@@ -25,17 +25,23 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.edit
-import com.example.webview_locker.config.SettingsKeys
+import com.example.webview_locker.config.SystemSettingsKeys
+import com.example.webview_locker.config.UserSettingsKeys
 import kotlin.math.roundToInt
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun WebView(onOpenSettings: () -> Unit) {
     val context = LocalContext.current
-    val prefs = context.getSharedPreferences(SettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
 
-    val homeUrl = prefs.getString(SettingsKeys.HOME_URL, "https://duckduckgo.com")!!
-    val initUrl by remember { mutableStateOf(prefs.getString(SettingsKeys.LAST_URL, homeUrl) ?: homeUrl) }
+    val userPrefs = context.getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
+    val systemPrefs = context.getSharedPreferences(SystemSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
+
+    val homeUrl = userPrefs.getString(UserSettingsKeys.HOME_URL, "https://duckduckgo.com")!!
+
+    val initUrl by remember { mutableStateOf(systemPrefs.getString(SystemSettingsKeys.LAST_URL, homeUrl) ?: homeUrl) }
+    val savedOffsetX = systemPrefs.getFloat(SystemSettingsKeys.MENU_OFFSET_X, 0f)
+    val savedOffsetY = systemPrefs.getFloat(SystemSettingsKeys.MENU_OFFSET_Y, 0f)
 
     val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
 
@@ -49,7 +55,7 @@ fun WebView(onOpenSettings: () -> Unit) {
             webViewClient = object : android.webkit.WebViewClient() {
                 override fun onPageFinished(view: android.webkit.WebView?, url: String?) {
                     if (url != null) {
-                        prefs.edit { putString(SettingsKeys.LAST_URL, url) }
+                        systemPrefs.edit { putString(SystemSettingsKeys.LAST_URL, url) }
                     }
                 }
             }
@@ -71,9 +77,11 @@ fun WebView(onOpenSettings: () -> Unit) {
 
     var menuExpanded by remember { mutableStateOf(false) }
 
-    // Remember the icon's position; start bottom-right with some offset
-    var offsetX by remember { mutableFloatStateOf(0f) }
-    var offsetY by remember { mutableFloatStateOf(0f) }
+    var offsetX by remember { mutableFloatStateOf(savedOffsetX) }
+    var offsetY by remember { mutableFloatStateOf(savedOffsetY) }
+
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val onPrimaryColor = MaterialTheme.colorScheme.onPrimary
 
     Box(Modifier.fillMaxSize()) {
         AndroidView(factory = { webView }, modifier = Modifier.fillMaxSize())
@@ -84,15 +92,23 @@ fun WebView(onOpenSettings: () -> Unit) {
                 .padding(24.dp)
                 .size(64.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.primary)
+                .background(primaryColor)
                 .pointerInput(Unit) {
-                    detectDragGestures { change, dragAmount ->
-                        change.consume()
-                        offsetX += dragAmount.x
-                        offsetY += dragAmount.y
-                    }
+                    detectDragGestures(
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            offsetX += dragAmount.x
+                            offsetY += dragAmount.y
+                        },
+                        onDragEnd = {
+                            systemPrefs.edit {
+                                putFloat(SystemSettingsKeys.MENU_OFFSET_X, offsetX)
+                                putFloat(SystemSettingsKeys.MENU_OFFSET_Y, offsetY)
+                            }
+                        }
+                    )
                 }
-                .align(Alignment.BottomEnd) // initial position at bottom end
+                .align(Alignment.BottomEnd)
         ) {
             IconButton(
                 onClick = { menuExpanded = true },
@@ -101,38 +117,44 @@ fun WebView(onOpenSettings: () -> Unit) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.List,
                     contentDescription = "Menu",
-                    tint = MaterialTheme.colorScheme.onPrimary,
+                    tint = onPrimaryColor,
                     modifier = Modifier.size(36.dp)
                 )
             }
 
             DropdownMenu(
                 expanded = menuExpanded,
-                onDismissRequest = { menuExpanded = false }
+                onDismissRequest = { menuExpanded = false },
+                modifier = Modifier
+                    .background(primaryColor)
+                    .width(IntrinsicSize.Min)
             ) {
                 DropdownMenuItem(
-                    text = { Text("Home") },
+                    text = { Text("Home", color = onPrimaryColor) },
                     onClick = {
                         menuExpanded = false
                         webView.loadUrl(homeUrl)
                     },
-                    leadingIcon = { Icon(Icons.Default.Home, contentDescription = null) }
+                    leadingIcon = { Icon(Icons.Default.Home, contentDescription = null, tint = onPrimaryColor) },
+                    modifier = Modifier.padding(vertical = 4.dp)
                 )
                 DropdownMenuItem(
-                    text = { Text("Settings") },
-                    onClick = {
-                        menuExpanded = false
-                        onOpenSettings()
-                    },
-                    leadingIcon = { Icon(Icons.Default.Build, contentDescription = null) }
-                )
-                DropdownMenuItem(
-                    text = { Text("Pin app") },
+                    text = { Text("Pin app", color = onPrimaryColor) },
                     onClick = {
                         menuExpanded = false
                         // TODO: Implement pinning
                     },
-                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) }
+                    leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null, tint = onPrimaryColor) },
+                    modifier = Modifier.padding(vertical = 4.dp)
+                )
+                DropdownMenuItem(
+                    text = { Text("Settings", color = onPrimaryColor) },
+                    onClick = {
+                        menuExpanded = false
+                        onOpenSettings()
+                    },
+                    leadingIcon = { Icon(Icons.Default.Build, contentDescription = null, tint = onPrimaryColor) },
+                    modifier = Modifier.padding(vertical = 4.dp)
                 )
             }
         }

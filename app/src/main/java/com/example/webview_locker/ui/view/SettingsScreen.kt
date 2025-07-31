@@ -7,14 +7,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.webview_locker.config.SettingsKeys
+import com.example.webview_locker.config.UserSettingsKeys
 import androidx.core.content.edit
 
 @Composable
 fun SettingsScreen(onSave: () -> Unit) {
     val context = LocalContext.current
-    val prefs = context.getSharedPreferences(SettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
-    var url by remember { mutableStateOf(prefs.getString(SettingsKeys.HOME_URL, "") ?: "") }
+    val prefs = context.getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
+    var url by remember { mutableStateOf(prefs.getString(UserSettingsKeys.HOME_URL, "") ?: "") }
 
     Column(
         modifier = Modifier
@@ -29,13 +29,14 @@ fun SettingsScreen(onSave: () -> Unit) {
             value = url,
             onValueChange = { url = it },
             label = { Text("Start URL") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Button(onClick = {
-            prefs.edit { putString(SettingsKeys.HOME_URL, url) }
+            prefs.edit { putString(UserSettingsKeys.HOME_URL, url) }
             onSave()
         }) {
             Text("Save")
