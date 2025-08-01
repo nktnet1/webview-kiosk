@@ -9,6 +9,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import com.example.webview_locker.config.UserSettingsKeys
 import androidx.core.content.edit
@@ -35,7 +36,7 @@ fun SettingsScreen(onSave: () -> Unit) {
         return try {
             val inputUrl = URL(input)
             inputUrl.host.contains(".") && (inputUrl.protocol == "http" || inputUrl.protocol == "https")
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             false
         }
     }
@@ -61,17 +62,21 @@ fun SettingsScreen(onSave: () -> Unit) {
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        Text("Configure Start URL", style = MaterialTheme.typography.headlineSmall)
+        Text("Settings", style = MaterialTheme.typography.headlineSmall)
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Home URL", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.width(4.dp))
+        }
         OutlinedTextField(
             value = url,
             onValueChange = {
                 url = it
                 urlError = !isValidUrl(it)
             },
-            label = { Text("Home URL") },
+            placeholder = { Text("e.g. https://google.com.au", fontStyle = FontStyle.Italic) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             isError = urlError
@@ -100,7 +105,7 @@ fun SettingsScreen(onSave: () -> Unit) {
                 blacklist = it
                 blacklistError = !validateMultilineInput(it)
             },
-            placeholder = { Text("e.g.\n*") },
+            placeholder = { Text("e.g.\n*", fontStyle = FontStyle.Italic) },
             modifier = Modifier.fillMaxWidth(),
             isError = blacklistError,
             minLines = 3
@@ -166,7 +171,7 @@ fun SettingsScreen(onSave: () -> Unit) {
                     Text("OK")
                 }
             },
-            title = { Text("Blacklist Info") },
+            title = { Text("Blacklist: sites to block") },
             text = {
                 Text(
                     "Specify blocked URL patterns, one per line."
@@ -186,7 +191,7 @@ fun SettingsScreen(onSave: () -> Unit) {
                     Text("OK")
                 }
             },
-            title = { Text("Whitelist Info") },
+            title = { Text("Whitelist: sites to bypass blacklist") },
             text = {
                 Text(
                     "Specify allowed URL patterns, one per line."
