@@ -14,9 +14,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -142,6 +142,7 @@ fun WebView(onOpenSettings: () -> Unit) {
                             Icon(
                                 Icons.Default.Home,
                                 contentDescription = null,
+                                modifier = Modifier.size(24.dp),
                                 tint = lighterBlue
                             )
                         }
@@ -160,6 +161,7 @@ fun WebView(onOpenSettings: () -> Unit) {
                             Icon(
                                 Icons.Default.Lock,
                                 contentDescription = null,
+                                modifier = Modifier.size(24.dp),
                                 tint = lighterBlue
                             )
                         }
@@ -172,8 +174,9 @@ fun WebView(onOpenSettings: () -> Unit) {
                         },
                         leadingIcon = {
                             Icon(
-                                Icons.Default.Build,
+                                Icons.Default.Settings,
                                 contentDescription = null,
+                                modifier = Modifier.size(24.dp),
                                 tint = lighterBlue
                             )
                         }

@@ -3,6 +3,9 @@ package com.example.webview_locker.config
 object UserSettingsKeys {
     const val PREFS_NAME = "user_settings"
     const val HOME_URL = "home_url"
+
+    const val WEBSITE_BLACKLIST = "website_blacklist"
+    const val WEBSITE_WHITELIST = "website_whitelist"
 }
 
 object SystemSettingsKeys {
