@@ -28,10 +28,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.edit
 import com.example.webview_locker.config.SystemSettingsKeys
 import com.example.webview_locker.config.UserSettingsKeys
-import kotlin.math.roundToInt
 import com.example.webview_locker.utils.rememberPinnedState
+import kotlin.math.roundToInt
 
-@SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun WebView(onOpenSettings: () -> Unit) {
     val context = LocalContext.current
@@ -48,7 +47,68 @@ fun WebView(onOpenSettings: () -> Unit) {
 
     val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
 
-    val webView = remember {
+    val webView = rememberWebView(context, initUrl, systemPrefs)
+
+    HandleBackPress(webView, onBackPressedDispatcher)
+
+    var menuExpanded by remember { mutableStateOf(false) }
+    var offsetX by remember { mutableFloatStateOf(savedOffsetX) }
+    var offsetY by remember { mutableFloatStateOf(savedOffsetY) }
+
+    val isPinned by rememberPinnedState()
+
+    val lighterBlue = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+
+    Box(Modifier.fillMaxSize()) {
+        AndroidView(factory = { webView }, modifier = Modifier.fillMaxSize())
+
+        if (!isPinned) {
+            Box(modifier = Modifier.align(Alignment.BottomEnd)) {
+                FloatingMenuButton(
+                    offsetX = offsetX,
+                    offsetY = offsetY,
+                    onOffsetChange = { x, y ->
+                        offsetX = x
+                        offsetY = y
+                        systemPrefs.edit {
+                            putFloat(SystemSettingsKeys.MENU_OFFSET_X, offsetX)
+                            putFloat(SystemSettingsKeys.MENU_OFFSET_Y, offsetY)
+                        }
+                    },
+                    onMenuClick = { menuExpanded = true },
+                    isMenuExpanded = menuExpanded,
+                    onDismissMenu = { menuExpanded = false },
+                    onHomeClick = {
+                        menuExpanded = false
+                        webView.loadUrl(homeUrl)
+                    },
+                    onPinClick = {
+                        menuExpanded = false
+                        try {
+                            activity?.startLockTask()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    },
+                    onSettingsClick = {
+                        menuExpanded = false
+                        onOpenSettings()
+                    },
+                    tintColor = lighterBlue
+                )
+            }
+        }
+    }
+}
+
+@SuppressLint("SetJavaScriptEnabled")
+@Composable
+private fun rememberWebView(
+    context: Context,
+    initUrl: String,
+    systemPrefs: android.content.SharedPreferences
+): android.webkit.WebView {
+    return remember {
         android.webkit.WebView(context).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -65,7 +125,13 @@ fun WebView(onOpenSettings: () -> Unit) {
             loadUrl(initUrl)
         }
     }
+}
 
+@Composable
+private fun HandleBackPress(
+    webView: android.webkit.WebView,
+    dispatcher: androidx.activity.OnBackPressedDispatcher?
+) {
     DisposableEffect(webView) {
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -74,113 +140,92 @@ fun WebView(onOpenSettings: () -> Unit) {
                 }
             }
         }
-        onBackPressedDispatcher?.addCallback(callback)
+        dispatcher?.addCallback(callback)
         onDispose { callback.remove() }
     }
+}
 
-    var menuExpanded by remember { mutableStateOf(false) }
-    var offsetX by remember { mutableFloatStateOf(savedOffsetX) }
-    var offsetY by remember { mutableFloatStateOf(savedOffsetY) }
-
-    val isPinned by rememberPinnedState()
-
-    val lighterBlue = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-
-    Box(Modifier.fillMaxSize()) {
-        AndroidView(factory = { webView }, modifier = Modifier.fillMaxSize())
-
-        if (!isPinned) {
-            Box(
-                modifier = Modifier
-                    .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
-                    .padding(24.dp)
-                    .size(64.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary)
-                    .pointerInput(Unit) {
-                        detectDragGestures(
-                            onDrag = { change, dragAmount ->
-                                change.consume()
-                                offsetX += dragAmount.x
-                                offsetY += dragAmount.y
-                            },
-                            onDragEnd = {
-                                systemPrefs.edit {
-                                    putFloat(SystemSettingsKeys.MENU_OFFSET_X, offsetX)
-                                    putFloat(SystemSettingsKeys.MENU_OFFSET_Y, offsetY)
-                                }
-                            }
-                        )
+@Composable
+private fun FloatingMenuButton(
+    offsetX: Float,
+    offsetY: Float,
+    onOffsetChange: (Float, Float) -> Unit,
+    onMenuClick: () -> Unit,
+    isMenuExpanded: Boolean,
+    onDismissMenu: () -> Unit,
+    onHomeClick: () -> Unit,
+    onPinClick: () -> Unit,
+    onSettingsClick: () -> Unit,
+    tintColor: androidx.compose.ui.graphics.Color
+) {
+    Box(
+        modifier = Modifier
+            .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
+            .padding(24.dp)
+            .size(64.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primary)
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        onOffsetChange(offsetX + dragAmount.x, offsetY + dragAmount.y)
                     }
-                    .align(Alignment.BottomEnd)
-            ) {
-                IconButton(
-                    onClick = { menuExpanded = true },
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.List,
-                        contentDescription = "Menu",
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(36.dp)
-                    )
-                }
-
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false }
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Home", color = lighterBlue) },
-                        onClick = {
-                            menuExpanded = false
-                            webView.loadUrl(homeUrl)
-                        },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Home,
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp),
-                                tint = lighterBlue
-                            )
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Pin app", color = lighterBlue) },
-                        onClick = {
-                            menuExpanded = false
-                            try {
-                                activity?.startLockTask()
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                            }
-                        },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Lock,
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp),
-                                tint = lighterBlue
-                            )
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Settings", color = lighterBlue) },
-                        onClick = {
-                            menuExpanded = false
-                            onOpenSettings()
-                        },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Default.Settings,
-                                contentDescription = null,
-                                modifier = Modifier.size(24.dp),
-                                tint = lighterBlue
-                            )
-                        }
-                    )
-                }
+                )
             }
+    ) {
+        IconButton(
+            onClick = onMenuClick,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.List,
+                contentDescription = "Menu",
+                tint = MaterialTheme.colorScheme.onPrimary,
+                modifier = Modifier.size(36.dp)
+            )
+        }
+
+        DropdownMenu(
+            expanded = isMenuExpanded,
+            onDismissRequest = onDismissMenu
+        ) {
+            DropdownMenuItem(
+                text = { Text("Home", color = tintColor) },
+                onClick = onHomeClick,
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Home,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = tintColor
+                    )
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Pin app", color = tintColor) },
+                onClick = onPinClick,
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Lock,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = tintColor
+                    )
+                }
+            )
+            DropdownMenuItem(
+                text = { Text("Settings", color = tintColor) },
+                onClick = onSettingsClick,
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Settings,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                        tint = tintColor
+                    )
+                }
+            )
         }
     }
 }
