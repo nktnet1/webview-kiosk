@@ -29,7 +29,7 @@ import androidx.core.content.edit
 import com.example.webview_locker.config.SystemSettingsKeys
 import com.example.webview_locker.config.UserSettingsKeys
 import kotlin.math.roundToInt
-import rememberPinnedState
+import com.example.webview_locker.utils.rememberPinnedState
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
