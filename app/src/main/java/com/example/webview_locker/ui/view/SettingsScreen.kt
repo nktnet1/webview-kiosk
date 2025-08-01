@@ -148,18 +148,23 @@ fun SettingsScreen(onSave: () -> Unit) {
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        Button(
-            enabled = !urlError && !blacklistError && !whitelistError,
-            onClick = {
-                prefs.edit {
-                    putString(UserSettingsKeys.HOME_URL, url)
-                    putString(UserSettingsKeys.WEBSITE_BLACKLIST, blacklist)
-                    putString(UserSettingsKeys.WEBSITE_WHITELIST, whitelist)
-                }
-                onSave()
-            }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
         ) {
-            Text("Save")
+            Button(
+                enabled = !urlError && !blacklistError && !whitelistError,
+                onClick = {
+                    prefs.edit {
+                        putString(UserSettingsKeys.HOME_URL, url)
+                        putString(UserSettingsKeys.WEBSITE_BLACKLIST, blacklist)
+                        putString(UserSettingsKeys.WEBSITE_WHITELIST, whitelist)
+                    }
+                    onSave()
+                }
+            ) {
+                Text("Save")
+            }
         }
     }
 

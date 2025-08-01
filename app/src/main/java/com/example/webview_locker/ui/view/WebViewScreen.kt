@@ -2,9 +2,7 @@ package com.example.webview_locker.ui.view
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.ActivityManager
 import android.content.Context
-import android.os.Build
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
@@ -31,7 +29,7 @@ import androidx.core.content.edit
 import com.example.webview_locker.config.SystemSettingsKeys
 import com.example.webview_locker.config.UserSettingsKeys
 import kotlin.math.roundToInt
-import kotlinx.coroutines.delay
+import rememberPinnedState
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -185,22 +183,4 @@ fun WebView(onOpenSettings: () -> Unit) {
             }
         }
     }
-}
-
-@Composable
-fun rememberPinnedState(): State<Boolean> {
-    val context = LocalContext.current.applicationContext
-    val activityManager = remember {
-        context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-    }
-    val pinned = remember { mutableStateOf(false) }
-
-    LaunchedEffect(activityManager) {
-        while (true) {
-            val isLocked = activityManager.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
-            pinned.value = isLocked
-            delay(1000L)
-        }
-    }
-    return pinned
 }
