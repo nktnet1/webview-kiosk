@@ -92,7 +92,7 @@ private fun SettingsContent(
                 blacklistError = !validateMultilineRegex(it)
             },
             isError = blacklistError,
-            placeholder = "^https://.*\\.example\\.com/.*\n^https://blockedsite\\.com/.*",
+            placeholder = "^.*$",
             infoTitle = "Blacklist (Regex)",
             infoText = """
         Specify regular expressions (regex), one per line, to allow matching URLs.

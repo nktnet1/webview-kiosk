@@ -67,14 +67,19 @@ fun customWebView(
                                 justify-content: center;
                                 white-space: pre-wrap;
                             }
+                            hr {
+                              border: none;
+                              border-top: 1px solid #555555;
+                              margin: 20px 0;
+                            }
                         </style>
                     </head>
                     <body>
                         <h2>🚫 Access Blocked</h2>
                         <p>$blockedMessage</p>
+                        <hr />
+                        <b>URL:</b>
                         <p>$url</p>
-                        <!-- Forced error: unclosed <div> tag to break rendering -->
-                        <div>
                     </body>
                 </html>
                 """.trimIndent(),
