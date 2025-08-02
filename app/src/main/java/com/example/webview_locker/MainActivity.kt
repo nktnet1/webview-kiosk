@@ -29,7 +29,7 @@ class MainActivity : AppCompatActivity() {
                         WebView(onOpenSettings = { navController.navigate("settings") })
                     }
                     composable("settings") {
-                        SettingsScreen(onSave = { navController.popBackStack() }, promptManager)
+                        SettingsScreen(onClose = { navController.popBackStack() }, promptManager)
                     }
                 }
             }

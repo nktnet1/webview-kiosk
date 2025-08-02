@@ -19,7 +19,7 @@ import java.net.URL
 
 @Composable
 fun SettingsScreen(
-    onSave: () -> Unit,
+    onClose: () -> Unit,
     promptManager: BiometricPromptManager
 ) {
     val context = LocalContext.current
@@ -28,7 +28,7 @@ fun SettingsScreen(
     RequireAuthentication(
         promptManager = promptManager,
         onAuthenticated = {
-            SettingsContent(userSettings = userSettings, onSave = onSave)
+            SettingsContent(userSettings = userSettings, onClose = onClose)
         },
         onFailed = { errorResult ->
             AuthenticationErrorDisplay(errorResult = errorResult) {
@@ -44,7 +44,7 @@ fun SettingsScreen(
 @Composable
 private fun SettingsContent(
     userSettings: UserSettings,
-    onSave: () -> Unit,
+    onClose: () -> Unit,
 ) {
     var url by remember { mutableStateOf(userSettings.homeUrl) }
     var blacklist by remember { mutableStateOf(userSettings.websiteBlacklist) }
@@ -62,7 +62,7 @@ private fun SettingsContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp)
+            .padding(top = 40.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
     ) {
         Text("Settings", style = MaterialTheme.typography.headlineSmall)
 
@@ -164,16 +164,25 @@ private fun SettingsContent(
 
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            OutlinedButton(
+                onClick = onClose,
+                modifier = Modifier.width(100.dp)
+            ) {
+                Text("Cancel")
+            }
+
             Button(
                 enabled = saveEnabled,
+                modifier = Modifier.width(100.dp),
                 onClick = {
                     userSettings.homeUrl = url
                     userSettings.websiteBlacklist = blacklist
                     userSettings.websiteWhitelist = whitelist
                     userSettings.blockedMessage = blockedMessage.trim()
-                    onSave()
+                    onClose()
                 }
             ) {
                 Text("Save")
