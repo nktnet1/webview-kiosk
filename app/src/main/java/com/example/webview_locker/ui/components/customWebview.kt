@@ -12,7 +12,7 @@ import com.example.webview_locker.config.SystemSettingsKeys
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun CustomWebView(
+fun customWebView(
     context: Context,
     initUrl: String,
     systemPrefs: SharedPreferences

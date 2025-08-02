@@ -1,9 +1,7 @@
 package com.example.webview_locker.ui.view
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
-import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.layout.*
@@ -13,10 +11,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.core.content.edit
 import com.example.webview_locker.config.SystemSettingsKeys
 import com.example.webview_locker.config.UserSettingsKeys
-import com.example.webview_locker.ui.components.CustomWebView
+import com.example.webview_locker.ui.components.customWebView
 import com.example.webview_locker.ui.components.FloatingMenuButton
 import com.example.webview_locker.utils.rememberPinnedState
 
@@ -34,7 +31,7 @@ fun WebView(onOpenSettings: () -> Unit) {
 
     val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
 
-    val webView = CustomWebView(context, initUrl, systemPrefs)
+    val webView = customWebView(context, initUrl, systemPrefs)
 
     HandleBackPress(webView, onBackPressedDispatcher)
 
