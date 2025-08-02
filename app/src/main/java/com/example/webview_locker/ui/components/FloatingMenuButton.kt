@@ -1,6 +1,5 @@
 package com.example.webview_locker.ui.components
 
-import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
@@ -18,9 +17,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.core.content.edit
-import com.example.webview_locker.config.SystemSettingsKeys
 import kotlin.math.roundToInt
+import com.example.webview_locker.config.SystemSettings
 
 @Composable
 fun FloatingMenuButton(
@@ -29,11 +27,10 @@ fun FloatingMenuButton(
     onSettingsClick: () -> Unit
 ) {
     val context = LocalContext.current
-    val systemPrefs = context.getSharedPreferences(SystemSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
-    val savedOffsetX = systemPrefs.getFloat(SystemSettingsKeys.MENU_OFFSET_X, 0f)
-    val savedOffsetY = systemPrefs.getFloat(SystemSettingsKeys.MENU_OFFSET_Y, 0f)
-    var offsetX by remember { mutableFloatStateOf(savedOffsetX) }
-    var offsetY by remember { mutableFloatStateOf(savedOffsetY) }
+    val systemSettings = remember { SystemSettings(context) }
+
+    var offsetX by remember { mutableFloatStateOf(systemSettings.menuOffsetX) }
+    var offsetY by remember { mutableFloatStateOf(systemSettings.menuOffsetY) }
     var menuExpanded by remember { mutableStateOf(false) }
 
     val tintColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
@@ -50,10 +47,8 @@ fun FloatingMenuButton(
                     change.consume()
                     offsetX += dragAmount.x
                     offsetY += dragAmount.y
-                    systemPrefs.edit {
-                        putFloat(SystemSettingsKeys.MENU_OFFSET_X, offsetX)
-                        putFloat(SystemSettingsKeys.MENU_OFFSET_Y, offsetY)
-                    }
+                    systemSettings.menuOffsetX = offsetX
+                    systemSettings.menuOffsetY = offsetY
                 }
             }
     ) {

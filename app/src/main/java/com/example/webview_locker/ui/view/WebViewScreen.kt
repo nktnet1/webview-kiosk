@@ -1,8 +1,9 @@
 package com.example.webview_locker.ui.view
 
 import android.app.Activity
-import android.content.Context
+import android.webkit.WebView
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
@@ -10,8 +11,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
-import com.example.webview_locker.config.SystemSettingsKeys
-import com.example.webview_locker.config.UserSettingsKeys
+import com.example.webview_locker.config.SystemSettings
+import com.example.webview_locker.config.UserSettings
 import com.example.webview_locker.ui.components.customWebView
 import com.example.webview_locker.ui.components.FloatingMenuButton
 import com.example.webview_locker.utils.rememberPinnedState
@@ -21,15 +22,15 @@ fun WebView(onOpenSettings: () -> Unit) {
     val context = LocalContext.current
     val activity = context as? Activity
 
-    val userPrefs = context.getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
-    val systemPrefs = context.getSharedPreferences(SystemSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
+    val userSettings = remember { UserSettings(context) }
+    val systemSettings = remember { SystemSettings(context) }
 
-    val homeUrl = userPrefs.getString(UserSettingsKeys.HOME_URL, "https://duckduckgo.com")!!
-    val initUrl by remember { mutableStateOf(systemPrefs.getString(SystemSettingsKeys.LAST_URL, homeUrl) ?: homeUrl) }
+    val homeUrl = userSettings.homeUrl
+    val initUrl by remember { mutableStateOf(systemSettings.lastUrl.ifEmpty { homeUrl }) }
 
     val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
 
-    val webView = customWebView(context, initUrl, systemPrefs)
+    val webView = customWebView(context, initUrl)
 
     HandleBackPress(webView, onBackPressedDispatcher)
 
@@ -58,8 +59,8 @@ fun WebView(onOpenSettings: () -> Unit) {
 
 @Composable
 private fun HandleBackPress(
-    webView: android.webkit.WebView,
-    dispatcher: androidx.activity.OnBackPressedDispatcher?
+    webView: WebView,
+    dispatcher: OnBackPressedDispatcher?
 ) {
     DisposableEffect(webView) {
         val callback = object : OnBackPressedCallback(true) {
@@ -73,4 +74,3 @@ private fun HandleBackPress(
         onDispose { callback.remove() }
     }
 }
-

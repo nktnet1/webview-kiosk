@@ -11,9 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
-import androidx.core.content.edit
 import com.example.webview_locker.auth.BiometricPromptManager
-import com.example.webview_locker.config.UserSettingsKeys
+import com.example.webview_locker.config.UserSettings
 import com.example.webview_locker.ui.components.AuthenticationErrorDisplay
 import com.example.webview_locker.ui.components.RequireAuthentication
 import java.net.URL
@@ -24,12 +23,12 @@ fun SettingsScreen(
     promptManager: BiometricPromptManager
 ) {
     val context = LocalContext.current
-    val prefs = context.getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
+    val userSettings = remember { UserSettings(context) }
 
     RequireAuthentication(
         promptManager = promptManager,
         onAuthenticated = {
-            SettingsContent(prefs = prefs, onSave = onSave)
+            SettingsContent(userSettings = userSettings, onSave = onSave)
         },
         onFailed = { errorResult ->
             AuthenticationErrorDisplay(errorResult = errorResult) {
@@ -44,19 +43,16 @@ fun SettingsScreen(
 
 @Composable
 private fun SettingsContent(
-    prefs: android.content.SharedPreferences,
+    userSettings: UserSettings,
     onSave: () -> Unit,
 ) {
-    var url by remember { mutableStateOf(prefs.getString(UserSettingsKeys.HOME_URL, "") ?: "") }
-    var blacklist by remember { mutableStateOf(prefs.getString(UserSettingsKeys.WEBSITE_BLACKLIST, "") ?: "") }
-    var whitelist by remember { mutableStateOf(prefs.getString(UserSettingsKeys.WEBSITE_WHITELIST, "") ?: "") }
+    var url by remember { mutableStateOf(userSettings.homeUrl) }
+    var blacklist by remember { mutableStateOf(userSettings.websiteBlacklist) }
+    var whitelist by remember { mutableStateOf(userSettings.websiteWhitelist) }
 
     var urlError by remember { mutableStateOf(false) }
     var blacklistError by remember { mutableStateOf(false) }
     var whitelistError by remember { mutableStateOf(false) }
-
-    var showBlacklistInfo by remember { mutableStateOf(false) }
-    var showWhitelistInfo by remember { mutableStateOf(false) }
 
     val saveEnabled = !urlError && !blacklistError && !whitelistError
 
@@ -81,49 +77,57 @@ private fun SettingsContent(
         Spacer(Modifier.height(24.dp))
 
         PatternInput(
-            label = "Blacklist",
+            label = "Blacklist Regex",
             value = blacklist,
             onValueChange = {
                 blacklist = it
-                blacklistError = !validateMultilineInput(it)
+                blacklistError = !validateMultilineRegex(it)
             },
             isError = blacklistError,
-            showInfo = showBlacklistInfo,
-            onShowInfoChange = { showBlacklistInfo = it },
-            placeholder = "e.g.\n*",
-            infoTitle = "Blacklist: sites to block",
+            placeholder = "^https://.*\\.example\\.com/.*\n^https://blockedsite\\.com/.*",
+            infoTitle = "Blacklist (Regex)",
             infoText = """
-                Specify blocked URL patterns, one per line.
+        Specify regular expressions, one per line, to block matching URLs.
 
-                Patterns follow the Chromium URL blocklist filter format:
-                https://www.chromium.org/administrators/url-blocklist-filter-format/
+        Regular expressions use partial (contains) matching. For example,
+        "example.com" will match any URL that contains it, such as 
+        "https://example.com/page" or "https://sub.example.com".
 
-                You can also block all (*) and use the whitelist to allow specific sites.
+        To restrict more precisely, use anchors like ^ and $:
+        - ^https://example\.com$ matches only the exact URL.
+        - ^https://.*\.example\.com/.* matches all subdomains and paths.
+
+        Special characters like '.' and '?' must be escaped with '\\'.
+
+        Whitelist patterns (if matched) will override blacklist patterns.
             """.trimIndent()
         )
 
         Spacer(Modifier.height(16.dp))
 
         PatternInput(
-            label = "Whitelist",
+            label = "Whitelist Regex",
             value = whitelist,
             onValueChange = {
                 whitelist = it
-                whitelistError = !validateMultilineInput(it)
+                whitelistError = !validateMultilineRegex(it)
             },
             isError = whitelistError,
-            showInfo = showWhitelistInfo,
-            onShowInfoChange = { showWhitelistInfo = it },
-            placeholder = "e.g.\nhttps://homepage.com\nhttps://*.company.com/*",
-            infoTitle = "Whitelist: sites to bypass blacklist",
+            placeholder = "^https://allowedsite\\.com/.*\n^https://.*\\.trusted\\.org/.*",
+            infoTitle = "Whitelist (Regex)",
             infoText = """
-                Specify allowed URL patterns, one per line.
+        Specify regular expressions, one per line, to allow matching URLs.
 
-                Patterns follow the Chromium URL blocklist filter format:
-                https://www.chromium.org/administrators/url-blocklist-filter-format/
+        These patterns also use partial (contains) matching by default.
 
-                Use this list to unblock any sites blocked by the blacklist.
-            """.trimIndent()
+        If you need strict control, anchor your regex:
+        - ^https://allowedsite\.com$ for exact match
+        - ^https://.*\.trusted\.org/.* for subdomains
+
+        Escaping is required for special characters like '.' and '?'.
+
+        Whitelist patterns take precedence over blacklist patterns.
+           """.trimIndent()
         )
 
         Spacer(Modifier.height(24.dp))
@@ -135,47 +139,15 @@ private fun SettingsContent(
             Button(
                 enabled = saveEnabled,
                 onClick = {
-                    prefs.edit {
-                        putString(UserSettingsKeys.HOME_URL, url)
-                        putString(UserSettingsKeys.WEBSITE_BLACKLIST, blacklist)
-                        putString(UserSettingsKeys.WEBSITE_WHITELIST, whitelist)
-                    }
+                    userSettings.homeUrl = url
+                    userSettings.websiteBlacklist = blacklist
+                    userSettings.websiteWhitelist = whitelist
                     onSave()
                 }
             ) {
                 Text("Save")
             }
         }
-    }
-
-    if (showBlacklistInfo) {
-        InfoDialog(
-            title = "Blacklist: sites to block",
-            text = """
-                Specify blocked URL patterns, one per line.
-
-                Patterns follow the Chromium URL blocklist filter format:
-                https://www.chromium.org/administrators/url-blocklist-filter-format/
-
-                You can also block all (*) and use the whitelist to allow specific sites.
-            """.trimIndent(),
-            onDismiss = { showBlacklistInfo = false }
-        )
-    }
-
-    if (showWhitelistInfo) {
-        InfoDialog(
-            title = "Whitelist: sites to bypass blacklist",
-            text = """
-                Specify allowed URL patterns, one per line.
-
-                Patterns follow the Chromium URL blocklist filter format:
-                https://www.chromium.org/administrators/url-blocklist-filter-format/
-
-                Use this list to unblock any sites blocked by the blacklist.
-            """.trimIndent(),
-            onDismiss = { showWhitelistInfo = false }
-        )
     }
 }
 
@@ -213,16 +185,16 @@ private fun PatternInput(
     value: String,
     onValueChange: (String) -> Unit,
     isError: Boolean,
-    showInfo: Boolean,
-    onShowInfoChange: (Boolean) -> Unit,
     placeholder: String,
     infoTitle: String,
     infoText: String
 ) {
+    var showInfo by remember { mutableStateOf(false) }
+
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(label, style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.width(4.dp))
-        IconButton(onClick = { onShowInfoChange(true) }, modifier = Modifier.size(20.dp)) {
+        IconButton(onClick = { showInfo = true }, modifier = Modifier.size(20.dp)) {
             Icon(Icons.Default.Info, contentDescription = "$label info")
         }
     }
@@ -236,7 +208,7 @@ private fun PatternInput(
     )
     if (isError) {
         Text(
-            "Invalid $label format",
+            "Invalid regex pattern",
             color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(start = 0.dp, top = 4.dp)
@@ -244,29 +216,18 @@ private fun PatternInput(
     }
 
     if (showInfo) {
-        InfoDialog(title = infoTitle, text = infoText, onDismiss = { onShowInfoChange(false) })
+        AlertDialog(
+            onDismissRequest = { showInfo = false },
+            confirmButton = {
+                TextButton(onClick = { showInfo = false }) {
+                    Text("OK")
+                }
+            },
+            title = { Text(infoTitle) },
+            text = { Text(infoText) }
+        )
     }
 }
-
-@Composable
-private fun InfoDialog(
-    title: String,
-    text: String,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("OK")
-            }
-        },
-        title = { Text(title) },
-        text = { Text(text) }
-    )
-}
-
-// Validation helpers
 
 private fun isValidUrl(input: String): Boolean {
     if (!(input.startsWith("http://") || input.startsWith("https://"))) return false
@@ -278,17 +239,15 @@ private fun isValidUrl(input: String): Boolean {
     }
 }
 
-private fun isValidPatternLine(line: String): Boolean {
-    val trimmed = line.trim()
-    if (trimmed.isEmpty()) return true
-    if (trimmed == "*") return true   // allow block all wildcard
-    return trimmed.startsWith("http://") ||
-            trimmed.startsWith("https://") ||
-            trimmed.startsWith("*.") ||
-            trimmed.startsWith("[") ||  // IP range in brackets
-            trimmed.startsWith("file://")
-}
-
-private fun validateMultilineInput(text: String): Boolean {
-    return text.lines().all { isValidPatternLine(it) }
+private fun validateMultilineRegex(text: String): Boolean {
+    return text.lines().all { line ->
+        val trimmed = line.trim()
+        if (trimmed.isEmpty()) return@all true
+        try {
+            Regex(trimmed)
+            true
+        } catch (_: Exception) {
+            false
+        }
+    }
 }
