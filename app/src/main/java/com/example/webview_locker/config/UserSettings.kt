@@ -19,10 +19,15 @@ class UserSettings(context: Context) {
         get() = prefs.getString(WEBSITE_WHITELIST, "") ?: ""
         set(value) = prefs.edit { putString(WEBSITE_WHITELIST, value) }
 
+    var blockedMessage: String
+        get() = prefs.getString(BLOCKED_MESSAGE, "This site is blocked by WebView Locker.") ?: "This site is blocked by WebView Locker."
+        set(value) = prefs.edit { putString(BLOCKED_MESSAGE, value) }
+
     companion object {
         private const val PREFS_NAME = "user_settings"
         private const val HOME_URL = "home_url"
         private const val WEBSITE_BLACKLIST = "website_blacklist"
         private const val WEBSITE_WHITELIST = "website_whitelist"
+        private const val BLOCKED_MESSAGE = "blocked_message"
     }
 }

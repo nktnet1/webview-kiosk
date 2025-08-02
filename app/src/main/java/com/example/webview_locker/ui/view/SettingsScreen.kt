@@ -49,10 +49,13 @@ private fun SettingsContent(
     var url by remember { mutableStateOf(userSettings.homeUrl) }
     var blacklist by remember { mutableStateOf(userSettings.websiteBlacklist) }
     var whitelist by remember { mutableStateOf(userSettings.websiteWhitelist) }
+    var blockedMessage by remember { mutableStateOf(userSettings.blockedMessage) }
 
     var urlError by remember { mutableStateOf(false) }
     var blacklistError by remember { mutableStateOf(false) }
     var whitelistError by remember { mutableStateOf(false) }
+    // Allow empty string, so no error here
+    val blockedMessageError = false
 
     val saveEnabled = !urlError && !blacklistError && !whitelistError
 
@@ -65,6 +68,11 @@ private fun SettingsContent(
 
         Spacer(Modifier.height(16.dp))
 
+        LabelWithInfo(
+            label = "Home URL",
+            infoTitle = "Home URL",
+            infoText = "The start page URL when the app launches."
+        )
         UrlInput(
             value = url,
             onValueChange = {
@@ -87,19 +95,19 @@ private fun SettingsContent(
             placeholder = "^https://.*\\.example\\.com/.*\n^https://blockedsite\\.com/.*",
             infoTitle = "Blacklist (Regex)",
             infoText = """
-        Specify regular expressions, one per line, to block matching URLs.
+        Specify regular expressions (regex), one per line, to allow matching URLs.
+        Escaping is required for special characters in regex like '.' and '?'.
 
-        Regular expressions use partial (contains) matching. For example,
-        "example.com" will match any URL that contains it, such as 
-        "https://example.com/page" or "https://sub.example.com".
+        These patterns also use partial (contains) matching by default.
 
-        To restrict more precisely, use anchors like ^ and $:
-        - ^https://example\.com$ matches only the exact URL.
-        - ^https://.*\.example\.com/.* matches all subdomains and paths.
+        If you need strict control, anchor your regex with '^' and '$'.
+        
+        Examples:
+        - .*
+        - ^https://.*\.?google\.com/.*
 
-        Special characters like '.' and '?' must be escaped with '\\'.
 
-        Whitelist patterns (if matched) will override blacklist patterns.
+        Whitelist patterns take precedence over blacklist patterns.
             """.trimIndent()
         )
 
@@ -116,18 +124,40 @@ private fun SettingsContent(
             placeholder = "^https://allowedsite\\.com/.*\n^https://.*\\.trusted\\.org/.*",
             infoTitle = "Whitelist (Regex)",
             infoText = """
-        Specify regular expressions, one per line, to allow matching URLs.
+        Specify regular expressions (regex), one per line, to allow matching URLs.
+        Escaping is required for special characters in regex like '.' and '?'.
 
         These patterns also use partial (contains) matching by default.
 
-        If you need strict control, anchor your regex:
-        - ^https://allowedsite\.com$ for exact match
-        - ^https://.*\.trusted\.org/.* for subdomains
+        If you need strict control, anchor your regex with '^' and '$'.
+        
+        Examples:
+        - ^https://allowedsite\.com$
+        - ^https://.*\.trusted\.org/.*
 
-        Escaping is required for special characters like '.' and '?'.
 
         Whitelist patterns take precedence over blacklist patterns.
            """.trimIndent()
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        LabelWithInfo(
+            label = "Blocked Message",
+            infoTitle = "Blocked Message",
+            infoText = "Custom message shown on blocked pages. Can be left empty."
+        )
+        OutlinedTextField(
+            value = blockedMessage,
+            onValueChange = {
+                blockedMessage = it
+                // No error check, empty allowed
+            },
+            placeholder = { Text("This site is blocked by WebView Locker.") },
+            isError = false,
+            modifier = Modifier.fillMaxWidth(),
+            minLines = 2,
+            maxLines = 5,
         )
 
         Spacer(Modifier.height(24.dp))
@@ -142,6 +172,7 @@ private fun SettingsContent(
                     userSettings.homeUrl = url
                     userSettings.websiteBlacklist = blacklist
                     userSettings.websiteWhitelist = whitelist
+                    userSettings.blockedMessage = blockedMessage.trim()
                     onSave()
                 }
             ) {
@@ -152,15 +183,42 @@ private fun SettingsContent(
 }
 
 @Composable
+private fun LabelWithInfo(
+    label: String,
+    infoTitle: String,
+    infoText: String
+) {
+    var showInfo by remember { mutableStateOf(false) }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding(bottom = 8.dp)
+    ) {
+        Text(label, style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.width(4.dp))
+        IconButton(onClick = { showInfo = true }, modifier = Modifier.size(20.dp)) {
+            Icon(Icons.Default.Info, contentDescription = "$label info")
+        }
+    }
+    if (showInfo) {
+        AlertDialog(
+            onDismissRequest = { showInfo = false },
+            confirmButton = {
+                TextButton(onClick = { showInfo = false }) {
+                    Text("OK")
+                }
+            },
+            title = { Text(infoTitle) },
+            text = { Text(infoText) }
+        )
+    }
+}
+
+@Composable
 private fun UrlInput(
     value: String,
     onValueChange: (String) -> Unit,
     isError: Boolean
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text("Home URL", style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.width(4.dp))
-    }
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
@@ -231,7 +289,7 @@ private fun PatternInput(
 
 private fun isValidUrl(input: String): Boolean {
     if (input.isEmpty()) {
-        return true;
+        return true
     }
     if (!(input.startsWith("http://") || input.startsWith("https://"))) {
         return false

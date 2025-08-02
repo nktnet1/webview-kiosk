@@ -21,6 +21,7 @@ fun customWebView(
 
     val blacklistText by remember { derivedStateOf { userSettings.websiteBlacklist } }
     val whitelistText by remember { derivedStateOf { userSettings.websiteWhitelist } }
+    val blockedMessage by remember { derivedStateOf { userSettings.blockedMessage } }
 
     val blacklistRegexes by remember(blacklistText) {
         mutableStateOf(
@@ -48,13 +49,35 @@ fun customWebView(
                 loadDataWithBaseURL(
                     url,
                     """
-                    <html>
-                        <body style="text-align:center;font-family:sans-serif;padding-top:50px;padding-left:5px;padding-right:5px">                            <h2>🚫 Access Blocked</h2>
-                            <p>This site is blocked by WebView Locker.</p>
-                            <p><code>$url</code></p>
-                        </body>
-                    </html>
-                    """.trimIndent(),
+                <html>
+                    <head>
+                        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+                        <style>
+                            body {
+                                margin: 0;
+                                padding-top: 50px;
+                                padding-left: 20px;
+                                padding-right: 20px;
+                                font-family: sans-serif;
+                                overflow-wrap: break-word;
+                                box-sizing: border-box;
+                                display: flex;
+                                flex-direction: column;
+                                text-align: center;
+                                justify-content: center;
+                                white-space: pre-wrap;
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <h2>🚫 Access Blocked</h2>
+                        <p>$blockedMessage</p>
+                        <p>$url</p>
+                        <!-- Forced error: unclosed <div> tag to break rendering -->
+                        <div>
+                    </body>
+                </html>
+                """.trimIndent(),
                     "text/html",
                     "UTF-8",
                     null,
@@ -99,7 +122,7 @@ fun customWebView(
         }
     }
 
-    LaunchedEffect(blacklistRegexes, whitelistRegexes) {
+    LaunchedEffect(blacklistRegexes, whitelistRegexes, blockedMessage) {
         val currentUrl = webView.url.orEmpty()
         if (isBlocked(currentUrl)) {
             showBlockedPage(webView, currentUrl)
