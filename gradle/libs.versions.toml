@@ -13,6 +13,7 @@ composeBom = "2025.07.00"
 navigationCompose = "2.9.3"
 
 [libraries]
+adblock-android = { module = "org.adblockplus:adblock-android" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 androidx-biometric = { module = "androidx.biometric:biometric", version.ref = "biometric" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
