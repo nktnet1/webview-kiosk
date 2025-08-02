@@ -70,7 +70,7 @@ fun customWebView(
                             hr {
                               border: none;
                               border-top: 1px solid #555555;
-                              margin: 20px 0;
+                              margin: 20px 0 30px 0px;
                             }
                         </style>
                     </head>
