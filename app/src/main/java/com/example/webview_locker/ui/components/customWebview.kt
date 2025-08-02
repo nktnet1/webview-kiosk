@@ -25,24 +25,41 @@ fun customWebView(
     val blacklistRegexes by remember(blacklistText) {
         mutableStateOf(
             blacklistText.lines()
-                .mapNotNull { line -> line.trim().takeIf { it.isNotEmpty() } }
-                .mapNotNull { pattern -> runCatching { Regex(pattern) }.getOrNull() }
+                .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+                .mapNotNull { runCatching { Regex(it) }.getOrNull() }
         )
     }
     val whitelistRegexes by remember(whitelistText) {
         mutableStateOf(
             whitelistText.lines()
-                .mapNotNull { line -> line.trim().takeIf { it.isNotEmpty() } }
-                .mapNotNull { pattern -> runCatching { Regex(pattern) }.getOrNull() }
+                .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+                .mapNotNull { runCatching { Regex(it) }.getOrNull() }
         )
     }
 
-    var lastNonBlockedUrl by remember { mutableStateOf(initUrl) }
-
     fun isBlocked(url: String): Boolean {
-        return when {
-            whitelistRegexes.isNotEmpty() -> whitelistRegexes.none { it.containsMatchIn(url) }
-            else -> blacklistRegexes.any { it.containsMatchIn(url) }
+        if (whitelistRegexes.any { it.containsMatchIn(url) }) return false
+        return blacklistRegexes.any { it.containsMatchIn(url) }
+    }
+
+    fun showBlockedPage(view: WebView?, url: String) {
+        view?.apply {
+            loadUrl("about:blank")
+            post {
+                loadData(
+                    """
+                    <html>
+                        <body style="text-align:center;font-family:sans-serif;padding-top:50px">
+                            <h2>🚫 Access Blocked</h2>
+                            <p>This site is blocked by WebView Locker.</p>
+                            <p><code>$url</code></p>
+                        </body>
+                    </html>
+                    """.trimIndent(),
+                    "text/html",
+                    "UTF-8"
+                )
+            }
         }
     }
 
@@ -60,21 +77,8 @@ fun customWebView(
                     request: WebResourceRequest?
                 ): Boolean {
                     val url = request?.url.toString()
-
                     return if (isBlocked(url)) {
-                        view?.loadData(
-                            """
-                            <html>
-                                <body style="text-align:center;font-family:sans-serif;padding-top:50px">
-                                    <h2>🚫 Access Blocked</h2>
-                                    <p>This site is blocked by WebView Locker.</p>
-                                    <p><code>$url</code></p>
-                                </body>
-                            </html>
-                            """.trimIndent(),
-                            "text/html",
-                            "UTF-8"
-                        )
+                        showBlockedPage(view, url)
                         true
                     } else {
                         false
@@ -82,35 +86,28 @@ fun customWebView(
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    if (url != null && !isBlocked(url)) {
-                        lastNonBlockedUrl = url
-                        systemSettings.lastUrl = url
+                    url?.let {
+                        if (!isBlocked(it)) {
+                            systemSettings.lastUrl = it
+                        }
                     }
                 }
             }
 
             loadUrl(initUrl)
+            if (!isBlocked(initUrl)) {
+                systemSettings.lastUrl = initUrl
+            }
         }
     }
 
     LaunchedEffect(blacklistRegexes, whitelistRegexes) {
-        webView.clearCache(true)
-        if (isBlocked(webView.url ?: "")) {
-            webView.loadData(
-                """
-                <html>
-                    <body style="text-align:center;font-family:sans-serif;padding-top:50px">
-                        <h2>🚫 Access Blocked</h2>
-                        <p>This site is blocked by WebView Locker.</p>
-                        <p><code>${webView.url}</code></p>
-                    </body>
-                </html>
-                """.trimIndent(),
-                "text/html",
-                "UTF-8"
-            )
+        val currentUrl = webView.url.orEmpty()
+        if (isBlocked(currentUrl)) {
+            showBlockedPage(webView, currentUrl)
         } else {
-            webView.loadUrl(lastNonBlockedUrl)
+            val lastUrl = systemSettings.lastUrl.takeIf { it.isNotEmpty() } ?: initUrl
+            webView.loadUrl(lastUrl)
         }
     }
 

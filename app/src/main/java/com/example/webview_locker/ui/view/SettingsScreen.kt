@@ -230,7 +230,12 @@ private fun PatternInput(
 }
 
 private fun isValidUrl(input: String): Boolean {
-    if (!(input.startsWith("http://") || input.startsWith("https://"))) return false
+    if (input.isEmpty()) {
+        return true;
+    }
+    if (!(input.startsWith("http://") || input.startsWith("https://"))) {
+        return false
+    }
     return try {
         val inputUrl = URL(input)
         inputUrl.host.contains(".") && (inputUrl.protocol == "http" || inputUrl.protocol == "https")
