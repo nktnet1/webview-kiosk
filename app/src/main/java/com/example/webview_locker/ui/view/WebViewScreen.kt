@@ -15,7 +15,7 @@ import com.example.webview_locker.config.SystemSettings
 import com.example.webview_locker.config.UserSettings
 import com.example.webview_locker.ui.components.customWebView
 import com.example.webview_locker.ui.components.FloatingMenuButton
-import com.example.webview_locker.utils.rememberPinnedState
+import com.example.webview_locker.utils.rememberLockedState
 
 @Composable
 fun WebView(onOpenSettings: () -> Unit) {
@@ -34,7 +34,7 @@ fun WebView(onOpenSettings: () -> Unit) {
 
     HandleBackPress(webView, onBackPressedDispatcher)
 
-    val isPinned by rememberPinnedState()
+    val isPinned by rememberLockedState()
 
     Box(Modifier.fillMaxSize()) {
         AndroidView(factory = { webView }, modifier = Modifier.fillMaxSize())
@@ -43,7 +43,7 @@ fun WebView(onOpenSettings: () -> Unit) {
             Box(modifier = Modifier.align(Alignment.BottomEnd)) {
                 FloatingMenuButton(
                     onHomeClick = { webView.loadUrl(homeUrl) },
-                    onPinClick = {
+                    onLockClick = {
                         try {
                             activity?.startLockTask()
                         } catch (e: Exception) {

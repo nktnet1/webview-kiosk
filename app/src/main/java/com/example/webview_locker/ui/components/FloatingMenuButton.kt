@@ -5,7 +5,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Settings
@@ -23,7 +23,7 @@ import com.example.webview_locker.config.SystemSettings
 @Composable
 fun FloatingMenuButton(
     onHomeClick: () -> Unit,
-    onPinClick: () -> Unit,
+    onLockClick: () -> Unit,
     onSettingsClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -57,8 +57,7 @@ fun FloatingMenuButton(
             modifier = Modifier.fillMaxSize()
         ) {
             Icon(
-                imageVector = Icons.AutoMirrored.Filled.List,
-                contentDescription = "Menu",
+                imageVector = Icons.Filled.Build,                contentDescription = "Menu",
                 tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(36.dp)
             )
@@ -84,10 +83,10 @@ fun FloatingMenuButton(
                 }
             )
             DropdownMenuItem(
-                text = { Text("Pin app", color = tintColor) },
+                text = { Text("Lock", color = tintColor) },
                 onClick = {
                     menuExpanded = false
-                    onPinClick()
+                    onLockClick()
                 },
                 leadingIcon = {
                     Icon(

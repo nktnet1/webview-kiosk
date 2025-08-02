@@ -11,19 +11,18 @@ import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.delay
 
 @Composable
-fun rememberPinnedState(): State<Boolean> {
+fun rememberLockedState(): State<Boolean> {
     val context = LocalContext.current.applicationContext
     val activityManager = remember {
         context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
     }
-    val pinned = remember { mutableStateOf(false) }
+    val isLocked = remember { mutableStateOf(false) }
 
     LaunchedEffect(activityManager) {
         while (true) {
-            val isLocked = activityManager.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
-            pinned.value = isLocked
+            isLocked.value = activityManager.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
             delay(1000L)
         }
     }
-    return pinned
+    return isLocked
 }
