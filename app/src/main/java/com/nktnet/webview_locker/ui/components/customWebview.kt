@@ -1,4 +1,4 @@
-package com.example.webview_locker.ui.components
+package com.nktnet.webview_locker.ui.components
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -7,8 +7,8 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.runtime.*
-import com.example.webview_locker.config.SystemSettings
-import com.example.webview_locker.config.UserSettings
+import com.nktnet.webview_locker.config.SystemSettings
+import com.nktnet.webview_locker.config.UserSettings
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable

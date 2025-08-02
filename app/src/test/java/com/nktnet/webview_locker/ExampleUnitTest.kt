@@ -1,4 +1,4 @@
-package com.example.webview_locker
+package com.nktnet.webview_locker
 
 import org.junit.Test
 

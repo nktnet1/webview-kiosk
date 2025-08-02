@@ -1,4 +1,4 @@
-package com.example.webview_locker.config
+package com.nktnet.webview_locker.config
 
 import android.content.Context
 import android.content.SharedPreferences

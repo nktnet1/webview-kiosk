@@ -1,4 +1,4 @@
-package com.example.webview_locker.ui.theme
+package com.nktnet.webview_locker.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

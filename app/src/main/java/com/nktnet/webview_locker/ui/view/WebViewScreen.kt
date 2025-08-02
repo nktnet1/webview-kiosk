@@ -1,4 +1,4 @@
-package com.example.webview_locker.ui.view
+package com.nktnet.webview_locker.ui.view
 
 import android.app.Activity
 import android.webkit.WebView
@@ -11,11 +11,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
-import com.example.webview_locker.config.SystemSettings
-import com.example.webview_locker.config.UserSettings
-import com.example.webview_locker.ui.components.customWebView
-import com.example.webview_locker.ui.components.FloatingMenuButton
-import com.example.webview_locker.utils.rememberLockedState
+import com.nktnet.webview_locker.config.SystemSettings
+import com.nktnet.webview_locker.config.UserSettings
+import com.nktnet.webview_locker.ui.components.customWebView
+import com.nktnet.webview_locker.ui.components.FloatingMenuButton
+import com.nktnet.webview_locker.utils.rememberLockedState
 
 @Composable
 fun WebView(onOpenSettings: () -> Unit) {

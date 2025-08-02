@@ -1,4 +1,4 @@
-package com.example.webview_locker.ui.components
+package com.nktnet.webview_locker.ui.components
 
 import android.content.Intent
 import android.os.Build
@@ -15,7 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.webview_locker.auth.BiometricPromptManager
+import com.nktnet.webview_locker.auth.BiometricPromptManager
 
 @Composable
 fun RequireAuthentication(

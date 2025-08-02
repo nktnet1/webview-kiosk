@@ -1,4 +1,4 @@
-package com.example.webview_locker.ui.view
+package com.nktnet.webview_locker.ui.view
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -10,10 +10,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
-import com.example.webview_locker.auth.BiometricPromptManager
-import com.example.webview_locker.config.UserSettings
-import com.example.webview_locker.ui.components.AuthenticationErrorDisplay
-import com.example.webview_locker.ui.components.RequireAuthentication
+import com.nktnet.webview_locker.auth.BiometricPromptManager
+import com.nktnet.webview_locker.config.UserSettings
+import com.nktnet.webview_locker.ui.components.AuthenticationErrorDisplay
+import com.nktnet.webview_locker.ui.components.RequireAuthentication
 import java.net.URL
 
 @Composable

@@ -1,4 +1,4 @@
-package com.example.webview_locker
+package com.nktnet.webview_locker
 
 import android.os.Bundle
 import androidx.activity.compose.setContent
@@ -7,10 +7,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.webview_locker.auth.BiometricPromptManager
-import com.example.webview_locker.ui.theme.WebviewlockerTheme
-import com.example.webview_locker.ui.view.SettingsScreen
-import com.example.webview_locker.ui.view.WebView
+import com.nktnet.webview_locker.auth.BiometricPromptManager
+import com.nktnet.webview_locker.ui.theme.WebviewlockerTheme
+import com.nktnet.webview_locker.ui.view.SettingsScreen
+import com.nktnet.webview_locker.ui.view.WebView
 
 class MainActivity : AppCompatActivity() {
     private val promptManager by lazy {

@@ -1,4 +1,4 @@
-package com.example.webview_locker.auth
+package com.nktnet.webview_locker.auth
 
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity

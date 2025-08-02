@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.webview_locker"
+    namespace = "com.nktnet.webview_locker"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.webview_locker"
+        applicationId = "com.nktnet.webview_locker"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

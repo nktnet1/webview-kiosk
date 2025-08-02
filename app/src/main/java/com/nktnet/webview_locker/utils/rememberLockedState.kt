@@ -1,4 +1,4 @@
-package com.example.webview_locker.utils
+package com.nktnet.webview_locker.utils
 
 import android.app.ActivityManager
 import android.content.Context

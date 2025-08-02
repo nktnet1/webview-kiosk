@@ -1,4 +1,4 @@
-package com.example.webview_locker
+package com.nktnet.webview_locker
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4
