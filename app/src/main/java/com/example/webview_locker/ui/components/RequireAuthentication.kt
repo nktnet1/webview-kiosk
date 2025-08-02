@@ -7,7 +7,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.example.webview_locker.auth.BiometricPromptManager
 
 @Composable
@@ -43,7 +50,22 @@ fun RequireAuthentication(
     }
 
     when (biometricResult) {
+        null -> LoadingIndicator()
         is BiometricPromptManager.BiometricResult.AuthenticationSuccess -> onAuthenticated()
         else -> onFailed(biometricResult)
+    }
+}
+
+@Composable
+private fun LoadingIndicator() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator()
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Waiting for authentication...", style = MaterialTheme.typography.bodyMedium)
+        }
     }
 }
