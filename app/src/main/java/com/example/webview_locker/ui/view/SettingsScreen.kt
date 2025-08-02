@@ -185,7 +185,10 @@ private fun UrlInput(
     onValueChange: (String) -> Unit,
     isError: Boolean
 ) {
-    LabelWithSpacer("Home URL")
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text("Home URL", style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.width(4.dp))
+    }
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
@@ -242,14 +245,6 @@ private fun PatternInput(
 
     if (showInfo) {
         InfoDialog(title = infoTitle, text = infoText, onDismiss = { onShowInfoChange(false) })
-    }
-}
-
-@Composable
-private fun LabelWithSpacer(text: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(text, style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.width(4.dp))
     }
 }
 
