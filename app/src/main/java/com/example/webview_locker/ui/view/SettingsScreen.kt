@@ -1,6 +1,5 @@
 package com.example.webview_locker.ui.view
 
-import android.content.Context
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
@@ -54,8 +53,6 @@ private fun SettingsContent(
     var urlError by remember { mutableStateOf(false) }
     var blacklistError by remember { mutableStateOf(false) }
     var whitelistError by remember { mutableStateOf(false) }
-    // Allow empty string, so no error here
-    val blockedMessageError = false
 
     val saveEnabled = !urlError && !blacklistError && !whitelistError
 
