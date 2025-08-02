@@ -44,20 +44,20 @@ fun customWebView(
 
     fun showBlockedPage(view: WebView?, url: String) {
         view?.apply {
-            loadUrl("about:blank")
             post {
-                loadData(
+                loadDataWithBaseURL(
+                    url,
                     """
                     <html>
-                        <body style="text-align:center;font-family:sans-serif;padding-top:50px">
-                            <h2>🚫 Access Blocked</h2>
+                        <body style="text-align:center;font-family:sans-serif;padding-top:50px;padding-left:5px;padding-right:5px">                            <h2>🚫 Access Blocked</h2>
                             <p>This site is blocked by WebView Locker.</p>
                             <p><code>$url</code></p>
                         </body>
                     </html>
                     """.trimIndent(),
                     "text/html",
-                    "UTF-8"
+                    "UTF-8",
+                    null,
                 )
             }
         }
@@ -87,9 +87,7 @@ fun customWebView(
 
                 override fun onPageFinished(view: WebView?, url: String?) {
                     url?.let {
-                        if (!isBlocked(it)) {
-                            systemSettings.lastUrl = it
-                        }
+                        systemSettings.lastUrl = it
                     }
                 }
             }
