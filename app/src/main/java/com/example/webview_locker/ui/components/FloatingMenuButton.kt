@@ -14,7 +14,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
@@ -25,13 +24,9 @@ import kotlin.math.roundToInt
 
 @Composable
 fun FloatingMenuButton(
-    onMenuClick: () -> Unit,
-    isMenuExpanded: Boolean,
-    onDismissMenu: () -> Unit,
     onHomeClick: () -> Unit,
     onPinClick: () -> Unit,
-    onSettingsClick: () -> Unit,
-    tintColor: Color
+    onSettingsClick: () -> Unit
 ) {
     val context = LocalContext.current
     val systemPrefs = context.getSharedPreferences(SystemSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
@@ -39,6 +34,10 @@ fun FloatingMenuButton(
     val savedOffsetY = systemPrefs.getFloat(SystemSettingsKeys.MENU_OFFSET_Y, 0f)
     var offsetX by remember { mutableFloatStateOf(savedOffsetX) }
     var offsetY by remember { mutableFloatStateOf(savedOffsetY) }
+    var menuExpanded by remember { mutableStateOf(false) }
+
+    val tintColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+
     Box(
         modifier = Modifier
             .offset { IntOffset(offsetX.roundToInt(), offsetY.roundToInt()) }
@@ -47,21 +46,19 @@ fun FloatingMenuButton(
             .clip(CircleShape)
             .background(MaterialTheme.colorScheme.primary)
             .pointerInput(Unit) {
-                detectDragGestures(
-                    onDrag = { change, dragAmount ->
-                        change.consume()
-                        offsetX = offsetX + dragAmount.x
-                        offsetY = offsetY + dragAmount.y
-                        systemPrefs.edit {
-                            putFloat(SystemSettingsKeys.MENU_OFFSET_X, offsetX)
-                            putFloat(SystemSettingsKeys.MENU_OFFSET_Y, offsetY)
-                        }
+                detectDragGestures { change, dragAmount ->
+                    change.consume()
+                    offsetX += dragAmount.x
+                    offsetY += dragAmount.y
+                    systemPrefs.edit {
+                        putFloat(SystemSettingsKeys.MENU_OFFSET_X, offsetX)
+                        putFloat(SystemSettingsKeys.MENU_OFFSET_Y, offsetY)
                     }
-                )
+                }
             }
     ) {
         IconButton(
-            onClick = onMenuClick,
+            onClick = { menuExpanded = true },
             modifier = Modifier.fillMaxSize()
         ) {
             Icon(
@@ -73,12 +70,15 @@ fun FloatingMenuButton(
         }
 
         DropdownMenu(
-            expanded = isMenuExpanded,
-            onDismissRequest = onDismissMenu
+            expanded = menuExpanded,
+            onDismissRequest = { menuExpanded = false }
         ) {
             DropdownMenuItem(
                 text = { Text("Home", color = tintColor) },
-                onClick = onHomeClick,
+                onClick = {
+                    menuExpanded = false
+                    onHomeClick()
+                },
                 leadingIcon = {
                     Icon(
                         Icons.Default.Home,
@@ -90,7 +90,10 @@ fun FloatingMenuButton(
             )
             DropdownMenuItem(
                 text = { Text("Pin app", color = tintColor) },
-                onClick = onPinClick,
+                onClick = {
+                    menuExpanded = false
+                    onPinClick()
+                },
                 leadingIcon = {
                     Icon(
                         Icons.Default.Lock,
@@ -102,7 +105,10 @@ fun FloatingMenuButton(
             )
             DropdownMenuItem(
                 text = { Text("Settings", color = tintColor) },
-                onClick = onSettingsClick,
+                onClick = {
+                    menuExpanded = false
+                    onSettingsClick()
+                },
                 leadingIcon = {
                     Icon(
                         Icons.Default.Settings,

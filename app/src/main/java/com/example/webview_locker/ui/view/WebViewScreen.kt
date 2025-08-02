@@ -5,7 +5,6 @@ import android.content.Context
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,18 +27,13 @@ fun WebView(onOpenSettings: () -> Unit) {
     val homeUrl = userPrefs.getString(UserSettingsKeys.HOME_URL, "https://duckduckgo.com")!!
     val initUrl by remember { mutableStateOf(systemPrefs.getString(SystemSettingsKeys.LAST_URL, homeUrl) ?: homeUrl) }
 
-
     val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
 
     val webView = customWebView(context, initUrl, systemPrefs)
 
     HandleBackPress(webView, onBackPressedDispatcher)
 
-    var menuExpanded by remember { mutableStateOf(false) }
-
     val isPinned by rememberPinnedState()
-
-    val lighterBlue = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
 
     Box(Modifier.fillMaxSize()) {
         AndroidView(factory = { webView }, modifier = Modifier.fillMaxSize())
@@ -47,31 +41,21 @@ fun WebView(onOpenSettings: () -> Unit) {
         if (!isPinned) {
             Box(modifier = Modifier.align(Alignment.BottomEnd)) {
                 FloatingMenuButton(
-                    onMenuClick = { menuExpanded = true },
-                    isMenuExpanded = menuExpanded,
-                    onDismissMenu = { menuExpanded = false },
-                    onHomeClick = {
-                        menuExpanded = false
-                        webView.loadUrl(homeUrl)
-                    },
+                    onHomeClick = { webView.loadUrl(homeUrl) },
                     onPinClick = {
-                        menuExpanded = false
                         try {
                             activity?.startLockTask()
                         } catch (e: Exception) {
                             e.printStackTrace()
                         }
                     },
-                    onSettingsClick = {
-                        menuExpanded = false
-                        onOpenSettings()
-                    },
-                    tintColor = lighterBlue
+                    onSettingsClick = onOpenSettings
                 )
             }
         }
     }
 }
+
 @Composable
 private fun HandleBackPress(
     webView: android.webkit.WebView,
