@@ -16,6 +16,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.edit
 import com.example.webview_locker.config.SystemSettingsKeys
 import com.example.webview_locker.config.UserSettingsKeys
+import com.example.webview_locker.ui.components.CustomWebView
 import com.example.webview_locker.ui.components.FloatingMenuButton
 import com.example.webview_locker.utils.rememberPinnedState
 
@@ -33,7 +34,7 @@ fun WebView(onOpenSettings: () -> Unit) {
 
     val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
 
-    val webView = rememberWebView(context, initUrl, systemPrefs)
+    val webView = CustomWebView(context, initUrl, systemPrefs)
 
     HandleBackPress(webView, onBackPressedDispatcher)
 
@@ -74,33 +75,6 @@ fun WebView(onOpenSettings: () -> Unit) {
         }
     }
 }
-
-@SuppressLint("SetJavaScriptEnabled")
-@Composable
-private fun rememberWebView(
-    context: Context,
-    initUrl: String,
-    systemPrefs: android.content.SharedPreferences
-): android.webkit.WebView {
-    return remember {
-        android.webkit.WebView(context).apply {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-            settings.javaScriptEnabled = true
-            webViewClient = object : android.webkit.WebViewClient() {
-                override fun onPageFinished(view: android.webkit.WebView?, url: String?) {
-                    if (url != null) {
-                        systemPrefs.edit { putString(SystemSettingsKeys.LAST_URL, url) }
-                    }
-                }
-            }
-            loadUrl(initUrl)
-        }
-    }
-}
-
 @Composable
 private fun HandleBackPress(
     webView: android.webkit.WebView,
