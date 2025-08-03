@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.util.Base64
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
@@ -85,7 +86,11 @@ fun SettingsContent(
                             showMenu = false
                         },
                         leadingIcon = {
-                            Icon(painter = painterResource(R.drawable.outline_drive_folder_upload_24), contentDescription = null, tint = tintColor)
+                            Icon(
+                                painter = painterResource(R.drawable.outline_drive_folder_upload_24),
+                                contentDescription = null,
+                                tint = tintColor
+                            )
                         }
                     )
                     DropdownMenuItem(
@@ -102,7 +107,11 @@ fun SettingsContent(
                             showMenu = false
                         },
                         leadingIcon = {
-                            Icon(painter = painterResource(R.drawable.outline_file_export_24), contentDescription = null, tint = tintColor)
+                            Icon(
+                                painter = painterResource(R.drawable.outline_file_export_24),
+                                contentDescription = null,
+                                tint = tintColor
+                            )
                         }
                     )
                 }
@@ -197,18 +206,22 @@ fun SettingsContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top=32.dp),
+                .padding(top = 32.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedButton(
                 onClick = onClose,
-                modifier = Modifier.width(150.dp)
+                modifier = Modifier.width(150.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
             ) {
                 Text("Cancel")
             }
 
-            Button(
+            OutlinedButton(
                 enabled = saveEnabled,
                 modifier = Modifier.width(150.dp),
                 onClick = {
@@ -216,7 +229,11 @@ fun SettingsContent(
                     userSettings.websiteBlacklist = blacklist
                     userSettings.websiteWhitelist = whitelist
                     userSettings.blockedMessage = blockedMessage.trim()
-                }
+                },
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.primary
+                ),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
             ) {
                 Text("Save")
             }
@@ -231,10 +248,14 @@ fun SettingsContent(
                 onClose()
             },
             modifier = Modifier
-                .padding(top=8.dp)
+                .padding(top = 8.dp)
                 .width(150.dp)
                 .align(Alignment.End),
-            enabled = saveEnabled
+            enabled = saveEnabled,
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
         ) {
             Text("Save & Close")
         }
