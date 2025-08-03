@@ -74,6 +74,15 @@ fun SettingsContent(
                     onDismissRequest = { showMenu = false }
                 ) {
                     DropdownMenuItem(
+                        text = { Text("Import") },
+                        onClick = {
+                            importText = ""
+                            importError = false
+                            showImportDialog = true
+                            showMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
                         text = { Text("Export") },
                         onClick = {
                             val json = JSONObject().apply {
@@ -84,15 +93,6 @@ fun SettingsContent(
                             }.toString()
                             exportText = Base64.encodeToString(json.toByteArray(), Base64.NO_WRAP)
                             showExportDialog = true
-                            showMenu = false
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("Import") },
-                        onClick = {
-                            importText = ""
-                            importError = false
-                            showImportDialog = true
                             showMenu = false
                         }
                     )
