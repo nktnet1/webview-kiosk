@@ -29,16 +29,16 @@ fun SettingsContent(
 ) {
     val context = LocalContext.current
 
-    var url by remember { mutableStateOf(userSettings.homeUrl) }
+    var homeUrl by remember { mutableStateOf(userSettings.homeUrl) }
     var blacklist by remember { mutableStateOf(userSettings.websiteBlacklist) }
     var whitelist by remember { mutableStateOf(userSettings.websiteWhitelist) }
     var blockedMessage by remember { mutableStateOf(userSettings.blockedMessage) }
 
-    var urlError by remember { mutableStateOf(false) }
+    var homeUrlError by remember { mutableStateOf(false) }
     var blacklistError by remember { mutableStateOf(false) }
     var whitelistError by remember { mutableStateOf(false) }
 
-    val saveEnabled = !urlError && !blacklistError && !whitelistError
+    val saveEnabled = !homeUrlError && !blacklistError && !whitelistError
 
     var showExportDialog by remember { mutableStateOf(false) }
     var exportText by remember { mutableStateOf("") }
@@ -59,7 +59,7 @@ fun SettingsContent(
     }
 
     fun saveSettings() {
-        userSettings.homeUrl = url
+        userSettings.homeUrl = homeUrl
         userSettings.websiteBlacklist = blacklist
         userSettings.websiteWhitelist = whitelist
         userSettings.blockedMessage = blockedMessage.trim()
@@ -115,7 +115,7 @@ fun SettingsContent(
                         text = { Text("Export", color = tintColor) },
                         onClick = {
                             val json = JSONObject().apply {
-                                put("url", url)
+                                put("homeUrl", homeUrl)
                                 put("blacklist", blacklist)
                                 put("whitelist", whitelist)
                                 put("blockedMessage", blockedMessage)
@@ -142,12 +142,12 @@ fun SettingsContent(
             infoText = "The start page URL when the app launches."
         )
         UrlInput(
-            value = url,
+            value = homeUrl,
             onValueChange = {
-                url = it
-                urlError = !validateUrl(it)
+                homeUrl = it
+                homeUrlError = !validateUrl(it)
             },
-            isError = urlError
+            isError = homeUrlError
         )
 
         LabelWithInfo(
@@ -304,7 +304,7 @@ fun SettingsContent(
                 TextButton(onClick = {
                     try {
                         val json = JSONObject(String(Base64.decode(importText, Base64.NO_WRAP)))
-                        url = json.optString("url", url)
+                        homeUrl = json.optString("homeUrl", homeUrl)
                         blacklist = json.optString("blacklist", blacklist)
                         whitelist = json.optString("whitelist", whitelist)
                         blockedMessage = json.optString("blockedMessage", blockedMessage)
