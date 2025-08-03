@@ -29,6 +29,14 @@ android {
                 "proguard-rules.pro"
             )
         }
+        applicationVariants.all {
+            outputs.all {
+                val outputImpl = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+                val versionName = versionName
+                val apkName = "webview_locker-v$versionName.apk"
+                outputImpl.outputFileName = apkName
+            }
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
