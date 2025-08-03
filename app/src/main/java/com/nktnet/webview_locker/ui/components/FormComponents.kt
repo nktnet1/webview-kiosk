@@ -40,7 +40,7 @@ fun LabelWithInfo(
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
-        IconButton(onClick = { showInfo = true }, modifier = Modifier.size(20.dp)) {
+        IconButton(onClick = { showInfo = true }, modifier = Modifier.size(20.dp).padding(start=4.dp)) {
             Icon(
                 imageVector = Icons.Default.Info,
                 contentDescription = "$label info",

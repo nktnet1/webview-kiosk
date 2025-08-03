@@ -1,11 +1,17 @@
 package com.nktnet.webview_locker.ui.components
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.util.Base64
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.nktnet.webview_locker.config.UserSettings
 import com.nktnet.webview_locker.utils.validateMultilineRegex
@@ -17,6 +23,8 @@ fun SettingsContent(
     userSettings: UserSettings,
     onClose: () -> Unit,
 ) {
+    val context = LocalContext.current
+
     var url by remember { mutableStateOf(userSettings.homeUrl) }
     var blacklist by remember { mutableStateOf(userSettings.websiteBlacklist) }
     var whitelist by remember { mutableStateOf(userSettings.websiteWhitelist) }
@@ -35,17 +43,62 @@ fun SettingsContent(
     var importText by remember { mutableStateOf("") }
     var importError by remember { mutableStateOf(false) }
 
+    var showMenu by remember { mutableStateOf(false) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(top = 60.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
     ) {
-        Text(
-            "Settings",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                "Settings",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+
+            Box {
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = "Menu",
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Export") },
+                        onClick = {
+                            val json = JSONObject().apply {
+                                put("url", url)
+                                put("blacklist", blacklist)
+                                put("whitelist", whitelist)
+                                put("blockedMessage", blockedMessage)
+                            }.toString()
+                            exportText = Base64.encodeToString(json.toByteArray(), Base64.NO_WRAP)
+                            showExportDialog = true
+                            showMenu = false
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Import") },
+                        onClick = {
+                            importText = ""
+                            importError = false
+                            showImportDialog = true
+                            showMenu = false
+                        }
+                    )
+                }
+            }
+        }
 
         LabelWithInfo(
             label = "Home URL",
@@ -63,7 +116,7 @@ fun SettingsContent(
 
         LabelWithInfo(
             label = "Blacklist Regex",
-            infoTitle = "e.g.\n\tBlacklist (Regex)\n\t^https://.*\\.?google\\.com/.*",
+            infoTitle = "e.g.\\n\\tBlacklist (Regex)\\n\\t^https://.*\\.?google\\.com/.*",
             infoText = """
                 Specify regular expressions (regex), one per line, to allow matching URLs.
                 Escaping is required for special characters in regex like '.' and '?'.
@@ -74,7 +127,7 @@ fun SettingsContent(
 
                 Examples:
                 - .*
-                - ^https://.*\.?google\.com/.*
+                - ^https://.*\\.?google\\.com/.*
                 Whitelist patterns take precedence over blacklist patterns.
             """.trimIndent()
         )
@@ -85,7 +138,7 @@ fun SettingsContent(
                 blacklistError = !validateMultilineRegex(it)
             },
             isError = blacklistError,
-            placeholder = "e.g.\n\t^.*$\n\t^https://.*\\.?google\\.com/.*"
+            placeholder = "e.g.\\n\\t^.*$\\n\\t^https://.*\\.?google\\.com/.*"
         )
 
         LabelWithInfo(
@@ -100,8 +153,8 @@ fun SettingsContent(
                 If you need strict control, anchor your regex with '^' and '$'.
 
                 Examples:
-                - ^https://allowedsite\.com$
-                - ^https://.*\.trusted\.org/.*
+                - ^https://allowedsite\\.com$
+                - ^https://.*\\.trusted\\.org/.*
                 Whitelist patterns take precedence over blacklist patterns.
             """.trimIndent()
         )
@@ -112,7 +165,7 @@ fun SettingsContent(
                 whitelistError = !validateMultilineRegex(it)
             },
             isError = whitelistError,
-            placeholder = "e.g.\n\t^https://allowedsite\\.com/.*\n\t^https://.*\\.trusted\\.org/.*"
+            placeholder = "e.g.\\n\\t^https://allowedsite\\.com/.*\\n\\t^https://.*\\.trusted\\.org/.*"
         )
 
         LabelWithInfo(
@@ -135,71 +188,72 @@ fun SettingsContent(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(top = 32.dp),
+                .padding(top=32.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedButton(
                 onClick = onClose,
-                modifier = Modifier.width(100.dp)
+                modifier = Modifier.width(150.dp)
             ) {
                 Text("Cancel")
             }
 
             Button(
                 enabled = saveEnabled,
-                modifier = Modifier.width(100.dp),
+                modifier = Modifier.width(150.dp),
                 onClick = {
                     userSettings.homeUrl = url
                     userSettings.websiteBlacklist = blacklist
                     userSettings.websiteWhitelist = whitelist
                     userSettings.blockedMessage = blockedMessage.trim()
-                    onClose()
                 }
             ) {
                 Text("Save")
             }
         }
 
-        Row(
+        Button(
+            onClick = {
+                userSettings.homeUrl = url
+                userSettings.websiteBlacklist = blacklist
+                userSettings.websiteWhitelist = whitelist
+                userSettings.blockedMessage = blockedMessage.trim()
+                onClose()
+            },
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(top=8.dp)
+                .width(150.dp)
+                .align(Alignment.End),
+            enabled = saveEnabled
         ) {
-            Button(onClick = {
-                val json = JSONObject().apply {
-                    put("url", url)
-                    put("blacklist", blacklist)
-                    put("whitelist", whitelist)
-                    put("blockedMessage", blockedMessage)
-                }.toString()
-                exportText = Base64.encodeToString(json.toByteArray(), Base64.NO_WRAP)
-                showExportDialog = true
-            }) {
-                Text("Export")
-            }
-
-            OutlinedButton(onClick = {
-                importText = ""
-                importError = false
-                showImportDialog = true
-            }) {
-                Text("Import")
-            }
+            Text("Save & Close")
         }
     }
 
     if (showExportDialog) {
         AlertDialog(
             onDismissRequest = { showExportDialog = false },
-            confirmButton = {
-                TextButton(onClick = { showExportDialog = false }) {
-                    Text("OK")
+            title = { Text("Exported Settings (Base64)") },
+            text = {
+                Column {
+                    Text(exportText, style = MaterialTheme.typography.bodySmall)
                 }
             },
-            title = { Text("Exported Settings (Base64)") },
-            text = { Text(exportText, style = MaterialTheme.typography.bodySmall) }
+            confirmButton = {
+                TextButton(onClick = {
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText("Exported Settings", exportText))
+                    showExportDialog = false
+                }) {
+                    Text("Copy")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showExportDialog = false }) {
+                    Text("Cancel")
+                }
+            }
         )
     }
 
@@ -253,4 +307,3 @@ fun SettingsContent(
         )
     }
 }
-
