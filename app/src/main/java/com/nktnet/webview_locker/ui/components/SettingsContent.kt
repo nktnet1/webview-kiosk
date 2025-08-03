@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.util.Base64
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -47,6 +48,23 @@ fun SettingsContent(
     var importError by remember { mutableStateOf(false) }
 
     var showMenu by remember { mutableStateOf(false) }
+
+    val toastRef = remember { mutableStateOf<Toast?>(null) }
+
+    fun showToast(message: String) {
+        toastRef.value?.cancel()
+        toastRef.value = Toast.makeText(context, message, Toast.LENGTH_SHORT).also {
+            it.show()
+        }
+    }
+
+    fun saveSettings() {
+        userSettings.homeUrl = url
+        userSettings.websiteBlacklist = blacklist
+        userSettings.websiteWhitelist = whitelist
+        userSettings.blockedMessage = blockedMessage.trim()
+        showToast("Settings saved successfully.")
+    }
 
     Column(
         modifier = Modifier
@@ -224,12 +242,7 @@ fun SettingsContent(
             OutlinedButton(
                 enabled = saveEnabled,
                 modifier = Modifier.width(150.dp),
-                onClick = {
-                    userSettings.homeUrl = url
-                    userSettings.websiteBlacklist = blacklist
-                    userSettings.websiteWhitelist = whitelist
-                    userSettings.blockedMessage = blockedMessage.trim()
-                },
+                onClick = { saveSettings() },
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = MaterialTheme.colorScheme.primary
                 ),
@@ -241,10 +254,7 @@ fun SettingsContent(
 
         Button(
             onClick = {
-                userSettings.homeUrl = url
-                userSettings.websiteBlacklist = blacklist
-                userSettings.websiteWhitelist = whitelist
-                userSettings.blockedMessage = blockedMessage.trim()
+                saveSettings()
                 onClose()
             },
             modifier = Modifier
@@ -300,6 +310,8 @@ fun SettingsContent(
                         blockedMessage = json.optString("blockedMessage", blockedMessage)
                         importError = false
                         showImportDialog = false
+
+                        showToast("Settings imported successfully")
                     } catch (_: Exception) {
                         importError = true
                     }
