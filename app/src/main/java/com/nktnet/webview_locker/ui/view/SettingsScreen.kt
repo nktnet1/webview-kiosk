@@ -59,11 +59,14 @@ private fun SettingsContent(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = 40.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
+            .padding(top = 60.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
     ) {
-        Text("Settings", style = MaterialTheme.typography.headlineSmall)
-
-        Spacer(Modifier.height(16.dp))
+        Text(
+            "Settings",
+            style = MaterialTheme.typography.headlineSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
 
         LabelWithInfo(
             label = "Home URL",
@@ -79,65 +82,59 @@ private fun SettingsContent(
             isError = urlError
         )
 
-        Spacer(Modifier.height(24.dp))
-
-        PatternInput(
+        LabelWithInfo(
             label = "Blacklist Regex",
+            infoTitle = "e.g.\n\tBlacklist (Regex)\n\t^https://.*\\.?google\\.com/.*",
+            infoText = """
+                Specify regular expressions (regex), one per line, to allow matching URLs.
+                Escaping is required for special characters in regex like '.' and '?'.
+
+                These patterns also use partial (contains) matching by default.
+
+                If you need strict control, anchor your regex with '^' and '$'.
+
+                Examples:
+                - .*
+                - ^https://.*\.?google\.com/.*
+                Whitelist patterns take precedence over blacklist patterns.
+            """.trimIndent()
+        )
+        PatternInput(
             value = blacklist,
             onValueChange = {
                 blacklist = it
                 blacklistError = !validateMultilineRegex(it)
             },
             isError = blacklistError,
-            placeholder = "^.*$",
-            infoTitle = "Blacklist (Regex)",
-            infoText = """
-        Specify regular expressions (regex), one per line, to allow matching URLs.
-        Escaping is required for special characters in regex like '.' and '?'.
-
-        These patterns also use partial (contains) matching by default.
-
-        If you need strict control, anchor your regex with '^' and '$'.
-        
-        Examples:
-        - .*
-        - ^https://.*\.?google\.com/.*
-
-
-        Whitelist patterns take precedence over blacklist patterns.
-            """.trimIndent()
+            placeholder = "e.g.\n\t^.*$\n\t^https://.*\\.?google\\.com/.*"
         )
 
-        Spacer(Modifier.height(16.dp))
-
-        PatternInput(
+        LabelWithInfo(
             label = "Whitelist Regex",
+            infoTitle = "Whitelist (Regex)",
+            infoText = """
+                Specify regular expressions (regex), one per line, to allow matching URLs.
+                Escaping is required for special characters in regex like '.' and '?'.
+
+                These patterns also use partial (contains) matching by default.
+
+                If you need strict control, anchor your regex with '^' and '$'.
+
+                Examples:
+                - ^https://allowedsite\.com$
+                - ^https://.*\.trusted\.org/.*
+                Whitelist patterns take precedence over blacklist patterns.
+            """.trimIndent()
+        )
+        PatternInput(
             value = whitelist,
             onValueChange = {
                 whitelist = it
                 whitelistError = !validateMultilineRegex(it)
             },
             isError = whitelistError,
-            placeholder = "^https://allowedsite\\.com/.*\n^https://.*\\.trusted\\.org/.*",
-            infoTitle = "Whitelist (Regex)",
-            infoText = """
-        Specify regular expressions (regex), one per line, to allow matching URLs.
-        Escaping is required for special characters in regex like '.' and '?'.
-
-        These patterns also use partial (contains) matching by default.
-
-        If you need strict control, anchor your regex with '^' and '$'.
-        
-        Examples:
-        - ^https://allowedsite\.com$
-        - ^https://.*\.trusted\.org/.*
-
-
-        Whitelist patterns take precedence over blacklist patterns.
-           """.trimIndent()
+            placeholder = "e.g.\n\t^https://allowedsite\\.com/.*\n\t^https://.*\\.trusted\\.org/.*"
         )
-
-        Spacer(Modifier.height(16.dp))
 
         LabelWithInfo(
             label = "Blocked Message",
@@ -148,7 +145,6 @@ private fun SettingsContent(
             value = blockedMessage,
             onValueChange = {
                 blockedMessage = it
-                // No error check, empty allowed
             },
             placeholder = { Text("This site is blocked by WebView Locker.") },
             isError = false,
@@ -157,10 +153,10 @@ private fun SettingsContent(
             maxLines = 5,
         )
 
-        Spacer(Modifier.height(24.dp))
-
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 32.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -197,12 +193,19 @@ private fun LabelWithInfo(
     var showInfo by remember { mutableStateOf(false) }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(bottom = 8.dp)
+        modifier = Modifier.padding(top=16.dp, bottom=4.dp)
     ) {
-        Text(label, style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.width(4.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
         IconButton(onClick = { showInfo = true }, modifier = Modifier.size(20.dp)) {
-            Icon(Icons.Default.Info, contentDescription = "$label info")
+            Icon(
+                imageVector = Icons.Default.Info,
+                contentDescription = "$label info",
+                tint = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
     if (showInfo) {
@@ -245,30 +248,18 @@ private fun UrlInput(
 
 @Composable
 private fun PatternInput(
-    label: String,
     value: String,
     onValueChange: (String) -> Unit,
     isError: Boolean,
     placeholder: String,
-    infoTitle: String,
-    infoText: String
 ) {
-    var showInfo by remember { mutableStateOf(false) }
-
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(label, style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.width(4.dp))
-        IconButton(onClick = { showInfo = true }, modifier = Modifier.size(20.dp)) {
-            Icon(Icons.Default.Info, contentDescription = "$label info")
-        }
-    }
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         placeholder = { Text(placeholder, fontStyle = FontStyle.Italic) },
         modifier = Modifier.fillMaxWidth(),
         isError = isError,
-        minLines = 3
+        minLines = 3,
     )
     if (isError) {
         Text(
@@ -276,19 +267,6 @@ private fun PatternInput(
             color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(start = 0.dp, top = 4.dp)
-        )
-    }
-
-    if (showInfo) {
-        AlertDialog(
-            onDismissRequest = { showInfo = false },
-            confirmButton = {
-                TextButton(onClick = { showInfo = false }) {
-                    Text("OK")
-                }
-            },
-            title = { Text(infoTitle) },
-            text = { Text(infoText) }
         )
     }
 }

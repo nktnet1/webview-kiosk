@@ -55,7 +55,6 @@ fun RequireAuthentication(
         else -> onFailed(biometricResult)
     }
 }
-
 @Composable
 private fun LoadingIndicator() {
     Box(
@@ -65,7 +64,12 @@ private fun LoadingIndicator() {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             CircularProgressIndicator()
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Waiting for authentication...", style = MaterialTheme.typography.bodyMedium)
+            Text(
+                "Waiting for authentication...",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }
+
