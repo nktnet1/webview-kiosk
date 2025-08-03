@@ -12,11 +12,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.nktnet.webview_locker.config.UserSettings
 import com.nktnet.webview_locker.utils.validateMultilineRegex
 import com.nktnet.webview_locker.utils.validateUrl
 import org.json.JSONObject
+import com.nktnet.webview_locker.R
 
 @Composable
 fun SettingsContent(
@@ -69,21 +71,25 @@ fun SettingsContent(
                         tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
+                val tintColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
                 DropdownMenu(
                     expanded = showMenu,
                     onDismissRequest = { showMenu = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text("Import") },
+                        text = { Text("Import", color = tintColor) },
                         onClick = {
                             importText = ""
                             importError = false
                             showImportDialog = true
                             showMenu = false
+                        },
+                        leadingIcon = {
+                            Icon(painter = painterResource(R.drawable.outline_drive_folder_upload_24), contentDescription = null, tint = tintColor)
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("Export") },
+                        text = { Text("Export", color = tintColor) },
                         onClick = {
                             val json = JSONObject().apply {
                                 put("url", url)
@@ -94,6 +100,9 @@ fun SettingsContent(
                             exportText = Base64.encodeToString(json.toByteArray(), Base64.NO_WRAP)
                             showExportDialog = true
                             showMenu = false
+                        },
+                        leadingIcon = {
+                            Icon(painter = painterResource(R.drawable.outline_file_export_24), contentDescription = null, tint = tintColor)
                         }
                     )
                 }
@@ -116,7 +125,7 @@ fun SettingsContent(
 
         LabelWithInfo(
             label = "Blacklist Regex",
-            infoTitle = "e.g.\\n\\tBlacklist (Regex)\\n\\t^https://.*\\.?google\\.com/.*",
+            infoTitle = "Blacklist",
             infoText = """
                 Specify regular expressions (regex), one per line, to allow matching URLs.
                 Escaping is required for special characters in regex like '.' and '?'.
@@ -138,12 +147,12 @@ fun SettingsContent(
                 blacklistError = !validateMultilineRegex(it)
             },
             isError = blacklistError,
-            placeholder = "e.g.\\n\\t^.*$\\n\\t^https://.*\\.?google\\.com/.*"
+            placeholder = "e.g.\n\t^.*$\n\t^https://.*\\.?google\\.com/.*"
         )
 
         LabelWithInfo(
             label = "Whitelist Regex",
-            infoTitle = "Whitelist (Regex)",
+            infoTitle = "Whitelist",
             infoText = """
                 Specify regular expressions (regex), one per line, to allow matching URLs.
                 Escaping is required for special characters in regex like '.' and '?'.
@@ -165,7 +174,7 @@ fun SettingsContent(
                 whitelistError = !validateMultilineRegex(it)
             },
             isError = whitelistError,
-            placeholder = "e.g.\\n\\t^https://allowedsite\\.com/.*\\n\\t^https://.*\\.trusted\\.org/.*"
+            placeholder = "e.g.\n\t^https://allowedsite\\.com/.*\n\t^https://.*\\.trusted\\.org/.*"
         )
 
         LabelWithInfo(
@@ -264,10 +273,10 @@ fun SettingsContent(
                 TextButton(onClick = {
                     try {
                         val json = JSONObject(String(Base64.decode(importText, Base64.NO_WRAP)))
-                        url = json.optString("url")
-                        blacklist = json.optString("blacklist")
-                        whitelist = json.optString("whitelist")
-                        blockedMessage = json.optString("blockedMessage")
+                        url = json.optString("url", url)
+                        blacklist = json.optString("blacklist", blacklist)
+                        whitelist = json.optString("whitelist", whitelist)
+                        blockedMessage = json.optString("blockedMessage", blockedMessage)
                         importError = false
                         showImportDialog = false
                     } catch (_: Exception) {
@@ -291,7 +300,7 @@ fun SettingsContent(
                             importText = it
                             importError = false
                         },
-                        placeholder = { Text("Paste exported Base64 string here") },
+                        placeholder = { Text("Paste your exported Base64 string here") },
                         isError = importError,
                         modifier = Modifier.fillMaxWidth()
                     )
