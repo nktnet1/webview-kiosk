@@ -139,7 +139,7 @@ fun SettingsContent(
         LabelWithInfo(
             label = "Home URL",
             infoTitle = "Home URL",
-            infoText = "The start page URL when the app launches."
+            infoText = "The URL that can be reset to using the floating icon button."
         )
         UrlInput(
             value = homeUrl,
