@@ -17,7 +17,7 @@ import androidx.compose.ui.text.withStyle
 @Composable
 fun DeviceSecurityTip(modifier: Modifier = Modifier) {
     val text = buildAnnotatedString {
-        append("For better security, go to the App Pinning setting, tap into it to view more options, theb enable ")
+        append("For better security, go to the App Pinning setting, tap into it to view more options, then enable ")
         withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
             append("Ask for PIN/pattern/password before unpinning")
         }

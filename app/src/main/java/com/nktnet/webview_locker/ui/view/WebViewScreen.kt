@@ -13,8 +13,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import com.nktnet.webview_locker.config.SystemSettings
 import com.nktnet.webview_locker.config.UserSettings
-import com.nktnet.webview_locker.ui.components.customWebView
 import com.nktnet.webview_locker.ui.components.FloatingMenuButton
+import com.nktnet.webview_locker.utils.createCustomWebview
 import com.nktnet.webview_locker.utils.rememberLockedState
 
 @Composable
@@ -30,7 +30,7 @@ fun WebView(onOpenSettings: () -> Unit) {
 
     val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
 
-    val webView = customWebView(context, initUrl)
+    val webView = createCustomWebview(context, initUrl)
 
     HandleBackPress(webView, onBackPressedDispatcher)
 

@@ -1,4 +1,4 @@
-package com.nktnet.webview_locker.ui.components
+package com.nktnet.webview_locker.utils
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -12,7 +12,7 @@ import com.nktnet.webview_locker.config.UserSettings
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun customWebView(
+fun createCustomWebview(
     context: Context,
     initUrl: String
 ): WebView {
