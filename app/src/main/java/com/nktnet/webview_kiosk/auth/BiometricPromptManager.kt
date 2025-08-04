@@ -1,4 +1,4 @@
-package com.nktnet.webview_locker.auth
+package com.nktnet.webview_kiosk.auth
 
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity

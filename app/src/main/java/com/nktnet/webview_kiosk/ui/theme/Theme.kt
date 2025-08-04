@@ -1,4 +1,4 @@
-package com.nktnet.webview_locker.ui.theme
+package com.nktnet.webview_kiosk.ui.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -33,7 +33,7 @@ private val LightColorScheme = lightColorScheme(
 )
 
 @Composable
-fun WebviewlockerTheme(
+fun WebviewKioskTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,

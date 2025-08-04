@@ -1,5 +1,6 @@
-package com.nktnet.webview_locker.ui.components
+package com.nktnet.webview_kiosk.ui.components
 
+import org.json.JSONObject
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -16,11 +17,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.nktnet.webview_locker.config.UserSettings
-import com.nktnet.webview_locker.utils.validateMultilineRegex
-import com.nktnet.webview_locker.utils.validateUrl
-import org.json.JSONObject
-import com.nktnet.webview_locker.R
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.utils.validateMultilineRegex
+import com.nktnet.webview_kiosk.utils.validateUrl
+import com.nktnet.webview_kiosk.R
 
 @Composable
 fun SettingsContent(
@@ -214,7 +214,7 @@ fun SettingsContent(
             onValueChange = {
                 blockedMessage = it
             },
-            placeholder = { Text("This site is blocked by WebView Locker.") },
+            placeholder = { Text("e.g. This site is blocked by <Company Name>") },
             isError = false,
             modifier = Modifier.fillMaxWidth(),
             minLines = 2,

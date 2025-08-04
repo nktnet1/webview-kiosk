@@ -1,4 +1,4 @@
-package com.nktnet.webview_locker.ui.components
+package com.nktnet.webview_kiosk.ui.components
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth

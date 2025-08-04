@@ -1,4 +1,4 @@
-package com.nktnet.webview_locker.ui.components
+package com.nktnet.webview_kiosk.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -18,7 +18,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
-import com.nktnet.webview_locker.config.SystemSettings
+import com.nktnet.webview_kiosk.config.SystemSettings
 
 @Composable
 fun FloatingMenuButton(

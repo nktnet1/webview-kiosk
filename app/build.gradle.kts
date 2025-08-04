@@ -8,14 +8,14 @@ plugins {
 
 
 android {
-    namespace = "com.nktnet.webview_locker"
+    namespace = "com.nktnet.webview_kiosk"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.nktnet.webview_locker"
+        applicationId = "com.nktnet.webview_kiosk"
         minSdk = 26
         targetSdk = 36
-        versionCode = 8
+        versionCode = 1
         versionName = "0.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -32,8 +32,9 @@ android {
         applicationVariants.all {
             outputs.all {
                 val outputImpl = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+                val appId = applicationId.replace('.', '_')
                 val versionName = versionName
-                val apkName = "webview_locker-v$versionName.apk"
+                val apkName = "${appId}-v$versionName.apk"
                 outputImpl.outputFileName = apkName
             }
         }

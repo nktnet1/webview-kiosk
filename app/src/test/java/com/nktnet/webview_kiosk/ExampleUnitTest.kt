@@ -1,4 +1,4 @@
-package com.nktnet.webview_locker
+package com.nktnet.webview_kiosk
 
 import org.junit.Test
 

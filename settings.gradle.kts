@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "webview-locker"
+rootProject.name = "Webview Kiosk"
 include(":app")

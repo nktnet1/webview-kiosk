@@ -1,12 +1,12 @@
-package com.nktnet.webview_locker.ui.view
+package com.nktnet.webview_kiosk.ui.view
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
-import com.nktnet.webview_locker.auth.BiometricPromptManager
-import com.nktnet.webview_locker.config.UserSettings
-import com.nktnet.webview_locker.ui.components.AuthenticationErrorDisplay
-import com.nktnet.webview_locker.ui.components.RequireAuthentication
-import com.nktnet.webview_locker.ui.components.SettingsContent
+import com.nktnet.webview_kiosk.auth.BiometricPromptManager
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.ui.components.AuthenticationErrorDisplay
+import com.nktnet.webview_kiosk.ui.components.RequireAuthentication
+import com.nktnet.webview_kiosk.ui.components.SettingsContent
 
 
 @Composable
