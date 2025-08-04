@@ -1,10 +1,8 @@
 package com.nktnet.webview_kiosk.ui.components
 
-import org.json.JSONObject
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.util.Base64
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
@@ -17,10 +15,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.nktnet.webview_kiosk.R
 import com.nktnet.webview_kiosk.config.UserSettings
 import com.nktnet.webview_kiosk.utils.validateMultilineRegex
 import com.nktnet.webview_kiosk.utils.validateUrl
-import com.nktnet.webview_kiosk.R
 
 @Composable
 fun SettingsContent(
@@ -53,9 +51,7 @@ fun SettingsContent(
 
     fun showToast(message: String) {
         toastRef.value?.cancel()
-        toastRef.value = Toast.makeText(context, message, Toast.LENGTH_SHORT).also {
-            it.show()
-        }
+        toastRef.value = Toast.makeText(context, message, Toast.LENGTH_SHORT).also { it.show() }
     }
 
     fun saveSettings() {
@@ -114,13 +110,7 @@ fun SettingsContent(
                     DropdownMenuItem(
                         text = { Text("Export", color = tintColor) },
                         onClick = {
-                            val json = JSONObject().apply {
-                                put("homeUrl", homeUrl)
-                                put("blacklist", blacklist)
-                                put("whitelist", whitelist)
-                                put("blockedMessage", blockedMessage)
-                            }.toString()
-                            exportText = Base64.encodeToString(json.toByteArray(), Base64.NO_WRAP)
+                            exportText = userSettings.exportToBase64()
                             showExportDialog = true
                             showMenu = false
                         },
@@ -211,9 +201,7 @@ fun SettingsContent(
         )
         OutlinedTextField(
             value = blockedMessage,
-            onValueChange = {
-                blockedMessage = it
-            },
+            onValueChange = { blockedMessage = it },
             placeholder = { Text("e.g. This site is blocked by <Company Name>") },
             isError = false,
             modifier = Modifier.fillMaxWidth(),
@@ -304,17 +292,16 @@ fun SettingsContent(
             onDismissRequest = { showImportDialog = false },
             confirmButton = {
                 TextButton(onClick = {
-                    try {
-                        val json = JSONObject(String(Base64.decode(importText, Base64.NO_WRAP)))
-                        homeUrl = json.optString("homeUrl", homeUrl)
-                        blacklist = json.optString("blacklist", blacklist)
-                        whitelist = json.optString("whitelist", whitelist)
-                        blockedMessage = json.optString("blockedMessage", blockedMessage)
+                    val success = userSettings.importFromBase64(importText)
+                    if (success) {
+                        homeUrl = userSettings.homeUrl
+                        blacklist = userSettings.websiteBlacklist
+                        whitelist = userSettings.websiteWhitelist
+                        blockedMessage = userSettings.blockedMessage
                         importError = false
                         showImportDialog = false
-
                         showToast("Settings imported successfully")
-                    } catch (_: Exception) {
+                    } else {
                         importError = true
                     }
                 }) {
