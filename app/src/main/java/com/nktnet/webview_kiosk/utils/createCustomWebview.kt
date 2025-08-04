@@ -23,25 +23,28 @@ fun createCustomWebview(
     val whitelistText by remember { derivedStateOf { userSettings.websiteWhitelist } }
     val blockedMessage by remember { derivedStateOf { userSettings.blockedMessage } }
 
-    val blacklistRegexes by remember(blacklistText) {
-        mutableStateOf(
-            blacklistText.lines()
-                .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
-                .mapNotNull { runCatching { Regex(it) }.getOrNull() }
-        )
+    val blacklistRegexes = remember(blacklistText) {
+        blacklistText.lines()
+            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+            .mapNotNull { runCatching { Regex(it) }.getOrNull() }
     }
-    val whitelistRegexes by remember(whitelistText) {
-        mutableStateOf(
-            whitelistText.lines()
-                .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
-                .mapNotNull { runCatching { Regex(it) }.getOrNull() }
-        )
+    val whitelistRegexes = remember(whitelistText) {
+        whitelistText.lines()
+            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+            .mapNotNull { runCatching { Regex(it) }.getOrNull() }
     }
 
     fun isBlocked(url: String): Boolean {
         if (whitelistRegexes.any { it.containsMatchIn(url) }) return false
         return blacklistRegexes.any { it.containsMatchIn(url) }
     }
+
+    fun escapeHtml(input: String): String =
+        input.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&#39;")
 
     fun showBlockedPage(view: WebView?, url: String) {
         view?.apply {
@@ -76,10 +79,10 @@ fun createCustomWebview(
                     </head>
                     <body>
                         <h2>🚫 Access Blocked</h2>
-                        <p>$blockedMessage</p>
+                        <p>${escapeHtml(blockedMessage)}</p>
                         <hr />
                         <b>URL:</b>
-                        <p>$url</p>
+                        <p>${escapeHtml(url)}</p>
                     </body>
                 </html>
                 """.trimIndent(),
@@ -104,7 +107,7 @@ fun createCustomWebview(
                     view: WebView?,
                     request: WebResourceRequest?
                 ): Boolean {
-                    val url = request?.url.toString()
+                    val url = request?.url?.toString() ?: ""
                     return if (isBlocked(url)) {
                         showBlockedPage(view, url)
                         true

@@ -12,11 +12,11 @@ class SystemSettings(context: Context) {
         set(value) = prefs.edit { putString(LAST_URL, value) }
 
     var menuOffsetX: Float
-        get() = prefs.getFloat(MENU_OFFSET_X, 0f)
+        get() = prefs.getFloat(MENU_OFFSET_X, -50f)
         set(value) = prefs.edit { putFloat(MENU_OFFSET_X, value) }
 
     var menuOffsetY: Float
-        get() = prefs.getFloat(MENU_OFFSET_Y, 0f)
+        get() = prefs.getFloat(MENU_OFFSET_Y, -50f)
         set(value) = prefs.edit { putFloat(MENU_OFFSET_Y, value) }
 
     companion object {
