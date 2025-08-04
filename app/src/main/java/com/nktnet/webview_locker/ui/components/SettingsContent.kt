@@ -258,7 +258,7 @@ fun SettingsContent(
                 onClose()
             },
             modifier = Modifier
-                .padding(top = 8.dp)
+                .padding(top = 2.dp)
                 .width(150.dp)
                 .align(Alignment.End),
             enabled = saveEnabled,
@@ -269,6 +269,8 @@ fun SettingsContent(
         ) {
             Text("Save & Close")
         }
+
+        DeviceSecurityTip()
     }
 
     if (showExportDialog) {
