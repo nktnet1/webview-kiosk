@@ -18,10 +18,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.config.Theme
 import com.nktnet.webview_kiosk.config.UserSettings
 
 @Composable
-fun SettingsHeaderMenu(navController: NavController) {
+fun SettingsHeaderMenu(
+    navController: NavController,
+    themeState: MutableState<Theme>,
+) {
     val tintColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
     var showMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -52,6 +56,7 @@ fun SettingsHeaderMenu(navController: NavController) {
             val success = userSettings.importFromBase64(importText)
             if (success) {
                 showToast("Settings imported successfully")
+                themeState.value = userSettings.theme
                 showImportDialog = false
             } else {
                 importError = true

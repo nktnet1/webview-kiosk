@@ -78,7 +78,7 @@ enum class AddressBarMode {
     SHOWN;
     companion object {
         fun fromString(value: String?): AddressBarMode {
-            return entries.find { it.name == value } ?: SHOWN
+            return entries.find { it.name == value } ?: HIDDEN_WHEN_LOCKED
         }
     }
 }

@@ -23,10 +23,10 @@ import androidx.compose.runtime.MutableState
 @Composable
 fun SettingsAppearanceScreen(
     navController: NavController,
-    themeState: MutableState<Theme>, // new param to hold theme state
-    userSettings: UserSettings          // pass UserSettings to avoid recreating
+    themeState: MutableState<Theme>,
 ) {
     val context = LocalContext.current
+    val userSettings = UserSettings(context)
 
     var blockedMessage by remember { mutableStateOf(userSettings.blockedMessage) }
     var theme by remember { mutableStateOf(themeState.value) }  // initialize from themeState

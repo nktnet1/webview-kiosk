@@ -64,7 +64,10 @@ class MainActivity : AppCompatActivity() {
                         ) {
                             composable(Screen.Settings.route) {
                                 RequireAuthWrapper(promptManager) {
-                                    SettingsListScreen(navController)
+                                    SettingsListScreen(
+                                        navController,
+                                        themeState = themeState,
+                                    )
                                 }
                             }
                             composable(Screen.SettingsAppearance.route) {
@@ -72,7 +75,6 @@ class MainActivity : AppCompatActivity() {
                                     SettingsAppearanceScreen(
                                         navController,
                                         themeState = themeState,
-                                        userSettings = userSettings
                                     )
                                 }
                             }

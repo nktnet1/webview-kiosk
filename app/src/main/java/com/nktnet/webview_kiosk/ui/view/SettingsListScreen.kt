@@ -12,11 +12,15 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.config.Screen
+import com.nktnet.webview_kiosk.config.Theme
 import com.nktnet.webview_kiosk.ui.components.DeviceSecurityTip
 import com.nktnet.webview_kiosk.ui.components.SettingsHeaderMenu
 
 @Composable
-fun SettingsListScreen(navController: NavController) {
+fun SettingsListScreen(
+    navController: NavController,
+    themeState: MutableState<Theme>,
+) {
     val settingsItems = listOf(
         Triple(
             "Appearance",
@@ -34,7 +38,7 @@ fun SettingsListScreen(navController: NavController) {
         modifier = Modifier
             .fillMaxSize()
     ) {
-        SettingsHeaderMenu(navController)
+        SettingsHeaderMenu(navController, themeState)
 
         LazyColumn(modifier = Modifier.padding(vertical = 8.dp)) {
             items(settingsItems) { (title, description, route) ->
