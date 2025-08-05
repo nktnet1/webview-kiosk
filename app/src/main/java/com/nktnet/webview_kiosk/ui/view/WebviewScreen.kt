@@ -18,6 +18,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextRange
@@ -56,6 +59,8 @@ fun WebviewScreen(navController: NavController) {
         AddressBarOption.HIDDEN_WHEN_LOCKED -> !isPinned
     }
 
+    val focusRequester = remember { FocusRequester() }
+    var hasFocus by remember { mutableStateOf(false) }
     val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
 
     val webView = createCustomWebview(
@@ -65,10 +70,12 @@ fun WebviewScreen(navController: NavController) {
         showBlockedPage = { url -> blockedPageHtml(url) },
         onPageStarted = { transitionState = TransitionState.PAGE_STARTED },
         onPageFinished = { url ->
-            urlBarText = TextFieldValue(
-                text = url,
-                selection = TextRange(url.length)
-            )
+            if (!hasFocus) {
+                urlBarText = urlBarText.copy(
+                    text = url,
+                )
+            }
+
             currentUrl = url
             systemSettings.lastUrl = url
             transitionState = TransitionState.PAGE_FINISHED
@@ -96,7 +103,12 @@ fun WebviewScreen(navController: NavController) {
                     onValueChange = { urlBarText = it },
                     singleLine = true,
                     enabled = transitionState == TransitionState.PAGE_FINISHED,
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .focusRequester(focusRequester)
+                        .onFocusChanged { focusState ->
+                            hasFocus = focusState.isFocused
+                        }
+                        .fillMaxWidth(),
                     shape = RoundedCornerShape(percent = 50),
                     colors = OutlinedTextFieldDefaults.colors(
                         unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -115,6 +127,12 @@ fun WebviewScreen(navController: NavController) {
                         }
                     }
                 )
+            }
+
+            LaunchedEffect(hasFocus) {
+                if (hasFocus) {
+                    urlBarText = urlBarText.copy(selection = TextRange(0, urlBarText.text.length))
+                }
             }
         }
 
