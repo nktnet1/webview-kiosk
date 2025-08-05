@@ -35,7 +35,7 @@ class MainActivity : AppCompatActivity() {
 
                 NavHost(navController, startDestination = Screen.WebView.route) {
                     composable(Screen.WebView.route) {
-                        WebView(navController)
+                        WebviewScreen(navController)
                     }
 
                     navigation(

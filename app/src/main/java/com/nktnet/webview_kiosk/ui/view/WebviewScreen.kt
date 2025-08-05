@@ -19,7 +19,7 @@ import com.nktnet.webview_kiosk.utils.createCustomWebview
 import com.nktnet.webview_kiosk.utils.rememberLockedState
 
 @Composable
-fun WebView(navController: NavController) {
+fun WebviewScreen(navController: NavController) {
     val context = LocalContext.current
     val activity = context as? Activity
 

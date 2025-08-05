@@ -1,4 +1,4 @@
-package com.nktnet.webview_kiosk
+package com.nktnet.webview_kiosk.ui.view
 
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
@@ -6,8 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 
 @Composable
-fun SettingsUrlControlScreen(navController: NavController) {
+fun SettingsAppearanceScreen(navController: NavController) {
     Button(onClick = { navController.popBackStack() }) {
-        Text("Close URL Control Settings")
+        Text("Close Appearance Settings")
     }
 }
