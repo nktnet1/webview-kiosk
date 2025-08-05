@@ -6,13 +6,16 @@ import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.R
 import com.nktnet.webview_kiosk.config.UserSettings
@@ -134,10 +137,19 @@ fun ImportSettingsDialog(
     onImportConfirm: () -> Unit
 ) {
     if (!showDialog) return
+    val context = LocalContext.current
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = onImportConfirm) { Text("Import") }
+            TextButton(
+                onClick = onImportConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text("Import")
+            }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
@@ -147,9 +159,7 @@ fun ImportSettingsDialog(
             Column {
                 OutlinedTextField(
                     value = importText,
-                    onValueChange = {
-                        onImportTextChange(it)
-                    },
+                    onValueChange = onImportTextChange,
                     placeholder = { Text("Paste your exported Base64 string here") },
                     isError = importError,
                     modifier = Modifier.fillMaxWidth()
@@ -160,6 +170,36 @@ fun ImportSettingsDialog(
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall
                     )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { onImportTextChange("") },
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = "Clear",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    IconButton(
+                        onClick = {
+                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            val clipData = clipboard.primaryClip
+                            val pasteData = clipData?.getItemAt(0)?.text?.toString() ?: ""
+                            onImportTextChange(pasteData)
+                        }
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.outline_content_paste_24),
+                            contentDescription = "Paste",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }
@@ -179,10 +219,16 @@ fun ExportSettingsDialog(
         title = { Text("Exported Settings (Base64)") },
         text = { Text(exportText, style = MaterialTheme.typography.bodySmall) },
         confirmButton = {
-            TextButton(onClick = {
-                onCopy()
-                onDismiss()
-            }) {
+            TextButton(
+                onClick = {
+                    onCopy()
+                    onDismiss()
+                },
+                colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
+            ) {
                 Text("Copy")
             }
         },

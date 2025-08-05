@@ -1,19 +1,15 @@
 package com.nktnet.webview_kiosk.ui.view
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
-import com.nktnet.webview_kiosk.config.Screen
 import com.nktnet.webview_kiosk.config.UserSettings
 import com.nktnet.webview_kiosk.ui.components.LabelWithInfo
 import com.nktnet.webview_kiosk.ui.components.PatternInput
 import com.nktnet.webview_kiosk.ui.components.SettingLabel
+import com.nktnet.webview_kiosk.ui.components.SettingsActionButtons
 import com.nktnet.webview_kiosk.ui.components.UrlInput
 import com.nktnet.webview_kiosk.utils.validateMultilineRegex
 import com.nktnet.webview_kiosk.utils.validateUrl
@@ -28,7 +24,6 @@ fun SettingsUrlControlScreen(
     var homeUrl by remember { mutableStateOf(userSettings.homeUrl) }
     var blacklist by remember { mutableStateOf(userSettings.websiteBlacklist) }
     var whitelist by remember { mutableStateOf(userSettings.websiteWhitelist) }
-    var blockedMessage by remember { mutableStateOf(userSettings.blockedMessage) }
 
     var homeUrlError by remember { mutableStateOf(false) }
     var blacklistError by remember { mutableStateOf(false) }
@@ -47,13 +42,11 @@ fun SettingsUrlControlScreen(
         userSettings.homeUrl = homeUrl
         userSettings.websiteBlacklist = blacklist
         userSettings.websiteWhitelist = whitelist
-        userSettings.blockedMessage = blockedMessage.trim()
         showToast("Settings saved successfully.")
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = Modifier.fillMaxSize()
     ) {
         SettingLabel(navController = navController, label = "URL Control")
 
@@ -124,73 +117,10 @@ fun SettingsUrlControlScreen(
             isError = whitelistError,
             placeholder = "e.g.\n\t^https://allowedsite\\.com/.*\n\t^https://.*\\.trusted\\.org/.*"
         )
-
-        LabelWithInfo(
-            label = "Blocked Message",
-            infoTitle = "Blocked Message",
-            infoText = "Custom message shown on blocked pages. Can be left empty."
+        SettingsActionButtons(
+            navController = navController,
+            saveEnabled = saveEnabled,
+            saveSettings = { saveSettings() }
         )
-        OutlinedTextField(
-            value = blockedMessage,
-            onValueChange = { blockedMessage = it },
-            placeholder = { Text("e.g. This site is blocked by <Company Name>") },
-            isError = false,
-            modifier = Modifier.fillMaxWidth(),
-            minLines = 2,
-            maxLines = 5,
-        )
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 32.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            OutlinedButton(
-                onClick = {
-                    navController.navigate(Screen.WebView.route)
-                },
-                modifier = Modifier.width(150.dp),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.error)
-            ) {
-                Text("Cancel")
-            }
-
-            OutlinedButton(
-                enabled = saveEnabled,
-                modifier = Modifier.width(150.dp),
-                onClick = { saveSettings() },
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.primary
-                ),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
-            ) {
-                Text("Save")
-            }
-        }
-
-        Button(
-            onClick = {
-                saveSettings()
-                navController.navigate(Screen.WebView.route)
-            },
-            modifier = Modifier
-                .padding(top = 2.dp)
-                .width(150.dp)
-                .align(Alignment.End),
-            enabled = saveEnabled,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            )
-        ) {
-            Text("Save & Close")
-        }
     }
 }
-
-

@@ -17,8 +17,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.nktnet.webview_kiosk.auth.BiometricPromptManager
 
+
 @Composable
-fun RequireAuthentication(
+fun RequireAuthWrapper(
+    promptManager: BiometricPromptManager,
+    content: @Composable () -> Unit
+) {
+    Box(modifier = Modifier.padding(top = 32.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+        RequireAuthentication(
+            promptManager = promptManager,
+            onAuthenticated = { content() },
+            onFailed = { errorResult ->
+                AuthenticationErrorDisplay(errorResult = errorResult) {
+                    promptManager.showBiometricPrompt(
+                        title = "Authentication Required",
+                        description = "Please authenticate to access settings"
+                    )
+                }
+            }
+        )
+    }
+}
+@Composable
+private fun RequireAuthentication(
     promptManager: BiometricPromptManager,
     onAuthenticated: @Composable () -> Unit,
     onFailed: @Composable (BiometricPromptManager.BiometricResult?) -> Unit

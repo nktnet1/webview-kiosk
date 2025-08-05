@@ -4,19 +4,20 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.nktnet.webview_kiosk.auth.BiometricPromptManager
 import com.nktnet.webview_kiosk.config.Screen
-import com.nktnet.webview_kiosk.ui.components.AuthenticationErrorDisplay
-import com.nktnet.webview_kiosk.ui.components.RequireAuthentication
+import com.nktnet.webview_kiosk.config.Theme
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.ui.components.RequireAuthWrapper
 import com.nktnet.webview_kiosk.ui.theme.WebviewKioskTheme
 import com.nktnet.webview_kiosk.ui.view.*
 
@@ -33,32 +34,52 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val userSettings = UserSettings(this)
+
         setContent {
-            WebviewKioskTheme {
-                val navController = rememberNavController()
+            // Hold current theme in a Compose mutable state
+            val themeState = remember { mutableStateOf(userSettings.theme) }
 
-                NavHost(navController, startDestination = Screen.WebView.route) {
-                    composable(Screen.WebView.route) {
-                        WebviewScreen(navController)
-                    }
+            WebviewKioskTheme(darkTheme = when (themeState.value) {
+                Theme.SYSTEM -> isSystemInDarkTheme()
+                Theme.DARK -> true
+                Theme.LIGHT -> false
+            }) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = androidx.compose.material3.MaterialTheme.colorScheme.background
+                ) {
+                    val navController = rememberNavController()
 
-                    navigation(
-                        startDestination = Screen.Settings.route,
-                        route = "settings_list"
-                    ) {
-                        composable(Screen.Settings.route) {
-                            RequireAuthWrapper(promptManager) {
-                                SettingsListScreen(navController)
-                            }
+                    // Pass themeState down to settings screen to allow theme updates
+                    NavHost(navController, startDestination = Screen.WebView.route) {
+                        composable(Screen.WebView.route) {
+                            WebviewScreen(navController)
                         }
-                        composable(Screen.SettingsAppearance.route) {
-                            RequireAuthWrapper(promptManager) {
-                                SettingsAppearanceScreen(navController)
+
+                        navigation(
+                            startDestination = Screen.Settings.route,
+                            route = "settings_list"
+                        ) {
+                            composable(Screen.Settings.route) {
+                                RequireAuthWrapper(promptManager) {
+                                    SettingsListScreen(navController)
+                                }
                             }
-                        }
-                        composable(Screen.SettingsUrlControl.route) {
-                            RequireAuthWrapper(promptManager) {
-                                SettingsUrlControlScreen(navController)
+                            composable(Screen.SettingsAppearance.route) {
+                                RequireAuthWrapper(promptManager) {
+                                    SettingsAppearanceScreen(
+                                        navController,
+                                        themeState = themeState,
+                                        userSettings = userSettings
+                                    )
+                                }
+                            }
+                            composable(Screen.SettingsUrlControl.route) {
+                                RequireAuthWrapper(promptManager) {
+                                    SettingsUrlControlScreen(navController)
+                                }
                             }
                         }
                     }
@@ -68,23 +89,3 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-@Composable
-fun RequireAuthWrapper(
-    promptManager: BiometricPromptManager,
-    content: @Composable () -> Unit
-) {
-    Box(modifier = Modifier.padding(top = 32.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)) {
-        RequireAuthentication(
-            promptManager = promptManager,
-            onAuthenticated = { content() },
-            onFailed = { errorResult ->
-                AuthenticationErrorDisplay(errorResult = errorResult) {
-                    promptManager.showBiometricPrompt(
-                        title = "Authentication Required",
-                        description = "Please authenticate to access settings"
-                    )
-                }
-            }
-        )
-    }
-}

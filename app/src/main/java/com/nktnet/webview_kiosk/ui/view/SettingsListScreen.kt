@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.config.Screen
@@ -18,15 +19,15 @@ import com.nktnet.webview_kiosk.ui.components.SettingsHeaderMenu
 fun SettingsListScreen(navController: NavController) {
     val settingsItems = listOf(
         Triple(
-            "URL Control",
-            "Set home URL, blacklist (blocked) sites, whitelist (allowed) sites",
-            Screen.SettingsUrlControl.route
+            "Appearance",
+            "Theme, UI elements",
+            Screen.SettingsAppearance.route
         ),
         Triple(
-            "Appearance",
-            "Configure theme and UI elements such as blocked text message",
-            Screen.SettingsAppearance.route
-        )
+            "URL Control",
+            "Home URL, blacklist, whitelist",
+            Screen.SettingsUrlControl.route
+        ),
     )
 
     Column(
@@ -39,7 +40,12 @@ fun SettingsListScreen(navController: NavController) {
             items(settingsItems) { (title, description, route) ->
                 ListItem(
                     headlineContent = { Text(text = title) },
-                    supportingContent = { Text(text = description) },
+                    supportingContent = {
+                        Text(
+                            text = description,
+                            style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic)
+                        )
+                    },
                     modifier = Modifier
                         .clickable { navController.navigate(route) }
                         .fillMaxWidth()
