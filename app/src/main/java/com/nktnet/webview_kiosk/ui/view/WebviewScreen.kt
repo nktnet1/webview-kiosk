@@ -20,6 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -47,7 +48,7 @@ fun WebviewScreen(navController: NavController) {
 
     var currentUrl by remember { mutableStateOf(systemSettings.lastUrl.ifEmpty { userSettings.homeUrl }) }
     var urlBarText by remember { mutableStateOf(TextFieldValue(currentUrl)) }
-    var isPageTransition by remember { mutableStateOf(false) }
+    var transitionState by remember { mutableStateOf(TransitionState.PAGE_FINISHED) }
 
     val showAddressBar = when (userSettings.addressBarMode) {
         AddressBarMode.SHOWN -> true
@@ -62,11 +63,15 @@ fun WebviewScreen(navController: NavController) {
         initUrl = currentUrl,
         isBlocked = isBlocked,
         showBlockedPage = { url -> blockedPageHtml(url) },
-        onPageStarted = { isPageTransition = false },
+        onPageStarted = { transitionState = TransitionState.PAGE_STARTED },
         onPageFinished = { url ->
+            urlBarText = TextFieldValue(
+                text = url,
+                selection = TextRange(url.length)
+            )
             currentUrl = url
-            urlBarText = TextFieldValue(url)
             systemSettings.lastUrl = url
+            transitionState = TransitionState.PAGE_FINISHED
         }
     )
 
@@ -74,7 +79,7 @@ fun WebviewScreen(navController: NavController) {
 
     val triggerLoad: (String) -> Unit = { input ->
         val finalUrl = resolveUrlOrSearch(input.trim())
-        isPageTransition = true
+        transitionState = TransitionState.TRANSITIONING
         currentUrl = finalUrl
         webView.loadUrl(finalUrl)
     }
@@ -90,6 +95,7 @@ fun WebviewScreen(navController: NavController) {
                     value = urlBarText,
                     onValueChange = { urlBarText = it },
                     singleLine = true,
+                    enabled = transitionState == TransitionState.PAGE_FINISHED,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(percent = 50),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -115,7 +121,7 @@ fun WebviewScreen(navController: NavController) {
         Box(modifier = Modifier.weight(1f)) {
             AndroidView(factory = { webView }, modifier = Modifier.fillMaxSize())
 
-            if (isPageTransition) {
+            if (transitionState != TransitionState.PAGE_FINISHED) {
                 Box(
                     Modifier
                         .fillMaxSize()
@@ -141,6 +147,12 @@ fun WebviewScreen(navController: NavController) {
             }
         }
     }
+}
+
+private enum class TransitionState {
+    TRANSITIONING,
+    PAGE_STARTED,
+    PAGE_FINISHED
 }
 
 @Composable
