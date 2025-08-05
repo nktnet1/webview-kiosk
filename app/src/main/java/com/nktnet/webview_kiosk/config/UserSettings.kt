@@ -26,7 +26,7 @@ class UserSettings(context: Context) {
 
     var blockedMessage: String
         get() = prefs.getString(BLOCKED_MESSAGE, null)
-            ?: "This site is blocked by WebView Kiosk."
+            ?: "This site is blocked by Webview Kiosk."
         set(value) = prefs.edit { putString(BLOCKED_MESSAGE, value) }
 
     var theme: ThemeOption

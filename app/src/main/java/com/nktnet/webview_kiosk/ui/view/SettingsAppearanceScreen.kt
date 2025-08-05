@@ -71,7 +71,7 @@ fun SettingsAppearanceScreen(
                     ThemeOption.DARK -> "Dark"
                     ThemeOption.LIGHT -> "Light"
                 },
-                modifier = Modifier.padding(8.dp)
+                modifier = Modifier.padding(vertical = 8.dp)
             )
         }
 
@@ -94,7 +94,7 @@ fun SettingsAppearanceScreen(
                     AddressBarOption.HIDDEN_WHEN_LOCKED -> "Hidden when locked"
                     AddressBarOption.SHOWN -> "Shown"
                 },
-                modifier = Modifier.padding(8.dp)
+                modifier = Modifier.padding(vertical = 8.dp)
             )
         }
 
@@ -143,6 +143,7 @@ private fun <T> DropdownSelector(
             modifier = Modifier
                 .fillMaxWidth()
                 .onSizeChanged { buttonWidth = it.width },
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
             shape = shape
         ) {
             Box(Modifier.weight(1f)) {
@@ -158,7 +159,7 @@ private fun <T> DropdownSelector(
             options.forEach { option ->
                 DropdownMenuItem(
                     text = {
-                        Box(Modifier.padding(horizontal = 8.dp)) {
+                        Box(Modifier) {
                             itemContent(option)
                         }
                     },
