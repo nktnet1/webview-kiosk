@@ -1,14 +1,8 @@
 package com.nktnet.webview_kiosk.utils
 
-fun generateBlockedPageHtml(url: String, message: String): String {
-    val escapeHtml = { input: String ->
-        input.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace("\"", "&quot;")
-            .replace("'", "&#39;")
-    }
+import android.text.Html
 
+fun generateBlockedPageHtml(url: String, message: String): String {
     return """
         <html>
           <head>
@@ -37,10 +31,10 @@ fun generateBlockedPageHtml(url: String, message: String): String {
           </head>
           <body>
             <h2>🚫 Access Blocked</h2>
-            <p>${escapeHtml(message)}</p>
+            <p>${Html.escapeHtml(message)}</p>
             <hr />
             <b>URL:</b>
-            <p>${escapeHtml(url)}</p>
+            <p>${Html.escapeHtml(url)}</p>
           </body>
         </html>
     """.trimIndent()
