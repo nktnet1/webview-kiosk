@@ -4,7 +4,11 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
@@ -69,16 +73,18 @@ fun RequireAuthWrapper(
     promptManager: BiometricPromptManager,
     content: @Composable () -> Unit
 ) {
-    RequireAuthentication(
-        promptManager = promptManager,
-        onAuthenticated = { content() },
-        onFailed = { errorResult ->
-            AuthenticationErrorDisplay(errorResult = errorResult) {
-                promptManager.showBiometricPrompt(
-                    title = "Authentication Required",
-                    description = "Please authenticate to access settings"
-                )
+    Box(modifier = Modifier.padding(top = 32.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+        RequireAuthentication(
+            promptManager = promptManager,
+            onAuthenticated = { content() },
+            onFailed = { errorResult ->
+                AuthenticationErrorDisplay(errorResult = errorResult) {
+                    promptManager.showBiometricPrompt(
+                        title = "Authentication Required",
+                        description = "Please authenticate to access settings"
+                    )
+                }
             }
-        }
-    )
+        )
+    }
 }

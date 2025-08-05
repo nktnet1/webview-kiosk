@@ -12,19 +12,19 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.config.Screen
 import com.nktnet.webview_kiosk.ui.components.DeviceSecurityTip
-import com.nktnet.webview_kiosk.ui.components.import_export.SettingsHeaderMenu
+import com.nktnet.webview_kiosk.ui.components.SettingsHeaderMenu
 
 @Composable
 fun SettingsListScreen(navController: NavController) {
     val settingsItems = listOf(
         Triple(
             "URL Control",
-            "Set allowed or blocked websites",
+            "Set home URL, blacklist (blocked) sites, whitelist (allowed) sites",
             Screen.SettingsUrlControl.route
         ),
         Triple(
             "Appearance",
-            "Configure UI elements like theme and colors",
+            "Configure theme and UI elements such as blocked text message",
             Screen.SettingsAppearance.route
         )
     )
@@ -32,9 +32,8 @@ fun SettingsListScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = 30.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
     ) {
-        SettingsHeaderMenu()
+        SettingsHeaderMenu(navController)
 
         LazyColumn(modifier = Modifier.padding(vertical = 8.dp)) {
             items(settingsItems) { (title, description, route) ->

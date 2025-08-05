@@ -1,4 +1,4 @@
-package com.nktnet.webview_kiosk.ui.components.import_export
+package com.nktnet.webview_kiosk.ui.components
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -13,11 +13,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.R
 import com.nktnet.webview_kiosk.config.UserSettings
 
 @Composable
- fun SettingsHeaderMenu() {
+fun SettingsHeaderMenu(navController: NavController) {
     val tintColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
     var showMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
@@ -71,12 +72,11 @@ import com.nktnet.webview_kiosk.config.UserSettings
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            "Settings",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Box {
+        SettingLabel(navController = navController, label = "Settings")
+
+        Box(
+            modifier = Modifier.align(Alignment.Bottom) // Align menu icon box bottom with SettingLabel bottom
+        ) {
             IconButton(onClick = { showMenu = true }) {
                 Icon(
                     Icons.Default.MoreVert,
@@ -94,7 +94,8 @@ import com.nktnet.webview_kiosk.config.UserSettings
                         showMenu = false
                         showImportDialog = true
                         importText = ""
-                        importError = false                    },
+                        importError = false
+                    },
                     leadingIcon = {
                         Icon(
                             painter = painterResource(R.drawable.outline_drive_folder_upload_24),
@@ -108,7 +109,8 @@ import com.nktnet.webview_kiosk.config.UserSettings
                     onClick = {
                         showMenu = false
                         exportText = userSettings.exportToBase64()
-                        showExportDialog = true                    },
+                        showExportDialog = true
+                    },
                     leadingIcon = {
                         Icon(
                             painter = painterResource(R.drawable.outline_file_export_24),

@@ -13,6 +13,7 @@ import com.nktnet.webview_kiosk.config.Screen
 import com.nktnet.webview_kiosk.config.UserSettings
 import com.nktnet.webview_kiosk.ui.components.LabelWithInfo
 import com.nktnet.webview_kiosk.ui.components.PatternInput
+import com.nktnet.webview_kiosk.ui.components.SettingLabel
 import com.nktnet.webview_kiosk.ui.components.UrlInput
 import com.nktnet.webview_kiosk.utils.validateMultilineRegex
 import com.nktnet.webview_kiosk.utils.validateUrl
@@ -53,14 +54,8 @@ fun SettingsUrlControlScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(top = 30.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)
     ) {
-        Text(
-            "Settings",
-            style = MaterialTheme.typography.headlineSmall,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
+        SettingLabel(navController = navController, label = "URL Control")
 
         LabelWithInfo(
             label = "Home URL",
@@ -197,3 +192,5 @@ fun SettingsUrlControlScreen(
         }
     }
 }
+
+
