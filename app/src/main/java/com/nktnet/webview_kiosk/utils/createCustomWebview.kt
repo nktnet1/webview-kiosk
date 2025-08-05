@@ -2,6 +2,7 @@ package com.nktnet.webview_kiosk.utils
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.graphics.Bitmap
 import android.view.ViewGroup
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
@@ -15,6 +16,7 @@ fun createCustomWebview(
     initUrl: String,
     isBlocked: (String) -> Boolean,
     showBlockedPage: (String) -> String,
+    onPageStarted: () -> Unit,
     onPageFinished: (String) -> Unit
 ): WebView {
     val webView = remember {
@@ -45,6 +47,11 @@ fun createCustomWebview(
                     } else {
                         false
                     }
+                }
+
+                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                    super.onPageStarted(view, url, favicon)
+                    onPageStarted()
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {

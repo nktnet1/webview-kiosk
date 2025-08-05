@@ -8,11 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.nktnet.webview_kiosk.auth.BiometricPromptManager
@@ -75,25 +71,7 @@ private fun RequireAuthentication(
     when {
         promptManager.isAuthenticated -> onAuthenticated()
         biometricResult is BiometricPromptManager.BiometricResult.AuthenticationSuccess -> onAuthenticated()
-        biometricResult == null -> LoadingIndicator()
+        biometricResult == null -> LoadingIndicator("Waiting for authentication...")
         else -> onFailed(biometricResult)
-    }
-}
-
-@Composable
-private fun LoadingIndicator() {
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            CircularProgressIndicator()
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "Waiting for authentication...",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
     }
 }

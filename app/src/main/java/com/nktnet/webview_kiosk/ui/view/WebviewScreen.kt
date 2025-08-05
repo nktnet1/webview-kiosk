@@ -1,10 +1,13 @@
 package com.nktnet.webview_kiosk.ui.view
 
 import android.app.Activity
+import android.net.Uri
+import android.webkit.URLUtil
 import android.webkit.WebView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -15,6 +18,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
@@ -25,6 +29,7 @@ import com.nktnet.webview_kiosk.config.AddressBarMode
 import com.nktnet.webview_kiosk.config.SystemSettings
 import com.nktnet.webview_kiosk.config.UserSettings
 import com.nktnet.webview_kiosk.ui.components.FloatingMenuButton
+import com.nktnet.webview_kiosk.ui.components.LoadingIndicator
 import com.nktnet.webview_kiosk.utils.createCustomWebview
 import com.nktnet.webview_kiosk.utils.generateBlockedPageHtml
 import com.nktnet.webview_kiosk.utils.rememberLockedState
@@ -42,6 +47,7 @@ fun WebviewScreen(navController: NavController) {
 
     var currentUrl by remember { mutableStateOf(systemSettings.lastUrl.ifEmpty { userSettings.homeUrl }) }
     var urlBarText by remember { mutableStateOf(TextFieldValue(currentUrl)) }
+    var isPageTransition by remember { mutableStateOf(false) }
 
     val showAddressBar = when (userSettings.addressBarMode) {
         AddressBarMode.SHOWN -> true
@@ -56,6 +62,7 @@ fun WebviewScreen(navController: NavController) {
         initUrl = currentUrl,
         isBlocked = isBlocked,
         showBlockedPage = { url -> blockedPageHtml(url) },
+        onPageStarted = { isPageTransition = false },
         onPageFinished = { url ->
             currentUrl = url
             urlBarText = TextFieldValue(url)
@@ -65,47 +72,59 @@ fun WebviewScreen(navController: NavController) {
 
     HandleBackPress(webView, onBackPressedDispatcher)
 
+    val triggerLoad: (String) -> Unit = { input ->
+        val finalUrl = resolveUrlOrSearch(input.trim())
+        isPageTransition = true
+        currentUrl = finalUrl
+        webView.loadUrl(finalUrl)
+    }
+
     Column(Modifier.fillMaxSize()) {
         if (showAddressBar) {
-            OutlinedTextField(
-                value = urlBarText,
-                onValueChange = { urlBarText = it },
-                singleLine = true,
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(10.dp),
-                shape = RoundedCornerShape(percent = 50),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                ),
-                keyboardOptions = KeyboardOptions.Default.copy(
-                    imeAction = ImeAction.Go
-                ),
-                keyboardActions = KeyboardActions(
-                    onGo = {
-                        val input = urlBarText.text.trim()
-                        val finalUrl = if (input.startsWith("http")) input else "https://$input"
-                        currentUrl = finalUrl
-                        webView.loadUrl(finalUrl)
+                    .padding(10.dp)
+            ) {
+                OutlinedTextField(
+                    value = urlBarText,
+                    onValueChange = { urlBarText = it },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(percent = 50),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    ),
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        imeAction = ImeAction.Go
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onGo = { triggerLoad(urlBarText.text) }
+                    ),
+                    textStyle = LocalTextStyle.current,
+                    trailingIcon = {
+                        IconButton(onClick = { triggerLoad(urlBarText.text) }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Go")
+                        }
                     }
-                ),
-                textStyle = LocalTextStyle.current,
-                trailingIcon = {
-                    IconButton(onClick = {
-                        val input = urlBarText.text.trim()
-                        val finalUrl = if (input.startsWith("http")) input else "https://$input"
-                        currentUrl = finalUrl
-                        webView.loadUrl(finalUrl)
-                    }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Go")
-                    }
-                }
-            )
+                )
+            }
         }
 
         Box(modifier = Modifier.weight(1f)) {
             AndroidView(factory = { webView }, modifier = Modifier.fillMaxSize())
+
+            if (isPageTransition) {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color(0x88000000)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LoadingIndicator("Loading...")
+                }
+            }
 
             if (!isPinned) {
                 ShowFloatingMenu(
@@ -180,5 +199,13 @@ private fun BoxScope.ShowFloatingMenu(
             onLockClick = onLockClick,
             navController = navController
         )
+    }
+}
+
+private fun resolveUrlOrSearch(input: String): String {
+    return when {
+        URLUtil.isValidUrl(input) -> input
+        input.contains('.') -> "https://$input"
+        else -> "https://www.google.com/search?q=${Uri.encode(input)}"
     }
 }

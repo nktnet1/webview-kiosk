@@ -11,7 +11,7 @@ class UserSettings(context: Context) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     var homeUrl: String
-        get() = prefs.getString(HOME_URL, null) ?: "https://duckduckgo.com"
+        get() = prefs.getString(HOME_URL, null) ?: "https://google.com"
         set(value) = prefs.edit { putString(HOME_URL, value) }
 
     var websiteBlacklist: String
