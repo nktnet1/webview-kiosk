@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.config.SystemSettings
 import com.nktnet.webview_kiosk.config.UserSettings
 import com.nktnet.webview_kiosk.ui.components.FloatingMenuButton
@@ -18,7 +19,7 @@ import com.nktnet.webview_kiosk.utils.createCustomWebview
 import com.nktnet.webview_kiosk.utils.rememberLockedState
 
 @Composable
-fun WebView(onOpenSettings: () -> Unit) {
+fun WebView(navController: NavController) {
     val context = LocalContext.current
     val activity = context as? Activity
 
@@ -50,7 +51,7 @@ fun WebView(onOpenSettings: () -> Unit) {
                             e.printStackTrace()
                         }
                     },
-                    onSettingsClick = onOpenSettings
+                    navController,
                 )
             }
         }

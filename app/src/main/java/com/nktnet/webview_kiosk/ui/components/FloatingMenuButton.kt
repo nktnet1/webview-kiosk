@@ -17,6 +17,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
+import com.nktnet.webview_kiosk.config.Screen
 import kotlin.math.roundToInt
 import com.nktnet.webview_kiosk.config.SystemSettings
 
@@ -24,7 +26,7 @@ import com.nktnet.webview_kiosk.config.SystemSettings
 fun FloatingMenuButton(
     onHomeClick: () -> Unit,
     onLockClick: () -> Unit,
-    onSettingsClick: () -> Unit
+    navController: NavController,
 ) {
     val context = LocalContext.current
     val systemSettings = remember { SystemSettings(context) }
@@ -57,7 +59,8 @@ fun FloatingMenuButton(
             modifier = Modifier.fillMaxSize()
         ) {
             Icon(
-                imageVector = Icons.Filled.Build,                contentDescription = "Menu",
+                imageVector = Icons.Filled.Build,
+                contentDescription = "Menu",
                 tint = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.size(36.dp)
             )
@@ -100,8 +103,8 @@ fun FloatingMenuButton(
             DropdownMenuItem(
                 text = { Text("Settings", color = tintColor) },
                 onClick = {
+                    navController.navigate(Screen.Settings.route)
                     menuExpanded = false
-                    onSettingsClick()
                 },
                 leadingIcon = {
                     Icon(
