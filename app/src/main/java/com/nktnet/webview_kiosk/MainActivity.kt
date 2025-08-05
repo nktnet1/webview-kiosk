@@ -17,6 +17,11 @@ class MainActivity : AppCompatActivity() {
         BiometricPromptManager(this)
     }
 
+    override fun onStop() {
+        super.onStop()
+        promptManager.resetAuthentication()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

@@ -16,25 +16,35 @@ class BiometricPromptManager(
     private val resultChannel = Channel<BiometricResult>()
     val promptResults = resultChannel.receiveAsFlow()
 
+    private var lastAuthTime = 0L
+    private val authTimeoutMs = 2 * 60 * 1000L // 2 minutes
+
+    val isAuthenticated: Boolean
+        get() = System.currentTimeMillis() - lastAuthTime < authTimeoutMs
+
+    fun resetAuthentication() {
+        lastAuthTime = 0
+    }
+
     fun showBiometricPrompt(
         title: String,
         description: String
     ) {
         val manager = BiometricManager.from(activity)
-        val authenticators = if(Build.VERSION.SDK_INT >= 30) {
+        val authenticators = if (Build.VERSION.SDK_INT >= 30) {
             BIOMETRIC_STRONG or DEVICE_CREDENTIAL
         } else BIOMETRIC_STRONG
 
-        val promptInfo = PromptInfo.Builder()
+        val promptInfoBuilder = PromptInfo.Builder()
             .setTitle(title)
             .setDescription(description)
             .setAllowedAuthenticators(authenticators)
 
-        if(Build.VERSION.SDK_INT < 30) {
-            promptInfo.setNegativeButtonText("Cancel")
+        if (Build.VERSION.SDK_INT < 30) {
+            promptInfoBuilder.setNegativeButtonText("Cancel")
         }
 
-        when(manager.canAuthenticate(authenticators)) {
+        when (manager.canAuthenticate(authenticators)) {
             BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> {
                 resultChannel.trySend(BiometricResult.HardwareUnavailable)
                 return
@@ -50,34 +60,39 @@ class BiometricPromptManager(
             else -> Unit
         }
 
+        val promptInfo = promptInfoBuilder.build()
+
         val prompt = BiometricPrompt(
             activity,
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
                     resultChannel.trySend(BiometricResult.AuthenticationError(errString.toString()))
+                    resetAuthentication()
                 }
 
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
                     resultChannel.trySend(BiometricResult.AuthenticationSuccess)
+                    lastAuthTime = System.currentTimeMillis()
                 }
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
                     resultChannel.trySend(BiometricResult.AuthenticationFailed)
+                    resetAuthentication()
                 }
             }
         )
-        prompt.authenticate(promptInfo.build())
+        prompt.authenticate(promptInfo)
     }
 
     sealed interface BiometricResult {
-        data object HardwareUnavailable: BiometricResult
-        data object FeatureUnavailable: BiometricResult
-        data class AuthenticationError(val error: String): BiometricResult
-        data object AuthenticationFailed: BiometricResult
-        data object AuthenticationSuccess: BiometricResult
-        data object AuthenticationNotSet: BiometricResult
+        data object HardwareUnavailable : BiometricResult
+        data object FeatureUnavailable : BiometricResult
+        data class AuthenticationError(val error: String) : BiometricResult
+        data object AuthenticationFailed : BiometricResult
+        data object AuthenticationSuccess : BiometricResult
+        data object AuthenticationNotSet : BiometricResult
     }
 }

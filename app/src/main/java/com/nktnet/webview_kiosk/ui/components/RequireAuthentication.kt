@@ -26,7 +26,7 @@ fun RequireAuthentication(
     val biometricResult by promptManager.promptResults.collectAsState(initial = null)
     val enrollLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult(),
-        onResult = { /* no-op or log */ }
+        onResult = { /* no-op */ }
     )
 
     LaunchedEffect(biometricResult) {
@@ -43,18 +43,22 @@ fun RequireAuthentication(
     }
 
     LaunchedEffect(Unit) {
-        promptManager.showBiometricPrompt(
-            title = "Authentication Required",
-            description = "Please authenticate to proceed"
-        )
+        if (!promptManager.isAuthenticated) {
+            promptManager.showBiometricPrompt(
+                title = "Authentication Required",
+                description = "Please authenticate to proceed"
+            )
+        }
     }
 
-    when (biometricResult) {
-        null -> LoadingIndicator()
-        is BiometricPromptManager.BiometricResult.AuthenticationSuccess -> onAuthenticated()
+    when {
+        promptManager.isAuthenticated -> onAuthenticated()
+        biometricResult is BiometricPromptManager.BiometricResult.AuthenticationSuccess -> onAuthenticated()
+        biometricResult == null -> LoadingIndicator()
         else -> onFailed(biometricResult)
     }
 }
+
 @Composable
 private fun LoadingIndicator() {
     Box(
@@ -63,7 +67,7 @@ private fun LoadingIndicator() {
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             CircularProgressIndicator()
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
             Text(
                 "Waiting for authentication...",
                 style = MaterialTheme.typography.bodyMedium,
@@ -72,4 +76,3 @@ private fun LoadingIndicator() {
         }
     }
 }
-
