@@ -12,14 +12,14 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.config.Screen
-import com.nktnet.webview_kiosk.config.Theme
-import com.nktnet.webview_kiosk.ui.components.DeviceSecurityTip
-import com.nktnet.webview_kiosk.ui.components.SettingsHeaderMenu
+import com.nktnet.webview_kiosk.config.option.ThemeOption
+import com.nktnet.webview_kiosk.ui.components.setting.DeviceSecurityTip
+import com.nktnet.webview_kiosk.ui.components.setting.SettingsHeaderMenu
 
 @Composable
 fun SettingsListScreen(
     navController: NavController,
-    themeState: MutableState<Theme>,
+    themeState: MutableState<ThemeOption>,
 ) {
     val settingsItems = listOf(
         Triple(

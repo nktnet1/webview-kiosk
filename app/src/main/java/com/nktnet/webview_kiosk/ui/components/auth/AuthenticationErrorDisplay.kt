@@ -1,4 +1,4 @@
-package com.nktnet.webview_kiosk.ui.components
+package com.nktnet.webview_kiosk.ui.components.auth
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*

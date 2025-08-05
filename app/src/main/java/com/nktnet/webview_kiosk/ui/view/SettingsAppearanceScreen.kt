@@ -12,18 +12,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.Shape
 import androidx.navigation.NavController
-import com.nktnet.webview_kiosk.config.AddressBarMode
-import com.nktnet.webview_kiosk.config.Theme
+import com.nktnet.webview_kiosk.config.option.AddressBarOption
+import com.nktnet.webview_kiosk.config.option.ThemeOption
 import com.nktnet.webview_kiosk.config.UserSettings
-import com.nktnet.webview_kiosk.ui.components.LabelWithInfo
-import com.nktnet.webview_kiosk.ui.components.SettingLabel
-import com.nktnet.webview_kiosk.ui.components.SettingsActionButtons
+import com.nktnet.webview_kiosk.ui.components.common.LabelWithInfo
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
+import com.nktnet.webview_kiosk.ui.components.setting.SettingsActionButtons
 import androidx.compose.runtime.MutableState
 
 @Composable
 fun SettingsAppearanceScreen(
     navController: NavController,
-    themeState: MutableState<Theme>,
+    themeState: MutableState<ThemeOption>,
 ) {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
@@ -60,16 +60,16 @@ fun SettingsAppearanceScreen(
             infoText = "Select the app theme: System default, Light, or Dark."
         )
         DropdownSelector(
-            options = Theme.entries,
+            options = ThemeOption.entries,
             selected = theme,
             onSelectedChange = { theme = it },
             modifier = Modifier.fillMaxWidth()
         ) { selected ->
             Text(
                 when (selected) {
-                    Theme.SYSTEM  -> "System"
-                    Theme.DARK -> "Dark"
-                    Theme.LIGHT -> "Light"
+                    ThemeOption.SYSTEM  -> "System"
+                    ThemeOption.DARK -> "Dark"
+                    ThemeOption.LIGHT -> "Light"
                 },
                 modifier = Modifier.padding(8.dp)
             )
@@ -83,16 +83,16 @@ fun SettingsAppearanceScreen(
             infoText = "Control the visibility of the browser address bar."
         )
         DropdownSelector(
-            options = AddressBarMode.entries,
+            options = AddressBarOption.entries,
             selected = addressBarMode,
             onSelectedChange = { addressBarMode = it },
             modifier = Modifier.fillMaxWidth()
         ) { selected ->
             Text(
                 when (selected) {
-                    AddressBarMode.HIDDEN -> "Hidden"
-                    AddressBarMode.HIDDEN_WHEN_LOCKED -> "Hidden when locked"
-                    AddressBarMode.SHOWN -> "Shown"
+                    AddressBarOption.HIDDEN -> "Hidden"
+                    AddressBarOption.HIDDEN_WHEN_LOCKED -> "Hidden when locked"
+                    AddressBarOption.SHOWN -> "Shown"
                 },
                 modifier = Modifier.padding(8.dp)
             )
@@ -125,7 +125,7 @@ fun SettingsAppearanceScreen(
 }
 
 @Composable
-fun <T> DropdownSelector(
+private fun <T> DropdownSelector(
     options: List<T>,
     selected: T,
     onSelectedChange: (T) -> Unit,

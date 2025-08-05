@@ -1,4 +1,4 @@
-package com.nktnet.webview_kiosk.ui.components
+package com.nktnet.webview_kiosk.ui.components.setting
 
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -18,13 +18,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.R
-import com.nktnet.webview_kiosk.config.Theme
+import com.nktnet.webview_kiosk.config.option.ThemeOption
 import com.nktnet.webview_kiosk.config.UserSettings
 
 @Composable
 fun SettingsHeaderMenu(
     navController: NavController,
-    themeState: MutableState<Theme>,
+    themeState: MutableState<ThemeOption>,
 ) {
     val tintColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
     var showMenu by remember { mutableStateOf(false) }
@@ -133,7 +133,7 @@ fun SettingsHeaderMenu(
 }
 
 @Composable
-fun ImportSettingsDialog(
+private fun ImportSettingsDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit,
     importText: String,
@@ -212,7 +212,7 @@ fun ImportSettingsDialog(
 }
 
 @Composable
-fun ExportSettingsDialog(
+private fun ExportSettingsDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit,
     exportText: String,

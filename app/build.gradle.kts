@@ -18,6 +18,7 @@ android {
         versionCode = 1
         versionName = "0.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        setProperty("archivesBaseName", "${applicationId}-v${versionCode}-${versionName}")
     }
 
     buildTypes {

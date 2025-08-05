@@ -15,9 +15,9 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.nktnet.webview_kiosk.auth.BiometricPromptManager
 import com.nktnet.webview_kiosk.config.Screen
-import com.nktnet.webview_kiosk.config.Theme
+import com.nktnet.webview_kiosk.config.option.ThemeOption
 import com.nktnet.webview_kiosk.config.UserSettings
-import com.nktnet.webview_kiosk.ui.components.RequireAuthWrapper
+import com.nktnet.webview_kiosk.ui.components.auth.RequireAuthWrapper
 import com.nktnet.webview_kiosk.ui.theme.WebviewKioskTheme
 import com.nktnet.webview_kiosk.ui.view.*
 
@@ -42,9 +42,9 @@ class MainActivity : AppCompatActivity() {
             val themeState = remember { mutableStateOf(userSettings.theme) }
 
             WebviewKioskTheme(darkTheme = when (themeState.value) {
-                Theme.SYSTEM -> isSystemInDarkTheme()
-                Theme.DARK -> true
-                Theme.LIGHT -> false
+                ThemeOption.SYSTEM -> isSystemInDarkTheme()
+                ThemeOption.DARK -> true
+                ThemeOption.LIGHT -> false
             }) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),

@@ -1,4 +1,5 @@
 package com.nktnet.webview_kiosk.utils
+
 import android.webkit.URLUtil.isValidUrl
 
 import java.net.URL

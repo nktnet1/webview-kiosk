@@ -1,4 +1,4 @@
-package com.nktnet.webview_kiosk.ui.components
+package com.nktnet.webview_kiosk.ui.components.setting
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding

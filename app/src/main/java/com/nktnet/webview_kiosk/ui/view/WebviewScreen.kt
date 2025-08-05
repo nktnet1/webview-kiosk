@@ -26,11 +26,11 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
-import com.nktnet.webview_kiosk.config.AddressBarMode
+import com.nktnet.webview_kiosk.config.option.AddressBarOption
 import com.nktnet.webview_kiosk.config.SystemSettings
 import com.nktnet.webview_kiosk.config.UserSettings
 import com.nktnet.webview_kiosk.ui.components.FloatingMenuButton
-import com.nktnet.webview_kiosk.ui.components.LoadingIndicator
+import com.nktnet.webview_kiosk.ui.components.common.LoadingIndicator
 import com.nktnet.webview_kiosk.utils.createCustomWebview
 import com.nktnet.webview_kiosk.utils.generateBlockedPageHtml
 import com.nktnet.webview_kiosk.utils.rememberLockedState
@@ -51,9 +51,9 @@ fun WebviewScreen(navController: NavController) {
     var transitionState by remember { mutableStateOf(TransitionState.PAGE_FINISHED) }
 
     val showAddressBar = when (userSettings.addressBarMode) {
-        AddressBarMode.SHOWN -> true
-        AddressBarMode.HIDDEN -> false
-        AddressBarMode.HIDDEN_WHEN_LOCKED -> !isPinned
+        AddressBarOption.SHOWN -> true
+        AddressBarOption.HIDDEN -> false
+        AddressBarOption.HIDDEN_WHEN_LOCKED -> !isPinned
     }
 
     val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher

@@ -6,11 +6,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.config.UserSettings
-import com.nktnet.webview_kiosk.ui.components.LabelWithInfo
-import com.nktnet.webview_kiosk.ui.components.PatternInput
-import com.nktnet.webview_kiosk.ui.components.SettingLabel
-import com.nktnet.webview_kiosk.ui.components.SettingsActionButtons
-import com.nktnet.webview_kiosk.ui.components.UrlInput
+import com.nktnet.webview_kiosk.ui.components.common.LabelWithInfo
+import com.nktnet.webview_kiosk.ui.components.common.PatternInput
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
+import com.nktnet.webview_kiosk.ui.components.setting.SettingsActionButtons
+import com.nktnet.webview_kiosk.ui.components.common.UrlInput
 import com.nktnet.webview_kiosk.utils.validateMultilineRegex
 import com.nktnet.webview_kiosk.utils.validateUrl
 

@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Base64
 import androidx.core.content.edit
+import com.nktnet.webview_kiosk.config.option.AddressBarOption
+import com.nktnet.webview_kiosk.config.option.ThemeOption
 import org.json.JSONObject
 
 class UserSettings(context: Context) {
@@ -27,12 +29,12 @@ class UserSettings(context: Context) {
             ?: "This site is blocked by WebView Kiosk."
         set(value) = prefs.edit { putString(BLOCKED_MESSAGE, value) }
 
-    var theme: Theme
-        get() = Theme.fromString(prefs.getString(THEME, null))
+    var theme: ThemeOption
+        get() = ThemeOption.fromString(prefs.getString(THEME, null))
         set(value) = prefs.edit { putString(THEME, value.name) }
 
-    var addressBarMode: AddressBarMode
-        get() = AddressBarMode.fromString(prefs.getString(ADDRESS_BAR_MODE, null))
+    var addressBarMode: AddressBarOption
+        get() = AddressBarOption.fromString(prefs.getString(ADDRESS_BAR_MODE, null))
         set(value) = prefs.edit { putString(ADDRESS_BAR_MODE, value.name) }
 
     fun exportToBase64(): String {
@@ -54,8 +56,8 @@ class UserSettings(context: Context) {
             websiteBlacklist = json.optString(WEBSITE_BLACKLIST, websiteBlacklist)
             websiteWhitelist = json.optString(WEBSITE_WHITELIST, websiteWhitelist)
             blockedMessage = json.optString(BLOCKED_MESSAGE, blockedMessage)
-            theme = Theme.fromString(json.optString(THEME, theme.name))
-            addressBarMode = AddressBarMode.fromString(json.optString(ADDRESS_BAR_MODE, addressBarMode.name))
+            theme = ThemeOption.fromString(json.optString(THEME, theme.name))
+            addressBarMode = AddressBarOption.fromString(json.optString(ADDRESS_BAR_MODE, addressBarMode.name))
             true
         } catch (_: Exception) {
             false
@@ -72,24 +74,4 @@ class UserSettings(context: Context) {
         private const val ADDRESS_BAR_MODE = "appearance.address_bar_mode"
     }
 }
-enum class AddressBarMode {
-    HIDDEN,
-    HIDDEN_WHEN_LOCKED,
-    SHOWN;
-    companion object {
-        fun fromString(value: String?): AddressBarMode {
-            return entries.find { it.name == value } ?: HIDDEN_WHEN_LOCKED
-        }
-    }
-}
 
-enum class Theme {
-    SYSTEM,
-    DARK,
-    LIGHT;
-    companion object {
-        fun fromString(value: String?): Theme {
-            return entries.find { it.name == value } ?: SYSTEM
-        }
-    }
-}
