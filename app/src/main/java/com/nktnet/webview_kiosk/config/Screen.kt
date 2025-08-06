@@ -4,4 +4,5 @@ sealed class Screen(val route: String) {
     object Settings : Screen("settings")
     object SettingsAppearance : Screen("settings/appearance")
     object SettingsUrlControl : Screen("settings/url-control")
+    object SettingsDevice : Screen("settings/device")
 }

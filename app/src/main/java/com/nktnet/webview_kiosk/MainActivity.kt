@@ -1,5 +1,6 @@
 package com.nktnet.webview_kiosk
 
+import KeepScreenOnOption
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -38,8 +39,14 @@ class MainActivity : AppCompatActivity() {
         val userSettings = UserSettings(this)
 
         setContent {
-            // Hold current theme in a Compose mutable state
             val themeState = remember { mutableStateOf(userSettings.theme) }
+            val keepScreenOnState = remember { mutableStateOf(userSettings.keepScreenOn) }
+
+            LaunchedEffect(keepScreenOnState.value) {
+                userSettings.keepScreenOn = keepScreenOnState.value
+            }
+
+            KeepScreenOnOption(keepOn = keepScreenOnState.value)
 
             WebviewKioskTheme(darkTheme = when (themeState.value) {
                 ThemeOption.SYSTEM -> isSystemInDarkTheme()
@@ -81,6 +88,11 @@ class MainActivity : AppCompatActivity() {
                             composable(Screen.SettingsUrlControl.route) {
                                 RequireAuthWrapper(promptManager) {
                                     SettingsUrlControlScreen(navController)
+                                }
+                            }
+                            composable(Screen.SettingsDevice.route) {
+                                RequireAuthWrapper(promptManager) {
+                                    SettingsDeviceScreen(navController)
                                 }
                             }
                         }

@@ -32,6 +32,11 @@ fun SettingsListScreen(
             "Home URL, blacklist, whitelist",
             Screen.SettingsUrlControl.route
         ),
+        Triple(
+            "Device",
+            "Keep screen on",
+            Screen.SettingsDevice.route
+        ),
     )
 
     Column(
