@@ -3,9 +3,10 @@ import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 import { BookIcon, FileTextIcon, ShieldIcon } from "lucide-react";
 import AppIcon from "@/app/icon.png";
 import Image from "next/image";
+import { GITHUB_URL } from "@/config/links";
 
 export const baseOptions: BaseLayoutProps = {
-  githubUrl: "https://github.com/nktnet1/webview-kiosk",
+  githubUrl: GITHUB_URL,
   nav: {
     title: (
       <>
