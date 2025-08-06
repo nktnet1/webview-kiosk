@@ -25,7 +25,7 @@ import com.nktnet.webview_kiosk.ui.components.AddressBar
 import com.nktnet.webview_kiosk.ui.components.FloatingMenuButton
 import com.nktnet.webview_kiosk.ui.components.common.LoadingIndicator
 import com.nktnet.webview_kiosk.utils.createCustomWebview
-import com.nktnet.webview_kiosk.utils.generateBlockedPageHtml
+import com.nktnet.webview_kiosk.utils.customLoadUrl
 import com.nktnet.webview_kiosk.utils.rememberLockedState
 
 @Composable
@@ -36,10 +36,23 @@ fun WebviewScreen(navController: NavController) {
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
 
-    val (isBlocked, blockedPageHtml) = rememberBlockLogic(userSettings)
     val isPinned by rememberLockedState()
 
     var currentUrl by remember { mutableStateOf(systemSettings.lastUrl.ifEmpty { userSettings.homeUrl }) }
+    var blockedMessage by remember { mutableStateOf(userSettings.blockedMessage) }
+
+    val blacklistRegexes = remember(userSettings.websiteBlacklist) {
+        userSettings.websiteBlacklist.lines()
+            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+            .mapNotNull { runCatching { Regex(it) }.getOrNull() }
+    }
+
+    val whitelistRegexes = remember(userSettings.websiteWhitelist) {
+        userSettings.websiteWhitelist.lines()
+            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+            .mapNotNull { runCatching { Regex(it) }.getOrNull() }
+    }
+
     var urlBarText by remember { mutableStateOf(TextFieldValue(currentUrl)) }
     var transitionState by remember { mutableStateOf(TransitionState.PAGE_FINISHED) }
 
@@ -55,9 +68,13 @@ fun WebviewScreen(navController: NavController) {
 
     val webView = createCustomWebview(
         context = context,
+
         initUrl = currentUrl,
-        isBlocked = isBlocked,
-        showBlockedPage = { url -> blockedPageHtml(url) },
+
+        blockedMessage = blockedMessage,
+        blacklistRegexes = blacklistRegexes,
+        whitelistRegexes = whitelistRegexes,
+
         onPageStarted = { transitionState = TransitionState.PAGE_STARTED },
         onPageFinished = { url ->
             if (!hasFocus) {
@@ -71,6 +88,9 @@ fun WebviewScreen(navController: NavController) {
         }
     )
 
+    fun WebView.customLoadUrlWithDefaults(url: String) =
+        customLoadUrl(url, blacklistRegexes, whitelistRegexes, blockedMessage)
+
     HandleBackPress(webView, onBackPressedDispatcher)
 
     val triggerLoad: (String) -> Unit = { input ->
@@ -78,7 +98,7 @@ fun WebviewScreen(navController: NavController) {
         val finalUrl = resolveUrlOrSearch(input.trim())
         transitionState = TransitionState.TRANSITIONING
         currentUrl = finalUrl
-        webView.loadUrl(finalUrl)
+        webView.customLoadUrlWithDefaults(finalUrl)
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -111,7 +131,7 @@ fun WebviewScreen(navController: NavController) {
             if (!isPinned) {
                 ShowFloatingMenu(
                     navController = navController,
-                    onHomeClick = { webView.loadUrl(userSettings.homeUrl) },
+                    onHomeClick = { webView.customLoadUrlWithDefaults(userSettings.homeUrl) },
                     onLockClick = {
                         try {
                             activity?.startLockTask()
@@ -147,32 +167,6 @@ private fun HandleBackPress(
         dispatcher?.addCallback(callback)
         onDispose { callback.remove() }
     }
-}
-
-@Composable
-private fun rememberBlockLogic(
-    userSettings: UserSettings
-): Pair<(String) -> Boolean, (String) -> String> {
-    val blacklistRegexes = remember(userSettings.websiteBlacklist) {
-        userSettings.websiteBlacklist.lines()
-            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
-            .mapNotNull { runCatching { Regex(it) }.getOrNull() }
-    }
-
-    val whitelistRegexes = remember(userSettings.websiteWhitelist) {
-        userSettings.websiteWhitelist.lines()
-            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
-            .mapNotNull { runCatching { Regex(it) }.getOrNull() }
-    }
-
-    val blockedMessage = userSettings.blockedMessage
-
-    val isBlocked: (String) -> Boolean = { url ->
-        if (whitelistRegexes.any { it.containsMatchIn(url) }) false
-        else blacklistRegexes.any { it.containsMatchIn(url) }
-    }
-
-    return Pair(isBlocked) { url -> generateBlockedPageHtml(url, blockedMessage) }
 }
 
 @Composable
