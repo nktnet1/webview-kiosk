@@ -117,7 +117,7 @@ fun WebviewScreen(navController: NavController) {
         Box(modifier = Modifier.weight(1f)) {
             AndroidView(factory = { webView }, modifier = Modifier.fillMaxSize())
 
-            if (transitionState != TransitionState.PAGE_FINISHED) {
+            if (transitionState == TransitionState.TRANSITIONING) {
                 Box(
                     Modifier
                         .fillMaxSize()
