@@ -9,29 +9,19 @@ import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.config.option.AddressBarOption
 import com.nktnet.webview_kiosk.config.SystemSettings
 import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.ui.components.AddressBar
 import com.nktnet.webview_kiosk.ui.components.FloatingMenuButton
 import com.nktnet.webview_kiosk.ui.components.common.LoadingIndicator
 import com.nktnet.webview_kiosk.utils.createCustomWebview
@@ -75,7 +65,6 @@ fun WebviewScreen(navController: NavController) {
                     text = url,
                 )
             }
-
             currentUrl = url
             systemSettings.lastUrl = url
             transitionState = TransitionState.PAGE_FINISHED
@@ -85,6 +74,7 @@ fun WebviewScreen(navController: NavController) {
     HandleBackPress(webView, onBackPressedDispatcher)
 
     val triggerLoad: (String) -> Unit = { input ->
+        webView.requestFocus()
         val finalUrl = resolveUrlOrSearch(input.trim())
         transitionState = TransitionState.TRANSITIONING
         currentUrl = finalUrl
@@ -93,47 +83,15 @@ fun WebviewScreen(navController: NavController) {
 
     Column(Modifier.fillMaxSize()) {
         if (showAddressBar) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp)
-            ) {
-                OutlinedTextField(
-                    value = urlBarText,
-                    onValueChange = { urlBarText = it },
-                    singleLine = true,
-                    enabled = transitionState == TransitionState.PAGE_FINISHED,
-                    modifier = Modifier
-                        .focusRequester(focusRequester)
-                        .onFocusChanged { focusState ->
-                            hasFocus = focusState.isFocused
-                        }
-                        .fillMaxWidth(),
-                    shape = RoundedCornerShape(percent = 50),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                    ),
-                    keyboardOptions = KeyboardOptions.Default.copy(
-                        imeAction = ImeAction.Go
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onGo = { triggerLoad(urlBarText.text) }
-                    ),
-                    textStyle = LocalTextStyle.current,
-                    trailingIcon = {
-                        IconButton(onClick = { triggerLoad(urlBarText.text) }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Go")
-                        }
-                    }
-                )
-            }
-
-            LaunchedEffect(hasFocus) {
-                if (hasFocus) {
-                    urlBarText = urlBarText.copy(selection = TextRange(0, urlBarText.text.length))
-                }
-            }
+            AddressBar(
+                urlBarText = urlBarText,
+                onUrlBarTextChange = { urlBarText = it },
+                hasFocus = hasFocus,
+                onFocusChanged = { focusState -> hasFocus = focusState.isFocused },
+                focusRequester = focusRequester,
+                triggerLoad = triggerLoad,
+                webView = webView
+            )
         }
 
         Box(modifier = Modifier.weight(1f)) {
