@@ -2,6 +2,7 @@ package com.nktnet.webview_kiosk.ui.view
 
 import android.app.Activity
 import android.net.Uri
+import android.os.Build
 import android.webkit.URLUtil
 import android.webkit.WebView
 import androidx.activity.OnBackPressedCallback
@@ -18,9 +19,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
+import androidx.webkit.WebSettingsCompat
+import androidx.webkit.WebViewFeature
 import com.nktnet.webview_kiosk.config.option.AddressBarOption
 import com.nktnet.webview_kiosk.config.SystemSettings
 import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.option.ThemeOption
 import com.nktnet.webview_kiosk.ui.components.AddressBar
 import com.nktnet.webview_kiosk.ui.components.FloatingMenuButton
 import com.nktnet.webview_kiosk.ui.components.common.LoadingIndicator
@@ -69,8 +73,6 @@ fun WebviewScreen(navController: NavController) {
     val webView = createCustomWebview(
         context = context,
 
-        initUrl = currentUrl,
-
         blockedMessage = blockedMessage,
         blacklistRegexes = blacklistRegexes,
         whitelistRegexes = whitelistRegexes,
@@ -115,8 +117,26 @@ fun WebviewScreen(navController: NavController) {
         }
 
         Box(modifier = Modifier.weight(1f)) {
-            AndroidView(factory = { webView }, modifier = Modifier.fillMaxSize())
-
+            AndroidView(
+                factory = {
+                    webView.apply {
+                        if(Build.VERSION.SDK_INT >= 33 && WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
+                            settings.isAlgorithmicDarkeningAllowed = (userSettings.theme == ThemeOption.DARK)
+                        } else if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
+                            WebSettingsCompat.setForceDark(
+                                settings,
+                                when (userSettings.theme) {
+                                    ThemeOption.DARK -> WebSettingsCompat.FORCE_DARK_ON
+                                    ThemeOption.LIGHT -> WebSettingsCompat.FORCE_DARK_OFF
+                                    ThemeOption.SYSTEM -> WebSettingsCompat.FORCE_DARK_AUTO
+                                }
+                            )
+                        }
+                        customLoadUrlWithDefaults(currentUrl)
+                    }
+                },
+                modifier = Modifier.fillMaxSize()
+            )
             if (transitionState == TransitionState.TRANSITIONING) {
                 Box(
                     Modifier

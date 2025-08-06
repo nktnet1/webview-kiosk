@@ -14,7 +14,6 @@ import androidx.compose.runtime.*
 @Composable
 fun createCustomWebview(
     context: Context,
-    initUrl: String,
 
     blockedMessage: String,
     blacklistRegexes: List<Regex>,
@@ -58,13 +57,6 @@ fun createCustomWebview(
                     url?.let { onPageFinished(it) }
                 }
             }
-
-            customLoadUrl(
-                url = initUrl,
-                blacklistRegexes = blacklistRegexes,
-                whitelistRegexes = whitelistRegexes,
-                blockedMessage = blockedMessage
-            )
         }
     }
 
