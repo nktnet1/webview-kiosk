@@ -5,6 +5,7 @@ import AppIcon from "@/app/icon.png";
 import Image from "next/image";
 
 export const baseOptions: BaseLayoutProps = {
+  githubUrl: "https://github.com/nktnet1/webview-kiosk",
   nav: {
     title: (
       <>
