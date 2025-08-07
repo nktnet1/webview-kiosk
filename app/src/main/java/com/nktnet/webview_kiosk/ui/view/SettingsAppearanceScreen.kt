@@ -29,7 +29,7 @@ fun SettingsAppearanceScreen(
     val userSettings = UserSettings(context)
 
     var blockedMessage by remember { mutableStateOf(userSettings.blockedMessage) }
-    var theme by remember { mutableStateOf(themeState.value) }  // initialize from themeState
+    var theme by remember { mutableStateOf(themeState.value) }
     var addressBarMode by remember { mutableStateOf(userSettings.addressBarMode) }
 
     val saveEnabled = true
@@ -43,9 +43,11 @@ fun SettingsAppearanceScreen(
 
     fun saveSettings() {
         userSettings.blockedMessage = blockedMessage.trim()
-        userSettings.theme = theme
         userSettings.addressBarMode = addressBarMode
-        themeState.value = theme  // update shared theme state to trigger recomposition
+
+        userSettings.theme = theme
+        themeState.value = theme
+
         showToast("Settings saved successfully.")
     }
 

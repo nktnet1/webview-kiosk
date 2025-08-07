@@ -15,11 +15,12 @@ import com.nktnet.webview_kiosk.ui.components.setting.SettingsActionButtons
 @Composable
 fun SettingsDeviceScreen(
     navController: NavController,
+    keepScreenOnState: MutableState<Boolean>,
 ) {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
 
-    var keepScreenOn by remember { mutableStateOf(userSettings.keepScreenOn) }
+    var keepScreenOn by remember { mutableStateOf(keepScreenOnState) }
     val saveEnabled = true
 
     val toastRef = remember { mutableStateOf<android.widget.Toast?>(null) }
@@ -30,7 +31,8 @@ fun SettingsDeviceScreen(
     }
 
     fun saveSettings() {
-        userSettings.keepScreenOn = keepScreenOn
+        userSettings.keepScreenOn = keepScreenOn.value
+        keepScreenOnState.value = keepScreenOn.value
         showToast("Settings saved successfully.")
     }
 
@@ -46,8 +48,8 @@ fun SettingsDeviceScreen(
         ) {
             Text(text = "Keep Screen On", style = MaterialTheme.typography.bodyLarge)
             Switch(
-                checked = keepScreenOn,
-                onCheckedChange = { keepScreenOn = it }
+                checked = keepScreenOn.value,
+                onCheckedChange = { keepScreenOn.value = it }
             )
         }
 

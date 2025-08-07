@@ -42,10 +42,6 @@ class MainActivity : AppCompatActivity() {
             val themeState = remember { mutableStateOf(userSettings.theme) }
             val keepScreenOnState = remember { mutableStateOf(userSettings.keepScreenOn) }
 
-            LaunchedEffect(keepScreenOnState.value) {
-                userSettings.keepScreenOn = keepScreenOnState.value
-            }
-
             KeepScreenOnOption(keepOn = keepScreenOnState.value)
 
             WebviewKioskTheme(darkTheme = when (themeState.value) {
@@ -59,7 +55,6 @@ class MainActivity : AppCompatActivity() {
                 ) {
                     val navController = rememberNavController()
 
-                    // Pass themeState down to settings screen to allow theme updates
                     NavHost(navController, startDestination = Screen.WebView.route) {
                         composable(Screen.WebView.route) {
                             WebviewScreen(navController)
@@ -92,7 +87,10 @@ class MainActivity : AppCompatActivity() {
                             }
                             composable(Screen.SettingsDevice.route) {
                                 RequireAuthWrapper(promptManager) {
-                                    SettingsDeviceScreen(navController)
+                                    SettingsDeviceScreen(
+                                        navController,
+                                        keepScreenOnState
+                                    )
                                 }
                             }
                         }
