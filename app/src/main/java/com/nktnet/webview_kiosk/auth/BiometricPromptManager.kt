@@ -1,5 +1,6 @@
 package com.nktnet.webview_kiosk.auth
 
+import android.app.KeyguardManager
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
@@ -30,6 +31,12 @@ class BiometricPromptManager(
         title: String,
         description: String
     ) {
+        val keyguardManager = activity.getSystemService(KeyguardManager::class.java)
+        if (keyguardManager == null || !keyguardManager.isDeviceSecure) {
+            resultChannel.trySend(BiometricResult.AuthenticationNotSet)
+            return
+        }
+
         val manager = BiometricManager.from(activity)
         val authenticators = if (Build.VERSION.SDK_INT >= 30) {
             BIOMETRIC_STRONG or DEVICE_CREDENTIAL
