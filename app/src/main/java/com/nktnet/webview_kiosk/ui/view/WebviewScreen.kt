@@ -2,7 +2,6 @@ package com.nktnet.webview_kiosk.ui.view
 
 import android.app.Activity
 import android.net.Uri
-import android.os.Build
 import android.webkit.URLUtil
 import android.webkit.WebView
 import androidx.activity.OnBackPressedCallback
@@ -19,12 +18,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
-import androidx.webkit.WebSettingsCompat
-import androidx.webkit.WebViewFeature
 import com.nktnet.webview_kiosk.config.option.AddressBarOption
 import com.nktnet.webview_kiosk.config.SystemSettings
 import com.nktnet.webview_kiosk.config.UserSettings
-import com.nktnet.webview_kiosk.config.option.ThemeOption
 import com.nktnet.webview_kiosk.ui.components.AddressBar
 import com.nktnet.webview_kiosk.ui.components.FloatingMenuButton
 import com.nktnet.webview_kiosk.ui.components.common.LoadingIndicator
@@ -44,6 +40,7 @@ fun WebviewScreen(navController: NavController) {
 
     var currentUrl by remember { mutableStateOf(systemSettings.lastUrl.ifEmpty { userSettings.homeUrl }) }
     var blockedMessage by remember { mutableStateOf(userSettings.blockedMessage) }
+    var theme by remember { mutableStateOf(userSettings.theme) }
 
     val blacklistRegexes = remember(userSettings.websiteBlacklist) {
         userSettings.websiteBlacklist.lines()
@@ -72,6 +69,7 @@ fun WebviewScreen(navController: NavController) {
 
     val webView = createCustomWebview(
         context = context,
+        theme = theme,
 
         blockedMessage = blockedMessage,
         blacklistRegexes = blacklistRegexes,
@@ -120,18 +118,6 @@ fun WebviewScreen(navController: NavController) {
             AndroidView(
                 factory = {
                     webView.apply {
-                        if(Build.VERSION.SDK_INT >= 33 && WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
-                            settings.isAlgorithmicDarkeningAllowed = (userSettings.theme == ThemeOption.DARK)
-                        } else if (WebViewFeature.isFeatureSupported(WebViewFeature.FORCE_DARK)) {
-                            WebSettingsCompat.setForceDark(
-                                settings,
-                                when (userSettings.theme) {
-                                    ThemeOption.DARK -> WebSettingsCompat.FORCE_DARK_ON
-                                    ThemeOption.LIGHT -> WebSettingsCompat.FORCE_DARK_OFF
-                                    ThemeOption.SYSTEM -> WebSettingsCompat.FORCE_DARK_AUTO
-                                }
-                            )
-                        }
                         customLoadUrlWithDefaults(currentUrl)
                     }
                 },
@@ -211,3 +197,4 @@ private fun resolveUrlOrSearch(input: String): String {
         else -> "https://www.google.com/search?q=${Uri.encode(input)}"
     }
 }
+

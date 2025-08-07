@@ -9,11 +9,13 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.runtime.*
+import com.nktnet.webview_kiosk.config.option.ThemeOption
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun createCustomWebview(
     context: Context,
+    theme: ThemeOption,
 
     blockedMessage: String,
     blacklistRegexes: List<Regex>,
@@ -49,6 +51,8 @@ fun createCustomWebview(
                 }
 
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                    val js = getPrefersColorSchemeOverrideScript(theme)
+                    evaluateJavascript(js, null)
                     super.onPageStarted(view, url, favicon)
                     onPageStarted()
                 }
@@ -136,5 +140,49 @@ fun generateBlockedPageHtml(url: String, message: String): String {
             <p>${Html.escapeHtml(url)}</p>
           </body>
         </html>
+    """.trimIndent()
+}
+
+private fun getPrefersColorSchemeOverrideScript(theme: ThemeOption): String {
+    if (theme == ThemeOption.SYSTEM) return ""
+
+    val mediaValue = when (theme) {
+        ThemeOption.DARK -> "dark"
+        ThemeOption.LIGHT -> "light"
+        else -> error("Unhandled theme: $theme")
+    }
+
+    return """
+        (function() {
+            window.matchMedia = (function(origMatchMedia) {
+                return function(query) {
+                    if (query === '(prefers-color-scheme: dark)') {
+                        return {
+                            matches: ${mediaValue == "dark"},
+                            media: query,
+                            addListener: function() {},
+                            removeListener: function() {},
+                            onchange: null,
+                            addEventListener: function() {},
+                            removeEventListener: function() {},
+                            dispatchEvent: function() { return false; }
+                        };
+                    }
+                    if (query === '(prefers-color-scheme: light)') {
+                        return {
+                            matches: ${mediaValue == "light"},
+                            media: query,
+                            addListener: function() {},
+                            removeListener: function() {},
+                            onchange: null,
+                            addEventListener: function() {},
+                            removeEventListener: function() {},
+                            dispatchEvent: function() { return false; }
+                        };
+                    }
+                    return origMatchMedia.call(window, query);
+                };
+            })(window.matchMedia);
+        })();
     """.trimIndent()
 }
