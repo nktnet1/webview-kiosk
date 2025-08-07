@@ -1,14 +1,17 @@
+package com.nktnet.webview_kiosk.ui.components
+
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 
 @Composable
 fun KeepScreenOnOption(keepOn: Boolean) {
     val view = LocalView.current
-    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     DisposableEffect(keepOn, lifecycleOwner) {
         val window = (view.context as? ComponentActivity)?.window

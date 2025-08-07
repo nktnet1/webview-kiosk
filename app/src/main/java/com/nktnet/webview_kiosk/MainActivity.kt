@@ -1,6 +1,6 @@
 package com.nktnet.webview_kiosk
 
-import KeepScreenOnOption
+import com.nktnet.webview_kiosk.ui.components.KeepScreenOnOption
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
