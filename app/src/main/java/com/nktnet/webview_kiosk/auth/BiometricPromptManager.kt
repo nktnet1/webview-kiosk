@@ -8,17 +8,18 @@ import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricPrompt.PromptInfo
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class BiometricPromptManager(
     private val activity: AppCompatActivity
 ) {
-    private val resultChannel = Channel<BiometricResult>()
-    val promptResults = resultChannel.receiveAsFlow()
+    private val _resultState = MutableStateFlow<BiometricResult?>(null)
+    val promptResults: StateFlow<BiometricResult?> = _resultState.asStateFlow()
 
     private var lastAuthTime = 0L
-    private val authTimeoutMs = 2 * 60 * 1000L // 2 minutes
+    private val authTimeoutMs = 2 * 60 * 1000L
 
     val isAuthenticated: Boolean
         get() = System.currentTimeMillis() - lastAuthTime < authTimeoutMs
@@ -33,7 +34,7 @@ class BiometricPromptManager(
     ) {
         val keyguardManager = activity.getSystemService(KeyguardManager::class.java)
         if (keyguardManager == null || !keyguardManager.isDeviceSecure) {
-            resultChannel.trySend(BiometricResult.AuthenticationNotSet)
+            _resultState.value = BiometricResult.AuthenticationNotSet
             return
         }
 
@@ -53,15 +54,15 @@ class BiometricPromptManager(
 
         when (manager.canAuthenticate(authenticators)) {
             BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> {
-                resultChannel.trySend(BiometricResult.HardwareUnavailable)
+                _resultState.value = BiometricResult.HardwareUnavailable
                 return
             }
             BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> {
-                resultChannel.trySend(BiometricResult.FeatureUnavailable)
+                _resultState.value = BiometricResult.FeatureUnavailable
                 return
             }
             BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
-                resultChannel.trySend(BiometricResult.AuthenticationNotSet)
+                _resultState.value = BiometricResult.AuthenticationNotSet
                 return
             }
             else -> Unit
@@ -74,19 +75,19 @@ class BiometricPromptManager(
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
-                    resultChannel.trySend(BiometricResult.AuthenticationError(errString.toString()))
+                    _resultState.value = BiometricResult.AuthenticationError(errString.toString())
                     resetAuthentication()
                 }
 
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
-                    resultChannel.trySend(BiometricResult.AuthenticationSuccess)
+                    _resultState.value = BiometricResult.AuthenticationSuccess
                     lastAuthTime = System.currentTimeMillis()
                 }
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
-                    resultChannel.trySend(BiometricResult.AuthenticationFailed)
+                    _resultState.value = BiometricResult.AuthenticationFailed
                     resetAuthentication()
                 }
             }
