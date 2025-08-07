@@ -36,7 +36,7 @@ fun SettingsDeviceScreen(
         showToast("Settings saved successfully.")
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(modifier = Modifier.fillMaxSize()) {
         SettingLabel(navController = navController, label = "Device")
 
         Spacer(modifier = Modifier.height(16.dp))
