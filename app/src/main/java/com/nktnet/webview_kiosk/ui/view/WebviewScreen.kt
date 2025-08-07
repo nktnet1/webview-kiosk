@@ -94,9 +94,9 @@ fun WebviewScreen(navController: NavController) {
     HandleBackPress(webView, onBackPressedDispatcher)
 
     val triggerLoad: (String) -> Unit = { input ->
+        transitionState = TransitionState.TRANSITIONING
         webView.requestFocus()
         val finalUrl = resolveUrlOrSearch(input.trim())
-        transitionState = TransitionState.TRANSITIONING
         currentUrl = finalUrl
         webView.customLoadUrlWithDefaults(finalUrl)
     }
