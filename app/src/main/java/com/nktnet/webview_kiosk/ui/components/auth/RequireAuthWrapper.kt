@@ -41,7 +41,7 @@ private fun RequireAuthentication(
     val biometricResult by promptManager.promptResults.collectAsState(initial = null)
 
     LaunchedEffect(Unit) {
-        if (!promptManager.isAuthenticated) {
+        if (!promptManager.checkAuthAndRefreshSession()) {
             promptManager.showBiometricPrompt(
                 title = "Authentication Required",
                 description = "Please authenticate to proceed"
@@ -50,7 +50,8 @@ private fun RequireAuthentication(
     }
 
     when {
-        promptManager.isAuthenticated
+        promptManager.checkAuthAndRefreshSession()
+                || biometricResult is BiometricPromptManager.BiometricResult.AuthenticationSuccess
                 || biometricResult is BiometricPromptManager.BiometricResult.AuthenticationNotSet
             -> onAuthenticated()
         biometricResult == null -> LoadingIndicator("Waiting for authentication...")

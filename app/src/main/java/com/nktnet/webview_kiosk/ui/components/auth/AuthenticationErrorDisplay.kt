@@ -32,7 +32,7 @@ fun AuthenticationErrorDisplay(
                     "No biometric or credentials enrolled"
                 BiometricPromptManager.BiometricResult.AuthenticationFailed ->
                     "Authentication failed"
-                else -> "Authentication failed"
+                else -> errorResult.toString()
             },
             color = MaterialTheme.colorScheme.error,
             style = MaterialTheme.typography.bodyMedium,

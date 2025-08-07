@@ -19,10 +19,16 @@ class BiometricPromptManager(
     val promptResults: StateFlow<BiometricResult?> = _resultState.asStateFlow()
 
     private var lastAuthTime = 0L
-    private val authTimeoutMs = 2 * 60 * 1000L
+    private val authTimeoutMs = 5 * 60 * 1000L
 
-    val isAuthenticated: Boolean
-        get() = System.currentTimeMillis() - lastAuthTime < authTimeoutMs
+    fun checkAuthAndRefreshSession(): Boolean {
+        val now = System.currentTimeMillis()
+        val isValid = now - lastAuthTime < authTimeoutMs
+        if (isValid) {
+            lastAuthTime = now
+        }
+        return isValid
+    }
 
     fun resetAuthentication() {
         lastAuthTime = 0
