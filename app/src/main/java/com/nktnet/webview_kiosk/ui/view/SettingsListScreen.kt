@@ -30,12 +30,12 @@ fun SettingsListScreen(
 
         Triple(
             "Web Browsing",
-            "Refresh, navigate back, navigate forward",
+            "Refresh, navigation, search provider",
             Screen.SettingsWebBrowsing.route
         ),
         Triple(
             "Appearance",
-            "Theme, UI elements",
+            "Theme, address bar, custom blocked message",
             Screen.SettingsAppearance.route
         ),
 

@@ -27,12 +27,13 @@ import androidx.compose.ui.unit.dp
 fun LabelWithInfo(
     label: String,
     infoTitle: String,
-    infoText: String
+    infoText: String,
+    modifier: Modifier = Modifier,
 ) {
     var showInfo by remember { mutableStateOf(false) }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.padding(top=16.dp, bottom=4.dp)
+        modifier = modifier
     ) {
         Text(
             label,

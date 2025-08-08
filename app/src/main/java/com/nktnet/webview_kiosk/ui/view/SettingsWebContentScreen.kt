@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.config.UserSettings
 import com.nktnet.webview_kiosk.ui.components.common.LabelWithInfo
@@ -51,9 +52,10 @@ fun SettingsWebContentScreen(
         SettingLabel(navController = navController, label = "Web Content")
 
         LabelWithInfo(
+            modifier = Modifier.padding(top=16.dp, bottom=4.dp),
             label = "Home URL",
             infoTitle = "Home URL",
-            infoText = "The URL that can be reset to using the floating icon button."
+            infoText = "The URL that can be reset to using the floating icon button.",
         )
         UrlInput(
             value = homeUrl,
@@ -65,6 +67,7 @@ fun SettingsWebContentScreen(
         )
 
         LabelWithInfo(
+            modifier = Modifier.padding(top=16.dp, bottom=4.dp),
             label = "Blacklist Regex",
             infoTitle = "Blacklist",
             infoText = """
@@ -92,6 +95,7 @@ fun SettingsWebContentScreen(
         )
 
         LabelWithInfo(
+            modifier = Modifier.padding(top=16.dp, bottom=4.dp),
             label = "Whitelist Regex",
             infoTitle = "Whitelist",
             infoText = """

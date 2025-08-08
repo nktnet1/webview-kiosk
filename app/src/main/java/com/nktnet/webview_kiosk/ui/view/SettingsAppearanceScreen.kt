@@ -57,6 +57,7 @@ fun SettingsAppearanceScreen(
         SettingLabel(navController = navController, label = "Appearance")
 
         LabelWithInfo(
+            modifier = Modifier.padding(top=16.dp, bottom=4.dp),
             label = "Theme",
             infoTitle = "Theme",
             infoText = "Select the app theme: System default, Light, or Dark."
@@ -80,6 +81,7 @@ fun SettingsAppearanceScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         LabelWithInfo(
+            modifier = Modifier.padding(top=16.dp, bottom=4.dp),
             label = "Address Bar Mode",
             infoTitle = "Address Bar",
             infoText = "Control the visibility of the browser address bar."
@@ -103,6 +105,7 @@ fun SettingsAppearanceScreen(
         Spacer(modifier = Modifier.height(24.dp))
 
         LabelWithInfo(
+            modifier = Modifier.padding(top=16.dp, bottom=4.dp),
             label = "Blocked Message",
             infoTitle = "Blocked Message",
             infoText = "Custom message shown on blocked pages. Can be left empty."

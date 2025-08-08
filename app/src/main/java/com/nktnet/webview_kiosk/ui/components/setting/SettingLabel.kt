@@ -19,17 +19,18 @@ fun SettingLabel(navController: NavController, label: String, showBackIcon: Bool
     ) {
         Box(
             modifier = Modifier
-                .height(64.dp)
+                .height(100.dp)
                 .padding(start = 0.dp)
         ) {
             if (showBackIcon) {
                 IconButton(
                     onClick = { navController.popBackStack() },
-                    modifier = Modifier.offset(x = (-2).dp).size(32.dp)
+                    modifier = Modifier.offset(x = (-16).dp).size(64.dp)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back"
+                        contentDescription = "Back",
+                        modifier = Modifier.size(32.dp)
                     )
                 }
             }

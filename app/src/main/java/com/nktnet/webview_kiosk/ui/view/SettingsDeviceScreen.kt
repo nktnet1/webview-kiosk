@@ -9,6 +9,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.ui.components.common.LabelWithInfo
 import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
 import com.nktnet.webview_kiosk.ui.components.setting.SettingsActionButtons
 
@@ -46,7 +47,11 @@ fun SettingsDeviceScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "Keep Screen On", style = MaterialTheme.typography.bodyLarge)
+            LabelWithInfo(
+                label = "Keep Screen On",
+                infoTitle = "Keep Screen On",
+                infoText = "Enable this option to keep your device awake (no screen timeout)"
+            )
             Switch(
                 checked = keepScreenOn.value,
                 onCheckedChange = { keepScreenOn.value = it }
