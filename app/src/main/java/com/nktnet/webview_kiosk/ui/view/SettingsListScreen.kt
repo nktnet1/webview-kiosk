@@ -23,15 +23,22 @@ fun SettingsListScreen(
 ) {
     val settingsItems = listOf(
         Triple(
+            "Web Content",
+            "Home URL, blacklist, whitelist",
+            Screen.SettingsWebContent.route
+        ),
+
+        Triple(
+            "Web Browsing",
+            "Refresh, navigate back, navigate forward",
+            Screen.SettingsWebBrowsing.route
+        ),
+        Triple(
             "Appearance",
             "Theme, UI elements",
             Screen.SettingsAppearance.route
         ),
-        Triple(
-            "URL Control",
-            "Home URL, blacklist, whitelist",
-            Screen.SettingsUrlControl.route
-        ),
+
         Triple(
             "Device",
             "Keep screen on",

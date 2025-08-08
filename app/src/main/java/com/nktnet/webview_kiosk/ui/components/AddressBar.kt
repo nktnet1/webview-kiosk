@@ -37,10 +37,12 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import com.nktnet.webview_kiosk.config.UserSettings
 
 @Composable
 fun AddressBar(
@@ -52,7 +54,13 @@ fun AddressBar(
     triggerLoad: (String) -> Unit,
     webView: WebView,
 ) {
+    val context = LocalContext.current
+    val userSettings = remember { UserSettings(context) }
+    var urlTextState by remember { mutableStateOf(urlBarText.text) }
+
     var menuExpanded by remember { mutableStateOf(false) }
+
+    val showMenu = userSettings.allowBackwardsNavigation || userSettings.allowRefresh
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -62,7 +70,10 @@ fun AddressBar(
     ) {
         OutlinedTextField(
             value = urlBarText,
-            onValueChange = onUrlBarTextChange,
+            onValueChange = {
+                onUrlBarTextChange(it)
+                urlTextState = it.text
+            },
             singleLine = true,
             modifier = Modifier
                 .weight(1f)
@@ -77,66 +88,76 @@ fun AddressBar(
                 imeAction = ImeAction.Go
             ),
             keyboardActions = KeyboardActions(
-                onGo = { triggerLoad(urlBarText.text) }
+                onGo = {
+                    if (urlBarText.text.isNotBlank()) {
+                        triggerLoad(urlBarText.text)
+                    }
+                }
             ),
             textStyle = LocalTextStyle.current,
             trailingIcon = {
-                IconButton(onClick = { triggerLoad(urlBarText.text) }) {
+                IconButton(onClick = { triggerLoad(urlTextState) }) {
                     Icon(Icons.Default.Search, contentDescription = "Go")
                 }
             }
         )
 
-        Box(modifier = Modifier.padding(start = 4.dp)) {
-            IconButton(
-                onClick = { menuExpanded = true },
-                modifier = Modifier
-                    .padding(0.dp)
-                    .size(width = 24.dp, height = 80.dp)
-                    .wrapContentSize(Alignment.Center)
-            ) {
-                Icon(
-                    Icons.Filled.MoreVert,
-                    contentDescription = "Menu",
-                    modifier = Modifier.size(32.dp)
-                )
-            }
-            DropdownMenu(
-                expanded = menuExpanded,
-                onDismissRequest = { menuExpanded = false }
-            ) {
-                DropdownMenuItem(
-                    text = { Text("Back") },
-                    enabled = webView.canGoBack(),
-                    onClick = {
-                        webView.goBack()
-                        menuExpanded = false
-                    },
-                    leadingIcon = {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+        if (showMenu) {
+            Box(modifier = Modifier.padding(start = 4.dp)) {
+                IconButton(
+                    onClick = { menuExpanded = true },
+                    modifier = Modifier
+                        .padding(0.dp)
+                        .size(width = 24.dp, height = 80.dp)
+                        .wrapContentSize(Alignment.Center)
+                ) {
+                    Icon(
+                        Icons.Filled.MoreVert,
+                        contentDescription = "Menu",
+                        modifier = Modifier.size(32.dp)
+                    )
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false }
+                ) {
+                    if (userSettings.allowBackwardsNavigation) {
+                        DropdownMenuItem(
+                            text = { Text("Back") },
+                            enabled = webView.canGoBack(),
+                            onClick = {
+                                webView.goBack()
+                                menuExpanded = false
+                            },
+                            leadingIcon = {
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Forward") },
+                            enabled = webView.canGoForward(),
+                            onClick = {
+                                webView.goForward()
+                                menuExpanded = false
+                            },
+                            leadingIcon = {
+                                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Forward")
+                            }
+                        )
                     }
-                )
-                DropdownMenuItem(
-                    text = { Text("Forward") },
-                    enabled = webView.canGoForward(),
-                    onClick = {
-                        webView.goForward()
-                        menuExpanded = false
-                    },
-                    leadingIcon = {
-                        Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Forward")
+                    if (userSettings.allowRefresh) {
+                        DropdownMenuItem(
+                            text = { Text("Refresh") },
+                            onClick = {
+                                webView.reload()
+                                menuExpanded = false
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
+                            }
+                        )
                     }
-                )
-                DropdownMenuItem(
-                    text = { Text("Refresh") },
-                    onClick = {
-                        webView.reload()
-                        menuExpanded = false
-                    },
-                    leadingIcon = {
-                        Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
-                    }
-                )
+                }
             }
         }
     }

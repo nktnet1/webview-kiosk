@@ -10,6 +10,7 @@ import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -18,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.nktnet.webview_kiosk.config.option.AddressBarOption
 import com.nktnet.webview_kiosk.config.SystemSettings
 import com.nktnet.webview_kiosk.config.UserSettings
@@ -40,6 +42,7 @@ fun WebviewScreen(navController: NavController) {
 
     var currentUrl by remember { mutableStateOf(systemSettings.lastUrl.ifEmpty { userSettings.homeUrl }) }
     var blockedMessage by remember { mutableStateOf(userSettings.blockedMessage) }
+    var allowRefresh by remember { mutableStateOf(userSettings.allowRefresh) }
     var theme by remember { mutableStateOf(userSettings.theme) }
 
     val blacklistRegexes = remember(userSettings.websiteBlacklist) {
@@ -56,6 +59,7 @@ fun WebviewScreen(navController: NavController) {
 
     var urlBarText by remember { mutableStateOf(TextFieldValue(currentUrl)) }
     var transitionState by remember { mutableStateOf(TransitionState.PAGE_FINISHED) }
+    var isRefreshing by remember { mutableStateOf(false) }
 
     val showAddressBar = when (userSettings.addressBarMode) {
         AddressBarOption.SHOWN -> true
@@ -70,35 +74,34 @@ fun WebviewScreen(navController: NavController) {
     val webView = createCustomWebview(
         context = context,
         theme = theme,
-
         blockedMessage = blockedMessage,
         blacklistRegexes = blacklistRegexes,
         whitelistRegexes = whitelistRegexes,
-
         onPageStarted = { transitionState = TransitionState.PAGE_STARTED },
         onPageFinished = { url ->
             if (!hasFocus) {
-                urlBarText = urlBarText.copy(
-                    text = url,
-                )
+                urlBarText = urlBarText.copy(text = url)
             }
             currentUrl = url
             systemSettings.lastUrl = url
             transitionState = TransitionState.PAGE_FINISHED
+            isRefreshing = false
         }
     )
 
     fun WebView.customLoadUrlWithDefaults(url: String) =
         customLoadUrl(url, blacklistRegexes, whitelistRegexes, blockedMessage)
 
-    HandleBackPress(webView, onBackPressedDispatcher)
+    HandleBackPress(webView, onBackPressedDispatcher, userSettings.allowBackwardsNavigation)
 
     val triggerLoad: (String) -> Unit = { input ->
-        transitionState = TransitionState.TRANSITIONING
-        webView.requestFocus()
-        val finalUrl = resolveUrlOrSearch(input.trim())
-        currentUrl = finalUrl
-        webView.customLoadUrlWithDefaults(finalUrl)
+        val searchUrl = resolveUrlOrSearch(input.trim())
+        if (searchUrl.isNotBlank() && searchUrl != currentUrl || allowRefresh) {
+            transitionState = TransitionState.TRANSITIONING
+            webView.requestFocus()
+            currentUrl = searchUrl
+            webView.customLoadUrlWithDefaults(searchUrl)
+        }
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -116,18 +119,30 @@ fun WebviewScreen(navController: NavController) {
 
         Box(modifier = Modifier.weight(1f)) {
             AndroidView(
-                factory = {
-                    webView.apply {
-                        customLoadUrlWithDefaults(currentUrl)
+                factory = { ctx ->
+                    if (userSettings.allowRefresh) {
+                        SwipeRefreshLayout(ctx).apply {
+                            setOnRefreshListener {
+                                isRefreshing = true
+                                webView.reload()
+                            }
+                            addView(webView.apply { customLoadUrlWithDefaults(currentUrl) })
+                        }
+                    } else {
+                        webView.apply { customLoadUrlWithDefaults(currentUrl) }
+                    }
+                },
+                update = { view ->
+                    if (view is SwipeRefreshLayout) {
+                        view.isRefreshing = isRefreshing
                     }
                 },
                 modifier = Modifier.fillMaxSize()
             )
+
             if (transitionState == TransitionState.TRANSITIONING) {
                 Box(
-                    Modifier
-                        .fillMaxSize()
-                        .background(Color(0x88000000)),
+                    Modifier.fillMaxSize().background(Color(0x88000000)),
                     contentAlignment = Alignment.Center
                 ) {
                     LoadingIndicator("Loading...")
@@ -160,12 +175,13 @@ private enum class TransitionState {
 @Composable
 private fun HandleBackPress(
     webView: WebView,
-    dispatcher: OnBackPressedDispatcher?
+    dispatcher: OnBackPressedDispatcher?,
+    allowBackwardsNavigation: Boolean
 ) {
-    DisposableEffect(webView) {
+    DisposableEffect(webView, dispatcher, allowBackwardsNavigation) {
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (webView.canGoBack()) {
+                if (allowBackwardsNavigation && webView.canGoBack()) {
                     webView.goBack()
                 }
             }
@@ -197,4 +213,3 @@ private fun resolveUrlOrSearch(input: String): String {
         else -> "https://www.google.com/search?q=${Uri.encode(input)}"
     }
 }
-

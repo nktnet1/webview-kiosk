@@ -77,8 +77,11 @@ class MainActivity : AppCompatActivity() {
                                     themeState = themeState,
                                 )
                             }
-                            authComposable(Screen.SettingsUrlControl.route, promptManager) {
-                                SettingsUrlControlScreen(navController)
+                            authComposable(Screen.SettingsWebContent.route, promptManager) {
+                                SettingsWebContentScreen(navController)
+                            }
+                            authComposable(Screen.SettingsWebBrowsing.route, promptManager) {
+                                SettingsWebBrowsingScreen(navController)
                             }
                             authComposable(Screen.SettingsDevice.route, promptManager) {
                                 SettingsDeviceScreen(

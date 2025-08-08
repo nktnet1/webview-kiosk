@@ -15,7 +15,7 @@ import com.nktnet.webview_kiosk.utils.validateMultilineRegex
 import com.nktnet.webview_kiosk.utils.validateUrl
 
 @Composable
-fun SettingsUrlControlScreen(
+fun SettingsWebContentScreen(
     navController: NavController,
 ) {
     val context = LocalContext.current
@@ -48,7 +48,7 @@ fun SettingsUrlControlScreen(
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        SettingLabel(navController = navController, label = "URL Control")
+        SettingLabel(navController = navController, label = "Web Content")
 
         LabelWithInfo(
             label = "Home URL",
