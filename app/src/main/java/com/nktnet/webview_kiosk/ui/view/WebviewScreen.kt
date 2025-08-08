@@ -43,6 +43,7 @@ fun WebviewScreen(navController: NavController) {
     var currentUrl by remember { mutableStateOf(systemSettings.lastUrl.ifEmpty { userSettings.homeUrl }) }
     var blockedMessage by remember { mutableStateOf(userSettings.blockedMessage) }
     var allowRefresh by remember { mutableStateOf(userSettings.allowRefresh) }
+    var searchProviderUrl by remember { mutableStateOf(userSettings.searchProviderUrl) }
     var theme by remember { mutableStateOf(userSettings.theme) }
 
     val blacklistRegexes = remember(userSettings.websiteBlacklist) {
@@ -95,7 +96,7 @@ fun WebviewScreen(navController: NavController) {
     HandleBackPress(webView, onBackPressedDispatcher, userSettings.allowBackwardsNavigation)
 
     val triggerLoad: (String) -> Unit = { input ->
-        val searchUrl = resolveUrlOrSearch(input.trim())
+        val searchUrl = resolveUrlOrSearch(searchProviderUrl, input.trim())
         if (searchUrl.isNotBlank() && searchUrl != currentUrl || allowRefresh) {
             transitionState = TransitionState.TRANSITIONING
             webView.requestFocus()
@@ -206,10 +207,10 @@ private fun BoxScope.ShowFloatingMenu(
     }
 }
 
-private fun resolveUrlOrSearch(input: String): String {
+private fun resolveUrlOrSearch(searchProviderUrl: String, input: String): String {
     return when {
         URLUtil.isValidUrl(input) -> input
         input.contains('.') -> "https://$input"
-        else -> "https://www.google.com/search?q=${Uri.encode(input)}"
+        else -> "${searchProviderUrl}${Uri.encode(input)}"
     }
 }
