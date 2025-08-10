@@ -151,17 +151,19 @@ fun WebviewScreen(navController: NavController) {
             }
 
             if (!isPinned) {
-                ShowFloatingMenu(
-                    navController = navController,
-                    onHomeClick = { webView.customLoadUrlWithDefaults(userSettings.homeUrl) },
-                    onLockClick = {
-                        try {
-                            activity?.startLockTask()
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-                    }
-                )
+                Box(modifier = Modifier.align(Alignment.BottomEnd)) {
+                    FloatingMenuButton(
+                        onHomeClick = { webView.customLoadUrlWithDefaults(userSettings.homeUrl) },
+                        onLockClick = {
+                            try {
+                                activity?.startLockTask()
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                            }
+                        },
+                        navController = navController
+                    )
+                }
             }
         }
     }
@@ -189,21 +191,6 @@ private fun HandleBackPress(
         }
         dispatcher?.addCallback(callback)
         onDispose { callback.remove() }
-    }
-}
-
-@Composable
-private fun BoxScope.ShowFloatingMenu(
-    navController: NavController,
-    onHomeClick: () -> Unit,
-    onLockClick: () -> Unit
-) {
-    Box(modifier = Modifier.align(Alignment.BottomEnd)) {
-        FloatingMenuButton(
-            onHomeClick = onHomeClick,
-            onLockClick = onLockClick,
-            navController = navController
-        )
     }
 }
 
