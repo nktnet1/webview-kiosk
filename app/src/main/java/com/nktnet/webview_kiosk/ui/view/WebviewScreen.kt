@@ -1,8 +1,6 @@
 package com.nktnet.webview_kiosk.ui.view
 
 import android.app.Activity
-import android.net.Uri
-import android.webkit.URLUtil
 import android.webkit.WebView
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.OnBackPressedDispatcher
@@ -29,6 +27,7 @@ import com.nktnet.webview_kiosk.ui.components.common.LoadingIndicator
 import com.nktnet.webview_kiosk.utils.createCustomWebview
 import com.nktnet.webview_kiosk.utils.customLoadUrl
 import com.nktnet.webview_kiosk.utils.rememberLockedState
+import com.nktnet.webview_kiosk.utils.resolveUrlOrSearch
 
 @Composable
 fun WebviewScreen(navController: NavController) {
@@ -200,10 +199,3 @@ private fun HandleBackPress(
     }
 }
 
-private fun resolveUrlOrSearch(searchProviderUrl: String, input: String): String {
-    return when {
-        URLUtil.isValidUrl(input) -> input
-        input.contains('.') -> "https://$input"
-        else -> "${searchProviderUrl}${Uri.encode(input)}"
-    }
-}

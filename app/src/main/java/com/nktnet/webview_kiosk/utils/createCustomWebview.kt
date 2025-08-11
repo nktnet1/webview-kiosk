@@ -3,8 +3,10 @@ package com.nktnet.webview_kiosk.utils
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
+import android.net.Uri
 import android.text.Html
 import android.view.ViewGroup
+import android.webkit.URLUtil
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -141,6 +143,15 @@ fun generateBlockedPageHtml(url: String, message: String): String {
           </body>
         </html>
     """.trimIndent()
+}
+
+
+fun resolveUrlOrSearch(searchProviderUrl: String, input: String): String {
+    return when {
+        URLUtil.isValidUrl(input) -> input
+        input.contains('.') -> "https://$input"
+        else -> "${searchProviderUrl}${Uri.encode(input)}"
+    }
 }
 
 private fun getPrefersColorSchemeOverrideScript(theme: ThemeOption): String {
