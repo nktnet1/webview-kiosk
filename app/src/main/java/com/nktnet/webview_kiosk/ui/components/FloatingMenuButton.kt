@@ -47,9 +47,14 @@ fun FloatingMenuButton(
     val buttonSizeDp = 64.dp
     val buttonSizePx = with(density) { buttonSizeDp.toPx() }
 
-
     val paddingDp = 8.dp
     val paddingPx = with(density) { paddingDp.toPx() }
+
+    val innerPaddingDp = 12.dp
+    val innerPaddingPx = with(density) { innerPaddingDp.toPx() }
+
+    val maxX = (containerWidth - buttonSizePx - paddingPx * 2 - innerPaddingPx * 2).coerceAtLeast(0f)
+    val maxY = (containerHeight - buttonSizePx - paddingPx * 2 - innerPaddingPx * 2).coerceAtLeast(0f)
 
     var offsetX by remember { mutableFloatStateOf(systemSettings.menuOffsetX) }
     var offsetY by remember { mutableFloatStateOf(systemSettings.menuOffsetY) }
@@ -58,11 +63,8 @@ fun FloatingMenuButton(
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val tintColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-    val borderColor =  MaterialTheme.colorScheme.error
+    val borderColor = MaterialTheme.colorScheme.error
     val borderWidth = 3.dp
-
-    val maxX = (containerWidth - buttonSizePx - paddingPx * 2).coerceAtLeast(0f)
-    val maxY = (containerHeight - buttonSizePx - paddingPx * 2).coerceAtLeast(0f)
 
     Box(
         modifier = Modifier
@@ -83,7 +85,6 @@ fun FloatingMenuButton(
                     systemSettings.menuOffsetY = offsetY
                 }
             }
-
             .background(Color.Transparent)
             .padding(paddingDp)
             .clip(RoundedCornerShape(12.dp))
@@ -93,8 +94,10 @@ fun FloatingMenuButton(
             modifier = Modifier
                 .offset {
                     IntOffset(
-                        x = offsetX.roundToInt().coerceIn(0, maxX.toInt()),
-                        y = offsetY.roundToInt().coerceIn(0, maxY.toInt())
+                        x = (offsetX + innerPaddingPx).roundToInt()
+                            .coerceIn(innerPaddingPx.toInt(), (maxX + innerPaddingPx).toInt()),
+                        y = (offsetY + innerPaddingPx).roundToInt()
+                            .coerceIn(innerPaddingPx.toInt(), (maxY + innerPaddingPx).toInt())
                     )
                 }
                 .size(buttonSizeDp)
