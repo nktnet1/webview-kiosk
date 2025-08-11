@@ -105,65 +105,71 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
-    Column(Modifier.fillMaxSize()) {
-        if (showAddressBar) {
-            AddressBar(
-                urlBarText = urlBarText,
-                onUrlBarTextChange = { urlBarText = it },
-                hasFocus = hasFocus,
-                onFocusChanged = { focusState -> hasFocus = focusState.isFocused },
-                focusRequester = focusRequester,
-                triggerLoad = triggerLoad,
-                webView = webView
-            )
-        }
-
-        Box(modifier = Modifier.weight(1f)) {
-            AndroidView(
-                factory = { ctx ->
-                    if (userSettings.allowRefresh) {
-                        SwipeRefreshLayout(ctx).apply {
-                            setOnRefreshListener {
-                                isRefreshing = true
-                                webView.reload()
-                            }
-                            addView(webView.apply { customLoadUrlWithDefaults(currentUrl) })
-                        }
-                    } else {
-                        webView.apply { customLoadUrlWithDefaults(currentUrl) }
-                    }
-                },
-                update = { view ->
-                    if (view is SwipeRefreshLayout) {
-                        view.isRefreshing = isRefreshing
-                    }
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-
-            if (transitionState == TransitionState.TRANSITIONING) {
-                Box(
-                    Modifier.fillMaxSize().background(Color(0x88000000)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    LoadingIndicator("Loading...")
-                }
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            if (showAddressBar) {
+                AddressBar(
+                    urlBarText = urlBarText,
+                    onUrlBarTextChange = { urlBarText = it },
+                    hasFocus = hasFocus,
+                    onFocusChanged = { focusState -> hasFocus = focusState.isFocused },
+                    focusRequester = focusRequester,
+                    triggerLoad = triggerLoad,
+                    webView = webView
+                )
             }
 
-            if (!isPinned) {
-                Box(modifier = Modifier.align(Alignment.BottomEnd)) {
-                    FloatingMenuButton(
-                        onHomeClick = { webView.customLoadUrlWithDefaults(userSettings.homeUrl) },
-                        onLockClick = {
-                            try {
-                                activity?.startLockTask()
-                            } catch (e: Exception) {
-                                e.printStackTrace()
+            Box(modifier = Modifier.weight(1f)) {
+                AndroidView(
+                    factory = { ctx ->
+                        if (userSettings.allowRefresh) {
+                            SwipeRefreshLayout(ctx).apply {
+                                setOnRefreshListener {
+                                    isRefreshing = true
+                                    webView.reload()
+                                }
+                                addView(webView.apply { customLoadUrlWithDefaults(currentUrl) })
                             }
-                        },
-                        navController = navController
-                    )
+                        } else {
+                            webView.apply { customLoadUrlWithDefaults(currentUrl) }
+                        }
+                    },
+                    update = { view ->
+                        if (view is SwipeRefreshLayout) {
+                            view.isRefreshing = isRefreshing
+                        }
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+
+                if (transitionState == TransitionState.TRANSITIONING) {
+                    Box(
+                        Modifier.fillMaxSize().background(Color(0x88000000)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        LoadingIndicator("Loading...")
+                    }
                 }
+            }
+        }
+
+        if (!isPinned) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Transparent)
+            ) {
+                FloatingMenuButton(
+                    onHomeClick = { webView.customLoadUrlWithDefaults(userSettings.homeUrl) },
+                    onLockClick = {
+                        try {
+                            activity?.startLockTask()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    },
+                    navController = navController
+                )
             }
         }
     }
