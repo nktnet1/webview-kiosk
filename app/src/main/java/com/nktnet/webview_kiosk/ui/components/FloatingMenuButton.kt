@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Home
@@ -92,7 +91,6 @@ fun FloatingMenuButton(
             .background(Color.Transparent)
             .padding(paddingDp)
             .padding(bottom = with(density) { insets.getBottom(density).toDp() })
-            .clip(RoundedCornerShape(12.dp))
     ) {
         if (isDragging) {
             Box(
