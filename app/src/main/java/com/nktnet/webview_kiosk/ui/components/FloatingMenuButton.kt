@@ -2,7 +2,6 @@ package com.nktnet.webview_kiosk.ui.components
 
 import android.graphics.Paint
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -15,6 +14,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
@@ -30,6 +30,9 @@ import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.config.Screen
 import com.nktnet.webview_kiosk.config.SystemSettings
 import kotlin.math.roundToInt
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.ui.zIndex
 
 @Composable
 fun FloatingMenuButton(
@@ -47,14 +50,17 @@ fun FloatingMenuButton(
     val buttonSizeDp = 64.dp
     val buttonSizePx = with(density) { buttonSizeDp.toPx() }
 
-    val paddingDp = 8.dp
+    val paddingDp = 0.dp
     val paddingPx = with(density) { paddingDp.toPx() }
 
-    val innerPaddingDp = 12.dp
+    val innerPaddingDp = 4.dp
     val innerPaddingPx = with(density) { innerPaddingDp.toPx() }
 
+    val insets = WindowInsets.navigationBars
+    val bottomInsetPx = with(density) { insets.getBottom(density).toFloat() }
+
     val maxX = (containerWidth - buttonSizePx - paddingPx * 2 - innerPaddingPx * 2).coerceAtLeast(0f)
-    val maxY = (containerHeight - buttonSizePx - paddingPx * 2 - innerPaddingPx * 2).coerceAtLeast(0f)
+    val maxY = (containerHeight - buttonSizePx - paddingPx * 2 - innerPaddingPx * 2 - bottomInsetPx).coerceAtLeast(0f)
 
     var offsetX by remember { mutableFloatStateOf(systemSettings.menuOffsetX) }
     var offsetY by remember { mutableFloatStateOf(systemSettings.menuOffsetY) }
@@ -62,9 +68,7 @@ fun FloatingMenuButton(
     var isDragging by remember { mutableStateOf(false) }
 
     val primaryColor = MaterialTheme.colorScheme.primary
-    val tintColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-    val borderColor = MaterialTheme.colorScheme.error
-    val borderWidth = 3.dp
+    val tintColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.95f)
 
     Box(
         modifier = Modifier
@@ -73,12 +77,12 @@ fun FloatingMenuButton(
                 containerWidth = it.width
                 containerHeight = it.height
 
-                val marginDp = 24.dp
+                val marginDp = 40.dp
                 val marginPx = with(density) { marginDp.toPx() }
 
                 if (systemSettings.menuOffsetX < 0f || systemSettings.menuOffsetY < 0f) {
                     val initialX = containerWidth - buttonSizePx - paddingPx * 2 - marginPx
-                    val initialY = containerHeight - buttonSizePx - paddingPx * 2 - marginPx
+                    val initialY = containerHeight - buttonSizePx - paddingPx * 2 - marginPx - bottomInsetPx
                     offsetX = initialX.coerceAtLeast(0f)
                     offsetY = initialY.coerceAtLeast(0f)
                     systemSettings.menuOffsetX = offsetX
@@ -87,11 +91,22 @@ fun FloatingMenuButton(
             }
             .background(Color.Transparent)
             .padding(paddingDp)
+            .padding(bottom = with(density) { insets.getBottom(density).toDp() })
             .clip(RoundedCornerShape(12.dp))
-            .then(if (isDragging) Modifier.border(2.dp, borderColor, RoundedCornerShape(12.dp)) else Modifier)
     ) {
+        if (isDragging) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .blur(16.dp)
+                    .background(MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.50f))
+                    .zIndex(0f)
+            )
+        }
+
         Box(
             modifier = Modifier
+                .zIndex(1f)
                 .offset {
                     IntOffset(
                         x = (offsetX + innerPaddingPx).roundToInt()
@@ -101,9 +116,6 @@ fun FloatingMenuButton(
                     )
                 }
                 .size(buttonSizeDp)
-                .then(
-                    if (isDragging) Modifier.border(borderWidth, borderColor, CircleShape) else Modifier
-                )
                 .drawBehind {
                     val radiusPx = size.minDimension / 2
                     drawContext.canvas.nativeCanvas.apply {
@@ -128,15 +140,9 @@ fun FloatingMenuButton(
                 .background(primaryColor)
                 .pointerInput(Unit) {
                     detectDragGestures(
-                        onDragStart = {
-                            isDragging = true
-                        },
-                        onDragEnd = {
-                            isDragging = false
-                        },
-                        onDragCancel = {
-                            isDragging = false
-                        }
+                        onDragStart = { isDragging = true },
+                        onDragEnd = { isDragging = false },
+                        onDragCancel = { isDragging = false }
                     ) { change, dragAmount ->
                         change.consume()
                         offsetX = (offsetX + dragAmount.x).coerceIn(0f, maxX)
