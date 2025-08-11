@@ -106,9 +106,9 @@ fun SettingsWebBrowsingScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             LabelWithInfo(
-                label = "Allow Go Home",
+                label = "Allow Go Home (multi tap)",
                 infoTitle = "Allow Go Home",
-                infoText = "Whether the user can return to the configured home page from the address bar menu"
+                infoText = "Whether the user can return to the configured home page when tapping the screen 10 times in quick succession"
             )
             Switch(
                 checked = allowGoHome,

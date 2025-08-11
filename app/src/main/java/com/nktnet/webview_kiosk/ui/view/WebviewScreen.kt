@@ -8,11 +8,11 @@ import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.viewinterop.AndroidView
@@ -159,7 +159,7 @@ fun WebviewScreen(navController: NavController) {
                     .background(Color.Transparent)
             ) {
                 FloatingMenuButton(
-                    onHomeClick = { webView.customLoadUrlWithDefaults(userSettings.homeUrl) },
+                    onHomeClick = { triggerLoad(userSettings.homeUrl) },
                     onLockClick = {
                         try {
                             activity?.startLockTask()
@@ -172,7 +172,66 @@ fun WebviewScreen(navController: NavController) {
             }
         }
     }
+
+
+    MultitapHandler(
+        onSuccess = {
+            triggerLoad(userSettings.homeUrl)
+        }
+    )
 }
+
+@Composable
+private fun MultitapHandler(
+    requiredTaps: Int = 10,
+    onSuccess: () -> Unit
+) {
+    val context = LocalContext.current
+    var tapsLeft by remember { mutableIntStateOf(requiredTaps) }
+    var lastTapTime by remember { mutableLongStateOf(0L) }
+    val maxInterval = 500L
+
+    val toastRef = remember { mutableStateOf<android.widget.Toast?>(null) }
+
+    fun showToast(message: String) {
+        toastRef.value?.cancel()
+        toastRef.value = android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).also { it.show() }
+    }
+
+    val userSettings = remember { UserSettings(context) }
+    var allowGoHome by remember { mutableStateOf(userSettings.allowGoHome ) }
+
+    if (allowGoHome) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .background(Color.Transparent)
+                .pointerInteropFilter { motionEvent ->
+                    if (motionEvent.action == android.view.MotionEvent.ACTION_DOWN) {
+                        val now = System.currentTimeMillis()
+                        if (now - lastTapTime > maxInterval) {
+                            tapsLeft = requiredTaps
+                        }
+                        tapsLeft = 0.coerceAtLeast(tapsLeft - 1)
+                        lastTapTime = now
+                        when {
+                            tapsLeft <= 0 -> {
+                                tapsLeft = requiredTaps
+                                showToast("Navigating home")
+                                onSuccess()
+                            }
+
+                            tapsLeft <= 5 -> {
+                                showToast("Tap $tapsLeft more times navigate home")
+                            }
+                        }
+                    }
+                    false
+                }
+        )
+    }
+}
+
 
 private enum class TransitionState {
     TRANSITIONING,
@@ -198,4 +257,3 @@ private fun HandleBackPress(
         onDispose { callback.remove() }
     }
 }
-
