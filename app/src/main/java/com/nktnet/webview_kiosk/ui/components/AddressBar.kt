@@ -13,6 +13,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
@@ -60,7 +61,7 @@ fun AddressBar(
 
     var menuExpanded by remember { mutableStateOf(false) }
 
-    val showMenu = userSettings.allowBackwardsNavigation || userSettings.allowRefresh
+    val showMenu = userSettings.allowBackwardsNavigation || userSettings.allowRefresh || userSettings.allowGoHome
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -154,6 +155,18 @@ fun AddressBar(
                             },
                             leadingIcon = {
                                 Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
+                            }
+                        )
+                    }
+                    if (userSettings.allowGoHome) {
+                        DropdownMenuItem(
+                            text = { Text("Home") },
+                            onClick = {
+                                webView.loadUrl(userSettings.homeUrl)
+                                menuExpanded = false
+                            },
+                            leadingIcon = {
+                                Icon(Icons.Filled.Home, contentDescription = "Home")
                             }
                         )
                     }

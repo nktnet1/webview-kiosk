@@ -32,6 +32,10 @@ class UserSettings(context: Context) {
         get() = prefs.getBoolean(ALLOW_BACKWARDS_NAVIGATION, true)
         set(value) = prefs.edit { putBoolean(ALLOW_BACKWARDS_NAVIGATION, value) }
 
+    var allowGoHome: Boolean
+        get() = prefs.getBoolean(ALLOW_GO_HOME, true)
+        set(value) = prefs.edit { putBoolean(ALLOW_GO_HOME, value) }
+
     var searchProviderUrl: String
         get() = prefs.getString(SEARCH_PROVIDER_URL, null) ?: "https://www.google.com/search?q="
         set(value) = prefs.edit { putString(SEARCH_PROVIDER_URL, value) }
@@ -60,6 +64,7 @@ class UserSettings(context: Context) {
             put(WEBSITE_WHITELIST, websiteWhitelist)
             put(ALLOW_REFRESH, allowRefresh)
             put(ALLOW_BACKWARDS_NAVIGATION, allowBackwardsNavigation)
+            put(ALLOW_GO_HOME, allowGoHome)
             put(SEARCH_PROVIDER_URL, searchProviderUrl)
             put(BLOCKED_MESSAGE, blockedMessage)
             put(THEME, theme.name)
@@ -77,6 +82,7 @@ class UserSettings(context: Context) {
             websiteWhitelist = json.optString(WEBSITE_WHITELIST, websiteWhitelist)
             allowRefresh = json.optBoolean(ALLOW_REFRESH, allowRefresh)
             allowBackwardsNavigation = json.optBoolean(ALLOW_BACKWARDS_NAVIGATION, allowBackwardsNavigation)
+            allowGoHome = json.optBoolean(ALLOW_GO_HOME, allowGoHome)
             searchProviderUrl = json.optString(SEARCH_PROVIDER_URL, searchProviderUrl)
             blockedMessage = json.optString(BLOCKED_MESSAGE, blockedMessage)
             theme = ThemeOption.fromString(json.optString(THEME, theme.name))
@@ -95,6 +101,7 @@ class UserSettings(context: Context) {
         private const val WEBSITE_WHITELIST = "web_content.website_whitelist"
         private const val ALLOW_REFRESH = "web_browsing.allow_refresh"
         private const val ALLOW_BACKWARDS_NAVIGATION = "web_browsing.allow_backwards_navigation"
+        private const val ALLOW_GO_HOME = "web_browsing.allow_go_home"
         private const val SEARCH_PROVIDER_URL = "web_browsing.search_provider_url"
         private const val BLOCKED_MESSAGE = "appearance.blocked_message"
         private const val THEME = "appearance.theme"

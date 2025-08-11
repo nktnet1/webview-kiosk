@@ -23,6 +23,7 @@ fun SettingsWebBrowsingScreen(
 
     var allowRefresh by remember { mutableStateOf(userSettings.allowRefresh) }
     var allowBackwardsNavigation by remember { mutableStateOf(userSettings.allowBackwardsNavigation) }
+    var allowGoHome by remember { mutableStateOf(userSettings.allowGoHome) }
     var searchProviderUrl by remember { mutableStateOf(TextFieldValue(userSettings.searchProviderUrl)) }
 
     var searchProviderError by remember { mutableStateOf<String?>(null) }
@@ -48,6 +49,7 @@ fun SettingsWebBrowsingScreen(
         if (error == null) {
             userSettings.allowRefresh = allowRefresh
             userSettings.allowBackwardsNavigation = allowBackwardsNavigation
+            userSettings.allowGoHome = allowGoHome
             userSettings.searchProviderUrl = searchProviderUrl.text.trim()
             showToast("Settings saved successfully.")
         } else {
@@ -96,8 +98,26 @@ fun SettingsWebBrowsingScreen(
             )
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            LabelWithInfo(
+                label = "Allow Go Home",
+                infoTitle = "Allow Go Home",
+                infoText = "Whether the user can return to the configured home page from the address bar menu"
+            )
+            Switch(
+                checked = allowGoHome,
+                onCheckedChange = { allowGoHome = it }
+            )
+        }
+
         LabelWithInfo(
-            modifier = Modifier.padding(top=20.dp, bottom=4.dp),
+            modifier = Modifier.padding(top = 20.dp, bottom = 4.dp),
             label = "Search Provider URL",
             infoTitle = "Search Provider URL",
             infoText = "The URL used for search queries. Must include the query parameter, e.g.\n\thttps://www.google.com/search?q="
