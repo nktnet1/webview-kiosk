@@ -168,7 +168,7 @@ fun WebviewScreen(navController: NavController) {
                             e.printStackTrace()
                         }
                     },
-                    navController = navController
+                    navController = navController,
                 )
             }
         }

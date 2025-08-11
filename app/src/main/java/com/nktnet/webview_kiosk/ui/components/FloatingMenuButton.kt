@@ -70,7 +70,20 @@ fun FloatingMenuButton(
             .onSizeChanged {
                 containerWidth = it.width
                 containerHeight = it.height
+
+                val marginDp = 24.dp
+                val marginPx = with(density) { marginDp.toPx() }
+
+                if (systemSettings.menuOffsetX < 0f || systemSettings.menuOffsetY < 0f) {
+                    val initialX = containerWidth - buttonSizePx - paddingPx * 2 - marginPx
+                    val initialY = containerHeight - buttonSizePx - paddingPx * 2 - marginPx
+                    offsetX = initialX.coerceAtLeast(0f)
+                    offsetY = initialY.coerceAtLeast(0f)
+                    systemSettings.menuOffsetX = offsetX
+                    systemSettings.menuOffsetY = offsetY
+                }
             }
+
             .background(Color.Transparent)
             .padding(paddingDp)
             .clip(RoundedCornerShape(12.dp))
