@@ -47,7 +47,7 @@ fun SettingsWebContentScreen(
     }
 
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeContent)
     ) {
         SettingLabel(navController = navController, label = "Web Content")
 

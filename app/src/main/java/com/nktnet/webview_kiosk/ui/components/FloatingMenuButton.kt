@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
@@ -21,7 +22,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
@@ -43,50 +43,44 @@ fun FloatingMenuButton(
     val context = LocalContext.current
     val systemSettings = remember { SystemSettings(context) }
 
-    var containerWidth by remember { mutableIntStateOf(0) }
-    var containerHeight by remember { mutableIntStateOf(0) }
-
     val density = LocalDensity.current
     val buttonSizeDp = 64.dp
     val buttonSizePx = with(density) { buttonSizeDp.toPx() }
 
-    val innerPaddingDp = 4.dp
-    val innerPaddingPx = with(density) { innerPaddingDp.toPx() }
-
     var boxBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
 
-    var offsetX by remember { mutableFloatStateOf(systemSettings.menuOffsetX) }
-    var offsetY by remember { mutableFloatStateOf(systemSettings.menuOffsetY) }
+    var offsetX by remember { mutableFloatStateOf(-1f) }
+    var offsetY by remember { mutableFloatStateOf(-1f) }
     var menuExpanded by remember { mutableStateOf(false) }
     var isDragging by remember { mutableStateOf(false) }
+    var visible by remember { mutableStateOf(false) }
 
     val primaryColor = MaterialTheme.colorScheme.primary
     val tintColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.95f)
 
-    val maxX = boxBounds?.right?.minus(buttonSizePx) ?: (containerWidth - buttonSizePx - innerPaddingPx * 2).coerceAtLeast(0f)
-    val maxY = boxBounds?.bottom?.minus(buttonSizePx) ?: (containerHeight - buttonSizePx - innerPaddingPx * 2).coerceAtLeast(0f)
-
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .onSizeChanged {
-                containerWidth = it.width
-                containerHeight = it.height
-
-                val marginDp = 40.dp
-                val marginPx = with(density) { marginDp.toPx() }
-
-                if (systemSettings.menuOffsetX < 0f || systemSettings.menuOffsetY < 0f) {
-                    val initialX = containerWidth - buttonSizePx - marginPx
-                    val initialY = containerHeight - buttonSizePx - marginPx
-                    offsetX = initialX.coerceAtLeast(0f)
-                    offsetY = initialY.coerceAtLeast(0f)
-                    systemSettings.menuOffsetX = offsetX
-                    systemSettings.menuOffsetY = offsetY
-                }
-            }
             .background(Color.Transparent)
             .windowInsetsPadding(WindowInsets.safeContent)
+            .onGloballyPositioned { coordinates ->
+                val size = coordinates.size.toSize()
+                val bounds = androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height)
+                boxBounds = bounds
+
+                if (offsetX < 0f || offsetY < 0f) {
+                    val marginPx = with(density) { 40.dp.toPx() }
+                    val maxX = bounds.right - buttonSizePx
+                    val maxY = bounds.bottom - buttonSizePx
+                    val savedX = systemSettings.menuOffsetX
+                    val savedY = systemSettings.menuOffsetY
+
+                    offsetX = if (savedX in bounds.left..maxX) savedX else (maxX - marginPx).coerceAtLeast(bounds.left)
+                    offsetY = if (savedY in bounds.top..maxY) savedY else (maxY - marginPx).coerceAtLeast(bounds.top)
+
+                    visible = true
+                }
+            }
     ) {
         if (isDragging) {
             Box(
@@ -96,22 +90,24 @@ fun FloatingMenuButton(
                     .background(MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.1f))
                     .zIndex(0f)
                     .border(2.dp, primaryColor)
-                    .onGloballyPositioned { coordinates ->
-                        val size = coordinates.size.toSize()
-                        boxBounds = androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height)
-                    }
             )
         }
+
+        val minX = boxBounds?.left ?: 0f
+        val minY = boxBounds?.top ?: 0f
+        val maxX = (boxBounds?.right ?: buttonSizePx) - buttonSizePx
+        val maxY = (boxBounds?.bottom ?: buttonSizePx) - buttonSizePx
 
         Box(
             modifier = Modifier
                 .zIndex(1f)
                 .offset {
                     IntOffset(
-                        x = offsetX.roundToInt().coerceIn(0, maxX.toInt()),
-                        y = offsetY.roundToInt().coerceIn(0, maxY.toInt()),
+                        x = offsetX.coerceIn(minX, maxX).roundToInt(),
+                        y = offsetY.coerceIn(minY, maxY).roundToInt(),
                     )
                 }
+                .alpha(if (visible) 1f else 0f)
                 .size(buttonSizeDp)
                 .drawBehind {
                     val radiusPx = size.minDimension / 2
@@ -142,8 +138,8 @@ fun FloatingMenuButton(
                         onDragCancel = { isDragging = false }
                     ) { change, dragAmount ->
                         change.consume()
-                        offsetX = (offsetX + dragAmount.x).coerceIn(0f, maxX)
-                        offsetY = (offsetY + dragAmount.y).coerceIn(0f, maxY)
+                        offsetX = (offsetX + dragAmount.x).coerceIn(minX, maxX)
+                        offsetY = (offsetY + dragAmount.y).coerceIn(minY, maxY)
                         systemSettings.menuOffsetX = offsetX
                         systemSettings.menuOffsetY = offsetY
                     }
