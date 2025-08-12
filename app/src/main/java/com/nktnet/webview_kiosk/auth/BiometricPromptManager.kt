@@ -38,6 +38,8 @@ class BiometricPromptManager(
         title: String,
         description: String
     ) {
+        _resultState.value = BiometricResult.Loading
+
         val keyguardManager = activity.getSystemService(KeyguardManager::class.java)
         if (keyguardManager == null || !keyguardManager.isDeviceSecure) {
             _resultState.value = BiometricResult.AuthenticationNotSet
@@ -102,6 +104,7 @@ class BiometricPromptManager(
     }
 
     sealed interface BiometricResult {
+        data object Loading : BiometricResult
         data object HardwareUnavailable : BiometricResult
         data object FeatureUnavailable : BiometricResult
         data class AuthenticationError(val error: String) : BiometricResult
