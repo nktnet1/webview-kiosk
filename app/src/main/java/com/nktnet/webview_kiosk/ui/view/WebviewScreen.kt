@@ -232,7 +232,6 @@ private fun MultitapHandler(
     }
 }
 
-
 private enum class TransitionState {
     TRANSITIONING,
     PAGE_STARTED,
