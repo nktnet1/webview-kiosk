@@ -199,7 +199,9 @@ private fun MultitapHandler(
     }
 
     val userSettings = remember { UserSettings(context) }
-    var allowGoHome by remember { mutableStateOf(userSettings.allowGoHome ) }
+    var allowGoHome by remember { mutableStateOf(userSettings.allowGoHome) }
+
+    var showConfirmDialog by remember { mutableStateOf(false) }
 
     if (allowGoHome) {
         Box(
@@ -217,17 +219,39 @@ private fun MultitapHandler(
                         when {
                             tapsLeft <= 0 -> {
                                 tapsLeft = requiredTaps
-                                showToast("Navigating home")
-                                onSuccess()
+                                toastRef.value?.cancel()
+                                showConfirmDialog = true
                             }
-
                             tapsLeft <= 5 -> {
-                                showToast("Tap $tapsLeft more times navigate home")
+                                showToast("Tap $tapsLeft more times to navigate home")
                             }
                         }
                     }
                     false
                 }
+        )
+    }
+
+    if (showConfirmDialog) {
+        androidx.compose.material3.AlertDialog(
+            onDismissRequest = { showConfirmDialog = false },
+            title = { androidx.compose.material3.Text("Confirm") },
+            text = { androidx.compose.material3.Text("Do you want to navigate home?") },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    showConfirmDialog = false
+                    onSuccess()
+                }) {
+                    androidx.compose.material3.Text("Yes")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    showConfirmDialog = false
+                }) {
+                    androidx.compose.material3.Text("No")
+                }
+            }
         )
     }
 }
