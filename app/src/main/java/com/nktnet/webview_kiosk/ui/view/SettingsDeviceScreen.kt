@@ -38,7 +38,10 @@ fun SettingsDeviceScreen(
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeContent)
+        modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.safeContent)
+            .padding(horizontal = 16.dp)
     ) {
         SettingLabel(navController = navController, label = "Device")
 

@@ -3,7 +3,6 @@ package com.nktnet.webview_kiosk.ui.components.auth
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.nktnet.webview_kiosk.auth.BiometricPromptManager
 import com.nktnet.webview_kiosk.ui.components.common.LoadingIndicator
 
@@ -22,7 +21,7 @@ fun RequireAuthWrapper(
         }
     }
 
-    Box(modifier = Modifier.padding(top = 32.dp, start = 16.dp, end = 16.dp, bottom = 16.dp)) {
+    Box(modifier = Modifier) {
         RequireAuthentication(
             promptManager = promptManager,
             onAuthenticated = { content() },

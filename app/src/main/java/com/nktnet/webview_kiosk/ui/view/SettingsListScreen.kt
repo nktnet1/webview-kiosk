@@ -47,7 +47,10 @@ fun SettingsListScreen(
     )
 
     Column(
-        modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeContent)
+        modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.safeContent)
+            .padding(horizontal = 16.dp)
     ) {
         SettingsHeaderMenu(navController, themeState)
 
