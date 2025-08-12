@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -45,11 +46,23 @@ class MainActivity : AppCompatActivity() {
 
             KeepScreenOnOption(keepOn = keepScreenOnState.value)
 
-            WebviewKioskTheme(darkTheme = when (themeState.value) {
+            val isDarkTheme = when (themeState.value) {
                 ThemeOption.SYSTEM -> isSystemInDarkTheme()
                 ThemeOption.DARK -> true
                 ThemeOption.LIGHT -> false
-            }) {
+            }
+
+            val window = (this as? AppCompatActivity)?.window
+            val insetsController = remember(window) {
+                window?.let { WindowInsetsControllerCompat(it, it.decorView) }
+            }
+
+            LaunchedEffect(isDarkTheme) {
+                insetsController?.isAppearanceLightStatusBars = !isDarkTheme
+                insetsController?.isAppearanceLightNavigationBars = !isDarkTheme
+            }
+
+            WebviewKioskTheme(darkTheme = isDarkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = androidx.compose.material3.MaterialTheme.colorScheme.background
