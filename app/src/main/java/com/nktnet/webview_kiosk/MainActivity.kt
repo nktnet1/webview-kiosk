@@ -102,6 +102,11 @@ class MainActivity : AppCompatActivity() {
                                     keepScreenOnState
                                 )
                             }
+                            authComposable(Screen.SettingsAbout.route, promptManager) {
+                                SettingsAboutScreen(
+                                    navController,
+                                )
+                            }
                         }
                     }
                 }

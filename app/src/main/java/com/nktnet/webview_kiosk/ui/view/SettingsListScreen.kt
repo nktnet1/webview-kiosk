@@ -27,7 +27,6 @@ fun SettingsListScreen(
             "Home URL, blacklist, whitelist",
             Screen.SettingsWebContent.route
         ),
-
         Triple(
             "Web Browsing",
             "Refresh, navigation, search provider",
@@ -38,11 +37,15 @@ fun SettingsListScreen(
             "Theme, address bar, custom blocked message",
             Screen.SettingsAppearance.route
         ),
-
         Triple(
             "Device",
             "Keep screen on",
             Screen.SettingsDevice.route
+        ),
+        Triple(
+            "About",
+            "App version, etc",
+            Screen.SettingsAbout.route
         ),
     )
 
