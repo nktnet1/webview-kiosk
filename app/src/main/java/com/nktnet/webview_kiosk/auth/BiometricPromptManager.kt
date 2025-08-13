@@ -12,18 +12,22 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
-class BiometricPromptManager(
-    private val activity: AppCompatActivity
-) {
+object BiometricPromptManager {
+    private var activity: AppCompatActivity? = null
+
     private val _resultState = MutableStateFlow<BiometricResult?>(null)
     val promptResults: StateFlow<BiometricResult?> = _resultState.asStateFlow()
 
     private var lastAuthTime = 0L
-    private val authTimeoutMs = 5 * 60 * 1000L
+    private const val AUTH_TIMEOUT_MS = 5 * 60 * 1000L
+
+    fun init(activity: AppCompatActivity) {
+        this.activity = activity
+    }
 
     fun checkAuthAndRefreshSession(): Boolean {
         val now = System.currentTimeMillis()
-        val isValid = now - lastAuthTime < authTimeoutMs
+        val isValid = now - lastAuthTime < AUTH_TIMEOUT_MS
         if (isValid) {
             lastAuthTime = now
         }
@@ -38,6 +42,11 @@ class BiometricPromptManager(
         title: String,
         description: String
     ) {
+        val activity = this.activity ?: run {
+            _resultState.value = BiometricResult.AuthenticationError("Activity is null")
+            return
+        }
+
         _resultState.value = BiometricResult.Loading
 
         val keyguardManager = activity.getSystemService(KeyguardManager::class.java)

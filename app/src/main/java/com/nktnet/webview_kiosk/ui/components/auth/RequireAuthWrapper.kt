@@ -7,8 +7,8 @@ import androidx.compose.ui.Modifier
 import com.nktnet.webview_kiosk.auth.BiometricPromptManager
 import com.nktnet.webview_kiosk.ui.components.common.LoadingIndicator
 
-private fun showAuthPrompt(promptManager: BiometricPromptManager) {
-    promptManager.showBiometricPrompt(
+private fun showAuthPrompt() {
+    BiometricPromptManager.showBiometricPrompt(
         title = "Authentication Required",
         description = "Please authenticate to access settings"
     )
@@ -16,15 +16,13 @@ private fun showAuthPrompt(promptManager: BiometricPromptManager) {
 
 @Composable
 fun RequireAuthWrapper(
-    promptManager: BiometricPromptManager,
     content: @Composable () -> Unit
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         RequireAuthentication(
-            promptManager = promptManager,
             onAuthenticated = content,
             onFailed = { errorResult ->
-                AuthenticationErrorDisplay(errorResult = errorResult, onRetry = { showAuthPrompt(promptManager) })
+                AuthenticationErrorDisplay(errorResult = errorResult, onRetry = { showAuthPrompt() })
             }
         )
     }
@@ -32,15 +30,14 @@ fun RequireAuthWrapper(
 
 @Composable
 private fun RequireAuthentication(
-    promptManager: BiometricPromptManager,
     onAuthenticated: @Composable () -> Unit,
     onFailed: @Composable (BiometricPromptManager.BiometricResult?) -> Unit
 ) {
-    val biometricResult by promptManager.promptResults.collectAsState(initial = BiometricPromptManager.BiometricResult.Loading)
+    val biometricResult by BiometricPromptManager.promptResults.collectAsState(initial = BiometricPromptManager.BiometricResult.Loading)
 
     LaunchedEffect(Unit) {
-        if (!promptManager.checkAuthAndRefreshSession()) {
-            showAuthPrompt(promptManager)
+        if (!BiometricPromptManager.checkAuthAndRefreshSession()) {
+            showAuthPrompt()
         }
     }
 

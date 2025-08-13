@@ -25,18 +25,12 @@ import com.nktnet.webview_kiosk.ui.theme.WebviewKioskTheme
 import com.nktnet.webview_kiosk.ui.view.*
 
 class MainActivity : AppCompatActivity() {
-    private val promptManager by lazy {
-        BiometricPromptManager(this)
-    }
-
-    override fun onStop() {
-        super.onStop()
-        promptManager.resetAuthentication()
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+
+        BiometricPromptManager.init(this)
 
         val userSettings = UserSettings(this)
 
@@ -78,31 +72,31 @@ class MainActivity : AppCompatActivity() {
                             startDestination = Screen.Settings.route,
                             route = "settings_list"
                         ) {
-                            authComposable(Screen.Settings.route, promptManager) {
+                            authComposable(Screen.Settings.route) {
                                 SettingsListScreen(
                                     navController,
                                     themeState = themeState,
                                 )
                             }
-                            authComposable(Screen.SettingsAppearance.route, promptManager) {
+                            authComposable(Screen.SettingsAppearance.route) {
                                 SettingsAppearanceScreen(
                                     navController,
                                     themeState = themeState,
                                 )
                             }
-                            authComposable(Screen.SettingsWebContent.route, promptManager) {
+                            authComposable(Screen.SettingsWebContent.route) {
                                 SettingsWebContentScreen(navController)
                             }
-                            authComposable(Screen.SettingsWebBrowsing.route, promptManager) {
+                            authComposable(Screen.SettingsWebBrowsing.route) {
                                 SettingsWebBrowsingScreen(navController)
                             }
-                            authComposable(Screen.SettingsDevice.route, promptManager) {
+                            authComposable(Screen.SettingsDevice.route) {
                                 SettingsDeviceScreen(
                                     navController,
                                     keepScreenOnState
                                 )
                             }
-                            authComposable(Screen.SettingsAbout.route, promptManager) {
+                            authComposable(Screen.SettingsAbout.route) {
                                 SettingsAboutScreen(
                                     navController,
                                 )
@@ -113,15 +107,26 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    override fun onStart() {
+        super.onStart()
+        BiometricPromptManager.init(this)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (!isChangingConfigurations) {
+            BiometricPromptManager.resetAuthentication()
+        }
+    }
 }
 
 inline fun NavGraphBuilder.authComposable(
     route: String,
-    promptManager: BiometricPromptManager,
     crossinline content: @Composable () -> Unit
 ) {
     composable(route) {
-        RequireAuthWrapper(promptManager) {
+        RequireAuthWrapper {
             content()
         }
     }
