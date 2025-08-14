@@ -83,7 +83,7 @@ fun SettingsHeaderMenu(
         SettingLabel(navController = navController, label = "Settings")
 
         Box(
-            modifier = Modifier.align(Alignment.Bottom) // Align menu icon box bottom with SettingLabel bottom
+            modifier = Modifier.align(Alignment.Bottom).offset(y = 5.dp)
         ) {
             IconButton(onClick = { showMenu = true }) {
                 Icon(

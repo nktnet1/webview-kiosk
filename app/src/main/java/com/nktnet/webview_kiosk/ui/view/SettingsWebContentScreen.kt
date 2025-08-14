@@ -14,6 +14,7 @@ import com.nktnet.webview_kiosk.ui.components.common.PatternInput
 import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
 import com.nktnet.webview_kiosk.ui.components.setting.SettingsActionButtons
 import com.nktnet.webview_kiosk.ui.components.common.UrlInput
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
 import com.nktnet.webview_kiosk.utils.validateMultilineRegex
 import com.nktnet.webview_kiosk.utils.validateUrl
 
@@ -57,8 +58,10 @@ fun SettingsWebContentScreen(
     ) {
         SettingLabel(navController = navController, label = "Web Content")
 
+        SettingDivider()
+
         LabelWithInfo(
-            modifier = Modifier.padding(top=16.dp, bottom=4.dp),
+            modifier = Modifier.padding(bottom=4.dp),
             label = "Home URL",
             infoTitle = "Home URL",
             infoText = "The URL that can be reset to using the floating icon button.",

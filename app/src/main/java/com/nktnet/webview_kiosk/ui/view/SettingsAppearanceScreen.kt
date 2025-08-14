@@ -21,6 +21,7 @@ import com.nktnet.webview_kiosk.ui.components.common.LabelWithInfo
 import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
 import com.nktnet.webview_kiosk.ui.components.setting.SettingsActionButtons
 import androidx.compose.runtime.MutableState
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
 
 @Composable
 fun SettingsAppearanceScreen(
@@ -62,8 +63,10 @@ fun SettingsAppearanceScreen(
     ) {
         SettingLabel(navController = navController, label = "Appearance")
 
+        SettingDivider()
+
         LabelWithInfo(
-            modifier = Modifier.padding(top=16.dp, bottom=4.dp),
+            modifier = Modifier.padding(bottom=4.dp),
             label = "Theme",
             infoTitle = "Theme",
             infoText = "Select the app theme: System default, Light, or Dark."

@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.navigation.NavController
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
 import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
 
 @Composable
@@ -91,7 +92,7 @@ fun SettingsAboutScreen(navController: NavController) {
     ) {
         SettingLabel(navController = navController, label = "About")
 
-        Spacer(modifier = Modifier.height(16.dp))
+        SettingDivider()
 
         InfoItem(label = "App Name", value = appName)
         InfoItem(label = "Package", value = packageName)

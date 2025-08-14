@@ -15,6 +15,7 @@ import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.config.Screen
 import com.nktnet.webview_kiosk.config.option.ThemeOption
 import com.nktnet.webview_kiosk.ui.components.setting.DeviceSecurityTip
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
 import com.nktnet.webview_kiosk.ui.components.setting.SettingsHeaderMenu
 
 @Composable
@@ -60,7 +61,7 @@ fun SettingsListScreen(
     ) {
         SettingsHeaderMenu(navController, themeState)
 
-        Spacer(modifier = Modifier.height(8.dp))
+        SettingDivider()
 
         settingsItems.forEach { (title, description, route) ->
             ListItem(

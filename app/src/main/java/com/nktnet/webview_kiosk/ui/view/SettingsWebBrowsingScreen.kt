@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.config.UserSettings
 import com.nktnet.webview_kiosk.ui.components.common.LabelWithInfo
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
 import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
 import com.nktnet.webview_kiosk.ui.components.setting.SettingsActionButtons
 
@@ -68,7 +69,7 @@ fun SettingsWebBrowsingScreen(
     ) {
         SettingLabel(navController = navController, label = "Web Browsing")
 
-        Spacer(modifier = Modifier.height(16.dp))
+        SettingDivider()
 
         Row(
             modifier = Modifier.fillMaxWidth(),
