@@ -1,6 +1,8 @@
 package com.nktnet.webview_kiosk.ui.view
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
@@ -54,8 +56,9 @@ fun SettingsAppearanceScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeContent)
             .padding(horizontal = 16.dp)
+            .windowInsetsPadding(WindowInsets.safeContent)
+            .verticalScroll(rememberScrollState()),
     ) {
         SettingLabel(navController = navController, label = "Appearance")
 

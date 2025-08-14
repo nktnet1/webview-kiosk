@@ -3,6 +3,8 @@ package com.nktnet.webview_kiosk.ui.view
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -81,7 +83,8 @@ fun SettingsAboutScreen(navController: NavController) {
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp)
-            .windowInsetsPadding(WindowInsets.safeContent),
+            .windowInsetsPadding(WindowInsets.safeContent)
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.Start
     ) {

@@ -1,6 +1,8 @@
 package com.nktnet.webview_kiosk.ui.view
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -40,8 +42,9 @@ fun SettingsDeviceScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeContent)
             .padding(horizontal = 16.dp)
+            .windowInsetsPadding(WindowInsets.safeContent)
+            .verticalScroll(rememberScrollState()),
     ) {
         SettingLabel(navController = navController, label = "Device")
 

@@ -1,6 +1,8 @@
 package com.nktnet.webview_kiosk.ui.view
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -49,8 +51,9 @@ fun SettingsWebContentScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeContent)
             .padding(horizontal = 16.dp)
+            .windowInsetsPadding(WindowInsets.safeContent)
+            .verticalScroll(rememberScrollState()),
     ) {
         SettingLabel(navController = navController, label = "Web Content")
 
