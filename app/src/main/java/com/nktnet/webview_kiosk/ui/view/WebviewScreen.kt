@@ -7,6 +7,9 @@ import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -199,6 +202,8 @@ private fun MultitapHandler(
     }
 
     val userSettings = remember { UserSettings(context) }
+
+    var homeUrl by remember { mutableStateOf(userSettings.homeUrl) }
     var allowGoHome by remember { mutableStateOf(userSettings.allowGoHome) }
 
     var showConfirmDialog by remember { mutableStateOf(false) }
@@ -233,25 +238,37 @@ private fun MultitapHandler(
     }
 
     if (showConfirmDialog) {
-        androidx.compose.material3.AlertDialog(
+        AlertDialog(
             onDismissRequest = { showConfirmDialog = false },
-            title = { androidx.compose.material3.Text("Confirm") },
-            text = { androidx.compose.material3.Text("Do you want to navigate home?") },
+            title = {
+                Text("Return Home?")
+            },
+            text = { Text("""
+                Do you wish to return to the home page?
+                - $homeUrl                
+                """.trimIndent())
+            },
             confirmButton = {
-                androidx.compose.material3.TextButton(onClick = {
+                TextButton(onClick = {
                     showConfirmDialog = false
                     onSuccess()
                 }) {
-                    androidx.compose.material3.Text("Yes")
+                    Text("Go Home")
                 }
             },
             dismissButton = {
-                androidx.compose.material3.TextButton(onClick = {
-                    showConfirmDialog = false
-                }) {
-                    androidx.compose.material3.Text("No")
+                TextButton(
+                    onClick = { showConfirmDialog = false },
+                    colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                        contentColor = androidx.compose.material3.MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Cancel")
                 }
-            }
+            },
+            properties = androidx.compose.ui.window.DialogProperties(
+                dismissOnClickOutside = false,
+            )
         )
     }
 }
