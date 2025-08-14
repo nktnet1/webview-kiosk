@@ -25,6 +25,7 @@ fun InfoItem(label: String, value: String) {
         )
         Text(
             text = value,
+            modifier = Modifier.padding(top=4.dp),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -94,8 +95,7 @@ fun SettingsAboutScreen(navController: NavController) {
 
         InfoItem(label = "App Name", value = appName)
         InfoItem(label = "Package", value = packageName)
-        InfoItem(label = "Version Code", value = versionCode)
-        InfoItem(label = "Version", value = versionName)
+        InfoItem(label = "Version", value = "$versionCode ($versionName)")
         InfoItem(label = "Target SDK", value = targetSdkVersion)
         InfoItem(label = "Debug Build", value = debugFlag)
         InfoItem(label = "Supported ABIs", value = supportedABIs)
