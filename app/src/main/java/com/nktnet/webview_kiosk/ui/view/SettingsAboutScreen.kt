@@ -94,7 +94,7 @@ fun SettingsAboutScreen(navController: NavController) {
 
         SettingDivider()
 
-        InfoItem(label = "App Name", value = appName)
+        InfoItem(label = "App", value = appName)
         InfoItem(label = "Package", value = packageName)
         InfoItem(label = "Version", value = "$versionCode ($versionName)")
         InfoItem(label = "Target SDK", value = targetSdkVersion)

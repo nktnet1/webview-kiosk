@@ -46,7 +46,7 @@ fun SettingsListScreen(
         ),
         Triple(
             "About",
-            "App version, etc",
+            "Package name, app version, debug build",
             Screen.SettingsAbout.route
         ),
     )
