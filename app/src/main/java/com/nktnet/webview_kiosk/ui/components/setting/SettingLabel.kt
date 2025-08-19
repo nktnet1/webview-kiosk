@@ -18,7 +18,7 @@ fun SettingLabel(navController: NavController, label: String, showBackIcon: Bool
         modifier = Modifier
     ) {
         Box(
-            modifier = Modifier.height(100.dp)
+            modifier = Modifier.height(80.dp)
         ) {
             if (showBackIcon) {
                 IconButton(
