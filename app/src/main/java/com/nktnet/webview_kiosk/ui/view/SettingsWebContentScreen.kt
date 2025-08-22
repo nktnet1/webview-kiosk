@@ -64,7 +64,7 @@ fun SettingsWebContentScreen(
             modifier = Modifier.padding(bottom=4.dp),
             label = "Home URL",
             infoTitle = "Home URL",
-            infoText = "The URL that can be reset to using the floating icon button.",
+            infoText = "The URL that can be reset by tapping the screen 10 times in succession, using the floating toolbar icon, the address bar menu.",
         )
         UrlInput(
             value = homeUrl,
@@ -87,7 +87,7 @@ fun SettingsWebContentScreen(
                 If you need strict control, anchor your regex with `^` and `$`.
 
                 Examples:
-                - .
+                - .*
                 - ^https://.*\.?google\.com/?.*
                 
                 Whitelist patterns take precedence over blacklist patterns.
@@ -100,7 +100,7 @@ fun SettingsWebContentScreen(
                 blacklistError = !validateMultilineRegex(it)
             },
             isError = blacklistError,
-            placeholder = "e.g.\n\t^.*$\n\t^https://.*\\.?google\\.com/.*"
+            placeholder = "e.g.\n\t^.*$\n\t^https://.*\\.?google\\.com/?.*"
         )
 
         LabelWithInfo(
@@ -115,7 +115,7 @@ fun SettingsWebContentScreen(
                 If you need strict control, anchor your regex with `^` and `$`.
 
                 Examples:
-                - ^https://allowedsite\.com/?$
+                - ^https://trusted\.org/?$
                 - ^https://.*\.trusted\.org/.*
                 
                 Whitelist patterns take precedence over blacklist patterns.
@@ -128,7 +128,7 @@ fun SettingsWebContentScreen(
                 whitelistError = !validateMultilineRegex(it)
             },
             isError = whitelistError,
-            placeholder = "e.g.\n\t^https://allowedsite\\.com/.*\n\t^https://.*\\.trusted\\.org/.*"
+            placeholder = "e.g.\n\t^https://trusted\\.org/.*\n\t^https://.*\\.trusted\\.org/.*"
         )
         SettingsActionButtons(
             navController = navController,

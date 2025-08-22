@@ -111,7 +111,7 @@ export default function RegexPlayground() {
           <div>
             <label className="block text-sm font-medium mb-1">Blacklist</label>
             <Textarea
-              placeholder=".*"
+              placeholder={`e.g.\n\t.*`}
               value={blacklist}
               onChange={(e) => setBlacklist(e.target.value)}
               className={`min-h-[100px] ${
@@ -122,7 +122,7 @@ export default function RegexPlayground() {
           <div>
             <label className="block text-sm font-medium mb-1">Whitelist</label>
             <Textarea
-              placeholder={`^https://allowedsite\\.com/?$\n^https://.*\\.trusted\\.org/.*
+              placeholder={`e.g.\n\t^https://trusted\\.org/?$\n\t^https://.*\\.trusted\\.org/.*
                 `}
               value={whitelist}
               onChange={(e) => setWhitelist(e.target.value)}
