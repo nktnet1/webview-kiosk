@@ -88,7 +88,7 @@ fun SettingsWebContentScreen(
 
                 Examples:
                 - .
-                - ^https://.*\\.?google\\.com/.*
+                - ^https://.*\.?google\.com/?.*
                 
                 Whitelist patterns take precedence over blacklist patterns.
             """.trimIndent()
@@ -115,8 +115,8 @@ fun SettingsWebContentScreen(
                 If you need strict control, anchor your regex with `^` and `$`.
 
                 Examples:
-                - ^https://allowedsite\\.com/?$
-                - ^https://.*\\.trusted\\.org/.*
+                - ^https://allowedsite\.com/?$
+                - ^https://.*\.trusted\.org/.*
                 
                 Whitelist patterns take precedence over blacklist patterns.
             """.trimIndent()
