@@ -1,0 +1,46 @@
+---
+title: Web Content
+description: Home URL, blacklist, whitelist
+---
+
+import { EllipsisVertical, Wrench } from 'lucide-react';
+
+## Home URL
+
+Configure the Home URL, which can be returned to using one of:
+
+1. Tapping the screen 10 times in quick succession (if setting enabled)
+1. Clicking the <span className="inline-flex">(<EllipsisVertical />)</span> icon on the right of the address bar (top-right corner of screen) and selecting `Home`
+1. Clicking the floating toolbar <span className="inline-flex">(<Wrench className="-rotate-90 mx-2"/>)</span> icon and selecting `Home`
+
+## Blacklist & Whitelist Regex
+
+Specify regular expressions (regex), one per line.
+Escaping is required for special characters in regex like `.` and `?`.
+
+These patterns also use partial matching.
+If you need strict control, anchor your regex with `^` and `$`.
+
+Whitelist patterns take precedence over blacklist patterns.
+
+### Blacklist Example
+
+Block all:
+
+```
+.
+```
+
+Block google, including all subdomains and paths:
+
+```
+^https://.*\\.?google\\.com/.*
+```
+
+### Whitelist Example
+
+Allow `https://allowsite.com` home page, and all subdomains and paths for `https://trusted.org`:
+```
+^https://allowedsite\\.com/?$
+^https://.*\\.trusted\\.org/.*
+```
