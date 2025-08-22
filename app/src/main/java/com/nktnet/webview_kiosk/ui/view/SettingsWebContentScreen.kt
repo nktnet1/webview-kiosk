@@ -80,16 +80,16 @@ fun SettingsWebContentScreen(
             label = "Blacklist Regex",
             infoTitle = "Blacklist",
             infoText = """
-                Specify regular expressions (regex), one per line, to allow matching URLs.
+                Specify regular expressions (regex), one per line.
                 Escaping is required for special characters in regex like '.' and '?'.
 
-                These patterns also use partial (contains) matching by default.
-
-                If you need strict control, anchor your regex with '^' and '$'.
+                These patterns also use partial matching.
+                If you need strict control, anchor your regex with `^` and `$`.
 
                 Examples:
-                - .*
+                - .
                 - ^https://.*\\.?google\\.com/.*
+                
                 Whitelist patterns take precedence over blacklist patterns.
             """.trimIndent()
         )
@@ -108,16 +108,16 @@ fun SettingsWebContentScreen(
             label = "Whitelist Regex",
             infoTitle = "Whitelist",
             infoText = """
-                Specify regular expressions (regex), one per line, to allow matching URLs.
+                Specify regular expressions (regex), one per line.
                 Escaping is required for special characters in regex like '.' and '?'.
 
-                These patterns also use partial (contains) matching by default.
-
-                If you need strict control, anchor your regex with '^' and '$'.
+                These patterns also use partial matching.
+                If you need strict control, anchor your regex with `^` and `$`.
 
                 Examples:
-                - ^https://allowedsite\\.com$
+                - ^https://allowedsite\\.com/?$
                 - ^https://.*\\.trusted\\.org/.*
+                
                 Whitelist patterns take precedence over blacklist patterns.
             """.trimIndent()
         )
