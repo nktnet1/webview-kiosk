@@ -1,8 +1,9 @@
 package com.nktnet.webview_kiosk.ui.components.auth
 
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -13,6 +14,8 @@ fun AuthenticationErrorDisplay(
     errorResult: BiometricPromptManager.BiometricResult?,
     onRetry: () -> Unit
 ) {
+    val dispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -39,9 +42,32 @@ fun AuthenticationErrorDisplay(
             modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        Button(onClick = onRetry) {
-            Text("Retry Authentication")
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Button(
+                onClick = { dispatcher?.onBackPressed() },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary,
+                    contentColor = MaterialTheme.colorScheme.onSecondary
+                ),
+                modifier = Modifier.defaultMinSize(minWidth = 100.dp)
+            ) {
+                Text("Cancel")
+            }
+
+            Button(
+                onClick = onRetry,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                ),
+                modifier = Modifier.defaultMinSize(minWidth = 100.dp)
+            ) {
+                Text("Retry")
+            }
         }
+
     }
 }
-
