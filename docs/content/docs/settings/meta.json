@@ -1,4 +1,11 @@
 {
   "defaultOpen": true,
-  "pages": ["web-content", "web-browsing", "appearance", "device", "about"]
+  "pages": [
+    "import-export",
+    "web-content",
+    "web-browsing",
+    "appearance",
+    "device",
+    "about"
+  ]
 }
