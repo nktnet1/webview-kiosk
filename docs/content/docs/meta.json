@@ -1,7 +1,3 @@
 {
-  "pages": [
-    "index",
-    "installation",
-    "settings"
-  ]
+  "pages": ["index", "installation", "settings", "security"]
 }

@@ -1,0 +1,29 @@
+---
+title: Security
+description: Authentication session, app pinning
+---
+
+## Settings Authentication Session
+
+The settings page is locked using the device's Biometrics or Credentials (if set).
+
+Once unlocked, it will not prompt for login for the next 5 minutes.
+This persisting session duration reset each time a settings page is accessed.
+
+When the device is locked, or the app is exited or placed in the background,
+the authentication session will be revoked.
+
+For more on Android App Pinning, visit the following resources:
+- Google Official Documentation: https://support.google.com/android/answer/9455138?hl=en 
+- Samsung Guide for Unpin Lock: https://www.samsung.com/sg/support/mobile-devices/pin-an-app-to-your-phone-screen-so-that-it-cant-be-closed/
+
+
+## App Pinning
+
+For better security, go to the App Pinning setting, tap into it to view more
+options, then enable **Ask for PIN/pattern/password before unpinning**.
+
+On some devices, it may be shown as **Lock device when unpinning** or equivalent.
+
+This will ensure that users cannot unpin (and thus unlock) the kiosk view without
+first entering your device biometrics or credentials.

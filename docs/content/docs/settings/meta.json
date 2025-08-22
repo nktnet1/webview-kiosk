@@ -1,4 +1,4 @@
 {
   "defaultOpen": true,
-  "pages": ["web-content", "web-browsing", "appearance"]
+  "pages": ["web-content", "web-browsing", "appearance", "device", "about"]
 }
