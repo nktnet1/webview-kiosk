@@ -3,16 +3,13 @@ title: Web Content
 description: Home URL, blacklist, whitelist
 ---
 
+import { Link } from 'next/link';
 import { EllipsisVertical, Wrench } from 'lucide-react';
 import RegexPlayground from '@/components/RegexPlayground';
 
 ## Home URL
 
-Configure the Home URL, which can be returned to using one of:
-
-1. Tapping the screen 10 times in quick succession (if setting enabled)
-1. Clicking the <span className="inline-flex">(<EllipsisVertical />)</span> icon on the right of the address bar (top-right corner of screen) and selecting `Home`
-1. Clicking the floating toolbar <span className="inline-flex">(<Wrench className="-rotate-90 mx-2"/>)</span> icon and selecting `Home`
+Configure the Home URL, which can be returned to as per <a href="/docs/settings/web-browsing/#allow-go-home">`Web Browsing -> Allow Go Home`</a>.
 
 ## Blacklist & Whitelist Regex
 

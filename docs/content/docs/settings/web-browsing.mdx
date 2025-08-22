@@ -3,13 +3,64 @@ title: Web Browsing
 description: Refresh, navigation, search provider
 ---
 
+import { EllipsisVertical, Wrench } from 'lucide-react';
+
 ## Allow Refresh
 
+Set to true to allow the user to refresh the page using one of:
+
+1. Pulling down from the top of the page
+1. Clicking the <span className="inline-flex">(<EllipsisVertical />)</span> icon on the right of the address bar (top-right corner of screen) and selecting `Refresh`
+1. Hit enter on the address bar
 
 ## Allow Backwards Navigation
 
+Set to true to allow the user to go back one page in history using one of:
+
+1. Clicking the back button on their android device
+1. Clicking the <span className="inline-flex">(<EllipsisVertical />)</span> icon on the right of the address bar (top-right corner of screen) and selecting `Refresh`
+
+This also enables forward navigation using the second method.
 
 ## Allow Go Home
 
+Set to true to allow the user to go home using one of:
+
+1. Tapping the screen 10 times in quick succession (if setting enabled)
+1. Clicking the <span className="inline-flex">(<EllipsisVertical />)</span> icon on the right of the address bar (top-right corner of screen) and selecting `Home`
+1. Clicking the floating toolbar <span className="inline-flex">(<Wrench className="-rotate-90"/>)</span> icon and selecting `Home`
+
 
 ## Search Provider URL
+
+The URL used for search queries in the address bar. This URL must include the search string query parameter - examples below.
+
+### Google
+```
+https://google.com/search?q=
+```
+
+### Unduck
+```
+https://unduck.link?q=
+```
+
+### Bing
+```
+https://bing.com/search?q=
+```
+
+### DuckDuckGo
+```
+https://duckduckgo.com/?q=
+```
+
+### Yahoo
+```
+https://search.yahoo.com/search?p=
+```
+
+### Startpage
+```
+https://startpage.com/do/search?q=
+```

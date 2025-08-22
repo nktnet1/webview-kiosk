@@ -4,7 +4,7 @@ import {
   defineDocs,
   frontmatterSchema,
   metaSchema,
-} from 'fumadocs-mdx/config';
+} from "fumadocs-mdx/config";
 
 export const docs = defineDocs({
   docs: {
@@ -16,8 +16,8 @@ export const docs = defineDocs({
 });
 
 export const legal = defineCollections({
-  type: 'doc',
-  dir: './content/legal',
+  type: "doc",
+  dir: "./content/legal",
   schema: frontmatterSchema.extend({}),
 });
 
