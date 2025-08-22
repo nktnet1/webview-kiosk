@@ -69,7 +69,11 @@ fun SettingsAppearanceScreen(
             modifier = Modifier.padding(bottom=4.dp),
             label = "Theme",
             infoTitle = "Theme",
-            infoText = "Select the app theme: System default, Light, or Dark."
+            infoText = """
+                Select the app theme: System (default), Dark or Light.
+
+                If either Dark or Light is selected, custom JavaScript will be injected to override the prefers-color-scheme property of the WebView page.
+            """.trimIndent()
         )
         DropdownSelector(
             options = ThemeOption.entries,

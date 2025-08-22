@@ -79,7 +79,7 @@ fun SettingsWebBrowsingScreen(
             LabelWithInfo(
                 label = "Allow Refresh",
                 infoTitle = "Allow Refresh",
-                infoText = "Whether the user can pull down at the top of a webpage to refresh"
+                infoText = "Whether the user can pull down at the top of a webpage to refresh."
             )
             Switch(
                 checked = allowRefresh,
@@ -127,7 +127,7 @@ fun SettingsWebBrowsingScreen(
             modifier = Modifier.padding(top = 20.dp, bottom = 4.dp),
             label = "Search Provider URL",
             infoTitle = "Search Provider URL",
-            infoText = "The URL used for search queries. Must include the query parameter, e.g.\n\thttps://www.google.com/search?q="
+            infoText = "The URL used for search queries in the address bar. This URL must include the query parameter, e.g.\n\thttps://google.com/search?q="
         )
         OutlinedTextField(
             value = searchProviderUrl,
