@@ -13,7 +13,7 @@ class UserSettings(context: Context) {
         context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     var homeUrl: String
-        get() = prefs.getString(HOME_URL, null) ?: "https://google.com"
+        get() = prefs.getString(HOME_URL, null) ?: Constants.WEBSITE_URL
         set(value) = prefs.edit { putString(HOME_URL, value) }
 
     var websiteBlacklist: String

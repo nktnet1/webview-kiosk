@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
+import com.nktnet.webview_kiosk.config.Constants
 
 @Composable
 fun LabelWithInfo(
@@ -71,7 +72,7 @@ fun UrlInput(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        placeholder = { Text("e.g. https://google.com.au", fontStyle = FontStyle.Italic) },
+        placeholder = { Text("e.g. ${Constants.WEBSITE_URL}", fontStyle = FontStyle.Italic) },
         modifier = Modifier.fillMaxWidth(),
         singleLine = true,
         isError = isError

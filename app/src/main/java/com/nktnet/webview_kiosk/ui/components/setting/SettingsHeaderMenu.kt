@@ -3,10 +3,12 @@ package com.nktnet.webview_kiosk.ui.components.setting
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.material3.ButtonDefaults
@@ -20,6 +22,7 @@ import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.R
 import com.nktnet.webview_kiosk.config.option.ThemeOption
 import com.nktnet.webview_kiosk.config.UserSettings
+import androidx.core.net.toUri
 
 @Composable
 fun SettingsHeaderMenu(
@@ -122,6 +125,22 @@ fun SettingsHeaderMenu(
                     leadingIcon = {
                         Icon(
                             painter = painterResource(R.drawable.outline_file_export_24),
+                            contentDescription = null,
+                            tint = tintColor
+                        )
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("Help", color = tintColor) },
+                    onClick = {
+                        showMenu = false
+                        val intent = Intent(Intent.ACTION_VIEW,
+                            "https://webviewkiosk.nktnet.uk".toUri())
+                        context.startActivity(intent)
+                    },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Info,
                             contentDescription = null,
                             tint = tintColor
                         )
@@ -230,9 +249,9 @@ private fun ExportSettingsDialog(
                     onDismiss()
                 },
                 colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
-            )
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
                 Text("Copy")
             }
