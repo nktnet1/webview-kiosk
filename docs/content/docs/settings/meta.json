@@ -1,6 +1,4 @@
 {
-  "pages": [
-    "web-content",
-    "web-browsing"
-  ]
+  "defaultOpen": true,
+  "pages": ["web-content", "web-browsing"]
 }

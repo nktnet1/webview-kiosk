@@ -4,6 +4,7 @@ description: Home URL, blacklist, whitelist
 ---
 
 import { EllipsisVertical, Wrench } from 'lucide-react';
+import RegexPlayground from '@/components/RegexPlayground';
 
 ## Home URL
 
@@ -28,7 +29,7 @@ Whitelist patterns take precedence over blacklist patterns.
 Block all:
 
 ```
-.
+.*
 ```
 
 Block google, including all subdomains and paths:
@@ -39,8 +40,12 @@ Block google, including all subdomains and paths:
 
 ### Whitelist Example
 
-Allow `https://allowsite.com` home page, and all subdomains and paths for `https://trusted.org`:
+Allow `https://allowsite.com` home page and all subdomains and paths for `https://trusted.org` to bypass rules in the blacklist:
 ```
 ^https://allowedsite\\.com/?$
 ^https://.*\\.trusted\\.org/.*
 ```
+
+### Regex Playground
+
+<RegexPlayground />

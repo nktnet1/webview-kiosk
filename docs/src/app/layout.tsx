@@ -1,4 +1,5 @@
 import "@/app/global.css";
+import { Toaster } from "@/components/ui/sonner";
 import { RootProvider } from "fumadocs-ui/provider";
 import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
@@ -20,6 +21,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           }}
         >
           {children}
+          <Toaster />
         </RootProvider>
       </body>
     </html>
