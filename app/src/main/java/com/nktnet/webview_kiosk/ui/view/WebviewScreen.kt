@@ -80,7 +80,9 @@ fun WebviewScreen(navController: NavController) {
         blockedMessage = blockedMessage,
         blacklistRegexes = blacklistRegexes,
         whitelistRegexes = whitelistRegexes,
-        onPageStarted = { transitionState = TransitionState.PAGE_STARTED },
+        onPageStarted = {
+            transitionState = TransitionState.PAGE_STARTED
+        },
         onPageFinished = { url ->
             if (!hasFocus) {
                 urlBarText = urlBarText.copy(text = url)

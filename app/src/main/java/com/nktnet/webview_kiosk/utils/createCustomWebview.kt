@@ -53,8 +53,10 @@ fun createCustomWebview(
                 }
 
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                    val js = getPrefersColorSchemeOverrideScript(theme)
-                    evaluateJavascript(js, null)
+                    if (theme != ThemeOption.SYSTEM) {
+                        val js = getPrefersColorSchemeOverrideScript(theme)
+                        evaluateJavascript(js, null)
+                    }
                     super.onPageStarted(view, url, favicon)
                     onPageStarted()
                 }
@@ -155,7 +157,9 @@ fun resolveUrlOrSearch(searchProviderUrl: String, input: String): String {
 }
 
 private fun getPrefersColorSchemeOverrideScript(theme: ThemeOption): String {
-    if (theme == ThemeOption.SYSTEM) return ""
+    if (theme == ThemeOption.SYSTEM) {
+        return ""
+    }
 
     val mediaValue = when (theme) {
         ThemeOption.DARK -> "dark"
