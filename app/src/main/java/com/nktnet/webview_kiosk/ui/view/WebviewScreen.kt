@@ -28,9 +28,8 @@ import com.nktnet.webview_kiosk.ui.components.AddressBar
 import com.nktnet.webview_kiosk.ui.components.FloatingMenuButton
 import com.nktnet.webview_kiosk.ui.components.common.LoadingIndicator
 import com.nktnet.webview_kiosk.utils.createCustomWebview
-import com.nktnet.webview_kiosk.utils.customLoadUrl
 import com.nktnet.webview_kiosk.utils.rememberLockedState
-import com.nktnet.webview_kiosk.utils.resolveUrlOrSearch
+import com.nktnet.webview_kiosk.utils.webview.resolveUrlOrSearch
 
 @Composable
 fun WebviewScreen(navController: NavController) {
@@ -94,9 +93,6 @@ fun WebviewScreen(navController: NavController) {
         }
     )
 
-    fun WebView.customLoadUrlWithDefaults(url: String) =
-        customLoadUrl(url, blacklistRegexes, whitelistRegexes, blockedMessage)
-
     HandleBackPress(webView, onBackPressedDispatcher, userSettings.allowBackwardsNavigation)
 
     val triggerLoad: (String) -> Unit = { input ->
@@ -105,7 +101,7 @@ fun WebviewScreen(navController: NavController) {
             transitionState = TransitionState.TRANSITIONING
             webView.requestFocus()
             currentUrl = searchUrl
-            webView.customLoadUrlWithDefaults(searchUrl)
+            webView.loadUrl(searchUrl)
         }
     }
 
@@ -132,10 +128,10 @@ fun WebviewScreen(navController: NavController) {
                                     isRefreshing = true
                                     webView.reload()
                                 }
-                                addView(webView.apply { customLoadUrlWithDefaults(currentUrl) })
+                                addView(webView.apply { loadUrl(currentUrl) })
                             }
                         } else {
-                            webView.apply { customLoadUrlWithDefaults(currentUrl) }
+                            webView.apply { loadUrl(currentUrl) }
                         }
                     },
                     update = { view ->
