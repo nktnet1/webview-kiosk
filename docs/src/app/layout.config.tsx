@@ -1,6 +1,6 @@
 import { APP_NAME } from "@/config/app";
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
-import { BookIcon, FileTextIcon, ShieldIcon } from "lucide-react";
+import { FileTextIcon, ShieldIcon } from "lucide-react";
 import AppIcon from "@/app/icon.png";
 import Image from "next/image";
 import { GITHUB_URL } from "@/config/links";
@@ -21,13 +21,6 @@ export const baseOptions: BaseLayoutProps = {
   },
   links: [
     {
-      icon: <BookIcon />,
-      text: "Docs",
-      url: "/docs",
-      secondary: false,
-      active: "nested-url",
-    },
-    {
       icon: <ShieldIcon />,
       text: "Privacy",
       url: "/privacy",
@@ -40,4 +33,4 @@ export const baseOptions: BaseLayoutProps = {
       secondary: false,
     },
   ],
-};
+} as const;
