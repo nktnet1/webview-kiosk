@@ -1,8 +1,7 @@
 package com.nktnet.webview_kiosk.ui.components
 
 import android.webkit.WebView
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,21 +20,8 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -47,7 +33,9 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import com.nktnet.webview_kiosk.config.SystemSettings
 import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.utils.webview.WebViewNavigation
 
 @Composable
 fun AddressBar(
@@ -61,10 +49,10 @@ fun AddressBar(
 ) {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val systemSettings = remember { SystemSettings(context) }
     var urlTextState by remember { mutableStateOf(urlBarText.text) }
 
     var menuExpanded by remember { mutableStateOf(false) }
-
     val showMenu = userSettings.allowBackwardsNavigation || userSettings.allowRefresh || userSettings.allowGoHome
 
     Row(
@@ -95,11 +83,7 @@ fun AddressBar(
                 imeAction = ImeAction.Go
             ),
             keyboardActions = KeyboardActions(
-                onGo = {
-                    if (urlBarText.text.isNotBlank()) {
-                        triggerLoad(urlBarText.text)
-                    }
-                }
+                onGo = { if (urlBarText.text.isNotBlank()) triggerLoad(urlBarText.text) }
             ),
             textStyle = LocalTextStyle.current,
             trailingIcon = {
@@ -118,11 +102,7 @@ fun AddressBar(
                         .size(width = 24.dp, height = 80.dp)
                         .wrapContentSize(Alignment.Center)
                 ) {
-                    Icon(
-                        Icons.Filled.MoreVert,
-                        contentDescription = "Menu",
-                        modifier = Modifier.size(32.dp)
-                    )
+                    Icon(Icons.Filled.MoreVert, contentDescription = "Menu", modifier = Modifier.size(32.dp))
                 }
                 DropdownMenu(
                     expanded = menuExpanded,
@@ -131,49 +111,43 @@ fun AddressBar(
                     if (userSettings.allowBackwardsNavigation) {
                         DropdownMenuItem(
                             text = { Text("Back") },
-                            enabled = webView.canGoBack(),
+                            enabled = systemSettings.historyIndex > 0,
                             onClick = {
-                                webView.goBack()
+                                WebViewNavigation.goBack(webView, systemSettings)
+                                val newUrl = systemSettings.historyStack[systemSettings.historyIndex]
+                                onUrlBarTextChange(TextFieldValue(newUrl))
                                 menuExpanded = false
                             },
-                            leadingIcon = {
-                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                            }
+                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                         )
                         DropdownMenuItem(
                             text = { Text("Forward") },
-                            enabled = webView.canGoForward(),
+                            enabled = systemSettings.historyIndex < (systemSettings.historyStack.size - 1),
                             onClick = {
-                                webView.goForward()
+                                WebViewNavigation.goForward(webView, systemSettings)
+                                val newUrl = systemSettings.historyStack[systemSettings.historyIndex]
+                                onUrlBarTextChange(TextFieldValue(newUrl))
                                 menuExpanded = false
                             },
-                            leadingIcon = {
-                                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Forward")
-                            }
+                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Forward") }
                         )
                     }
                     if (userSettings.allowRefresh) {
                         DropdownMenuItem(
                             text = { Text("Refresh") },
-                            onClick = {
-                                webView.reload()
-                                menuExpanded = false
-                            },
-                            leadingIcon = {
-                                Icon(Icons.Filled.Refresh, contentDescription = "Refresh")
-                            }
+                            onClick = { webView.reload(); menuExpanded = false },
+                            leadingIcon = { Icon(Icons.Filled.Refresh, contentDescription = "Refresh") }
                         )
                     }
                     if (userSettings.allowGoHome) {
                         DropdownMenuItem(
                             text = { Text("Home") },
                             onClick = {
-                                webView.loadUrl(userSettings.homeUrl)
+                                WebViewNavigation.goHome(webView, systemSettings, userSettings.homeUrl)
+                                onUrlBarTextChange(TextFieldValue(userSettings.homeUrl))
                                 menuExpanded = false
                             },
-                            leadingIcon = {
-                                Icon(Icons.Filled.Home, contentDescription = "Home")
-                            }
+                            leadingIcon = { Icon(Icons.Filled.Home, contentDescription = "Home") }
                         )
                     }
                 }
@@ -182,8 +156,6 @@ fun AddressBar(
     }
 
     LaunchedEffect(hasFocus) {
-        if (hasFocus) {
-            onUrlBarTextChange(urlBarText.copy(selection = TextRange(0, urlBarText.text.length)))
-        }
+        if (hasFocus) onUrlBarTextChange(urlBarText.copy(selection = TextRange(0, urlBarText.text.length)))
     }
 }

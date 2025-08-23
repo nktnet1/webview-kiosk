@@ -1,21 +1,14 @@
 package com.nktnet.webview_kiosk.ui.view
 
 import android.app.Activity
-import android.webkit.WebView
-import androidx.activity.OnBackPressedCallback
-import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.viewinterop.AndroidView
@@ -24,6 +17,8 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.nktnet.webview_kiosk.config.option.AddressBarOption
 import com.nktnet.webview_kiosk.config.SystemSettings
 import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.handlers.BackPressHandler
+import com.nktnet.webview_kiosk.handlers.MultitapHandler
 import com.nktnet.webview_kiosk.ui.components.AddressBar
 import com.nktnet.webview_kiosk.ui.components.FloatingMenuButton
 import com.nktnet.webview_kiosk.ui.components.common.LoadingIndicator
@@ -79,32 +74,35 @@ fun WebviewScreen(navController: NavController) {
         blockedMessage = blockedMessage,
         blacklistRegexes = blacklistRegexes,
         whitelistRegexes = whitelistRegexes,
-        onPageStarted = {
-            transitionState = TransitionState.PAGE_STARTED
-        },
+        onPageStarted = { transitionState = TransitionState.PAGE_STARTED },
         onPageFinished = { url ->
             currentUrl = url
-            systemSettings.lastUrl = url
+            val stack = systemSettings.historyStack.toMutableList()
+            val index = systemSettings.historyIndex
+            if (index in stack.indices) stack.subList(index + 1, stack.size).clear()
+
+            if (stack.lastOrNull() != url) {
+                stack.add(url)
+                systemSettings.historyStack = stack
+                systemSettings.historyIndex = stack.lastIndex
+            }
+
             transitionState = TransitionState.PAGE_FINISHED
             isRefreshing = false
         },
         updateAddressBarUrl = { url ->
-            if (!hasFocus) {
-                urlBarText = urlBarText.copy(text = url)
-            }
+            if (!hasFocus) urlBarText = urlBarText.copy(text = url)
             currentUrl = url
-            systemSettings.lastUrl = url
         }
     )
 
-    HandleBackPress(webView, onBackPressedDispatcher, userSettings.allowBackwardsNavigation)
+    BackPressHandler(webView, onBackPressedDispatcher)
 
     val triggerLoad: (String) -> Unit = { input ->
         val searchUrl = resolveUrlOrSearch(searchProviderUrl, input.trim())
         if (searchUrl.isNotBlank() && (searchUrl != currentUrl || allowRefresh)) {
             transitionState = TransitionState.TRANSITIONING
             webView.requestFocus()
-            currentUrl = searchUrl
             webView.loadUrl(searchUrl)
         }
     }
@@ -128,29 +126,17 @@ fun WebviewScreen(navController: NavController) {
                     factory = { ctx ->
                         if (userSettings.allowRefresh) {
                             SwipeRefreshLayout(ctx).apply {
-                                setOnRefreshListener {
-                                    isRefreshing = true
-                                    webView.reload()
-                                }
+                                setOnRefreshListener { isRefreshing = true; webView.reload() }
                                 addView(webView.apply { loadUrl(currentUrl) })
                             }
-                        } else {
-                            webView.apply { loadUrl(currentUrl) }
-                        }
+                        } else webView.apply { loadUrl(currentUrl) }
                     },
-                    update = { view ->
-                        if (view is SwipeRefreshLayout) {
-                            view.isRefreshing = isRefreshing
-                        }
-                    },
+                    update = { view -> if (view is SwipeRefreshLayout) view.isRefreshing = isRefreshing },
                     modifier = Modifier.fillMaxSize()
                 )
 
                 if (transitionState == TransitionState.TRANSITIONING) {
-                    Box(
-                        Modifier.fillMaxSize().background(Color(0x88000000)),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Box(Modifier.fillMaxSize().background(Color(0x88000000)), contentAlignment = Alignment.Center) {
                         LoadingIndicator("Loading...")
                     }
                 }
@@ -158,144 +144,17 @@ fun WebviewScreen(navController: NavController) {
         }
 
         if (!isPinned) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Transparent)
-            ) {
+            Box(modifier = Modifier.fillMaxSize().background(Color.Transparent)) {
                 FloatingMenuButton(
                     onHomeClick = { triggerLoad(userSettings.homeUrl) },
-                    onLockClick = {
-                        try {
-                            activity?.startLockTask()
-                        } catch (e: Exception) {
-                            e.printStackTrace()
-                        }
-                    },
+                    onLockClick = { try { activity?.startLockTask() } catch (_: Exception) {} },
                     navController = navController,
                 )
             }
         }
     }
 
-
-    MultitapHandler(
-        onSuccess = {
-            triggerLoad(userSettings.homeUrl)
-        }
-    )
+    MultitapHandler { triggerLoad(userSettings.homeUrl) }
 }
 
-@Composable
-private fun MultitapHandler(
-    requiredTaps: Int = 10,
-    onSuccess: () -> Unit
-) {
-    val context = LocalContext.current
-    var tapsLeft by remember { mutableIntStateOf(requiredTaps) }
-    var lastTapTime by remember { mutableLongStateOf(0L) }
-    val maxInterval = 500L
-
-    val toastRef = remember { mutableStateOf<android.widget.Toast?>(null) }
-
-    fun showToast(message: String) {
-        toastRef.value?.cancel()
-        toastRef.value = android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).also { it.show() }
-    }
-
-    val userSettings = remember { UserSettings(context) }
-
-    var homeUrl by remember { mutableStateOf(userSettings.homeUrl) }
-    var allowGoHome by remember { mutableStateOf(userSettings.allowGoHome) }
-
-    var showConfirmDialog by remember { mutableStateOf(false) }
-
-    if (allowGoHome) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(Color.Transparent)
-                .pointerInteropFilter { motionEvent ->
-                    if (motionEvent.action == android.view.MotionEvent.ACTION_DOWN) {
-                        val now = System.currentTimeMillis()
-                        if (now - lastTapTime > maxInterval) {
-                            tapsLeft = requiredTaps
-                        }
-                        tapsLeft = 0.coerceAtLeast(tapsLeft - 1)
-                        lastTapTime = now
-                        when {
-                            tapsLeft <= 0 -> {
-                                tapsLeft = requiredTaps
-                                toastRef.value?.cancel()
-                                showConfirmDialog = true
-                            }
-                            tapsLeft <= 5 -> {
-                                showToast("Tap $tapsLeft more times to navigate home")
-                            }
-                        }
-                    }
-                    false
-                }
-        )
-    }
-
-    if (showConfirmDialog) {
-        AlertDialog(
-            onDismissRequest = { showConfirmDialog = false },
-            title = {
-                Text("Return Home?")
-            },
-            text = { Text("""
-                Do you wish to return to the home page?
-                - $homeUrl                
-                """.trimIndent())
-            },
-            confirmButton = {
-                TextButton(onClick = {
-                    showConfirmDialog = false
-                    onSuccess()
-                }) {
-                    Text("Go Home")
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showConfirmDialog = false },
-                    colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
-                        contentColor = androidx.compose.material3.MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Text("Cancel")
-                }
-            },
-            properties = androidx.compose.ui.window.DialogProperties(
-                dismissOnClickOutside = false,
-            )
-        )
-    }
-}
-
-private enum class TransitionState {
-    TRANSITIONING,
-    PAGE_STARTED,
-    PAGE_FINISHED
-}
-
-@Composable
-private fun HandleBackPress(
-    webView: WebView,
-    dispatcher: OnBackPressedDispatcher?,
-    allowBackwardsNavigation: Boolean
-) {
-    DisposableEffect(webView, dispatcher, allowBackwardsNavigation) {
-        val callback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (allowBackwardsNavigation && webView.canGoBack()) {
-                    webView.goBack()
-                }
-            }
-        }
-        dispatcher?.addCallback(callback)
-        onDispose { callback.remove() }
-    }
-}
+private enum class TransitionState { TRANSITIONING, PAGE_STARTED, PAGE_FINISHED }
