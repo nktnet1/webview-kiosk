@@ -60,7 +60,9 @@ fun SettingsActionButtons(
         Button(
             onClick = {
                 saveSettings()
-                navController.navigate(Screen.WebView.route)
+                navController.navigate(Screen.WebView.route) {
+                    popUpTo(Screen.Settings.route) { inclusive = true }
+                }
             },
             modifier = Modifier
                 .padding(top = 2.dp)
