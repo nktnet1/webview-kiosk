@@ -83,13 +83,17 @@ fun WebviewScreen(navController: NavController) {
             transitionState = TransitionState.PAGE_STARTED
         },
         onPageFinished = { url ->
+            currentUrl = url
+            systemSettings.lastUrl = url
+            transitionState = TransitionState.PAGE_FINISHED
+            isRefreshing = false
+        },
+        updateAddressBarUrl = { url ->
             if (!hasFocus) {
                 urlBarText = urlBarText.copy(text = url)
             }
             currentUrl = url
             systemSettings.lastUrl = url
-            transitionState = TransitionState.PAGE_FINISHED
-            isRefreshing = false
         }
     )
 
@@ -97,7 +101,7 @@ fun WebviewScreen(navController: NavController) {
 
     val triggerLoad: (String) -> Unit = { input ->
         val searchUrl = resolveUrlOrSearch(searchProviderUrl, input.trim())
-        if (searchUrl.isNotBlank() && searchUrl != currentUrl || allowRefresh) {
+        if (searchUrl.isNotBlank() && (searchUrl != currentUrl || allowRefresh)) {
             transitionState = TransitionState.TRANSITIONING
             webView.requestFocus()
             currentUrl = searchUrl

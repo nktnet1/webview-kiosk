@@ -18,13 +18,12 @@ import com.nktnet.webview_kiosk.utils.webview.isBlockedUrl
 fun createCustomWebview(
     context: Context,
     theme: ThemeOption,
-
     blockedMessage: String,
     blacklistRegexes: List<Regex>,
     whitelistRegexes: List<Regex>,
-
     onPageStarted: () -> Unit,
-    onPageFinished: (String) -> Unit
+    onPageFinished: (url: String) -> Unit,
+    updateAddressBarUrl: (url: String) -> Unit
 ): WebView {
     val isBlocked: (String) -> Boolean = { url ->
         isBlockedUrl(url = url, blacklistRegexes = blacklistRegexes, whitelistRegexes = whitelistRegexes)
@@ -51,7 +50,10 @@ fun createCustomWebview(
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    url?.let { onPageFinished(it) }
+                    url?.let {
+                        onPageFinished(it)
+                    }
+                    isShowingBlockedPage = false
                 }
 
                 override fun shouldOverrideUrlLoading(
@@ -59,8 +61,9 @@ fun createCustomWebview(
                     request: WebResourceRequest?
                 ): Boolean {
                     val url = request?.url?.toString() ?: ""
-                    return if (isBlocked(url)) {
+                    return if (!isShowingBlockedPage && isBlocked(url)) {
                         view?.loadBlockedPage(url, blockedMessage)
+                        isShowingBlockedPage = true
                         true
                     } else {
                         false
@@ -68,13 +71,27 @@ fun createCustomWebview(
                 }
 
                 override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
+                    /*
+                    android.util.Log.d("WebViewClient", "doUpdateVisitedHistory url=$url isReload=$isReload isShowingBlockedPage=$isShowingBlockedPage")
+                    val stack = view?.copyBackForwardList()
+                    if (stack != null) {
+                        val sb = StringBuilder()
+                        for (i in 0 until stack.size) {
+                            val entry = stack.getItemAtIndex(i)
+                            sb.append("\n[$i] ${entry.url}")
+                        }
+                        android.util.Log.d("WebViewClient", "History stack (currentIndex=${stack.currentIndex}): $sb")
+                    }
+                    */
+
                     url?.let {
-                        if (!isShowingBlockedPage && isBlocked(it)) {
+                        val isUrlBlocked = isBlocked(it)
+                        if (!isShowingBlockedPage && isUrlBlocked) {
                             isShowingBlockedPage = true
                             view?.loadBlockedPage(it, blockedMessage)
-                        } else {
-                            isShowingBlockedPage = false
+                            return
                         }
+                        updateAddressBarUrl(it)
                     }
                     super.doUpdateVisitedHistory(view, url, isReload)
                 }
@@ -97,4 +114,3 @@ private fun WebView.loadBlockedPage(
         null
     )
 }
-
