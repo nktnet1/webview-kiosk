@@ -81,8 +81,13 @@ fun WebviewScreen(navController: NavController) {
             val index = systemSettings.historyIndex
             if (index in stack.indices) stack.subList(index + 1, stack.size).clear()
 
-            if (stack.lastOrNull() != url) {
-                stack.add(url)
+            fun normalizeUrl(url: String): String = url.trimEnd('/')
+
+            val lastUrl = stack.lastOrNull()?.let { normalizeUrl(it) }
+            val newUrl = normalizeUrl(url)
+
+            if (lastUrl != newUrl) {
+                stack.add(newUrl)
                 systemSettings.historyStack = stack
                 systemSettings.historyIndex = stack.lastIndex
             }
