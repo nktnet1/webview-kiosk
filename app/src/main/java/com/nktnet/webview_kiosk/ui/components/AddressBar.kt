@@ -143,7 +143,7 @@ fun AddressBar(
                         DropdownMenuItem(
                             text = { Text("Home") },
                             onClick = {
-                                WebViewNavigation.goHome(webView, systemSettings, userSettings.homeUrl)
+                                WebViewNavigation.goHome(webView, systemSettings, userSettings)
                                 onUrlBarTextChange(TextFieldValue(userSettings.homeUrl))
                                 menuExpanded = false
                             },

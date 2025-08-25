@@ -27,6 +27,8 @@ fun SettingsWebBrowsingScreen(
     var allowRefresh by remember { mutableStateOf(userSettings.allowRefresh) }
     var allowBackwardsNavigation by remember { mutableStateOf(userSettings.allowBackwardsNavigation) }
     var allowGoHome by remember { mutableStateOf(userSettings.allowGoHome) }
+    var allowOtherUrlSchemes by remember { mutableStateOf(userSettings.allowOtherUrlSchemes) }
+    var clearHistoryOnHome by remember { mutableStateOf(userSettings.clearHistoryOnHome) }
     var searchProviderUrl by remember { mutableStateOf(TextFieldValue(userSettings.searchProviderUrl)) }
 
     var searchProviderError by remember { mutableStateOf<String?>(null) }
@@ -43,7 +45,9 @@ fun SettingsWebBrowsingScreen(
 
     fun showToast(message: String) {
         toastRef.value?.cancel()
-        toastRef.value = android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).also { it.show() }
+        toastRef.value =
+            android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT)
+                .also { it.show() }
     }
 
     fun saveSettings() {
@@ -53,6 +57,8 @@ fun SettingsWebBrowsingScreen(
             userSettings.allowRefresh = allowRefresh
             userSettings.allowBackwardsNavigation = allowBackwardsNavigation
             userSettings.allowGoHome = allowGoHome
+            userSettings.allowOtherUrlSchemes = allowOtherUrlSchemes
+            userSettings.clearHistoryOnHome = clearHistoryOnHome
             userSettings.searchProviderUrl = searchProviderUrl.text.trim()
             showToast("Settings saved successfully.")
         } else {
@@ -122,6 +128,43 @@ fun SettingsWebBrowsingScreen(
                 onCheckedChange = { allowGoHome = it }
             )
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            LabelWithInfo(
+                label = "Clear History on Home",
+                infoTitle = "Clear History on Home",
+                infoText = "Clear the browser history whenever the user returns to the home page."
+            )
+            Switch(
+                checked = clearHistoryOnHome,
+                onCheckedChange = { clearHistoryOnHome = it }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            LabelWithInfo(
+                label = "Open Other URL Schemes",
+                infoTitle = "Open Other URL Schemes",
+                infoText = "Allow opening of non-http/https URL schemes such as 'tel:', 'mailto:' and 'intent:' in other apps."
+            )
+            Switch(
+                checked = allowOtherUrlSchemes,
+                onCheckedChange = { allowOtherUrlSchemes = it }
+            )
+        }
+
 
         LabelWithInfo(
             modifier = Modifier.padding(top = 20.dp, bottom = 4.dp),

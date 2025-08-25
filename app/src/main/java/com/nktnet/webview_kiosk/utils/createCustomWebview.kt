@@ -23,7 +23,7 @@ fun createCustomWebview(
     whitelistRegexes: List<Regex>,
     onPageStarted: () -> Unit,
     onPageFinished: (url: String) -> Unit,
-    updateAddressBarUrl: (url: String) -> Unit
+    doUpdateVisitedHistory: (url: String) -> Unit
 ): WebView {
     val isBlocked: (String) -> Boolean = { url ->
         isBlockedUrl(url = url, blacklistRegexes = blacklistRegexes, whitelistRegexes = whitelistRegexes)
@@ -71,19 +71,6 @@ fun createCustomWebview(
                 }
 
                 override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
-                    /*
-                    android.util.Log.d("WebViewClient", "doUpdateVisitedHistory url=$url isReload=$isReload isShowingBlockedPage=$isShowingBlockedPage")
-                    val stack = view?.copyBackForwardList()
-                    if (stack != null) {
-                        val sb = StringBuilder()
-                        for (i in 0 until stack.size) {
-                            val entry = stack.getItemAtIndex(i)
-                            sb.append("\n[$i] ${entry.url}")
-                        }
-                        android.util.Log.d("WebViewClient", "History stack (currentIndex=${stack.currentIndex}): $sb")
-                    }
-                    */
-
                     url?.let {
                         val isUrlBlocked = isBlocked(it)
                         if (!isShowingBlockedPage && isUrlBlocked) {
@@ -91,7 +78,7 @@ fun createCustomWebview(
                             view?.loadBlockedPage(it, blockedMessage)
                             return
                         }
-                        updateAddressBarUrl(it)
+                        doUpdateVisitedHistory(it)
                     }
                     super.doUpdateVisitedHistory(view, url, isReload)
                 }

@@ -24,6 +24,7 @@ import com.nktnet.webview_kiosk.ui.components.FloatingMenuButton
 import com.nktnet.webview_kiosk.ui.components.common.LoadingIndicator
 import com.nktnet.webview_kiosk.utils.createCustomWebview
 import com.nktnet.webview_kiosk.utils.rememberLockedState
+import com.nktnet.webview_kiosk.utils.webview.appendWebviewHistory
 import com.nktnet.webview_kiosk.utils.webview.resolveUrlOrSearch
 
 @Composable
@@ -77,27 +78,15 @@ fun WebviewScreen(navController: NavController) {
         onPageStarted = { transitionState = TransitionState.PAGE_STARTED },
         onPageFinished = { url ->
             currentUrl = url
-            val stack = systemSettings.historyStack.toMutableList()
-            val index = systemSettings.historyIndex
-            if (index in stack.indices) stack.subList(index + 1, stack.size).clear()
-
-            fun normalizeUrl(url: String): String = url.trimEnd('/')
-
-            val lastUrl = stack.lastOrNull()?.let { normalizeUrl(it) }
-            val newUrl = normalizeUrl(url)
-
-            if (lastUrl != newUrl) {
-                stack.add(newUrl)
-                systemSettings.historyStack = stack
-                systemSettings.historyIndex = stack.lastIndex
-            }
-
             transitionState = TransitionState.PAGE_FINISHED
             isRefreshing = false
         },
-        updateAddressBarUrl = { url ->
-            if (!hasFocus) urlBarText = urlBarText.copy(text = url)
+        doUpdateVisitedHistory = { url ->
+            if (!hasFocus) {
+                urlBarText = urlBarText.copy(text = url)
+            }
             currentUrl = url
+            appendWebviewHistory(systemSettings, url)
         }
     )
 

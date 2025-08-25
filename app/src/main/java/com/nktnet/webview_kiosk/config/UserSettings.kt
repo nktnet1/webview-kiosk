@@ -36,6 +36,14 @@ class UserSettings(context: Context) {
         get() = prefs.getBoolean(ALLOW_GO_HOME, true)
         set(value) = prefs.edit { putBoolean(ALLOW_GO_HOME, value) }
 
+    var clearHistoryOnHome: Boolean
+        get() = prefs.getBoolean(CLEAR_HISTORY_ON_HOME, false)
+        set(value) = prefs.edit { putBoolean(CLEAR_HISTORY_ON_HOME, value) }
+
+    var allowOtherUrlSchemes: Boolean
+        get() = prefs.getBoolean(ALLOW_OTHER_URL_SCHEMES, false)
+        set(value) = prefs.edit { putBoolean(ALLOW_OTHER_URL_SCHEMES, value) }
+
     var searchProviderUrl: String
         get() = prefs.getString(SEARCH_PROVIDER_URL, null) ?: "https://www.google.com/search?q="
         set(value) = prefs.edit { putString(SEARCH_PROVIDER_URL, value) }
@@ -65,6 +73,8 @@ class UserSettings(context: Context) {
             put(ALLOW_REFRESH, allowRefresh)
             put(ALLOW_BACKWARDS_NAVIGATION, allowBackwardsNavigation)
             put(ALLOW_GO_HOME, allowGoHome)
+            put(CLEAR_HISTORY_ON_HOME, clearHistoryOnHome)
+            put(ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
             put(SEARCH_PROVIDER_URL, searchProviderUrl)
             put(BLOCKED_MESSAGE, blockedMessage)
             put(THEME, theme.name)
@@ -83,6 +93,8 @@ class UserSettings(context: Context) {
             allowRefresh = json.optBoolean(ALLOW_REFRESH, allowRefresh)
             allowBackwardsNavigation = json.optBoolean(ALLOW_BACKWARDS_NAVIGATION, allowBackwardsNavigation)
             allowGoHome = json.optBoolean(ALLOW_GO_HOME, allowGoHome)
+            clearHistoryOnHome = json.optBoolean(CLEAR_HISTORY_ON_HOME, clearHistoryOnHome)
+            allowOtherUrlSchemes = json.optBoolean(ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
             searchProviderUrl = json.optString(SEARCH_PROVIDER_URL, searchProviderUrl)
             blockedMessage = json.optString(BLOCKED_MESSAGE, blockedMessage)
             theme = ThemeOption.fromString(json.optString(THEME, theme.name))
@@ -102,6 +114,8 @@ class UserSettings(context: Context) {
         private const val ALLOW_REFRESH = "web_browsing.allow_refresh"
         private const val ALLOW_BACKWARDS_NAVIGATION = "web_browsing.allow_backwards_navigation"
         private const val ALLOW_GO_HOME = "web_browsing.allow_go_home"
+        private const val CLEAR_HISTORY_ON_HOME = "web_browsing.clear_history_on_home"
+        private const val ALLOW_OTHER_URL_SCHEMES = "web_browsing.allow_other_url_schemes"
         private const val SEARCH_PROVIDER_URL = "web_browsing.search_provider_url"
         private const val BLOCKED_MESSAGE = "appearance.blocked_message"
         private const val THEME = "appearance.theme"
