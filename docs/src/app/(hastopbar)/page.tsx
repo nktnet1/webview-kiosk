@@ -5,8 +5,8 @@ import Link from "next/link";
 export default function HomePage() {
   return (
     <main className="flex flex-1 flex-col items-center text-center px-4 pt-24 pb-12">
-      <div className="bg-fd-muted p-2 md:p-16 rounded-2xl">
-        <h1 className="mb-4 text-4xl font-bold tracking-tight">{APP_NAME}</h1>
+      <div className="bg-fd-muted p-4 py-8 md:p-16 rounded-2xl">
+        <h1 className="mb-8 text-4xl font-bold tracking-tight">{APP_NAME}</h1>
         <p className="mb-6 text-lg text-muted-foreground max-w-lg">
           Turn any Android device into a dedicated, locked-down web page in
           fullscreen mode.
