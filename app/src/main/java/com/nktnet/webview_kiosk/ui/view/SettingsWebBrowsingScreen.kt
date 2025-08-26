@@ -157,7 +157,7 @@ fun SettingsWebBrowsingScreen(
             LabelWithInfo(
                 label = "Allow Other URL Schemes",
                 infoTitle = "Allow Other URL Schemes",
-                infoText = "Allow opening of non-http/https URL schemes such as 'sms:', 'tel:', 'mailto:', 'intent:' etc in other apps.\n\nNOTE: This only works when in unlocked/unpinned mode."
+                infoText = "Allow opening of non-http/https URL schemes such as 'mailto:', 'sms:', 'tel:', 'intent:', 'spotify:', 'whatsapp:', etc in other apps.\n\nNOTE: This only works when in unlocked/unpinned mode."
             )
             Switch(
                 checked = allowOtherUrlSchemes,
