@@ -1,0 +1,47 @@
+---
+title: Web Engine
+description: JavaScript, DOM storage, cookies, caching
+---
+
+import { EllipsisVertical, Wrench } from 'lucide-react';
+
+## Enable JavaScript
+
+When enabled, the WebView can execute JavaScript code on web pages.  
+This is required for most modern websites to function properly.  
+
+**Default:** true
+
+## Enable DOM Storage
+
+When enabled, websites can use DOM storage APIs such as `localStorage` and `sessionStorage`.  
+Useful for saving data client-side in the browser context.
+
+**Default:** true
+
+## Accept Cookies
+
+When enabled, the WebView allows websites to store and read cookies.  
+This includes first-party cookies that persist session or preference data.
+
+**Default:** true
+
+## Accept Third-party Cookies
+
+When enabled, third-party websites (embedded in iframes or resources) are allowed to set cookies.  
+This is important for services like embedded analytics or login widgets.
+
+**Default:** true
+
+## Cache Mode
+
+Controls how the WebView uses its cache when loading pages. Options:
+
+- **Default (`LOAD_DEFAULT`)** – Normal caching behavior; the WebView decides when to use cached content.  
+- **Cache else network (`LOAD_CACHE_ELSE_NETWORK`)** – Uses cached content if available; otherwise fetches from network.  
+- **No cache (`LOAD_NO_CACHE`)** – Always fetches from the network; ignores cached content.  
+- **Cache only (`LOAD_CACHE_ONLY`)** – Only loads content from cache; network requests are skipped.  
+
+For more details, refer to the [Android Developer Documentation](https://developer.android.com/reference/android/webkit/WebSettings#LOAD_CACHE_ELSE_NETWORK).
+
+**Default:** `LOAD_DEFAULT`

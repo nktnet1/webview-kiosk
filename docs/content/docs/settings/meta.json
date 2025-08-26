@@ -4,6 +4,7 @@
     "import-export",
     "web-content",
     "web-browsing",
+    "web-engine",
     "appearance",
     "device",
     "about"

@@ -13,6 +13,8 @@ Set to true to allow the user to refresh the page using one of:
 1. Clicking the <span className="inline-flex">(<EllipsisVertical />)</span> icon on the right of the address bar (top-right corner of screen) and selecting `Refresh`
 1. Hit enter on the address bar
 
+**Default:** true
+
 ## Allow Backwards Navigation
 
 Set to true to allow the user to go back one page in history using one of:
@@ -22,6 +24,8 @@ Set to true to allow the user to go back one page in history using one of:
 
 This also enables forward navigation using the second method.
 
+**Default:** true
+
 ## Allow Go Home
 
 Set to true to allow the user to go home using one of:
@@ -30,10 +34,14 @@ Set to true to allow the user to go home using one of:
 1. Clicking the <span className="inline-flex">(<EllipsisVertical />)</span> icon on the right of the address bar (top-right corner of screen) and selecting `Home`
 1. Clicking the floating toolbar <span className="inline-flex">(<Wrench className="-rotate-90"/>)</span> icon and selecting `Home`
 
+**Default:** true
+
 ## Clear History on Home
 
 Set to true if you want to clear the backwards/forward navigation history
 whenever a `Go Home` action is triggered.
+
+**Default:** false
 
 ## Allow Other URL Schemes
 
@@ -43,11 +51,13 @@ When enabled, clicking on URLs with schemes like `mailto:`, `sms`, `tel`,
 `intent:`, `spotify:`, `whatsapp:`, etc will prompt the user to select an
 appropriate application to handle.
 
+**Default:** true
+
 ## Search Provider URL
 
 The URL used for search queries in the address bar. This URL must include the search string query parameter - examples below.
 
-### Google
+### Google (default)
 ```
 https://google.com/search?q=
 ```
