@@ -73,10 +73,12 @@ object WebViewNavigation {
             systemSettings.historyIndex = currentIndex
         }
 
+        /*
         println("[HISTORY] WebView Stack:")
         systemSettings.historyStack.forEachIndexed { i, s ->
             val marker = if (i == systemSettings.historyIndex) "->" else "  "
             println("[HISTORY] $i: $marker $s")
         }
+        */
     }
 }
