@@ -104,7 +104,11 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.systemBars)
+    ) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (showAddressBar) {
                 AddressBar(
