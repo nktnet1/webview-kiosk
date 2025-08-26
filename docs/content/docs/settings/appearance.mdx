@@ -3,18 +3,21 @@ title: Appearance
 description: Theme, address bar, custom blocked message
 ---
 
+import { APP_NAME } from '@/config/app';
 import { Wrench } from 'lucide-react';
 
 ## Theme
 
 Select one of
 
-1. System (default)
+1. System
 1. Dark
 1. Light
 
 If either Dark or Light is selected, custom JavaScript will be injected
 to override the `prefers-color-scheme` property of the WebView page.
+
+**Default:** System
 
 ## Address Bar Mode
 
@@ -27,6 +30,10 @@ Select one of
 With `Hidden when locked`, the address bar will be visible in the default view,
 but disappears when the app is locked (pinned) using the floating toolbar <span className="inline-flex">(<Wrench className="-rotate-90"/>)</span>.
 
+**Default:** Hidden when locked
+
 ## Blocked Message
 
 The message to display when a URL matches the blacklist regex filter rule.
+
+**Default:** This site is blocked by {APP_NAME}
