@@ -4,8 +4,8 @@ import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <main className="flex flex-1 flex-col items-center text-center px-4 pt-24 pb-12">
-      <div className="bg-fd-muted p-4 py-8 md:p-16 rounded-2xl">
+    <main className="flex flex-1 flex-col items-center text-center p-4 md:mt-8">
+      <div className="bg-fd-muted rounded-2xl p-6 md:p-16">
         <h1 className="mb-8 text-4xl font-bold tracking-tight">{APP_NAME}</h1>
         <p className="mb-6 text-lg text-muted-foreground max-w-lg">
           Turn any Android device into a dedicated, locked-down web page in
