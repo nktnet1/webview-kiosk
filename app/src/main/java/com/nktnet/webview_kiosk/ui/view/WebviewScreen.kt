@@ -89,7 +89,6 @@ fun WebviewScreen(navController: NavController) {
         }
     )
 
-    // Apply cookies settings
     val cookieManager = CookieManager.getInstance()
     cookieManager.setAcceptCookie(userSettings.acceptCookies)
     cookieManager.setAcceptThirdPartyCookies(webView, userSettings.acceptThirdPartyCookies)

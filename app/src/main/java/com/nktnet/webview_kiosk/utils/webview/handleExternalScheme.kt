@@ -10,7 +10,6 @@ fun handleExternalScheme(context: Context, url: String) {
             val intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
             context.startActivity(intent)
         } else {
-            // mailto:, sms:, tel:, intent:, spotify:, whatsapp:, etc
             val intent = Intent(Intent.ACTION_VIEW, url.toUri())
             context.startActivity(intent)
         }
