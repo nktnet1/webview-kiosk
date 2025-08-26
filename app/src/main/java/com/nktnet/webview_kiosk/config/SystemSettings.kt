@@ -18,14 +18,6 @@ class SystemSettings(context: Context) {
     var historyStack: List<String>
         get() {
             val stack = prefs.getString(HISTORY_STACK, null)?.split("|") ?: emptyList()
-            /*
-            println("History Stack:")
-            stack.forEachIndexed { i, url ->
-                val marker = if (i == historyIndex) " <-- current" else ""
-                println("  [$i]: $url$marker")
-            }
-            println("History Index: $historyIndex")
-            */
             return stack
         }
         set(value) {
