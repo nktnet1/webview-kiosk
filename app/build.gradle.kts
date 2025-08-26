@@ -6,7 +6,6 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
-
 android {
     namespace = "com.nktnet.webview_kiosk"
     compileSdk = 36
@@ -15,8 +14,8 @@ android {
         applicationId = "com.nktnet.webview_kiosk"
         minSdk = 26
         targetSdk = 36
-        versionCode = 17
-        versionName = "0.8.0"
+        versionCode = 18
+        versionName = "0.9.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         setProperty("archivesBaseName", "${applicationId}-v${versionCode}-${versionName}")
     }
