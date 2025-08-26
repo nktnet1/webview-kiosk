@@ -103,7 +103,7 @@ fun SettingsWebBrowsingScreen(
             LabelWithInfo(
                 label = "Allow Backwards Navigation",
                 infoTitle = "Allow Backwards Navigation",
-                infoText = "Whether the user can use the device 'back' button to go back one page in history"
+                infoText = "Whether the user can use the device 'back' button to go back one page in history."
             )
             Switch(
                 checked = allowBackwardsNavigation,
@@ -121,7 +121,7 @@ fun SettingsWebBrowsingScreen(
             LabelWithInfo(
                 label = "Allow Go Home (multi tap)",
                 infoTitle = "Allow Go Home",
-                infoText = "Whether the user can return to the configured home page when tapping the screen 10 times in quick succession"
+                infoText = "Whether the user can return to the configured home page when tapping the screen 10 times in quick succession."
             )
             Switch(
                 checked = allowGoHome,
@@ -139,7 +139,7 @@ fun SettingsWebBrowsingScreen(
             LabelWithInfo(
                 label = "Clear History on Home",
                 infoTitle = "Clear History on Home",
-                infoText = "Clear the browser history whenever the user returns to the home page."
+                infoText = "Clear the browser history whenever the user triggers an action to return home."
             )
             Switch(
                 checked = clearHistoryOnHome,
