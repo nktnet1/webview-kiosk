@@ -24,7 +24,7 @@ import com.nktnet.webview_kiosk.ui.components.FloatingMenuButton
 import com.nktnet.webview_kiosk.ui.components.common.LoadingIndicator
 import com.nktnet.webview_kiosk.utils.createCustomWebview
 import com.nktnet.webview_kiosk.utils.rememberLockedState
-import com.nktnet.webview_kiosk.utils.webview.appendWebviewHistory
+import com.nktnet.webview_kiosk.utils.webview.WebViewNavigation
 import com.nktnet.webview_kiosk.utils.webview.resolveUrlOrSearch
 
 @Composable
@@ -86,7 +86,7 @@ fun WebviewScreen(navController: NavController) {
                 urlBarText = urlBarText.copy(text = url)
             }
             currentUrl = url
-            appendWebviewHistory(systemSettings, url)
+            WebViewNavigation.appendWebviewHistory(systemSettings, url)
         }
     )
 
@@ -140,7 +140,7 @@ fun WebviewScreen(navController: NavController) {
         if (!isPinned) {
             Box(modifier = Modifier.fillMaxSize().background(Color.Transparent)) {
                 FloatingMenuButton(
-                    onHomeClick = { triggerLoad(userSettings.homeUrl) },
+                    onHomeClick = { WebViewNavigation.goHome(webView, systemSettings, userSettings) },
                     onLockClick = { try { activity?.startLockTask() } catch (_: Exception) {} },
                     navController = navController,
                 )
@@ -148,7 +148,7 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
-    MultitapHandler { triggerLoad(userSettings.homeUrl) }
+    MultitapHandler { WebViewNavigation.goHome(webView, systemSettings, userSettings) }
 }
 
 private enum class TransitionState { TRANSITIONING, PAGE_STARTED, PAGE_FINISHED }
