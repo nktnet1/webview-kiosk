@@ -155,9 +155,9 @@ fun SettingsWebBrowsingScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             LabelWithInfo(
-                label = "Open Other URL Schemes",
-                infoTitle = "Open Other URL Schemes",
-                infoText = "Allow opening of non-http/https URL schemes such as 'tel:', 'mailto:' and 'intent:' in other apps."
+                label = "Allow Other URL Schemes",
+                infoTitle = "Allow Other URL Schemes",
+                infoText = "Allow opening of non-http/https URL schemes such as 'sms:', 'tel:', 'mailto:', 'intent:' etc in other apps.\n\nNOTE: This only works when in unlocked/unpinned mode."
             )
             Switch(
                 checked = allowOtherUrlSchemes,

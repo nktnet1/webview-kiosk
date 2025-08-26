@@ -44,7 +44,7 @@ fun AddressBar(
     hasFocus: Boolean,
     onFocusChanged: (FocusState) -> Unit,
     focusRequester: FocusRequester,
-    triggerLoad: (String) -> Unit,
+    addressBarSearch: (String) -> Unit,
     webView: WebView,
 ) {
     val context = LocalContext.current
@@ -83,11 +83,11 @@ fun AddressBar(
                 imeAction = ImeAction.Go
             ),
             keyboardActions = KeyboardActions(
-                onGo = { if (urlBarText.text.isNotBlank()) triggerLoad(urlBarText.text) }
+                onGo = { if (urlBarText.text.isNotBlank()) addressBarSearch(urlBarText.text) }
             ),
             textStyle = LocalTextStyle.current,
             trailingIcon = {
-                IconButton(onClick = { triggerLoad(urlTextState) }) {
+                IconButton(onClick = { addressBarSearch(urlTextState) }) {
                     Icon(Icons.Default.Search, contentDescription = "Go")
                 }
             }

@@ -40,6 +40,8 @@ fun WebviewScreen(navController: NavController) {
     var currentUrl by remember { mutableStateOf(systemSettings.lastUrl.ifEmpty { userSettings.homeUrl }) }
     var blockedMessage by remember { mutableStateOf(userSettings.blockedMessage) }
     var allowRefresh by remember { mutableStateOf(userSettings.allowRefresh) }
+    var allowOtherUrlSchemes by remember { mutableStateOf(userSettings.allowOtherUrlSchemes ) }
+
     var searchProviderUrl by remember { mutableStateOf(userSettings.searchProviderUrl) }
     var theme by remember { mutableStateOf(userSettings.theme) }
 
@@ -75,6 +77,7 @@ fun WebviewScreen(navController: NavController) {
         blockedMessage = blockedMessage,
         blacklistRegexes = blacklistRegexes,
         whitelistRegexes = whitelistRegexes,
+        allowOtherUrlSchemes = allowOtherUrlSchemes,
         onPageStarted = { transitionState = TransitionState.PAGE_STARTED },
         onPageFinished = { url ->
             currentUrl = url
@@ -92,7 +95,7 @@ fun WebviewScreen(navController: NavController) {
 
     BackPressHandler(webView, onBackPressedDispatcher)
 
-    val triggerLoad: (String) -> Unit = { input ->
+    val addressBarSearch: (String) -> Unit = { input ->
         val searchUrl = resolveUrlOrSearch(searchProviderUrl, input.trim())
         if (searchUrl.isNotBlank() && (searchUrl != currentUrl || allowRefresh)) {
             transitionState = TransitionState.TRANSITIONING
@@ -110,7 +113,7 @@ fun WebviewScreen(navController: NavController) {
                     hasFocus = hasFocus,
                     onFocusChanged = { focusState -> hasFocus = focusState.isFocused },
                     focusRequester = focusRequester,
-                    triggerLoad = triggerLoad,
+                    addressBarSearch = addressBarSearch,
                     webView = webView
                 )
             }

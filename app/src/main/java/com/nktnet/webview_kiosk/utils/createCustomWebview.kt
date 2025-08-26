@@ -11,7 +11,9 @@ import androidx.compose.runtime.*
 import com.nktnet.webview_kiosk.config.option.ThemeOption
 import com.nktnet.webview_kiosk.utils.webview.generateBlockedPageHtml
 import com.nktnet.webview_kiosk.utils.webview.getPrefersColorSchemeOverrideScript
+import com.nktnet.webview_kiosk.utils.webview.handleExternalScheme
 import com.nktnet.webview_kiosk.utils.webview.isBlockedUrl
+import androidx.core.net.toUri
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -21,6 +23,7 @@ fun createCustomWebview(
     blockedMessage: String,
     blacklistRegexes: List<Regex>,
     whitelistRegexes: List<Regex>,
+    allowOtherUrlSchemes: Boolean,
     onPageStarted: () -> Unit,
     onPageFinished: (url: String) -> Unit,
     doUpdateVisitedHistory: (url: String) -> Unit
@@ -61,13 +64,25 @@ fun createCustomWebview(
                     request: WebResourceRequest?
                 ): Boolean {
                     val url = request?.url?.toString() ?: ""
-                    return if (!isShowingBlockedPage && isBlocked(url)) {
+
+                    val scheme = request?.url?.scheme?.lowercase() ?: ""
+                    if (scheme !in listOf("http", "https")) {
+                        if (!allowOtherUrlSchemes) {
+                            view?.loadBlockedPage(url, blockedMessage)
+                            isShowingBlockedPage = true
+                            return true
+                        }
+                        handleExternalScheme(context, url)
+                        return true
+                    }
+
+                    if (!isShowingBlockedPage && isBlocked(url)) {
                         view?.loadBlockedPage(url, blockedMessage)
                         isShowingBlockedPage = true
-                        true
-                    } else {
-                        false
+                        return true
                     }
+
+                    return false
                 }
 
                 override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
