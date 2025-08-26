@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.Shape
 import androidx.navigation.NavController
+import com.nktnet.webview_kiosk.config.WebViewInset
 import com.nktnet.webview_kiosk.config.option.AddressBarOption
 import com.nktnet.webview_kiosk.config.option.ThemeOption
 import com.nktnet.webview_kiosk.config.UserSettings
@@ -34,6 +35,7 @@ fun SettingsAppearanceScreen(
     var blockedMessage by remember { mutableStateOf(userSettings.blockedMessage) }
     var theme by remember { mutableStateOf(themeState.value) }
     var addressBarMode by remember { mutableStateOf(userSettings.addressBarMode) }
+    var webViewInset by remember { mutableStateOf(userSettings.webViewInset) }
 
     val saveEnabled = true
 
@@ -47,6 +49,7 @@ fun SettingsAppearanceScreen(
     fun saveSettings() {
         userSettings.blockedMessage = blockedMessage.trim()
         userSettings.addressBarMode = addressBarMode
+        userSettings.webViewInset = webViewInset
 
         userSettings.theme = theme
         themeState.value = theme
@@ -66,7 +69,7 @@ fun SettingsAppearanceScreen(
         SettingDivider()
 
         LabelWithInfo(
-            modifier = Modifier.padding(bottom=4.dp),
+            modifier = Modifier.padding(bottom = 2.dp),
             label = "Theme",
             infoTitle = "Theme",
             infoText = """
@@ -91,10 +94,8 @@ fun SettingsAppearanceScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
         LabelWithInfo(
-            modifier = Modifier.padding(top=16.dp, bottom=4.dp),
+            modifier = Modifier.padding(top = 16.dp, bottom = 2.dp),
             label = "Address Bar Mode",
             infoTitle = "Address Bar",
             infoText = "Control the visibility of the browser address bar."
@@ -115,10 +116,26 @@ fun SettingsAppearanceScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        LabelWithInfo(
+            modifier = Modifier.padding(top = 16.dp, bottom = 2.dp),
+            label = "WebView Insets",
+            infoTitle = "Insets",
+            infoText = "Select which WindowInsets the WebView should respect for padding."
+        )
+        DropdownSelector(
+            options = WebViewInset.entries,
+            selected = webViewInset,
+            onSelectedChange = { webViewInset = it },
+            modifier = Modifier.fillMaxWidth()
+        ) { selected ->
+            Text(
+                selected.label,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+        }
 
         LabelWithInfo(
-            modifier = Modifier.padding(top=16.dp, bottom=4.dp),
+            modifier = Modifier.padding(top = 16.dp, bottom = 2.dp),
             label = "Blocked Message",
             infoTitle = "Blocked Message",
             infoText = "Custom message shown on blocked pages. Can be left empty."

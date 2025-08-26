@@ -92,6 +92,10 @@ class UserSettings(context: Context) {
         get() = prefs.getBoolean(KEEP_SCREEN_ON, false)
         set(value) = prefs.edit { putBoolean(KEEP_SCREEN_ON, value) }
 
+    var webViewInset: WebViewInset
+        get() = WebViewInset.fromString(prefs.getString(WEBVIEW_INSET, null))
+        set(value) = prefs.edit { putString(WEBVIEW_INSET, value.name) }
+
     fun exportToBase64(): String {
         val json = JSONObject().apply {
             put(HOME_URL, homeUrl)
@@ -112,6 +116,7 @@ class UserSettings(context: Context) {
             put(THEME, theme.name)
             put(ADDRESS_BAR_MODE, addressBarMode.name)
             put(KEEP_SCREEN_ON, keepScreenOn)
+            put(WEBVIEW_INSET, webViewInset.name)
         }
         return Base64.encodeToString(json.toString().toByteArray(), Base64.NO_WRAP)
     }
@@ -137,6 +142,7 @@ class UserSettings(context: Context) {
             theme = ThemeOption.fromString(json.optString(THEME, theme.name))
             addressBarMode = AddressBarOption.fromString(json.optString(ADDRESS_BAR_MODE, addressBarMode.name))
             keepScreenOn = json.optBoolean(KEEP_SCREEN_ON, keepScreenOn)
+            webViewInset = WebViewInset.fromString(json.optString(WEBVIEW_INSET, webViewInset.name))
             true
         } catch (_: Exception) {
             false
@@ -166,6 +172,7 @@ class UserSettings(context: Context) {
         private const val BLOCKED_MESSAGE = "appearance.blocked_message"
         private const val THEME = "appearance.theme"
         private const val ADDRESS_BAR_MODE = "appearance.address_bar_mode"
+        private const val WEBVIEW_INSET = "appearance.webview_inset"
 
         private const val KEEP_SCREEN_ON = "device.keep_screen_on"
 

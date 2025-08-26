@@ -135,6 +135,7 @@ fun SettingsWebEngineScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         LabelWithInfo(
+            modifier = Modifier.padding(bottom = 2.dp),
             label = "Cache Mode",
             infoTitle = "Cache Mode",
             infoText = "Control how the WebView uses its cache when loading pages."

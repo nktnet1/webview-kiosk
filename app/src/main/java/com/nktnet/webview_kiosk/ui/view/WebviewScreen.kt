@@ -107,7 +107,7 @@ fun WebviewScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.systemBars)
+            .windowInsetsPadding(userSettings.webViewInset.toWindowInsets())
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (showAddressBar) {
