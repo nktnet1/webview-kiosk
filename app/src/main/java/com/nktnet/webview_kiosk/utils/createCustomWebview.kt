@@ -13,7 +13,6 @@ import com.nktnet.webview_kiosk.utils.webview.generateBlockedPageHtml
 import com.nktnet.webview_kiosk.utils.webview.getPrefersColorSchemeOverrideScript
 import com.nktnet.webview_kiosk.utils.webview.handleExternalScheme
 import com.nktnet.webview_kiosk.utils.webview.isBlockedUrl
-import androidx.core.net.toUri
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -24,6 +23,9 @@ fun createCustomWebview(
     blacklistRegexes: List<Regex>,
     whitelistRegexes: List<Regex>,
     allowOtherUrlSchemes: Boolean,
+    enableJavaScript: Boolean,
+    enableDomStorage: Boolean,
+    cacheMode: Int,
     onPageStarted: () -> Unit,
     onPageFinished: (url: String) -> Unit,
     doUpdateVisitedHistory: (url: String) -> Unit
@@ -40,7 +42,10 @@ fun createCustomWebview(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
-            settings.javaScriptEnabled = true
+
+            settings.javaScriptEnabled = enableJavaScript
+            settings.domStorageEnabled = enableDomStorage
+            settings.cacheMode = cacheMode
 
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
@@ -53,9 +58,7 @@ fun createCustomWebview(
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    url?.let {
-                        onPageFinished(it)
-                    }
+                    url?.let { onPageFinished(it) }
                     isShowingBlockedPage = false
                 }
 
@@ -64,8 +67,8 @@ fun createCustomWebview(
                     request: WebResourceRequest?
                 ): Boolean {
                     val url = request?.url?.toString() ?: ""
-
                     val scheme = request?.url?.scheme?.lowercase() ?: ""
+
                     if (scheme !in listOf("http", "https")) {
                         if (!allowOtherUrlSchemes) {
                             view?.loadBlockedPage(url, blockedMessage)

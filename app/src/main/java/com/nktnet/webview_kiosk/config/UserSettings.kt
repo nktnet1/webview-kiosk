@@ -3,6 +3,7 @@ package com.nktnet.webview_kiosk.config
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Base64
+import android.webkit.WebSettings
 import androidx.core.content.edit
 import com.nktnet.webview_kiosk.config.option.AddressBarOption
 import com.nktnet.webview_kiosk.config.option.ThemeOption
@@ -48,6 +49,32 @@ class UserSettings(context: Context) {
         get() = prefs.getString(SEARCH_PROVIDER_URL, null) ?: "https://www.google.com/search?q="
         set(value) = prefs.edit { putString(SEARCH_PROVIDER_URL, value) }
 
+    var enableJavaScript: Boolean
+        get() = prefs.getBoolean(ENABLE_JAVASCRIPT, true)
+        set(value) = prefs.edit { putBoolean(ENABLE_JAVASCRIPT, value) }
+
+    var enableDomStorage: Boolean
+        get() = prefs.getBoolean(ENABLE_DOM_STORAGE, true)
+        set(value) = prefs.edit { putBoolean(ENABLE_DOM_STORAGE, value) }
+
+    var acceptCookies: Boolean
+        get() = prefs.getBoolean(ACCEPT_COOKIES, true)
+        set(value) = prefs.edit { putBoolean(ACCEPT_COOKIES, value) }
+
+    var acceptThirdPartyCookies: Boolean
+        get() = prefs.getBoolean(ACCEPT_THIRD_PARTY_COOKIES, false)
+        set(value) = prefs.edit { putBoolean(ACCEPT_THIRD_PARTY_COOKIES, value) }
+
+    var cacheMode: Int
+        get() {
+            val value = prefs.getInt(CACHE_MODE, WebSettings.LOAD_DEFAULT)
+            return if (value in VALID_CACHE_MODES) value else WebSettings.LOAD_DEFAULT
+        }
+        set(value) {
+            val validValue = if (value in VALID_CACHE_MODES) value else WebSettings.LOAD_DEFAULT
+            prefs.edit { putInt(CACHE_MODE, validValue) }
+        }
+
     var blockedMessage: String
         get() = prefs.getString(BLOCKED_MESSAGE, null)
             ?: "This site is blocked by Webview Kiosk."
@@ -76,6 +103,11 @@ class UserSettings(context: Context) {
             put(CLEAR_HISTORY_ON_HOME, clearHistoryOnHome)
             put(ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
             put(SEARCH_PROVIDER_URL, searchProviderUrl)
+            put(ENABLE_JAVASCRIPT, enableJavaScript)
+            put(ENABLE_DOM_STORAGE, enableDomStorage)
+            put(ACCEPT_COOKIES, acceptCookies)
+            put(ACCEPT_THIRD_PARTY_COOKIES, acceptThirdPartyCookies)
+            put(CACHE_MODE, cacheMode)
             put(BLOCKED_MESSAGE, blockedMessage)
             put(THEME, theme.name)
             put(ADDRESS_BAR_MODE, addressBarMode.name)
@@ -96,6 +128,11 @@ class UserSettings(context: Context) {
             clearHistoryOnHome = json.optBoolean(CLEAR_HISTORY_ON_HOME, clearHistoryOnHome)
             allowOtherUrlSchemes = json.optBoolean(ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
             searchProviderUrl = json.optString(SEARCH_PROVIDER_URL, searchProviderUrl)
+            enableJavaScript = json.optBoolean(ENABLE_JAVASCRIPT, enableJavaScript)
+            enableDomStorage = json.optBoolean(ENABLE_DOM_STORAGE, enableDomStorage)
+            acceptCookies = json.optBoolean(ACCEPT_COOKIES, acceptCookies)
+            acceptThirdPartyCookies = json.optBoolean(ACCEPT_THIRD_PARTY_COOKIES, acceptThirdPartyCookies)
+            cacheMode = json.optInt(CACHE_MODE, cacheMode)
             blockedMessage = json.optString(BLOCKED_MESSAGE, blockedMessage)
             theme = ThemeOption.fromString(json.optString(THEME, theme.name))
             addressBarMode = AddressBarOption.fromString(json.optString(ADDRESS_BAR_MODE, addressBarMode.name))
@@ -108,18 +145,35 @@ class UserSettings(context: Context) {
 
     companion object {
         private const val PREFS_NAME = "user_settings"
+
         private const val HOME_URL = "web_content.home_url"
         private const val WEBSITE_BLACKLIST = "web_content.website_blacklist"
         private const val WEBSITE_WHITELIST = "web_content.website_whitelist"
+
         private const val ALLOW_REFRESH = "web_browsing.allow_refresh"
         private const val ALLOW_BACKWARDS_NAVIGATION = "web_browsing.allow_backwards_navigation"
         private const val ALLOW_GO_HOME = "web_browsing.allow_go_home"
         private const val CLEAR_HISTORY_ON_HOME = "web_browsing.clear_history_on_home"
         private const val ALLOW_OTHER_URL_SCHEMES = "web_browsing.allow_other_url_schemes"
         private const val SEARCH_PROVIDER_URL = "web_browsing.search_provider_url"
+
+        private const val ENABLE_JAVASCRIPT = "web_engine.enable_javascript"
+        private const val ENABLE_DOM_STORAGE = "web_engine.enable_dom_storage"
+        private const val CACHE_MODE = "web_engine.cache_mode"
+        private const val ACCEPT_COOKIES = "web_engine.accept_cookies"
+        private const val ACCEPT_THIRD_PARTY_COOKIES = "web_engine.accept_third_party_cookies"
+
         private const val BLOCKED_MESSAGE = "appearance.blocked_message"
         private const val THEME = "appearance.theme"
         private const val ADDRESS_BAR_MODE = "appearance.address_bar_mode"
+
         private const val KEEP_SCREEN_ON = "device.keep_screen_on"
+
+        private val VALID_CACHE_MODES = setOf(
+            WebSettings.LOAD_DEFAULT,
+            WebSettings.LOAD_CACHE_ELSE_NETWORK,
+            WebSettings.LOAD_NO_CACHE,
+            WebSettings.LOAD_CACHE_ONLY,
+        )
     }
 }

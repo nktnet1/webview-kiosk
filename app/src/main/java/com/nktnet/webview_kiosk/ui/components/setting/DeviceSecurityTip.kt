@@ -32,7 +32,7 @@ fun DeviceSecurityTip(modifier: Modifier = Modifier) {
         text = text,
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 16.dp),
+            .padding(top = 8.dp),
         style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray),
         textAlign = TextAlign.Center
     )

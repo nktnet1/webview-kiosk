@@ -191,7 +191,7 @@ fun SettingsWebBrowsingScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         SettingsActionButtons(
             navController = navController,

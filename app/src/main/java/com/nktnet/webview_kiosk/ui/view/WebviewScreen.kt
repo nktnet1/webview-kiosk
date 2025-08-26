@@ -1,6 +1,7 @@
 package com.nktnet.webview_kiosk.ui.view
 
 import android.app.Activity
+import android.webkit.CookieManager
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -27,6 +28,7 @@ import com.nktnet.webview_kiosk.utils.rememberLockedState
 import com.nktnet.webview_kiosk.utils.webview.WebViewNavigation
 import com.nktnet.webview_kiosk.utils.webview.resolveUrlOrSearch
 
+private enum class TransitionState { TRANSITIONING, PAGE_STARTED, PAGE_FINISHED }
 @Composable
 fun WebviewScreen(navController: NavController) {
     val context = LocalContext.current
@@ -38,12 +40,10 @@ fun WebviewScreen(navController: NavController) {
     val isPinned by rememberLockedState()
 
     var currentUrl by remember { mutableStateOf(systemSettings.lastUrl.ifEmpty { userSettings.homeUrl }) }
-    var blockedMessage by remember { mutableStateOf(userSettings.blockedMessage) }
-    var allowRefresh by remember { mutableStateOf(userSettings.allowRefresh) }
-    var allowOtherUrlSchemes by remember { mutableStateOf(userSettings.allowOtherUrlSchemes ) }
-
-    var searchProviderUrl by remember { mutableStateOf(userSettings.searchProviderUrl) }
-    var theme by remember { mutableStateOf(userSettings.theme) }
+    var urlBarText by remember { mutableStateOf(TextFieldValue(currentUrl)) }
+    var transitionState by remember { mutableStateOf(TransitionState.PAGE_FINISHED) }
+    var isRefreshing by remember { mutableStateOf(false) }
+    var hasFocus by remember { mutableStateOf(false) }
 
     val blacklistRegexes = remember(userSettings.websiteBlacklist) {
         userSettings.websiteBlacklist.lines()
@@ -57,10 +57,6 @@ fun WebviewScreen(navController: NavController) {
             .mapNotNull { runCatching { Regex(it) }.getOrNull() }
     }
 
-    var urlBarText by remember { mutableStateOf(TextFieldValue(currentUrl)) }
-    var transitionState by remember { mutableStateOf(TransitionState.PAGE_FINISHED) }
-    var isRefreshing by remember { mutableStateOf(false) }
-
     val showAddressBar = when (userSettings.addressBarMode) {
         AddressBarOption.SHOWN -> true
         AddressBarOption.HIDDEN -> false
@@ -68,16 +64,18 @@ fun WebviewScreen(navController: NavController) {
     }
 
     val focusRequester = remember { FocusRequester() }
-    var hasFocus by remember { mutableStateOf(false) }
     val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
 
     val webView = createCustomWebview(
         context = context,
-        theme = theme,
-        blockedMessage = blockedMessage,
+        theme = userSettings.theme,
+        blockedMessage = userSettings.blockedMessage,
         blacklistRegexes = blacklistRegexes,
         whitelistRegexes = whitelistRegexes,
-        allowOtherUrlSchemes = allowOtherUrlSchemes,
+        allowOtherUrlSchemes = userSettings.allowOtherUrlSchemes,
+        enableJavaScript = userSettings.enableJavaScript,
+        enableDomStorage = userSettings.enableDomStorage,
+        cacheMode = userSettings.cacheMode,
         onPageStarted = { transitionState = TransitionState.PAGE_STARTED },
         onPageFinished = { url ->
             currentUrl = url
@@ -85,19 +83,22 @@ fun WebviewScreen(navController: NavController) {
             isRefreshing = false
         },
         doUpdateVisitedHistory = { url ->
-            if (!hasFocus) {
-                urlBarText = urlBarText.copy(text = url)
-            }
+            if (!hasFocus) urlBarText = urlBarText.copy(text = url)
             currentUrl = url
             WebViewNavigation.appendWebviewHistory(systemSettings, url)
         }
     )
 
+    // Apply cookies settings
+    val cookieManager = CookieManager.getInstance()
+    cookieManager.setAcceptCookie(userSettings.acceptCookies)
+    cookieManager.setAcceptThirdPartyCookies(webView, userSettings.acceptThirdPartyCookies)
+
     BackPressHandler(webView, onBackPressedDispatcher)
 
     val addressBarSearch: (String) -> Unit = { input ->
-        val searchUrl = resolveUrlOrSearch(searchProviderUrl, input.trim())
-        if (searchUrl.isNotBlank() && (searchUrl != currentUrl || allowRefresh)) {
+        val searchUrl = resolveUrlOrSearch(userSettings.searchProviderUrl, input.trim())
+        if (searchUrl.isNotBlank() && (searchUrl != currentUrl || userSettings.allowRefresh)) {
             transitionState = TransitionState.TRANSITIONING
             webView.requestFocus()
             webView.loadUrl(searchUrl)
@@ -133,7 +134,12 @@ fun WebviewScreen(navController: NavController) {
                 )
 
                 if (transitionState == TransitionState.TRANSITIONING) {
-                    Box(Modifier.fillMaxSize().background(Color(0x88000000)), contentAlignment = Alignment.Center) {
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(Color(0x88000000)),
+                        contentAlignment = Alignment.Center
+                    ) {
                         LoadingIndicator("Loading...")
                     }
                 }
@@ -153,5 +159,3 @@ fun WebviewScreen(navController: NavController) {
 
     MultitapHandler { WebViewNavigation.goHome(webView, systemSettings, userSettings) }
 }
-
-private enum class TransitionState { TRANSITIONING, PAGE_STARTED, PAGE_FINISHED }

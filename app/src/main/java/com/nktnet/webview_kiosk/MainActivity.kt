@@ -78,17 +78,22 @@ class MainActivity : AppCompatActivity() {
                                     themeState = themeState,
                                 )
                             }
-                            authComposable(Screen.SettingsAppearance.route) {
-                                SettingsAppearanceScreen(
-                                    navController,
-                                    themeState = themeState,
-                                )
-                            }
                             authComposable(Screen.SettingsWebContent.route) {
                                 SettingsWebContentScreen(navController)
                             }
                             authComposable(Screen.SettingsWebBrowsing.route) {
                                 SettingsWebBrowsingScreen(navController)
+                            }
+                            authComposable(Screen.SettingsWebEngine.route) {
+                                SettingsWebEngineScreen(
+                                    navController,
+                                )
+                            }
+                            authComposable(Screen.SettingsAppearance.route) {
+                                SettingsAppearanceScreen(
+                                    navController,
+                                    themeState = themeState,
+                                )
                             }
                             authComposable(Screen.SettingsDevice.route) {
                                 SettingsDeviceScreen(

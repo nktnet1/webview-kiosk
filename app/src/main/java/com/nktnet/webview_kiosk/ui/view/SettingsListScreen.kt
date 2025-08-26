@@ -35,6 +35,11 @@ fun SettingsListScreen(
             Screen.SettingsWebBrowsing.route
         ),
         Triple(
+            "Web Engine",
+            "JavaScript, DOM storage, cookies, cache",
+            Screen.SettingsWebEngine.route
+        ),
+        Triple(
             "Appearance",
             "Theme, address bar, custom blocked message",
             Screen.SettingsAppearance.route
@@ -84,10 +89,7 @@ fun SettingsListScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
         DeviceSecurityTip()
-
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(4.dp))
     }
 }
