@@ -30,7 +30,7 @@ import com.nktnet.webview_kiosk.utils.webview.resolveUrlOrSearch
 
 private enum class TransitionState { TRANSITIONING, PAGE_STARTED, PAGE_FINISHED }
 @Composable
-fun WebviewScreen(navController: NavController) {
+fun WebviewScreen(navController: NavController, intentUrl: String?) {
     val context = LocalContext.current
     val activity = context as? Activity
 
@@ -39,7 +39,13 @@ fun WebviewScreen(navController: NavController) {
 
     val isPinned by rememberLockedState()
 
-    var currentUrl by remember { mutableStateOf(systemSettings.lastUrl.ifEmpty { userSettings.homeUrl }) }
+    var currentUrl by remember {
+        mutableStateOf(
+            intentUrl
+                ?: systemSettings.lastUrl.takeIf { it.isNotEmpty() }
+                ?: userSettings.homeUrl
+        )
+    }
     var urlBarText by remember { mutableStateOf(TextFieldValue(currentUrl)) }
     var transitionState by remember { mutableStateOf(TransitionState.PAGE_FINISHED) }
     var isRefreshing by remember { mutableStateOf(false) }

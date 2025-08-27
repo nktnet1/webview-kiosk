@@ -1,5 +1,6 @@
 package com.nktnet.webview_kiosk
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -31,6 +32,19 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         BiometricPromptManager.init(this)
+
+        if (intent.action == Intent.ACTION_VIEW && intent.data != null && !intent.hasExtra("EXTRA_IS_NEW_INTENT")) {
+            startActivity(
+                Intent(this, MainActivity::class.java).apply {
+                    data = intent.data
+                    action = Intent.ACTION_VIEW
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    putExtra("EXTRA_IS_NEW_INTENT", true)
+                }
+            )
+            finish()
+            return
+        }
 
         val userSettings = UserSettings(this)
 
@@ -65,7 +79,7 @@ class MainActivity : AppCompatActivity() {
 
                     NavHost(navController, startDestination = Screen.WebView.route) {
                         composable(Screen.WebView.route) {
-                            WebviewScreen(navController)
+                            WebviewScreen(navController, intent?.dataString)
                         }
 
                         navigation(
@@ -110,6 +124,22 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        if (intent.action == Intent.ACTION_VIEW && intent.data != null && !intent.hasExtra("EXTRA_IS_NEW_INTENT")) {
+            startActivity(
+                Intent(this, MainActivity::class.java).apply {
+                    data = intent.data
+                    action = Intent.ACTION_VIEW
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                    putExtra("EXTRA_IS_NEW_INTENT", true)
+                }
+            )
+            finish()
+        } else {
+            super.onNewIntent(intent)
         }
     }
 
