@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.nktnet.webview_kiosk.auth.BiometricPromptManager
+import com.nktnet.webview_kiosk.config.Constants
 import com.nktnet.webview_kiosk.config.Screen
 import com.nktnet.webview_kiosk.config.UserSettings
 import com.nktnet.webview_kiosk.config.option.ThemeOption
@@ -26,26 +27,23 @@ import com.nktnet.webview_kiosk.ui.theme.WebviewKioskTheme
 import com.nktnet.webview_kiosk.ui.view.*
 
 class MainActivity : AppCompatActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge()
-        super.onCreate(savedInstanceState)
-
-        BiometricPromptManager.init(this)
-
-        if (intent.action == Intent.ACTION_VIEW && intent.data != null && !intent.hasExtra("EXTRA_IS_NEW_INTENT")) {
+        // Opening links from other apps
+        if (intent.action == Intent.ACTION_VIEW && intent.data != null && !intent.hasExtra(Constants.EXTRA_IS_INTENT_KEY)) {
             startActivity(
                 Intent(this, MainActivity::class.java).apply {
                     data = intent.data
                     action = Intent.ACTION_VIEW
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    putExtra("EXTRA_IS_NEW_INTENT", true)
+                    putExtra(Constants.EXTRA_IS_INTENT_KEY, true)
                 }
             )
             finish()
-            return
         }
 
+        enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
+        BiometricPromptManager.init(this)
         val userSettings = UserSettings(this)
 
         setContent {
@@ -124,22 +122,6 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
-        }
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        if (intent.action == Intent.ACTION_VIEW && intent.data != null && !intent.hasExtra("EXTRA_IS_NEW_INTENT")) {
-            startActivity(
-                Intent(this, MainActivity::class.java).apply {
-                    data = intent.data
-                    action = Intent.ACTION_VIEW
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    putExtra("EXTRA_IS_NEW_INTENT", true)
-                }
-            )
-            finish()
-        } else {
-            super.onNewIntent(intent)
         }
     }
 
