@@ -17,8 +17,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import com.nktnet.webview_kiosk.auth.BiometricPromptManager
-import com.nktnet.webview_kiosk.config.Constants
 import com.nktnet.webview_kiosk.config.Screen
+import com.nktnet.webview_kiosk.config.SystemSettings
 import com.nktnet.webview_kiosk.config.UserSettings
 import com.nktnet.webview_kiosk.config.option.ThemeOption
 import com.nktnet.webview_kiosk.ui.components.KeepScreenOnOption
@@ -28,21 +28,22 @@ import com.nktnet.webview_kiosk.ui.view.*
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val systemSettings = SystemSettings(this)
+
         // Opening links from other apps
-        if (intent.action == Intent.ACTION_VIEW && intent.data != null && !intent.hasExtra(Constants.EXTRA_IS_INTENT_KEY)) {
+        if (intent.action == Intent.ACTION_VIEW && intent.data != null && systemSettings.intentUrl.isEmpty()) {
+            systemSettings.intentUrl = intent?.dataString ?: ""
             startActivity(
                 Intent(this, MainActivity::class.java).apply {
-                    data = intent.data
-                    action = Intent.ACTION_VIEW
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    putExtra(Constants.EXTRA_IS_INTENT_KEY, true)
                 }
             )
             finish()
+            return
         }
 
         enableEdgeToEdge()
-        super.onCreate(savedInstanceState)
         BiometricPromptManager.init(this)
         val userSettings = UserSettings(this)
 
@@ -77,7 +78,7 @@ class MainActivity : AppCompatActivity() {
 
                     NavHost(navController, startDestination = Screen.WebView.route) {
                         composable(Screen.WebView.route) {
-                            WebviewScreen(navController, intent?.dataString)
+                            WebviewScreen(navController)
                         }
 
                         navigation(

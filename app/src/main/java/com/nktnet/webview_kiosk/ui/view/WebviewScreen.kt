@@ -30,7 +30,7 @@ import com.nktnet.webview_kiosk.utils.webview.resolveUrlOrSearch
 
 private enum class TransitionState { TRANSITIONING, PAGE_STARTED, PAGE_FINISHED }
 @Composable
-fun WebviewScreen(navController: NavController, intentUrl: String?) {
+fun WebviewScreen(navController: NavController) {
     val context = LocalContext.current
     val activity = context as? Activity
 
@@ -41,9 +41,8 @@ fun WebviewScreen(navController: NavController, intentUrl: String?) {
 
     var currentUrl by remember {
         mutableStateOf(
-            intentUrl
-                ?: systemSettings.lastUrl.takeIf { it.isNotEmpty() }
-                ?: userSettings.homeUrl
+            systemSettings.lastUrl.takeIf { it.isNotEmpty() }
+            ?: userSettings.homeUrl
         )
     }
     var urlBarText by remember { mutableStateOf(TextFieldValue(currentUrl)) }
@@ -84,12 +83,13 @@ fun WebviewScreen(navController: NavController, intentUrl: String?) {
         cacheMode = userSettings.cacheMode,
         onPageStarted = { transitionState = TransitionState.PAGE_STARTED },
         onPageFinished = { url ->
-            currentUrl = url
             transitionState = TransitionState.PAGE_FINISHED
             isRefreshing = false
         },
         doUpdateVisitedHistory = { url ->
-            if (!hasFocus) urlBarText = urlBarText.copy(text = url)
+            if (!hasFocus) {
+                urlBarText = urlBarText.copy(text = url)
+            }
             currentUrl = url
             WebViewNavigation.appendWebviewHistory(systemSettings, url)
         }
@@ -131,14 +131,23 @@ fun WebviewScreen(navController: NavController, intentUrl: String?) {
             Box(modifier = Modifier.weight(1f)) {
                 AndroidView(
                     factory = { ctx ->
+                        val initialUrl = if (systemSettings.intentUrl.isNotEmpty()) {
+                            systemSettings.intentUrl.also { systemSettings.intentUrl = "" }
+                        } else {
+                            currentUrl
+                        }
                         if (userSettings.allowRefresh) {
                             SwipeRefreshLayout(ctx).apply {
                                 setOnRefreshListener { isRefreshing = true; webView.reload() }
-                                addView(webView.apply { loadUrl(currentUrl) })
+                                addView(webView.apply { loadUrl(initialUrl) })
                             }
-                        } else webView.apply { loadUrl(currentUrl) }
+                        } else {
+                            webView.apply { loadUrl(initialUrl) }
+                        }
                     },
-                    update = { view -> if (view is SwipeRefreshLayout) view.isRefreshing = isRefreshing },
+                    update = { view ->
+                        if (view is SwipeRefreshLayout) view.isRefreshing = isRefreshing
+                    },
                     modifier = Modifier.fillMaxSize()
                 )
 

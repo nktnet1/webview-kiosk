@@ -25,16 +25,15 @@ class SystemSettings(context: Context) {
         }
 
     var historyIndex: Int
-        get() {
-            val idx = prefs.getInt(HISTORY_INDEX, -1)
-            return idx
-        }
-        set(value) {
-            prefs.edit { putInt(HISTORY_INDEX, value) }
-        }
+        get() = prefs.getInt(HISTORY_INDEX, -1)
+        set(value) = prefs.edit { putInt(HISTORY_INDEX, value) }
 
     val lastUrl: String
         get() = historyStack.getOrNull(historyIndex) ?: ""
+
+    var intentUrl: String
+        get() = prefs.getString(INTENT_URL, "") ?: ""
+        set(value) = prefs.edit { putString(INTENT_URL, value) }
 
     companion object {
         private const val PREFS_NAME = "system_settings"
@@ -42,5 +41,6 @@ class SystemSettings(context: Context) {
         private const val MENU_OFFSET_Y = "menu_offset_y"
         private const val HISTORY_STACK = "history_stack"
         private const val HISTORY_INDEX = "history_index"
+        private const val INTENT_URL = "intent_url"
     }
 }
