@@ -14,8 +14,8 @@ android {
         applicationId = "com.nktnet.webview_kiosk"
         minSdk = 26
         targetSdk = 36
-        versionCode = 23
-        versionName = "0.12.0"
+        versionCode = 24
+        versionName = "0.12.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         setProperty("archivesBaseName", "${applicationId}-v${versionCode}-${versionName}")
     }
