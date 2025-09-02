@@ -32,19 +32,13 @@ object WebViewNavigation {
         systemSettings: SystemSettings,
         userSettings: UserSettings,
     ) {
-        isProgrammaticNavigation = true
-        webView.loadUrl(userSettings.homeUrl)
-
         if (userSettings.clearHistoryOnHome) {
             systemSettings.historyStack = listOf(userSettings.homeUrl)
             systemSettings.historyIndex = 0
-        } else {
-            val stack = systemSettings.historyStack.toMutableList()
-            if (stack.lastOrNull() != userSettings.homeUrl) {
-                stack.add(userSettings.homeUrl)
-                systemSettings.historyStack = stack
-            }
-            systemSettings.historyIndex = systemSettings.historyStack.lastIndex
+        }
+
+        if (systemSettings.lastUrl != userSettings.homeUrl) {
+            webView.loadUrl(userSettings.homeUrl)
         }
     }
 
@@ -73,12 +67,10 @@ object WebViewNavigation {
             systemSettings.historyIndex = currentIndex
         }
 
-        /*
-        println("[HISTORY] WebView Stack:")
-        systemSettings.historyStack.forEachIndexed { i, s ->
-            val marker = if (i == systemSettings.historyIndex) "->" else "  "
-            println("[HISTORY] $i: $marker $s")
-        }
-        */
+//        println("[HISTORY] WebView Stack:")
+//        systemSettings.historyStack.forEachIndexed { i, s ->
+//            val marker = if (i == systemSettings.historyIndex) "->" else "  "
+//            println("[HISTORY] $i: $marker $s")
+//        }
     }
 }
