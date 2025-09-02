@@ -8,29 +8,27 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 
 @Composable
 fun SettingLabel(navController: NavController, label: String, showBackIcon: Boolean = true) {
-    Column(
-        modifier = Modifier
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
     ) {
-        Box(
-            modifier = Modifier.height(80.dp)
-        ) {
-            if (showBackIcon) {
-                IconButton(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier.offset(x = (-20).dp).size(64.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
+        if (showBackIcon) {
+            IconButton(
+                onClick = { navController.popBackStack() },
+                modifier = Modifier.offset(x = (-20).dp).size(64.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    modifier = Modifier.size(24.dp),
+                )
             }
         }
 
@@ -38,6 +36,7 @@ fun SettingLabel(navController: NavController, label: String, showBackIcon: Bool
             text = label,
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.offset(x = (-20).dp),
         )
     }
 }
