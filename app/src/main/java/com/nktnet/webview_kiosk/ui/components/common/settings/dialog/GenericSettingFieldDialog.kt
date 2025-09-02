@@ -1,4 +1,4 @@
-package com.nktnet.webview_kiosk.ui.components.common.settings
+package com.nktnet.webview_kiosk.ui.components.common.settings.dialog
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*

@@ -3,7 +3,7 @@ package com.nktnet.webview_kiosk.ui.components.setting.fields.webcontent
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import com.nktnet.webview_kiosk.config.UserSettings
-import com.nktnet.webview_kiosk.ui.components.common.settings.EditableSettingItem
+import com.nktnet.webview_kiosk.ui.components.common.settings.fields.TextSettingFieldItem
 import com.nktnet.webview_kiosk.utils.validateMultilineRegex
 
 @Composable
@@ -12,7 +12,7 @@ fun WhitelistSetting() {
     val userSettings = remember { UserSettings(context) }
     var value by remember { mutableStateOf(userSettings.websiteWhitelist) }
 
-    EditableSettingItem(
+    TextSettingFieldItem(
         label = "Whitelist Regex",
         infoText = """
             Specify regular expressions (regex), one per line.

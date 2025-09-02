@@ -3,7 +3,7 @@ package com.nktnet.webview_kiosk.ui.components.setting.fields.webcontent
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import com.nktnet.webview_kiosk.config.UserSettings
-import com.nktnet.webview_kiosk.ui.components.common.settings.EditableSettingItem
+import com.nktnet.webview_kiosk.ui.components.common.settings.fields.TextSettingFieldItem
 import com.nktnet.webview_kiosk.utils.validateUrl
 
 @Composable
@@ -12,7 +12,7 @@ fun HomeUrlSetting() {
     val userSettings = remember { UserSettings(context) }
     var value by remember { mutableStateOf(userSettings.homeUrl) }
 
-    EditableSettingItem(
+    TextSettingFieldItem(
         label = "Home URL",
         infoText = "The URL that can be reset by tapping the screen 10 times in succession, using the floating toolbar icon, the address bar menu.",
         placeholder = "https://example.com",
