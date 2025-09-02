@@ -13,9 +13,11 @@ fun validateUrl(input: String): Boolean {
     }
     return try {
         val inputUrl = URL(input)
-        inputUrl.host.contains(".")
-                && (inputUrl.protocol == "http" || inputUrl.protocol == "https")
-                && isValidUrl(input)
+        val host = inputUrl.host
+        host.contains(".") &&
+                host.substringAfterLast(".").matches(Regex("^[a-zA-Z]{2,}$")) &&
+                (inputUrl.protocol == "http" || inputUrl.protocol == "https") &&
+                isValidUrl(input)
     } catch (_: Exception) {
         false
     }
