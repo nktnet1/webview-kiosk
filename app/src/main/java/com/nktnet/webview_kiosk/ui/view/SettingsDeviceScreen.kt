@@ -9,7 +9,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
 import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
-import com.nktnet.webview_kiosk.ui.components.setting.fields.device.KeepScreenOnSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.device.KeepScreenOnSetting
 
 @Composable
 fun SettingsDeviceScreen(

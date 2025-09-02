@@ -9,9 +9,9 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
 import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
-import com.nktnet.webview_kiosk.ui.components.setting.fields.webcontent.BlacklistSetting
-import com.nktnet.webview_kiosk.ui.components.setting.fields.webcontent.HomeUrlSetting
-import com.nktnet.webview_kiosk.ui.components.setting.fields.webcontent.WhitelistSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.webcontent.BlacklistSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.webcontent.HomeUrlSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.webcontent.WhitelistSetting
 
 @Composable
 fun SettingsWebContentScreen(navController: NavController) {
