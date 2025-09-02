@@ -1,6 +1,7 @@
 package com.nktnet.webview_kiosk.ui.components.setting.fields.webcontent
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.nktnet.webview_kiosk.config.UserSettings
 import com.nktnet.webview_kiosk.ui.components.common.settings.fields.TextSettingFieldItem
@@ -10,7 +11,6 @@ import com.nktnet.webview_kiosk.utils.validateMultilineRegex
 fun WhitelistSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-    var value by remember { mutableStateOf(userSettings.websiteWhitelist) }
 
     TextSettingFieldItem(
         label = "Whitelist Regex",
@@ -24,12 +24,9 @@ fun WhitelistSetting() {
             Whitelist patterns take precedence over blacklist patterns.
         """.trimIndent(),
         placeholder = "^https://trusted\\.org/?$\n^https://.*\\.trusted\\.org/.*",
-        initialValue = value,
+        initialValue = userSettings.websiteWhitelist,
         isMultiline = true,
         validator = { validateMultilineRegex(it) },
-        onSave = { newValue ->
-            value = newValue
-            userSettings.websiteWhitelist = newValue
-        }
+        onSave = { userSettings.websiteWhitelist = it }
     )
 }
