@@ -24,7 +24,9 @@ fun SettingsDeviceScreen(
             .verticalScroll(rememberScrollState())
     ) {
         SettingLabel(navController = navController, label = "Device")
+
         SettingDivider()
+
         KeepScreenOnSetting(keepScreenOnState)
     }
 }

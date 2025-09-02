@@ -14,6 +14,7 @@ import com.nktnet.webview_kiosk.ui.components.setting.fields.appearance.ThemeSet
 import com.nktnet.webview_kiosk.ui.components.setting.fields.appearance.WebViewInsetSetting
 import androidx.compose.runtime.MutableState
 import com.nktnet.webview_kiosk.config.option.ThemeOption
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
 
 @Composable
 fun SettingsAppearanceScreen(
@@ -28,7 +29,8 @@ fun SettingsAppearanceScreen(
             .verticalScroll(rememberScrollState())
     ) {
         SettingLabel(navController = navController, label = "Appearance")
-        Spacer(Modifier.height(16.dp))
+
+        SettingDivider()
 
         ThemeSetting(themeState)
         AddressBarModeSetting()

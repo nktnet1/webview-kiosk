@@ -7,8 +7,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
 import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
 import com.nktnet.webview_kiosk.ui.components.setting.fields.webengine.*
 
 @Composable
@@ -21,7 +21,9 @@ fun SettingsWebEngineScreen(navController: NavController) {
             .verticalScroll(rememberScrollState())
     ) {
         SettingLabel(navController = navController, label = "Web Engine")
+
         SettingDivider()
+
         EnableJavaScriptSetting()
         EnableDomStorageSetting()
         AcceptCookiesSetting()

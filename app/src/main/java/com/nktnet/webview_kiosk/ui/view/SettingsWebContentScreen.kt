@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
 import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
 import com.nktnet.webview_kiosk.ui.components.setting.fields.webcontent.BlacklistSetting
 import com.nktnet.webview_kiosk.ui.components.setting.fields.webcontent.HomeUrlSetting
@@ -22,7 +23,9 @@ fun SettingsWebContentScreen(navController: NavController) {
             .verticalScroll(rememberScrollState())
     ) {
         SettingLabel(navController = navController, label = "Web Content")
-        Spacer(Modifier.height(16.dp))
+
+        SettingDivider()
+
         HomeUrlSetting()
         BlacklistSetting()
         WhitelistSetting()
