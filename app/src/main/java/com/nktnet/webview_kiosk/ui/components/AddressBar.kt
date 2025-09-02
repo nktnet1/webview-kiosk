@@ -26,10 +26,12 @@ import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import com.nktnet.webview_kiosk.R
 import com.nktnet.webview_kiosk.config.SystemSettings
 import com.nktnet.webview_kiosk.config.UserSettings
 import com.nktnet.webview_kiosk.utils.webview.WebViewNavigation
@@ -50,7 +52,8 @@ fun AddressBar(
     var urlTextState by remember { mutableStateOf(urlBarText.text) }
 
     var menuExpanded by remember { mutableStateOf(false) }
-    val showMenu = userSettings.allowBackwardsNavigation || userSettings.allowRefresh || userSettings.allowGoHome
+    val showMenu = userSettings.allowBackwardsNavigation || userSettings.allowRefresh || userSettings.allowGoHome || userSettings.allowHistoryAccess
+    var showHistoryDialog by remember { mutableStateOf(false) }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -146,9 +149,29 @@ fun AddressBar(
                             leadingIcon = { Icon(Icons.Filled.Home, contentDescription = "Home") }
                         )
                     }
+                    if (userSettings.allowHistoryAccess) {
+                        DropdownMenuItem(
+                            text = { Text("History") },
+                            onClick = {
+                                menuExpanded = false
+                                showHistoryDialog = true
+                            },
+                            leadingIcon = { Icon(
+                                painter = painterResource(R.drawable.outline_history_24),
+                                contentDescription = "History")
+                            }
+                        )
+                    }
                 }
             }
         }
+    }
+
+    if (showHistoryDialog) {
+        HistoryDialog(
+            webView = webView,
+            onDismiss = { showHistoryDialog = false }
+        )
     }
 
     LaunchedEffect(hasFocus) {
