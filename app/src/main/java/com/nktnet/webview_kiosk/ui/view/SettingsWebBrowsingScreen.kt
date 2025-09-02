@@ -27,21 +27,10 @@ fun SettingsWebBrowsingScreen(
         SettingDivider()
 
         AllowRefreshSetting()
-        Spacer(modifier = Modifier.height(16.dp))
-
         AllowBackwardsNavigationSetting()
-        Spacer(modifier = Modifier.height(16.dp))
-
         AllowGoHomeSetting()
-        Spacer(modifier = Modifier.height(16.dp))
-
         ClearHistoryOnHomeSetting()
-        Spacer(modifier = Modifier.height(16.dp))
-
         AllowOtherUrlSchemesSetting()
-        Spacer(modifier = Modifier.height(16.dp))
-
         SearchProviderUrlSetting()
-        Spacer(modifier = Modifier.height(12.dp))
     }
 }
