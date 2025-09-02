@@ -3,7 +3,7 @@ package com.nktnet.webview_kiosk.ui.components.setting.fields.webcontent
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import com.nktnet.webview_kiosk.config.UserSettings
-import com.nktnet.webview_kiosk.ui.components.common.EditableSettingItem
+import com.nktnet.webview_kiosk.ui.components.common.settings.EditableSettingItem
 import com.nktnet.webview_kiosk.utils.validateUrl
 
 @Composable
