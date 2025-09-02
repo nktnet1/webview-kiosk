@@ -71,7 +71,7 @@ fun createCustomWebview(
 
                     if (scheme !in listOf("http", "https")) {
                         if (!allowOtherUrlSchemes) {
-                            view?.loadBlockedPage(url, blockedMessage)
+                            view?.loadBlockedPage(url, blockedMessage, theme)
                             isShowingBlockedPage = true
                             return true
                         }
@@ -80,7 +80,7 @@ fun createCustomWebview(
                     }
 
                     if (!isShowingBlockedPage && isBlocked(url)) {
-                        view?.loadBlockedPage(url, blockedMessage)
+                        view?.loadBlockedPage(url, blockedMessage, theme)
                         isShowingBlockedPage = true
                         return true
                     }
@@ -93,7 +93,7 @@ fun createCustomWebview(
                         val isUrlBlocked = isBlocked(it)
                         if (!isShowingBlockedPage && isUrlBlocked) {
                             isShowingBlockedPage = true
-                            view?.loadBlockedPage(it, blockedMessage)
+                            view?.loadBlockedPage(it, blockedMessage, theme)
                             return
                         }
                         doUpdateVisitedHistory(it)
@@ -110,10 +110,11 @@ fun createCustomWebview(
 private fun WebView.loadBlockedPage(
     url: String,
     message: String,
+    theme: ThemeOption,
 ) {
     loadDataWithBaseURL(
         url,
-        generateBlockedPageHtml(url, message),
+        generateBlockedPageHtml(url, message, theme),
         "text/html",
         "UTF-8",
         null

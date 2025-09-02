@@ -1,8 +1,48 @@
 package com.nktnet.webview_kiosk.utils.webview
 
 import android.text.Html
+import com.nktnet.webview_kiosk.config.option.ThemeOption
 
-fun generateBlockedPageHtml(url: String, message: String): String {
+fun generateBlockedPageHtml(url: String, message: String, theme: ThemeOption): String {
+    val style = when (theme) {
+        ThemeOption.DARK -> """
+            body {
+                background-color: #121212;
+                color: #ffffff;
+            }
+            hr {
+                border-top: 1px solid #aaaaaa;
+            }
+        """
+        ThemeOption.LIGHT -> """
+            body {
+                background-color: #ffffff;
+                color: #000000;
+            }
+            hr {
+                border-top: 1px solid #555555;
+            }
+        """
+        ThemeOption.SYSTEM -> """
+            body {
+                background-color: #ffffff;
+                color: #000000;
+            }
+            hr {
+                border-top: 1px solid #555555;
+            }
+            @media (prefers-color-scheme: dark) {
+                body {
+                    background-color: #121212;
+                    color: #ffffff;
+                }
+                hr {
+                    border-top: 1px solid #aaaaaa;
+                }
+            }
+        """
+    }
+
     return """
         <html>
           <head>
@@ -23,10 +63,10 @@ fun generateBlockedPageHtml(url: String, message: String): String {
                     white-space: pre-wrap;
                 }
                 hr {
-                  border: none;
-                  border-top: 1px solid #555555;
-                  margin: 20px 0 30px 0px;
+                    border: none;
+                    margin: 20px 0 30px 0px;
                 }
+                $style
             </style>
           </head>
           <body>
