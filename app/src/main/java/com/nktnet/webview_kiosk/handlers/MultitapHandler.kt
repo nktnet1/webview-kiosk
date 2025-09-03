@@ -1,9 +1,14 @@
 package com.nktnet.webview_kiosk.handlers
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -17,7 +22,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import com.nktnet.webview_kiosk.config.UserSettings
+import kotlin.math.max
 
 @Composable
 fun MultitapHandler(
@@ -25,6 +34,10 @@ fun MultitapHandler(
     onSuccess: () -> Unit
 ) {
     val context = LocalContext.current
+    val windowInfo = LocalWindowInfo.current
+    val screenWidthPx = windowInfo.containerSize.width.toFloat()
+    val screenHeightPx = windowInfo.containerSize.height.toFloat()
+
     var tapsLeft by remember { mutableIntStateOf(requiredTaps) }
     var lastTapTime by remember { mutableLongStateOf(0L) }
     val maxInterval = 300L
@@ -47,29 +60,40 @@ fun MultitapHandler(
         Box(
             Modifier
                 .fillMaxSize()
-                .background(Color.Transparent)
                 .pointerInteropFilter { motionEvent ->
                     if (motionEvent.action == android.view.MotionEvent.ACTION_DOWN) {
                         val now = System.currentTimeMillis()
-                        if (now - lastTapTime > maxInterval) {
-                            tapsLeft = requiredTaps
-                        }
-                        tapsLeft = 0.coerceAtLeast(tapsLeft - 1)
-                        lastTapTime = now
-                        when {
-                            tapsLeft <= 0 -> {
+                        if (motionEvent.x < screenWidthPx / 2f && motionEvent.y < screenHeightPx / 2f) {
+                            if (now - lastTapTime > maxInterval) {
                                 tapsLeft = requiredTaps
-                                toastRef.value?.cancel()
-                                showConfirmDialog = true
                             }
-                            tapsLeft <= 5 -> {
-                                showToast("Tap $tapsLeft more times to navigate home")
+                            tapsLeft = max(0, tapsLeft - 1)
+                            lastTapTime = now
+                            when {
+                                tapsLeft <= 0 -> {
+                                    tapsLeft = requiredTaps
+                                    toastRef.value?.cancel()
+                                    showConfirmDialog = true
+                                }
+                                tapsLeft <= 5 -> {
+                                    showToast("Tap $tapsLeft more times to navigate home")
+                                }
                             }
                         }
                     }
                     false
                 }
-        )
+        ) {
+            if (tapsLeft in 1..5) {
+                Box(
+                    Modifier
+                        .fillMaxWidth(0.5f)
+                        .fillMaxHeight(0.5f)
+                        .background(Color(0x3300C853))
+                        .border(2.dp, Color(0xFF00C853))
+                )
+            }
+        }
     }
 
     if (showConfirmDialog) {
@@ -94,14 +118,14 @@ fun MultitapHandler(
             dismissButton = {
                 TextButton(
                     onClick = { showConfirmDialog = false },
-                    colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
-                        contentColor = androidx.compose.material3.MaterialTheme.colorScheme.error
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
                     Text("Cancel")
                 }
             },
-            properties = androidx.compose.ui.window.DialogProperties(
+            properties = DialogProperties(
                 dismissOnClickOutside = false,
             )
         )

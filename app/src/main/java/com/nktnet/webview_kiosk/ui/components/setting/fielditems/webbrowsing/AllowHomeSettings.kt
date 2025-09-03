@@ -13,7 +13,7 @@ fun AllowGoHomeSetting() {
 
     BooleanSettingFieldItem(
         label = "Allow Go Home",
-        infoText = "Whether the user can return to the configured home page when tapping the screen 10 times in quick succession.",
+        infoText = "Whether the user can return to the configured home page when tapping the top-left quadrant of the screen 10 times in quick succession (300ms interval).",
         initialValue = userSettings.allowGoHome,
         onSave = { userSettings.allowGoHome = it }
     )
