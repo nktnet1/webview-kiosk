@@ -12,6 +12,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -19,7 +20,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.nktnet.webview_kiosk.config.UserSettings
 import kotlin.math.max
+import kotlinx.coroutines.delay
 
 @Composable
 fun MultitapHandler(
@@ -55,6 +56,15 @@ fun MultitapHandler(
     var allowGoHome by remember { mutableStateOf(userSettings.allowGoHome) }
 
     var showConfirmDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(tapsLeft, lastTapTime) {
+        if (tapsLeft in 1..5) {
+            delay(maxInterval)
+            if (System.currentTimeMillis() - lastTapTime >= maxInterval) {
+                tapsLeft = requiredTaps
+            }
+        }
+    }
 
     if (allowGoHome) {
         Box(
@@ -89,8 +99,8 @@ fun MultitapHandler(
                     Modifier
                         .fillMaxWidth(0.5f)
                         .fillMaxHeight(0.5f)
-                        .background(Color(0x3300C853))
-                        .border(2.dp, Color(0xFF00C853))
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+                        .border(2.dp, MaterialTheme.colorScheme.primary)
                 )
             }
         }
