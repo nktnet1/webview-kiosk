@@ -50,7 +50,7 @@ class UserSettings(context: Context) {
         set(value) = prefs.edit { putBoolean(ALLOW_OTHER_URL_SCHEMES, value) }
 
     var searchProviderUrl: String
-        get() = prefs.getString(SEARCH_PROVIDER_URL, null) ?: "https://www.google.com/search?q="
+        get() = prefs.getString(SEARCH_PROVIDER_URL, null) ?: Constants.DEFAULT_SEARCH_PROVIDER_URL
         set(value) = prefs.edit { putString(SEARCH_PROVIDER_URL, value) }
 
     var enableJavaScript: Boolean
