@@ -34,6 +34,8 @@ import androidx.compose.ui.unit.dp
 import com.nktnet.webview_kiosk.R
 import com.nktnet.webview_kiosk.config.SystemSettings
 import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.WebViewInset
+import com.nktnet.webview_kiosk.utils.rememberLockedState
 import com.nktnet.webview_kiosk.utils.webview.WebViewNavigation
 
 @Composable
@@ -51,6 +53,16 @@ fun AddressBar(
     val systemSettings = remember { SystemSettings(context) }
     var urlTextState by remember { mutableStateOf(urlBarText.text) }
 
+    val isLocked by rememberLockedState()
+    val addressBarInset = when (userSettings.webViewInset) {
+        WebViewInset.StatusBars,
+        WebViewInset.SystemBars,
+        WebViewInset.SafeDrawing,
+        WebViewInset.SafeGestures,
+        WebViewInset.SafeContent -> WindowInsets()
+        else -> if (!isLocked) WindowInsets.statusBars else WindowInsets()
+    }
+
     var menuExpanded by remember { mutableStateOf(false) }
     val showMenu = userSettings.allowBackwardsNavigation || userSettings.allowRefresh || userSettings.allowGoHome || userSettings.allowHistoryAccess
     var showHistoryDialog by remember { mutableStateOf(false) }
@@ -58,6 +70,7 @@ fun AddressBar(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
+            .windowInsetsPadding(addressBarInset)
             .fillMaxWidth()
             .height(70.dp)
             .padding(horizontal = 8.dp)

@@ -22,7 +22,7 @@ enum class WebViewInset(val label: String) {
 
     @Composable
     fun toWindowInsets(): WindowInsets = when (this) {
-        None -> WindowInsets(0, 0, 0, 0)
+        None -> WindowInsets()
         StatusBars -> WindowInsets.statusBars
         NavigationBars -> WindowInsets.navigationBars
         SystemBars -> WindowInsets.systemBars
