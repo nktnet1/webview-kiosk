@@ -33,8 +33,8 @@ object WebViewNavigation {
         userSettings: UserSettings,
     ) {
         if (userSettings.clearHistoryOnHome) {
-            systemSettings.historyStack = listOf(userSettings.homeUrl)
-            systemSettings.historyIndex = 0
+            systemSettings.historyStack = emptyList()
+            systemSettings.historyIndex = -1
         }
 
         if (systemSettings.lastUrl != userSettings.homeUrl) {
@@ -75,11 +75,11 @@ object WebViewNavigation {
             systemSettings.historyIndex = currentIndex
         }
 
-//        println("[HISTORY] WebView Stack:")
-//        systemSettings.historyStack.forEachIndexed { i, s ->
-//            val marker = if (i == systemSettings.historyIndex) "->" else "  "
-//            println("[HISTORY] $i: $marker $s")
-//        }
+        println("[HISTORY] WebView Stack:")
+        systemSettings.historyStack.forEachIndexed { i, s ->
+            val marker = if (i == systemSettings.historyIndex) "->" else "  "
+            println("[HISTORY] $i: $marker $s")
+        }
     }
 
     fun clearHistory(systemSettings: SystemSettings) {
