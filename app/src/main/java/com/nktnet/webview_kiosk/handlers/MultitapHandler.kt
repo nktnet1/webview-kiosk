@@ -19,7 +19,6 @@ import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
 import com.nktnet.webview_kiosk.config.UserSettings
 
-
 @Composable
 fun MultitapHandler(
     requiredTaps: Int = 10,
@@ -28,7 +27,7 @@ fun MultitapHandler(
     val context = LocalContext.current
     var tapsLeft by remember { mutableIntStateOf(requiredTaps) }
     var lastTapTime by remember { mutableLongStateOf(0L) }
-    val maxInterval = 500L
+    val maxInterval = 300L
 
     val toastRef = remember { mutableStateOf<android.widget.Toast?>(null) }
 
