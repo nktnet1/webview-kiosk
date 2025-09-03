@@ -37,7 +37,7 @@ object WebViewNavigation {
             systemSettings.historyIndex = -1
         }
 
-        if (systemSettings.lastUrl != userSettings.homeUrl) {
+        if (systemSettings.currentUrl != userSettings.homeUrl) {
             webView.loadUrl(userSettings.homeUrl)
         }
     }

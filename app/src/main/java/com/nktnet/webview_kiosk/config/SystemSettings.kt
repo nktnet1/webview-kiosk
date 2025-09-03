@@ -28,7 +28,7 @@ class SystemSettings(context: Context) {
         get() = prefs.getInt(HISTORY_INDEX, -1)
         set(value) = prefs.edit { putInt(HISTORY_INDEX, value) }
 
-    val lastUrl: String
+    val currentUrl: String
         get() = historyStack.getOrNull(historyIndex) ?: ""
 
     var intentUrl: String

@@ -41,7 +41,7 @@ fun WebviewScreen(navController: NavController) {
 
     var currentUrl by remember {
         mutableStateOf(
-            systemSettings.lastUrl.takeIf { it.isNotEmpty() }
+            systemSettings.currentUrl.takeIf { it.isNotEmpty() }
             ?: userSettings.homeUrl
         )
     }
@@ -139,10 +139,16 @@ fun WebviewScreen(navController: NavController) {
                         if (userSettings.allowRefresh) {
                             SwipeRefreshLayout(ctx).apply {
                                 setOnRefreshListener { isRefreshing = true; webView.reload() }
-                                addView(webView.apply { loadUrl(initialUrl) })
+                                addView(webView.apply {
+                                    urlBarText = urlBarText.copy(text = initialUrl)
+                                    loadUrl(initialUrl)
+                                })
                             }
                         } else {
-                            webView.apply { loadUrl(initialUrl) }
+                            webView.apply {
+                                urlBarText = urlBarText.copy(text = initialUrl)
+                                loadUrl(initialUrl)
+                            }
                         }
                     },
                     update = { view ->
