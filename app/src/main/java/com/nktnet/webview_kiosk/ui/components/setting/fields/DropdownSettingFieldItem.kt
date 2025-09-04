@@ -1,6 +1,6 @@
 package com.nktnet.webview_kiosk.ui.components.setting.fields
 
-import DropdownSelector
+import com.nktnet.webview_kiosk.ui.components.common.DropdownSelector
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -53,10 +53,15 @@ fun <T> DropdownSettingFieldItem(
                 selected = draftValue,
                 onSelectedChange = { draftValue = it }
             ) { option ->
+                val isSelected = option == draftValue
                 Text(
                     text = itemText(option),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                 )
             }
         }
