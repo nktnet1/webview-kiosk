@@ -1,13 +1,11 @@
 # Webview Kiosk
 
-Webview Kiosk is a free and open-source Android application designed for secure,
+Webview Kiosk is a free and open-source Android application for secure,
 kiosk-style web browsing.
 
-It allows device owners to lock the device to a single webview, restrict access
-to other apps or system features, and provide flexible configuration options.
-
-This app is intended for device owners seeking a simple solution without the need
-for Enterprise Mobility Management (EMM) or Mobile Device Management (MDM) systems.
+The app is designed for small businesses and device owners who are looking for
+a simpler alternative to Enterprise Mobility Management (EMM) or Mobile Device
+Management (MDM) systems.
 
 ## Key Features
 
