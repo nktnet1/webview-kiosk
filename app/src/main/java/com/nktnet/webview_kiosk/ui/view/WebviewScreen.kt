@@ -136,17 +136,16 @@ fun WebviewScreen(navController: NavController) {
                         } else {
                             currentUrl
                         }
+                        urlBarText = urlBarText.copy(text = initialUrl)
                         if (userSettings.allowRefresh) {
                             SwipeRefreshLayout(ctx).apply {
                                 setOnRefreshListener { isRefreshing = true; webView.reload() }
                                 addView(webView.apply {
-                                    urlBarText = urlBarText.copy(text = initialUrl)
                                     loadUrl(initialUrl)
                                 })
                             }
                         } else {
                             webView.apply {
-                                urlBarText = urlBarText.copy(text = initialUrl)
                                 loadUrl(initialUrl)
                             }
                         }

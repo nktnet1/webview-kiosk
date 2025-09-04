@@ -18,7 +18,8 @@ fun TextSettingFieldItem(
     initialValue: String,
     isMultiline: Boolean,
     validator: (String) -> Boolean,
-    onSave: (String) -> Unit
+    onSave: (String) -> Unit,
+    extraContent: (@Composable ((setValue: (String) -> Unit) -> Unit))? = null
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var value by remember { mutableStateOf(initialValue) }
@@ -75,6 +76,7 @@ fun TextSettingFieldItem(
                 singleLine = !isMultiline,
                 modifier = if (isMultiline) Modifier.height(200.dp) else Modifier.fillMaxWidth()
             )
-        }
+
+            extraContent?.invoke { draftValue = it; draftError = !validator(it) } }
     }
 }
