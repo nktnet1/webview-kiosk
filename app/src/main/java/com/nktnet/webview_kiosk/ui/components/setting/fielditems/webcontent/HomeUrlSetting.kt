@@ -30,7 +30,14 @@ fun HomeUrlSetting() {
 
     TextSettingFieldItem(
         label = "Home URL",
-        infoText = "The URL that can be reset by tapping the screen 10 times in succession, using the floating toolbar icon, the address bar menu.",
+        infoText = """
+            The URL that can be returned to by:
+              1. tapping the screen 10 times in quick succession
+              2. using the floating toolbar icon
+              3. using the address bar menu
+              
+            This is also controlled by the "Allow go home" setting under web browsing.
+        """.trimIndent(),
         placeholder = "https://example.com",
         initialValue = userSettings.homeUrl,
         isMultiline = false,
