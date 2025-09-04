@@ -136,6 +136,7 @@ fun WebviewScreen(navController: NavController) {
                         } else {
                             currentUrl
                         }
+                        transitionState = TransitionState.TRANSITIONING
                         urlBarText = urlBarText.copy(text = initialUrl)
                         if (userSettings.allowRefresh) {
                             SwipeRefreshLayout(ctx).apply {
