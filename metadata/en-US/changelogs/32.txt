@@ -1,0 +1,3 @@
+- initial release on F-droid
+- fix: missing package for DropdownSelector, missing selected highlight for DropdownSettingFieldItem
+- fix: home url info text

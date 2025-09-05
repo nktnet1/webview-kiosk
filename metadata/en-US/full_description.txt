@@ -1,5 +1,3 @@
-# Webview Kiosk
-
 Webview Kiosk is a free and open-source Android application for secure,
 kiosk-style web browsing.
 
@@ -16,10 +14,28 @@ Management (MDM) systems.
 - **URL Filtering:** supports regex-based blacklist and whitelist to control web access.
 - **Export/Import:** allow for backups of settings & configurations
 
-For more details, visit the official documentation:
+For all configurable settings, view the `Settings` section.
 
-- https://webviewkiosk.nktnet.uk
+## Contact
 
-Contact support at:
+### Questions/Feature Requests
 
-- mailto:support@webviewkiosk.nktnet.uk
+Create a `Q&A` for questions and `Ideas` for feature requests on GitHub discussions:
+
+- https://github.com/nktnet1/webview-kiosk/discussions
+
+### Bugs/Issues
+
+Report bugs by creating a GitHub issue describing the problem and how it can be reproduced:
+
+- https://github.com/nktnet1/webview-kiosk/issues
+
+Please also include your device model, app version and android version.
+
+### Other
+
+For all other enquiries, please reach out to:
+
+```
+support@webviewkiosk.nktnet.uk
+```
