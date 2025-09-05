@@ -1,10 +1,11 @@
 package com.nktnet.webview_kiosk.ui.components
 
+import android.content.Context
 import android.webkit.WebView
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
@@ -22,6 +23,27 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.nktnet.webview_kiosk.config.SystemSettings
 import com.nktnet.webview_kiosk.utils.webview.WebViewNavigation
+import java.util.concurrent.TimeUnit
+import android.text.format.DateFormat
+import androidx.compose.ui.text.font.FontStyle
+import java.util.Date
+
+private fun formatDatetime(context: Context, timestamp: Long): String {
+    val now = System.currentTimeMillis()
+    val diff = now - timestamp
+    val timeAgo = when {
+        diff < TimeUnit.MINUTES.toMillis(1) -> "Just now"
+        diff < TimeUnit.HOURS.toMillis(1) -> "${TimeUnit.MILLISECONDS.toMinutes(diff)} min ago"
+        diff < TimeUnit.DAYS.toMillis(1) -> "${TimeUnit.MILLISECONDS.toHours(diff)} h ago"
+        else -> "${TimeUnit.MILLISECONDS.toDays(diff)} d ago"
+    }
+
+    val dateTime = DateFormat.getMediumDateFormat(context).format(Date(timestamp)) +
+            " " +
+            DateFormat.getTimeFormat(context).format(Date(timestamp))
+
+    return "$timeAgo • $dateTime"
+}
 
 @Composable
 fun HistoryDialog(
@@ -55,44 +77,55 @@ fun HistoryDialog(
                     modifier = Modifier.weight(1f),
                     state = listState
                 ) {
-                    itemsIndexed(history) { index, item ->
+                    items(history, key = { it.id }) { item ->
+                        val index = history.indexOf(item)
                         val isCurrent = index == systemSettings.historyIndex
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp)
-                                .clickable(enabled = !isUpdating && !isCurrent) {
-                                    isUpdating = true
-                                    WebViewNavigation.navigateToIndex(webView, systemSettings, index)
-                                    isUpdating = false
-                                    onDismiss()
-                                },
-                            elevation = CardDefaults.cardElevation(4.dp)
                         ) {
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .clickable(
+                                        enabled = !isUpdating && !isCurrent,
+                                        onClick = {
+                                            isUpdating = true
+                                            WebViewNavigation.navigateToIndex(webView, systemSettings, index)
+                                            isUpdating = false
+                                            onDismiss()
+                                        }
+                                    )
                                     .padding(start = 12.dp, top = 12.dp, bottom = 12.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = buildAnnotatedString {
-                                        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                            append("[$index] ")
-                                        }
-                                        append(item.toCharArray().joinToString("\u200B"))
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    maxLines = 2,
-                                    overflow = TextOverflow.Ellipsis,
-                                    style = if (isCurrent)
-                                        MaterialTheme.typography.bodyMedium.copy(
-                                            color = MaterialTheme.colorScheme.primary,
-                                        )
-                                    else
-                                        MaterialTheme.typography.bodyMedium
-                                )
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = buildAnnotatedString {
+                                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                                append("[$index] ")
+                                            }
+                                            append(item.url.toCharArray().joinToString("\u200B"))
+                                        },
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        style = if (isCurrent)
+                                            MaterialTheme.typography.bodyMedium.copy(
+                                                color = MaterialTheme.colorScheme.primary,
+                                            )
+                                        else
+                                            MaterialTheme.typography.bodyMedium
+                                    )
+                                    Text(
+                                        text = formatDatetime(context,item.visitedAt),
+                                        fontStyle = FontStyle.Italic,
+                                        modifier = Modifier.padding(top = 2.dp),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                                 IconButton(
                                     enabled = !isUpdating && !isCurrent,
                                     onClick = {
@@ -102,18 +135,14 @@ fun HistoryDialog(
                                         isUpdating = false
                                     }
                                 ) {
-                                    if (!isUpdating && !isCurrent) {
-                                        Icon(
-                                            Icons.Default.Clear,
-                                            contentDescription = "Delete",
-                                            tint = MaterialTheme.colorScheme.error
-                                        )
-                                    } else {
-                                        Icon(
-                                            Icons.Default.Clear,
-                                            contentDescription = "Delete"
-                                        )
-                                    }
+                                    Icon(
+                                        Icons.Default.Clear,
+                                        contentDescription = "Delete",
+                                        tint = if (!isUpdating && !isCurrent)
+                                            MaterialTheme.colorScheme.error
+                                        else
+                                            LocalContentColor.current
+                                    )
                                 }
                             }
                         }

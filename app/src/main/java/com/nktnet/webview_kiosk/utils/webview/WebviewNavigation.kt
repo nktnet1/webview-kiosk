@@ -1,6 +1,7 @@
 package com.nktnet.webview_kiosk.utils.webview
 
 import android.webkit.WebView
+import com.nktnet.webview_kiosk.config.HistoryEntry
 import com.nktnet.webview_kiosk.config.SystemSettings
 import com.nktnet.webview_kiosk.config.UserSettings
 
@@ -13,7 +14,7 @@ object WebViewNavigation {
             val newIndex = index - 1
             systemSettings.historyIndex = newIndex
             isProgrammaticNavigation = true
-            webView.loadUrl(systemSettings.historyStack[newIndex])
+            webView.loadUrl(systemSettings.historyStack[newIndex].url)
         }
     }
 
@@ -23,7 +24,7 @@ object WebViewNavigation {
             val newIndex = index + 1
             systemSettings.historyIndex = newIndex
             isProgrammaticNavigation = true
-            webView.loadUrl(systemSettings.historyStack[newIndex])
+            webView.loadUrl(systemSettings.historyStack[newIndex].url)
         }
     }
 
@@ -33,8 +34,7 @@ object WebViewNavigation {
         userSettings: UserSettings,
     ) {
         if (userSettings.clearHistoryOnHome) {
-            systemSettings.historyStack = emptyList()
-            systemSettings.historyIndex = -1
+            systemSettings.clearHistory()
         }
 
         if (systemSettings.currentUrl != userSettings.homeUrl) {
@@ -46,7 +46,7 @@ object WebViewNavigation {
         if (index in 0..systemSettings.historyStack.lastIndex) {
             isProgrammaticNavigation = true
             systemSettings.historyIndex = index
-            webView.loadUrl(systemSettings.historyStack[index])
+            webView.loadUrl(systemSettings.historyStack[index].url)
         }
     }
 
@@ -59,7 +59,7 @@ object WebViewNavigation {
         val newUrl = url.trimEnd('/')
         val stack = systemSettings.historyStack.toMutableList()
         val currentIndex = systemSettings.historyIndex
-        val currentUrl = stack.getOrNull(currentIndex)?.trimEnd('/')
+        val currentUrl = stack.getOrNull(currentIndex)?.url?.trimEnd('/')
 
         if (currentUrl != newUrl) {
             val updatedStack = if (currentIndex < stack.lastIndex) {
@@ -68,7 +68,7 @@ object WebViewNavigation {
                 stack
             }
 
-            updatedStack.add(newUrl)
+            updatedStack.add(HistoryEntry(url = newUrl))
             systemSettings.historyStack = updatedStack
             systemSettings.historyIndex = updatedStack.lastIndex
         } else {
@@ -76,21 +76,20 @@ object WebViewNavigation {
         }
 
         println("[HISTORY] WebView Stack:")
-        systemSettings.historyStack.forEachIndexed { i, s ->
+        systemSettings.historyStack.forEachIndexed { i, entry ->
             val marker = if (i == systemSettings.historyIndex) "->" else "  "
-            println("[HISTORY] $i: $marker $s")
+            println("[HISTORY] $i: $marker ${entry.url}")
         }
     }
 
     fun clearHistory(systemSettings: SystemSettings) {
         val currentIndex = systemSettings.historyIndex.coerceIn(0, systemSettings.historyStack.lastIndex)
-        val currentUrl = systemSettings.historyStack.getOrNull(currentIndex)
-        if (currentUrl != null) {
-            systemSettings.historyStack = listOf(currentUrl)
+        val currentEntry = systemSettings.historyStack.getOrNull(currentIndex)
+        if (currentEntry != null) {
+            systemSettings.historyStack = listOf(currentEntry)
             systemSettings.historyIndex = 0
         } else {
-            systemSettings.historyStack = emptyList()
-            systemSettings.historyIndex = -1
+            systemSettings.clearHistory()
         }
     }
 

@@ -126,7 +126,7 @@ fun AddressBar(
                             enabled = systemSettings.historyIndex > 0,
                             onClick = {
                                 WebViewNavigation.goBack(webView, systemSettings)
-                                val newUrl = systemSettings.historyStack[systemSettings.historyIndex]
+                                val newUrl = systemSettings.historyStack[systemSettings.historyIndex].url
                                 onUrlBarTextChange(TextFieldValue(newUrl))
                                 menuExpanded = false
                             },
@@ -137,7 +137,7 @@ fun AddressBar(
                             enabled = systemSettings.historyIndex < (systemSettings.historyStack.size - 1),
                             onClick = {
                                 WebViewNavigation.goForward(webView, systemSettings)
-                                val newUrl = systemSettings.historyStack[systemSettings.historyIndex]
+                                val newUrl = systemSettings.historyStack[systemSettings.historyIndex].url
                                 onUrlBarTextChange(TextFieldValue(newUrl))
                                 menuExpanded = false
                             },
