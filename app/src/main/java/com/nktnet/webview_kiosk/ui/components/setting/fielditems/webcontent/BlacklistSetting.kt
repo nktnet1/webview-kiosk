@@ -23,7 +23,11 @@ fun BlacklistSetting() {
             
             Whitelist patterns take precedence over blacklist patterns.
         """.trimIndent(),
-        placeholder = "^.*$\n^https://.*\\.?google\\.com/?.*",
+        placeholder = """
+            e.g.
+                ^.*$
+                ^https://.*\.?google\.com/?.*
+        """.trimIndent(),
         initialValue = userSettings.websiteBlacklist,
         isMultiline = true,
         validator = { validateMultilineRegex(it) },

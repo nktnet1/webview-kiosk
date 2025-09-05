@@ -72,7 +72,23 @@ fun TextSettingFieldItem(
                     draftError = !validator(it)
                 },
                 isError = draftError,
-                placeholder = { Text(placeholder) },
+                placeholder = {
+                    if (isMultiline) {
+                        Text(
+                            placeholder,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontStyle = FontStyle.Italic,
+                        )
+                    } else {
+                        Text(
+                            placeholder,
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            fontStyle = FontStyle.Italic,
+                        )
+                    }
+                },
                 singleLine = !isMultiline,
                 modifier = if (isMultiline) Modifier.height(200.dp) else Modifier.fillMaxWidth()
             )

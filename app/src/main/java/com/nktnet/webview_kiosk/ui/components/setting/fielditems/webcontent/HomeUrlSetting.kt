@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import com.nktnet.webview_kiosk.config.Constants
 import com.nktnet.webview_kiosk.config.SystemSettings
 import com.nktnet.webview_kiosk.config.UserSettings
 import com.nktnet.webview_kiosk.ui.components.setting.fields.TextSettingFieldItem
@@ -38,7 +39,7 @@ fun HomeUrlSetting() {
               
             This is also controlled by the "Allow go home" setting under web browsing.
         """.trimIndent(),
-        placeholder = "https://example.com",
+        placeholder = "e.g. ${Constants.WEBSITE_URL}",
         initialValue = userSettings.homeUrl,
         isMultiline = false,
         validator = { validateUrl(it) },
