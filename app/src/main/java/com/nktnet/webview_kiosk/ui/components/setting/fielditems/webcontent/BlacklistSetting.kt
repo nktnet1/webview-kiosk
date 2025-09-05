@@ -16,6 +16,7 @@ fun BlacklistSetting() {
         label = "Blacklist Regex",
         infoText = """
             Specify regular expressions (regex), one per line.
+
             Escaping is required for special characters in regex like '.' and '?'.
             
             These patterns also use partial matching.
