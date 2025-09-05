@@ -13,7 +13,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.nktnet.webview_kiosk.config.SystemSettings
@@ -68,17 +72,24 @@ fun HistoryDialog(
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(12.dp),
+                                    .padding(start = 12.dp, top = 12.dp, bottom = 12.dp),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = item,
+                                    text = buildAnnotatedString {
+                                        withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                            append("[$index] ")
+                                        }
+                                        append(item.toCharArray().joinToString("\u200B"))
+                                    },
                                     modifier = Modifier.weight(1f),
                                     maxLines = 2,
                                     overflow = TextOverflow.Ellipsis,
                                     style = if (isCurrent)
-                                        MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.primary)
+                                        MaterialTheme.typography.bodyMedium.copy(
+                                            color = MaterialTheme.colorScheme.primary,
+                                        )
                                     else
                                         MaterialTheme.typography.bodyMedium
                                 )
@@ -91,7 +102,18 @@ fun HistoryDialog(
                                         isUpdating = false
                                     }
                                 ) {
-                                    Icon(Icons.Default.Clear, contentDescription = "Delete")
+                                    if (!isUpdating && !isCurrent) {
+                                        Icon(
+                                            Icons.Default.Clear,
+                                            contentDescription = "Delete",
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    } else {
+                                        Icon(
+                                            Icons.Default.Clear,
+                                            contentDescription = "Delete"
+                                        )
+                                    }
                                 }
                             }
                         }
