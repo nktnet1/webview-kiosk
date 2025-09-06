@@ -1,0 +1,5 @@
+build: disable dependenciesInfo includeInApk + includeInBundle for reproducible builds.
+
+Context:
+- https://gitlab.com/fdroid/fdroiddata/-/issues/3330
+
