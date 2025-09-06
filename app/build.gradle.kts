@@ -50,6 +50,7 @@ android {
             }
         }
     }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -58,6 +59,7 @@ android {
     buildFeatures {
         compose = true
     }
+
     dependenciesInfo {
         // https://gitlab.com/fdroid/fdroiddata/-/issues/3330
         includeInApk = false
