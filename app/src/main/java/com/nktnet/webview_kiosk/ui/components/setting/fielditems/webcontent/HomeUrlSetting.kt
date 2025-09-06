@@ -37,7 +37,7 @@ fun HomeUrlSetting() {
               2. using the floating toolbar icon
               3. using the address bar menu
               
-            This is also controlled by the "Allow go home" setting under web browsing.
+            This is also controlled by the "Allow Go Home" setting under web browsing.
         """.trimIndent(),
         placeholder = "e.g. ${Constants.WEBSITE_URL}",
         initialValue = userSettings.homeUrl,

@@ -32,7 +32,7 @@ fun GenericSettingFieldDialog(
     if (showInfoDialog) {
         AlertDialog(
             onDismissRequest = { showInfoDialog = false },
-            title = { Text("Info") },
+            title = { Text(title) },
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     Text(infoText.replace("\t", "    "))
