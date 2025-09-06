@@ -56,7 +56,7 @@ fun HomeUrlSetting() {
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "Click to use the current URL:",
+                        text = "Use the current URL:",
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary,

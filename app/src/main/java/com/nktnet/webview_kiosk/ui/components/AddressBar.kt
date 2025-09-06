@@ -2,21 +2,13 @@ package com.nktnet.webview_kiosk.ui.components
 
 import android.webkit.WebView
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -64,8 +56,11 @@ fun AddressBar(
     }
 
     var menuExpanded by remember { mutableStateOf(false) }
-    val showMenu = userSettings.allowBackwardsNavigation || userSettings.allowRefresh || userSettings.allowGoHome || userSettings.allowHistoryAccess
+    val showMenu =
+        userSettings.allowBackwardsNavigation || userSettings.allowRefresh || userSettings.allowGoHome ||
+                userSettings.allowHistoryAccess || userSettings.allowBookmarkAccess
     var showHistoryDialog by remember { mutableStateOf(false) }
+    var showBookmarksDialog by remember { mutableStateOf(false) }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -114,7 +109,11 @@ fun AddressBar(
                         .size(width = 24.dp, height = 80.dp)
                         .wrapContentSize(Alignment.Center)
                 ) {
-                    Icon(Icons.Filled.MoreVert, contentDescription = "Menu", modifier = Modifier.size(32.dp))
+                    Icon(
+                        Icons.Filled.MoreVert,
+                        contentDescription = "Menu",
+                        modifier = Modifier.size(32.dp)
+                    )
                 }
                 DropdownMenu(
                     expanded = menuExpanded,
@@ -126,29 +125,46 @@ fun AddressBar(
                             enabled = systemSettings.historyIndex > 0,
                             onClick = {
                                 WebViewNavigation.goBack(webView, systemSettings)
-                                val newUrl = systemSettings.historyStack[systemSettings.historyIndex].url
+                                val newUrl =
+                                    systemSettings.historyStack[systemSettings.historyIndex].url
                                 onUrlBarTextChange(TextFieldValue(newUrl))
                                 menuExpanded = false
                             },
-                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                            leadingIcon = {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back"
+                                )
+                            }
                         )
                         DropdownMenuItem(
                             text = { Text("Forward") },
                             enabled = systemSettings.historyIndex < (systemSettings.historyStack.size - 1),
                             onClick = {
                                 WebViewNavigation.goForward(webView, systemSettings)
-                                val newUrl = systemSettings.historyStack[systemSettings.historyIndex].url
+                                val newUrl =
+                                    systemSettings.historyStack[systemSettings.historyIndex].url
                                 onUrlBarTextChange(TextFieldValue(newUrl))
                                 menuExpanded = false
                             },
-                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Forward") }
+                            leadingIcon = {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowForward,
+                                    contentDescription = "Forward"
+                                )
+                            }
                         )
                     }
                     if (userSettings.allowRefresh) {
                         DropdownMenuItem(
                             text = { Text("Refresh") },
                             onClick = { webView.reload(); menuExpanded = false },
-                            leadingIcon = { Icon(Icons.Filled.Refresh, contentDescription = "Refresh") }
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Filled.Refresh,
+                                    contentDescription = "Refresh"
+                                )
+                            }
                         )
                     }
                     if (userSettings.allowGoHome) {
@@ -169,9 +185,26 @@ fun AddressBar(
                                 menuExpanded = false
                                 showHistoryDialog = true
                             },
-                            leadingIcon = { Icon(
-                                painter = painterResource(R.drawable.outline_history_24),
-                                contentDescription = "History")
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.outline_history_24),
+                                    contentDescription = "History"
+                                )
+                            }
+                        )
+                    }
+                    if (userSettings.allowBookmarkAccess) {
+                        DropdownMenuItem(
+                            text = { Text("Bookmark") },
+                            onClick = {
+                                menuExpanded = false
+                                showBookmarksDialog = true
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.outline_bookmark_24),
+                                    contentDescription = "Bookmarks"
+                                )
                             }
                         )
                     }
@@ -187,7 +220,22 @@ fun AddressBar(
         )
     }
 
+    if (showBookmarksDialog) {
+        BookmarksDialog(
+            onDismiss = { showBookmarksDialog = false },
+            onNavigate = { url ->
+                showBookmarksDialog = false
+                onUrlBarTextChange(TextFieldValue(url))
+                webView.loadUrl(url)
+            }
+        )
+    }
+
     LaunchedEffect(hasFocus) {
-        if (hasFocus) onUrlBarTextChange(urlBarText.copy(selection = TextRange(0, urlBarText.text.length)))
+        if (hasFocus) onUrlBarTextChange(
+            urlBarText.copy(
+                selection = TextRange(0, urlBarText.text.length)
+            )
+        )
     }
 }

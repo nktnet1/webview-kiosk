@@ -29,8 +29,9 @@ fun SettingsWebBrowsingScreen(
         AllowRefreshSetting()
         AllowBackwardsNavigationSetting()
         AllowGoHomeSetting()
-        AllowHistoryAccessSetting()
         ClearHistoryOnHomeSetting()
+        AllowHistoryAccessSetting()
+        AllowBookmarkAccessSetting()
         AllowOtherUrlSchemesSetting()
         SearchProviderUrlSetting()
     }
