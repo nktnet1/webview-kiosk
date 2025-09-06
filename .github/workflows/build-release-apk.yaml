@@ -1,6 +1,3 @@
-# Modelled After:
-# https://github.com/TeamNewPipe/NewPipe/blob/8afb00d2f0bd814a5b3bd76a2d35d5f1d63a86cd/.github/workflows/build-release-apk.yml
-
 name: Build Release APK
 
 on:
@@ -36,13 +33,26 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           mv app/build/outputs/apk/release/*.apk "app/build/outputs/apk/release/WebviewKiosk_v$VERSION_NAME.apk"
 
+      - name: Get version code
+        id: version
+        run: |
+          VERSION_CODE=$(jq -r ".elements[0].versionCode" app/build/outputs/apk/release/output-metadata.json)
+          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+
+      - name: Ensure changelog exists
+        run: |
+          if [[ ! -f "metadata/en-US/changelogs/${{ env.VERSION_CODE }}.txt" ]]; then
+            echo "Changelog not found for version ${{ env.VERSION_CODE }}, creating empty file."
+            touch metadata/en-US/changelogs/${{ env.VERSION_CODE }}.txt
+          fi
+
       - name: Create GitHub Release
         id: create_release
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.ref_name }}
           name: Webview Kiosk ${{ github.ref_name }}
-          body: "Release ${{ github.ref_name }} of Webview Kiosk"
+          bodyFile: metadata/en-US/changelogs/${{ env.VERSION_CODE }}.txt
 
       - name: Upload APK to Release
         uses: softprops/action-gh-release@v1
