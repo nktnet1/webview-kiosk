@@ -3,10 +3,17 @@ title: Installation
 description: How to download Webview Kiosk to your Android device.
 ---
 
+import urlJoin from 'url-join';
 import { APP_NAME } from '@/config/app'
 import { PLAYSTORE_URL, GITHUB_URL } from '@/config/links'
 
-You can download {APP_NAME} on the <a href={PLAYSTORE_URL} target="_blank">Google Play Store</a>.
+## Google Play
+
+You can download {APP_NAME} directly on the <a href={PLAYSTORE_URL} target="_blank">Google Play Store</a>.
+
+## GitHub
+
+Pre-built APKs are availabe on the <a href={urlJoin(GITHUB_URL, 'releases')} target="_blank">GitHub Releases</a> page.
 
 To build the application from source, clone the <a href={GITHUB_URL} target="_blank">GitHub repository</a>, open
 the project in Android Studio and follow the [official documentation](https://developer.android.com/studio/run).
