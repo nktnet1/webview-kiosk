@@ -20,6 +20,11 @@ jobs:
           java-version: 21
           cache: gradle
 
+      - name: Prepare keystore and version
+        run: |
+          # Decode keystore
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > app/keystore.jks
+
       - name: Build release APK
         run: ./gradlew assembleRelease --stacktrace
         env:
@@ -27,10 +32,16 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Prepare keystore and apk
+      - name: Rename APK and Add Version Code Changelog
         run: |
-          # Decode keystore
-          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > app/keystore.jks
+          # Rename APK
+          VERSION_NAME="$(jq -r ".elements[0].versionName" "app/build/outputs/apk/release/output-metadata.json")"
+          echo "Version name: $VERSION_NAME" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat "app/build/outputs/apk/release/output-metadata.json" >> "$GITHUB_STEP_SUMMARY"
+          echo >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          mv app/build/outputs/apk/release/*.apk "app/build/outputs/apk/release/WebviewKiosk_v$VERSION_NAME.apk"
 
           # Get version code from output-metadata.json
           VERSION_CODE=$(jq -r ".elements[0].versionCode" app/build/outputs/apk/release/output-metadata.json 2>/dev/null || echo "0")
@@ -41,15 +52,6 @@ jobs:
             echo "Changelog not found for version $VERSION_CODE, creating empty file."
             touch metadata/en-US/changelogs/${VERSION_CODE}.txt
           fi
-
-          # Rename APK
-          VERSION_NAME="$(jq -r ".elements[0].versionName" "app/build/outputs/apk/release/output-metadata.json")"
-          echo "Version name: $VERSION_NAME" >> "$GITHUB_STEP_SUMMARY"
-          echo '```json' >> "$GITHUB_STEP_SUMMARY"
-          cat "app/build/outputs/apk/release/output-metadata.json" >> "$GITHUB_STEP_SUMMARY"
-          echo >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          mv app/build/outputs/apk/release/*.apk "app/build/outputs/apk/release/WebviewKiosk_v$VERSION_NAME.apk"
 
       - name: Create GitHub Release
         id: create_release
