@@ -51,7 +51,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.ref_name }}
-          name: Webview Kiosk ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
           bodyFile: metadata/en-US/changelogs/${{ env.VERSION_CODE }}.txt
 
       - name: Upload APK to Release
