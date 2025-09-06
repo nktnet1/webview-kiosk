@@ -58,6 +58,11 @@ android {
     buildFeatures {
         compose = true
     }
+    dependenciesInfo {
+        // https://gitlab.com/fdroid/fdroiddata/-/issues/3330
+        includeInApk = false
+        includeInBundle = false
+    }
 }
 
 kotlin {
