@@ -20,7 +20,7 @@ jobs:
           java-version: 21
           cache: gradle
 
-      - name: Prepare keystore and version
+      - name: Prepare keystore
         run: |
           # Decode keystore
           echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > app/keystore.jks
@@ -53,7 +53,7 @@ jobs:
             touch metadata/en-US/changelogs/${VERSION_CODE}.txt
           fi
 
-      - name: Create GitHub Release
+      - name: Create Draf GitHub Release
         id: create_release
         uses: ncipollo/release-action@v1
         with:
