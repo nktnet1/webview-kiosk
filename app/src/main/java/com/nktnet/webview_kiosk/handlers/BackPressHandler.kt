@@ -14,6 +14,7 @@ import com.nktnet.webview_kiosk.utils.webview.WebViewNavigation
 @Composable
 fun BackPressHandler(
     webView: WebView,
+    customLoadUrl: (newUrl: String) -> Unit,
     dispatcher: OnBackPressedDispatcher?,
 ) {
     val context = LocalContext.current
@@ -24,7 +25,7 @@ fun BackPressHandler(
         val callback = object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 if (!userSettings.allowBackwardsNavigation) return
-                WebViewNavigation.goBack(webView, systemSettings)
+                WebViewNavigation.goBack(customLoadUrl, systemSettings)
             }
         }
         dispatcher?.addCallback(callback)

@@ -1,7 +1,6 @@
 package com.nktnet.webview_kiosk.ui.components
 
 import android.content.Context
-import android.webkit.WebView
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -47,7 +46,7 @@ private fun formatDatetime(context: Context, timestamp: Long): String {
 
 @Composable
 fun HistoryDialog(
-    webView: WebView,
+    customLoadUrl: (newUrl: String) -> Unit,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
@@ -92,7 +91,7 @@ fun HistoryDialog(
                                         enabled = !isUpdating && !isCurrent,
                                         onClick = {
                                             isUpdating = true
-                                            WebViewNavigation.navigateToIndex(webView, systemSettings, index)
+                                            WebViewNavigation.navigateToIndex(customLoadUrl, systemSettings, index)
                                             isUpdating = false
                                             onDismiss()
                                         }

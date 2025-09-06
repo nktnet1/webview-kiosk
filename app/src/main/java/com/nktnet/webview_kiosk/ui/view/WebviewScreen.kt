@@ -95,18 +95,22 @@ fun WebviewScreen(navController: NavController) {
         }
     )
 
+    fun customLoadUrl(newUrl: String) {
+        transitionState = TransitionState.TRANSITIONING
+        webView.loadUrl(newUrl)
+    }
+
     val cookieManager = CookieManager.getInstance()
     cookieManager.setAcceptCookie(userSettings.acceptCookies)
     cookieManager.setAcceptThirdPartyCookies(webView, userSettings.acceptThirdPartyCookies)
 
-    BackPressHandler(webView, onBackPressedDispatcher)
+    BackPressHandler(webView, ::customLoadUrl, onBackPressedDispatcher)
 
     val addressBarSearch: (String) -> Unit = { input ->
         val searchUrl = resolveUrlOrSearch(userSettings.searchProviderUrl, input.trim())
         if (searchUrl.isNotBlank() && (searchUrl != currentUrl || userSettings.allowRefresh)) {
-            transitionState = TransitionState.TRANSITIONING
             webView.requestFocus()
-            webView.loadUrl(searchUrl)
+            customLoadUrl(searchUrl)
         }
     }
 
@@ -124,7 +128,8 @@ fun WebviewScreen(navController: NavController) {
                     onFocusChanged = { focusState -> hasFocus = focusState.isFocused },
                     focusRequester = focusRequester,
                     addressBarSearch = addressBarSearch,
-                    webView = webView
+                    webView = webView,
+                    customLoadUrl = ::customLoadUrl,
                 )
             }
 
@@ -136,18 +141,17 @@ fun WebviewScreen(navController: NavController) {
                         } else {
                             currentUrl
                         }
-                        transitionState = TransitionState.TRANSITIONING
                         urlBarText = urlBarText.copy(text = initialUrl)
                         if (userSettings.allowRefresh) {
                             SwipeRefreshLayout(ctx).apply {
                                 setOnRefreshListener { isRefreshing = true; webView.reload() }
                                 addView(webView.apply {
-                                    loadUrl(initialUrl)
+                                    customLoadUrl(initialUrl)
                                 })
                             }
                         } else {
                             webView.apply {
-                                loadUrl(initialUrl)
+                                customLoadUrl(initialUrl)
                             }
                         }
                     },
@@ -173,7 +177,7 @@ fun WebviewScreen(navController: NavController) {
         if (!isPinned) {
             Box(modifier = Modifier.fillMaxSize().background(Color.Transparent)) {
                 FloatingMenuButton(
-                    onHomeClick = { WebViewNavigation.goHome(webView, systemSettings, userSettings) },
+                    onHomeClick = { WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings) },
                     onLockClick = { try { activity?.startLockTask() } catch (_: Exception) {} },
                     navController = navController,
                 )
@@ -181,5 +185,5 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
-    MultitapHandler { WebViewNavigation.goHome(webView, systemSettings, userSettings) }
+    MultitapHandler { WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings) }
 }

@@ -1,6 +1,5 @@
 package com.nktnet.webview_kiosk.utils.webview
 
-import android.webkit.WebView
 import com.nktnet.webview_kiosk.config.HistoryEntry
 import com.nktnet.webview_kiosk.config.SystemSettings
 import com.nktnet.webview_kiosk.config.UserSettings
@@ -8,28 +7,28 @@ import com.nktnet.webview_kiosk.config.UserSettings
 object WebViewNavigation {
     private var isProgrammaticNavigation = false
 
-    fun goBack(webView: WebView, systemSettings: SystemSettings) {
+    fun goBack(customLoadUrl: (newUrl: String) -> Unit, systemSettings: SystemSettings) {
         val index = systemSettings.historyIndex
         if (index > 0) {
             val newIndex = index - 1
             systemSettings.historyIndex = newIndex
             isProgrammaticNavigation = true
-            webView.loadUrl(systemSettings.historyStack[newIndex].url)
+            customLoadUrl(systemSettings.historyStack[newIndex].url)
         }
     }
 
-    fun goForward(webView: WebView, systemSettings: SystemSettings) {
+    fun goForward(customLoadUrl: (newUrl: String) -> Unit, systemSettings: SystemSettings) {
         val index = systemSettings.historyIndex
         if (index < systemSettings.historyStack.lastIndex) {
             val newIndex = index + 1
             systemSettings.historyIndex = newIndex
             isProgrammaticNavigation = true
-            webView.loadUrl(systemSettings.historyStack[newIndex].url)
+            customLoadUrl(systemSettings.historyStack[newIndex].url)
         }
     }
 
     fun goHome(
-        webView: WebView,
+        customLoadUrl: (newUrl: String) -> Unit,
         systemSettings: SystemSettings,
         userSettings: UserSettings,
     ) {
@@ -38,15 +37,15 @@ object WebViewNavigation {
         }
 
         if (systemSettings.currentUrl != userSettings.homeUrl) {
-            webView.loadUrl(userSettings.homeUrl)
+            customLoadUrl(userSettings.homeUrl)
         }
     }
 
-    fun navigateToIndex(webView: WebView, systemSettings: SystemSettings, index: Int) {
+    fun navigateToIndex(customLoadUrl: (newUrl: String) -> Unit, systemSettings: SystemSettings, index: Int) {
         if (index in 0..systemSettings.historyStack.lastIndex) {
             isProgrammaticNavigation = true
             systemSettings.historyIndex = index
-            webView.loadUrl(systemSettings.historyStack[index].url)
+            customLoadUrl(systemSettings.historyStack[index].url)
         }
     }
 

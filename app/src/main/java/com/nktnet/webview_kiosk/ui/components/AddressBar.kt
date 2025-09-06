@@ -39,6 +39,7 @@ fun AddressBar(
     focusRequester: FocusRequester,
     addressBarSearch: (String) -> Unit,
     webView: WebView,
+    customLoadUrl: (newUrl: String) -> Unit
 ) {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
@@ -124,7 +125,7 @@ fun AddressBar(
                             text = { Text("Back") },
                             enabled = systemSettings.historyIndex > 0,
                             onClick = {
-                                WebViewNavigation.goBack(webView, systemSettings)
+                                WebViewNavigation.goBack(customLoadUrl, systemSettings)
                                 val newUrl =
                                     systemSettings.historyStack[systemSettings.historyIndex].url
                                 onUrlBarTextChange(TextFieldValue(newUrl))
@@ -141,7 +142,7 @@ fun AddressBar(
                             text = { Text("Forward") },
                             enabled = systemSettings.historyIndex < (systemSettings.historyStack.size - 1),
                             onClick = {
-                                WebViewNavigation.goForward(webView, systemSettings)
+                                WebViewNavigation.goForward(customLoadUrl, systemSettings)
                                 val newUrl =
                                     systemSettings.historyStack[systemSettings.historyIndex].url
                                 onUrlBarTextChange(TextFieldValue(newUrl))
@@ -171,7 +172,7 @@ fun AddressBar(
                         DropdownMenuItem(
                             text = { Text("Home") },
                             onClick = {
-                                WebViewNavigation.goHome(webView, systemSettings, userSettings)
+                                WebViewNavigation.goHome(customLoadUrl, systemSettings, userSettings)
                                 onUrlBarTextChange(TextFieldValue(userSettings.homeUrl))
                                 menuExpanded = false
                             },
@@ -215,19 +216,15 @@ fun AddressBar(
 
     if (showHistoryDialog) {
         HistoryDialog(
-            webView = webView,
+            customLoadUrl,
             onDismiss = { showHistoryDialog = false }
         )
     }
 
     if (showBookmarksDialog) {
         BookmarksDialog(
+            customLoadUrl,
             onDismiss = { showBookmarksDialog = false },
-            onNavigate = { url ->
-                showBookmarksDialog = false
-                onUrlBarTextChange(TextFieldValue(url))
-                webView.loadUrl(url)
-            }
         )
     }
 

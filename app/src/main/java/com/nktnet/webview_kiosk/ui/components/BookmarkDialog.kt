@@ -3,22 +3,26 @@ package com.nktnet.webview_kiosk.ui.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.nktnet.webview_kiosk.config.UserSettings
 
 @Composable
 fun BookmarksDialog(
+    customLoadUrl: (newUrl: String) -> Unit,
     onDismiss: () -> Unit,
-    onNavigate: (String) -> Unit
 ) {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
@@ -59,20 +63,28 @@ fun BookmarksDialog(
                         modifier = Modifier.weight(1f),
                         state = listState
                     ) {
-                        items(bookmarks) { url ->
+                        itemsIndexed(bookmarks) { index, url ->
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp)
-                                    .clickable { onNavigate(url) }
+                                    .clickable {
+                                        customLoadUrl(url)
+                                        onDismiss()
+                                    }
                             ) {
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(12.dp)
+                                        .padding(16.dp)
                                 ) {
                                     Text(
-                                        text = url.toCharArray().joinToString("\u200B"),
+                                        text = buildAnnotatedString {
+                                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                                append("[$index] ")
+                                            }
+                                            append(url.toCharArray().joinToString("\u200B"))
+                                        },
                                         maxLines = 2,
                                         overflow = TextOverflow.Ellipsis,
                                         style = MaterialTheme.typography.bodyMedium
