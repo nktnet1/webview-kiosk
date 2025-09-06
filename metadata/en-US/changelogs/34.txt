@@ -1,0 +1,2 @@
+fix: setting info text wording consistency, and more specific info title label
+fix(ui): export settings box scrollable, import has minlines
