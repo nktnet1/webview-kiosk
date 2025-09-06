@@ -20,8 +20,27 @@ jobs:
           java-version: 21
           cache: gradle
 
+      - name: Prepare keystore and version
+        run: |
+          # Decode keystore
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > app/keystore.jks
+
+          # Get version code from output-metadata.json
+          VERSION_CODE=$(jq -r ".elements[0].versionCode" app/build/outputs/apk/release/output-metadata.json 2>/dev/null || echo "0")
+          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+
+          # Ensure changelog exists
+          if [[ ! -f "metadata/en-US/changelogs/${VERSION_CODE}.txt" ]]; then
+            echo "Changelog not found for version $VERSION_CODE, creating empty file."
+            touch metadata/en-US/changelogs/${VERSION_CODE}.txt
+          fi
+
       - name: Build release APK
         run: ./gradlew assembleRelease --stacktrace
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
       - name: Rename APK
         run: |
@@ -33,19 +52,6 @@ jobs:
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           mv app/build/outputs/apk/release/*.apk "app/build/outputs/apk/release/WebviewKiosk_v$VERSION_NAME.apk"
 
-      - name: Get version code
-        id: version
-        run: |
-          VERSION_CODE=$(jq -r ".elements[0].versionCode" app/build/outputs/apk/release/output-metadata.json)
-          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
-
-      - name: Ensure changelog exists
-        run: |
-          if [[ ! -f "metadata/en-US/changelogs/${{ env.VERSION_CODE }}.txt" ]]; then
-            echo "Changelog not found for version ${{ env.VERSION_CODE }}, creating empty file."
-            touch metadata/en-US/changelogs/${{ env.VERSION_CODE }}.txt
-          fi
-
       - name: Create GitHub Release
         id: create_release
         uses: ncipollo/release-action@v1
@@ -53,6 +59,7 @@ jobs:
           tag: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           bodyFile: metadata/en-US/changelogs/${{ env.VERSION_CODE }}.txt
+          draft: true
 
       - name: Upload APK to Release
         uses: softprops/action-gh-release@v1
