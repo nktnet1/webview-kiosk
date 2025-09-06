@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.AlertDialog
@@ -39,6 +40,7 @@ fun ImportSettingsDialog(
     val context = LocalContext.current
     AlertDialog(
         onDismissRequest = onDismiss,
+        modifier = Modifier.padding(bottom = 16.dp),
         confirmButton = {
             TextButton(
                 onClick = onImportConfirm,
@@ -59,8 +61,9 @@ fun ImportSettingsDialog(
                 OutlinedTextField(
                     value = importText,
                     onValueChange = onImportTextChange,
-                    placeholder = { Text("Paste your exported Base64 string here") },
+                    placeholder = { Text("Paste your exported Base64 string here.") },
                     isError = importError,
+                    minLines = 10,
                     modifier = Modifier.fillMaxWidth()
                 )
                 if (importError) {
