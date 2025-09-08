@@ -22,7 +22,9 @@
             android:name=".MainActivity"
             android:windowSoftInputMode="adjustResize"
             android:exported="true"
-            android:theme="@style/Theme.WebviewKiosk">
+            android:theme="@style/Theme.WebviewKiosk"
+            android:configChanges="orientation|screenSize"
+        >
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
