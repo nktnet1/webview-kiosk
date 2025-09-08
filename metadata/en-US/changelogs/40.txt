@@ -1,0 +1,2 @@
+fix: pull-to-refresh only at top-half of screen, and not during scroll
+
