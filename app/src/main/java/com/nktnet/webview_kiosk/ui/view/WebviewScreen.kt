@@ -22,6 +22,7 @@ import com.nktnet.webview_kiosk.handlers.BackPressHandler
 import com.nktnet.webview_kiosk.handlers.MultitapHandler
 import com.nktnet.webview_kiosk.ui.components.AddressBar
 import com.nktnet.webview_kiosk.ui.components.FloatingMenuButton
+import com.nktnet.webview_kiosk.ui.components.WebviewAwareSwipeRefreshLayout
 import com.nktnet.webview_kiosk.ui.components.common.LoadingIndicator
 import com.nktnet.webview_kiosk.utils.createCustomWebview
 import com.nktnet.webview_kiosk.utils.rememberLockedState
@@ -142,17 +143,21 @@ fun WebviewScreen(navController: NavController) {
                             currentUrl
                         }
                         urlBarText = urlBarText.copy(text = initialUrl)
+
+                        fun initWebviewApply(initialUrl: String) = webView.apply {
+                            customLoadUrl(initialUrl)
+                        }
+
                         if (userSettings.allowRefresh) {
-                            SwipeRefreshLayout(ctx).apply {
-                                setOnRefreshListener { isRefreshing = true; webView.reload() }
-                                addView(webView.apply {
-                                    customLoadUrl(initialUrl)
-                                })
+                            WebviewAwareSwipeRefreshLayout(ctx, webView).apply {
+                                setOnRefreshListener {
+                                    isRefreshing = true
+                                    webView.reload()
+                                }
+                                addView(initWebviewApply(initialUrl))
                             }
                         } else {
-                            webView.apply {
-                                customLoadUrl(initialUrl)
-                            }
+                            initWebviewApply(initialUrl)
                         }
                     },
                     update = { view ->
@@ -160,6 +165,7 @@ fun WebviewScreen(navController: NavController) {
                     },
                     modifier = Modifier.fillMaxSize()
                 )
+
 
                 if (transitionState == TransitionState.TRANSITIONING) {
                     Box(
