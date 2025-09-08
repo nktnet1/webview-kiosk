@@ -90,7 +90,13 @@ fun TextSettingFieldItem(
                     }
                 },
                 singleLine = !isMultiline,
-                modifier = if (isMultiline) Modifier.height(200.dp) else Modifier.fillMaxWidth()
+                modifier = if (isMultiline) {
+                    Modifier
+                        .height(200.dp)
+                        .fillMaxWidth()
+                } else {
+                    Modifier.fillMaxWidth()
+                }
             )
 
             extraContent?.invoke { draftValue = it; draftError = !validator(it) } }
