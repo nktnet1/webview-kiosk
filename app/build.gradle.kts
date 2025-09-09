@@ -8,11 +8,11 @@ plugins {
 }
 
 android {
-    namespace = "com.nktnet.webview_kiosk"
+    namespace = "uk.nktnet.webviewkiosk"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.nktnet.webview_kiosk"
+        applicationId = "uk.nktnet.webviewkiosk"
         minSdk = 26
         targetSdk = 36
         versionCode = 41
