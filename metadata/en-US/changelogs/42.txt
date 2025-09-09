@@ -1,0 +1,17 @@
+Change:
+- com.nktnet.webview_kiosk
+
+To
+- uk.nktnet.webviewkiosk
+
+To match website:
+- https://webviewkiosk.nktnet.uk
+
+Since proof of domain ownership is required by Accrescent:
+- https://accrescent.app/docs/guide/getting-started/new-app.html#domain-verification
+
+Note that this patch currently only for F-Droid and Accresent.
+
+Google Play Store package name will remain as com.nktnet.webview_kiosk for the time
+being, as it is not as trivial to change.
+
