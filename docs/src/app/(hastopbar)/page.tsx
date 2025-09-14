@@ -17,7 +17,7 @@ export default function HomePage() {
             <Link href="/docs">Get Started</Link>
           </Button>
           <Button asChild variant="success" className="w-28">
-            <Link target="_blank" href={PLAYSTORE_URL}>
+            <Link href="/docs/installation">
               Download
             </Link>
           </Button>

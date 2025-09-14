@@ -7,13 +7,40 @@ import urlJoin from 'url-join';
 import { APP_NAME } from '@/config/app'
 import { PLAYSTORE_URL, GITHUB_URL } from '@/config/links'
 
-## Google Play
+## 1. Google Play
 
-You can download {APP_NAME} directly on the <a href={PLAYSTORE_URL} target="_blank">Google Play Store</a>.
+You can download {APP_NAME} directly on the
+<a href={PLAYSTORE_URL} target="_blank">Google Play Store</a>.
 
-## GitHub
+Alternatively, you can use the [Aurora Store](https://auroraoss.com/aurora-store),
+a FOSS client to Google Play that works without needing Google Play Services or microG.
 
-Pre-built APKs are availabe on the <a href={urlJoin(GITHUB_URL, 'releases')} target="_blank">GitHub Releases</a> page.
+## 2. GitHub
+
+<Callout title="NOTE">
+  As of [v0.15.7](https://github.com/nktnet1/webview-kiosk/releases/tag/v0.15.7),
+  the package name has changed from `com.nktnet.webview_kiosk` to `uk.nktnet.webviewkiosk`.
+</Callout>
+
+Signed APKs are available for download on the
+<a href={urlJoin(GITHUB_URL, 'releases')} target="_blank">GitHub Releases</a> page.
 
 To build the application from source, clone the <a href={GITHUB_URL} target="_blank">GitHub repository</a>, open
 the project in Android Studio and follow the [official documentation](https://developer.android.com/studio/run).
+
+### 2.1. Obtanium
+
+You can also use [Obtainium](https://obtainium.imranr.dev) to manage
+installations and updates of {APP_NAME} on GitHub release page.
+
+This has the added bonus of notifications when new releases are made
+available.
+
+### 2.2. F-Droid
+
+{APP_NAME} is currently
+[pending review on the F-Droid data repository](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/26746).
+
+With [Reproducible builds](https://f-droid.org/docs/Reproducible_Builds)
+enabled, once the app is officially published on F-Droid, the APK will be
+identical to that of GitHub.
