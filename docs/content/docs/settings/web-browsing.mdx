@@ -5,7 +5,7 @@ description: Refresh, navigation, search provider
 
 import { EllipsisVertical, Wrench } from 'lucide-react';
 
-## Allow Refresh
+## 1. Allow Refresh
 
 Set to true to allow the user to refresh the page using one of:
 
@@ -15,7 +15,7 @@ Set to true to allow the user to refresh the page using one of:
 
 **Default:** true
 
-## Allow Backwards Navigation
+## 2. Allow Backwards Navigation
 
 Set to true to allow the user to go back one page in history using one of:
 
@@ -26,7 +26,7 @@ This also enables forward navigation using the second method.
 
 **Default:** true
 
-## Allow Go Home
+## 3. Allow Go Home
 
 Set to true to allow the user to go home using one of:
 
@@ -36,14 +36,14 @@ Set to true to allow the user to go home using one of:
 
 **Default:** true
 
-## Clear History on Home
+## 4. Clear History on Home
 
 Set to true if you want to clear the backwards/forward navigation history
 whenever a `Go Home` action is triggered.
 
 **Default:** false
 
-## Allow Bookmark Access
+## 5. Allow Bookmark Access
 
 Set to true to allow viewing and navigating to bookmarks configured in settings, by
 clicking the <span className="inline-flex">(<EllipsisVertical />)</span> icon
@@ -51,7 +51,7 @@ on the right of the address bar (top-right corner of screen) and selecting `Book
 
 **Default:** true
 
-## Allow Other URL Schemes
+## 6. Allow Other URL Schemes
 
 This option only works when the application is not in locked (pinned) mode.
 
@@ -61,38 +61,50 @@ appropriate application to handle.
 
 **Default:** false
 
-## Search Provider URL
+## 7. Search Provider URL
 
 The URL used for search queries in the address bar. This URL must include the search string query parameter.
 
 **Default:** https://google.com/search?q=
 
-### Google
+### 7.1. Google
+
 ```
 https://google.com/search?q=
 ```
 
-### Unduck
+### 7.2. Unduck
+
 ```
 https://unduck.link?q=
 ```
 
-### Bing
+### 7.3. Unduckified
+
+```
+https://s.dunkirk.sh?q=
+```
+
+### 7.4. Bing
+
 ```
 https://bing.com/search?q=
 ```
 
-### DuckDuckGo
+### 7.5. DuckDuckGo
+
 ```
 https://duckduckgo.com/?q=
 ```
 
-### Yahoo
+### 7.6. Yahoo
+
 ```
 https://search.yahoo.com/search?p=
 ```
 
-### Startpage
+### 7.7. Startpage
+
 ```
 https://startpage.com/do/search?q=
 ```

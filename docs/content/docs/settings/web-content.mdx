@@ -7,11 +7,11 @@ import { Link } from 'next/link';
 import { EllipsisVertical, Wrench } from 'lucide-react';
 import RegexPlayground from '@/components/RegexPlayground';
 
-## Home URL
+## 1. Home URL
 
 Configure the Home URL, which can be returned to as per <a href="/docs/settings/web-browsing/#allow-go-home">`Web Browsing -> Allow Go Home`</a>.
 
-## Blacklist & Whitelist Regex
+## 2. Blacklist & Whitelist Regex
 
 Specify regular expressions (regex), one per line.
 Escaping is required for special characters in regex like `.` and `?`.
@@ -21,7 +21,7 @@ If you need strict control, anchor your regex with `^` and `$`.
 
 Whitelist patterns take precedence over blacklist patterns.
 
-### Blacklist Example
+### 2.1. Blacklist Example
 
 Block all:
 
@@ -35,7 +35,7 @@ Block google, including all subdomains and paths:
 ^https://.*\.?google\.com/?.*
 ```
 
-### Whitelist Example
+### 2.2. Whitelist Example
 
 Allow `https://allowsite.com` home page and all subdomains and paths for `https://trusted.org` to bypass rules in the blacklist:
 ```
@@ -43,11 +43,11 @@ Allow `https://allowsite.com` home page and all subdomains and paths for `https:
 ^https://.*\.trusted\.org/?.*
 ```
 
-### Regex Playground
+### 2.3. Regex Playground
 
 <RegexPlayground />
 
-## Bookmarks
+## 3. Bookmarks
 
 Specify bookmarked URLs one per line.
 
