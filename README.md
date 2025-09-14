@@ -22,4 +22,4 @@ For more details, visit the official documentation:
 
 Contact support at:
 
-- mailto:support@webviewkiosk.nktnet.uk
+- support@webviewkiosk.nktnet.uk
