@@ -144,3 +144,13 @@
     @apply wrap-anywhere;
   }
 }
+
+@layer link {
+  .prose div a:not(.custom-link-style),
+  .prose li a:not(.custom-link-style),
+  .prose p a:not(.custom-link-style),
+  .prose td a:not(.custom-link-style),
+  .prose blockquote a:not(.custom-link-style) {
+    @apply text-blue-800 dark:text-blue-100 underline decoration-blue-800 dark:decoration-blue-200;
+  }
+}
