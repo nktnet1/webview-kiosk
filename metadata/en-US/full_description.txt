@@ -14,7 +14,9 @@ Management (MDM) systems.
 - **URL Filtering:** supports regex-based blacklist and whitelist to control web access.
 - **Export/Import:** allow for backups of settings & configurations
 
-For all configurable settings, view the `Settings` section.
+For more details, visit the official documentation:
+
+- https://webviewkiosk.nktnet.uk
 
 ## Contact
 
