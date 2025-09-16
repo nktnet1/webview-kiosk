@@ -5,7 +5,7 @@ The app is designed for small businesses and device owners who are looking for
 a simpler alternative to Enterprise Mobility Management (EMM) or Mobile Device
 Management (MDM) systems.
 
-## Key Features
+### Key Features
 
 - **Lock Task Mode (Pin):** prevent users from opening other apps or access the
   status bar. You can also enable the "Lock device when unpinning" feature to
@@ -18,15 +18,15 @@ For more details, visit the official documentation:
 
 - https://webviewkiosk.nktnet.uk
 
-## Contact
+### Contact
 
-### Questions/Feature Requests
+#### Questions/Feature Requests
 
 Create a `Q&A` for questions and `Ideas` for feature requests on GitHub discussions:
 
 - https://github.com/nktnet1/webview-kiosk/discussions
 
-### Bugs/Issues
+#### Bugs/Issues
 
 Report bugs by creating a GitHub issue describing the problem and how it can be reproduced:
 
@@ -34,7 +34,7 @@ Report bugs by creating a GitHub issue describing the problem and how it can be 
 
 Please also include your device model, app version and android version.
 
-### Other
+#### Other
 
 For all other enquiries, please reach out to:
 
