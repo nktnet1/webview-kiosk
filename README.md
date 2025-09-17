@@ -9,11 +9,11 @@ Management (MDM) systems.
 
 ## Key Features
 
-- **Lock Task Mode (Pin):** prevent users from opening other apps or access the
-  status bar. You can also enable the "Lock device when unpinning" feature to
-  further enforce the security.
+- **Lock Task Mode (Pin):** prevent users from opening other apps or accessing the
+  status bar. You can also enable the "Lock device when unpinning" android feature to
+  further enhance security
 - **Protected Settings:** protect app settings with biometrics or device credentials
-- **URL Filtering:** supports regex-based blacklist and whitelist to control web access.
+- **URL Filtering:** supports regex-based blacklist and whitelist to control web access
 - **Export/Import:** allow for backups of settings & configurations
 
 For more details, visit the official documentation:
