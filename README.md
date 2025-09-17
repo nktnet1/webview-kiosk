@@ -1,4 +1,4 @@
-# Webview Kiosk
+<img src="/metadata/en-US/images/featureGraphic.png" width="24%" />
 
 Webview Kiosk is a free and open-source Android application for secure,
 kiosk-style web browsing.
