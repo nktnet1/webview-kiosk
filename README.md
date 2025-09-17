@@ -8,10 +8,10 @@ a simpler alternative to Enterprise Mobility Management (EMM) or Mobile Device
 Management (MDM) systems.
 
 <p align="center">
-  <img src="/metadata/en-US/images/phoneScreenshots/001.phone-default.png" width="20%" />
-  <img src="/metadata/en-US/images/phoneScreenshots/002.phone-locked.png" width="20%" />
-  <img src="/metadata/en-US/images/phoneScreenshots/003.phone-page-blocked.png" width="20%" />
-  <img src="/metadata/en-US/images/phoneScreenshots/004.phone-settings.png" width="20%" />
+  <img src="/metadata/en-US/images/phoneScreenshots/001.phone-default.png" width="24%" />
+  <img src="/metadata/en-US/images/phoneScreenshots/002.phone-locked.png" width="24%" />
+  <img src="/metadata/en-US/images/phoneScreenshots/003.phone-page-blocked.png" width="24%" />
+  <img src="/metadata/en-US/images/phoneScreenshots/004.phone-settings.png" width="24%" />
 </p>
 
 ## Key Features
