@@ -1,4 +1,4 @@
-<img src="/metadata/en-US/images/featureGraphic.png" width="24%" />
+<img src="/metadata/en-US/images/featureGraphic.png" width="100%" alt="Feature Graphic" />
 
 Webview Kiosk is a free and open-source Android application for secure,
 kiosk-style web browsing.
@@ -8,10 +8,10 @@ a simpler alternative to Enterprise Mobility Management (EMM) or Mobile Device
 Management (MDM) systems.
 
 <p align="center">
-  <img src="/metadata/en-US/images/phoneScreenshots/001.phone-default.png" width="24%" />
-  <img src="/metadata/en-US/images/phoneScreenshots/002.phone-locked.png" width="24%" />
-  <img src="/metadata/en-US/images/phoneScreenshots/003.phone-page-blocked.png" width="24%" />
-  <img src="/metadata/en-US/images/phoneScreenshots/004.phone-settings.png" width="24%" />
+  <img src="/metadata/en-US/images/phoneScreenshots/001.phone-default.png" width="24%" alt="Phone Screenshot 1" />
+  <img src="/metadata/en-US/images/phoneScreenshots/002.phone-locked.png" width="24%" alt="Phone Screenshot 2"/>
+  <img src="/metadata/en-US/images/phoneScreenshots/003.phone-page-blocked.png" width="24%" alt="Phone Screenshot 3" />
+  <img src="/metadata/en-US/images/phoneScreenshots/004.phone-settings.png" width="24%" alt="Phone Screenshot 4" />
 </p>
 
 ## Key Features
