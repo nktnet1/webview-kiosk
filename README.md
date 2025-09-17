@@ -7,11 +7,11 @@ The app is designed for small businesses and device owners who are looking for
 a simpler alternative to Enterprise Mobility Management (EMM) or Mobile Device
 Management (MDM) systems.
 
-<p float="left">
-  <img src="/metadata/en-US/images/phoneScreenshots/001.phone-default.png" width="100" />
-  <img src="/metadata/en-US/images/phoneScreenshots/002.phone-locked.png" width="100" />
-  <img src="/metadata/en-US/images/phoneScreenshots/003.phone-page-blocked.png" width="100" />
-  <img src="/metadata/en-US/images/phoneScreenshots/004.phone-settings.png" width="100" />
+<p align="center">
+  <img src="/metadata/en-US/images/phoneScreenshots/001.phone-default.png" width="25%" />
+  <img src="/metadata/en-US/images/phoneScreenshots/002.phone-locked.png" width="25%" />
+  <img src="/metadata/en-US/images/phoneScreenshots/003.phone-page-blocked.png" width="25%" />
+  <img src="/metadata/en-US/images/phoneScreenshots/004.phone-settings.png" width="25%" />
 </p>
 
 ## Key Features
