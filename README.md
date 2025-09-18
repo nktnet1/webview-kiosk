@@ -2,13 +2,13 @@
 
 <div align="center">
   <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk">
-    <img src="./docs/public/static/images/badges/google-play.svg" width="23%" alt="Get it on Google Play" style="margin: 0 3px;" />
+    <img src="./docs/public/static/images/badges/google-play.svg" width="30%" alt="Get it on Google Play" style="margin: 0 3px;" />
   </a>
   <a href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk">
-    <img src="./docs/public/static/images/badges/obtanium.png" width="23%" alt="Get it on Obtanium" style="margin: 0 3px;" />
+    <img src="./docs/public/static/images/badges/obtanium.png" width="30%" alt="Get it on Obtanium" style="margin: 0 3px;" />
   </a>
   <a href="https://apt.izzysoft.de/fdroid/index/apk/uk.nktnet.webviewkiosk" target="_blank">
-    <img src="./docs/public/static/images/badges/izzy-on-droid.svg" width="23%" alt="Get it on IzzyOnDroid" style="margin: 0 3px;" />
+    <img src="./docs/public/static/images/badges/izzy-on-droid.svg" width="30%" alt="Get it on IzzyOnDroid" style="margin: 0 3px;" />
   </a>
 </div>
 
