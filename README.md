@@ -3,12 +3,12 @@
 <div align="center">
 
 [<img src="./docs/public/static/images/badges/google-play.svg" alt="Get it on Google Play" width="30%" />](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk)&nbsp;&nbsp;
+
 [<img src="./docs/public/static/images/badges/obtanium.png" alt="Get it on Obtanium" width="30%" />](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk)&nbsp;&nbsp;
+
 [<img src="./docs/public/static/images/badges/izzy-on-droid.svg" alt="Get it on IzzyOnDroid" width="30%" />](https://apt.izzysoft.de/fdroid/index/apk/uk.nktnet.webviewkiosk)
 
 </div>
-
-<br />
 
 Webview Kiosk is a free and open-source Android application for secure,
 kiosk-style web browsing.
