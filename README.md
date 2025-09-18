@@ -1,10 +1,15 @@
 # Webview Kiosk
 
+> Documentation: https://webviewkiosk.nktnet.uk
+
 <div align="center">
 
-[<img src="./docs/public/static/images/badges/google-play.svg" alt="Get it on Google Play" width="30%" />](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk)&nbsp;&nbsp;
-[<img src="./docs/public/static/images/badges/obtanium.png" alt="Get it on Obtanium" width="30%" />](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk)&nbsp;&nbsp;
-[<img src="./docs/public/static/images/badges/izzy-on-droid.svg" alt="Get it on IzzyOnDroid" width="30%" />](https://apt.izzysoft.de/fdroid/index/apk/uk.nktnet.webviewkiosk)
+[<img src="./docs/public/static/images/badges/google-play.svg" alt="Get it on Google Play" width="40%" />](https://play.google.com/store/apps/details?id=com.nktnet.webview_kiosk)&nbsp;&nbsp;
+[<img src="./docs/public/static/images/badges/github.png" alt="Get it on GitHub" width="40%" />](https://github.com/nktnet1/webview-kiosk/releases)
+
+[<img src="./docs/public/static/images/badges/obtanium.png" alt="Get it on Obtanium" width="40%" />](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk)&nbsp;&nbsp;
+[<img src="./docs/public/static/images/badges/izzy-on-droid.svg" alt="Get it on IzzyOnDroid" width="40%" />](https://apt.izzysoft.de/fdroid/index/apk/uk.nktnet.webviewkiosk)
+
 
 </div>
 
@@ -30,10 +35,6 @@ Management (MDM) systems.
 - **Protected Settings:** protect app settings with biometrics or device credentials
 - **URL Filtering:** supports regex-based blacklist and whitelist to control web access
 - **Export/Import:** allow for backups of settings & configurations
-
-For more details, visit the official documentation:
-
-- https://webviewkiosk.nktnet.uk
 
 Contact support at:
 
