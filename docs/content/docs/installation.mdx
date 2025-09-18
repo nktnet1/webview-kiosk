@@ -9,8 +9,16 @@ import { PLAYSTORE_URL, GITHUB_URL } from '@/config/links'
 
 ## 1. Google Play
 
-You can download {APP_NAME} directly on the
-<a href={PLAYSTORE_URL} target="_blank">Google Play Store</a>.
+<a
+  href="https://play.google.com/store/apps/details?id=com.nktnet.webview_kiosk"
+  target="_blank"
+>
+  <img
+    src="/static/images/badges/google-play.svg"
+    alt="Get it on Google Play"
+    className="w-full max-w-48"
+  />
+</a>
 
 Alternatively, you can use the [Aurora Store](https://auroraoss.com/aurora-store),
 a FOSS client to Google Play that works without needing Google Play Services or microG.
@@ -30,10 +38,20 @@ the project in Android Studio and follow the [official documentation](https://de
 
 ### 2.1. Obtanium
 
-You can also use [Obtainium](https://obtainium.imranr.dev) to manage
-installations and updates of {APP_NAME} on GitHub release page.
+<a
+  href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk"
+  target="_blank"
+>
+  <img
+    src="/static/images/badges/obtanium.png"
+    alt="Get it on Obtanium"
+    className="w-full max-w-48"
+  />
+</a>
 
-This has the added bonus of notifications when new releases are made
+[Obtainium](https://obtainium.imranr.dev) can be used to manage
+installations and updates of {APP_NAME} on GitHub release page,
+with the added bonus of notifications when new releases are made
 available.
 
 ### 2.2. F-Droid
@@ -41,6 +59,23 @@ available.
 {APP_NAME} is currently
 [pending review on the F-Droid data repository](https://gitlab.com/fdroid/fdroiddata/-/merge_requests/26746).
 
-With [Reproducible builds](https://f-droid.org/docs/Reproducible_Builds)
+With [reproducible builds](https://f-droid.org/docs/Reproducible_Builds)
 enabled, once the app is officially published on F-Droid, the APK will be
 identical to that of GitHub.
+
+### 2.3. Izzy On Droid
+
+<a
+  href="https://apt.izzysoft.de/fdroid/index/apk/uk.nktnet.webviewkiosk"
+  target="_blank"
+>
+  <img
+    src="/static/images/badges/izzy-on-droid.svg"
+    alt="Get it on IzzyOnDroid"
+    className="w-full max-w-48"
+  />
+</a>
+
+Similar to F-droid, the
+[reproducible builds](https://android.izzysoft.de/articles/named/iod-rbs-mirrors-clients)
+criteria is also met for Izzy On Droid
