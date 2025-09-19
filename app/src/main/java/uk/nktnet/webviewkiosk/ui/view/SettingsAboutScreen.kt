@@ -26,7 +26,7 @@ fun InfoItem(label: String, value: String) {
         )
         Text(
             text = value,
-            modifier = Modifier.padding(top=4.dp),
+            modifier = Modifier.padding(top = 4.dp),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -81,6 +81,19 @@ fun SettingsAboutScreen(navController: NavController) {
         Build.SUPPORTED_ABIS.joinToString(", ")
     }
 
+    val installerPackage = remember {
+        try {
+            if (Build.VERSION.SDK_INT >= 30) {
+                packageManager.getInstallSourceInfo(packageName).installingPackageName
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getInstallerPackageName(packageName)
+            } ?: "Unknown"
+        } catch (_: Exception) {
+            "N/A"
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -100,5 +113,6 @@ fun SettingsAboutScreen(navController: NavController) {
         InfoItem(label = "Target SDK", value = targetSdkVersion)
         InfoItem(label = "Debug Build", value = debugFlag)
         InfoItem(label = "Supported ABIs", value = supportedABIs)
+        InfoItem(label = "Installer", value = installerPackage)
     }
 }
