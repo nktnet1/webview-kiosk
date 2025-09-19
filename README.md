@@ -6,10 +6,10 @@
 
 <div align="center">
 
-[<img src="./docs/public/static/images/badges/google-play.svg" alt="Get it on Google Play" width="150px" />](https://play.google.com/store/apps/details?id=com.nktnet.webview_kiosk)&nbsp;
-[<img src="./docs/public/static/images/badges/github.png" alt="Get it on GitHub" width="150px" />](https://github.com/nktnet1/webview-kiosk/releases)
-[<img src="./docs/public/static/images/badges/obtanium.png" alt="Get it on Obtanium" width="150px" />](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk)&nbsp;
-[<img src="./docs/public/static/images/badges/izzy-on-droid.svg" alt="Get it on IzzyOnDroid" width="150px" />](https://apt.izzysoft.de/fdroid/index/apk/uk.nktnet.webviewkiosk)
+[<img src="./docs/public/static/images/badges/google-play.svg" alt="Get it on Google Play" width="200px" />](https://play.google.com/store/apps/details?id=com.nktnet.webview_kiosk)&nbsp;
+[<img src="./docs/public/static/images/badges/github.png" alt="Get it on GitHub" width="200px" />](https://github.com/nktnet1/webview-kiosk/releases)
+[<img src="./docs/public/static/images/badges/obtanium.png" alt="Get it on Obtanium" width="200px" />](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk)&nbsp;
+[<img src="./docs/public/static/images/badges/izzy-on-droid.svg" alt="Get it on IzzyOnDroid" width="200px" />](https://apt.izzysoft.de/fdroid/index/apk/uk.nktnet.webviewkiosk)
 
 </div>
 
@@ -25,10 +25,10 @@ Management (MDM) systems.
 <br />
 
 <div align="center">
-  <img src="./metadata/en-US/images/phoneScreenshots/001.phone-default.png" width="150px" alt="Phone Screenshot 1" />&nbsp;
-  <img src="./metadata/en-US/images/phoneScreenshots/002.phone-locked.png" width="150px" alt="Phone Screenshot 2"/>&nbsp;
-  <img src="./metadata/en-US/images/phoneScreenshots/003.phone-page-blocked.png" width="150px" alt="Phone Screenshot 3" />&nbsp;
-  <img src="./metadata/en-US/images/phoneScreenshots/004.phone-settings.png" width="150px" alt="Phone Screenshot 4" />
+  <img src="./metadata/en-US/images/phoneScreenshots/001.phone-default.png" width="200px" alt="Phone Screenshot 1" />&nbsp;
+  <img src="./metadata/en-US/images/phoneScreenshots/002.phone-locked.png" width="200px" alt="Phone Screenshot 2"/>&nbsp;
+  <img src="./metadata/en-US/images/phoneScreenshots/003.phone-page-blocked.png" width="200px" alt="Phone Screenshot 3" />&nbsp;
+  <img src="./metadata/en-US/images/phoneScreenshots/004.phone-settings.png" width="200px" alt="Phone Screenshot 4" />
 </div>
 
 <br />
