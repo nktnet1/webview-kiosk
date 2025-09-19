@@ -6,10 +6,10 @@
 
 <div align="center">
 
-[<img src="./docs/public/static/images/badges/google-play.svg" alt="Get it on Google Play" width="170px" />](https://play.google.com/store/apps/details?id=com.nktnet.webview_kiosk)&nbsp;
 [<img src="./docs/public/static/images/badges/github.png" alt="Get it on GitHub" width="170px" />](https://github.com/nktnet1/webview-kiosk/releases)
 [<img src="./docs/public/static/images/badges/obtanium.png" alt="Get it on Obtanium" width="170px" />](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk)&nbsp;
 [<img src="./docs/public/static/images/badges/izzy-on-droid.svg" alt="Get it on IzzyOnDroid" width="170px" />](https://apt.izzysoft.de/fdroid/index/apk/uk.nktnet.webviewkiosk)
+[<img src="./docs/public/static/images/badges/google-play.svg" alt="Get it on Google Play" width="170px" />](https://play.google.com/store/apps/details?id=com.nktnet.webview_kiosk)&nbsp;
 
 </div>
 
