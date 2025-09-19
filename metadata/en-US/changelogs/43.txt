@@ -1,0 +1,2 @@
+feat: added installer source info in About screen
+deps: update android dependencies
