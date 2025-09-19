@@ -2,16 +2,19 @@
 
 > Documentation: https://webviewkiosk.nktnet.uk
 
+<br />
+
 <div align="center">
 
-[<img src="./docs/public/static/images/badges/google-play.svg" alt="Get it on Google Play" width="40%" />](https://play.google.com/store/apps/details?id=com.nktnet.webview_kiosk)&nbsp;&nbsp;
-[<img src="./docs/public/static/images/badges/github.png" alt="Get it on GitHub" width="40%" />](https://github.com/nktnet1/webview-kiosk/releases)
+[<img src="./docs/public/static/images/badges/google-play.svg" alt="Get it on Google Play" width="45%" />](https://play.google.com/store/apps/details?id=com.nktnet.webview_kiosk)&nbsp;
+[<img src="./docs/public/static/images/badges/github.png" alt="Get it on GitHub" width="45%" />](https://github.com/nktnet1/webview-kiosk/releases)
 
-[<img src="./docs/public/static/images/badges/obtanium.png" alt="Get it on Obtanium" width="40%" />](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk)&nbsp;&nbsp;
-[<img src="./docs/public/static/images/badges/izzy-on-droid.svg" alt="Get it on IzzyOnDroid" width="40%" />](https://apt.izzysoft.de/fdroid/index/apk/uk.nktnet.webviewkiosk)
-
+[<img src="./docs/public/static/images/badges/obtanium.png" alt="Get it on Obtanium" width="45%" />](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk)&nbsp;
+[<img src="./docs/public/static/images/badges/izzy-on-droid.svg" alt="Get it on IzzyOnDroid" width="45%" />](https://apt.izzysoft.de/fdroid/index/apk/uk.nktnet.webviewkiosk)
 
 </div>
+
+<br />
 
 Webview Kiosk is a free and open-source Android application for secure,
 kiosk-style web browsing.
@@ -20,12 +23,20 @@ The app is designed for small businesses and device owners who are looking for
 a simpler alternative to Enterprise Mobility Management (EMM) or Mobile Device
 Management (MDM) systems.
 
+<br />
+
 <div align="center">
-  <img src="./metadata/en-US/images/phoneScreenshots/001.phone-default.png" width="23%" alt="Phone Screenshot 1" />
-  <img src="./metadata/en-US/images/phoneScreenshots/002.phone-locked.png" width="23%" alt="Phone Screenshot 2"/>
-  <img src="./metadata/en-US/images/phoneScreenshots/003.phone-page-blocked.png" width="23%" alt="Phone Screenshot 3" />
-  <img src="./metadata/en-US/images/phoneScreenshots/004.phone-settings.png" width="23%" alt="Phone Screenshot 4" />
+  <img src="./metadata/en-US/images/phoneScreenshots/001.phone-default.png" width="22.5%" alt="Phone Screenshot 1" />&nbsp;
+  <img src="./metadata/en-US/images/phoneScreenshots/002.phone-locked.png" width="22.5%" alt="Phone Screenshot 2"/>&nbsp;
+  <img src="./metadata/en-US/images/phoneScreenshots/003.phone-page-blocked.png" width="22.5%" alt="Phone Screenshot 3" />&nbsp;
+  <img src="./metadata/en-US/images/phoneScreenshots/004.phone-settings.png" width="22.5%" alt="Phone Screenshot 4" />
 </div>
+
+<br />
+
+> [!NOTE]  
+> From v0.15.7, the package name for all installation sources except the Google Play
+> Store has changed from `com.nktnet.webview_kiosk` to `uk.nktnet.webviewkiosk`.
 
 ## Key Features
 
