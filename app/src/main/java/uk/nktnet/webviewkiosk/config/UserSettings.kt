@@ -5,16 +5,13 @@ import android.content.SharedPreferences
 import android.util.Base64
 import android.webkit.WebSettings
 import androidx.core.content.edit
-import uk.nktnet.webviewkiosk.config.option.AddressBarOption
-import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import org.json.JSONObject
-import uk.nktnet.webviewkiosk.config.option.ValidCacheModes
-import uk.nktnet.webviewkiosk.config.option.WebViewInset
+import uk.nktnet.webviewkiosk.config.option.*
 
 class UserSettings(context: Context) {
-    private val prefs: SharedPreferences =
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
+    // Web Content
     var homeUrl: String
         get() = prefs.getString(HOME_URL, null) ?: Constants.WEBSITE_URL
         set(value) = prefs.edit { putString(HOME_URL, value) }
@@ -31,6 +28,7 @@ class UserSettings(context: Context) {
         get() = prefs.getString(WEBSITE_BOOKMARKS, null) ?: ""
         set(value) = prefs.edit { putString(WEBSITE_BOOKMARKS, value) }
 
+    // Browsing
     var allowRefresh: Boolean
         get() = prefs.getBoolean(ALLOW_REFRESH, true)
         set(value) = prefs.edit { putBoolean(ALLOW_REFRESH, value) }
@@ -63,6 +61,7 @@ class UserSettings(context: Context) {
         get() = prefs.getString(SEARCH_PROVIDER_URL, null) ?: Constants.DEFAULT_SEARCH_PROVIDER_URL
         set(value) = prefs.edit { putString(SEARCH_PROVIDER_URL, value) }
 
+    // Web Engine
     var enableJavaScript: Boolean
         get() = prefs.getBoolean(ENABLE_JAVASCRIPT, true)
         set(value) = prefs.edit { putBoolean(ENABLE_JAVASCRIPT, value) }
@@ -89,9 +88,9 @@ class UserSettings(context: Context) {
             prefs.edit { putInt(CACHE_MODE, validValue) }
         }
 
+    // Appearance
     var blockedMessage: String
-        get() = prefs.getString(BLOCKED_MESSAGE, null)
-            ?: "This site is blocked by Webview Kiosk."
+        get() = prefs.getString(BLOCKED_MESSAGE, null) ?: "This site is blocked by Webview Kiosk."
         set(value) = prefs.edit { putString(BLOCKED_MESSAGE, value) }
 
     var theme: ThemeOption
@@ -102,13 +101,18 @@ class UserSettings(context: Context) {
         get() = AddressBarOption.fromString(prefs.getString(ADDRESS_BAR_MODE, null))
         set(value) = prefs.edit { putString(ADDRESS_BAR_MODE, value.name) }
 
+    var webViewInset: WebViewInset
+        get() = WebViewInset.fromString(prefs.getString(WEBVIEW_INSET, null))
+        set(value) = prefs.edit { putString(WEBVIEW_INSET, value.name) }
+
+    // Device
     var keepScreenOn: Boolean
         get() = prefs.getBoolean(KEEP_SCREEN_ON, false)
         set(value) = prefs.edit { putBoolean(KEEP_SCREEN_ON, value) }
 
-    var webViewInset: WebViewInset
-        get() = WebViewInset.fromString(prefs.getString(WEBVIEW_INSET, null))
-        set(value) = prefs.edit { putString(WEBVIEW_INSET, value.name) }
+    var deviceRotation: DeviceRotationOption
+        get() = DeviceRotationOption.fromString(prefs.getString(DEVICE_ROTATION, null))
+        set(value) = prefs.edit { putString(DEVICE_ROTATION, value.degrees) }
 
     fun exportToBase64(): String {
         val json = JSONObject().apply {
@@ -132,8 +136,9 @@ class UserSettings(context: Context) {
             put(BLOCKED_MESSAGE, blockedMessage)
             put(THEME, theme.name)
             put(ADDRESS_BAR_MODE, addressBarMode.name)
-            put(KEEP_SCREEN_ON, keepScreenOn)
             put(WEBVIEW_INSET, webViewInset.name)
+            put(KEEP_SCREEN_ON, keepScreenOn)
+            put(DEVICE_ROTATION, deviceRotation.degrees)
         }
         return Base64.encodeToString(json.toString().toByteArray(), Base64.NO_WRAP)
     }
@@ -161,8 +166,9 @@ class UserSettings(context: Context) {
             blockedMessage = json.optString(BLOCKED_MESSAGE, blockedMessage)
             theme = ThemeOption.fromString(json.optString(THEME, theme.name))
             addressBarMode = AddressBarOption.fromString(json.optString(ADDRESS_BAR_MODE, addressBarMode.name))
-            keepScreenOn = json.optBoolean(KEEP_SCREEN_ON, keepScreenOn)
             webViewInset = WebViewInset.fromString(json.optString(WEBVIEW_INSET, webViewInset.name))
+            keepScreenOn = json.optBoolean(KEEP_SCREEN_ON, keepScreenOn)
+            deviceRotation = DeviceRotationOption.fromString(json.optString(DEVICE_ROTATION, deviceRotation.degrees))
             true
         } catch (_: Exception) {
             false
@@ -198,6 +204,6 @@ class UserSettings(context: Context) {
         private const val WEBVIEW_INSET = "appearance.webview_inset"
 
         private const val KEEP_SCREEN_ON = "device.keep_screen_on"
-
+        private const val DEVICE_ROTATION = "device.rotation"
     }
 }

@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk
 
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -20,6 +21,7 @@ import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.components.auth.RequireAuthWrapper
@@ -30,8 +32,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val systemSettings = SystemSettings(this)
+        val userSettings = UserSettings(this)
 
-        // Opening links from other apps
         if (intent.action == Intent.ACTION_VIEW && intent.data != null && systemSettings.intentUrl.isEmpty()) {
             systemSettings.intentUrl = intent?.dataString ?: ""
             startActivity(
@@ -45,13 +47,19 @@ class MainActivity : AppCompatActivity() {
 
         enableEdgeToEdge()
         BiometricPromptManager.init(this)
-        val userSettings = UserSettings(this)
+
+        applyDeviceRotation(userSettings.deviceRotation)
 
         setContent {
             val themeState = remember { mutableStateOf(userSettings.theme) }
             val keepScreenOnState = remember { mutableStateOf(userSettings.keepScreenOn) }
+            val deviceRotationState = remember { mutableStateOf(userSettings.deviceRotation) }
 
             KeepScreenOnOption(keepOn = keepScreenOnState.value)
+
+            LaunchedEffect(deviceRotationState.value) {
+                applyDeviceRotation(deviceRotationState.value)
+            }
 
             val isDarkTheme = when (themeState.value) {
                 ThemeOption.SYSTEM -> isSystemInDarkTheme()
@@ -111,7 +119,8 @@ class MainActivity : AppCompatActivity() {
                             authComposable(Screen.SettingsDevice.route) {
                                 SettingsDeviceScreen(
                                     navController,
-                                    keepScreenOnState
+                                    keepScreenOnState,
+                                    deviceRotationState
                                 )
                             }
                             authComposable(Screen.SettingsAbout.route) {
@@ -123,6 +132,16 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
             }
+        }
+    }
+
+    private fun applyDeviceRotation(rotation: DeviceRotationOption) {
+        requestedOrientation = when (rotation) {
+            DeviceRotationOption.AUTO -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            DeviceRotationOption.ROTATION_0 -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            DeviceRotationOption.ROTATION_90 -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            DeviceRotationOption.ROTATION_180 -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+            DeviceRotationOption.ROTATION_270 -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
         }
     }
 
