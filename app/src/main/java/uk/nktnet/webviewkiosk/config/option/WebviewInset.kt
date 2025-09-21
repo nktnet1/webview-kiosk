@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config
+package uk.nktnet.webviewkiosk.config.option
 
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.displayCutout

@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.WebViewInset
+import uk.nktnet.webviewkiosk.config.option.WebViewInset
 import uk.nktnet.webviewkiosk.utils.rememberLockedState
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 

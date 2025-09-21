@@ -8,6 +8,8 @@ import androidx.core.content.edit
 import uk.nktnet.webviewkiosk.config.option.AddressBarOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import org.json.JSONObject
+import uk.nktnet.webviewkiosk.config.option.ValidCacheModes
+import uk.nktnet.webviewkiosk.config.option.WebViewInset
 
 class UserSettings(context: Context) {
     private val prefs: SharedPreferences =
@@ -80,10 +82,10 @@ class UserSettings(context: Context) {
     var cacheMode: Int
         get() {
             val value = prefs.getInt(CACHE_MODE, WebSettings.LOAD_DEFAULT)
-            return if (value in VALID_CACHE_MODES) value else WebSettings.LOAD_DEFAULT
+            return if (value in ValidCacheModes) value else WebSettings.LOAD_DEFAULT
         }
         set(value) {
-            val validValue = if (value in VALID_CACHE_MODES) value else WebSettings.LOAD_DEFAULT
+            val validValue = if (value in ValidCacheModes) value else WebSettings.LOAD_DEFAULT
             prefs.edit { putInt(CACHE_MODE, validValue) }
         }
 
@@ -197,11 +199,5 @@ class UserSettings(context: Context) {
 
         private const val KEEP_SCREEN_ON = "device.keep_screen_on"
 
-        private val VALID_CACHE_MODES = setOf(
-            WebSettings.LOAD_DEFAULT,
-            WebSettings.LOAD_CACHE_ELSE_NETWORK,
-            WebSettings.LOAD_NO_CACHE,
-            WebSettings.LOAD_CACHE_ONLY,
-        )
     }
 }
