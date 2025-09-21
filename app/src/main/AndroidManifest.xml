@@ -17,7 +17,7 @@
         android:theme="@style/Theme.AppCompat"
     >
         <activity
-            android:name=".MainActivity"
+            android:name="uk.nktnet.webviewkiosk.MainActivity"
             android:windowSoftInputMode="adjustResize"
             android:exported="true"
             android:theme="@style/Theme.WebviewKiosk"
