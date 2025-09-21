@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.ui.view
 
 import android.app.Activity
 import android.webkit.CookieManager
+import android.webkit.HttpAuthHandler
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -20,47 +21,37 @@ import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.handlers.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.MultitapHandler
-import uk.nktnet.webviewkiosk.ui.components.AddressBar
-import uk.nktnet.webviewkiosk.ui.components.FloatingMenuButton
-import uk.nktnet.webviewkiosk.ui.components.WebviewAwareSwipeRefreshLayout
+import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
+import uk.nktnet.webviewkiosk.ui.components.webview.FloatingMenuButton
+import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
 import uk.nktnet.webviewkiosk.ui.components.common.LoadingIndicator
+import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
 import uk.nktnet.webviewkiosk.utils.rememberLockedState
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
 
 private enum class TransitionState { TRANSITIONING, PAGE_STARTED, PAGE_FINISHED }
+
 @Composable
 fun WebviewScreen(navController: NavController) {
     val context = LocalContext.current
     val activity = context as? Activity
-
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
-
     val isPinned by rememberLockedState()
-
-    var currentUrl by remember {
-        mutableStateOf(
-            systemSettings.currentUrl.takeIf { it.isNotEmpty() }
-            ?: userSettings.homeUrl
-        )
-    }
+    var currentUrl by remember { mutableStateOf(systemSettings.currentUrl.takeIf { it.isNotEmpty() } ?: userSettings.homeUrl) }
     var urlBarText by remember { mutableStateOf(TextFieldValue(currentUrl)) }
     var transitionState by remember { mutableStateOf(TransitionState.PAGE_FINISHED) }
     var isRefreshing by remember { mutableStateOf(false) }
     var hasFocus by remember { mutableStateOf(false) }
 
     val blacklistRegexes = remember(userSettings.websiteBlacklist) {
-        userSettings.websiteBlacklist.lines()
-            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
-            .mapNotNull { runCatching { Regex(it) }.getOrNull() }
+        userSettings.websiteBlacklist.lines().mapNotNull { it.trim().takeIf(String::isNotEmpty) }.mapNotNull { runCatching { Regex(it) }.getOrNull() }
     }
 
     val whitelistRegexes = remember(userSettings.websiteWhitelist) {
-        userSettings.websiteWhitelist.lines()
-            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
-            .mapNotNull { runCatching { Regex(it) }.getOrNull() }
+        userSettings.websiteWhitelist.lines().mapNotNull { it.trim().takeIf(String::isNotEmpty) }.mapNotNull { runCatching { Regex(it) }.getOrNull() }
     }
 
     val showAddressBar = when (userSettings.addressBarMode) {
@@ -71,6 +62,9 @@ fun WebviewScreen(navController: NavController) {
 
     val focusRequester = remember { FocusRequester() }
     val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+    var authHandler by remember { mutableStateOf<HttpAuthHandler?>(null) }
+    var authHost by remember { mutableStateOf<String?>(null) }
+    var authRealm by remember { mutableStateOf<String?>(null) }
 
     val webView = createCustomWebview(
         context = context,
@@ -88,11 +82,14 @@ fun WebviewScreen(navController: NavController) {
             isRefreshing = false
         },
         doUpdateVisitedHistory = { url ->
-            if (!hasFocus) {
-                urlBarText = urlBarText.copy(text = url)
-            }
+            if (!hasFocus) urlBarText = urlBarText.copy(text = url)
             currentUrl = url
             WebViewNavigation.appendWebviewHistory(systemSettings, url)
+        },
+        onHttpAuthRequest = { handler, host, realm ->
+            authHandler = handler
+            authHost = host
+            authRealm = realm
         }
     )
 
@@ -104,7 +101,6 @@ fun WebviewScreen(navController: NavController) {
     val cookieManager = CookieManager.getInstance()
     cookieManager.setAcceptCookie(userSettings.acceptCookies)
     cookieManager.setAcceptThirdPartyCookies(webView, userSettings.acceptThirdPartyCookies)
-
     BackPressHandler(webView, ::customLoadUrl, onBackPressedDispatcher)
 
     val addressBarSearch: (String) -> Unit = { input ->
@@ -115,11 +111,7 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(userSettings.webViewInset.toWindowInsets())
-    ) {
+    Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(userSettings.webViewInset.toWindowInsets())) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (showAddressBar) {
                 AddressBar(
@@ -137,16 +129,10 @@ fun WebviewScreen(navController: NavController) {
             Box(modifier = Modifier.weight(1f)) {
                 AndroidView(
                     factory = { ctx ->
-                        val initialUrl = if (systemSettings.intentUrl.isNotEmpty()) {
-                            systemSettings.intentUrl.also { systemSettings.intentUrl = "" }
-                        } else {
-                            currentUrl
-                        }
+                        val initialUrl = if (systemSettings.intentUrl.isNotEmpty()) systemSettings.intentUrl.also { systemSettings.intentUrl = "" } else currentUrl
                         urlBarText = urlBarText.copy(text = initialUrl)
 
-                        fun initWebviewApply(initialUrl: String) = webView.apply {
-                            customLoadUrl(initialUrl)
-                        }
+                        fun initWebviewApply(initialUrl: String) = webView.apply { customLoadUrl(initialUrl) }
 
                         if (userSettings.allowRefresh) {
                             WebviewAwareSwipeRefreshLayout(ctx, webView).apply {
@@ -160,20 +146,12 @@ fun WebviewScreen(navController: NavController) {
                             initWebviewApply(initialUrl)
                         }
                     },
-                    update = { view ->
-                        if (view is SwipeRefreshLayout) view.isRefreshing = isRefreshing
-                    },
+                    update = { view -> if (view is SwipeRefreshLayout) view.isRefreshing = isRefreshing },
                     modifier = Modifier.fillMaxSize()
                 )
 
-
                 if (transitionState == TransitionState.TRANSITIONING) {
-                    Box(
-                        Modifier
-                            .fillMaxSize()
-                            .background(Color(0x88000000)),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Box(Modifier.fillMaxSize().background(Color(0x88000000)), contentAlignment = Alignment.Center) {
                         LoadingIndicator("Loading...")
                     }
                 }
@@ -192,4 +170,7 @@ fun WebviewScreen(navController: NavController) {
     }
 
     MultitapHandler { WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings) }
+
+    BasicAuthDialog(authHandler, authHost, authRealm) { authHandler = null }
 }
+

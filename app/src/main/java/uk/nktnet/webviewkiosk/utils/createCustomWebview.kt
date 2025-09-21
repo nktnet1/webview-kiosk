@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.view.ViewGroup
+import android.webkit.HttpAuthHandler
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -28,7 +29,8 @@ fun createCustomWebview(
     cacheMode: Int,
     onPageStarted: () -> Unit,
     onPageFinished: (url: String) -> Unit,
-    doUpdateVisitedHistory: (url: String) -> Unit
+    doUpdateVisitedHistory: (url: String) -> Unit,
+    onHttpAuthRequest: (handler: HttpAuthHandler?, host: String?, realm: String?) -> Unit
 ): WebView {
     val isBlocked: (String) -> Boolean = { url ->
         isBlockedUrl(url = url, blacklistRegexes = blacklistRegexes, whitelistRegexes = whitelistRegexes)
@@ -99,6 +101,15 @@ fun createCustomWebview(
                         doUpdateVisitedHistory(it)
                     }
                     super.doUpdateVisitedHistory(view, url, isReload)
+                }
+
+                override fun onReceivedHttpAuthRequest(
+                    view: WebView?,
+                    handler: HttpAuthHandler?,
+                    host: String?,
+                    realm: String?
+                ) {
+                    onHttpAuthRequest(handler, host, realm)
                 }
             }
         }

@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components
+package uk.nktnet.webviewkiosk.ui.components.webview
 
 import android.graphics.Paint
 import androidx.compose.foundation.background
@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
@@ -47,7 +48,7 @@ fun FloatingMenuButton(
     val buttonSizeDp = 64.dp
     val buttonSizePx = with(density) { buttonSizeDp.toPx() }
 
-    var boxBounds by remember { mutableStateOf<androidx.compose.ui.geometry.Rect?>(null) }
+    var boxBounds by remember { mutableStateOf<Rect?>(null) }
 
     var offsetX by remember { mutableFloatStateOf(-1f) }
     var offsetY by remember { mutableFloatStateOf(-1f) }
@@ -65,7 +66,7 @@ fun FloatingMenuButton(
             .windowInsetsPadding(WindowInsets.safeContent)
             .onGloballyPositioned { coordinates ->
                 val size = coordinates.size.toSize()
-                val bounds = androidx.compose.ui.geometry.Rect(0f, 0f, size.width, size.height)
+                val bounds = Rect(0f, 0f, size.width, size.height)
                 boxBounds = bounds
 
                 if (offsetX < 0f || offsetY < 0f) {
