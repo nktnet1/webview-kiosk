@@ -46,7 +46,7 @@ fun SettingsListScreen(
         ),
         Triple(
             "Device",
-            "Keep screen on, device rotations",
+            "Keep screen on, device rotation",
             Screen.SettingsDevice.route
         ),
         Triple(
