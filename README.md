@@ -1,6 +1,6 @@
 # Webview Kiosk
 
-> Documentation: https://webviewkiosk.nktnet.uk
+> Docs: https://webviewkiosk.nktnet.uk
 
 <br />
 
@@ -21,10 +21,6 @@ The app is designed for small businesses and device owners who are looking for
 a simpler alternative to Enterprise Mobility Management (EMM) or Mobile Device
 Management (MDM) systems.
 
-> [!NOTE]  
-> From v0.15.7, the package name for all installation sources except the Google Play
-> Store has changed from `com.nktnet.webview_kiosk` to `uk.nktnet.webviewkiosk`.
-
 ## Key Features
 
 - **Lock Task Mode (Pin):** prevent users from opening other apps or accessing the
@@ -33,6 +29,16 @@ Management (MDM) systems.
 - **Protected Settings:** protect app settings with biometrics or device credentials
 - **URL Filtering:** supports regex-based blacklist and whitelist to control web access
 - **Export/Import:** allow for backups of settings & configurations
+
+## Installation Notes
+
+From [v0.17.0](https://github.com/nktnet1/webview-kiosk/releases/tag/v0.17.0),
+Google Play's [automatic protection](https://support.google.com/googleplay/android-developer/answer/10183279)
+has been intentionally **disabled** to allow installations from the Aurora Store.
+
+From [v0.15.7](https://github.com/nktnet1/webview-kiosk/releases/tag/v0.15.7),
+the package name for all installation sources except the Google Play Store has
+changed from `com.nktnet.webview_kiosk` to `uk.nktnet.webviewkiosk`.
 
 ## Contact
 
@@ -46,5 +52,3 @@ Management (MDM) systems.
   <img src="./metadata/en-US/images/phoneScreenshots/003.phone-page-blocked.png" width="275px" alt="Phone Screenshot 3" />&nbsp;
   <img src="./metadata/en-US/images/phoneScreenshots/004.phone-settings.png" width="275px" alt="Phone Screenshot 4" />
 </div>
-
-<br />
