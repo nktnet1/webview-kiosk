@@ -2,15 +2,13 @@
 
 > Docs: https://webviewkiosk.nktnet.uk
 
-<br />
-
 <div align="center">
 
-[<img src="./docs/public/static/images/badges/github.png" alt="Get it on GitHub" width="260px" />](https://github.com/nktnet1/webview-kiosk/releases)&nbsp;
-[<img src="./docs/public/static/images/badges/obtanium.png" alt="Get it on Obtanium" width="260px" />](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk)&nbsp;
-[<img src="./docs/public/static/images/badges/google-play.svg" alt="Get it on Google Play" width="260px" />](https://play.google.com/store/apps/details?id=com.nktnet.webview_kiosk)&nbsp;
-[<img src="./docs/public/static/images/badges/f-droid.svg" alt="Get it on F-Droid" width="260px" />](https://f-droid.org/packages/uk.nktnet.webviewkiosk)&nbsp;
-[<img src="./docs/public/static/images/badges/izzy-on-droid.svg" alt="Get it on IzzyOnDroid" width="260px" />](https://apt.izzysoft.de/fdroid/index/apk/uk.nktnet.webviewkiosk)&nbsp;
+[<img src="./docs/public/static/images/badges/github.png" alt="Get it on GitHub" width="260px" />](https://github.com/nktnet1/webview-kiosk/releases)
+[<img src="./docs/public/static/images/badges/obtanium.png" alt="Get it on Obtanium" width="260px" />](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk)
+[<img src="./docs/public/static/images/badges/google-play.svg" alt="Get it on Google Play" width="260px" />](https://play.google.com/store/apps/details?id=com.nktnet.webview_kiosk)
+[<img src="./docs/public/static/images/badges/f-droid.svg" alt="Get it on F-Droid" width="260px" />](https://f-droid.org/packages/uk.nktnet.webviewkiosk)
+[<img src="./docs/public/static/images/badges/izzy-on-droid.svg" alt="Get it on IzzyOnDroid" width="260px" />](https://apt.izzysoft.de/fdroid/index/apk/uk.nktnet.webviewkiosk)
 
 </div>
 
@@ -43,6 +41,12 @@ changed from `com.nktnet.webview_kiosk` to `uk.nktnet.webviewkiosk`.
 ## Contact
 
 - support@webviewkiosk.nktnet.uk
+
+## License
+
+This project is licensed under the GNU Affero General Public License v3.0 or later.
+
+See the [LICENSE](./LICENSE) file for details.
 
 ## Screenshots
 
