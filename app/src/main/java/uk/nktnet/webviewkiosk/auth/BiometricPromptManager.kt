@@ -21,7 +21,9 @@ object BiometricPromptManager {
 
     private var lastAuthTime = 0L
     private const val AUTH_TIMEOUT_MS = 5 * 60 * 1000L
-    private const val DEVICE_CREDENTIAL_REQUEST_CODE = 9999
+
+    // Arbitrarily chosen number for request code.
+    private const val LOLLIPOP_DEVICE_CREDENTIAL_REQUEST_CODE = 9999
 
     fun init(activity: AppCompatActivity) {
         this.activity = activity
@@ -67,7 +69,7 @@ object BiometricPromptManager {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             showBiometricPromptModern(title, description)
         } else {
-            showDeviceCredentialFallback(title, description)
+            showDeviceCredentialLollipop(keyguardManager, title, description)
         }
     }
 
@@ -129,16 +131,14 @@ object BiometricPromptManager {
         prompt.authenticate(promptInfoBuilder.build())
     }
 
-    private fun showDeviceCredentialFallback(title: String, description: String) {
+    private fun showDeviceCredentialLollipop(keyguardManager: KeyguardManager, title: String, description: String) {
         val activity = this.activity ?: return
-        val keyguardManager =
-            activity.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         try {
             @Suppress("DEPRECATION")
             val intent = keyguardManager.createConfirmDeviceCredentialIntent(title, description)
             if (intent != null) {
                 @Suppress("DEPRECATION")
-                activity.startActivityForResult(intent, DEVICE_CREDENTIAL_REQUEST_CODE)
+                activity.startActivityForResult(intent, LOLLIPOP_DEVICE_CREDENTIAL_REQUEST_CODE)
             } else {
                 _resultState.value = BiometricResult.FeatureUnavailable
             }
@@ -147,8 +147,8 @@ object BiometricPromptManager {
         }
     }
 
-    fun handleDeviceCredentialResult(requestCode: Int, resultCode: Int) {
-        if (requestCode != DEVICE_CREDENTIAL_REQUEST_CODE) {
+    fun handleLollipopDeviceCredentialResult(requestCode: Int, resultCode: Int) {
+        if (requestCode != LOLLIPOP_DEVICE_CREDENTIAL_REQUEST_CODE) {
             return
         }
         if (resultCode == AppCompatActivity.RESULT_OK) {

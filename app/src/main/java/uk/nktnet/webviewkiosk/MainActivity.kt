@@ -161,7 +161,7 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            BiometricPromptManager.handleDeviceCredentialResult(requestCode, resultCode)
+            BiometricPromptManager.handleLollipopDeviceCredentialResult(requestCode, resultCode)
         }
     }
 }
