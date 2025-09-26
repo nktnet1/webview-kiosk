@@ -21,6 +21,7 @@ object BiometricPromptManager {
 
     private var lastAuthTime = 0L
     private const val AUTH_TIMEOUT_MS = 5 * 60 * 1000L
+    private const val DEVICE_CREDENTIAL_REQUEST_CODE = 9999
 
     fun init(activity: AppCompatActivity) {
         this.activity = activity
@@ -63,19 +64,19 @@ object BiometricPromptManager {
             return
         }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            showBiometricPromptModern(title, description)
+        } else {
+            showDeviceCredentialFallback(title, description)
+        }
+    }
+
+    private fun showBiometricPromptModern(title: String, description: String) {
+        val activity = this.activity ?: return
         val manager = BiometricManager.from(activity)
         val authenticators = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             BIOMETRIC_STRONG or DEVICE_CREDENTIAL
         } else BIOMETRIC_STRONG
-
-        val promptInfoBuilder = PromptInfo.Builder()
-            .setTitle(title)
-            .setDescription(description)
-            .setAllowedAuthenticators(authenticators)
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            promptInfoBuilder.setNegativeButtonText("Cancel")
-        }
 
         when (manager.canAuthenticate(authenticators)) {
             BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> {
@@ -93,7 +94,14 @@ object BiometricPromptManager {
             else -> Unit
         }
 
-        val promptInfo = promptInfoBuilder.build()
+        val promptInfoBuilder = PromptInfo.Builder()
+            .setTitle(title)
+            .setDescription(description)
+            .setAllowedAuthenticators(authenticators)
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            promptInfoBuilder.setNegativeButtonText("Cancel")
+        }
 
         val prompt = BiometricPrompt(
             activity,
@@ -117,7 +125,39 @@ object BiometricPromptManager {
                 }
             }
         )
-        prompt.authenticate(promptInfo)
+
+        prompt.authenticate(promptInfoBuilder.build())
+    }
+
+    private fun showDeviceCredentialFallback(title: String, description: String) {
+        val activity = this.activity ?: return
+        val keyguardManager =
+            activity.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        try {
+            @Suppress("DEPRECATION")
+            val intent = keyguardManager.createConfirmDeviceCredentialIntent(title, description)
+            if (intent != null) {
+                @Suppress("DEPRECATION")
+                activity.startActivityForResult(intent, DEVICE_CREDENTIAL_REQUEST_CODE)
+            } else {
+                _resultState.value = BiometricResult.FeatureUnavailable
+            }
+        } catch (_: Exception) {
+            _resultState.value = BiometricResult.FeatureUnavailable
+        }
+    }
+
+    fun handleDeviceCredentialResult(requestCode: Int, resultCode: Int) {
+        if (requestCode != DEVICE_CREDENTIAL_REQUEST_CODE) {
+            return
+        }
+        if (resultCode == AppCompatActivity.RESULT_OK) {
+            _resultState.value = BiometricResult.AuthenticationSuccess
+            lastAuthTime = System.currentTimeMillis()
+        } else {
+            _resultState.value = BiometricResult.AuthenticationFailed
+            resetAuthentication()
+        }
     }
 
     sealed interface BiometricResult {
