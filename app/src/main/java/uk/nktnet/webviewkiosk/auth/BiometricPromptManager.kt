@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.auth
 
 import android.app.KeyguardManager
+import android.content.Context
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
@@ -49,14 +50,21 @@ object BiometricPromptManager {
 
         _resultState.value = BiometricResult.Loading
 
-        val keyguardManager = activity.getSystemService(KeyguardManager::class.java)
-        if (keyguardManager == null || !keyguardManager.isDeviceSecure) {
+        val keyguardManager = activity.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        val deviceSecure = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            keyguardManager.isDeviceSecure
+        } else {
+            @Suppress("DEPRECATION")
+            keyguardManager.isKeyguardSecure
+        }
+
+        if (!deviceSecure) {
             _resultState.value = BiometricResult.AuthenticationNotSet
             return
         }
 
         val manager = BiometricManager.from(activity)
-        val authenticators = if (Build.VERSION.SDK_INT >= 30) {
+        val authenticators = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             BIOMETRIC_STRONG or DEVICE_CREDENTIAL
         } else BIOMETRIC_STRONG
 
@@ -65,7 +73,7 @@ object BiometricPromptManager {
             .setDescription(description)
             .setAllowedAuthenticators(authenticators)
 
-        if (Build.VERSION.SDK_INT < 30) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             promptInfoBuilder.setNegativeButtonText("Cancel")
         }
 

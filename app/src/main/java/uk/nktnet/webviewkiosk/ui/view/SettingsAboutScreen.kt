@@ -83,7 +83,7 @@ fun SettingsAboutScreen(navController: NavController) {
 
     val installerPackage = remember {
         try {
-            if (Build.VERSION.SDK_INT >= 30) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                 packageManager.getInstallSourceInfo(packageName).installingPackageName
             } else {
                 @Suppress("DEPRECATION")
