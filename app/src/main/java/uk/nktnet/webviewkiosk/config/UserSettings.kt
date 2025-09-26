@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config
+package com.nktnet.webview_kiosk.config
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -6,7 +6,7 @@ import android.util.Base64
 import android.webkit.WebSettings
 import androidx.core.content.edit
 import org.json.JSONObject
-import uk.nktnet.webviewkiosk.config.option.*
+import com.nktnet.webview_kiosk.config.option.*
 
 class UserSettings(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)

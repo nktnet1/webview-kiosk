@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.handlers
+package com.nktnet.webview_kiosk.handlers
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -25,7 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import uk.nktnet.webviewkiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.UserSettings
 import kotlin.math.max
 import kotlinx.coroutines.delay
 

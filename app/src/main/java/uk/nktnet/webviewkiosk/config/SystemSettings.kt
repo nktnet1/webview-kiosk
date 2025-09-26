@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config
+package com.nktnet.webview_kiosk.config
 
 import android.content.Context
 import android.content.SharedPreferences

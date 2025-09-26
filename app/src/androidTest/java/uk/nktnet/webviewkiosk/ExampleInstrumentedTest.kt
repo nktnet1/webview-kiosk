@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk
+package com.nktnet.webview_kiosk
 
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.ext.junit.runners.AndroidJUnit4

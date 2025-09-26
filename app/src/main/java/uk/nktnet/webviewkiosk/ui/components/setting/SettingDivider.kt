@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting
+package com.nktnet.webview_kiosk.ui.components.setting
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable

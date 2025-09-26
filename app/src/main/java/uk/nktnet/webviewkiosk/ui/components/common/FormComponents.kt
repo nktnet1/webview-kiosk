@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.common
+package com.nktnet.webview_kiosk.ui.components.common
 
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,7 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
-import uk.nktnet.webviewkiosk.config.Constants
+import com.nktnet.webview_kiosk.config.Constants
 
 @Composable
 fun LabelWithInfo(

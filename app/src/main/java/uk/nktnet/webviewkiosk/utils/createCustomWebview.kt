@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -9,11 +9,11 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.runtime.*
-import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.utils.webview.generateBlockedPageHtml
-import uk.nktnet.webviewkiosk.utils.webview.getPrefersColorSchemeOverrideScript
-import uk.nktnet.webviewkiosk.utils.webview.handleExternalScheme
-import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
+import com.nktnet.webview_kiosk.config.option.ThemeOption
+import com.nktnet.webview_kiosk.utils.webview.generateBlockedPageHtml
+import com.nktnet.webview_kiosk.utils.webview.getPrefersColorSchemeOverrideScript
+import com.nktnet.webview_kiosk.utils.webview.handleExternalScheme
+import com.nktnet.webview_kiosk.utils.webview.isBlockedUrl
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable

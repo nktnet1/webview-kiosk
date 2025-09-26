@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.auth
+package com.nktnet.webview_kiosk.auth
 
 import android.app.KeyguardManager
 import android.content.Context

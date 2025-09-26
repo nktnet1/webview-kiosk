@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting
+package com.nktnet.webview_kiosk.ui.components.setting
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -13,7 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.config.Screen
+import com.nktnet.webview_kiosk.config.Screen
 
 @Composable
 fun SettingLabel(

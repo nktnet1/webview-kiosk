@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk
+package com.nktnet.webview_kiosk
 
 import android.content.Intent
 import android.content.pm.ActivityInfo
@@ -18,16 +18,16 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
-import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
-import uk.nktnet.webviewkiosk.config.Screen
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
-import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
-import uk.nktnet.webviewkiosk.ui.components.auth.RequireAuthWrapper
-import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
-import uk.nktnet.webviewkiosk.ui.view.*
+import com.nktnet.webview_kiosk.auth.BiometricPromptManager
+import com.nktnet.webview_kiosk.config.Screen
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.option.DeviceRotationOption
+import com.nktnet.webview_kiosk.config.option.ThemeOption
+import com.nktnet.webview_kiosk.ui.components.webview.KeepScreenOnOption
+import com.nktnet.webview_kiosk.ui.components.auth.RequireAuthWrapper
+import com.nktnet.webview_kiosk.ui.theme.WebviewKioskTheme
+import com.nktnet.webview_kiosk.ui.view.*
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

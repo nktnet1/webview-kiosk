@@ -1,12 +1,12 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing
+package com.nktnet.webview_kiosk.ui.components.setting.fielditems.webbrowsing
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
-import uk.nktnet.webviewkiosk.utils.validateUrl
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.ui.components.setting.fields.TextSettingFieldItem
+import com.nktnet.webview_kiosk.utils.validateUrl
 
 @Composable
 fun SearchProviderUrlSetting() {

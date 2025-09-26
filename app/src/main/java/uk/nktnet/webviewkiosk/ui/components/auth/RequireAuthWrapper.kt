@@ -1,11 +1,11 @@
-package uk.nktnet.webviewkiosk.ui.components.auth
+package com.nktnet.webview_kiosk.ui.components.auth
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
-import uk.nktnet.webviewkiosk.ui.components.common.LoadingIndicator
+import com.nktnet.webview_kiosk.auth.BiometricPromptManager
+import com.nktnet.webview_kiosk.ui.components.common.LoadingIndicator
 
 private fun showAuthPrompt() {
     BiometricPromptManager.showBiometricPrompt(
