@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk
 
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -154,6 +155,13 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         if (!isChangingConfigurations) {
             BiometricPromptManager.resetAuthentication()
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            BiometricPromptManager.handleLollipopDeviceCredentialResult(requestCode, resultCode)
         }
     }
 }

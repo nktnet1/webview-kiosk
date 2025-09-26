@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.utils
 
 import android.app.ActivityManager
 import android.content.Context
+import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
@@ -20,7 +21,12 @@ fun rememberLockedState(): State<Boolean> {
 
     LaunchedEffect(activityManager) {
         while (true) {
-            isLocked.value = activityManager.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
+            isLocked.value = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                activityManager.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
+            } else {
+                @Suppress("DEPRECATION")
+                activityManager.isInLockTaskMode
+            }
             delay(1000L)
         }
     }

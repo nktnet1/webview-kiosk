@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.auth
 
 import android.app.KeyguardManager
+import android.content.Context
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
@@ -20,6 +21,9 @@ object BiometricPromptManager {
 
     private var lastAuthTime = 0L
     private const val AUTH_TIMEOUT_MS = 5 * 60 * 1000L
+
+    // Arbitrarily chosen number for request code.
+    private const val LOLLIPOP_DEVICE_CREDENTIAL_REQUEST_CODE = 9999
 
     fun init(activity: AppCompatActivity) {
         this.activity = activity
@@ -49,25 +53,32 @@ object BiometricPromptManager {
 
         _resultState.value = BiometricResult.Loading
 
-        val keyguardManager = activity.getSystemService(KeyguardManager::class.java)
-        if (keyguardManager == null || !keyguardManager.isDeviceSecure) {
+        val keyguardManager = activity.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        val deviceSecure = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            keyguardManager.isDeviceSecure
+        } else {
+            @Suppress("DEPRECATION")
+            keyguardManager.isKeyguardSecure
+        }
+
+        if (!deviceSecure) {
             _resultState.value = BiometricResult.AuthenticationNotSet
             return
         }
 
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            showBiometricPromptModern(title, description)
+        } else {
+            showDeviceCredentialLollipop(keyguardManager, title, description)
+        }
+    }
+
+    private fun showBiometricPromptModern(title: String, description: String) {
+        val activity = this.activity ?: return
         val manager = BiometricManager.from(activity)
-        val authenticators = if (Build.VERSION.SDK_INT >= 30) {
+        val authenticators = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             BIOMETRIC_STRONG or DEVICE_CREDENTIAL
         } else BIOMETRIC_STRONG
-
-        val promptInfoBuilder = PromptInfo.Builder()
-            .setTitle(title)
-            .setDescription(description)
-            .setAllowedAuthenticators(authenticators)
-
-        if (Build.VERSION.SDK_INT < 30) {
-            promptInfoBuilder.setNegativeButtonText("Cancel")
-        }
 
         when (manager.canAuthenticate(authenticators)) {
             BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> {
@@ -85,7 +96,14 @@ object BiometricPromptManager {
             else -> Unit
         }
 
-        val promptInfo = promptInfoBuilder.build()
+        val promptInfoBuilder = PromptInfo.Builder()
+            .setTitle(title)
+            .setDescription(description)
+            .setAllowedAuthenticators(authenticators)
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            promptInfoBuilder.setNegativeButtonText("Cancel")
+        }
 
         val prompt = BiometricPrompt(
             activity,
@@ -109,7 +127,37 @@ object BiometricPromptManager {
                 }
             }
         )
-        prompt.authenticate(promptInfo)
+
+        prompt.authenticate(promptInfoBuilder.build())
+    }
+
+    private fun showDeviceCredentialLollipop(keyguardManager: KeyguardManager, title: String, description: String) {
+        val activity = this.activity ?: return
+        try {
+            @Suppress("DEPRECATION")
+            val intent = keyguardManager.createConfirmDeviceCredentialIntent(title, description)
+            if (intent != null) {
+                @Suppress("DEPRECATION")
+                activity.startActivityForResult(intent, LOLLIPOP_DEVICE_CREDENTIAL_REQUEST_CODE)
+            } else {
+                _resultState.value = BiometricResult.FeatureUnavailable
+            }
+        } catch (_: Exception) {
+            _resultState.value = BiometricResult.FeatureUnavailable
+        }
+    }
+
+    fun handleLollipopDeviceCredentialResult(requestCode: Int, resultCode: Int) {
+        if (requestCode != LOLLIPOP_DEVICE_CREDENTIAL_REQUEST_CODE) {
+            return
+        }
+        if (resultCode == AppCompatActivity.RESULT_OK) {
+            _resultState.value = BiometricResult.AuthenticationSuccess
+            lastAuthTime = System.currentTimeMillis()
+        } else {
+            _resultState.value = BiometricResult.AuthenticationFailed
+            resetAuthentication()
+        }
     }
 
     sealed interface BiometricResult {

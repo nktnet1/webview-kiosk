@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.components.webview
 
 import android.content.Context
+import android.os.Build
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.webkit.WebView
@@ -18,8 +19,14 @@ class WebviewAwareSwipeRefreshLayout : SwipeRefreshLayout {
 
     constructor(context: Context, webview: WebView) : super(context) {
         this.webview = webview
-        webview.setOnScrollChangeListener { _, _, scrollY, _, _ ->
-            isEnabled = scrollY == 0
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            webview.setOnScrollChangeListener { _, _, scrollY, _, _ ->
+                isEnabled = scrollY == 0
+            }
+        } else {
+            webview.viewTreeObserver.addOnScrollChangedListener {
+                isEnabled = webview.scrollY == 0
+            }
         }
     }
 

@@ -13,7 +13,7 @@ android {
 
     defaultConfig {
         applicationId = "uk.nktnet.webviewkiosk"
-        minSdk = 26
+        minSdk = 21
         targetSdk = 36
         versionCode = 44
         versionName = "0.17.0"
