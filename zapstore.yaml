@@ -1,0 +1,6 @@
+repository: https://github.com/nktnet1/webview-kiosk
+assets:
+  - .*.apk
+remote_metadata:
+  - fdroid
+  - github
