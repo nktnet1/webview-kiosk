@@ -13,7 +13,10 @@ class UserSettings(context: Context) {
 
     // Web Content
     var homeUrl: String
-        get() = prefs.getString(HOME_URL, null) ?: Constants.WEBSITE_URL
+        get() = prefs
+            .getString(HOME_URL, null)
+            .takeIf { !it.isNullOrBlank() }
+            ?: Constants.WEBSITE_URL
         set(value) = prefs.edit { putString(HOME_URL, value) }
 
     var websiteBlacklist: String
