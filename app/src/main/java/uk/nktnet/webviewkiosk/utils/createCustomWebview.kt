@@ -59,7 +59,8 @@ fun createCustomWebview(
                 cacheMode = userSettings.cacheMode
                 userAgentString = userSettings.userAgent.takeIf { it.isNotBlank() }
                     ?: settings.userAgentString
-                builtInZoomControls = true
+                builtInZoomControls = userSettings.enableZoom
+                displayZoomControls = userSettings.displayZoomControls
             }
 
             val isBlocked: (String) -> Boolean = { url ->

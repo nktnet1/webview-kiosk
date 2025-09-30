@@ -95,6 +95,14 @@ class UserSettings(context: Context) {
         get() = prefs.getString(USER_AGENT, null) ?: ""
         set(value) = prefs.edit { putString(USER_AGENT, value) }
 
+    var enableZoom: Boolean
+        get() = prefs.getBoolean(ENABLE_ZOOM, true)
+        set(value) = prefs.edit { putBoolean(ENABLE_ZOOM, value) }
+
+    var displayZoomControls: Boolean
+        get() = prefs.getBoolean(DISPLAY_ZOOM_CONTROLS, false)
+        set(value) = prefs.edit { putBoolean(DISPLAY_ZOOM_CONTROLS, value) }
+
     // Appearance
     var blockedMessage: String
         get() = prefs.getString(BLOCKED_MESSAGE, null) ?: "This site is blocked by Webview Kiosk."
@@ -141,6 +149,8 @@ class UserSettings(context: Context) {
             put(ACCEPT_THIRD_PARTY_COOKIES, acceptThirdPartyCookies)
             put(CACHE_MODE, cacheMode)
             put(USER_AGENT, userAgent)
+            put(ENABLE_ZOOM, enableZoom)
+            put(DISPLAY_ZOOM_CONTROLS, displayZoomControls)
             put(BLOCKED_MESSAGE, blockedMessage)
             put(THEME, theme.name)
             put(ADDRESS_BAR_MODE, addressBarMode.name)
@@ -172,6 +182,8 @@ class UserSettings(context: Context) {
             acceptThirdPartyCookies = json.optBoolean(ACCEPT_THIRD_PARTY_COOKIES, acceptThirdPartyCookies)
             cacheMode = json.optInt(CACHE_MODE, cacheMode)
             userAgent = json.optString(USER_AGENT, userAgent)
+            enableZoom = json.optBoolean(ENABLE_ZOOM, enableZoom)
+            displayZoomControls = json.optBoolean(DISPLAY_ZOOM_CONTROLS, displayZoomControls)
             blockedMessage = json.optString(BLOCKED_MESSAGE, blockedMessage)
             theme = ThemeOption.fromString(json.optString(THEME, theme.name))
             addressBarMode = AddressBarOption.fromString(json.optString(ADDRESS_BAR_MODE, addressBarMode.name))
@@ -207,6 +219,8 @@ class UserSettings(context: Context) {
         private const val ACCEPT_COOKIES = "web_engine.accept_cookies"
         private const val ACCEPT_THIRD_PARTY_COOKIES = "web_engine.accept_third_party_cookies"
         private const val USER_AGENT = "web_engine.user_agent"
+        private const val ENABLE_ZOOM = "web_engine.enable_zoom"
+        private const val DISPLAY_ZOOM_CONTROLS = "web_engine.display_zoom_controls"
 
         private const val BLOCKED_MESSAGE = "appearance.blocked_message"
         private const val THEME = "appearance.theme"
