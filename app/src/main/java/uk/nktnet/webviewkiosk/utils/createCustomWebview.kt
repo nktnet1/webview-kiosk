@@ -27,6 +27,7 @@ fun createCustomWebview(
     enableJavaScript: Boolean,
     enableDomStorage: Boolean,
     cacheMode: Int,
+    userAgent: String,
     onPageStarted: () -> Unit,
     onPageFinished: (url: String) -> Unit,
     doUpdateVisitedHistory: (url: String) -> Unit,
@@ -47,7 +48,10 @@ fun createCustomWebview(
 
             settings.javaScriptEnabled = enableJavaScript
             settings.domStorageEnabled = enableDomStorage
+            settings.userAgentString = userAgent.takeIf { it.isNotBlank() }
+                ?: settings.userAgentString
             settings.cacheMode = cacheMode
+            settings.builtInZoomControls = true
 
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {

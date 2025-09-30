@@ -2,6 +2,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fields
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -17,7 +19,7 @@ fun TextSettingFieldItem(
     placeholder: String,
     initialValue: String,
     isMultiline: Boolean,
-    validator: (String) -> Boolean,
+    validator: (String) -> Boolean = { true },
     onSave: (String) -> Unit,
     extraContent: (@Composable ((setValue: (String) -> Unit) -> Unit))? = null
 ) {
@@ -96,6 +98,16 @@ fun TextSettingFieldItem(
                         .fillMaxWidth()
                 } else {
                     Modifier.fillMaxWidth()
+                },
+                trailingIcon = {
+                    if (draftValue.isNotEmpty()) {
+                        IconButton(onClick = { draftValue = "" }) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "Clear"
+                            )
+                        }
+                    }
                 }
             )
 

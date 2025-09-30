@@ -76,6 +76,7 @@ fun WebviewScreen(navController: NavController) {
         enableJavaScript = userSettings.enableJavaScript,
         enableDomStorage = userSettings.enableDomStorage,
         cacheMode = userSettings.cacheMode,
+        userAgent = userSettings.userAgent,
         onPageStarted = { transitionState = TransitionState.PAGE_STARTED },
         onPageFinished = { url ->
             transitionState = TransitionState.PAGE_FINISHED

@@ -29,5 +29,6 @@ fun SettingsWebEngineScreen(navController: NavController) {
         AcceptCookiesSetting()
         AcceptThirdPartyCookiesSetting()
         CacheModeSetting()
+        UserAgentSetting()
     }
 }

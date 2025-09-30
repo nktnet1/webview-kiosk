@@ -88,6 +88,10 @@ class UserSettings(context: Context) {
             prefs.edit { putInt(CACHE_MODE, validValue) }
         }
 
+    var userAgent: String
+        get() = prefs.getString(USER_AGENT, null) ?: ""
+        set(value) = prefs.edit { putString(USER_AGENT, value) }
+
     // Appearance
     var blockedMessage: String
         get() = prefs.getString(BLOCKED_MESSAGE, null) ?: "This site is blocked by Webview Kiosk."
@@ -133,6 +137,7 @@ class UserSettings(context: Context) {
             put(ACCEPT_COOKIES, acceptCookies)
             put(ACCEPT_THIRD_PARTY_COOKIES, acceptThirdPartyCookies)
             put(CACHE_MODE, cacheMode)
+            put(USER_AGENT, userAgent)
             put(BLOCKED_MESSAGE, blockedMessage)
             put(THEME, theme.name)
             put(ADDRESS_BAR_MODE, addressBarMode.name)
@@ -163,6 +168,7 @@ class UserSettings(context: Context) {
             acceptCookies = json.optBoolean(ACCEPT_COOKIES, acceptCookies)
             acceptThirdPartyCookies = json.optBoolean(ACCEPT_THIRD_PARTY_COOKIES, acceptThirdPartyCookies)
             cacheMode = json.optInt(CACHE_MODE, cacheMode)
+            userAgent = json.optString(USER_AGENT, userAgent)
             blockedMessage = json.optString(BLOCKED_MESSAGE, blockedMessage)
             theme = ThemeOption.fromString(json.optString(THEME, theme.name))
             addressBarMode = AddressBarOption.fromString(json.optString(ADDRESS_BAR_MODE, addressBarMode.name))
@@ -197,6 +203,7 @@ class UserSettings(context: Context) {
         private const val CACHE_MODE = "web_engine.cache_mode"
         private const val ACCEPT_COOKIES = "web_engine.accept_cookies"
         private const val ACCEPT_THIRD_PARTY_COOKIES = "web_engine.accept_third_party_cookies"
+        private const val USER_AGENT = "web_engine.user_agent"
 
         private const val BLOCKED_MESSAGE = "appearance.blocked_message"
         private const val THEME = "appearance.theme"
