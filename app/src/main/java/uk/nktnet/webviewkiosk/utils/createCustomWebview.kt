@@ -9,34 +9,41 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.runtime.*
+import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.utils.webview.generateBlockedPageHtml
 import uk.nktnet.webviewkiosk.utils.webview.getPrefersColorSchemeOverrideScript
 import uk.nktnet.webviewkiosk.utils.webview.handleExternalScheme
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
 
+data class WebViewConfig(
+    val userSettings: UserSettings,
+    val theme: ThemeOption,
+    val onPageStarted: () -> Unit,
+    val onPageFinished: (String) -> Unit,
+    val doUpdateVisitedHistory: (String) -> Unit,
+    val onHttpAuthRequest: (HttpAuthHandler?, String?, String?) -> Unit
+) {
+    val blacklistRegexes: List<Regex> by lazy {
+        userSettings.websiteBlacklist.lines()
+            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+            .mapNotNull { runCatching { Regex(it) }.getOrNull() }
+    }
+
+    val whitelistRegexes: List<Regex> by lazy {
+        userSettings.websiteWhitelist.lines()
+            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+            .mapNotNull { runCatching { Regex(it) }.getOrNull() }
+    }
+}
+
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun createCustomWebview(
     context: Context,
-    theme: ThemeOption,
-    blockedMessage: String,
-    blacklistRegexes: List<Regex>,
-    whitelistRegexes: List<Regex>,
-    allowOtherUrlSchemes: Boolean,
-    enableJavaScript: Boolean,
-    enableDomStorage: Boolean,
-    cacheMode: Int,
-    userAgent: String,
-    onPageStarted: () -> Unit,
-    onPageFinished: (url: String) -> Unit,
-    doUpdateVisitedHistory: (url: String) -> Unit,
-    onHttpAuthRequest: (handler: HttpAuthHandler?, host: String?, realm: String?) -> Unit
+    config: WebViewConfig
 ): WebView {
-    val isBlocked: (String) -> Boolean = { url ->
-        isBlockedUrl(url = url, blacklistRegexes = blacklistRegexes, whitelistRegexes = whitelistRegexes)
-    }
-
+    val userSettings = config.userSettings
     var isShowingBlockedPage by remember { mutableStateOf(false) }
 
     val webView = remember {
@@ -46,38 +53,40 @@ fun createCustomWebview(
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
 
-            settings.javaScriptEnabled = enableJavaScript
-            settings.domStorageEnabled = enableDomStorage
-            settings.userAgentString = userAgent.takeIf { it.isNotBlank() }
-                ?: settings.userAgentString
-            settings.cacheMode = cacheMode
-            settings.builtInZoomControls = true
+            settings.apply {
+                javaScriptEnabled = userSettings.enableJavaScript
+                domStorageEnabled = userSettings.enableDomStorage
+                cacheMode = userSettings.cacheMode
+                userAgentString = userSettings.userAgent.takeIf { it.isNotBlank() }
+                    ?: settings.userAgentString
+                builtInZoomControls = true
+            }
+
+            val isBlocked: (String) -> Boolean = { url ->
+                isBlockedUrl(url, config.blacklistRegexes, config.whitelistRegexes)
+            }
 
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                    if (theme != ThemeOption.SYSTEM) {
-                        val js = getPrefersColorSchemeOverrideScript(theme)
-                        evaluateJavascript(js, null)
+                    if (config.theme != ThemeOption.SYSTEM) {
+                        evaluateJavascript(getPrefersColorSchemeOverrideScript(config.theme), null)
                     }
                     super.onPageStarted(view, url, favicon)
-                    onPageStarted()
+                    config.onPageStarted()
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    url?.let { onPageFinished(it) }
+                    url?.let { config.onPageFinished(it) }
                     isShowingBlockedPage = false
                 }
 
-                override fun shouldOverrideUrlLoading(
-                    view: WebView?,
-                    request: WebResourceRequest?
-                ): Boolean {
+                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                     val url = request?.url?.toString() ?: ""
                     val scheme = request?.url?.scheme?.lowercase() ?: ""
 
                     if (scheme !in listOf("http", "https")) {
-                        if (!allowOtherUrlSchemes) {
-                            view?.loadBlockedPage(url, blockedMessage, theme)
+                        if (!userSettings.allowOtherUrlSchemes) {
+                            view?.loadBlockedPage(url, userSettings.blockedMessage, config.theme)
                             isShowingBlockedPage = true
                             return true
                         }
@@ -86,7 +95,7 @@ fun createCustomWebview(
                     }
 
                     if (!isShowingBlockedPage && isBlocked(url)) {
-                        view?.loadBlockedPage(url, blockedMessage, theme)
+                        view?.loadBlockedPage(url, userSettings.blockedMessage, config.theme)
                         isShowingBlockedPage = true
                         return true
                     }
@@ -96,24 +105,18 @@ fun createCustomWebview(
 
                 override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
                     url?.let {
-                        val isUrlBlocked = isBlocked(it)
-                        if (!isShowingBlockedPage && isUrlBlocked) {
+                        if (!isShowingBlockedPage && isBlocked(it)) {
                             isShowingBlockedPage = true
-                            view?.loadBlockedPage(it, blockedMessage, theme)
+                            view?.loadBlockedPage(it, userSettings.blockedMessage, config.theme)
                             return
                         }
-                        doUpdateVisitedHistory(it)
+                        config.doUpdateVisitedHistory(it)
                     }
                     super.doUpdateVisitedHistory(view, url, isReload)
                 }
 
-                override fun onReceivedHttpAuthRequest(
-                    view: WebView?,
-                    handler: HttpAuthHandler?,
-                    host: String?,
-                    realm: String?
-                ) {
-                    onHttpAuthRequest(handler, host, realm)
+                override fun onReceivedHttpAuthRequest(view: WebView?, handler: HttpAuthHandler?, host: String?, realm: String?) {
+                    config.onHttpAuthRequest(handler, host, realm)
                 }
             }
         }
@@ -122,11 +125,7 @@ fun createCustomWebview(
     return webView
 }
 
-private fun WebView.loadBlockedPage(
-    url: String,
-    message: String,
-    theme: ThemeOption,
-) {
+private fun WebView.loadBlockedPage(url: String, message: String, theme: ThemeOption) {
     loadDataWithBaseURL(
         url,
         generateBlockedPageHtml(url, message, theme),
