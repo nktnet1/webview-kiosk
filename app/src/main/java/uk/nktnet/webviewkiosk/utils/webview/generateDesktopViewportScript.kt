@@ -1,6 +1,6 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
-fun generateDesktopViewportScript(): String {
+fun generateDesktopViewportScript(widthPx: Int = 1024): String {
     val rawScript = """
         function applyViewportFix() {
             var meta = document.querySelector('meta[name=viewport]');
@@ -9,7 +9,7 @@ fun generateDesktopViewportScript(): String {
                 meta.name = 'viewport';
                 document.head.appendChild(meta);
             }
-            meta.content = 'target-densitydpi=high-dpi';
+            meta.content = 'width=$widthPx';
         }
 
         applyViewportFix();

@@ -12,12 +12,15 @@ fun CustomScriptOnStartSetting() {
     val userSettings = remember { UserSettings(context) }
 
     TextSettingFieldItem(
-        label = "Custom Script (Page Start)",
+        label = "On Page Start (custom)",
         infoText = """
             JavaScript to run immediately when the page starts loading.
             You can use this for early DOM manipulation or overriding functions.
-            
-            Be careful: errors in this script can prevent page scripts from running.
+ 
+            Your code content will be wrapped in:
+                (function() {
+                    <YOUR CODE>
+                })()
         """.trimIndent(),
         placeholder = "e.g. document.body.style.backgroundColor = 'green';",
         initialValue = userSettings.customScriptOnStart,

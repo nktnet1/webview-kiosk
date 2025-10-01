@@ -14,12 +14,13 @@ fun ApplyAppThemeSetting() {
     BooleanSettingFieldItem(
         label = "Apply App Theme",
         infoText = """
-            Set to True to inject JavaScript code that will set prefers-color-scheme
-            according to your selected preference in Webview Kiosk settings.
+            This script injects JavaScript code that will set prefers-color-scheme
+            according to your selected preference in Webview Kiosk settings, thus
+            keeping the Webpage's theme consistent with the App's theme.
             
             This script will run immediately "on page start".
 
-            If the theme setting is "System", this script is a no-op (do nothing).
+            If the theme setting is "System", this script is a no-op (does nothing).
         """.trimIndent(),
         initialValue = userSettings.applyAppTheme,
         onSave = { userSettings.applyAppTheme = it }

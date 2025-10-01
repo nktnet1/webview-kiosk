@@ -14,9 +14,9 @@ fun ApplyDesktopViewportSetting() {
     BooleanSettingFieldItem(
         label = "Apply Desktop Viewport",
         infoText = """
-            Set to True to inject JavaScript code that will set the
-            document.meta.content to 'target-densitydpi=high-dpi',
-            simulating browsing in Desktop.
+            This script injects JavaScript code that will set the
+            document.meta.content to 'width=1024', simulating web
+            browsing on a Desktop.
             
             This script will also listen to JS history state changes
             (e.g. from Single Page Applications).

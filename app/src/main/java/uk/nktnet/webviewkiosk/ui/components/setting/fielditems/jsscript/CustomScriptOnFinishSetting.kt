@@ -12,13 +12,15 @@ fun CustomScriptOnFinishSetting() {
     val userSettings = remember { UserSettings(context) }
 
     TextSettingFieldItem(
-        label = "Custom Script (Page Finish)",
+        label = "On Page Finish (custom)",
         infoText = """
             JavaScript to run after the page has fully loaded.
             Useful for DOM updates, styling, or injecting behavior.
             
-            Errors in this script may still affect page functionality.
-        """.trimIndent(),
+            Your code content will be wrapped in:
+                (function() {
+                    <YOUR CODE>
+                })()        """.trimIndent(),
         placeholder = "e.g.\ndocument.body.style.color = 'blue';",
         initialValue = userSettings.customScriptOnFinish,
         isMultiline = true,
