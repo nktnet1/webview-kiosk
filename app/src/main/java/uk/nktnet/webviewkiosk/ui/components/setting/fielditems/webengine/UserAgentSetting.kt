@@ -38,7 +38,7 @@ fun UserAgentSetting() {
             
             Leave blank to use the system default User Agent.
         """.trimIndent(),
-        placeholder = "(leave blank to use system default)",
+        placeholder = "(leave blank for system default)",
         initialValue = userSettings.userAgent,
         isMultiline = false,
         onSave = { userSettings.userAgent = it },

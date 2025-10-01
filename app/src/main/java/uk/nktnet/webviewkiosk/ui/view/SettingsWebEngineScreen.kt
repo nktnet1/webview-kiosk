@@ -30,6 +30,8 @@ fun SettingsWebEngineScreen(navController: NavController) {
         AcceptThirdPartyCookiesSetting()
         CacheModeSetting()
         UserAgentSetting()
+        UseWideViewPortSetting()
+        LoadWithOverviewModeSetting()
         EnableZoomSetting()
         DisplayZoomControlsSetting()
     }

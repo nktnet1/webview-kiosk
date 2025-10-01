@@ -59,6 +59,8 @@ class UserSettings(context: Context) {
         set(value) = prefs.edit { putInt(CACHE_MODE, value.mode) }
 
     var userAgent by stringPrefOptional(USER_AGENT)
+    var useWideViewPort by booleanPref(USE_WIDE_VIEWPORT, false)
+    var loadWithOverviewMode by booleanPref(LOAD_WITH_OVERVIEW_MODE, false)
     var enableZoom by booleanPref(ENABLE_ZOOM, true)
     var displayZoomControls by booleanPref(DISPLAY_ZOOM_CONTROLS, false)
 
@@ -100,8 +102,10 @@ class UserSettings(context: Context) {
             put(ENABLE_DOM_STORAGE, enableDomStorage)
             put(ACCEPT_COOKIES, acceptCookies)
             put(ACCEPT_THIRD_PARTY_COOKIES, acceptThirdPartyCookies)
-            put(CACHE_MODE, cacheMode)
+            put(CACHE_MODE, cacheMode.mode)
             put(USER_AGENT, userAgent)
+            put(USE_WIDE_VIEWPORT, useWideViewPort)
+            put(LOAD_WITH_OVERVIEW_MODE, loadWithOverviewMode)
             put(ENABLE_ZOOM, enableZoom)
             put(DISPLAY_ZOOM_CONTROLS, displayZoomControls)
             put(BLOCKED_MESSAGE, blockedMessage)
@@ -135,6 +139,8 @@ class UserSettings(context: Context) {
             acceptThirdPartyCookies = json.optBoolean(ACCEPT_THIRD_PARTY_COOKIES, acceptThirdPartyCookies)
             cacheMode = CacheModeOption.fromInt(json.optInt(CACHE_MODE, cacheMode.mode))
             userAgent = json.optString(USER_AGENT, userAgent)
+            useWideViewPort = json.optBoolean(USE_WIDE_VIEWPORT, useWideViewPort)
+            loadWithOverviewMode = json.optBoolean(LOAD_WITH_OVERVIEW_MODE, loadWithOverviewMode)
             enableZoom = json.optBoolean(ENABLE_ZOOM, enableZoom)
             displayZoomControls = json.optBoolean(DISPLAY_ZOOM_CONTROLS, displayZoomControls)
             blockedMessage = json.optString(BLOCKED_MESSAGE, blockedMessage)
@@ -172,6 +178,8 @@ class UserSettings(context: Context) {
         private const val ACCEPT_COOKIES = "web_engine.accept_cookies"
         private const val ACCEPT_THIRD_PARTY_COOKIES = "web_engine.accept_third_party_cookies"
         private const val USER_AGENT = "web_engine.user_agent"
+        private const val USE_WIDE_VIEWPORT = "web_engine.use_wide_viewport"
+        private const val LOAD_WITH_OVERVIEW_MODE = "web_engine.load_with_overview_mode"
         private const val ENABLE_ZOOM = "web_engine.enable_zoom"
         private const val DISPLAY_ZOOM_CONTROLS = "web_engine.display_zoom_controls"
 
