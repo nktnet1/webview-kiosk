@@ -17,10 +17,13 @@ fun CustomScriptOnPageFinishSetting() {
             JavaScript to run after the page has fully loaded.
             Useful for DOM updates, styling, or injecting behavior.
             
-            Your code content will be wrapped in:
+            Your code content will be wrapped as follows to prevent
+            polluting the global scope and avoid conflicts with
+            other scripts:
                 (function() {
-                    <YOUR CODE>
-                })()        """.trimIndent(),
+                    // <YOUR CODE>
+                })()
+            """.trimIndent(),
         placeholder = "e.g. document.body.style.backgroundColor = 'green';",
         initialValue = userSettings.customScriptOnPageFinish,
         isMultiline = true,

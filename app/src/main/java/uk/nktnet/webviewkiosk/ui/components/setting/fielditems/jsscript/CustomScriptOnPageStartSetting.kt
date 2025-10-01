@@ -17,11 +17,13 @@ fun CustomScriptOnPageStartSetting() {
             JavaScript to run immediately when the page starts loading.
             You can use this for early DOM manipulation or overriding functions.
  
-            Your code content will be wrapped in:
+            Your code content will be wrapped as follows to prevent
+            polluting the global scope and avoid conflicts with
+            other scripts:
                 (function() {
-                    <YOUR CODE>
+                    // <YOUR CODE>
                 })()
-        """.trimIndent(),
+            """.trimIndent(),
         placeholder = "e.g. document.body.style.backgroundColor = 'green';",
         initialValue = userSettings.customScriptOnPageStart,
         isMultiline = true,
