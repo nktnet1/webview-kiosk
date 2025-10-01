@@ -56,7 +56,7 @@ fun createCustomWebview(
             settings.apply {
                 javaScriptEnabled = userSettings.enableJavaScript
                 domStorageEnabled = userSettings.enableDomStorage
-                cacheMode = userSettings.cacheMode
+                cacheMode = userSettings.cacheMode.mode
                 userAgentString = userSettings.userAgent.takeIf { it.isNotBlank() }
                     ?: settings.userAgentString
                 builtInZoomControls = userSettings.enableZoom

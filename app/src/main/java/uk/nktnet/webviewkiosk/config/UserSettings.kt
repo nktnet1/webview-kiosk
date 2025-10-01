@@ -6,108 +6,64 @@ import android.util.Base64
 import android.webkit.WebSettings
 import androidx.core.content.edit
 import org.json.JSONObject
+import kotlin.properties.ReadWriteProperty
+import kotlin.reflect.KProperty
 import uk.nktnet.webviewkiosk.config.option.*
 
 class UserSettings(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
+    // Delegated property helpers
+    private fun stringPref(key: String, default: String) = object : ReadWriteProperty<Any?, String> {
+        override fun getValue(thisRef: Any?, property: KProperty<*>) =
+            prefs.getString(key, null)?.takeIf { it.isNotBlank() } ?: default
+        override fun setValue(thisRef: Any?, property: KProperty<*>, value: String) =
+            prefs.edit { putString(key, value) }
+    }
+
+    private fun stringPrefOptional(key: String) = object : ReadWriteProperty<Any?, String> {
+        override fun getValue(thisRef: Any?, property: KProperty<*>) = prefs.getString(key, null) ?: ""
+        override fun setValue(thisRef: Any?, property: KProperty<*>, value: String) =
+            prefs.edit { putString(key, value) }
+    }
+
+    private fun booleanPref(key: String, default: Boolean) = object : ReadWriteProperty<Any?, Boolean> {
+        override fun getValue(thisRef: Any?, property: KProperty<*>) = prefs.getBoolean(key, default)
+        override fun setValue(thisRef: Any?, property: KProperty<*>, value: Boolean) =
+            prefs.edit { putBoolean(key, value) }
+    }
+
     // Web Content
-    var homeUrl: String
-        get() = prefs
-            .getString(HOME_URL, null)
-            .takeIf { !it.isNullOrBlank() }
-            ?: Constants.WEBSITE_URL
-        set(value) = prefs.edit { putString(HOME_URL, value) }
-
-    var websiteBlacklist: String
-        get() = prefs.getString(WEBSITE_BLACKLIST, null) ?: ""
-        set(value) = prefs.edit { putString(WEBSITE_BLACKLIST, value) }
-
-    var websiteWhitelist: String
-        get() = prefs.getString(WEBSITE_WHITELIST, null) ?: ""
-        set(value) = prefs.edit { putString(WEBSITE_WHITELIST, value) }
-
-    var websiteBookmarks: String
-        get() = prefs.getString(WEBSITE_BOOKMARKS, null) ?: ""
-        set(value) = prefs.edit { putString(WEBSITE_BOOKMARKS, value) }
+    var homeUrl by stringPref(HOME_URL, Constants.WEBSITE_URL)
+    var websiteBlacklist by stringPrefOptional(WEBSITE_BLACKLIST)
+    var websiteWhitelist by stringPrefOptional(WEBSITE_WHITELIST)
+    var websiteBookmarks by stringPrefOptional(WEBSITE_BOOKMARKS)
 
     // Browsing
-    var allowRefresh: Boolean
-        get() = prefs.getBoolean(ALLOW_REFRESH, true)
-        set(value) = prefs.edit { putBoolean(ALLOW_REFRESH, value) }
-
-    var allowBackwardsNavigation: Boolean
-        get() = prefs.getBoolean(ALLOW_BACKWARDS_NAVIGATION, true)
-        set(value) = prefs.edit { putBoolean(ALLOW_BACKWARDS_NAVIGATION, value) }
-
-    var allowGoHome: Boolean
-        get() = prefs.getBoolean(ALLOW_GO_HOME, true)
-        set(value) = prefs.edit { putBoolean(ALLOW_GO_HOME, value) }
-
-    var clearHistoryOnHome: Boolean
-        get() = prefs.getBoolean(CLEAR_HISTORY_ON_HOME, false)
-        set(value) = prefs.edit { putBoolean(CLEAR_HISTORY_ON_HOME, value) }
-
-    var allowHistoryAccess: Boolean
-        get() = prefs.getBoolean(ALLOW_HISTORY_ACCESS, true)
-        set(value) = prefs.edit { putBoolean(ALLOW_HISTORY_ACCESS, value) }
-
-    var allowBookmarkAccess: Boolean
-        get() = prefs.getBoolean(ALLOW_BOOKMARK_ACCESS, true)
-        set(value) = prefs.edit { putBoolean(ALLOW_BOOKMARK_ACCESS, value) }
-
-    var allowOtherUrlSchemes: Boolean
-        get() = prefs.getBoolean(ALLOW_OTHER_URL_SCHEMES, false)
-        set(value) = prefs.edit { putBoolean(ALLOW_OTHER_URL_SCHEMES, value) }
-
-    var searchProviderUrl: String
-        get() = prefs.getString(SEARCH_PROVIDER_URL, null) ?: Constants.DEFAULT_SEARCH_PROVIDER_URL
-        set(value) = prefs.edit { putString(SEARCH_PROVIDER_URL, value) }
+    var allowRefresh by booleanPref(ALLOW_REFRESH, true)
+    var allowBackwardsNavigation by booleanPref(ALLOW_BACKWARDS_NAVIGATION, true)
+    var allowGoHome by booleanPref(ALLOW_GO_HOME, true)
+    var clearHistoryOnHome by booleanPref(CLEAR_HISTORY_ON_HOME, false)
+    var allowHistoryAccess by booleanPref(ALLOW_HISTORY_ACCESS, true)
+    var allowBookmarkAccess by booleanPref(ALLOW_BOOKMARK_ACCESS, true)
+    var allowOtherUrlSchemes by booleanPref(ALLOW_OTHER_URL_SCHEMES, false)
+    var searchProviderUrl by stringPref(SEARCH_PROVIDER_URL, Constants.DEFAULT_SEARCH_PROVIDER_URL)
 
     // Web Engine
-    var enableJavaScript: Boolean
-        get() = prefs.getBoolean(ENABLE_JAVASCRIPT, true)
-        set(value) = prefs.edit { putBoolean(ENABLE_JAVASCRIPT, value) }
+    var enableJavaScript by booleanPref(ENABLE_JAVASCRIPT, true)
+    var enableDomStorage by booleanPref(ENABLE_DOM_STORAGE, true)
+    var acceptCookies by booleanPref(ACCEPT_COOKIES, true)
+    var acceptThirdPartyCookies by booleanPref(ACCEPT_THIRD_PARTY_COOKIES, false)
+    var cacheMode: CacheModeOption
+        get() = CacheModeOption.fromInt(prefs.getInt(CACHE_MODE, WebSettings.LOAD_DEFAULT))
+        set(value) = prefs.edit { putInt(CACHE_MODE, value.mode) }
 
-    var enableDomStorage: Boolean
-        get() = prefs.getBoolean(ENABLE_DOM_STORAGE, true)
-        set(value) = prefs.edit { putBoolean(ENABLE_DOM_STORAGE, value) }
-
-    var acceptCookies: Boolean
-        get() = prefs.getBoolean(ACCEPT_COOKIES, true)
-        set(value) = prefs.edit { putBoolean(ACCEPT_COOKIES, value) }
-
-    var acceptThirdPartyCookies: Boolean
-        get() = prefs.getBoolean(ACCEPT_THIRD_PARTY_COOKIES, false)
-        set(value) = prefs.edit { putBoolean(ACCEPT_THIRD_PARTY_COOKIES, value) }
-
-    var cacheMode: Int
-        get() {
-            val value = prefs.getInt(CACHE_MODE, WebSettings.LOAD_DEFAULT)
-            return if (value in ValidCacheModes) value else WebSettings.LOAD_DEFAULT
-        }
-        set(value) {
-            val validValue = if (value in ValidCacheModes) value else WebSettings.LOAD_DEFAULT
-            prefs.edit { putInt(CACHE_MODE, validValue) }
-        }
-
-    var userAgent: String
-        get() = prefs.getString(USER_AGENT, null) ?: ""
-        set(value) = prefs.edit { putString(USER_AGENT, value) }
-
-    var enableZoom: Boolean
-        get() = prefs.getBoolean(ENABLE_ZOOM, true)
-        set(value) = prefs.edit { putBoolean(ENABLE_ZOOM, value) }
-
-    var displayZoomControls: Boolean
-        get() = prefs.getBoolean(DISPLAY_ZOOM_CONTROLS, false)
-        set(value) = prefs.edit { putBoolean(DISPLAY_ZOOM_CONTROLS, value) }
+    var userAgent by stringPrefOptional(USER_AGENT)
+    var enableZoom by booleanPref(ENABLE_ZOOM, true)
+    var displayZoomControls by booleanPref(DISPLAY_ZOOM_CONTROLS, false)
 
     // Appearance
-    var blockedMessage: String
-        get() = prefs.getString(BLOCKED_MESSAGE, null) ?: "This site is blocked by Webview Kiosk."
-        set(value) = prefs.edit { putString(BLOCKED_MESSAGE, value) }
-
+    var blockedMessage by stringPref(BLOCKED_MESSAGE, "This site is blocked by Webview Kiosk.")
     var theme: ThemeOption
         get() = ThemeOption.fromString(prefs.getString(THEME, null))
         set(value) = prefs.edit { putString(THEME, value.name) }
@@ -121,10 +77,7 @@ class UserSettings(context: Context) {
         set(value) = prefs.edit { putString(WEBVIEW_INSET, value.name) }
 
     // Device
-    var keepScreenOn: Boolean
-        get() = prefs.getBoolean(KEEP_SCREEN_ON, false)
-        set(value) = prefs.edit { putBoolean(KEEP_SCREEN_ON, value) }
-
+    var keepScreenOn by booleanPref(KEEP_SCREEN_ON, false)
     var deviceRotation: DeviceRotationOption
         get() = DeviceRotationOption.fromString(prefs.getString(DEVICE_ROTATION, null))
         set(value) = prefs.edit { putString(DEVICE_ROTATION, value.degrees) }
@@ -180,7 +133,7 @@ class UserSettings(context: Context) {
             enableDomStorage = json.optBoolean(ENABLE_DOM_STORAGE, enableDomStorage)
             acceptCookies = json.optBoolean(ACCEPT_COOKIES, acceptCookies)
             acceptThirdPartyCookies = json.optBoolean(ACCEPT_THIRD_PARTY_COOKIES, acceptThirdPartyCookies)
-            cacheMode = json.optInt(CACHE_MODE, cacheMode)
+            cacheMode = CacheModeOption.fromInt(json.optInt(CACHE_MODE, cacheMode.mode))
             userAgent = json.optString(USER_AGENT, userAgent)
             enableZoom = json.optBoolean(ENABLE_ZOOM, enableZoom)
             displayZoomControls = json.optBoolean(DISPLAY_ZOOM_CONTROLS, displayZoomControls)
