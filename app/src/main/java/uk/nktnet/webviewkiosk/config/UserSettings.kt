@@ -13,7 +13,6 @@ import uk.nktnet.webviewkiosk.config.option.*
 class UserSettings(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    // Delegated property helpers
     private fun stringPref(key: String, default: String) = object : ReadWriteProperty<Any?, String> {
         override fun getValue(thisRef: Any?, property: KProperty<*>) =
             prefs.getString(key, null)?.takeIf { it.isNotBlank() } ?: default
@@ -33,13 +32,11 @@ class UserSettings(context: Context) {
             prefs.edit { putBoolean(key, value) }
     }
 
-    // Web Content
     var homeUrl by stringPref(HOME_URL, Constants.WEBSITE_URL)
     var websiteBlacklist by stringPrefOptional(WEBSITE_BLACKLIST)
     var websiteWhitelist by stringPrefOptional(WEBSITE_WHITELIST)
     var websiteBookmarks by stringPrefOptional(WEBSITE_BOOKMARKS)
 
-    // Browsing
     var allowRefresh by booleanPref(ALLOW_REFRESH, true)
     var allowBackwardsNavigation by booleanPref(ALLOW_BACKWARDS_NAVIGATION, true)
     var allowGoHome by booleanPref(ALLOW_GO_HOME, true)
@@ -49,7 +46,6 @@ class UserSettings(context: Context) {
     var allowOtherUrlSchemes by booleanPref(ALLOW_OTHER_URL_SCHEMES, false)
     var searchProviderUrl by stringPref(SEARCH_PROVIDER_URL, Constants.DEFAULT_SEARCH_PROVIDER_URL)
 
-    // Web Engine
     var enableJavaScript by booleanPref(ENABLE_JAVASCRIPT, true)
     var enableDomStorage by booleanPref(ENABLE_DOM_STORAGE, true)
     var acceptCookies by booleanPref(ACCEPT_COOKIES, true)
@@ -58,13 +54,21 @@ class UserSettings(context: Context) {
         get() = CacheModeOption.fromInt(prefs.getInt(CACHE_MODE, WebSettings.LOAD_DEFAULT))
         set(value) = prefs.edit { putInt(CACHE_MODE, value.mode) }
 
+    var layoutAlgorithm: LayoutAlgorithmOption
+        get() = LayoutAlgorithmOption.fromAlgorithm(
+            when (val value = prefs.getString(LAYOUT_ALGORITHM, null)) {
+                null -> WebSettings.LayoutAlgorithm.NORMAL
+                else -> WebSettings.LayoutAlgorithm.valueOf(value)
+            }
+        )
+        set(value) = prefs.edit { putString(LAYOUT_ALGORITHM, value.algorithm.name) }
+
     var userAgent by stringPrefOptional(USER_AGENT)
     var useWideViewPort by booleanPref(USE_WIDE_VIEWPORT, false)
     var loadWithOverviewMode by booleanPref(LOAD_WITH_OVERVIEW_MODE, false)
     var enableZoom by booleanPref(ENABLE_ZOOM, true)
     var displayZoomControls by booleanPref(DISPLAY_ZOOM_CONTROLS, false)
 
-    // Appearance
     var blockedMessage by stringPref(BLOCKED_MESSAGE, "This site is blocked by Webview Kiosk.")
     var theme: ThemeOption
         get() = ThemeOption.fromString(prefs.getString(THEME, null))
@@ -78,13 +82,11 @@ class UserSettings(context: Context) {
         get() = WebViewInset.fromString(prefs.getString(WEBVIEW_INSET, null))
         set(value) = prefs.edit { putString(WEBVIEW_INSET, value.name) }
 
-    // Device
     var keepScreenOn by booleanPref(KEEP_SCREEN_ON, false)
     var deviceRotation: DeviceRotationOption
         get() = DeviceRotationOption.fromString(prefs.getString(DEVICE_ROTATION, null))
         set(value) = prefs.edit { putString(DEVICE_ROTATION, value.degrees) }
 
-    // JS Scripts
     var applyAppTheme by booleanPref(JS_APPLY_APP_THEME, true)
     var applyDesktopViewport by booleanPref(JS_APPLY_DESKTOP_VIEWPORT, false)
     var customScriptOnPageStart by stringPrefOptional(JS_CUSTOM_SCRIPT_ON_PAGE_START)
@@ -109,6 +111,7 @@ class UserSettings(context: Context) {
             put(ACCEPT_COOKIES, acceptCookies)
             put(ACCEPT_THIRD_PARTY_COOKIES, acceptThirdPartyCookies)
             put(CACHE_MODE, cacheMode.mode)
+            put(LAYOUT_ALGORITHM, layoutAlgorithm.algorithm.name)
             put(USER_AGENT, userAgent)
             put(USE_WIDE_VIEWPORT, useWideViewPort)
             put(LOAD_WITH_OVERVIEW_MODE, loadWithOverviewMode)
@@ -148,6 +151,9 @@ class UserSettings(context: Context) {
             acceptCookies = json.optBoolean(ACCEPT_COOKIES, acceptCookies)
             acceptThirdPartyCookies = json.optBoolean(ACCEPT_THIRD_PARTY_COOKIES, acceptThirdPartyCookies)
             cacheMode = CacheModeOption.fromInt(json.optInt(CACHE_MODE, cacheMode.mode))
+            layoutAlgorithm = LayoutAlgorithmOption.fromAlgorithm(
+                WebSettings.LayoutAlgorithm.valueOf(json.optString(LAYOUT_ALGORITHM, layoutAlgorithm.algorithm.name))
+            )
             userAgent = json.optString(USER_AGENT, userAgent)
             useWideViewPort = json.optBoolean(USE_WIDE_VIEWPORT, useWideViewPort)
             loadWithOverviewMode = json.optBoolean(LOAD_WITH_OVERVIEW_MODE, loadWithOverviewMode)
@@ -189,6 +195,7 @@ class UserSettings(context: Context) {
         private const val ENABLE_JAVASCRIPT = "web_engine.enable_javascript"
         private const val ENABLE_DOM_STORAGE = "web_engine.enable_dom_storage"
         private const val CACHE_MODE = "web_engine.cache_mode"
+        private const val LAYOUT_ALGORITHM = "web_engine.layout_algorithm"
         private const val ACCEPT_COOKIES = "web_engine.accept_cookies"
         private const val ACCEPT_THIRD_PARTY_COOKIES = "web_engine.accept_third_party_cookies"
         private const val USER_AGENT = "web_engine.user_agent"
