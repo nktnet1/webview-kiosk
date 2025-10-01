@@ -7,7 +7,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 
 @Composable
-fun CustomScriptOnFinishSetting() {
+fun CustomScriptOnPageFinishSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
 
@@ -21,9 +21,9 @@ fun CustomScriptOnFinishSetting() {
                 (function() {
                     <YOUR CODE>
                 })()        """.trimIndent(),
-        placeholder = "e.g.\ndocument.body.style.color = 'blue';",
-        initialValue = userSettings.customScriptOnFinish,
+        placeholder = "e.g. document.body.style.backgroundColor = 'green';",
+        initialValue = userSettings.customScriptOnPageFinish,
         isMultiline = true,
-        onSave = { userSettings.customScriptOnFinish = it }
+        onSave = { userSettings.customScriptOnPageFinish = it }
     )
 }

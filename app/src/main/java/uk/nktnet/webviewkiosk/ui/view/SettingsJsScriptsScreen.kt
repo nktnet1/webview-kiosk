@@ -11,8 +11,8 @@ import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.ApplyAppThemeSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.ApplyDesktopViewportSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.CustomScriptOnFinishSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.CustomScriptOnStartSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.CustomScriptOnPageFinishSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.CustomScriptOnPageStartSetting
 
 @Composable
 fun SettingsJsScriptsScreen(
@@ -31,7 +31,7 @@ fun SettingsJsScriptsScreen(
 
         ApplyAppThemeSetting()
         ApplyDesktopViewportSetting()
-        CustomScriptOnStartSetting()
-        CustomScriptOnFinishSetting()
+        CustomScriptOnPageStartSetting()
+        CustomScriptOnPageFinishSetting()
     }
 }

@@ -76,8 +76,8 @@ fun createCustomWebview(
                     if (userSettings.applyAppTheme && config.theme != ThemeOption.SYSTEM) {
                         evaluateJavascript(generatePrefersColorSchemeOverrideScript(config.theme), null)
                     }
-                    if (userSettings.customScriptOnStart.isNotBlank()) {
-                        view?.evaluateJavascript(wrapJsInIIFE(userSettings.customScriptOnStart), null)
+                    if (userSettings.customScriptOnPageStart.isNotBlank()) {
+                        view?.evaluateJavascript(wrapJsInIIFE(userSettings.customScriptOnPageStart), null)
                     }
                     super.onPageStarted(view, url, favicon)
                     config.onPageStarted()
@@ -87,8 +87,8 @@ fun createCustomWebview(
                     if (userSettings.applyDesktopViewport) {
                         view?.evaluateJavascript(generateDesktopViewportScript(), null)
                     }
-                    if (userSettings.customScriptOnFinish.isNotBlank()) {
-                        view?.evaluateJavascript(wrapJsInIIFE(userSettings.customScriptOnFinish), null)
+                    if (userSettings.customScriptOnPageFinish.isNotBlank()) {
+                        view?.evaluateJavascript(wrapJsInIIFE(userSettings.customScriptOnPageFinish), null)
                     }
                     url?.let { config.onPageFinished(it) }
                     isShowingBlockedPage = false
