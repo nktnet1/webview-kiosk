@@ -2,7 +2,7 @@ package uk.nktnet.webviewkiosk.utils.webview
 
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 
-fun getPrefersColorSchemeOverrideScript(theme: ThemeOption): String {
+fun generatePrefersColorSchemeOverrideScript(theme: ThemeOption): String {
     if (theme == ThemeOption.SYSTEM) {
         return ""
     }

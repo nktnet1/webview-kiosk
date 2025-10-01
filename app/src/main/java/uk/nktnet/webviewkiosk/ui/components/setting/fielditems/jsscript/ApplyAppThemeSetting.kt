@@ -13,7 +13,14 @@ fun ApplyAppThemeSetting() {
 
     BooleanSettingFieldItem(
         label = "Apply App Theme",
-        infoText = "Whether the web content should automatically apply the app's theme (light or dark).",
+        infoText = """
+            Set to True to inject JavaScript code that will set prefers-color-scheme
+            according to your selected preference in Webview Kiosk settings.
+            
+            This script will run immediately "on page start".
+
+            If the theme setting is "System", this script is a no-op (do nothing).
+        """.trimIndent(),
         initialValue = userSettings.applyAppTheme,
         onSave = { userSettings.applyAppTheme = it }
     )

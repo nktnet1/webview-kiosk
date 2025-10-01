@@ -13,7 +13,18 @@ fun ApplyDesktopViewportSetting() {
 
     BooleanSettingFieldItem(
         label = "Apply Desktop Viewport",
-        infoText = "Whether to force a desktop-style viewport on websites for consistent zoom and layout behavior.",
+        infoText = """
+            Set to True to inject JavaScript code that will set the
+            document.meta.content to 'target-densitydpi=high-dpi',
+            simulating browsing in Desktop.
+            
+            This script will also listen to JS history state changes
+            (e.g. from Single Page Applications).
+
+            You should only enable this option if setting the user
+            agent was insufficient to force Desktop mode, as the
+            additional JS here will slow down the page.
+        """.trimIndent(),
         initialValue = userSettings.applyDesktopViewport,
         onSave = { userSettings.applyDesktopViewport = it }
     )

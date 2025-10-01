@@ -13,7 +13,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.utils.webview.generateBlockedPageHtml
 import uk.nktnet.webviewkiosk.utils.webview.generateDesktopViewportScript
-import uk.nktnet.webviewkiosk.utils.webview.getPrefersColorSchemeOverrideScript
+import uk.nktnet.webviewkiosk.utils.webview.generatePrefersColorSchemeOverrideScript
 import uk.nktnet.webviewkiosk.utils.webview.handleExternalScheme
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
@@ -74,7 +74,7 @@ fun createCustomWebview(
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     if (userSettings.applyAppTheme && config.theme != ThemeOption.SYSTEM) {
-                        evaluateJavascript(getPrefersColorSchemeOverrideScript(config.theme), null)
+                        evaluateJavascript(generatePrefersColorSchemeOverrideScript(config.theme), null)
                     }
                     if (userSettings.customScriptOnStart.isNotBlank()) {
                         view?.evaluateJavascript(wrapJsInIIFE(userSettings.customScriptOnStart), null)
