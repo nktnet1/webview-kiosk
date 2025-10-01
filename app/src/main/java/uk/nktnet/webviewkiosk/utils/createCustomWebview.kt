@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.utils.webview.generateBlockedPageHtml
+import uk.nktnet.webviewkiosk.utils.webview.generateDesktopViewportScript
 import uk.nktnet.webviewkiosk.utils.webview.getPrefersColorSchemeOverrideScript
 import uk.nktnet.webviewkiosk.utils.webview.handleExternalScheme
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
@@ -71,7 +72,7 @@ fun createCustomWebview(
 
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                    if (config.theme != ThemeOption.SYSTEM) {
+                    if (userSettings.applyAppTheme && config.theme != ThemeOption.SYSTEM) {
                         evaluateJavascript(getPrefersColorSchemeOverrideScript(config.theme), null)
                     }
                     super.onPageStarted(view, url, favicon)
@@ -79,6 +80,9 @@ fun createCustomWebview(
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
+                    if (userSettings.applyDesktopViewport) {
+                        view?.evaluateJavascript(generateDesktopViewportScript(), null)
+                    }
                     url?.let { config.onPageFinished(it) }
                     isShowingBlockedPage = false
                 }

@@ -15,7 +15,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.ui.components.setting.DeviceSecurityTip
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingsHeaderMenu
 
@@ -49,6 +48,11 @@ fun SettingsListScreen(
             "Device",
             "Keep screen on, device rotation",
             Screen.SettingsDevice.route
+        ),
+        Triple(
+            "JS Scripts",
+            "Apply theme, desktop viewport, custom scripts",
+            Screen.SettingsJsScript.route
         ),
         Triple(
             "About",
@@ -92,7 +96,6 @@ fun SettingsListScreen(
             )
         }
 
-        DeviceSecurityTip()
         Spacer(modifier = Modifier.height(4.dp))
     }
 }

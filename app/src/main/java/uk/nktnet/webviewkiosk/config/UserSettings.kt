@@ -84,6 +84,12 @@ class UserSettings(context: Context) {
         get() = DeviceRotationOption.fromString(prefs.getString(DEVICE_ROTATION, null))
         set(value) = prefs.edit { putString(DEVICE_ROTATION, value.degrees) }
 
+    // JS Scripts
+    var applyAppTheme by booleanPref(JS_APPLY_APP_THEME, true)
+    var applyDesktopViewport by booleanPref(JS_APPLY_DESKTOP_VIEWPORT, false)
+    var customScriptOnStart by stringPrefOptional(JS_CUSTOM_SCRIPT_START)
+    var customScriptOnFinish by stringPrefOptional(JS_CUSTOM_SCRIPT_FINISH)
+
     fun exportToBase64(): String {
         val json = JSONObject().apply {
             put(HOME_URL, homeUrl)
@@ -114,6 +120,10 @@ class UserSettings(context: Context) {
             put(WEBVIEW_INSET, webViewInset.name)
             put(KEEP_SCREEN_ON, keepScreenOn)
             put(DEVICE_ROTATION, deviceRotation.degrees)
+            put(JS_APPLY_APP_THEME, applyAppTheme)
+            put(JS_APPLY_DESKTOP_VIEWPORT, applyDesktopViewport)
+            put(JS_CUSTOM_SCRIPT_START, customScriptOnStart)
+            put(JS_CUSTOM_SCRIPT_FINISH, customScriptOnFinish)
         }
         return Base64.encodeToString(json.toString().toByteArray(), Base64.NO_WRAP)
     }
@@ -149,6 +159,10 @@ class UserSettings(context: Context) {
             webViewInset = WebViewInset.fromString(json.optString(WEBVIEW_INSET, webViewInset.name))
             keepScreenOn = json.optBoolean(KEEP_SCREEN_ON, keepScreenOn)
             deviceRotation = DeviceRotationOption.fromString(json.optString(DEVICE_ROTATION, deviceRotation.degrees))
+            applyAppTheme = json.optBoolean(JS_APPLY_APP_THEME, applyAppTheme)
+            applyDesktopViewport = json.optBoolean(JS_APPLY_DESKTOP_VIEWPORT, applyDesktopViewport)
+            customScriptOnStart = json.optString(JS_CUSTOM_SCRIPT_START, customScriptOnStart)
+            customScriptOnFinish = json.optString(JS_CUSTOM_SCRIPT_FINISH, customScriptOnFinish)
             true
         } catch (_: Exception) {
             false
@@ -190,5 +204,10 @@ class UserSettings(context: Context) {
 
         private const val KEEP_SCREEN_ON = "device.keep_screen_on"
         private const val DEVICE_ROTATION = "device.rotation"
+
+        private const val JS_APPLY_APP_THEME = "js_scripts.apply_app_theme"
+        private const val JS_APPLY_DESKTOP_VIEWPORT = "js_scripts.apply_desktop_viewport"
+        private const val JS_CUSTOM_SCRIPT_START = "js_scripts.custom_script_on_start"
+        private const val JS_CUSTOM_SCRIPT_FINISH = "js_scripts.custom_script_on_finish"
     }
 }

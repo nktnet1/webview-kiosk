@@ -1,0 +1,31 @@
+package uk.nktnet.webviewkiosk.utils.webview
+
+fun generateDesktopViewportScript(): String {
+    val rawScript = """
+        function applyViewportFix() {
+            var meta = document.querySelector('meta[name=viewport]');
+            if (!meta) {
+                meta = document.createElement('meta');
+                meta.name = 'viewport';
+                document.head.appendChild(meta);
+            }
+            meta.content = 'target-densitydpi=high-dpi';
+        }
+
+        applyViewportFix();
+
+        const pushState = history.pushState;
+        history.pushState = function() {
+            pushState.apply(history, arguments);
+            setTimeout(applyViewportFix, 0);
+        };
+        const replaceState = history.replaceState;
+        history.replaceState = function() {
+            replaceState.apply(history, arguments);
+            setTimeout(applyViewportFix, 0);
+        };
+        window.addEventListener('hashchange', applyViewportFix);
+    """.trimIndent()
+
+    return wrapJsInIIFE(rawScript)
+}
