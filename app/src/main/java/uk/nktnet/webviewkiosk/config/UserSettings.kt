@@ -4,52 +4,36 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.util.Base64
 import android.webkit.WebSettings
-import androidx.core.content.edit
 import org.json.JSONObject
-import kotlin.properties.ReadWriteProperty
-import kotlin.reflect.KProperty
+import androidx.core.content.edit
 import uk.nktnet.webviewkiosk.config.option.*
+import uk.nktnet.webviewkiosk.utils.booleanPref
+import uk.nktnet.webviewkiosk.utils.intPref
+import uk.nktnet.webviewkiosk.utils.stringPref
+import uk.nktnet.webviewkiosk.utils.stringPrefOptional
 
 class UserSettings(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    private fun stringPref(key: String, default: String) = object : ReadWriteProperty<Any?, String> {
-        override fun getValue(thisRef: Any?, property: KProperty<*>) =
-            prefs.getString(key, null)?.takeIf { it.isNotBlank() } ?: default
-        override fun setValue(thisRef: Any?, property: KProperty<*>, value: String) =
-            prefs.edit { putString(key, value) }
-    }
+    var homeUrl by stringPref(prefs, HOME_URL, Constants.WEBSITE_URL)
+    var websiteBlacklist by stringPrefOptional(prefs, WEBSITE_BLACKLIST)
+    var websiteWhitelist by stringPrefOptional(prefs, WEBSITE_WHITELIST)
+    var websiteBookmarks by stringPrefOptional(prefs, WEBSITE_BOOKMARKS)
 
-    private fun stringPrefOptional(key: String) = object : ReadWriteProperty<Any?, String> {
-        override fun getValue(thisRef: Any?, property: KProperty<*>) = prefs.getString(key, null) ?: ""
-        override fun setValue(thisRef: Any?, property: KProperty<*>, value: String) =
-            prefs.edit { putString(key, value) }
-    }
+    var allowRefresh by booleanPref(prefs, ALLOW_REFRESH, true)
+    var allowBackwardsNavigation by booleanPref(prefs, ALLOW_BACKWARDS_NAVIGATION, true)
+    var allowGoHome by booleanPref(prefs, ALLOW_GO_HOME, true)
+    var clearHistoryOnHome by booleanPref(prefs, CLEAR_HISTORY_ON_HOME, false)
+    var allowHistoryAccess by booleanPref(prefs, ALLOW_HISTORY_ACCESS, true)
+    var allowBookmarkAccess by booleanPref(prefs, ALLOW_BOOKMARK_ACCESS, true)
+    var allowOtherUrlSchemes by booleanPref(prefs, ALLOW_OTHER_URL_SCHEMES, false)
+    var searchProviderUrl by stringPref(prefs, SEARCH_PROVIDER_URL, Constants.DEFAULT_SEARCH_PROVIDER_URL)
 
-    private fun booleanPref(key: String, default: Boolean) = object : ReadWriteProperty<Any?, Boolean> {
-        override fun getValue(thisRef: Any?, property: KProperty<*>) = prefs.getBoolean(key, default)
-        override fun setValue(thisRef: Any?, property: KProperty<*>, value: Boolean) =
-            prefs.edit { putBoolean(key, value) }
-    }
+    var enableJavaScript by booleanPref(prefs, ENABLE_JAVASCRIPT, true)
+    var enableDomStorage by booleanPref(prefs, ENABLE_DOM_STORAGE, true)
+    var acceptCookies by booleanPref(prefs, ACCEPT_COOKIES, true)
+    var acceptThirdPartyCookies by booleanPref(prefs, ACCEPT_THIRD_PARTY_COOKIES, false)
 
-    var homeUrl by stringPref(HOME_URL, Constants.WEBSITE_URL)
-    var websiteBlacklist by stringPrefOptional(WEBSITE_BLACKLIST)
-    var websiteWhitelist by stringPrefOptional(WEBSITE_WHITELIST)
-    var websiteBookmarks by stringPrefOptional(WEBSITE_BOOKMARKS)
-
-    var allowRefresh by booleanPref(ALLOW_REFRESH, true)
-    var allowBackwardsNavigation by booleanPref(ALLOW_BACKWARDS_NAVIGATION, true)
-    var allowGoHome by booleanPref(ALLOW_GO_HOME, true)
-    var clearHistoryOnHome by booleanPref(CLEAR_HISTORY_ON_HOME, false)
-    var allowHistoryAccess by booleanPref(ALLOW_HISTORY_ACCESS, true)
-    var allowBookmarkAccess by booleanPref(ALLOW_BOOKMARK_ACCESS, true)
-    var allowOtherUrlSchemes by booleanPref(ALLOW_OTHER_URL_SCHEMES, false)
-    var searchProviderUrl by stringPref(SEARCH_PROVIDER_URL, Constants.DEFAULT_SEARCH_PROVIDER_URL)
-
-    var enableJavaScript by booleanPref(ENABLE_JAVASCRIPT, true)
-    var enableDomStorage by booleanPref(ENABLE_DOM_STORAGE, true)
-    var acceptCookies by booleanPref(ACCEPT_COOKIES, true)
-    var acceptThirdPartyCookies by booleanPref(ACCEPT_THIRD_PARTY_COOKIES, false)
     var cacheMode: CacheModeOption
         get() = CacheModeOption.fromInt(prefs.getInt(CACHE_MODE, WebSettings.LOAD_DEFAULT))
         set(value) = prefs.edit { putInt(CACHE_MODE, value.mode) }
@@ -63,13 +47,16 @@ class UserSettings(context: Context) {
         )
         set(value) = prefs.edit { putString(LAYOUT_ALGORITHM, value.algorithm.name) }
 
-    var userAgent by stringPrefOptional(USER_AGENT)
-    var useWideViewPort by booleanPref(USE_WIDE_VIEWPORT, false)
-    var loadWithOverviewMode by booleanPref(LOAD_WITH_OVERVIEW_MODE, false)
-    var enableZoom by booleanPref(ENABLE_ZOOM, true)
-    var displayZoomControls by booleanPref(DISPLAY_ZOOM_CONTROLS, false)
+    var userAgent by stringPrefOptional(prefs, USER_AGENT)
+    var useWideViewPort by booleanPref(prefs, USE_WIDE_VIEWPORT, false)
+    var loadWithOverviewMode by booleanPref(prefs, LOAD_WITH_OVERVIEW_MODE, false)
+    var enableZoom by booleanPref(prefs, ENABLE_ZOOM, true)
+    var displayZoomControls by booleanPref(prefs, DISPLAY_ZOOM_CONTROLS, false)
 
-    var blockedMessage by stringPref(BLOCKED_MESSAGE, "This site is blocked by Webview Kiosk.")
+    var resetOnLaunch by booleanPref(prefs, RESET_ON_LAUNCH, false)
+    var resetOnInactivitySeconds by intPref(prefs, RESET_ON_INACTIVITY_SECONDS, 0)
+
+    var blockedMessage by stringPref(prefs, BLOCKED_MESSAGE, "This site is blocked by Webview Kiosk.")
     var theme: ThemeOption
         get() = ThemeOption.fromString(prefs.getString(THEME, null))
         set(value) = prefs.edit { putString(THEME, value.name) }
@@ -82,15 +69,15 @@ class UserSettings(context: Context) {
         get() = WebViewInset.fromString(prefs.getString(WEBVIEW_INSET, null))
         set(value) = prefs.edit { putString(WEBVIEW_INSET, value.name) }
 
-    var keepScreenOn by booleanPref(KEEP_SCREEN_ON, false)
+    var keepScreenOn by booleanPref(prefs, KEEP_SCREEN_ON, false)
     var deviceRotation: DeviceRotationOption
         get() = DeviceRotationOption.fromString(prefs.getString(DEVICE_ROTATION, null))
         set(value) = prefs.edit { putString(DEVICE_ROTATION, value.degrees) }
 
-    var applyAppTheme by booleanPref(JS_APPLY_APP_THEME, true)
-    var applyDesktopViewport by booleanPref(JS_APPLY_DESKTOP_VIEWPORT, false)
-    var customScriptOnPageStart by stringPrefOptional(JS_CUSTOM_SCRIPT_ON_PAGE_START)
-    var customScriptOnPageFinish by stringPrefOptional(JS_CUSTOM_SCRIPT_ON_PAGE_FINISH)
+    var applyAppTheme by booleanPref(prefs, JS_APPLY_APP_THEME, true)
+    var applyDesktopViewport by booleanPref(prefs, JS_APPLY_DESKTOP_VIEWPORT, false)
+    var customScriptOnPageStart by stringPrefOptional(prefs, JS_CUSTOM_SCRIPT_ON_PAGE_START)
+    var customScriptOnPageFinish by stringPrefOptional(prefs, JS_CUSTOM_SCRIPT_ON_PAGE_FINISH)
 
     fun exportToBase64(): String {
         val json = JSONObject().apply {
@@ -117,6 +104,8 @@ class UserSettings(context: Context) {
             put(LOAD_WITH_OVERVIEW_MODE, loadWithOverviewMode)
             put(ENABLE_ZOOM, enableZoom)
             put(DISPLAY_ZOOM_CONTROLS, displayZoomControls)
+            put(RESET_ON_LAUNCH, resetOnLaunch)
+            put(RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
             put(BLOCKED_MESSAGE, blockedMessage)
             put(THEME, theme.name)
             put(ADDRESS_BAR_MODE, addressBarMode.name)
@@ -159,6 +148,8 @@ class UserSettings(context: Context) {
             loadWithOverviewMode = json.optBoolean(LOAD_WITH_OVERVIEW_MODE, loadWithOverviewMode)
             enableZoom = json.optBoolean(ENABLE_ZOOM, enableZoom)
             displayZoomControls = json.optBoolean(DISPLAY_ZOOM_CONTROLS, displayZoomControls)
+            resetOnLaunch = json.optBoolean(RESET_ON_LAUNCH, resetOnLaunch)
+            resetOnInactivitySeconds = json.optInt(RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
             blockedMessage = json.optString(BLOCKED_MESSAGE, blockedMessage)
             theme = ThemeOption.fromString(json.optString(THEME, theme.name))
             addressBarMode = AddressBarOption.fromString(json.optString(ADDRESS_BAR_MODE, addressBarMode.name))
@@ -203,6 +194,9 @@ class UserSettings(context: Context) {
         private const val LOAD_WITH_OVERVIEW_MODE = "web_engine.load_with_overview_mode"
         private const val ENABLE_ZOOM = "web_engine.enable_zoom"
         private const val DISPLAY_ZOOM_CONTROLS = "web_engine.display_zoom_controls"
+
+        private const val RESET_ON_LAUNCH = "web_lifecycle.reset_on_launch"
+        private const val RESET_ON_INACTIVITY_SECONDS = "web_lifecycle.reset_on_inactivity_seconds"
 
         private const val BLOCKED_MESSAGE = "appearance.blocked_message"
         private const val THEME = "appearance.theme"

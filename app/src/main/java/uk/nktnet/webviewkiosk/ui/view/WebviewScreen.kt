@@ -118,7 +118,19 @@ fun WebviewScreen(navController: NavController) {
             Box(modifier = Modifier.weight(1f)) {
                 AndroidView(
                     factory = { ctx ->
-                        val initialUrl = if (systemSettings.intentUrl.isNotEmpty()) systemSettings.intentUrl.also { systemSettings.intentUrl = "" } else currentUrl
+                        var initialUrl = currentUrl
+
+                        if (systemSettings.intentUrl.isNotEmpty()) {
+                            initialUrl = systemSettings.intentUrl
+                            systemSettings.intentUrl = ""
+                        } else if (systemSettings.isFreshLaunch) {
+                            systemSettings.isFreshLaunch = false
+                            if (userSettings.resetOnLaunch) {
+                                initialUrl = userSettings.homeUrl
+                                systemSettings.clearHistory()
+                            }
+                        }
+
                         urlBarText = urlBarText.copy(text = initialUrl)
 
                         fun initWebviewApply(initialUrl: String) = webView.apply { customLoadUrl(initialUrl) }

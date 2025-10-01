@@ -10,7 +10,7 @@ import androidx.compose.material3.HorizontalDivider
 @Composable
 fun SettingDivider(modifier: Modifier = Modifier) {
     HorizontalDivider(
-        modifier = modifier.padding(top = 8.dp, bottom = 16.dp),
+        modifier = modifier.padding(bottom = 10.dp),
         thickness = 2.dp,
         color = MaterialTheme.colorScheme.onSurface
     )
