@@ -16,6 +16,7 @@ import uk.nktnet.webviewkiosk.utils.webview.generateDesktopViewportScript
 import uk.nktnet.webviewkiosk.utils.webview.getPrefersColorSchemeOverrideScript
 import uk.nktnet.webviewkiosk.utils.webview.handleExternalScheme
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
+import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 
 data class WebViewConfig(
     val userSettings: UserSettings,
@@ -75,6 +76,9 @@ fun createCustomWebview(
                     if (userSettings.applyAppTheme && config.theme != ThemeOption.SYSTEM) {
                         evaluateJavascript(getPrefersColorSchemeOverrideScript(config.theme), null)
                     }
+                    if (userSettings.customScriptOnStart.isNotBlank()) {
+                        view?.evaluateJavascript(wrapJsInIIFE(userSettings.customScriptOnStart), null)
+                    }
                     super.onPageStarted(view, url, favicon)
                     config.onPageStarted()
                 }
@@ -82,6 +86,9 @@ fun createCustomWebview(
                 override fun onPageFinished(view: WebView?, url: String?) {
                     if (userSettings.applyDesktopViewport) {
                         view?.evaluateJavascript(generateDesktopViewportScript(), null)
+                    }
+                    if (userSettings.customScriptOnFinish.isNotBlank()) {
+                        view?.evaluateJavascript(wrapJsInIIFE(userSettings.customScriptOnFinish), null)
                     }
                     url?.let { config.onPageFinished(it) }
                     isShowingBlockedPage = false
