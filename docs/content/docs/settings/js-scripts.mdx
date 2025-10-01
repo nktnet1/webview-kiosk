@@ -1,0 +1,68 @@
+---
+title: JS Scripts
+description: Extend functionality through injecting JavaScript code
+---
+
+import { Code, Wrench } from 'lucide-react';
+
+## 1. Apply App Theme
+
+This option injects JavaScript that sets `prefers-color-scheme` according to
+your selected Webview Kiosk theme.  
+It keeps the webpage theme consistent with the app's theme.  
+
+This script runs immediately **on page start**.
+
+If the theme is the default **System**, this script is a no-op (does nothing).
+
+**Default:** true
+
+## 2. Apply Desktop Viewport
+
+This option injects JavaScript that sets `document.meta.content` to
+`width=1024`, simulating a desktop viewport.  
+It also listens for JS history state changes (useful for Single Page Applications).
+
+Only enable this if changing the user agent isn't sufficient to force desktop
+mode, as it may slow down page rendering (i.e. negatively affects performance).
+
+**Default:** false
+
+## 3. Custom Scripts
+
+Your code content will be wrapped as follows to prevent polluting the global
+scope and avoid conflicts with other scripts:
+
+```javascript
+(function() {
+    // <YOUR CODE>
+})()
+```
+
+**Example:**
+
+```javascript
+document.body.style.backgroundColor = 'green';
+```
+
+### 3.1. On Page Start
+
+JavaScript to run immediately when the page starts loading.
+
+Useful for early DOM manipulation or overriding functions.
+
+**Example:**
+
+```javascript
+document.body.style.backgroundColor = 'green';
+```
+
+**Default:** *(blank)*
+
+### 3.2. On Page Finish
+
+JavaScript to run after the page has fully loaded.  
+
+Useful for DOM updates, styling, or injecting behavior.
+
+**Default:** *(blank)*

@@ -16,9 +16,9 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import uk.nktnet.webviewkiosk.config.option.AddressBarOption
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.option.AddressBarOption
 import uk.nktnet.webviewkiosk.handlers.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.MultitapHandler
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
@@ -40,19 +40,12 @@ fun WebviewScreen(navController: NavController) {
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
     val isPinned by rememberLockedState()
+
     var currentUrl by remember { mutableStateOf(systemSettings.currentUrl.takeIf { it.isNotEmpty() } ?: userSettings.homeUrl) }
     var urlBarText by remember { mutableStateOf(TextFieldValue(currentUrl)) }
     var transitionState by remember { mutableStateOf(TransitionState.PAGE_FINISHED) }
     var isRefreshing by remember { mutableStateOf(false) }
     var hasFocus by remember { mutableStateOf(false) }
-
-    val blacklistRegexes = remember(userSettings.websiteBlacklist) {
-        userSettings.websiteBlacklist.lines().mapNotNull { it.trim().takeIf(String::isNotEmpty) }.mapNotNull { runCatching { Regex(it) }.getOrNull() }
-    }
-
-    val whitelistRegexes = remember(userSettings.websiteWhitelist) {
-        userSettings.websiteWhitelist.lines().mapNotNull { it.trim().takeIf(String::isNotEmpty) }.mapNotNull { runCatching { Regex(it) }.getOrNull() }
-    }
 
     val showAddressBar = when (userSettings.addressBarMode) {
         AddressBarOption.SHOWN -> true
@@ -68,29 +61,25 @@ fun WebviewScreen(navController: NavController) {
 
     val webView = createCustomWebview(
         context = context,
-        theme = userSettings.theme,
-        blockedMessage = userSettings.blockedMessage,
-        blacklistRegexes = blacklistRegexes,
-        whitelistRegexes = whitelistRegexes,
-        allowOtherUrlSchemes = userSettings.allowOtherUrlSchemes,
-        enableJavaScript = userSettings.enableJavaScript,
-        enableDomStorage = userSettings.enableDomStorage,
-        cacheMode = userSettings.cacheMode,
-        onPageStarted = { transitionState = TransitionState.PAGE_STARTED },
-        onPageFinished = { url ->
-            transitionState = TransitionState.PAGE_FINISHED
-            isRefreshing = false
-        },
-        doUpdateVisitedHistory = { url ->
-            if (!hasFocus) urlBarText = urlBarText.copy(text = url)
-            currentUrl = url
-            WebViewNavigation.appendWebviewHistory(systemSettings, url)
-        },
-        onHttpAuthRequest = { handler, host, realm ->
-            authHandler = handler
-            authHost = host
-            authRealm = realm
-        }
+        config = uk.nktnet.webviewkiosk.utils.WebViewConfig(
+            userSettings = userSettings,
+            theme = userSettings.theme,
+            onPageStarted = { transitionState = TransitionState.PAGE_STARTED },
+            onPageFinished = { url ->
+                transitionState = TransitionState.PAGE_FINISHED
+                isRefreshing = false
+            },
+            doUpdateVisitedHistory = { url ->
+                if (!hasFocus) urlBarText = urlBarText.copy(text = url)
+                currentUrl = url
+                WebViewNavigation.appendWebviewHistory(systemSettings, url)
+            },
+            onHttpAuthRequest = { handler, host, realm ->
+                authHandler = handler
+                authHost = host
+                authRealm = realm
+            }
+        )
     )
 
     fun customLoadUrl(newUrl: String) {
@@ -122,7 +111,7 @@ fun WebviewScreen(navController: NavController) {
                     focusRequester = focusRequester,
                     addressBarSearch = addressBarSearch,
                     webView = webView,
-                    customLoadUrl = ::customLoadUrl,
+                    customLoadUrl = ::customLoadUrl
                 )
             }
 
@@ -163,7 +152,7 @@ fun WebviewScreen(navController: NavController) {
                 FloatingMenuButton(
                     onHomeClick = { WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings) },
                     onLockClick = { try { activity?.startLockTask() } catch (_: Exception) {} },
-                    navController = navController,
+                    navController = navController
                 )
             }
         }
@@ -173,4 +162,3 @@ fun WebviewScreen(navController: NavController) {
 
     BasicAuthDialog(authHandler, authHost, authRealm) { authHandler = null }
 }
-

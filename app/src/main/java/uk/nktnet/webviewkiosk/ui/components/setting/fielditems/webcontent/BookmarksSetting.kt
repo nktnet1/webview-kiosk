@@ -28,7 +28,7 @@ fun BookmarksSetting() {
         initialValue = currentValue,
         isMultiline = true,
         validator = { input ->
-            input.lines().all { validateUrl(it.trim()) }
+            input.isEmpty() || input.lines().all { validateUrl(it.trim()) }
         },
         onSave = { input ->
             currentValue = input

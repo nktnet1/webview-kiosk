@@ -124,6 +124,11 @@ class MainActivity : AppCompatActivity() {
                                     deviceRotationState
                                 )
                             }
+                            authComposable(Screen.SettingsJsScript.route) {
+                                SettingsJsScriptsScreen(
+                                    navController,
+                                )
+                            }
                             authComposable(Screen.SettingsAbout.route) {
                                 SettingsAboutScreen(
                                     navController,

@@ -10,11 +10,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.ui.components.setting.DeviceSecurityTip
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingsHeaderMenu
 
@@ -26,22 +26,22 @@ fun SettingsListScreen(
     val settingsItems = listOf(
         Triple(
             "Web Content",
-            "Home URL, blacklist, whitelist",
+            "Home URL, blacklist, whitelist, bookmark",
             Screen.SettingsWebContent.route
         ),
         Triple(
             "Web Browsing",
-            "Refresh, navigation, search provider",
+            "Refresh, navigation, history, search provider",
             Screen.SettingsWebBrowsing.route
         ),
         Triple(
             "Web Engine",
-            "JavaScript, DOM storage, cookies, cache",
+            "JavaScript, DOM storage, cookies, cache, user agent, zoom",
             Screen.SettingsWebEngine.route
         ),
         Triple(
             "Appearance",
-            "Theme, address bar, custom blocked message",
+            "Theme, address bar, insets, blocked message",
             Screen.SettingsAppearance.route
         ),
         Triple(
@@ -50,8 +50,13 @@ fun SettingsListScreen(
             Screen.SettingsDevice.route
         ),
         Triple(
+            "JS Scripts",
+            "Apply theme, desktop viewport, custom scripts",
+            Screen.SettingsJsScript.route
+        ),
+        Triple(
             "About",
-            "Package name, app version, debug build",
+            "Package name, app version, debug build, installer",
             Screen.SettingsAbout.route
         ),
     )
@@ -74,7 +79,9 @@ fun SettingsListScreen(
                 supportingContent = {
                     Text(
                         text = description,
-                        style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic)
+                        style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 },
                 modifier = Modifier
@@ -89,7 +96,6 @@ fun SettingsListScreen(
             )
         }
 
-        DeviceSecurityTip()
         Spacer(modifier = Modifier.height(4.dp))
     }
 }

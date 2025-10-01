@@ -1,9 +1,15 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.fields
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
@@ -17,7 +23,7 @@ fun TextSettingFieldItem(
     placeholder: String,
     initialValue: String,
     isMultiline: Boolean,
-    validator: (String) -> Boolean,
+    validator: (String) -> Boolean = { true },
     onSave: (String) -> Unit,
     extraContent: (@Composable ((setValue: (String) -> Unit) -> Unit))? = null
 ) {
@@ -65,40 +71,71 @@ fun TextSettingFieldItem(
                 }
             }
         ) {
-            OutlinedTextField(
-                value = draftValue,
-                onValueChange = {
-                    draftValue = it
-                    draftError = !validator(it)
-                },
-                isError = draftError,
-                placeholder = {
-                    if (isMultiline) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                OutlinedTextField(
+                    value = draftValue,
+                    onValueChange = {
+                        draftValue = it
+                        draftError = !validator(it)
+                    },
+                    isError = draftError,
+                    placeholder = {
                         Text(
                             placeholder,
                             style = MaterialTheme.typography.bodyMedium,
                             fontStyle = FontStyle.Italic,
+                            maxLines = if (isMultiline) Int.MAX_VALUE else 1,
+                            overflow = if (isMultiline) TextOverflow.Visible else TextOverflow.Ellipsis
                         )
+                    },
+                    singleLine = !isMultiline,
+                    modifier = if (!isMultiline) {
+                        Modifier
+                            .fillMaxWidth()
                     } else {
-                        Text(
-                            placeholder,
-                            style = MaterialTheme.typography.bodyMedium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            fontStyle = FontStyle.Italic,
+                        Modifier
+                            .fillMaxWidth()
+                            .defaultMinSize(minHeight = 200.dp)
+                            .heightIn(max = 400.dp)
+                       },
+                    trailingIcon = if (!isMultiline) {
+                        {
+                            IconButton(
+                                onClick = {
+                                    draftValue = ""
+                                    draftError = !validator("")
+                                },
+                                enabled = draftValue.isNotEmpty()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = "Clear"
+                                )
+                            }
+                        }
+                    } else null
+                )
+
+                if (isMultiline) {
+                    IconButton(
+                        onClick = {
+                            draftValue = ""
+                            draftError = !validator("")
+                          },
+                        enabled = draftValue.isNotEmpty(),
+                        modifier = Modifier
+                            .padding(top = 4.dp)
+                            .align(Alignment.End)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Clear,
+                            contentDescription = "Clear"
                         )
                     }
-                },
-                singleLine = !isMultiline,
-                modifier = if (isMultiline) {
-                    Modifier
-                        .height(200.dp)
-                        .fillMaxWidth()
-                } else {
-                    Modifier.fillMaxWidth()
                 }
-            )
 
-            extraContent?.invoke { draftValue = it; draftError = !validator(it) } }
+                extraContent?.invoke { draftValue = it; draftError = !validator(it) }
+            }
+        }
     }
 }

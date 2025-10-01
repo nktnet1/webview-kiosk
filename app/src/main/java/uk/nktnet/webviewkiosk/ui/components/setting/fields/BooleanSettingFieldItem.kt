@@ -15,6 +15,6 @@ fun BooleanSettingFieldItem(
         options = listOf(true, false),
         initialValue = initialValue,
         onSave = onSave,
-        itemText = { if (it) "Enabled" else "Disabled" }
+        itemText = { if (it) "True" else "False" }
     )
 }
