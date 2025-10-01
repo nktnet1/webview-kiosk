@@ -7,7 +7,8 @@ import { Code, Wrench } from 'lucide-react';
 
 ## 1. Apply App Theme
 
-This option injects JavaScript that sets `prefers-color-scheme` according to your selected Webview Kiosk theme.  
+This option injects JavaScript that sets `prefers-color-scheme` according to
+your selected Webview Kiosk theme.  
 It keeps the webpage theme consistent with the app's theme.  
 
 This script runs immediately **on page start**.
@@ -18,10 +19,12 @@ If the theme is the default **System**, this script is a no-op (does nothing).
 
 ## 2. Apply Desktop Viewport
 
-This option injects JavaScript that sets `document.meta.content` to `width=1024`, simulating a desktop viewport.  
+This option injects JavaScript that sets `document.meta.content` to
+`width=1024`, simulating a desktop viewport.  
 It also listens for JS history state changes (useful for Single Page Applications).
 
-Only enable this if changing the user agent isn't sufficient to force desktop mode, as it may slow down page rendering.
+Only enable this if changing the user agent isn't sufficient to force desktop
+mode, as it may slow down page rendering (i.e. negatively affects performance).
 
 **Default:** false
 
