@@ -1,0 +1,16 @@
+## Web Lifecycle
+
+- feat: added "reset on launch" - start on Home URL, clear history (#13, #14)
+- feat: added "inactivity timeout (seconds)" (#13)
+
+## Web Engine
+
+- feat: added "layout algorithm"
+- feat: added "user agent"
+- feat: added "loadWithOverviewMode" and "useWideViewPort"
+- feat: added "enableZoom" and "displayZoomControls"
+
+## JS Scripts
+
+- feat: added options for theme & desktop viewports scripts
+- feat: added custom "on page start" and "on page finish" scripts
