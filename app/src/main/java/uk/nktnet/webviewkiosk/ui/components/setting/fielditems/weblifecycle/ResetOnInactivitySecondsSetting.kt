@@ -14,7 +14,14 @@ fun ResetOnInactivitySecondsSetting() {
 
     NumberSettingFieldItem(
         label = "Reset on Inactivity (seconds)",
-        infoText = "Number of seconds of inactivity before the app resets to the home URL.",
+        infoText = """
+            Number of seconds of inactivity before the app resets to the home URL.
+            Minimum: ${Constants.MIN_INACTIVITY_TIMEOUT_SECONDS}
+            
+            The navigation history will be cleared when resetting.
+            
+            To disable, use the value 0. 
+        """.trimIndent(),
         placeholder = "e.g. 3600 (for 1 hour)",
         initialValue = userSettings.resetOnInactivitySeconds,
         min = Constants.MIN_INACTIVITY_TIMEOUT_SECONDS,

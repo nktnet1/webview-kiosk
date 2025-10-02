@@ -13,7 +13,12 @@ fun ResetOnLaunchSetting() {
 
     BooleanSettingFieldItem(
         label = "Reset on App Launch",
-        infoText = "When enabled, the app will clear history and navigate to the home URL on launch.",
+        infoText = """
+             When enabled, the app will always start fresh at the Home URL when
+             closed and re-opened, as opposed to the last visited URL.
+             
+             The navigation history will also be cleared.
+        """.trimIndent(),
         initialValue = userSettings.resetOnLaunch,
         onSave = { userSettings.resetOnLaunch = it }
     )
