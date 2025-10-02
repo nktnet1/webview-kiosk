@@ -36,8 +36,13 @@ fun GenericSettingFieldDialog(
             title = { Text(title) },
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    Text(infoText.replace("\t", "    "))
+                    Text(
+                        infoText
+                            .replace("\t", "    ")
+                            .replace(Regex("(?m)(?<!\\n)\\n(?!\\n)(?!\\s*- )"), " ")
+                    )
                 }
+
             },
             confirmButton = {
                 TextButton(onClick = { showInfoDialog = false }) { Text("OK") }

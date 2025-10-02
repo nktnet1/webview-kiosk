@@ -9,6 +9,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.runtime.*
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.utils.webview.generateBlockedPageHtml
@@ -85,8 +86,8 @@ fun createCustomWebview(
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    if (userSettings.applyDesktopViewport) {
-                        view?.evaluateJavascript(generateDesktopViewportScript(), null)
+                    if (userSettings.applyDesktopViewportWidth >= Constants.MIN_DESKTOP_WIDTH) {
+                        view?.evaluateJavascript(generateDesktopViewportScript(userSettings.applyDesktopViewportWidth), null)
                     }
                     if (userSettings.customScriptOnPageFinish.isNotBlank()) {
                         view?.evaluateJavascript(wrapJsInIIFE(userSettings.customScriptOnPageFinish), null)

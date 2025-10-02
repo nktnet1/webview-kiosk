@@ -75,7 +75,7 @@ class UserSettings(context: Context) {
         set(value) = prefs.edit { putString(DEVICE_ROTATION, value.degrees) }
 
     var applyAppTheme by booleanPref(prefs, JS_APPLY_APP_THEME, true)
-    var applyDesktopViewport by booleanPref(prefs, JS_APPLY_DESKTOP_VIEWPORT, false)
+    var applyDesktopViewportWidth by intPref(prefs, JS_APPLY_DESKTOP_VIEWPORT_WIDTH, 0)
     var customScriptOnPageStart by stringPrefOptional(prefs, JS_CUSTOM_SCRIPT_ON_PAGE_START)
     var customScriptOnPageFinish by stringPrefOptional(prefs, JS_CUSTOM_SCRIPT_ON_PAGE_FINISH)
 
@@ -113,7 +113,7 @@ class UserSettings(context: Context) {
             put(KEEP_SCREEN_ON, keepScreenOn)
             put(DEVICE_ROTATION, deviceRotation.degrees)
             put(JS_APPLY_APP_THEME, applyAppTheme)
-            put(JS_APPLY_DESKTOP_VIEWPORT, applyDesktopViewport)
+            put(JS_APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
             put(JS_CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             put(JS_CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
         }
@@ -157,7 +157,7 @@ class UserSettings(context: Context) {
             keepScreenOn = json.optBoolean(KEEP_SCREEN_ON, keepScreenOn)
             deviceRotation = DeviceRotationOption.fromString(json.optString(DEVICE_ROTATION, deviceRotation.degrees))
             applyAppTheme = json.optBoolean(JS_APPLY_APP_THEME, applyAppTheme)
-            applyDesktopViewport = json.optBoolean(JS_APPLY_DESKTOP_VIEWPORT, applyDesktopViewport)
+            applyDesktopViewportWidth = json.optInt(JS_APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
             customScriptOnPageStart = json.optString(JS_CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             customScriptOnPageFinish = json.optString(JS_CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
             true
@@ -207,7 +207,7 @@ class UserSettings(context: Context) {
         private const val DEVICE_ROTATION = "device.rotation"
 
         private const val JS_APPLY_APP_THEME = "js_scripts.apply_app_theme"
-        private const val JS_APPLY_DESKTOP_VIEWPORT = "js_scripts.apply_desktop_viewport"
+        private const val JS_APPLY_DESKTOP_VIEWPORT_WIDTH = "js_scripts.apply_desktop_viewport_width"
         private const val JS_CUSTOM_SCRIPT_ON_PAGE_START = "js_scripts.custom_script_on_start"
         private const val JS_CUSTOM_SCRIPT_ON_PAGE_FINISH = "js_scripts.custom_script_on_finish"
     }
