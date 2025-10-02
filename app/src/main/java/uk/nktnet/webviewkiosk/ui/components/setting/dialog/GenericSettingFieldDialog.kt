@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 
 @Composable
 fun GenericSettingFieldDialog(
@@ -40,7 +41,7 @@ fun GenericSettingFieldDialog(
             },
             confirmButton = {
                 TextButton(onClick = { showInfoDialog = false }) { Text("OK") }
-            }
+            },
         )
     }
 
@@ -69,6 +70,9 @@ fun GenericSettingFieldDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
+        },
+        properties = DialogProperties(
+            dismissOnClickOutside = false,
+        )
     )
 }
