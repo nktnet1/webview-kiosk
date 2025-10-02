@@ -42,7 +42,6 @@ fun GenericSettingFieldDialog(
                             .replace(Regex("(?m)(?<!\\n)\\n(?!\\n)(?!\\s*- )"), " ")
                     )
                 }
-
             },
             confirmButton = {
                 TextButton(onClick = { showInfoDialog = false }) { Text("OK") }

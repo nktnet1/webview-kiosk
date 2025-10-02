@@ -10,7 +10,7 @@ import { EllipsisVertical, Wrench } from 'lucide-react';
 When enabled, the WebView can execute JavaScript code on web pages.  
 This is required for most modern websites to function properly.  
 
-**Android API**: [WebSettings#setJavaScriptEnabled(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setJavaScriptEnabled(boolean))
+**Android API:** [WebSettings#setJavaScriptEnabled(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setJavaScriptEnabled(boolean))
 
 **Default:** true
 
@@ -19,7 +19,7 @@ This is required for most modern websites to function properly.
 When enabled, websites can use DOM storage APIs such as `localStorage` and `sessionStorage`.  
 Useful for saving data client-side in the browser context.
 
-**Android API**: [WebSettings#setDomStorageEnabled(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setDomStorageEnabled(boolean))
+**Android API:** [WebSettings#setDomStorageEnabled(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setDomStorageEnabled(boolean))
 
 **Default:** true
 
@@ -28,7 +28,7 @@ Useful for saving data client-side in the browser context.
 When enabled, the WebView allows websites to store and read cookies.  
 This includes first-party cookies that persist session or preference data.
 
-**Android API**: [CookieManager#setAcceptCookie(boolean)](https://developer.android.com/reference/android/webkit/CookieManager#setAcceptCookie(boolean))
+**Android API:** [CookieManager#setAcceptCookie(boolean)](https://developer.android.com/reference/android/webkit/CookieManager#setAcceptCookie(boolean))
 
 **Default:** true
 
@@ -37,7 +37,7 @@ This includes first-party cookies that persist session or preference data.
 When enabled, third-party websites (embedded in iframes or resources) are allowed to set cookies.  
 This is important for services like embedded analytics or login widgets.
 
-**Android API**: [CookieManager#setAcceptThirdPartyCookies(android.webkit.WebView, boolean)](https://developer.android.com/reference/android/webkit/CookieManager#setAcceptThirdPartyCookies(android.webkit.WebView,%20boolean))
+**Android API:** [CookieManager#setAcceptThirdPartyCookies(android.webkit.WebView, boolean)](https://developer.android.com/reference/android/webkit/CookieManager#setAcceptThirdPartyCookies(android.webkit.WebView,%20boolean))
 
 **Default:** false
 
@@ -50,11 +50,22 @@ Controls how the WebView uses its cache when loading pages. Options:
 - **No cache (`LOAD_NO_CACHE`)** - Always fetches from the network; ignores cached content.  
 - **Cache only (`LOAD_CACHE_ONLY`)** - Only loads content from cache; network requests are skipped.  
 
-**Android API**: [WebSettings#LOAD_CACHE_ELSE_NETWORK](https://developer.android.com/reference/android/webkit/WebSettings#LOAD_CACHE_ELSE_NETWORK)
+**Android API:** [WebSettings#LOAD_CACHE_ELSE_NETWORK](https://developer.android.com/reference/android/webkit/WebSettings#LOAD_CACHE_ELSE_NETWORK)
 
 **Default:** `LOAD_DEFAULT`
 
-## 6. Layout Algorithm
+## 6. User Agent
+
+The User Agent string controls how the web engine identifies itself
+to websites. Some sites may behave differently depending on this value.
+            
+Leave blank to use the system default User Agent.
+
+**Android API:** [WebSettings#setUserAgentString(java.lang.String)](https://developer.android.com/reference/android/webkit/WebSettings#setUserAgentString(java.lang.String))
+
+**Default:** (blank)
+
+## 7. Layout Algorithm
 
 Controls how the WebView arranges and scales content. Options:
 
@@ -69,40 +80,40 @@ Controls how the WebView arranges and scales content. Options:
   support. Supported from API level KitKat.  
 
 
-**Android API**: [WebSettings.LayoutAlgorithm](https://developer.android.com/reference/android/webkit/WebSettings.LayoutAlgorithm)
+**Android API:** [WebSettings.LayoutAlgorithm](https://developer.android.com/reference/android/webkit/WebSettings.LayoutAlgorithm)
 
 **Default:** `NORMAL`
 
-## 7. Use Wide ViewPort
+## 8. Use Wide ViewPort
 
 When enabled, the WebView will use a viewport wide enough to fit the content as if viewed on a desktop browser.  
 
-**Android API**: [WebSettings#setUseWideViewPort(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setUseWideViewPort(boolean))
+**Android API:** [WebSettings#setUseWideViewPort(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setUseWideViewPort(boolean))
 
 **Default:** false
 
-## 8. Load With Overview Mode
+## 9. Load With Overview Mode
 
 When enabled, the WebView scales the page so that the content fits on screen initially.  
 
-**Android API**: [WebSettings#setUseWideViewPort(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setUseWideViewPort(boolean))
+**Android API:** [WebSettings#setUseWideViewPort(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setUseWideViewPort(boolean))
 
 **Default:** false
 
-## 9. Zoom Controls
+## 10. Zoom Controls
 
-### 9.1. Enable Zoom
+### 10.1. Enable Zoom
 
 Allows pinch-to-zoom gestures.  
 
-**Android API**: [WebSettings#setBuiltInZoomControls(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setBuiltInZoomControls(boolean))
+**Android API:** [WebSettings#setBuiltInZoomControls(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setBuiltInZoomControls(boolean))
 
 **Default:** true
 
-### 9.2. Display Zoom Controls
+### 10.2. Display Zoom Controls
 
 Shows on-screen zoom buttons.  
 
-**Android API**: [WebSettings#setDisplayZoomControls(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setDisplayZoomControls(boolean))
+**Android API:** [WebSettings#setDisplayZoomControls(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setDisplayZoomControls(boolean))
 
 **Default:** false

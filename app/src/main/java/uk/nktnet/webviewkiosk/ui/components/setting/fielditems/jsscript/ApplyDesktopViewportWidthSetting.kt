@@ -28,7 +28,7 @@ fun ApplyDesktopViewportWidthSetting() {
             additional JS here will slow down the page.
             
             You may also want to enable the following options under
-            Settings ->Web Engine:
+            Settings -> Web Engine:
               - User Agent: Desktop
               - Use Wide Viewport: True
               - Load with Overview Mode: True
