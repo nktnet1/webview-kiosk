@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.view
+package com.nktnet.webview_kiosk.ui.view
 
 import android.app.Activity
 import android.webkit.CookieManager
@@ -16,22 +16,22 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.AddressBarOption
-import uk.nktnet.webviewkiosk.handlers.BackPressHandler
-import uk.nktnet.webviewkiosk.handlers.InactivityTimeoutHandler
-import uk.nktnet.webviewkiosk.handlers.MultitapHandler
-import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
-import uk.nktnet.webviewkiosk.ui.components.webview.FloatingMenuButton
-import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
-import uk.nktnet.webviewkiosk.ui.components.common.LoadingIndicator
-import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
-import uk.nktnet.webviewkiosk.utils.createCustomWebview
-import uk.nktnet.webviewkiosk.utils.rememberLockedState
-import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
-import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.option.AddressBarOption
+import com.nktnet.webview_kiosk.handlers.BackPressHandler
+import com.nktnet.webview_kiosk.handlers.InactivityTimeoutHandler
+import com.nktnet.webview_kiosk.handlers.MultitapHandler
+import com.nktnet.webview_kiosk.ui.components.webview.AddressBar
+import com.nktnet.webview_kiosk.ui.components.webview.FloatingMenuButton
+import com.nktnet.webview_kiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
+import com.nktnet.webview_kiosk.ui.components.common.LoadingIndicator
+import com.nktnet.webview_kiosk.ui.components.setting.BasicAuthDialog
+import com.nktnet.webview_kiosk.utils.createCustomWebview
+import com.nktnet.webview_kiosk.utils.rememberLockedState
+import com.nktnet.webview_kiosk.utils.webview.WebViewNavigation
+import com.nktnet.webview_kiosk.utils.webview.resolveUrlOrSearch
 
 private enum class TransitionState { TRANSITIONING, PAGE_STARTED, PAGE_FINISHED }
 
@@ -63,7 +63,7 @@ fun WebviewScreen(navController: NavController) {
 
     val webView = createCustomWebview(
         context = context,
-        config = uk.nktnet.webviewkiosk.utils.WebViewConfig(
+        config = com.nktnet.webview_kiosk.utils.WebViewConfig(
             userSettings = userSettings,
             theme = userSettings.theme,
             onPageStarted = { transitionState = TransitionState.PAGE_STARTED },

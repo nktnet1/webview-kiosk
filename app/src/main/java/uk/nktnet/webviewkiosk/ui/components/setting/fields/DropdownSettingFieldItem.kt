@@ -1,12 +1,12 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fields
+package com.nktnet.webview_kiosk.ui.components.setting.fields
 
-import uk.nktnet.webviewkiosk.ui.components.common.DropdownSelector
+import com.nktnet.webview_kiosk.ui.components.common.DropdownSelector
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import uk.nktnet.webviewkiosk.ui.components.setting.dialog.GenericSettingFieldDialog
+import com.nktnet.webview_kiosk.ui.components.setting.dialog.GenericSettingFieldDialog
 
 @Composable
 fun <T> DropdownSettingFieldItem(

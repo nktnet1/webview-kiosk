@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.auth
+package com.nktnet.webview_kiosk.auth
 
 import android.app.KeyguardManager
 import android.content.Context
@@ -12,7 +12,7 @@ import androidx.biometric.BiometricPrompt.PromptInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import uk.nktnet.webviewkiosk.config.Constants
+import com.nktnet.webview_kiosk.config.Constants
 
 object BiometricPromptManager {
     private var activity: AppCompatActivity? = null

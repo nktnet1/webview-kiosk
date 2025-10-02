@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.webview
+package com.nktnet.webview_kiosk.ui.components.webview
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,7 +17,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import uk.nktnet.webviewkiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.UserSettings
 
 @Composable
 fun BookmarksDialog(

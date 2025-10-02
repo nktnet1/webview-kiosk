@@ -1,11 +1,11 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance
+package com.nktnet.webview_kiosk.ui.components.setting.fielditems.appearance
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.AddressBarOption
-import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.option.AddressBarOption
+import com.nktnet.webview_kiosk.ui.components.setting.fields.DropdownSettingFieldItem
 
 @Composable
 fun AddressBarModeSetting() {

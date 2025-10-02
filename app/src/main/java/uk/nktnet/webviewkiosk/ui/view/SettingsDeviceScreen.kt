@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.view
+package com.nktnet.webview_kiosk.ui.view
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -7,11 +7,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.DeviceRotationSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.KeepScreenOnSetting
+import com.nktnet.webview_kiosk.config.option.DeviceRotationOption
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.device.DeviceRotationSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.device.KeepScreenOnSetting
 
 @Composable
 fun SettingsDeviceScreen(

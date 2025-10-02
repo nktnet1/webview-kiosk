@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.view
+package com.nktnet.webview_kiosk.ui.view
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -7,12 +7,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.ApplyAppThemeSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.ApplyDesktopViewportWidthSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.CustomScriptOnPageFinishSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.CustomScriptOnPageStartSetting
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.jsscript.ApplyAppThemeSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.jsscript.ApplyDesktopViewportWidthSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.jsscript.CustomScriptOnPageFinishSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.jsscript.CustomScriptOnPageStartSetting
 
 @Composable
 fun SettingsJsScriptsScreen(

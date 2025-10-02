@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.view
+package com.nktnet.webview_kiosk.ui.view
 
 import android.content.pm.PackageManager
 import android.os.Build
@@ -13,8 +13,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
 
 @Composable
 fun InfoItem(label: String, value: String) {
