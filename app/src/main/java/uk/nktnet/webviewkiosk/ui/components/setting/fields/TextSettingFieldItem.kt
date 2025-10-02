@@ -24,6 +24,7 @@ fun TextSettingFieldItem(
     initialValue: String,
     isMultiline: Boolean,
     validator: (String) -> Boolean = { true },
+    validationMessage: String? = null,
     onSave: (String) -> Unit,
     extraContent: (@Composable ((setValue: (String) -> Unit) -> Unit))? = null
 ) {
@@ -97,7 +98,7 @@ fun TextSettingFieldItem(
                             .fillMaxWidth()
                             .defaultMinSize(minHeight = 200.dp)
                             .heightIn(max = 400.dp)
-                       },
+                    },
                     trailingIcon = if (!isMultiline) {
                         {
                             IconButton(
@@ -121,7 +122,7 @@ fun TextSettingFieldItem(
                         onClick = {
                             draftValue = ""
                             draftError = !validator("")
-                          },
+                        },
                         enabled = draftValue.isNotEmpty(),
                         modifier = Modifier
                             .padding(top = 4.dp)
@@ -132,6 +133,15 @@ fun TextSettingFieldItem(
                             contentDescription = "Clear"
                         )
                     }
+                }
+
+                if (draftError) {
+                    Text(
+                        text = validationMessage ?: "Invalid input",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    )
                 }
 
                 extraContent?.invoke { draftValue = it; draftError = !validator(it) }

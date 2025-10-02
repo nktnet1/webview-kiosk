@@ -17,7 +17,6 @@ fun BlockedMessageSetting() {
         placeholder = "e.g. This site is blocked by <Company Name>",
         initialValue = userSettings.blockedMessage,
         isMultiline = true,
-        validator = { true },
         onSave = { userSettings.blockedMessage = it }
     )
 }
