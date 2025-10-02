@@ -1,0 +1,23 @@
+package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import uk.nktnet.webviewkiosk.config.Constants
+import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldItem
+
+@Composable
+fun ResetOnInactivitySecondsSetting() {
+    val context = LocalContext.current
+    val userSettings = remember { UserSettings(context) }
+
+    NumberSettingFieldItem(
+        label = "Reset on Inactivity (seconds)",
+        infoText = "Number of seconds of inactivity before the app resets to the home URL.",
+        placeholder = "e.g. 3600 (for 1 hour)",
+        initialValue = userSettings.resetOnInactivitySeconds,
+        min = Constants.MIN_INACTIVITY_TIMEOUT_SECONDS,
+        onSave = { userSettings.resetOnInactivitySeconds = it }
+    )
+}

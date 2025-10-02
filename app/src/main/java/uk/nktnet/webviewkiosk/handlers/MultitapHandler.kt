@@ -52,9 +52,6 @@ fun MultitapHandler(
 
     val userSettings = remember { UserSettings(context) }
 
-    var homeUrl by remember { mutableStateOf(userSettings.homeUrl) }
-    var allowGoHome by remember { mutableStateOf(userSettings.allowGoHome) }
-
     var showConfirmDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(tapsLeft, lastTapTime) {
@@ -66,7 +63,7 @@ fun MultitapHandler(
         }
     }
 
-    if (allowGoHome) {
+    if (userSettings.allowGoHome) {
         Box(
             Modifier
                 .fillMaxSize()
@@ -114,7 +111,7 @@ fun MultitapHandler(
             },
             text = { Text("""
                 Do you wish to return to the home page?
-                - $homeUrl                
+                - ${userSettings.homeUrl}              
                 """.trimIndent())
             },
             confirmButton = {

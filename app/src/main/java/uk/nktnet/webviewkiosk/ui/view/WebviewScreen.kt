@@ -16,10 +16,12 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.navigation.NavController
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.AddressBarOption
 import uk.nktnet.webviewkiosk.handlers.BackPressHandler
+import uk.nktnet.webviewkiosk.handlers.InactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.MultitapHandler
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
 import uk.nktnet.webviewkiosk.ui.components.webview.FloatingMenuButton
@@ -100,7 +102,11 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
-    Box(modifier = Modifier.fillMaxSize().windowInsetsPadding(userSettings.webViewInset.toWindowInsets())) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(userSettings.webViewInset.toWindowInsets()))
+    {
         Column(modifier = Modifier.fillMaxSize()) {
             if (showAddressBar) {
                 AddressBar(
@@ -170,7 +176,11 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
-    MultitapHandler { WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings) }
-
+    if (userSettings.resetOnInactivitySeconds >= Constants.MIN_INACTIVITY_TIMEOUT_SECONDS) {
+        InactivityTimeoutHandler(systemSettings, userSettings, ::customLoadUrl)
+    }
+    if (userSettings.allowGoHome) {
+        MultitapHandler { WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings) }
+    }
     BasicAuthDialog(authHandler, authHost, authRealm) { authHandler = null }
 }

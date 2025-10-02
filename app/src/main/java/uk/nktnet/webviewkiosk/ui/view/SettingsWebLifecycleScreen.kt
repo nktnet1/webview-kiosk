@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.ResetOnInactivitySecondsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.ResetOnLaunchSetting
 
 @Composable
@@ -25,5 +26,6 @@ fun SettingsWebLifecycleScreen(navController: NavController) {
         SettingDivider()
 
         ResetOnLaunchSetting()
+        ResetOnInactivitySecondsSetting()
     }
 }
