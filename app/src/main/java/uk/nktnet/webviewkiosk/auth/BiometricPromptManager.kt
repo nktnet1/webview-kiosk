@@ -12,6 +12,7 @@ import androidx.biometric.BiometricPrompt.PromptInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import uk.nktnet.webviewkiosk.config.Constants
 
 object BiometricPromptManager {
     private var activity: AppCompatActivity? = null
@@ -21,9 +22,6 @@ object BiometricPromptManager {
 
     private var lastAuthTime = 0L
     private const val AUTH_TIMEOUT_MS = 5 * 60 * 1000L
-
-    // Arbitrarily chosen number for request code.
-    private const val LOLLIPOP_DEVICE_CREDENTIAL_REQUEST_CODE = 9999
 
     fun init(activity: AppCompatActivity) {
         this.activity = activity
@@ -138,7 +136,7 @@ object BiometricPromptManager {
             val intent = keyguardManager.createConfirmDeviceCredentialIntent(title, description)
             if (intent != null) {
                 @Suppress("DEPRECATION")
-                activity.startActivityForResult(intent, LOLLIPOP_DEVICE_CREDENTIAL_REQUEST_CODE)
+                activity.startActivityForResult(intent, Constants.REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL)
             } else {
                 _resultState.value = BiometricResult.FeatureUnavailable
             }
@@ -148,7 +146,7 @@ object BiometricPromptManager {
     }
 
     fun handleLollipopDeviceCredentialResult(requestCode: Int, resultCode: Int) {
-        if (requestCode != LOLLIPOP_DEVICE_CREDENTIAL_REQUEST_CODE) {
+        if (requestCode != Constants.REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL) {
             return
         }
         if (resultCode == AppCompatActivity.RESULT_OK) {

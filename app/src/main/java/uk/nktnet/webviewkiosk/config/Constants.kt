@@ -9,4 +9,7 @@ object Constants {
     const val INACTIVITY_COUNTDOWN_SECONDS = 5
 
     const val MIN_DESKTOP_WIDTH = 640
+
+    const val REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL = 9999
+    const val REQUEST_CODE_PICK_HTML_FILE = 9998
 }
