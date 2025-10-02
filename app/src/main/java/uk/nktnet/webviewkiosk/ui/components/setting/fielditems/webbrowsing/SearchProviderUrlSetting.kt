@@ -20,6 +20,7 @@ fun SearchProviderUrlSetting() {
         initialValue = userSettings.searchProviderUrl,
         isMultiline = false,
         validator = { validateUrl(it) },
+        validationMessage = "Invalid URL",
         onSave = { userSettings.searchProviderUrl = it }
     )
 }

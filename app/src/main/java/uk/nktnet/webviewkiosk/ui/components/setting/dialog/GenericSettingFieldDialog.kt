@@ -18,6 +18,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 
 @Composable
 fun GenericSettingFieldDialog(
@@ -35,12 +36,16 @@ fun GenericSettingFieldDialog(
             title = { Text(title) },
             text = {
                 Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
-                    Text(infoText.replace("\t", "    "))
+                    Text(
+                        infoText
+                            .replace("\t", "    ")
+                            .replace(Regex("(?m)(?<!\\n)\\n(?!\\n)(?!\\s*- )"), " ")
+                    )
                 }
             },
             confirmButton = {
                 TextButton(onClick = { showInfoDialog = false }) { Text("OK") }
-            }
+            },
         )
     }
 
@@ -69,6 +74,9 @@ fun GenericSettingFieldDialog(
         },
         dismissButton = {
             TextButton(onClick = onDismiss) { Text("Cancel") }
-        }
+        },
+        properties = DialogProperties(
+            dismissOnClickOutside = false,
+        )
     )
 }

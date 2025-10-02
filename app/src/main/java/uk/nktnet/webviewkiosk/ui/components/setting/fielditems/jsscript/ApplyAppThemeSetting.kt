@@ -15,8 +15,8 @@ fun ApplyAppThemeSetting() {
         label = "Apply App Theme",
         infoText = """
             This script injects JavaScript code that will set prefers-color-scheme
-            according to your selected preference in Webview Kiosk settings, thus
-            keeping the Webpage's theme consistent with the App's theme.
+            according to your selected theme in Webview Kiosk Appearance settings,
+            thus keeping the Webpage's theme consistent with the App's theme.
             
             This script will run immediately "on page start".
 

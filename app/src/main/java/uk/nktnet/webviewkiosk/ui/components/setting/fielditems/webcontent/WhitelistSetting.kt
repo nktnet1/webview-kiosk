@@ -33,6 +33,7 @@ fun WhitelistSetting() {
         initialValue = userSettings.websiteWhitelist,
         isMultiline = true,
         validator = { validateMultilineRegex(it) },
+        validationMessage = "Some lines contain invalid regular expressions.",
         onSave = { userSettings.websiteWhitelist = it }
     )
 }

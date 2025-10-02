@@ -6,6 +6,10 @@ import androidx.core.content.edit
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.*
+import uk.nktnet.webviewkiosk.utils.booleanPref
+import uk.nktnet.webviewkiosk.utils.floatPref
+import uk.nktnet.webviewkiosk.utils.intPref
+import uk.nktnet.webviewkiosk.utils.stringPrefOptional
 
 @Serializable
 data class HistoryEntry(
@@ -18,13 +22,8 @@ class SystemSettings(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val json = Json { encodeDefaults = true; ignoreUnknownKeys = true }
 
-    var menuOffsetX: Float
-        get() = prefs.getFloat(MENU_OFFSET_X, -1f)
-        set(value) = prefs.edit { putFloat(MENU_OFFSET_X, value) }
-
-    var menuOffsetY: Float
-        get() = prefs.getFloat(MENU_OFFSET_Y, -1f)
-        set(value) = prefs.edit { putFloat(MENU_OFFSET_Y, value) }
+    var menuOffsetX: Float by floatPref(prefs, MENU_OFFSET_X, -1f)
+    var menuOffsetY: Float by floatPref(prefs, MENU_OFFSET_Y, -1f)
 
     var historyStack: List<HistoryEntry>
         get() {
@@ -40,16 +39,14 @@ class SystemSettings(context: Context) {
             prefs.edit { putString(HISTORY_STACK, serialized) }
         }
 
-    var historyIndex: Int
-        get() = prefs.getInt(HISTORY_INDEX, -1)
-        set(value) = prefs.edit { putInt(HISTORY_INDEX, value) }
+    var historyIndex: Int by intPref(prefs, HISTORY_INDEX, -1)
 
     val currentUrl: String
         get() = historyStack.getOrNull(historyIndex)?.url ?: ""
 
-    var intentUrl: String
-        get() = prefs.getString(INTENT_URL, "") ?: ""
-        set(value) = prefs.edit { putString(INTENT_URL, value) }
+    var intentUrl: String by stringPrefOptional(prefs, INTENT_URL)
+
+    var isFreshLaunch: Boolean by booleanPref(prefs, IS_FRESH_LAUNCH, true)
 
     fun clearHistory() {
         historyStack = emptyList()
@@ -63,5 +60,6 @@ class SystemSettings(context: Context) {
         private const val HISTORY_STACK = "history_stack"
         private const val HISTORY_INDEX = "history_index"
         private const val INTENT_URL = "intent_url"
+        private const val IS_FRESH_LAUNCH = "is_fresh_launch"
     }
 }

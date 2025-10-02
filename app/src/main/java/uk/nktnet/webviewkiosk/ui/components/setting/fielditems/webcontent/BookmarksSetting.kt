@@ -30,6 +30,7 @@ fun BookmarksSetting() {
         validator = { input ->
             input.isEmpty() || input.lines().all { validateUrl(it.trim()) }
         },
+        validationMessage = "Some lines contain invalid URLs",
         onSave = { input ->
             currentValue = input
             userSettings.websiteBookmarks = input

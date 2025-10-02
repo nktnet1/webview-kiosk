@@ -40,6 +40,11 @@ fun SettingsListScreen(
             Screen.SettingsWebEngine.route
         ),
         Triple(
+            "Web Lifecycle",
+            "Startup behaviour, auto-reset on inactivity",
+            Screen.SettingsWebLifecycle.route
+        ),
+        Triple(
             "Appearance",
             "Theme, address bar, insets, blocked message",
             Screen.SettingsAppearance.route

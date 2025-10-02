@@ -10,7 +10,7 @@ import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.ApplyAppThemeSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.ApplyDesktopViewportSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.ApplyDesktopViewportWidthSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.CustomScriptOnPageFinishSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.CustomScriptOnPageStartSetting
 
@@ -30,7 +30,7 @@ fun SettingsJsScriptsScreen(
         SettingDivider()
 
         ApplyAppThemeSetting()
-        ApplyDesktopViewportSetting()
+        ApplyDesktopViewportWidthSetting()
         CustomScriptOnPageStartSetting()
         CustomScriptOnPageFinishSetting()
     }

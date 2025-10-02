@@ -36,7 +36,10 @@ fun SettingLabel(
     val sideOffset = 20.dp
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 0.dp)
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 0.dp)
+            .height(55.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (showBackIcon) {

@@ -33,6 +33,7 @@ fun BlacklistSetting() {
         initialValue = userSettings.websiteBlacklist,
         isMultiline = true,
         validator = { validateMultilineRegex(it) },
+        validationMessage = "Some lines contain invalid regular expressions.",
         onSave = { userSettings.websiteBlacklist = it }
     )
 }

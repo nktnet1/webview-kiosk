@@ -45,6 +45,7 @@ class MainActivity : AppCompatActivity() {
             finish()
             return
         }
+        systemSettings.isFreshLaunch = true
 
         enableEdgeToEdge()
         BiometricPromptManager.init(this)
@@ -108,6 +109,11 @@ class MainActivity : AppCompatActivity() {
                             }
                             authComposable(Screen.SettingsWebEngine.route) {
                                 SettingsWebEngineScreen(
+                                    navController,
+                                )
+                            }
+                            authComposable(Screen.SettingsWebLifecycle.route) {
+                                SettingsWebLifecycleScreen(
                                     navController,
                                 )
                             }
