@@ -15,7 +15,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
-import uk.nktnet.webviewkiosk.utils.displayName
 import uk.nktnet.webviewkiosk.utils.getDisplayName
 import uk.nktnet.webviewkiosk.utils.getUUID
 import uk.nktnet.webviewkiosk.utils.humanReadableSize
@@ -28,7 +27,7 @@ fun LocalFileList(
     filesList: List<File>,
     filesDir: File,
     modifier: Modifier = Modifier,
-    onFilesChanged: (List<File>) -> Unit
+    refreshFiles: () -> Unit
 ) {
     val context = LocalContext.current
     val toast: (String) -> Unit = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
@@ -39,9 +38,7 @@ fun LocalFileList(
     var newName by remember { mutableStateOf("") }
     var menuExpanded by remember { mutableStateOf(false) }
 
-    fun refreshFiles() {
-        onFilesChanged(filesDir.listFiles()?.toList() ?: emptyList())
-    }
+
 
     LazyColumn(modifier = modifier) {
         items(filesList, key = { it.getUUID() }) { file ->
@@ -143,7 +140,7 @@ fun LocalFileList(
                     Text(
                         text = "NOTE: this may break existing links/bookmarks.",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.error
+                        color = MaterialTheme.colorScheme.secondary
                     )
                 }
             },
@@ -153,7 +150,6 @@ fun LocalFileList(
                         val newFile = File(filesDir, "${file.getUUID()}|$newName")
                         if (file.renameTo(newFile)) {
                             refreshFiles()
-                            toast("Renamed to ${newFile.displayName()}")
                         } else {
                             toast("Rename failed")
                         }
@@ -183,16 +179,15 @@ fun LocalFileList(
             },
             title = { Text("Delete File") },
             text = {
-                Text("Are you sure you want to delete ${activeFile?.displayName()}?")
+                Text("Are you sure you want to delete ${activeFile?.getDisplayName()}?")
             },
             confirmButton = {
                 TextButton(onClick = {
                     activeFile?.let { file ->
                         if (file.delete()) {
                             refreshFiles()
-                            toast("Deleted ${file.displayName()}")
                         } else {
-                            toast("Failed to delete ${file.displayName()}")
+                            toast("Failed to delete ${file.getDisplayName()}")
                         }
                         showDeleteDialog = false
                         activeFile = null

@@ -26,15 +26,16 @@ fun getFileNameFromUri(context: Context, uri: Uri): String {
     return name ?: uri.lastPathSegment ?: "uploaded_file"
 }
 
-fun uploadFile(context: Context, uri: Uri, targetDir: File): File {
-    if (!targetDir.exists()) {
-        targetDir.mkdirs()
-    }
+fun generateUuidFileName(originalName: String): String {
+    return "${UUID.randomUUID()}|$originalName"
+}
 
+fun uploadFile(context: Context, uri: Uri, targetDir: File): File {
     val inputStream = context.contentResolver.openInputStream(uri)
     val originalFileName = getFileNameFromUri(context, uri)
-    val fileName = "${UUID.randomUUID()}|$originalFileName"
+    val fileName = generateUuidFileName(originalFileName)
     val file = File(targetDir, fileName)
+
     inputStream?.use { input ->
         file.outputStream().use { output ->
             input.copyTo(output)
@@ -43,25 +44,37 @@ fun uploadFile(context: Context, uri: Uri, targetDir: File): File {
     return file
 }
 
-fun humanReadableSize(size: Long): String {
-    return when {
-        size >= 1024 * 1024 -> {
-            String.format(Locale.ROOT, "%.1f MB", size.toDouble() / (1024 * 1024))
-        }
-        size >= 1024 -> {
-            String.format(Locale.ROOT, "%.1f KB", size.toDouble() / 1024)
-        }
-        else -> {
-            "$size B"
+fun saveContentIntentToFile(context: Context, contentUri: Uri, targetDir: File): File {
+    val inputStream = context.contentResolver.openInputStream(contentUri)
+        ?: throw IllegalArgumentException("Unable to open InputStream for URI: $contentUri")
+
+    var originalName = contentUri.lastPathSegment ?: "uploaded_file"
+    val mimeType = context.contentResolver.getType(contentUri)
+    if (!originalName.contains('.') && mimeType != null) {
+        android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)?.let {
+            originalName += ".$it"
         }
     }
+
+    val fileName = generateUuidFileName(originalName)
+    val file = File(targetDir, fileName)
+
+    inputStream.use { input ->
+        file.outputStream().use { output ->
+            input.copyTo(output)
+        }
+    }
+
+    return file
 }
 
-fun File.displayName(): String {
-    val parts = this.name.split("|", limit = 2)
-    return parts.getOrElse(1) { this.name }
+fun humanReadableSize(size: Long): String {
+    return when {
+        size >= 1024 * 1024 -> String.format(Locale.ROOT, "%.1f MB", size.toDouble() / (1024 * 1024))
+        size >= 1024 -> String.format(Locale.ROOT, "%.1f KB", size.toDouble() / 1024)
+        else -> "$size B"
+    }
 }
-
 fun File.getUUID(): String {
     return this.name.split("|", limit = 2).getOrElse(0) { "" }
 }

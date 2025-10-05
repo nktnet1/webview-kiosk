@@ -19,6 +19,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -28,15 +29,30 @@ import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.components.auth.RequireAuthWrapper
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
 import uk.nktnet.webviewkiosk.ui.view.*
+import uk.nktnet.webviewkiosk.utils.saveContentIntentToFile
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val systemSettings = SystemSettings(this)
         val userSettings = UserSettings(this)
+        File(filesDir, Constants.WEB_CONTENT_FILES_DIR).mkdirs()
 
         if (intent.action == Intent.ACTION_VIEW && intent.data != null && systemSettings.intentUrl.isEmpty()) {
-            systemSettings.intentUrl = intent?.dataString ?: ""
+            val dataUri = intent.data!!
+            val localFileDir = File(filesDir, Constants.WEB_CONTENT_FILES_DIR)
+
+            val finalUrl = when (dataUri.scheme) {
+                "content" -> {
+                    val file = saveContentIntentToFile(this, dataUri, localFileDir)
+                    "file://${file.absolutePath}"
+                }
+                else -> dataUri.toString()
+            }
+
+            systemSettings.intentUrl = finalUrl
+
             startActivity(
                 Intent(this, MainActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP

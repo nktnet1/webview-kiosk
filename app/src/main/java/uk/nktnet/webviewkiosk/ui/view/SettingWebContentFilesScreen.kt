@@ -33,7 +33,11 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
         }
     }
 
+
     var filesList by remember { mutableStateOf(listLocalFiles(filesDir)) }
+    fun refreshFiles() {
+        filesList = listLocalFiles(filesDir)
+    }
 
     val fileUploadLauncher: ManagedActivityResultLauncher<Array<String>, Uri?> =
         rememberLauncherForActivityResult(
@@ -126,9 +130,8 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
             LocalFileList(
                 filesList = filesList,
                 filesDir = filesDir,
-                onFilesChanged = { updated ->
-                    filesList = updated
-                }
+                modifier = Modifier.padding(top = 8.dp),
+                refreshFiles = ::refreshFiles
             )
         }
     }

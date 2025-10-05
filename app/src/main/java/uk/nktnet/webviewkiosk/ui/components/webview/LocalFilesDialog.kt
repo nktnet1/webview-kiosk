@@ -18,6 +18,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import uk.nktnet.webviewkiosk.config.Constants
+import uk.nktnet.webviewkiosk.utils.getDisplayName
 import uk.nktnet.webviewkiosk.utils.listLocalFiles
 import java.io.File
 
@@ -49,7 +50,7 @@ fun LocalFilesDialog(
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                Text("Local Files", style = MaterialTheme.typography.headlineMedium)
+                Text("Files", style = MaterialTheme.typography.headlineMedium)
                 Spacer(Modifier.height(16.dp))
 
                 if (filesList.isEmpty()) {
@@ -71,8 +72,7 @@ fun LocalFilesDialog(
                         state = listState
                     ) {
                         itemsIndexed(filesList) { index, file ->
-                            val parts = file.name.split("|", limit = 2)
-                            val displayName = parts.getOrElse(1) { file.name }
+                            val displayName = file.getDisplayName()
 
                             Card(
                                 modifier = Modifier
