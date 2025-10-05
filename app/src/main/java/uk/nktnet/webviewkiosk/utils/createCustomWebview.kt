@@ -67,6 +67,7 @@ fun createCustomWebview(
                 loadWithOverviewMode = userSettings.loadWithOverviewMode
                 builtInZoomControls = userSettings.enableZoom
                 displayZoomControls = userSettings.displayZoomControls
+                allowFileAccess = userSettings.allowLocalFiles
             }
 
             val isBlocked: (String) -> Boolean = { url ->

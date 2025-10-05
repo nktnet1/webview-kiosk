@@ -104,6 +104,9 @@ class MainActivity : AppCompatActivity() {
                             authComposable(Screen.SettingsWebContent.route) {
                                 SettingsWebContentScreen(navController)
                             }
+                            authComposable(Screen.SettingsWebContentFiles.route) {
+                                SettingsWebContentFilesScreen(navController)
+                            }
                             authComposable(Screen.SettingsWebBrowsing.route) {
                                 SettingsWebBrowsingScreen(navController)
                             }
