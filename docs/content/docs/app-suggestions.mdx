@@ -3,6 +3,8 @@ title: App Suggestions
 description: Other apps to enhance your Kiosk device
 ---
 
+import { APP_NAME } from '@/config/app'
+
 ## 1. App Lock
 
 In case your device credentials is bypassed or compromised, you may
@@ -30,3 +32,13 @@ It aims to be a secure open source alternative to Google's Find Hub.
 Find Hub makes it easy to locate, ring, or wipe your device from the web, even when
 they are offline. For more details, visit the
 [App on Google Play Store](https://play.google.com/store/apps/details?id=com.google.android.apps.adm).
+
+## 3. Terminal Emulator
+
+While {APP_NAME} supports uploading local HTML files to the Android Webview, for
+web applications that heavily utilises JavaScript/routing, e.g. a single-page app
+built with React or Angular, this may not suffice.
+
+In these advanced use cases, we recommend installing an android terminal like
+[Termux](https://github.com/termux/termux-app), which can be used to host local
+web servers accessible at `http://localhost:<YOUR_PORT>`.
