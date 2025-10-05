@@ -19,6 +19,7 @@ class UserSettings(context: Context) {
     var websiteBlacklist by stringPrefOptional(prefs, WEBSITE_BLACKLIST)
     var websiteWhitelist by stringPrefOptional(prefs, WEBSITE_WHITELIST)
     var websiteBookmarks by stringPrefOptional(prefs, WEBSITE_BOOKMARKS)
+    var allowLocalHtmlFile by booleanPref(prefs, ALLOW_LOCAL_HTML_FILE, true)
 
     var allowRefresh by booleanPref(prefs, ALLOW_REFRESH, true)
     var allowBackwardsNavigation by booleanPref(prefs, ALLOW_BACKWARDS_NAVIGATION, true)
@@ -85,6 +86,7 @@ class UserSettings(context: Context) {
             put(WEBSITE_BLACKLIST, websiteBlacklist)
             put(WEBSITE_WHITELIST, websiteWhitelist)
             put(WEBSITE_BOOKMARKS, websiteBookmarks)
+            put(ALLOW_LOCAL_HTML_FILE, allowLocalHtmlFile)
             put(ALLOW_REFRESH, allowRefresh)
             put(ALLOW_BACKWARDS_NAVIGATION, allowBackwardsNavigation)
             put(ALLOW_GO_HOME, allowGoHome)
@@ -127,6 +129,7 @@ class UserSettings(context: Context) {
             websiteBlacklist = json.optString(WEBSITE_BLACKLIST, websiteBlacklist)
             websiteWhitelist = json.optString(WEBSITE_WHITELIST, websiteWhitelist)
             websiteBookmarks = json.optString(WEBSITE_BOOKMARKS, websiteBookmarks)
+            allowLocalHtmlFile = json.optBoolean(ALLOW_LOCAL_HTML_FILE, allowLocalHtmlFile)
             allowRefresh = json.optBoolean(ALLOW_REFRESH, allowRefresh)
             allowBackwardsNavigation = json.optBoolean(ALLOW_BACKWARDS_NAVIGATION, allowBackwardsNavigation)
             allowGoHome = json.optBoolean(ALLOW_GO_HOME, allowGoHome)
@@ -173,6 +176,7 @@ class UserSettings(context: Context) {
         private const val WEBSITE_BLACKLIST = "web_content.website_blacklist"
         private const val WEBSITE_WHITELIST = "web_content.website_whitelist"
         private const val WEBSITE_BOOKMARKS = "web_content.website_bookmarks"
+        private const val ALLOW_LOCAL_HTML_FILE = "web_content.allow_local_html_file"
 
         private const val ALLOW_REFRESH = "web_browsing.allow_refresh"
         private const val ALLOW_BACKWARDS_NAVIGATION = "web_browsing.allow_backwards_navigation"

@@ -89,6 +89,11 @@ fun WebviewScreen(navController: NavController) {
         webView.loadUrl(newUrl)
     }
 
+    fun customLoadHtmlFile(uriString: String, html: String) {
+        transitionState = TransitionState.TRANSITIONING
+        webView.loadDataWithBaseURL(uriString, html, "text/html", "UTF-8", null)
+    }
+
     val cookieManager = CookieManager.getInstance()
     cookieManager.setAcceptCookie(userSettings.acceptCookies)
     cookieManager.setAcceptThirdPartyCookies(webView, userSettings.acceptThirdPartyCookies)
@@ -117,7 +122,8 @@ fun WebviewScreen(navController: NavController) {
                     focusRequester = focusRequester,
                     addressBarSearch = addressBarSearch,
                     webView = webView,
-                    customLoadUrl = ::customLoadUrl
+                    customLoadUrl = ::customLoadUrl,
+                    customLoadHtmlFile = ::customLoadHtmlFile
                 )
             }
 

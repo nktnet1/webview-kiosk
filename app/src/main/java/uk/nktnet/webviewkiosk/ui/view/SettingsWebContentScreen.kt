@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.AllowLocalHtmlFileSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.BlacklistSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.BookmarksSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.HomeUrlSetting
@@ -31,5 +32,6 @@ fun SettingsWebContentScreen(navController: NavController) {
         BlacklistSetting()
         WhitelistSetting()
         BookmarksSetting()
+        AllowLocalHtmlFileSetting()
     }
 }

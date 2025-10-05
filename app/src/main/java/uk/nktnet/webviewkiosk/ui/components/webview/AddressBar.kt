@@ -27,6 +27,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.WebViewInset
+import uk.nktnet.webviewkiosk.utils.rememberFileUploadLauncher
 import uk.nktnet.webviewkiosk.utils.rememberLockedState
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
@@ -39,7 +40,8 @@ fun AddressBar(
     focusRequester: FocusRequester,
     addressBarSearch: (String) -> Unit,
     webView: WebView,
-    customLoadUrl: (newUrl: String) -> Unit
+    customLoadUrl: (newUrl: String) -> Unit,
+    customLoadHtmlFile: (uriString: String, html: String) -> Unit
 ) {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
@@ -53,15 +55,28 @@ fun AddressBar(
         WebViewInset.SafeDrawing,
         WebViewInset.SafeGestures,
         WebViewInset.SafeContent -> WindowInsets()
-        else -> if (!isLocked) WindowInsets.statusBars else WindowInsets()
+        else -> if (!isLocked) {
+            WindowInsets.statusBars
+        } else {
+            WindowInsets()
+        }
     }
 
     var menuExpanded by remember { mutableStateOf(false) }
     val showMenu =
-        userSettings.allowBackwardsNavigation || userSettings.allowRefresh || userSettings.allowGoHome ||
-                userSettings.allowHistoryAccess || userSettings.allowBookmarkAccess
+        userSettings.allowBackwardsNavigation
+        || userSettings.allowRefresh
+        || userSettings.allowGoHome
+        || userSettings.allowHistoryAccess
+        || userSettings.allowBookmarkAccess
+        || userSettings.allowLocalHtmlFile
     var showHistoryDialog by remember { mutableStateOf(false) }
     var showBookmarksDialog by remember { mutableStateOf(false) }
+
+    val pickHtmlLauncher = rememberFileUploadLauncher(
+        customLoadHtmlFile = customLoadHtmlFile,
+        onUrlBarTextChange = onUrlBarTextChange
+    )
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -90,9 +105,11 @@ fun AddressBar(
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Go
             ),
-            keyboardActions = KeyboardActions(
-                onGo = { if (urlBarText.text.isNotBlank()) addressBarSearch(urlBarText.text) }
-            ),
+            keyboardActions = KeyboardActions(onGo = {
+                if (urlBarText.text.isNotBlank()) {
+                    addressBarSearch(urlBarText.text)
+                }
+            }),
             textStyle = LocalTextStyle.current,
             trailingIcon = {
                 IconButton(onClick = { addressBarSearch(urlTextState) }) {
@@ -126,16 +143,12 @@ fun AddressBar(
                             enabled = systemSettings.historyIndex > 0,
                             onClick = {
                                 WebViewNavigation.goBack(customLoadUrl, systemSettings)
-                                val newUrl =
-                                    systemSettings.historyStack[systemSettings.historyIndex].url
+                                val newUrl = systemSettings.historyStack[systemSettings.historyIndex].url
                                 onUrlBarTextChange(TextFieldValue(newUrl))
                                 menuExpanded = false
                             },
                             leadingIcon = {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back"
-                                )
+                                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                             }
                         )
                         DropdownMenuItem(
@@ -143,16 +156,12 @@ fun AddressBar(
                             enabled = systemSettings.historyIndex < (systemSettings.historyStack.size - 1),
                             onClick = {
                                 WebViewNavigation.goForward(customLoadUrl, systemSettings)
-                                val newUrl =
-                                    systemSettings.historyStack[systemSettings.historyIndex].url
+                                val newUrl = systemSettings.historyStack[systemSettings.historyIndex].url
                                 onUrlBarTextChange(TextFieldValue(newUrl))
                                 menuExpanded = false
                             },
                             leadingIcon = {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.ArrowForward,
-                                    contentDescription = "Forward"
-                                )
+                                Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Forward")
                             }
                         )
                     }
@@ -160,12 +169,7 @@ fun AddressBar(
                         DropdownMenuItem(
                             text = { Text("Refresh") },
                             onClick = { webView.reload(); menuExpanded = false },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Filled.Refresh,
-                                    contentDescription = "Refresh"
-                                )
-                            }
+                            leadingIcon = { Icon(Icons.Filled.Refresh, contentDescription = "Refresh") }
                         )
                     }
                     if (userSettings.allowGoHome) {
@@ -187,10 +191,7 @@ fun AddressBar(
                                 showHistoryDialog = true
                             },
                             leadingIcon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.outline_history_24),
-                                    contentDescription = "History"
-                                )
+                                Icon(painter = painterResource(R.drawable.outline_history_24), contentDescription = "History")
                             }
                         )
                     }
@@ -202,37 +203,38 @@ fun AddressBar(
                                 showBookmarksDialog = true
                             },
                             leadingIcon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.outline_bookmark_24),
-                                    contentDescription = "Bookmarks"
-                                )
+                                Icon(painter = painterResource(R.drawable.outline_bookmark_24), contentDescription = "Bookmarks")
                             }
                         )
                     }
+                    if (userSettings.allowLocalHtmlFile && !isLocked) {
+                    DropdownMenuItem(
+                        text = { Text("HTML") },
+                        onClick = {
+                            menuExpanded = false
+                            pickHtmlLauncher.launch(arrayOf("text/html"))
+                        },
+                        leadingIcon = {
+                            Icon(painter = painterResource(R.drawable.outline_upload_file_24), contentDescription = "Upload")
+                        }
+                    )
+                        }
                 }
             }
         }
     }
 
     if (showHistoryDialog) {
-        HistoryDialog(
-            customLoadUrl,
-            onDismiss = { showHistoryDialog = false }
-        )
+        HistoryDialog(customLoadUrl, onDismiss = { showHistoryDialog = false })
     }
 
     if (showBookmarksDialog) {
-        BookmarksDialog(
-            customLoadUrl,
-            onDismiss = { showBookmarksDialog = false },
-        )
+        BookmarksDialog(customLoadUrl, onDismiss = { showBookmarksDialog = false })
     }
 
     LaunchedEffect(hasFocus) {
-        if (hasFocus) onUrlBarTextChange(
-            urlBarText.copy(
-                selection = TextRange(0, urlBarText.text.length)
-            )
-        )
+        if (hasFocus) {
+            onUrlBarTextChange(urlBarText.copy(selection = TextRange(0, urlBarText.text.length)))
+        }
     }
 }
