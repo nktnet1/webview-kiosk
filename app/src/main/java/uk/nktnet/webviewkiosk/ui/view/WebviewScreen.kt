@@ -117,7 +117,7 @@ fun WebviewScreen(navController: NavController) {
                     focusRequester = focusRequester,
                     addressBarSearch = addressBarSearch,
                     webView = webView,
-                    customLoadUrl = ::customLoadUrl
+                    customLoadUrl = ::customLoadUrl,
                 )
             }
 

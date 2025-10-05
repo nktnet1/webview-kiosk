@@ -3,8 +3,7 @@ title: Web Content
 description: Home URL, blacklist, whitelist
 ---
 
-import { Link } from 'next/link';
-import { EllipsisVertical, Wrench } from 'lucide-react';
+import { EllipsisVertical } from 'lucide-react';
 import RegexPlayground from '@/components/RegexPlayground';
 
 ## 1. Home URL
@@ -52,3 +51,11 @@ Allow `https://allowsite.com` home page and all subdomains and paths for `https:
 Specify bookmarked URLs one per line.
 
 This is accessible in the address bar. See also: "Allow Bookmark Access" under `Web Browsing`.
+
+## 4. Allow Local Files
+
+Set to true to enable access to local files (html, image, text) that were uploaded
+in the app settings via the 3-dot icon <span className="inline-flex">(<EllipsisVertical />)</span>
+on the right of the address bar.
+
+**Default:** true

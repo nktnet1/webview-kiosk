@@ -39,12 +39,17 @@ fun AddressBar(
     focusRequester: FocusRequester,
     addressBarSearch: (String) -> Unit,
     webView: WebView,
-    customLoadUrl: (newUrl: String) -> Unit
+    customLoadUrl: (newUrl: String) -> Unit,
 ) {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
     var urlTextState by remember { mutableStateOf(urlBarText.text) }
+
+    var menuExpanded by remember { mutableStateOf(false) }
+    var showHistoryDialog by remember { mutableStateOf(false) }
+    var showBookmarksDialog by remember { mutableStateOf(false) }
+    var showLocalFilesDialog by remember { mutableStateOf(false) }
 
     val isLocked by rememberLockedState()
     val addressBarInset = when (userSettings.webViewInset) {
@@ -53,15 +58,12 @@ fun AddressBar(
         WebViewInset.SafeDrawing,
         WebViewInset.SafeGestures,
         WebViewInset.SafeContent -> WindowInsets()
-        else -> if (!isLocked) WindowInsets.statusBars else WindowInsets()
+        else -> if (!isLocked) {
+            WindowInsets.statusBars
+        } else {
+            WindowInsets()
+        }
     }
-
-    var menuExpanded by remember { mutableStateOf(false) }
-    val showMenu =
-        userSettings.allowBackwardsNavigation || userSettings.allowRefresh || userSettings.allowGoHome ||
-                userSettings.allowHistoryAccess || userSettings.allowBookmarkAccess
-    var showHistoryDialog by remember { mutableStateOf(false) }
-    var showBookmarksDialog by remember { mutableStateOf(false) }
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -90,16 +92,23 @@ fun AddressBar(
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Go
             ),
-            keyboardActions = KeyboardActions(
-                onGo = { if (urlBarText.text.isNotBlank()) addressBarSearch(urlBarText.text) }
-            ),
-            textStyle = LocalTextStyle.current,
+            keyboardActions = KeyboardActions(onGo = {
+                if (urlBarText.text.isNotBlank()) addressBarSearch(urlBarText.text)
+            }),
             trailingIcon = {
                 IconButton(onClick = { addressBarSearch(urlTextState) }) {
                     Icon(Icons.Default.Search, contentDescription = "Go")
                 }
             }
         )
+
+        val showMenu =
+            userSettings.allowBackwardsNavigation
+                    || userSettings.allowRefresh
+                    || userSettings.allowGoHome
+                    || userSettings.allowHistoryAccess
+                    || userSettings.allowBookmarkAccess
+                    || userSettings.allowLocalFiles
 
         if (showMenu) {
             Box(modifier = Modifier.padding(start = 4.dp)) {
@@ -126,46 +135,29 @@ fun AddressBar(
                             enabled = systemSettings.historyIndex > 0,
                             onClick = {
                                 WebViewNavigation.goBack(customLoadUrl, systemSettings)
-                                val newUrl =
-                                    systemSettings.historyStack[systemSettings.historyIndex].url
+                                val newUrl = systemSettings.historyStack[systemSettings.historyIndex].url
                                 onUrlBarTextChange(TextFieldValue(newUrl))
                                 menuExpanded = false
                             },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back"
-                                )
-                            }
+                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
                         )
                         DropdownMenuItem(
                             text = { Text("Forward") },
                             enabled = systemSettings.historyIndex < (systemSettings.historyStack.size - 1),
                             onClick = {
                                 WebViewNavigation.goForward(customLoadUrl, systemSettings)
-                                val newUrl =
-                                    systemSettings.historyStack[systemSettings.historyIndex].url
+                                val newUrl = systemSettings.historyStack[systemSettings.historyIndex].url
                                 onUrlBarTextChange(TextFieldValue(newUrl))
                                 menuExpanded = false
                             },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.ArrowForward,
-                                    contentDescription = "Forward"
-                                )
-                            }
+                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Forward") }
                         )
                     }
                     if (userSettings.allowRefresh) {
                         DropdownMenuItem(
                             text = { Text("Refresh") },
                             onClick = { webView.reload(); menuExpanded = false },
-                            leadingIcon = {
-                                Icon(
-                                    Icons.Filled.Refresh,
-                                    contentDescription = "Refresh"
-                                )
-                            }
+                            leadingIcon = { Icon(Icons.Filled.Refresh, contentDescription = "Refresh") }
                         )
                     }
                     if (userSettings.allowGoHome) {
@@ -186,12 +178,7 @@ fun AddressBar(
                                 menuExpanded = false
                                 showHistoryDialog = true
                             },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.outline_history_24),
-                                    contentDescription = "History"
-                                )
-                            }
+                            leadingIcon = { Icon(painter = painterResource(R.drawable.outline_history_24), contentDescription = "History") }
                         )
                     }
                     if (userSettings.allowBookmarkAccess) {
@@ -201,12 +188,17 @@ fun AddressBar(
                                 menuExpanded = false
                                 showBookmarksDialog = true
                             },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.outline_bookmark_24),
-                                    contentDescription = "Bookmarks"
-                                )
-                            }
+                            leadingIcon = { Icon(painter = painterResource(R.drawable.outline_bookmark_24), contentDescription = "Bookmarks") }
+                        )
+                    }
+                    if (userSettings.allowLocalFiles) {
+                        DropdownMenuItem(
+                            text = { Text("Files") },
+                            onClick = {
+                                menuExpanded = false
+                                showLocalFilesDialog = true
+                            },
+                            leadingIcon = { Icon(painter = painterResource(R.drawable.outline_upload_file_24), contentDescription = "Local Files") }
                         )
                     }
                 }
@@ -215,24 +207,23 @@ fun AddressBar(
     }
 
     if (showHistoryDialog) {
-        HistoryDialog(
-            customLoadUrl,
-            onDismiss = { showHistoryDialog = false }
-        )
+        HistoryDialog(customLoadUrl, onDismiss = { showHistoryDialog = false })
     }
 
     if (showBookmarksDialog) {
-        BookmarksDialog(
-            customLoadUrl,
-            onDismiss = { showBookmarksDialog = false },
+        BookmarksDialog(customLoadUrl, onDismiss = { showBookmarksDialog = false })
+    }
+
+    if (showLocalFilesDialog) {
+        LocalFilesDialog(
+            onDismiss = { showLocalFilesDialog = false },
+            customLoadUrl = customLoadUrl
         )
     }
 
     LaunchedEffect(hasFocus) {
-        if (hasFocus) onUrlBarTextChange(
-            urlBarText.copy(
-                selection = TextRange(0, urlBarText.text.length)
-            )
-        )
+        if (hasFocus) {
+            onUrlBarTextChange(urlBarText.copy(selection = TextRange(0, urlBarText.text.length)))
+        }
     }
 }
