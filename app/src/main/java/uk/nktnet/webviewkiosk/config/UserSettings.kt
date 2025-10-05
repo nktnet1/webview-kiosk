@@ -176,7 +176,7 @@ class UserSettings(context: Context) {
         private const val WEBSITE_BLACKLIST = "web_content.website_blacklist"
         private const val WEBSITE_WHITELIST = "web_content.website_whitelist"
         private const val WEBSITE_BOOKMARKS = "web_content.website_bookmarks"
-        private const val ALLOW_LOCAL_FILES = "web_content.allow_local_html_file"
+        private const val ALLOW_LOCAL_FILES = "web_content.allow_local_files"
 
         private const val ALLOW_REFRESH = "web_browsing.allow_refresh"
         private const val ALLOW_BACKWARDS_NAVIGATION = "web_browsing.allow_backwards_navigation"
