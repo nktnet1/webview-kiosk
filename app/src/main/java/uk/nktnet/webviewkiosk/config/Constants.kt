@@ -10,6 +10,7 @@ object Constants {
 
     const val MIN_DESKTOP_WIDTH = 640
 
+    const val WEB_CONTENT_FILES_DIR = "web-content-files"
+
     const val REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL = 9999
-    const val REQUEST_CODE_PICK_HTML_FILE = 9998
 }

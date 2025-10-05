@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.components.webview
 
 import android.content.Context
+import android.text.format.DateFormat
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,16 +17,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
-import java.util.concurrent.TimeUnit
-import android.text.format.DateFormat
-import androidx.compose.ui.text.font.FontStyle
 import java.util.Date
+import java.util.concurrent.TimeUnit
 
 private fun formatDatetime(context: Context, timestamp: Long): String {
     val now = System.currentTimeMillis()
@@ -54,6 +55,16 @@ fun HistoryDialog(
     var history by remember { mutableStateOf(systemSettings.historyStack) }
     var isUpdating by remember { mutableStateOf(false) }
     val listState = rememberLazyListState()
+
+    fun displayUrl(url: String): String {
+        val prefix = "file://"
+        val dir = Constants.WEB_CONTENT_FILES_DIR
+        return if (url.startsWith(prefix) && url.contains( Constants.WEB_CONTENT_FILES_DIR)) {
+            val start = url.indexOf(prefix) + prefix.length
+            val end = url.indexOf(dir) + dir.length
+            url.substring(0, start) + "..." + url.substring(end)
+        } else url
+    }
 
     LaunchedEffect(Unit) {
         val currentIndex = systemSettings.historyIndex.coerceIn(0, history.lastIndex)
@@ -106,9 +117,9 @@ fun HistoryDialog(
                                             withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                                                 append("[$index] ")
                                             }
-                                            append(item.url.toCharArray().joinToString("\u200B"))
+                                            append(displayUrl(item.url).toCharArray().joinToString("\u200B"))
                                         },
-                                        maxLines = 2,
+                                        maxLines = 3,
                                         overflow = TextOverflow.Ellipsis,
                                         style = if (isCurrent)
                                             MaterialTheme.typography.bodyMedium.copy(
@@ -118,7 +129,7 @@ fun HistoryDialog(
                                             MaterialTheme.typography.bodyMedium
                                     )
                                     Text(
-                                        text = formatDatetime(context,item.visitedAt),
+                                        text = formatDatetime(context, item.visitedAt),
                                         fontStyle = FontStyle.Italic,
                                         modifier = Modifier.padding(top = 2.dp),
                                         style = MaterialTheme.typography.bodySmall,

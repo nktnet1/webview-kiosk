@@ -17,36 +17,43 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.files.LocalFileList
-import uk.nktnet.webviewkiosk.utils.displayName
 import uk.nktnet.webviewkiosk.utils.listLocalFiles
 import uk.nktnet.webviewkiosk.utils.uploadFile
+import java.io.File
 
 @Composable
 fun SettingsWebContentFilesScreen(navController: NavController) {
     val context = LocalContext.current
-    var filesList by remember { mutableStateOf(listLocalFiles(context.filesDir)) }
-    val showToast = rememberToast()
+    val filesDir = File(context.filesDir, Constants.WEB_CONTENT_FILES_DIR).apply {
+        if (!exists()) {
+            mkdirs()
+        }
+    }
+
+    var filesList by remember { mutableStateOf(listLocalFiles(filesDir)) }
 
     val fileUploadLauncher: ManagedActivityResultLauncher<Array<String>, Uri?> =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.OpenDocument(),
             onResult = { uri: Uri? ->
                 if (uri == null) {
-                    showToast("File selection cancelled")
                     return@rememberLauncherForActivityResult
                 }
+
                 try {
                     context.contentResolver.takePersistableUriPermission(
                         uri,
                         Intent.FLAG_GRANT_READ_URI_PERMISSION
                     )
-                    val file = uploadFile(context, uri, context.filesDir)
-                    filesList = listLocalFiles(context.filesDir)
-                    showToast("File uploaded: ${file.displayName()}")
+
+                    uploadFile(context, uri, filesDir)
+                    filesList = listLocalFiles(filesDir)
+                    Toast.makeText(context, "File uploaded", Toast.LENGTH_SHORT).show()
                 } catch (e: Exception) {
-                    showToast("File upload failed: ${e.message}")
+                    Toast.makeText(context, "Upload failed: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         )
@@ -71,7 +78,19 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                 .padding(vertical = 8.dp),
             contentAlignment = Alignment.Center
         ) {
-            Button(onClick = { fileUploadLauncher.launch(arrayOf("text/html")) }) {
+            Button(
+                onClick = {
+                    fileUploadLauncher.launch(arrayOf(
+                        "text/*",
+                        "image/*",
+                        "application/json",
+                        "application/javascript",
+                        "application/xml",
+                        "application/sql",
+                    ))
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Text("Upload")
                 Spacer(modifier = Modifier.width(8.dp))
                 Icon(
@@ -87,16 +106,14 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
                 .align(Alignment.End)
-                .padding(
-                    top = 4.dp, end = 4.dp,
-                )
+                .padding(top = 4.dp, end = 4.dp)
         )
 
         if (filesList.isEmpty()) {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp),
+                    .padding(top = 32.dp),
                 contentAlignment = Alignment.TopCenter
             ) {
                 Text(
@@ -108,26 +125,11 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
         } else {
             LocalFileList(
                 filesList = filesList,
-                onDeleteClick = { file ->
-                    if (file.delete()) {
-                        filesList = listLocalFiles(context.filesDir)
-                        showToast("Deleted ${file.displayName()}")
-                    } else {
-                        showToast("Failed to delete ${file.displayName()}")
-                    }
+                filesDir = filesDir,
+                onFilesChanged = { updated ->
+                    filesList = updated
                 }
             )
         }
-    }
-}
-
-
-@Composable
-fun rememberToast(): (String) -> Unit {
-    val context = LocalContext.current
-    val toastRef = remember { mutableStateOf<Toast?>(null) }
-    return { message ->
-        toastRef.value?.cancel()
-        toastRef.value = Toast.makeText(context, message, Toast.LENGTH_SHORT).also { it.show() }
     }
 }

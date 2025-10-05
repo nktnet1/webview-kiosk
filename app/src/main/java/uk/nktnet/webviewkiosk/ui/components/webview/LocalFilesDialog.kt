@@ -17,7 +17,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.utils.listLocalFiles
+import java.io.File
 
 @Composable
 fun LocalFilesDialog(
@@ -25,7 +27,13 @@ fun LocalFilesDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    var filesList by remember { mutableStateOf(listLocalFiles(context.filesDir)) }
+    val filesDir = File(context.filesDir, Constants.WEB_CONTENT_FILES_DIR).apply {
+        if (!exists()) {
+            mkdirs()
+        }
+    }
+
+    var filesList by remember { mutableStateOf(listLocalFiles(filesDir)) }
     val listState = rememberLazyListState()
 
     Dialog(onDismissRequest = onDismiss) {
@@ -104,7 +112,9 @@ fun LocalFilesDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss) { Text("Close") }
+                    TextButton(onClick = onDismiss) {
+                        Text("Close")
+                    }
                 }
             }
         }
