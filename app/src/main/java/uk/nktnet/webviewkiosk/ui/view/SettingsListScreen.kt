@@ -26,7 +26,7 @@ fun SettingsListScreen(
     val settingsItems = listOf(
         Triple(
             "Web Content",
-            "Home URL, blacklist, whitelist, bookmark",
+            "Home URL, blacklist, whitelist, bookmark, files",
             Screen.SettingsWebContent.route
         ),
         Triple(
