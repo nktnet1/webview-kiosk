@@ -8,6 +8,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -33,9 +34,16 @@ fun GenericSettingFieldDialog(
     if (showInfoDialog) {
         AlertDialog(
             onDismissRequest = { showInfoDialog = false },
-            title = { Text(title) },
+            title = {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+            },
             text = {
-                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                ) {
                     Text(
                         infoText
                             .replace("\t", "    ")
@@ -53,13 +61,20 @@ fun GenericSettingFieldDialog(
         onDismissRequest = onDismiss,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(title, modifier = Modifier.weight(1f))
+                Text(
+                    title,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
                 Icon(
                     imageVector = Icons.Default.Info,
                     contentDescription = "Info",
                     modifier = Modifier
                         .size(20.dp)
                         .clickable { showInfoDialog = true }
+                        .padding(
+                            start = 5.dp
+                        )
                         .align(Alignment.CenterVertically)
                 )
             }
