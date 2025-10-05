@@ -13,7 +13,8 @@ import { PLAYSTORE_URL, GITHUB_URL } from '@/config/links'
 
 From [v0.17.0](https://github.com/nktnet1/webview-kiosk/releases/tag/v0.17.0),
 Google Play's [automatic protection](https://support.google.com/googleplay/android-developer/answer/10183279)
-has been intentionally **disabled** to allow redistribution.
+has been intentionally **disabled** to allow installations from the Aurora Store
+([context](https://gitlab.com/AuroraOSS/AuroraStore/-/issues/1088)).
 
 </Callout>
 
@@ -36,7 +37,7 @@ for faster updates and better privacy.
 
 You can use the [Aurora Store](https://auroraoss.com/aurora-store),
 a FOSS client for Google Play that works without needing Google Play Services or microG,
-to install {APP_NAME}, starting from [v0.17.0](https://github.com/nktnet1/webview-kiosk/releases/tag/v0.17.0).
+starting from [v0.17.0](https://github.com/nktnet1/webview-kiosk/releases/tag/v0.17.0).
 
 ## 2. GitHub
 
@@ -95,7 +96,9 @@ available.
 </a>
 
 With [F-Droid reproducible builds](https://f-droid.org/docs/Reproducible_Builds)
-enabled, F-Droid will use the same APK as GitHub releases.
+enabled, F-Droid will publish the same APK as the GitHub releases after confirming
+that it was generated from the same source code.
+
 
 ### 2.3. IzzyOnDroid
 
@@ -110,6 +113,6 @@ enabled, F-Droid will use the same APK as GitHub releases.
   />
 </a>
 
-Similar to F-droid, the
+Similar to F-Droid, the
 [IzzyOnDroid reproducible builds](https://android.izzysoft.de/articles/named/iod-rbs-mirrors-clients)
 criteria is also met.
