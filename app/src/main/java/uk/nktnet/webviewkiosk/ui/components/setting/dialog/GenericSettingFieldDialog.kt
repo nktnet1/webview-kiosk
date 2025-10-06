@@ -70,7 +70,7 @@ fun GenericSettingFieldDialog(
                     painter = painterResource(R.drawable.baseline_info_24),
                     contentDescription = "Info",
                     modifier = Modifier
-                        .size(20.dp)
+                        .size(25.dp)
                         .clickable { showInfoDialog = true }
                         .padding(
                             start = 5.dp
