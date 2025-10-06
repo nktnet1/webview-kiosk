@@ -21,22 +21,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.files.LocalFileList
+import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.listLocalFiles
 import uk.nktnet.webviewkiosk.utils.uploadFile
-import java.io.File
 import java.util.concurrent.CancellationException
 
 @Composable
 fun SettingsWebContentFilesScreen(navController: NavController) {
     val context = LocalContext.current
-    val filesDir = File(context.filesDir, Constants.WEB_CONTENT_FILES_DIR).apply {
-        if (!exists()) {
-            mkdirs()
-        }
-    }
+    val filesDir = getWebContentFilesDir(context)
 
     var filesList by remember { mutableStateOf(listLocalFiles(filesDir)) }
     var uploading by remember { mutableStateOf(false) }
