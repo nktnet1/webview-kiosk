@@ -14,8 +14,10 @@ fun LockOnLaunchSetting() {
     BooleanSettingFieldItem(
         label = "Lock on App Launch",
         infoText = """
-            When enabled, the app will immediately enter locked/pinned/kiosk mode
-            on startup, preventing exit until unpinned.
+            When enabled, the app will immediately enter locked/pinned mode on startup,
+            preventing exit until unpinned.
+
+            On some devices, you may still be prompted with a confirmation screen.
         """.trimIndent(),
         initialValue = userSettings.lockOnLaunch,
         onSave = { userSettings.lockOnLaunch = it }
