@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.view
+package uk.nktnet.webviewkiosk.ui.screens
 
 import android.net.Uri
 import android.widget.Toast

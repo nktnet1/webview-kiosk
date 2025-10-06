@@ -24,7 +24,7 @@ import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
-import uk.nktnet.webviewkiosk.ui.view.*
+import uk.nktnet.webviewkiosk.ui.screens.*
 import uk.nktnet.webviewkiosk.utils.authComposable
 import java.io.File
 

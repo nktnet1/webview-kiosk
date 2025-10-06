@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.view
+package uk.nktnet.webviewkiosk.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState

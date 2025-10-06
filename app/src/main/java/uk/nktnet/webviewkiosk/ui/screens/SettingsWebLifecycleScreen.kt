@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.view
+package uk.nktnet.webviewkiosk.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -9,10 +9,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.*
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.ResetOnInactivitySecondsSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.ResetOnLaunchSetting
 
 @Composable
-fun SettingsWebEngineScreen(navController: NavController) {
+fun SettingsWebLifecycleScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -20,20 +21,11 @@ fun SettingsWebEngineScreen(navController: NavController) {
             .windowInsetsPadding(WindowInsets.safeContent)
             .verticalScroll(rememberScrollState())
     ) {
-        SettingLabel(navController = navController, label = "Web Engine")
+        SettingLabel(navController = navController, label = "Web Lifecycle")
 
         SettingDivider()
 
-        EnableJavaScriptSetting()
-        EnableDomStorageSetting()
-        AcceptCookiesSetting()
-        AcceptThirdPartyCookiesSetting()
-        CacheModeSetting()
-        UserAgentSetting()
-        LayoutAlgorithmSetting()
-        UseWideViewPortSetting()
-        LoadWithOverviewModeSetting()
-        EnableZoomSetting()
-        DisplayZoomControlsSetting()
+        ResetOnLaunchSetting()
+        ResetOnInactivitySecondsSetting()
     }
 }
