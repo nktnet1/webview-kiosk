@@ -49,8 +49,8 @@ class UserSettings(context: Context) {
         set(value) = prefs.edit { putString(LAYOUT_ALGORITHM, value.algorithm.name) }
 
     var userAgent by stringPrefOptional(prefs, USER_AGENT)
-    var useWideViewPort by booleanPref(prefs, USE_WIDE_VIEWPORT, false)
-    var loadWithOverviewMode by booleanPref(prefs, LOAD_WITH_OVERVIEW_MODE, false)
+    var useWideViewPort by booleanPref(prefs, USE_WIDE_VIEWPORT, true)
+    var loadWithOverviewMode by booleanPref(prefs, LOAD_WITH_OVERVIEW_MODE, true)
     var enableZoom by booleanPref(prefs, ENABLE_ZOOM, true)
     var displayZoomControls by booleanPref(prefs, DISPLAY_ZOOM_CONTROLS, false)
 
