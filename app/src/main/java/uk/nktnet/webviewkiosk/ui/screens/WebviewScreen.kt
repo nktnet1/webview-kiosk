@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.view
+package uk.nktnet.webviewkiosk.ui.screens
 
 import android.app.Activity
 import android.webkit.CookieManager

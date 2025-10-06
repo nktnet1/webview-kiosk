@@ -2,71 +2,61 @@ package uk.nktnet.webviewkiosk
 
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.Surface
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowInsetsControllerCompat
-import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.Screen
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
-import uk.nktnet.webviewkiosk.ui.components.auth.RequireAuthWrapper
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
-import uk.nktnet.webviewkiosk.ui.view.*
-import uk.nktnet.webviewkiosk.utils.saveContentIntentToFile
+import uk.nktnet.webviewkiosk.ui.screens.*
+import uk.nktnet.webviewkiosk.utils.authComposable
 import java.io.File
 
 class MainActivity : AppCompatActivity() {
+
+    private var uploadingFileUri: Uri? = null
+    private var uploadProgress by mutableFloatStateOf(0f)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         val systemSettings = SystemSettings(this)
         val userSettings = UserSettings(this)
-        File(filesDir, Constants.WEB_CONTENT_FILES_DIR).mkdirs()
-
-        if (intent.action == Intent.ACTION_VIEW && intent.data != null && systemSettings.intentUrl.isEmpty()) {
-            val dataUri = intent.data!!
-            val localFileDir = File(filesDir, Constants.WEB_CONTENT_FILES_DIR)
-
-            val finalUrl = when (dataUri.scheme) {
-                "content" -> {
-                    val file = saveContentIntentToFile(this, dataUri, localFileDir)
-                    "file://${file.absolutePath}"
-                }
-                else -> dataUri.toString()
-            }
-
-            systemSettings.intentUrl = finalUrl
-
-            startActivity(
-                Intent(this, MainActivity::class.java).apply {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                }
-            )
-            finish()
-            return
+        val webContentDir = File(filesDir, Constants.WEB_CONTENT_FILES_DIR).apply {
+            if (!exists()) mkdirs()
         }
-        systemSettings.isFreshLaunch = true
 
         enableEdgeToEdge()
         BiometricPromptManager.init(this)
-
         applyDeviceRotation(userSettings.deviceRotation)
+        systemSettings.isFreshLaunch = true
+
+        // Handle content:// intents asynchronously
+        if (intent.action == Intent.ACTION_VIEW && intent.data != null && systemSettings.intentUrl.isEmpty()) {
+            val dataUri = intent.data!!
+            if (dataUri.scheme == "content") {
+                uploadingFileUri = dataUri
+            } else {
+                // Just a regular URL
+                systemSettings.intentUrl = dataUri.toString()
+            }
+        }
 
         setContent {
             val themeState = remember { mutableStateOf(userSettings.theme) }
@@ -98,66 +88,66 @@ class MainActivity : AppCompatActivity() {
             WebviewKioskTheme(darkTheme = isDarkTheme) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = androidx.compose.material3.MaterialTheme.colorScheme.background
+                    color = MaterialTheme.colorScheme.background
                 ) {
                     val navController = rememberNavController()
 
-                    NavHost(navController, startDestination = Screen.WebView.route) {
-                        composable(Screen.WebView.route) {
-                            WebviewScreen(navController)
-                        }
+                    uploadingFileUri?.let { uri ->
+                        UploadFileProgressScreen(
+                            context = this@MainActivity,
+                            uri = uri,
+                            targetDir = webContentDir,
+                            onProgress = { progress -> uploadProgress = progress },
+                            onComplete = { file ->
+                                systemSettings.intentUrl = "file://${file.absolutePath}"
+                                startActivity(
+                                    Intent(this@MainActivity, MainActivity::class.java).apply {
+                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                    }
+                                )
+                                finish()
+                            }
+                        )
+                    } ?: run {
+                        NavHost(navController, startDestination = Screen.WebView.route) {
+                            composable(Screen.WebView.route) {
+                                WebviewScreen(navController)
+                            }
 
-                        navigation(
-                            startDestination = Screen.Settings.route,
-                            route = "settings_list"
-                        ) {
-                            authComposable(Screen.Settings.route) {
-                                SettingsListScreen(
-                                    navController,
-                                    themeState = themeState,
-                                )
-                            }
-                            authComposable(Screen.SettingsWebContent.route) {
-                                SettingsWebContentScreen(navController)
-                            }
-                            authComposable(Screen.SettingsWebContentFiles.route) {
-                                SettingsWebContentFilesScreen(navController)
-                            }
-                            authComposable(Screen.SettingsWebBrowsing.route) {
-                                SettingsWebBrowsingScreen(navController)
-                            }
-                            authComposable(Screen.SettingsWebEngine.route) {
-                                SettingsWebEngineScreen(
-                                    navController,
-                                )
-                            }
-                            authComposable(Screen.SettingsWebLifecycle.route) {
-                                SettingsWebLifecycleScreen(
-                                    navController,
-                                )
-                            }
-                            authComposable(Screen.SettingsAppearance.route) {
-                                SettingsAppearanceScreen(
-                                    navController,
-                                    themeState = themeState,
-                                )
-                            }
-                            authComposable(Screen.SettingsDevice.route) {
-                                SettingsDeviceScreen(
-                                    navController,
-                                    keepScreenOnState,
-                                    deviceRotationState
-                                )
-                            }
-                            authComposable(Screen.SettingsJsScript.route) {
-                                SettingsJsScriptsScreen(
-                                    navController,
-                                )
-                            }
-                            authComposable(Screen.SettingsAbout.route) {
-                                SettingsAboutScreen(
-                                    navController,
-                                )
+                            navigation(
+                                startDestination = Screen.Settings.route,
+                                route = "settings_list"
+                            ) {
+                                authComposable(Screen.Settings.route) {
+                                    SettingsListScreen(navController, themeState = themeState)
+                                }
+                                authComposable(Screen.SettingsWebContent.route) {
+                                    SettingsWebContentScreen(navController)
+                                }
+                                authComposable(Screen.SettingsWebContentFiles.route) {
+                                    SettingsWebContentFilesScreen(navController)
+                                }
+                                authComposable(Screen.SettingsWebBrowsing.route) {
+                                    SettingsWebBrowsingScreen(navController)
+                                }
+                                authComposable(Screen.SettingsWebEngine.route) {
+                                    SettingsWebEngineScreen(navController)
+                                }
+                                authComposable(Screen.SettingsWebLifecycle.route) {
+                                    SettingsWebLifecycleScreen(navController)
+                                }
+                                authComposable(Screen.SettingsAppearance.route) {
+                                    SettingsAppearanceScreen(navController, themeState = themeState)
+                                }
+                                authComposable(Screen.SettingsDevice.route) {
+                                    SettingsDeviceScreen(navController, keepScreenOnState, deviceRotationState)
+                                }
+                                authComposable(Screen.SettingsJsScript.route) {
+                                    SettingsJsScriptsScreen(navController)
+                                }
+                                authComposable(Screen.SettingsAbout.route) {
+                                    SettingsAboutScreen(navController)
+                                }
                             }
                         }
                     }
@@ -192,17 +182,6 @@ class MainActivity : AppCompatActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             BiometricPromptManager.handleLollipopDeviceCredentialResult(requestCode, resultCode)
-        }
-    }
-}
-
-inline fun NavGraphBuilder.authComposable(
-    route: String,
-    crossinline content: @Composable () -> Unit
-) {
-    composable(route) {
-        RequireAuthWrapper {
-            content()
         }
     }
 }

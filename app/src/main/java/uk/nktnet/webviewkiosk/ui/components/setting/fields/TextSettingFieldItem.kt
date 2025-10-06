@@ -5,15 +5,15 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.GenericSettingFieldDialog
 
 @Composable
@@ -109,7 +109,7 @@ fun TextSettingFieldItem(
                                 enabled = draftValue.isNotEmpty()
                             ) {
                                 Icon(
-                                    imageVector = Icons.Default.Clear,
+                                    painter = painterResource(R.drawable.baseline_clear_24),
                                     contentDescription = "Clear"
                                 )
                             }
@@ -129,7 +129,7 @@ fun TextSettingFieldItem(
                             .align(Alignment.End)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Clear,
+                            painter = painterResource(R.drawable.baseline_clear_24),
                             contentDescription = "Clear"
                         )
                     }

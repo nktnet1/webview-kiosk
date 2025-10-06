@@ -4,8 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -21,7 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import uk.nktnet.webviewkiosk.R
 
 @Composable
 fun <T> DropdownSelector(
@@ -48,7 +48,10 @@ fun <T> DropdownSelector(
             Box(Modifier.weight(1f)) {
                 itemContent(selected)
             }
-            Icon(Icons.Default.ArrowDropDown, contentDescription = "Select")
+            Icon(
+                painter = painterResource(R.drawable.outline_keyboard_arrow_down_24),
+                contentDescription = "Select"
+            )
         }
         DropdownMenu(
             expanded = expanded,

@@ -1,9 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.setting
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -11,8 +8,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 
 @Composable
@@ -22,7 +21,7 @@ fun SettingLabel(
     showBackIcon: Boolean = true,
     endIcon: @Composable (() -> Unit)? = {
         Icon(
-            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+            painter = painterResource(R.drawable.baseline_exit_to_app_24),
             contentDescription = "Go to WebView",
             modifier = Modifier.size(24.dp)
         )
@@ -48,7 +47,7 @@ fun SettingLabel(
                     modifier = Modifier.size(64.dp).offset(x = -sideOffset),
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        painter = painterResource(R.drawable.baseline_arrow_back_24),
                         contentDescription = "Back",
                         modifier = Modifier.size(24.dp),
                     )

@@ -4,8 +4,10 @@ import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.text.format.Formatter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.Locale
 import java.util.UUID
 
 fun listLocalFiles(dir: File): List<File> {
@@ -30,21 +32,48 @@ fun generateUuidFileName(originalName: String): String {
     return "${UUID.randomUUID()}|$originalName"
 }
 
-fun uploadFile(context: Context, uri: Uri, targetDir: File): File {
+private fun copyInputStreamToFile(
+    input: java.io.InputStream,
+    targetFile: File,
+    onProgress: ((Float) -> Unit)? = null
+): File {
+    val totalBytes = input.available().toLong()
+    var copiedBytes = 0L
+    input.use { i ->
+        targetFile.outputStream().use { o ->
+            val buffer = ByteArray(4 * 1024 * 1024)
+            var bytesRead: Int
+            while (i.read(buffer).also { bytesRead = it } >= 0) {
+                o.write(buffer, 0, bytesRead)
+                copiedBytes += bytesRead
+                if (totalBytes > 0) {
+                    onProgress?.invoke(copiedBytes.toFloat() / totalBytes)
+                }
+            }
+        }
+    }
+    return targetFile
+}
+
+fun uploadFile(
+    context: Context,
+    uri: Uri,
+    targetDir: File,
+    onProgress: (Float) -> Unit
+): File {
     val inputStream = context.contentResolver.openInputStream(uri)
     val originalFileName = getFileNameFromUri(context, uri)
     val fileName = generateUuidFileName(originalFileName)
     val file = File(targetDir, fileName)
-
-    inputStream?.use { input ->
-        file.outputStream().use { output ->
-            input.copyTo(output)
-        }
-    }
-    return file
+    return copyInputStreamToFile(inputStream!!, file, onProgress)
 }
 
-fun saveContentIntentToFile(context: Context, contentUri: Uri, targetDir: File): File {
+suspend fun saveContentIntentToFile(
+    context: Context,
+    contentUri: Uri,
+    targetDir: File,
+    onProgress: ((Float) -> Unit)? = null
+): File = withContext(Dispatchers.IO) {
     val inputStream = context.contentResolver.openInputStream(contentUri)
         ?: throw IllegalArgumentException("Unable to open InputStream for URI: $contentUri")
 
@@ -59,22 +88,13 @@ fun saveContentIntentToFile(context: Context, contentUri: Uri, targetDir: File):
     val fileName = generateUuidFileName(originalName)
     val file = File(targetDir, fileName)
 
-    inputStream.use { input ->
-        file.outputStream().use { output ->
-            input.copyTo(output)
-        }
-    }
-
-    return file
+    copyInputStreamToFile(inputStream, file, onProgress)
 }
 
-fun humanReadableSize(size: Long): String {
-    return when {
-        size >= 1024 * 1024 -> String.format(Locale.ROOT, "%.1f MB", size.toDouble() / (1024 * 1024))
-        size >= 1024 -> String.format(Locale.ROOT, "%.1f KB", size.toDouble() / 1024)
-        else -> "$size B"
-    }
+fun humanReadableSize(context: Context, size: Long): String {
+    return Formatter.formatFileSize(context, size)
 }
+
 fun File.getUUID(): String {
     return this.name.split("|", limit = 2).getOrElse(0) { "" }
 }
