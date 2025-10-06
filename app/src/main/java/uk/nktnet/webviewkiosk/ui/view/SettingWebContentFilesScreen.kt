@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,6 +17,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
@@ -23,6 +27,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.files.LocalFileList
 import uk.nktnet.webviewkiosk.utils.listLocalFiles
 import uk.nktnet.webviewkiosk.utils.uploadFile
 import java.io.File
+import java.util.concurrent.CancellationException
 
 @Composable
 fun SettingsWebContentFilesScreen(navController: NavController) {
@@ -33,31 +38,53 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
         }
     }
 
-
     var filesList by remember { mutableStateOf(listLocalFiles(filesDir)) }
+    var uploading by remember { mutableStateOf(false) }
+    var progress by remember { mutableFloatStateOf(0f) }
+
+    val coroutineScope = rememberCoroutineScope()
+
     fun refreshFiles() {
         filesList = listLocalFiles(filesDir)
+    }
+
+    val startUpload: (Uri) -> Unit = remember {
+        { uri ->
+            coroutineScope.launch {
+                uploading = true
+                progress = 0f
+                try {
+                    context.contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                    withContext(Dispatchers.IO) {
+                        uploadFile(context, uri, filesDir) { p ->
+                            progress = p
+                        }
+                    }
+                    filesList = listLocalFiles(filesDir)
+                    Toast.makeText(context, "File uploaded", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    if (e is CancellationException) {
+                        // Ignore cancellation caused by leaving the UI
+                    } else {
+                        Toast.makeText(context, "Upload failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                    }
+                } finally {
+                    uploading = false
+                    progress = 0f
+                }
+            }
+        }
     }
 
     val fileUploadLauncher: ManagedActivityResultLauncher<Array<String>, Uri?> =
         rememberLauncherForActivityResult(
             contract = ActivityResultContracts.OpenDocument(),
             onResult = { uri: Uri? ->
-                if (uri == null) {
-                    return@rememberLauncherForActivityResult
-                }
-
-                try {
-                    context.contentResolver.takePersistableUriPermission(
-                        uri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
-
-                    uploadFile(context, uri, filesDir)
-                    filesList = listLocalFiles(filesDir)
-                    Toast.makeText(context, "File uploaded", Toast.LENGTH_SHORT).show()
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Upload failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                if (uri != null) {
+                    startUpload(uri)
                 }
             }
         )
@@ -82,27 +109,43 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                 .padding(vertical = 8.dp),
             contentAlignment = Alignment.Center
         ) {
-            Button(
-                onClick = {
-                    fileUploadLauncher.launch(arrayOf(
-                        "text/*",
-                        "image/*",
-                        "audio/*",
-                        "video/*",
-                        "application/json",
-                        "application/javascript",
-                        "application/xml",
-                        "application/sql",
-                    ))
-                },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Upload")
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    painter = painterResource(R.drawable.outline_upload_file_24),
-                    contentDescription = "Upload"
-                )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Button(
+                    onClick = {
+                        fileUploadLauncher.launch(
+                            arrayOf(
+                                "text/*",
+                                "image/*",
+                                "audio/*",
+                                "video/*",
+                                "application/json",
+                                "application/javascript",
+                                "application/xml",
+                                "application/sql",
+                            )
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !uploading
+                ) {
+                    Text("Upload")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        painter = painterResource(R.drawable.outline_upload_file_24),
+                        contentDescription = "Upload"
+                    )
+                }
+
+                if (uploading) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        modifier = Modifier.fillMaxWidth(),
+                        color = ProgressIndicatorDefaults.linearColor,
+                        trackColor = ProgressIndicatorDefaults.linearTrackColor,
+                        strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+                    )
+                }
             }
         }
 

@@ -4,8 +4,8 @@ import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.provider.OpenableColumns
+import android.text.format.Formatter
 import java.io.File
-import java.util.Locale
 import java.util.UUID
 
 fun listLocalFiles(dir: File): List<File> {
@@ -30,15 +30,28 @@ fun generateUuidFileName(originalName: String): String {
     return "${UUID.randomUUID()}|$originalName"
 }
 
-fun uploadFile(context: Context, uri: Uri, targetDir: File): File {
+fun uploadFile(
+    context: Context,
+    uri: Uri,
+    targetDir: File,
+    onProgress: (Float) -> Unit
+): File {
     val inputStream = context.contentResolver.openInputStream(uri)
     val originalFileName = getFileNameFromUri(context, uri)
     val fileName = generateUuidFileName(originalFileName)
     val file = File(targetDir, fileName)
+    val totalBytes = inputStream?.available()?.toLong() ?: 0L
+    var copiedBytes = 0L
 
     inputStream?.use { input ->
         file.outputStream().use { output ->
-            input.copyTo(output)
+            val buffer = ByteArray(4 * 1024 * 1024)
+            var bytesRead: Int
+            while (input.read(buffer).also { bytesRead = it } >= 0) {
+                output.write(buffer, 0, bytesRead)
+                copiedBytes += bytesRead
+                if (totalBytes > 0) onProgress(copiedBytes.toFloat() / totalBytes)
+            }
         }
     }
     return file
@@ -68,12 +81,8 @@ fun saveContentIntentToFile(context: Context, contentUri: Uri, targetDir: File):
     return file
 }
 
-fun humanReadableSize(size: Long): String {
-    return when {
-        size >= 1024 * 1024 -> String.format(Locale.ROOT, "%.1f MB", size.toDouble() / (1024 * 1024))
-        size >= 1024 -> String.format(Locale.ROOT, "%.1f KB", size.toDouble() / 1024)
-        else -> "$size B"
-    }
+fun humanReadableSize(context: Context, size: Long): String {
+    return Formatter.formatFileSize(context, size)
 }
 fun File.getUUID(): String {
     return this.name.split("|", limit = 2).getOrElse(0) { "" }

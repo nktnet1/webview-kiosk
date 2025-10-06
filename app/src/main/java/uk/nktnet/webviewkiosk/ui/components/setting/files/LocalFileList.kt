@@ -68,7 +68,7 @@ fun LocalFileList(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "Size: ${humanReadableSize(file.length())}",
+                        text = "Size: ${humanReadableSize(context, file.length())}",
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -179,7 +179,13 @@ fun LocalFileList(
             },
             title = { Text("Delete File") },
             text = {
-                Text("Are you sure you want to delete ${activeFile?.getDisplayName()}?")
+                Text("""
+                    Are you sure you want to delete this file?
+                    
+                      ${activeFile?.getDisplayName()}
+                      
+                    This will only remove the app's copy and not the original file on your device.
+                """.trimIndent())
             },
             confirmButton = {
                 TextButton(onClick = {
