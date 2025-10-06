@@ -7,6 +7,7 @@ import android.provider.OpenableColumns
 import android.text.format.Formatter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import uk.nktnet.webviewkiosk.config.Constants
 import java.io.File
 import java.util.UUID
 
@@ -89,6 +90,14 @@ suspend fun saveContentIntentToFile(
     val file = File(targetDir, fileName)
 
     copyInputStreamToFile(inputStream, file, onProgress)
+}
+
+fun getWebContentFilesDir(context: Context): File {
+    return File(context.filesDir, Constants.WEB_CONTENT_FILES_DIR).apply {
+        if (!exists()) {
+            mkdirs()
+        }
+    }
 }
 
 fun humanReadableSize(context: Context, size: Long): String {

@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
@@ -27,42 +28,28 @@ import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
 import uk.nktnet.webviewkiosk.ui.screens.*
 import uk.nktnet.webviewkiosk.utils.authComposable
-import java.io.File
+import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 
 class MainActivity : AppCompatActivity() {
-
     private var uploadingFileUri: Uri? = null
     private var uploadProgress by mutableFloatStateOf(0f)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
         val systemSettings = SystemSettings(this)
         val userSettings = UserSettings(this)
-        val webContentDir = File(filesDir, Constants.WEB_CONTENT_FILES_DIR).apply {
-            if (!exists()) mkdirs()
-        }
+        val webContentDir = getWebContentFilesDir(this)
 
-        enableEdgeToEdge()
         BiometricPromptManager.init(this)
         applyDeviceRotation(userSettings.deviceRotation)
         systemSettings.isFreshLaunch = true
 
-        if (intent.action == Intent.ACTION_VIEW && intent.data != null && systemSettings.intentUrl.isEmpty()) {
-            val dataUri = intent.data!!
-            if (dataUri.scheme == "content") {
-                uploadingFileUri = dataUri
-            } else {
-                systemSettings.intentUrl = dataUri.toString()
-            }
-        }
+        handleIntent(systemSettings)
 
         if (userSettings.lockOnLaunch) {
-            try {
-                startLockTask()
-            } catch (e: Exception) {
-                Toast.makeText(this, "Failed to lock app: ${e.message}", Toast.LENGTH_SHORT).show()
-            }
+            tryLockTask()
         }
 
         setContent {
@@ -71,21 +58,11 @@ class MainActivity : AppCompatActivity() {
             val deviceRotationState = remember { mutableStateOf(userSettings.deviceRotation) }
 
             KeepScreenOnOption(keepOn = keepScreenOnState.value)
+            LaunchedEffect(deviceRotationState.value) { applyDeviceRotation(deviceRotationState.value) }
 
-            LaunchedEffect(deviceRotationState.value) {
-                applyDeviceRotation(deviceRotationState.value)
-            }
-
-            val isDarkTheme = when (themeState.value) {
-                ThemeOption.SYSTEM -> isSystemInDarkTheme()
-                ThemeOption.DARK -> true
-                ThemeOption.LIGHT -> false
-            }
-
+            val isDarkTheme = resolveTheme(themeState.value)
             val window = (this as? AppCompatActivity)?.window
-            val insetsController = remember(window) {
-                window?.let { WindowInsetsControllerCompat(it, it.decorView) }
-            }
+            val insetsController = remember(window) { window?.let { WindowInsetsControllerCompat(it, it.decorView) } }
 
             LaunchedEffect(isDarkTheme) {
                 insetsController?.isAppearanceLightStatusBars = !isDarkTheme
@@ -93,12 +70,8 @@ class MainActivity : AppCompatActivity() {
             }
 
             WebviewKioskTheme(darkTheme = isDarkTheme) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
+                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     val navController = rememberNavController()
-
                     uploadingFileUri?.let { uri ->
                         UploadFileProgressScreen(
                             context = this@MainActivity,
@@ -116,48 +89,96 @@ class MainActivity : AppCompatActivity() {
                             }
                         )
                     } ?: run {
-                        NavHost(navController, startDestination = Screen.WebView.route) {
-                            composable(Screen.WebView.route) {
-                                WebviewScreen(navController)
-                            }
-
-                            navigation(
-                                startDestination = Screen.Settings.route,
-                                route = "settings_list"
-                            ) {
-                                authComposable(Screen.Settings.route) {
-                                    SettingsListScreen(navController, themeState = themeState)
-                                }
-                                authComposable(Screen.SettingsWebContent.route) {
-                                    SettingsWebContentScreen(navController)
-                                }
-                                authComposable(Screen.SettingsWebContentFiles.route) {
-                                    SettingsWebContentFilesScreen(navController)
-                                }
-                                authComposable(Screen.SettingsWebBrowsing.route) {
-                                    SettingsWebBrowsingScreen(navController)
-                                }
-                                authComposable(Screen.SettingsWebEngine.route) {
-                                    SettingsWebEngineScreen(navController)
-                                }
-                                authComposable(Screen.SettingsWebLifecycle.route) {
-                                    SettingsWebLifecycleScreen(navController)
-                                }
-                                authComposable(Screen.SettingsAppearance.route) {
-                                    SettingsAppearanceScreen(navController, themeState = themeState)
-                                }
-                                authComposable(Screen.SettingsDevice.route) {
-                                    SettingsDeviceScreen(navController, keepScreenOnState, deviceRotationState)
-                                }
-                                authComposable(Screen.SettingsJsScript.route) {
-                                    SettingsJsScriptsScreen(navController)
-                                }
-                                authComposable(Screen.SettingsAbout.route) {
-                                    SettingsAboutScreen(navController)
-                                }
-                            }
-                        }
+                        SetupNavHost(navController, themeState, keepScreenOnState, deviceRotationState)
                     }
+                }
+            }
+        }
+    }
+
+    private fun handleIntent(systemSettings: SystemSettings) {
+        when (intent.action) {
+            Intent.ACTION_VIEW -> {
+                intent.data?.let { dataUri ->
+                    if (dataUri.scheme == "content") {
+                        uploadingFileUri = dataUri
+                    } else if (systemSettings.intentUrl.isEmpty()) {
+                        systemSettings.intentUrl = dataUri.toString()
+                    }
+                }
+            }
+            Intent.ACTION_SEND -> {
+                val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM)
+                } else {
+                    @Suppress("DEPRECATION")
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM)
+                } ?: intent.data
+
+                uri?.let { uploadingFileUri = it }
+            }
+        }
+    }
+    private fun tryLockTask() {
+        try {
+            startLockTask()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Failed to lock app: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    @Composable
+    private fun resolveTheme(themeOption: ThemeOption): Boolean {
+        return when (themeOption) {
+            ThemeOption.SYSTEM -> isSystemInDarkTheme()
+            ThemeOption.DARK -> true
+            ThemeOption.LIGHT -> false
+        }
+    }
+
+    @Composable
+    private fun SetupNavHost(
+        navController: NavHostController,
+        themeState: MutableState<ThemeOption>,
+        keepScreenOnState: MutableState<Boolean>,
+        deviceRotationState: MutableState<DeviceRotationOption>
+    ) {
+        NavHost(navController, startDestination = Screen.WebView.route) {
+            composable(Screen.WebView.route) {
+                WebviewScreen(navController)
+            }
+
+            navigation(startDestination = Screen.Settings.route, route = "settings_list") {
+                authComposable(Screen.Settings.route) {
+                    SettingsListScreen(navController, themeState = themeState)
+                }
+                authComposable(Screen.SettingsWebContent.route) {
+                    SettingsWebContentScreen(navController)
+                }
+                authComposable(Screen.SettingsWebContentFiles.route) {
+                    SettingsWebContentFilesScreen(navController)
+                }
+                authComposable(Screen.SettingsWebBrowsing.route) {
+                    SettingsWebBrowsingScreen(navController)
+                }
+                authComposable(Screen.SettingsWebEngine.route) {
+                    SettingsWebEngineScreen(navController)
+                }
+                authComposable(Screen.SettingsWebLifecycle.route) {
+                    SettingsWebLifecycleScreen(navController)
+                }
+                authComposable(Screen.SettingsAppearance.route) {
+                    SettingsAppearanceScreen(navController, themeState = themeState)
+                }
+                authComposable(Screen.SettingsDevice.route) {
+                    SettingsDeviceScreen(navController, keepScreenOnState, deviceRotationState)
+                }
+                authComposable(Screen.SettingsJsScript.route) {
+                    SettingsJsScriptsScreen(navController)
+                }
+                authComposable(Screen.SettingsAbout.route) {
+                    SettingsAboutScreen(navController)
                 }
             }
         }
