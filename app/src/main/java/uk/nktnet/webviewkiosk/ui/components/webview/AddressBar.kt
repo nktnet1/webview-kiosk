@@ -5,10 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -97,7 +93,10 @@ fun AddressBar(
             }),
             trailingIcon = {
                 IconButton(onClick = { addressBarSearch(urlTextState) }) {
-                    Icon(Icons.Default.Search, contentDescription = "Go")
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_search_24),
+                        contentDescription = "Go"
+                    )
                 }
             }
         )
@@ -120,7 +119,7 @@ fun AddressBar(
                         .wrapContentSize(Alignment.Center)
                 ) {
                     Icon(
-                        Icons.Filled.MoreVert,
+                        painter = painterResource(R.drawable.outline_more_vert_24),
                         contentDescription = "Menu",
                         modifier = Modifier.size(32.dp)
                     )
@@ -139,7 +138,12 @@ fun AddressBar(
                                 onUrlBarTextChange(TextFieldValue(newUrl))
                                 menuExpanded = false
                             },
-                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_arrow_back_24),
+                                    contentDescription = "Back"
+                                )
+                            }
                         )
                         DropdownMenuItem(
                             text = { Text("Forward") },
@@ -150,14 +154,24 @@ fun AddressBar(
                                 onUrlBarTextChange(TextFieldValue(newUrl))
                                 menuExpanded = false
                             },
-                            leadingIcon = { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Forward") }
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_arrow_forward_24),
+                                    contentDescription = "Forward"
+                                )
+                            }
                         )
                     }
                     if (userSettings.allowRefresh) {
                         DropdownMenuItem(
                             text = { Text("Refresh") },
                             onClick = { webView.reload(); menuExpanded = false },
-                            leadingIcon = { Icon(Icons.Filled.Refresh, contentDescription = "Refresh") }
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_refresh_24),
+                                    contentDescription = "Refresh"
+                                )
+                            }
                         )
                     }
                     if (userSettings.allowGoHome) {
@@ -168,7 +182,12 @@ fun AddressBar(
                                 onUrlBarTextChange(TextFieldValue(userSettings.homeUrl))
                                 menuExpanded = false
                             },
-                            leadingIcon = { Icon(Icons.Filled.Home, contentDescription = "Home") }
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_home_24),
+                                    contentDescription = "Home"
+                                )
+                            }
                         )
                     }
                     if (userSettings.allowHistoryAccess) {

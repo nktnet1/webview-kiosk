@@ -6,11 +6,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -26,11 +21,13 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import kotlin.math.roundToInt
@@ -151,7 +148,7 @@ fun FloatingMenuButton(
                 modifier = Modifier.fillMaxSize()
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Build,
+                    painter = painterResource(R.drawable.baseline_build_24),
                     contentDescription = "Menu",
                     tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(36.dp)
@@ -170,7 +167,7 @@ fun FloatingMenuButton(
                     },
                     leadingIcon = {
                         Icon(
-                            Icons.Default.Home,
+                            painter = painterResource(R.drawable.baseline_home_24),
                             contentDescription = null,
                             modifier = Modifier.size(24.dp),
                             tint = tintColor
@@ -185,7 +182,7 @@ fun FloatingMenuButton(
                     },
                     leadingIcon = {
                         Icon(
-                            Icons.Default.Lock,
+                            painter = painterResource(R.drawable.baseline_lock_24),
                             contentDescription = null,
                             modifier = Modifier.size(24.dp),
                             tint = tintColor
@@ -200,7 +197,7 @@ fun FloatingMenuButton(
                     },
                     leadingIcon = {
                         Icon(
-                            Icons.Default.Settings,
+                            painter = painterResource(R.drawable.baseline_settings_24),
                             contentDescription = null,
                             modifier = Modifier.size(24.dp),
                             tint = tintColor

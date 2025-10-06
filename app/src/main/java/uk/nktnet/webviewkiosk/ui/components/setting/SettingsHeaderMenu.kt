@@ -6,9 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -91,7 +88,7 @@ fun SettingsHeaderMenu(
                 ) {
                     IconButton(onClick = { showMenu = true }) {
                         Icon(
-                            Icons.Default.MoreVert,
+                            painter = painterResource(R.drawable.outline_more_vert_24),
                             contentDescription = "Menu",
                             tint = MaterialTheme.colorScheme.onSurface
                         )
@@ -141,7 +138,7 @@ fun SettingsHeaderMenu(
                             },
                             leadingIcon = {
                                 Icon(
-                                    imageVector = Icons.Default.Info,
+                                    painter = painterResource(R.drawable.outline_info_24),
                                     contentDescription = null,
                                     tint = tintColor
                                 )

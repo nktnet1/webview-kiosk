@@ -2,15 +2,15 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fields
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import uk.nktnet.webviewkiosk.R
 
 @Composable
 fun <T> GenericSettingFieldItem(
@@ -35,7 +35,7 @@ fun <T> GenericSettingFieldItem(
                 description(value)
             }
             Icon(
-                imageVector = Icons.Default.Edit,
+                painter = painterResource(R.drawable.baseline_edit_24),
                 contentDescription = "Edit",
                 modifier = Modifier.align(Alignment.CenterEnd)
             )

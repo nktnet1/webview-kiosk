@@ -3,8 +3,6 @@ package uk.nktnet.webviewkiosk.ui.components.setting.files
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -15,6 +13,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.utils.getDisplayName
 import uk.nktnet.webviewkiosk.utils.getUUID
 import uk.nktnet.webviewkiosk.utils.humanReadableSize
@@ -86,7 +86,7 @@ fun LocalFileList(
                         menuExpanded = true
                     }) {
                         Icon(
-                            Icons.Filled.MoreVert,
+                            painter = painterResource(R.drawable.outline_more_vert_24),
                             contentDescription = "Menu",
                             modifier = Modifier.size(32.dp)
                         )

@@ -3,13 +3,13 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fields
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.GenericSettingFieldDialog
 
 @Composable
@@ -81,7 +81,10 @@ fun NumberSettingFieldItem(
                             onClick = { draftValue = ""; draftError = !validateNumber("") },
                             enabled = draftValue.isNotEmpty()
                         ) {
-                            Icon(imageVector = Icons.Default.Clear, contentDescription = "Clear")
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_clear_24),
+                                contentDescription = "Clear"
+                            )
                         }
                     },
                     modifier = Modifier.fillMaxWidth()
