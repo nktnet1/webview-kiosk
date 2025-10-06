@@ -54,6 +54,7 @@ class UserSettings(context: Context) {
     var enableZoom by booleanPref(prefs, ENABLE_ZOOM, true)
     var displayZoomControls by booleanPref(prefs, DISPLAY_ZOOM_CONTROLS, false)
 
+    var lockOnLaunch by booleanPref(prefs, LOCK_ON_LAUNCH, false)
     var resetOnLaunch by booleanPref(prefs, RESET_ON_LAUNCH, false)
     var resetOnInactivitySeconds by intPref(prefs, RESET_ON_INACTIVITY_SECONDS, 0)
 
@@ -106,6 +107,7 @@ class UserSettings(context: Context) {
             put(LOAD_WITH_OVERVIEW_MODE, loadWithOverviewMode)
             put(ENABLE_ZOOM, enableZoom)
             put(DISPLAY_ZOOM_CONTROLS, displayZoomControls)
+            put(LOCK_ON_LAUNCH, lockOnLaunch)
             put(RESET_ON_LAUNCH, resetOnLaunch)
             put(RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
             put(BLOCKED_MESSAGE, blockedMessage)
@@ -151,6 +153,7 @@ class UserSettings(context: Context) {
             loadWithOverviewMode = json.optBoolean(LOAD_WITH_OVERVIEW_MODE, loadWithOverviewMode)
             enableZoom = json.optBoolean(ENABLE_ZOOM, enableZoom)
             displayZoomControls = json.optBoolean(DISPLAY_ZOOM_CONTROLS, displayZoomControls)
+            lockOnLaunch = json.optBoolean(LOCK_ON_LAUNCH, lockOnLaunch)
             resetOnLaunch = json.optBoolean(RESET_ON_LAUNCH, resetOnLaunch)
             resetOnInactivitySeconds = json.optInt(RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
             blockedMessage = json.optString(BLOCKED_MESSAGE, blockedMessage)
@@ -199,6 +202,7 @@ class UserSettings(context: Context) {
         private const val ENABLE_ZOOM = "web_engine.enable_zoom"
         private const val DISPLAY_ZOOM_CONTROLS = "web_engine.display_zoom_controls"
 
+        private const val LOCK_ON_LAUNCH = "web_lifecycle.lock_on_launch"
         private const val RESET_ON_LAUNCH = "web_lifecycle.reset_on_launch"
         private const val RESET_ON_INACTIVITY_SECONDS = "web_lifecycle.reset_on_inactivity_seconds"
 

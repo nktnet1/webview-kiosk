@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.ui.screens
 import android.app.Activity
 import android.webkit.CookieManager
 import android.webkit.HttpAuthHandler
+import android.widget.Toast
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -169,7 +170,15 @@ fun WebviewScreen(navController: NavController) {
             Box(modifier = Modifier.fillMaxSize().background(Color.Transparent)) {
                 FloatingMenuButton(
                     onHomeClick = { WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings) },
-                    onLockClick = { try { activity?.startLockTask() } catch (_: Exception) {} },
+                    onLockClick = {
+                        try {
+                            activity?.startLockTask()
+                        } catch (e: Exception) {
+                            activity?.let {
+                                Toast.makeText(it, "Failed to lock app: ${e.message}", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
                     navController = navController
                 )
             }
