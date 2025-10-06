@@ -67,7 +67,7 @@ fun GenericSettingFieldDialog(
                     style = MaterialTheme.typography.bodyLarge,
                 )
                 Icon(
-                    painter = painterResource(R.drawable.outline_info_24),
+                    painter = painterResource(R.drawable.baseline_info_24),
                     contentDescription = "Info",
                     modifier = Modifier
                         .size(20.dp)

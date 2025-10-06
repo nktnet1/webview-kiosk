@@ -5,6 +5,7 @@ import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -47,14 +48,20 @@ class MainActivity : AppCompatActivity() {
         applyDeviceRotation(userSettings.deviceRotation)
         systemSettings.isFreshLaunch = true
 
-        // Handle content:// intents asynchronously
         if (intent.action == Intent.ACTION_VIEW && intent.data != null && systemSettings.intentUrl.isEmpty()) {
             val dataUri = intent.data!!
             if (dataUri.scheme == "content") {
                 uploadingFileUri = dataUri
             } else {
-                // Just a regular URL
                 systemSettings.intentUrl = dataUri.toString()
+            }
+        }
+
+        if (userSettings.lockOnLaunch) {
+            try {
+                startLockTask()
+            } catch (e: Exception) {
+                Toast.makeText(this, "Failed to lock app: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
 

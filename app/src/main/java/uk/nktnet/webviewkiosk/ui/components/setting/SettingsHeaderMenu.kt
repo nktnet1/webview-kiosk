@@ -138,7 +138,7 @@ fun SettingsHeaderMenu(
                             },
                             leadingIcon = {
                                 Icon(
-                                    painter = painterResource(R.drawable.outline_info_24),
+                                    painter = painterResource(R.drawable.baseline_info_24),
                                     contentDescription = null,
                                     tint = tintColor
                                 )
