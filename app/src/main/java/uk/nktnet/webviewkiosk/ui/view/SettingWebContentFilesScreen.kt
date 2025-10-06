@@ -87,6 +87,8 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                     fileUploadLauncher.launch(arrayOf(
                         "text/*",
                         "image/*",
+                        "audio/*",
+                        "video/*",
                         "application/json",
                         "application/javascript",
                         "application/xml",

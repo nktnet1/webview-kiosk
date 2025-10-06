@@ -46,6 +46,8 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:mimeType="text/*" />
                 <data android:mimeType="image/*" />
+                <data android:mimeType="audio/*" />
+                <data android:mimeType="video/*" />
                 <data android:mimeType="application/json" />
                 <data android:mimeType="application/javascript" />
                 <data android:mimeType="application/xml" />
