@@ -1,0 +1,11 @@
+Changes:
+
+- feat: support uploading audio and video files
+- feat: non-blocking upload via open document (with loading indicator in UI)
+- feat: upload screen when opening file content with intent (stop large files from freezing UI)
+- feat: added lock app on launch setting
+- fix: added "files" to web content list description
+- fix: more appropriate size for buttons and icons
+- fix: change default for useWideViewPort and loadWithOverviewMode to true
+- refactor: migrate unsupported material icons to vector graphics
+- deps: bump to composeBom@2025.09.01 and navigationCompose@2.9.5
