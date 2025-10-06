@@ -109,8 +109,7 @@ class MainActivity : AppCompatActivity() {
             }
             Intent.ACTION_SEND -> {
                 val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    @Suppress("DEPRECATION")
-                    intent.getParcelableExtra(Intent.EXTRA_STREAM)
+                    intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
                 } else {
                     @Suppress("DEPRECATION")
                     intent.getParcelableExtra(Intent.EXTRA_STREAM)
