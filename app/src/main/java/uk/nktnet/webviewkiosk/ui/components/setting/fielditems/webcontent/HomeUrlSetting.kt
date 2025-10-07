@@ -43,7 +43,7 @@ fun HomeUrlSetting() {
         initialValue = userSettings.homeUrl,
         isMultiline = false,
         validator = { validateUrl(it) },
-        validationMessage = "Invalid URL",
+        validationMessage = "Invalid Home URL provided.",
         onSave = { userSettings.homeUrl = it },
         extraContent = { setValue: (String) -> Unit ->
             val currentUrl = systemSettings.currentUrl

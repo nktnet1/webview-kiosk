@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.utils
 
+import android.util.Patterns
 import android.webkit.URLUtil.isValidUrl
 import java.io.File
 
@@ -11,28 +12,25 @@ fun validateUrl(input: String): Boolean {
     if (input.isEmpty()) {
         return true
     }
+    val trimmedInput = input.trim()
 
-    return when {
-        input.startsWith("file:///") -> {
-            val filePath = URLDecoder.decode(input.removePrefix("file:///"), StandardCharsets.UTF_8.name())
+    val parsedUrl = runCatching { URL(trimmedInput) }.getOrElse { return false }
+    return when (parsedUrl.protocol) {
+        "file" -> {
+            val filePath = URLDecoder.decode(trimmedInput.removePrefix("file:///"), StandardCharsets.UTF_8.name())
             File(filePath).exists()
         }
-        input.startsWith("http://") || input.startsWith("https://") -> {
-            try {
-                val inputUrl = URL(input)
-                val host = inputUrl.host
-                host.contains(".") &&
-                        host.substringAfterLast(".").matches(Regex("^[a-zA-Z]{2,}$")) &&
-                        (inputUrl.protocol == "http" || inputUrl.protocol == "https") &&
-                        isValidUrl(input)
-            } catch (_: Exception) {
-                false
-            }
+        "http", "https" -> {
+            isValidUrl(trimmedInput)
+            && (
+                Patterns.WEB_URL.matcher(trimmedInput).matches()
+                || parsedUrl.host == "localhost"
+                || parsedUrl.host.matches(Regex("""\[[0-9a-fA-F:]+]"""))
+            )
         }
         else -> false
     }
 }
-
 
 fun validateMultilineRegex(text: String): Boolean {
     return text.lines().all { line ->
