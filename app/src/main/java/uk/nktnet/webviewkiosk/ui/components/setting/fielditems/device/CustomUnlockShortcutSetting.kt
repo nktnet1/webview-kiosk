@@ -1,7 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device
 
 import android.widget.Toast
-import android.view.KeyEvent as AndroidKeyEvent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Column
@@ -19,10 +18,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.isAltPressed
-import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.isMetaPressed
-import androidx.compose.ui.input.key.isShiftPressed
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -32,6 +27,8 @@ import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.CustomSettingFieldItem
+import uk.nktnet.webviewkiosk.utils.keyEventToShortcutString
+import uk.nktnet.webviewkiosk.utils.modifierKeyCodes
 
 fun handleUnlockShortcutKeyEvent(
     event: KeyEvent,
@@ -42,35 +39,18 @@ fun handleUnlockShortcutKeyEvent(
     if (!isListening) {
         return draftValue to false
     }
-    if (event.nativeKeyEvent.action != AndroidKeyEvent.ACTION_DOWN) {
+    val shortcut = keyEventToShortcutString(event)
+    if (shortcut == null) {
+        if (event.nativeKeyEvent.keyCode !in modifierKeyCodes) {
+            showToast("Shortcut must use CTRL/SHIFT/ALT/META.")
+        }
         return draftValue to true
     }
-    val modifiers = mutableListOf<String>()
-    if (event.isCtrlPressed) {
-        modifiers.add("Ctrl")
-    }
-    if (event.isShiftPressed) {
-        modifiers.add("Shift")
-    }
-    if (event.isAltPressed) {
-        modifiers.add("Alt")
-    }
-    if (event.isMetaPressed) {
-        modifiers.add("Meta")
-    }
-    val keyCode = event.nativeKeyEvent.keyCode
-    if (keyCode in modifierKeyCodes) {
-        return draftValue to true
-    }
-    if (modifiers.isEmpty()) {
-        showToast("Shortcut must use CTRL/SHIFT/ALT/META.")
-        return draftValue to true
-    }
-    val mainKey = AndroidKeyEvent.keyCodeToString(keyCode).removePrefix("KEYCODE_")
-    val newDraft = modifiers.joinToString("+") + "+" + mainKey
-    showToast("Shortcut: $newDraft")
-    return newDraft to false
+    showToast("Shortcut: $shortcut")
+    return shortcut to false
 }
+
+
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -84,9 +64,7 @@ fun CustomUnlockShortcutSetting() {
     var isListening by remember { mutableStateOf(false) }
     var toastRef by remember { mutableStateOf<Toast?>(null) }
     val showToast: (String) -> Unit = { msg ->
-        if (toastRef != null) {
-            toastRef?.cancel()
-        }
+        toastRef?.cancel()
         toastRef = Toast.makeText(context, msg, Toast.LENGTH_SHORT).apply { show() }
     }
 
@@ -158,14 +136,3 @@ fun CustomUnlockShortcutSetting() {
         }
     )
 }
-
-private val modifierKeyCodes = setOf(
-    AndroidKeyEvent.KEYCODE_SHIFT_LEFT,
-    AndroidKeyEvent.KEYCODE_SHIFT_RIGHT,
-    AndroidKeyEvent.KEYCODE_CTRL_LEFT,
-    AndroidKeyEvent.KEYCODE_CTRL_RIGHT,
-    AndroidKeyEvent.KEYCODE_ALT_LEFT,
-    AndroidKeyEvent.KEYCODE_ALT_RIGHT,
-    AndroidKeyEvent.KEYCODE_META_LEFT,
-    AndroidKeyEvent.KEYCODE_META_RIGHT
-)
