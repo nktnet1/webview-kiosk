@@ -1,11 +1,11 @@
 ## Features
 
-feat: add option to open launcher settings
-feat: add option to open device settings (in case app is set as launcher)
-feat: add launcher intent to AndroidManifest.xml
-feat: custom unlock shortcut working
-feat: send intent for file sharing to webview kiosk
+- feat: add option to open launcher settings
+- feat: add option to open device settings (in case app is set as launcher)
+- feat: add launcher intent to AndroidManifest.xml
+- feat: custom unlock shortcut working
+- feat: send intent for file sharing to webview kiosk
 
 ## Bug Fixes
 
-fix: url validation logic (now allows http://localhost:8080, e.g. from in termux)
+- fix: url validation logic (now allows http://localhost:8080, e.g. from in termux)
