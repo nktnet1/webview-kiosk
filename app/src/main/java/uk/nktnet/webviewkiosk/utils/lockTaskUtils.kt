@@ -5,7 +5,7 @@ import android.app.Activity
 private fun tryLockAction(
     activity: Activity?,
     action: Activity.() -> Unit,
-    showToast: (String) -> Unit,
+    showToast: (String) -> Unit = {},
     defaultMsg: String
 ) {
     if (activity == null) {
@@ -24,10 +24,10 @@ private fun tryLockAction(
     }
 }
 
-fun tryLockTask(activity: Activity?, showToast: (String) -> Unit) {
+fun tryLockTask(activity: Activity?, showToast: (String) -> Unit = {}) {
     tryLockAction(activity, Activity::startLockTask, showToast, "Failed to lock app")
 }
 
-fun tryUnlockTask(activity: Activity?, showToast: (String) -> Unit) {
+fun tryUnlockTask(activity: Activity?, showToast: (String) -> Unit = {}) {
     tryLockAction(activity, Activity::stopLockTask, showToast, "Failed to unlock app")
 }

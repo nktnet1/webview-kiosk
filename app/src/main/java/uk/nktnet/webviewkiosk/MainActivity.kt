@@ -31,9 +31,8 @@ import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
 import uk.nktnet.webviewkiosk.ui.screens.*
 import uk.nktnet.webviewkiosk.utils.authComposable
-import uk.nktnet.webviewkiosk.utils.getIsLocked
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
-import uk.nktnet.webviewkiosk.utils.isShortcutPressed
+import uk.nktnet.webviewkiosk.utils.handlePreviewKeyEvent
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 
 class MainActivity : AppCompatActivity() {
@@ -89,13 +88,7 @@ class MainActivity : AppCompatActivity() {
                     modifier = Modifier
                         .fillMaxSize()
                         .onPreviewKeyEvent { event: KeyEvent ->
-                            val shouldUnlock = getIsLocked(activityManager)
-                                && userSettings.customUnlockShortcut.isNotEmpty()
-                                && isShortcutPressed(event, userSettings.customUnlockShortcut)
-                            if (shouldUnlock) {
-                                stopLockTask()
-                            }
-                            shouldUnlock
+                            handlePreviewKeyEvent(this, activityManager, userSettings, event)
                         }
                 ) {
                     val navController = rememberNavController()

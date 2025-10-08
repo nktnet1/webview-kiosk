@@ -1,9 +1,9 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
-import android.app.Activity
 import android.webkit.CookieManager
 import android.webkit.HttpAuthHandler
 import android.widget.Toast
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
@@ -42,7 +42,8 @@ private enum class TransitionState { TRANSITIONING, PAGE_STARTED, PAGE_FINISHED 
 @Composable
 fun WebviewScreen(navController: NavController) {
     val context = LocalContext.current
-    val activity = context as? Activity
+    val activity = LocalActivity.current
+
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
     val isPinned by rememberLockedState()

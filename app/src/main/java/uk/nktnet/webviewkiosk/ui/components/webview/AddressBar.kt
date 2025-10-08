@@ -35,6 +35,7 @@ fun AddressBar(
     customLoadUrl: (newUrl: String) -> Unit,
 ) {
     val context = LocalContext.current
+
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
     var urlTextState by remember { mutableStateOf(urlBarText.text) }
@@ -99,14 +100,17 @@ fun AddressBar(
 
         val showMenu =
             userSettings.allowBackwardsNavigation
-                    || userSettings.allowRefresh
-                    || userSettings.allowGoHome
-                    || userSettings.allowHistoryAccess
-                    || userSettings.allowBookmarkAccess
-                    || userSettings.allowLocalFiles
+                || userSettings.allowRefresh
+                || userSettings.allowGoHome
+                || userSettings.allowHistoryAccess
+                || userSettings.allowBookmarkAccess
+                || userSettings.allowLocalFiles
 
         if (showMenu) {
-            Box(modifier = Modifier.padding(start = 4.dp)) {
+            Box(
+                modifier = Modifier
+                    .padding(start = 4.dp)
+            ) {
                 IconButton(
                     onClick = { menuExpanded = true },
                     modifier = Modifier
@@ -122,7 +126,7 @@ fun AddressBar(
                 }
                 DropdownMenu(
                     expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false }
+                    onDismissRequest = { menuExpanded = false },
                 ) {
                     if (userSettings.allowBackwardsNavigation) {
                         DropdownMenuItem(
