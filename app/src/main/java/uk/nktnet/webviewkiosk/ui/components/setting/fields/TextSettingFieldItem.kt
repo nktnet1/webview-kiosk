@@ -23,10 +23,12 @@ fun TextSettingFieldItem(
     placeholder: String,
     initialValue: String,
     isMultiline: Boolean,
+    modifier: Modifier = Modifier,
     validator: (String) -> Boolean = { true },
     validationMessage: String? = null,
     onSave: (String) -> Unit,
-    extraContent: (@Composable ((setValue: (String) -> Unit) -> Unit))? = null
+    readOnly: Boolean = true,
+    extraContent: (@Composable ((setValue: (String) -> Unit) -> Unit))? = null,
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var value by remember { mutableStateOf(initialValue) }
@@ -75,6 +77,7 @@ fun TextSettingFieldItem(
             Column(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     value = draftValue,
+                    readOnly = readOnly,
                     onValueChange = {
                         draftValue = it
                         draftError = !validator(it)
@@ -91,10 +94,10 @@ fun TextSettingFieldItem(
                     },
                     singleLine = !isMultiline,
                     modifier = if (!isMultiline) {
-                        Modifier
+                        modifier
                             .fillMaxWidth()
                     } else {
-                        Modifier
+                        modifier
                             .fillMaxWidth()
                             .defaultMinSize(minHeight = 200.dp)
                             .heightIn(max = 400.dp)

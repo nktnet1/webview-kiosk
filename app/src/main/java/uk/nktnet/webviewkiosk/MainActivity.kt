@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk
 
+import android.app.ActivityManager
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.net.Uri
@@ -14,6 +15,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.KeyEvent
+import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -28,7 +31,10 @@ import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
 import uk.nktnet.webviewkiosk.ui.screens.*
 import uk.nktnet.webviewkiosk.utils.authComposable
+import uk.nktnet.webviewkiosk.utils.getIsLocked
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
+import uk.nktnet.webviewkiosk.utils.isShortcutPressed
+import uk.nktnet.webviewkiosk.utils.tryLockTask
 
 class MainActivity : AppCompatActivity() {
     private var uploadingFileUri: Uri? = null
@@ -42,14 +48,22 @@ class MainActivity : AppCompatActivity() {
         val userSettings = UserSettings(this)
         val webContentDir = getWebContentFilesDir(this)
 
+        var toastRef: Toast? = null
+        val showToast: (String) -> Unit = { msg ->
+            toastRef?.cancel()
+            toastRef = Toast.makeText(this, msg, Toast.LENGTH_SHORT).apply { show() }
+        }
+
         BiometricPromptManager.init(this)
         applyDeviceRotation(userSettings.deviceRotation)
         systemSettings.isFreshLaunch = true
 
         handleIntent(systemSettings)
 
+        val activityManager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+
         if (userSettings.lockOnLaunch) {
-            tryLockTask()
+            tryLockTask(this, showToast)
         }
 
         setContent {
@@ -63,14 +77,27 @@ class MainActivity : AppCompatActivity() {
             val isDarkTheme = resolveTheme(themeState.value)
             val window = (this as? AppCompatActivity)?.window
             val insetsController = remember(window) { window?.let { WindowInsetsControllerCompat(it, it.decorView) } }
-
             LaunchedEffect(isDarkTheme) {
                 insetsController?.isAppearanceLightStatusBars = !isDarkTheme
                 insetsController?.isAppearanceLightNavigationBars = !isDarkTheme
             }
 
+
             WebviewKioskTheme(darkTheme = isDarkTheme) {
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                Surface(
+                    color = MaterialTheme.colorScheme.background,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .onPreviewKeyEvent { event: KeyEvent ->
+                            val shouldUnlock = getIsLocked(activityManager)
+                                && userSettings.customUnlockShortcut.isNotEmpty()
+                                && isShortcutPressed(event, userSettings.customUnlockShortcut)
+                            if (shouldUnlock) {
+                                stopLockTask()
+                            }
+                            shouldUnlock
+                        }
+                ) {
                     val navController = rememberNavController()
                     uploadingFileUri?.let { uri ->
                         UploadFileProgressScreen(
@@ -117,13 +144,6 @@ class MainActivity : AppCompatActivity() {
 
                 uri?.let { uploadingFileUri = it }
             }
-        }
-    }
-    private fun tryLockTask() {
-        try {
-            startLockTask()
-        } catch (e: Exception) {
-            Toast.makeText(this, "Failed to lock app: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 

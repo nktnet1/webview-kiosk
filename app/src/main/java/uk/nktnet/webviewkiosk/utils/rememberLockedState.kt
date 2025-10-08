@@ -11,6 +11,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.delay
 
+fun getIsLocked(activityManager: ActivityManager): Boolean {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        return activityManager.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
+    } else {
+        @Suppress("DEPRECATION")
+        return activityManager.isInLockTaskMode
+    }
+}
+
 @Composable
 fun rememberLockedState(): State<Boolean> {
     val context = LocalContext.current.applicationContext
@@ -21,12 +30,7 @@ fun rememberLockedState(): State<Boolean> {
 
     LaunchedEffect(activityManager) {
         while (true) {
-            isLocked.value = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                activityManager.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
-            } else {
-                @Suppress("DEPRECATION")
-                activityManager.isInLockTaskMode
-            }
+            isLocked.value = getIsLocked(activityManager)
             delay(1000L)
         }
     }

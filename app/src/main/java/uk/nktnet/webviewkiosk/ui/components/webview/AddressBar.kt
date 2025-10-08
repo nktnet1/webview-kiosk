@@ -9,9 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.FocusState
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -32,7 +30,6 @@ fun AddressBar(
     onUrlBarTextChange: (TextFieldValue) -> Unit,
     hasFocus: Boolean,
     onFocusChanged: (FocusState) -> Unit,
-    focusRequester: FocusRequester,
     addressBarSearch: (String) -> Unit,
     webView: WebView,
     customLoadUrl: (newUrl: String) -> Unit,
@@ -78,7 +75,6 @@ fun AddressBar(
             singleLine = true,
             modifier = Modifier
                 .weight(1f)
-                .focusRequester(focusRequester)
                 .onFocusChanged(onFocusChanged),
             shape = RoundedCornerShape(percent = 50),
             colors = OutlinedTextFieldDefaults.colors(
