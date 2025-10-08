@@ -6,11 +6,13 @@ import android.webkit.HttpAuthHandler
 import android.widget.Toast
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
@@ -62,6 +64,10 @@ fun WebviewScreen(navController: NavController) {
     var authHost by remember { mutableStateOf<String?>(null) }
     var authRealm by remember { mutableStateOf<String?>(null) }
 
+    LaunchedEffect(Unit) {
+        focusRequester.requestFocus()
+    }
+
     val webView = createCustomWebview(
         context = context,
         config = uk.nktnet.webviewkiosk.utils.WebViewConfig(
@@ -106,6 +112,8 @@ fun WebviewScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .focusRequester(focusRequester)
+            .focusable()
             .windowInsetsPadding(userSettings.webViewInset.toWindowInsets()))
     {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -115,7 +123,6 @@ fun WebviewScreen(navController: NavController) {
                     onUrlBarTextChange = { urlBarText = it },
                     hasFocus = hasFocus,
                     onFocusChanged = { focusState -> hasFocus = focusState.isFocused },
-                    focusRequester = focusRequester,
                     addressBarSearch = addressBarSearch,
                     webView = webView,
                     customLoadUrl = ::customLoadUrl,
