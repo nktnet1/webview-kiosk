@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -22,7 +24,6 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -36,9 +37,7 @@ fun handleUnlockShortcutKeyEvent(
     draftValue: String,
     showToast: (String) -> Unit
 ): Pair<String, Boolean> {
-    if (!isListening) {
-        return draftValue to false
-    }
+    if (!isListening) return draftValue to false
     val shortcut = keyEventToShortcutString(event)
     if (shortcut == null) {
         if (event.nativeKeyEvent.keyCode !in modifierKeyCodes) {
@@ -50,8 +49,6 @@ fun handleUnlockShortcutKeyEvent(
     return shortcut to false
 }
 
-
-
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun CustomUnlockShortcutSetting() {
@@ -59,6 +56,7 @@ fun CustomUnlockShortcutSetting() {
     val userSettings = remember { UserSettings(context) }
     val coroutineScope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
+
     var currentValue by remember { mutableStateOf(userSettings.customUnlockShortcut) }
     var draftValue by remember { mutableStateOf(currentValue) }
     var isListening by remember { mutableStateOf(false) }
@@ -66,6 +64,16 @@ fun CustomUnlockShortcutSetting() {
     val showToast: (String) -> Unit = { msg ->
         toastRef?.cancel()
         toastRef = Toast.makeText(context, msg, Toast.LENGTH_SHORT).apply { show() }
+    }
+
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    LaunchedEffect(isPressed) {
+        if (isPressed && !isListening) {
+            isListening = true
+            coroutineScope.launch { focusRequester.requestFocus() }
+        }
     }
 
     CustomSettingFieldItem(
@@ -88,6 +96,7 @@ fun CustomUnlockShortcutSetting() {
                     onValueChange = {},
                     readOnly = true,
                     singleLine = true,
+                    interactionSource = interactionSource,
                     trailingIcon = {
                         IconButton(onClick = {
                             draftValue = ""
@@ -102,9 +111,14 @@ fun CustomUnlockShortcutSetting() {
                     modifier = Modifier
                         .focusRequester(focusRequester)
                         .focusable()
-                        .background(if (isListening) androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
+                        .background(
+                            if (isListening)
+                                androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant
+                            else Color.Transparent
+                        )
                         .onPreviewKeyEvent { event ->
-                            val (newDraft, newListening) = handleUnlockShortcutKeyEvent(event, isListening, draftValue, showToast)
+                            val (newDraft, newListening) =
+                                handleUnlockShortcutKeyEvent(event, isListening, draftValue, showToast)
                             val handled = newDraft != draftValue || newListening != isListening
                             draftValue = newDraft
                             isListening = newListening
@@ -118,7 +132,7 @@ fun CustomUnlockShortcutSetting() {
                             isListening = false
                         } else {
                             isListening = true
-                            coroutineScope.launch { delay(50); focusRequester.requestFocus() }
+                            coroutineScope.launch { focusRequester.requestFocus() }
                         }
                     },
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(
@@ -128,7 +142,9 @@ fun CustomUnlockShortcutSetting() {
                             androidx.compose.material3.MaterialTheme.colorScheme.primary
                         }
                     ),
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp)
                 ) {
                     Text(if (isListening) "Listening..." else "Scan Shortcut")
                 }

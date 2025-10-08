@@ -33,6 +33,7 @@ import uk.nktnet.webviewkiosk.ui.components.common.LoadingIndicator
 import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
 import uk.nktnet.webviewkiosk.utils.rememberLockedState
+import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
 
@@ -63,6 +64,12 @@ fun WebviewScreen(navController: NavController) {
     var authHandler by remember { mutableStateOf<HttpAuthHandler?>(null) }
     var authHost by remember { mutableStateOf<String?>(null) }
     var authRealm by remember { mutableStateOf<String?>(null) }
+
+    var toastRef: Toast? = null
+    val showToast: (String) -> Unit = { msg ->
+        toastRef?.cancel()
+        toastRef = Toast.makeText(context, msg, Toast.LENGTH_SHORT).apply { show() }
+    }
 
     LaunchedEffect(Unit) {
         focusRequester.requestFocus()
@@ -178,13 +185,7 @@ fun WebviewScreen(navController: NavController) {
                 FloatingMenuButton(
                     onHomeClick = { WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings) },
                     onLockClick = {
-                        try {
-                            activity?.startLockTask()
-                        } catch (e: Exception) {
-                            activity?.let {
-                                Toast.makeText(it, "Failed to lock app: ${e.message}", Toast.LENGTH_SHORT).show()
-                            }
-                        }
+                        tryLockTask(activity, showToast)
                     },
                     navController = navController
                 )
