@@ -168,6 +168,7 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
             }
         } else {
             LocalFileList(
+                navController = navController,
                 filesList = filesList,
                 filesDir = filesDir,
                 modifier = Modifier.padding(top = 8.dp),

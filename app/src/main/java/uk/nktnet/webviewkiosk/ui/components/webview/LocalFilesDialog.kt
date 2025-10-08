@@ -18,6 +18,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import uk.nktnet.webviewkiosk.utils.getDisplayName
+import uk.nktnet.webviewkiosk.utils.getLocalUrl
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.listLocalFiles
 
@@ -74,8 +75,7 @@ fun LocalFilesDialog(
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp)
                                     .clickable {
-                                        val uriString = "file://${file.absolutePath}"
-                                        customLoadUrl(uriString)
+                                        customLoadUrl(file.getLocalUrl())
                                         onDismiss()
                                     }
                             ) {

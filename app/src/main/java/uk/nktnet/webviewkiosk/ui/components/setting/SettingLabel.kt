@@ -12,7 +12,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.Screen
+import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 
 @Composable
 fun SettingLabel(
@@ -27,9 +27,7 @@ fun SettingLabel(
         )
     },
     onEndIconClick: (() -> Unit)? = {
-        navController.navigate(Screen.WebView.route) {
-            popUpTo(Screen.Settings.route) { inclusive = true }
-        }
+        navigateToWebViewScreen(navController)
     }
 ) {
     val sideOffset = 20.dp

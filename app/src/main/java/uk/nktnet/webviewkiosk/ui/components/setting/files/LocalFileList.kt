@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.files
 
+import android.content.ClipData
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -12,33 +13,47 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.widget.Toast
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.painterResource
+import androidx.navigation.NavController
+import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.utils.getDisplayName
+import uk.nktnet.webviewkiosk.utils.getLocalUrl
 import uk.nktnet.webviewkiosk.utils.getUUID
 import uk.nktnet.webviewkiosk.utils.humanReadableSize
+import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
 @Composable
 fun LocalFileList(
+    navController: NavController,
     filesList: List<File>,
     filesDir: File,
     modifier: Modifier = Modifier,
     refreshFiles: () -> Unit
 ) {
     val context = LocalContext.current
-    val toast: (String) -> Unit = { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+    val systemSettings = SystemSettings(context)
 
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
+
+    val toastRef = remember { mutableStateOf<Toast?>(null) }
+    fun showToast(message: String) {
+        toastRef.value?.cancel()
+        toastRef.value = Toast.makeText(context, message, Toast.LENGTH_SHORT).also { it.show() }
+    }
     var activeFile by remember { mutableStateOf<File?>(null) }
     var showRenameDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf("") }
     var menuExpanded by remember { mutableStateOf(false) }
-
-
 
     LazyColumn(modifier = modifier) {
         items(filesList, key = { it.getUUID() }) { file ->
@@ -97,18 +112,60 @@ fun LocalFileList(
                         onDismissRequest = { menuExpanded = false }
                     ) {
                         DropdownMenuItem(
+                            text = { Text("Open File") },
+                            onClick = {
+                                menuExpanded = false
+                                systemSettings.intentUrl = file.getLocalUrl()
+                                navigateToWebViewScreen(navController)
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_file_open_24),
+                                    contentDescription = null
+                                )
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Copy URL") },
+                            onClick = {
+                                menuExpanded = false
+                                val clipData = ClipData.newPlainText("URL", file.getLocalUrl())
+                                scope.launch {
+                                    clipboard.setClipEntry(clipData.toClipEntry())
+                                }
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_content_copy_24),
+                                    contentDescription = null
+                                )
+                            },
+                        )
+                        DropdownMenuItem(
                             text = { Text("Rename") },
                             onClick = {
                                 showRenameDialog = true
                                 menuExpanded = false
-                            }
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_drive_file_rename_outline_24),
+                                    contentDescription = null
+                                )
+                            },
                         )
                         DropdownMenuItem(
                             text = { Text("Delete") },
                             onClick = {
                                 showDeleteDialog = true
                                 menuExpanded = false
-                            }
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_clear_24),
+                                    contentDescription = null
+                                )
+                            },
                         )
                     }
                 }
@@ -151,7 +208,7 @@ fun LocalFileList(
                         if (file.renameTo(newFile)) {
                             refreshFiles()
                         } else {
-                            toast("Rename failed")
+                            showToast("Rename failed")
                         }
                         showRenameDialog = false
                         activeFile = null
@@ -193,7 +250,7 @@ fun LocalFileList(
                         if (file.delete()) {
                             refreshFiles()
                         } else {
-                            toast("Failed to delete ${file.getDisplayName()}")
+                            showToast("Failed to delete ${file.getDisplayName()}")
                         }
                         showDeleteDialog = false
                         activeFile = null

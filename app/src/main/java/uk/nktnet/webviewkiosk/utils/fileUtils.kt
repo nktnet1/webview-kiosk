@@ -111,3 +111,7 @@ fun File.getUUID(): String {
 fun File.getDisplayName(): String {
     return this.name.split("|", limit = 2).getOrElse(1) { this.name }
 }
+
+fun File.getLocalUrl(): String {
+    return "file://${this.absolutePath}"
+}

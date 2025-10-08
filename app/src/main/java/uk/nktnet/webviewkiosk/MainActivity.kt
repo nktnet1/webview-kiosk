@@ -31,6 +31,7 @@ import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
 import uk.nktnet.webviewkiosk.ui.screens.*
 import uk.nktnet.webviewkiosk.utils.authComposable
+import uk.nktnet.webviewkiosk.utils.getLocalUrl
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handlePreviewKeyEvent
 import uk.nktnet.webviewkiosk.utils.tryLockTask
@@ -99,7 +100,7 @@ class MainActivity : AppCompatActivity() {
                             targetDir = webContentDir,
                             onProgress = { progress -> uploadProgress = progress },
                             onComplete = { file ->
-                                systemSettings.intentUrl = "file://${file.absolutePath}"
+                                systemSettings.intentUrl = file.getLocalUrl()
                                 startActivity(
                                     Intent(this@MainActivity, MainActivity::class.java).apply {
                                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
