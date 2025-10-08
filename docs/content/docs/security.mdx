@@ -3,6 +3,9 @@ title: Security
 description: Authentication session, app pinning
 ---
 
+import { APP_NAME } from '@/config/app';
+import Link from 'fumadocs-core/link';
+
 ## 1. Settings Authentication Session
 
 The settings page is locked using the device's Biometrics or Credentials (if set).
@@ -28,3 +31,10 @@ On some devices, it may be shown as **Lock device when unpinning** or equivalent
 
 This will ensure that users cannot unpin (and thus unlock) the kiosk view without
 first entering your device biometrics or credentials.
+
+## 3. Default Launcher
+
+By setting {APP_NAME} as the default launcher (home screen) app, any attempts to
+leave the app will simply re-open it.
+
+To do this, use the `Launcher` option in <Link href="/docs/setting-actions">Setting Actions</Link>.

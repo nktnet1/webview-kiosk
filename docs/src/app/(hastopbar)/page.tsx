@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { APP_NAME } from "@/config/app";
-import { PLAYSTORE_URL } from "@/config/links";
 import Link from "next/link";
 
 export default function HomePage() {
@@ -17,9 +16,7 @@ export default function HomePage() {
             <Link href="/docs">Get Started</Link>
           </Button>
           <Button asChild variant="success" className="w-28">
-            <Link href="/docs/installation">
-              Download
-            </Link>
+            <Link href="/docs/installation">Download</Link>
           </Button>
         </div>
       </div>

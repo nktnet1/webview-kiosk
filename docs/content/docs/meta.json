@@ -1,3 +1,10 @@
 {
-  "pages": ["index", "installation", "security", "settings", "import-export", "app-suggestions"]
+  "pages": [
+    "index",
+    "installation",
+    "security",
+    "setting-actions",
+    "settings",
+    "app-suggestions"
+  ]
 }
