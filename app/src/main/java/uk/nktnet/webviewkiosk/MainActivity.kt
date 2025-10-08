@@ -28,6 +28,7 @@ import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
+import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
 import uk.nktnet.webviewkiosk.ui.screens.*
 import uk.nktnet.webviewkiosk.utils.authComposable
@@ -94,7 +95,7 @@ class MainActivity : AppCompatActivity() {
                 ) {
                     val navController = rememberNavController()
                     uploadingFileUri?.let { uri ->
-                        UploadFileProgressScreen(
+                        UploadFileProgress(
                             context = this@MainActivity,
                             uri = uri,
                             targetDir = webContentDir,
@@ -103,7 +104,8 @@ class MainActivity : AppCompatActivity() {
                                 systemSettings.intentUrl = file.getLocalUrl()
                                 startActivity(
                                     Intent(this@MainActivity, MainActivity::class.java).apply {
-                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                        flags =
+                                            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                                     }
                                 )
                                 finish()

@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.screens
+package uk.nktnet.webviewkiosk.ui.placeholders
 
 import android.net.Uri
 import android.widget.Toast
@@ -26,7 +26,7 @@ import uk.nktnet.webviewkiosk.utils.saveContentIntentToFile
 import java.io.File
 
 @Composable
-fun UploadFileProgressScreen(
+fun UploadFileProgress(
     context: AppCompatActivity,
     uri: Uri,
     targetDir: File,
