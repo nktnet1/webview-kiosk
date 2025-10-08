@@ -152,9 +152,9 @@ fun SettingsHeaderMenu(
                             },
                             leadingIcon = {
                                 Icon(
-                                    painter = painterResource(R.drawable.baseline_rocket_launch_24),
+                                    painter = painterResource(R.drawable.baseline_rocket_24),
                                     contentDescription = null,
-                                    tint = tintColor
+                                    tint = tintColor,
                                 )
                             }
                         )
