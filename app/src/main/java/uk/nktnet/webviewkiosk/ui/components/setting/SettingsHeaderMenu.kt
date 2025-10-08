@@ -14,13 +14,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.config.UserSettings
 import androidx.core.net.toUri
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
+import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ExportSettingsDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ImportSettingsDialog
+import uk.nktnet.webviewkiosk.ui.components.setting.dialog.TerminateConfirmationDialog
 
 @Composable
 fun SettingsHeaderMenu(
@@ -37,6 +38,8 @@ fun SettingsHeaderMenu(
 
     var showExportDialog by remember { mutableStateOf(false) }
     var exportText by remember { mutableStateOf("") }
+
+    var showTerminateDialog by remember { mutableStateOf(false) }
 
     val toastRef = remember { mutableStateOf<Toast?>(null) }
     fun showToast(message: String) {
@@ -74,6 +77,11 @@ fun SettingsHeaderMenu(
             clipboard.setPrimaryClip(ClipData.newPlainText("Exported Settings", exportText))
             showToast("Copied to clipboard")
         }
+    )
+
+    TerminateConfirmationDialog (
+        showDialog = showTerminateDialog,
+        onDismiss = { showTerminateDialog = false },
     )
 
     Row(
@@ -160,6 +168,20 @@ fun SettingsHeaderMenu(
                             }
                         )
                         DropdownMenuItem(
+                            text = { Text("Terminate", color = tintColor) },
+                            onClick = {
+                                showMenu = false
+                                showTerminateDialog = true
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_power_off_24),
+                                    contentDescription = null,
+                                    tint = tintColor
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
                             text = { Text("Help", color = tintColor) },
                             onClick = {
                                 showMenu = false
@@ -180,3 +202,4 @@ fun SettingsHeaderMenu(
         )
     }
 }
+
