@@ -83,8 +83,15 @@ fun CustomUnlockShortcutSetting() {
             in combination with another standard key to unlock/unpin the application.
             
             This is useful for devices without any navigation buttons on screen.
+
+            Please note that the short-cut will only trigger when there is no app-specific
+            dropdown/alerts opened (e.g. from floating toolbar, address bar or "go home"
+            confirmation dialog from multitap).
         """.trimIndent(),
         value = currentValue,
+        onDismissCallback = {
+            isListening = false
+        },
         onSave = {
             currentValue = draftValue
             userSettings.customUnlockShortcut = draftValue
@@ -146,7 +153,7 @@ fun CustomUnlockShortcutSetting() {
                         .fillMaxWidth()
                         .padding(top = 8.dp)
                 ) {
-                    Text(if (isListening) "Listening..." else "Scan Shortcut")
+                    Text(if (isListening) "Listening..." else "Scan Keyboard Shortcut")
                 }
             }
         }

@@ -15,6 +15,7 @@ fun CustomSettingFieldItem(
     infoText: String,
     value: String,
     onSave: () -> Unit,
+    onDismissCallback: () -> Unit = {},
     bodyContent: @Composable () -> Unit
 ) {
     var showDialog by remember { mutableStateOf(false) }
@@ -38,7 +39,10 @@ fun CustomSettingFieldItem(
         GenericSettingFieldDialog(
             title = label,
             infoText = infoText,
-            onDismiss = { showDialog = false },
+            onDismiss = {
+                showDialog = false
+                onDismissCallback()
+            },
             onSave = {
                 onSave()
                 showDialog = false
