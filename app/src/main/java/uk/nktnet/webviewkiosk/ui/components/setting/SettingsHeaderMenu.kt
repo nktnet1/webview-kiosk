@@ -145,6 +145,20 @@ fun SettingsHeaderMenu(
                             }
                         )
                         DropdownMenuItem(
+                            text = { Text("Launcher", color = tintColor) },
+                            onClick = {
+                                showMenu = false
+                                context.startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_rocket_launch_24),
+                                    contentDescription = null,
+                                    tint = tintColor
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
                             text = { Text("Help", color = tintColor) },
                             onClick = {
                                 showMenu = false
