@@ -4,6 +4,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -123,6 +124,21 @@ fun SettingsHeaderMenu(
                             leadingIcon = {
                                 Icon(
                                     painter = painterResource(R.drawable.outline_file_export_24),
+                                    contentDescription = null,
+                                    tint = tintColor
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Settings", color = tintColor) },
+                            onClick = {
+                                showMenu = false
+                                val intent = Intent(Settings.ACTION_SETTINGS)
+                                context.startActivity(intent)
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_app_settings_alt_24),
                                     contentDescription = null,
                                     tint = tintColor
                                 )
