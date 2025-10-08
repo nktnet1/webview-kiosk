@@ -18,6 +18,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.config.UserSettings
 import androidx.core.net.toUri
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ExportSettingsDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ImportSettingsDialog
 
@@ -162,8 +163,7 @@ fun SettingsHeaderMenu(
                             text = { Text("Help", color = tintColor) },
                             onClick = {
                                 showMenu = false
-                                val intent = Intent(Intent.ACTION_VIEW,
-                                    "https://webviewkiosk.nktnet.uk".toUri())
+                                val intent = Intent(Intent.ACTION_VIEW, Constants.WEBSITE_URL.toUri())
                                 context.startActivity(intent)
                             },
                             leadingIcon = {
