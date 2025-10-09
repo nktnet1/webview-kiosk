@@ -35,5 +35,7 @@ fun SettingsWebEngineScreen(navController: NavController) {
         LoadWithOverviewModeSetting()
         EnableZoomSetting()
         DisplayZoomControlsSetting()
+        AllowFileAccessFromFileURLsSetting()
+        AllowUniversalAccessFromFileURLsSetting()
     }
 }
