@@ -6,7 +6,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import kotlin.system.exitProcess
 
 @Composable
 fun TerminateConfirmationDialog(
@@ -27,7 +26,6 @@ fun TerminateConfirmationDialog(
             confirmButton = {
                 TextButton(onClick = {
                     Process.killProcess(Process.myPid())
-                    exitProcess(0)
                 }) {
                     Text(
                         "Force Stop",
