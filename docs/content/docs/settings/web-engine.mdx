@@ -117,3 +117,49 @@ Shows on-screen zoom buttons.
 **Android API:** [WebSettings#setDisplayZoomControls(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setDisplayZoomControls(boolean))
 
 **Default:** false
+
+## 11. File Access
+
+These settings are insecure and deprecated.
+
+To access `file://` URLs, you will also need to enable `Web Content -> Allow Local Files`, which will set
+[WebSettings#setAllowFileAccess(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setAllowFileAccess(boolean))
+accordingly.
+
+### 11.1. Allow File Access from File URLs
+
+This method was deprecated in API level 30.  
+
+Sets whether cross-origin requests in the context of a file scheme URL should
+be allowed to access content from other file scheme URLs. Note that some
+accesses such as image HTML elements don't follow same-origin rules and aren't
+affected by this setting.
+
+Don't enable this setting if you open files that may be created or altered by
+external sources. Enabling this setting allows malicious scripts loaded in a
+`file://` context to access arbitrary local files including WebView cookies and
+app private data.
+
+**Android API:** [WebSettings#setAllowFileAccessFromFileURLs(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setAllowFileAccessFromFileURLs(boolean))
+
+**Default:** false
+
+### 11.2. Allow Universal Access from File URLs
+
+This method was deprecated in API level 30.  
+
+Sets whether cross-origin requests in the context of a file scheme URL should
+be allowed to access content from any origin. This includes access to content
+from other file scheme URLs or web contexts. Note that some access such as
+image HTML elements doesn't follow same-origin rules and isn't affected by this
+setting.
+
+Don't enable this setting if you open files that may be created or altered by
+external sources. Enabling this setting allows malicious scripts loaded in a
+`file://` context to launch cross-site scripting attacks, either accessing
+arbitrary local files including WebView cookies, app private data or even
+credentials used on arbitrary web sites.
+
+**Android API:** [WebSettings#setAllowUniversalAccessFromFileURLs(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setAllowUniversalAccessFromFileURLs(boolean))
+
+**Default:** false
