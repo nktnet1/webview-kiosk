@@ -15,12 +15,14 @@ import uk.nktnet.webviewkiosk.utils.stringPrefOptional
 class UserSettings(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
+    // Web Content
     var homeUrl by stringPref(prefs, HOME_URL, Constants.WEBSITE_URL)
     var websiteBlacklist by stringPrefOptional(prefs, WEBSITE_BLACKLIST)
     var websiteWhitelist by stringPrefOptional(prefs, WEBSITE_WHITELIST)
     var websiteBookmarks by stringPrefOptional(prefs, WEBSITE_BOOKMARKS)
     var allowLocalFiles by booleanPref(prefs, ALLOW_LOCAL_FILES, true)
 
+    // Web Browsing
     var allowRefresh by booleanPref(prefs, ALLOW_REFRESH, true)
     var allowBackwardsNavigation by booleanPref(prefs, ALLOW_BACKWARDS_NAVIGATION, true)
     var allowGoHome by booleanPref(prefs, ALLOW_GO_HOME, true)
@@ -30,15 +32,14 @@ class UserSettings(context: Context) {
     var allowOtherUrlSchemes by booleanPref(prefs, ALLOW_OTHER_URL_SCHEMES, false)
     var searchProviderUrl by stringPref(prefs, SEARCH_PROVIDER_URL, Constants.DEFAULT_SEARCH_PROVIDER_URL)
 
+    // Web Engine
     var enableJavaScript by booleanPref(prefs, ENABLE_JAVASCRIPT, true)
     var enableDomStorage by booleanPref(prefs, ENABLE_DOM_STORAGE, true)
     var acceptCookies by booleanPref(prefs, ACCEPT_COOKIES, true)
     var acceptThirdPartyCookies by booleanPref(prefs, ACCEPT_THIRD_PARTY_COOKIES, false)
-
     var cacheMode: CacheModeOption
         get() = CacheModeOption.fromInt(prefs.getInt(CACHE_MODE, WebSettings.LOAD_DEFAULT))
         set(value) = prefs.edit { putInt(CACHE_MODE, value.mode) }
-
     var layoutAlgorithm: LayoutAlgorithmOption
         get() = LayoutAlgorithmOption.fromAlgorithm(
             when (val value = prefs.getString(LAYOUT_ALGORITHM, null)) {
@@ -47,36 +48,39 @@ class UserSettings(context: Context) {
             }
         )
         set(value) = prefs.edit { putString(LAYOUT_ALGORITHM, value.algorithm.name) }
-
     var userAgent by stringPrefOptional(prefs, USER_AGENT)
     var useWideViewPort by booleanPref(prefs, USE_WIDE_VIEWPORT, true)
     var loadWithOverviewMode by booleanPref(prefs, LOAD_WITH_OVERVIEW_MODE, true)
     var enableZoom by booleanPref(prefs, ENABLE_ZOOM, true)
     var displayZoomControls by booleanPref(prefs, DISPLAY_ZOOM_CONTROLS, false)
+    var allowFileAccessFromFileURLs by booleanPref(prefs, ALLOW_FILE_ACCESS_FROM_FILE_URLS, false)
+    var allowUniversalAccessFromFileURLs by booleanPref(prefs, ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, false)
 
+    // Web Lifecycle
     var lockOnLaunch by booleanPref(prefs, LOCK_ON_LAUNCH, false)
     var resetOnLaunch by booleanPref(prefs, RESET_ON_LAUNCH, false)
     var resetOnInactivitySeconds by intPref(prefs, RESET_ON_INACTIVITY_SECONDS, 0)
 
+    // Appearance
     var blockedMessage by stringPref(prefs, BLOCKED_MESSAGE, "This site is blocked by Webview Kiosk.")
     var theme: ThemeOption
         get() = ThemeOption.fromString(prefs.getString(THEME, null))
         set(value) = prefs.edit { putString(THEME, value.name) }
-
     var addressBarMode: AddressBarOption
         get() = AddressBarOption.fromString(prefs.getString(ADDRESS_BAR_MODE, null))
         set(value) = prefs.edit { putString(ADDRESS_BAR_MODE, value.name) }
-
     var webViewInset: WebViewInset
         get() = WebViewInset.fromString(prefs.getString(WEBVIEW_INSET, null))
         set(value) = prefs.edit { putString(WEBVIEW_INSET, value.name) }
 
+    // Device
     var keepScreenOn by booleanPref(prefs, KEEP_SCREEN_ON, false)
     var deviceRotation: DeviceRotationOption
         get() = DeviceRotationOption.fromString(prefs.getString(DEVICE_ROTATION, null))
         set(value) = prefs.edit { putString(DEVICE_ROTATION, value.degrees) }
     var customUnlockShortcut by stringPrefOptional(prefs, CUSTOM_UNLOCK_SHORTCUT)
 
+    // JS Scripts
     var applyAppTheme by booleanPref(prefs, JS_APPLY_APP_THEME, true)
     var applyDesktopViewportWidth by intPref(prefs, JS_APPLY_DESKTOP_VIEWPORT_WIDTH, 0)
     var customScriptOnPageStart by stringPrefOptional(prefs, JS_CUSTOM_SCRIPT_ON_PAGE_START)
@@ -108,6 +112,8 @@ class UserSettings(context: Context) {
             put(LOAD_WITH_OVERVIEW_MODE, loadWithOverviewMode)
             put(ENABLE_ZOOM, enableZoom)
             put(DISPLAY_ZOOM_CONTROLS, displayZoomControls)
+            put(ALLOW_FILE_ACCESS_FROM_FILE_URLS, allowFileAccessFromFileURLs)
+            put(ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, allowUniversalAccessFromFileURLs)
             put(LOCK_ON_LAUNCH, lockOnLaunch)
             put(RESET_ON_LAUNCH, resetOnLaunch)
             put(RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
@@ -155,6 +161,8 @@ class UserSettings(context: Context) {
             loadWithOverviewMode = json.optBoolean(LOAD_WITH_OVERVIEW_MODE, loadWithOverviewMode)
             enableZoom = json.optBoolean(ENABLE_ZOOM, enableZoom)
             displayZoomControls = json.optBoolean(DISPLAY_ZOOM_CONTROLS, displayZoomControls)
+            allowFileAccessFromFileURLs = json.optBoolean(ALLOW_FILE_ACCESS_FROM_FILE_URLS, allowFileAccessFromFileURLs)
+            allowUniversalAccessFromFileURLs = json.optBoolean(ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, allowUniversalAccessFromFileURLs)
             lockOnLaunch = json.optBoolean(LOCK_ON_LAUNCH, lockOnLaunch)
             resetOnLaunch = json.optBoolean(RESET_ON_LAUNCH, resetOnLaunch)
             resetOnInactivitySeconds = json.optInt(RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
@@ -204,6 +212,8 @@ class UserSettings(context: Context) {
         private const val LOAD_WITH_OVERVIEW_MODE = "web_engine.load_with_overview_mode"
         private const val ENABLE_ZOOM = "web_engine.enable_zoom"
         private const val DISPLAY_ZOOM_CONTROLS = "web_engine.display_zoom_controls"
+        private const val ALLOW_FILE_ACCESS_FROM_FILE_URLS = "web_engine.allow_file_access_from_file_urls"
+        private const val ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS = "web_engine.allow_universal_access_from_file_urls"
 
         private const val LOCK_ON_LAUNCH = "web_lifecycle.lock_on_launch"
         private const val RESET_ON_LAUNCH = "web_lifecycle.reset_on_launch"
