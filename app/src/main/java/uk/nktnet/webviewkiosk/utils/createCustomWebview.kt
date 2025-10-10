@@ -32,7 +32,8 @@ data class WebViewConfig(
     val onPageStarted: () -> Unit,
     val onPageFinished: (String) -> Unit,
     val doUpdateVisitedHistory: (String) -> Unit,
-    val onHttpAuthRequest: (HttpAuthHandler?, String?, String?) -> Unit
+    val onHttpAuthRequest: (HttpAuthHandler?, String?, String?) -> Unit,
+    val onLinkLongClick: (String) -> Unit
 ) {
     val blacklistRegexes: List<Regex> by lazy {
         userSettings.websiteBlacklist.lines()
@@ -80,6 +81,18 @@ fun createCustomWebview(
                 @Suppress("DEPRECATION")
                 allowUniversalAccessFromFileURLs = userSettings.allowUniversalAccessFromFileURLs
                 mediaPlaybackRequiresUserGesture = userSettings.mediaPlaybackRequiresUserGesture
+
+                if (userSettings.allowLinkLongPressContextMenu) {
+                    setOnLongClickListener {
+                        val result = hitTestResult
+                        if (result.type == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
+                            result.extra?.let { link -> config.onLinkLongClick(link) }
+                            false
+                        } else {
+                            true
+                        }
+                    }
+                }
             }
 
             val isBlocked: (String) -> Boolean = { url ->
@@ -147,6 +160,7 @@ fun createCustomWebview(
                 override fun onReceivedHttpAuthRequest(view: WebView?, handler: HttpAuthHandler?, host: String?, realm: String?) {
                     config.onHttpAuthRequest(handler, host, realm)
                 }
+
             }
 
             webChromeClient = object : WebChromeClient() {
@@ -177,6 +191,7 @@ fun createCustomWebview(
                 ) {
                     callback?.invoke(origin, userSettings.allowLocation, false)
                 }
+
             }
         }
     }

@@ -33,6 +33,7 @@ fun SettingsWebBrowsingScreen(
         AllowHistoryAccessSetting()
         AllowBookmarkAccessSetting()
         AllowOtherUrlSchemesSetting()
+        AllowLinkLongPressContextMenuSetting()
         SearchProviderUrlSetting()
     }
 }

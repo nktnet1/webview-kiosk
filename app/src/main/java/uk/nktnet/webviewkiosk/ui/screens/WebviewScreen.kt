@@ -31,6 +31,7 @@ import uk.nktnet.webviewkiosk.ui.components.webview.FloatingMenuButton
 import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
 import uk.nktnet.webviewkiosk.ui.components.common.LoadingIndicator
 import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
+import uk.nktnet.webviewkiosk.ui.components.webview.LinkOptionsDialog
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
 import uk.nktnet.webviewkiosk.utils.rememberLockedState
 import uk.nktnet.webviewkiosk.utils.tryLockTask
@@ -53,6 +54,8 @@ fun WebviewScreen(navController: NavController) {
     var transitionState by remember { mutableStateOf(TransitionState.PAGE_FINISHED) }
     var isRefreshing by remember { mutableStateOf(false) }
     var hasFocus by remember { mutableStateOf(false) }
+
+    var linkToOpen by remember { mutableStateOf<String?>(null) }
 
     val showAddressBar = when (userSettings.addressBarMode) {
         AddressBarOption.SHOWN -> true
@@ -95,6 +98,9 @@ fun WebviewScreen(navController: NavController) {
                 authHandler = handler
                 authHost = host
                 authRealm = realm
+            },
+            onLinkLongClick = { link ->
+                linkToOpen = link
             }
         )
     )
@@ -155,7 +161,7 @@ fun WebviewScreen(navController: NavController) {
 
                         urlBarText = urlBarText.copy(text = initialUrl)
 
-                        fun initWebviewApply(initialUrl: String) = webView.apply { customLoadUrl(initialUrl) }
+                        fun initWebviewApply(initialUrl: String) = webView.apply {customLoadUrl(initialUrl) }
 
                         if (userSettings.allowRefresh) {
                             WebviewAwareSwipeRefreshLayout(ctx, webView).apply {
@@ -201,4 +207,12 @@ fun WebviewScreen(navController: NavController) {
         MultitapHandler { WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings) }
     }
     BasicAuthDialog(authHandler, authHost, authRealm) { authHandler = null }
+
+    LinkOptionsDialog(
+        link = linkToOpen,
+        onDismiss = { linkToOpen = null },
+        onOpenLink = { url -> customLoadUrl(url) },
+        showToast = showToast
+    )
+
 }
