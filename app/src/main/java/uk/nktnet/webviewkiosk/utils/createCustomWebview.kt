@@ -81,6 +81,18 @@ fun createCustomWebview(
                 @Suppress("DEPRECATION")
                 allowUniversalAccessFromFileURLs = userSettings.allowUniversalAccessFromFileURLs
                 mediaPlaybackRequiresUserGesture = userSettings.mediaPlaybackRequiresUserGesture
+
+                if (userSettings.allowLinkLongPressContextMenu) {
+                    setOnLongClickListener {
+                        val result = hitTestResult
+                        if (result.type == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
+                            result.extra?.let { link -> config.onLinkLongClick(link) }
+                            false
+                        } else {
+                            true
+                        }
+                    }
+                }
             }
 
             val isBlocked: (String) -> Boolean = { url ->
@@ -180,16 +192,6 @@ fun createCustomWebview(
                     callback?.invoke(origin, userSettings.allowLocation, false)
                 }
 
-            }
-
-            setOnLongClickListener {
-                val result = hitTestResult
-                if (result.type == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
-                    result.extra?.let { link -> config.onLinkLongClick(link) }
-                    false
-                } else {
-                    true
-                }
             }
         }
     }

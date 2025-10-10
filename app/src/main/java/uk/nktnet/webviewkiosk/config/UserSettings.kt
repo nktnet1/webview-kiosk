@@ -30,6 +30,7 @@ class UserSettings(context: Context) {
     var allowHistoryAccess by booleanPref(prefs, ALLOW_HISTORY_ACCESS, true)
     var allowBookmarkAccess by booleanPref(prefs, ALLOW_BOOKMARK_ACCESS, true)
     var allowOtherUrlSchemes by booleanPref(prefs, ALLOW_OTHER_URL_SCHEMES, false)
+    var allowLinkLongPressContextMenu by booleanPref(prefs, ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, true)
     var searchProviderUrl by stringPref(prefs, SEARCH_PROVIDER_URL, Constants.DEFAULT_SEARCH_PROVIDER_URL)
 
     // Web Engine
@@ -105,6 +106,7 @@ class UserSettings(context: Context) {
             put(ALLOW_HISTORY_ACCESS, allowHistoryAccess)
             put(ALLOW_BOOKMARK_ACCESS, allowBookmarkAccess)
             put(ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
+            put(ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, allowLinkLongPressContextMenu)
             put(SEARCH_PROVIDER_URL, searchProviderUrl)
 
             put(ENABLE_JAVASCRIPT, enableJavaScript)
@@ -163,6 +165,7 @@ class UserSettings(context: Context) {
             allowHistoryAccess = json.optBoolean(ALLOW_HISTORY_ACCESS, allowHistoryAccess)
             allowBookmarkAccess = json.optBoolean(ALLOW_BOOKMARK_ACCESS, allowBookmarkAccess)
             allowOtherUrlSchemes = json.optBoolean(ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
+            allowLinkLongPressContextMenu = json.optBoolean(ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, allowLinkLongPressContextMenu)
             searchProviderUrl = json.optString(SEARCH_PROVIDER_URL, searchProviderUrl)
 
             enableJavaScript = json.optBoolean(ENABLE_JAVASCRIPT, enableJavaScript)
@@ -224,6 +227,7 @@ class UserSettings(context: Context) {
         private const val ALLOW_HISTORY_ACCESS = "web_browsing.allow_history_access"
         private const val ALLOW_BOOKMARK_ACCESS = "web_browsing.allow_bookmark_access"
         private const val ALLOW_OTHER_URL_SCHEMES = "web_browsing.allow_other_url_schemes"
+        private const val ALLOW_LINK_LONG_PRESS_CONTEXT_MENU = "web_browsing.allow_link_long_press_context_menu"
         private const val SEARCH_PROVIDER_URL = "web_browsing.search_provider_url"
 
         private const val ENABLE_JAVASCRIPT = "web_engine.enable_javascript"
@@ -259,6 +263,7 @@ class UserSettings(context: Context) {
 
         private const val JS_APPLY_APP_THEME = "js_scripts.apply_app_theme"
         private const val JS_APPLY_DESKTOP_VIEWPORT_WIDTH = "js_scripts.apply_desktop_viewport_width"
+
         private const val JS_CUSTOM_SCRIPT_ON_PAGE_START = "js_scripts.custom_script_on_start"
         private const val JS_CUSTOM_SCRIPT_ON_PAGE_FINISH = "js_scripts.custom_script_on_finish"
     }
