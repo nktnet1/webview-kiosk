@@ -7,14 +7,17 @@ fun BooleanSettingFieldItem(
     label: String,
     infoText: String,
     initialValue: Boolean,
-    onSave: (Boolean) -> Unit
-) {
+    onSave: (Boolean) -> Unit,
+    itemText: (Boolean) -> String = { if (it) "True" else "False" },
+    extraContent: (@Composable ((setValue: (Boolean) -> Unit) -> Unit))? = null,
+    ) {
     DropdownSettingFieldItem(
         label = label,
         infoText = infoText,
         options = listOf(true, false),
         initialValue = initialValue,
         onSave = onSave,
-        itemText = { if (it) "True" else "False" }
+        itemText = itemText,
+        extraContent = extraContent,
     )
 }
