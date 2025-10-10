@@ -27,7 +27,7 @@ fun TextSettingFieldItem(
     validator: (String) -> Boolean = { true },
     validationMessage: String? = null,
     onSave: (String) -> Unit,
-    readOnly: Boolean = true,
+    readOnly: Boolean = false,
     extraContent: (@Composable ((setValue: (String) -> Unit) -> Unit))? = null,
 ) {
     var showDialog by remember { mutableStateOf(false) }
