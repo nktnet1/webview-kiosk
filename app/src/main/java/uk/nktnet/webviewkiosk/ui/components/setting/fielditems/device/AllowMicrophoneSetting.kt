@@ -28,9 +28,10 @@ fun AllowMicrophoneSetting() {
     BooleanSettingFieldItem(
         label = "Allow Microphone",
         infoText = """
-            Set to true to allow the WebView to access the device microphone.
-            
-            This will enable the RESOURCE_AUDIO_CAPTURE permission.
+            Set to true to give WebView access to your device's microphone.
+
+            You will need to grant the RECORD_AUDIO permission, which is required for the
+            WebView's RESOURCE_AUDIO_CAPTURE feature.
         """.trimIndent(),
         initialValue = userSettings.allowMicrophone,
         onSave = { userSettings.allowMicrophone = it },

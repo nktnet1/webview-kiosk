@@ -81,7 +81,9 @@ fun CustomUnlockShortcutSetting() {
         infoText = """
             Provide a custom keyboard shortcut using a modifier key (CTRL/SHIFT/ALT/META)
             in combination with another standard key to unlock/unpin the application.
-            
+
+            For example, CTRL+1
+
             This is useful for devices with no navigation buttons on screen and instead
             has a physical keyboard connected.
 

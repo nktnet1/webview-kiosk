@@ -28,9 +28,10 @@ fun AllowCameraSetting() {
     BooleanSettingFieldItem(
         label = "Allow Camera",
         infoText = """
-            Set to true to allow the WebView to access the device camera.
-
-            This will enable the RESOURCE_VIDEO_CAPTURE permission.
+            Set to true to give WebView access to your device's camera.
+                    
+            You will need to grant the CAMERA permission, which is required for the
+            WebView's RESOURCE_VIDEO_CAPTURE feature.
         """.trimIndent(),
         initialValue = userSettings.allowCamera,
         onSave = { userSettings.allowCamera = it },

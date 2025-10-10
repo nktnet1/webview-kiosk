@@ -37,13 +37,12 @@ fun AllowLocationSetting() {
     BooleanSettingFieldItem(
         label = "Allow Location",
         infoText = """
-            Enables location access for the WebView.
-
-            When enabled, websites can request the device's location. You can choose
-            to request precise location (fine) or approximate location (coarse).
-
-            Fine location provides accuracy within a few meters (GPS, network).
-            Coarse location provides less accurate location using network sources only.
+            When enabled, websites can request the device's location.
+            
+            You can choose to request precise location (FINE) or approximate location (COARSE).
+            
+            You will need to grant either ACCESS_FINE_LOCATION or ACCESS_COARSE_LOCATION,
+            required for the WebView's GeolocationPermissions.
         """.trimIndent(),
         initialValue = userSettings.allowLocation,
         onSave = { userSettings.allowLocation = it },

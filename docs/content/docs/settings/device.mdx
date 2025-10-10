@@ -29,29 +29,42 @@ For more details, refer to Android's official documentation for [R.attr.screenOr
 
 ## 3. Allow Camera
 
-Set this option to true to allow the WebView to access the device camera.
-
-This will enable the [RESOURCE_VIDEO_CAPTURE](https://developer.android.com/reference/android/webkit/PermissionRequest#RESOURCE_VIDEO_CAPTURE) permission.
+Set to true to give WebView access to your device's camera.
+      
+You will need to grant the [CAMERA](https://developer.android.com/reference/android/Manifest.permission#CAMERA)
+permission, which is required for the WebView's
+[RESOURCE_VIDEO_CAPTURE](https://developer.android.com/reference/android/webkit/PermissionRequest#RESOURCE_VIDEO_CAPTURE)
+feature.
 
 **Default:** false
 
 ## 4. Allow Microphone
 
-Set this option to true to allow the WebView to access the device microphone.
-
-This will enable the [RESOURCE_AUDIO_CAPTURE](https://developer.android.com/reference/android/webkit/PermissionRequest#RESOURCE_AUDIO_CAPTURE) permission.
+Set to true to give WebView access to your device's microphone.
+      
+You will need to grant the
+[RECORD_AUDIO](https://developer.android.com/reference/android/Manifest.permission#RECORD_AUDIO)
+permission, which is required for the WebView's
+[RESOURCE_AUDIO_CAPTURE](https://developer.android.com/reference/android/webkit/PermissionRequest#RESOURCE_AUDIO_CAPTURE)
+feature.
 
 **Default:** false
 
 ## 5. Allow Location
 
-Enable this option to allow the WebView to access the device’s location.
+When enabled, websites can request the device's location.
 
-You can choose to request precise location (fine) or approximate location (coarse).  
+You can choose to request precise location (FINE) or approximate location (COARSE).
 
-For more information, refer to:
+For more information, refer to
+[location/permissions#accuracy](https://developer.android.com/develop/sensors-and-location/location/permissions#accuracy).
 
-- [location/permissions#accuracy](https://developer.android.com/develop/sensors-and-location/location/permissions#accuracy)
+You will need to grant either
+[ACCESS_FINE_LOCATION](https://developer.android.com/reference/android/Manifest.permission#ACCESS_FINE_LOCATION)
+or
+[ACCESS_COARSE_LOCATION](https://developer.android.com/reference/android/Manifest.permission#ACCESS_COARSE_LOCATION),
+required for the WebView's
+[GeolocationPermissions](https://developer.android.com/reference/android/webkit/GeolocationPermissions).
 
 **Default:** false
 

@@ -15,6 +15,7 @@ fun AllowLocalFilesSetting() {
         label = "Allow Local Files",
         infoText = """
             Set to true to allow the user to load a local HTML file into the WebView.
+
             This will be accessible using the 3-dot icon on the right of the address bar.
         """.trimIndent(),
         initialValue = userSettings.allowLocalFiles,
