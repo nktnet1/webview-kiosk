@@ -8,7 +8,6 @@
 >
 > - F-Droid: https://f-droid.org/2025/09/29/google-developer-registration-decree.html
 > - Video context: https://www.youtube.com/watch?v=wRvqdLsnsKY
-> - Actions you can take: https://www.reddit.com/r/androiddev/comments/1nc0p8o/collection_of_actions_that_can_be_done_regarding
 
 # Webview Kiosk
 
