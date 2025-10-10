@@ -80,6 +80,7 @@ class UserSettings(context: Context) {
         set(value) = prefs.edit { putString(DEVICE_ROTATION, value.degrees) }
     var allowCamera by booleanPref(prefs, ALLOW_CAMERA, false)
     var allowMicrophone by booleanPref(prefs, ALLOW_MICROPHONE, false)
+    var allowLocation by booleanPref(prefs, ALLOW_LOCATION, false)
     var customUnlockShortcut by stringPrefOptional(prefs, CUSTOM_UNLOCK_SHORTCUT)
 
     // JS Scripts
@@ -127,6 +128,7 @@ class UserSettings(context: Context) {
             put(DEVICE_ROTATION, deviceRotation.degrees)
             put(ALLOW_CAMERA, allowCamera)
             put(ALLOW_MICROPHONE, allowMicrophone)
+            put(ALLOW_LOCATION, allowLocation)
             put(CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
             put(JS_APPLY_APP_THEME, applyAppTheme)
             put(JS_APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
@@ -178,6 +180,7 @@ class UserSettings(context: Context) {
             deviceRotation = DeviceRotationOption.fromString(json.optString(DEVICE_ROTATION, deviceRotation.degrees))
             allowCamera = json.optBoolean(ALLOW_CAMERA, allowCamera)
             allowMicrophone = json.optBoolean(ALLOW_MICROPHONE, allowMicrophone)
+            allowLocation = json.optBoolean(ALLOW_LOCATION, allowLocation)
             customUnlockShortcut = json.optString(CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
             applyAppTheme = json.optBoolean(JS_APPLY_APP_THEME, applyAppTheme)
             applyDesktopViewportWidth = json.optInt(JS_APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
@@ -234,6 +237,7 @@ class UserSettings(context: Context) {
         private const val DEVICE_ROTATION = "device.rotation"
         private const val ALLOW_CAMERA = "device.allow_camera"
         private const val ALLOW_MICROPHONE = "device.allow_microphone"
+        private const val ALLOW_LOCATION = "device.allow_location"
         private const val CUSTOM_UNLOCK_SHORTCUT = "device.custom_unlock_shortcut"
 
         private const val JS_APPLY_APP_THEME = "js_scripts.apply_app_theme"
