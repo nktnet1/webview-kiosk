@@ -7,6 +7,7 @@ import android.view.ViewGroup
 import android.webkit.GeolocationPermissions
 import android.webkit.HttpAuthHandler
 import android.webkit.PermissionRequest
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -148,7 +149,7 @@ fun createCustomWebview(
                 }
             }
 
-            webChromeClient = object : android.webkit.WebChromeClient() {
+            webChromeClient = object : WebChromeClient() {
                 override fun onPermissionRequest(request: PermissionRequest) {
                     val grantedResources = mutableListOf<String>()
 

@@ -30,8 +30,7 @@ fun AllowCameraSetting() {
         infoText = """
             Set to true to allow the WebView to access the device camera.
 
-            This will enable the  RESOURCE_VIDEO_CAPTURE permission for
-            the Android Webview.
+            This will enable the RESOURCE_VIDEO_CAPTURE permission.
         """.trimIndent(),
         initialValue = userSettings.allowCamera,
         onSave = { userSettings.allowCamera = it },

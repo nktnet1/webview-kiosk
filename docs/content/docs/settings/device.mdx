@@ -27,6 +27,34 @@ For more details, refer to Android's official documentation for [R.attr.screenOr
 
 **Default:** Auto
 
+## 3. Allow Camera
+
+Set this option to true to allow the WebView to access the device camera.
+
+This will enable the [RESOURCE_VIDEO_CAPTURE](https://developer.android.com/reference/android/webkit/PermissionRequest#RESOURCE_VIDEO_CAPTURE) permission.
+
+**Default:** false
+
+## 4. Allow Microphone
+
+Set this option to true to allow the WebView to access the device microphone.
+
+This will enable the [RESOURCE_AUDIO_CAPTURE](https://developer.android.com/reference/android/webkit/PermissionRequest#RESOURCE_AUDIO_CAPTURE) permission.
+
+**Default:** false
+
+## 5. Allow Location
+
+Enable this option to allow the WebView to access the device’s location.
+
+You can choose to request precise location (fine) or approximate location (coarse).  
+
+For more information, refer to:
+
+- [location/permissions#accuracy](https://developer.android.com/develop/sensors-and-location/location/permissions#accuracy)
+
+**Default:** false
+
 
 ## 3. Custom Unlock Shortcut
 
