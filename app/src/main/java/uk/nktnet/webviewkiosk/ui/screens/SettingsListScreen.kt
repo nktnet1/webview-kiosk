@@ -51,7 +51,7 @@ fun SettingsListScreen(
         ),
         Triple(
             "Device",
-            "Keep screen on, device rotation",
+            "Keep screen on, device rotation, camera, microphone, unlock shortcut",
             Screen.SettingsDevice.route
         ),
         Triple(

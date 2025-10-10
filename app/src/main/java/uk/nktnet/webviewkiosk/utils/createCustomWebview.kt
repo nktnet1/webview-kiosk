@@ -24,7 +24,6 @@ import uk.nktnet.webviewkiosk.utils.webview.handleExternalScheme
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 
-
 data class WebViewConfig(
     val userSettings: UserSettings,
     val theme: ThemeOption,
@@ -151,11 +150,12 @@ fun createCustomWebview(
             webChromeClient = object : android.webkit.WebChromeClient() {
                 override fun onPermissionRequest(request: PermissionRequest) {
                     val grantedResources = mutableListOf<String>()
-                    if (
-                        userSettings.allowCamera
-                        && PermissionRequest.RESOURCE_VIDEO_CAPTURE in request.resources
-                    ) {
-                        grantedResources.add(PermissionRequest.RESOURCE_VIDEO_CAPTURE)
+
+                    request.resources.forEach { res ->
+                        when (res) {
+                            PermissionRequest.RESOURCE_VIDEO_CAPTURE -> if (userSettings.allowCamera) grantedResources.add(res)
+                            PermissionRequest.RESOURCE_AUDIO_CAPTURE -> if (userSettings.allowMicrophone) grantedResources.add(res)
+                        }
                     }
 
                     if (grantedResources.isNotEmpty()) {
@@ -165,6 +165,7 @@ fun createCustomWebview(
                     }
                 }
             }
+
         }
     }
 

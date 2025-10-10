@@ -14,25 +14,25 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 import uk.nktnet.webviewkiosk.utils.rememberPermissionState
 
 @Composable
-fun AllowCameraSetting() {
+fun AllowMicrophoneSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
 
     val (
         permissionState,
         requestPermission
-    ) = rememberPermissionState(Manifest.permission.CAMERA)
+    ) = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
 
     BooleanSettingFieldItem(
-        label = "Allow Camera",
+        label = "Allow Microphone",
         infoText = """
-            Set to true to allow the WebView to access the device camera.
-
-            This will enable the  RESOURCE_VIDEO_CAPTURE permission for
-            the Android Webview.
+            Set to true to allow the WebView to access the device microphone.
+            
+            This will enable the RESOURCE_AUDIO_CAPTURE permission for the
+            Android Webview.
         """.trimIndent(),
-        initialValue = userSettings.allowCamera,
-        onSave = { userSettings.allowCamera = it },
+        initialValue = userSettings.allowMicrophone,
+        onSave = { userSettings.allowMicrophone = it },
         itemText = { v ->
             val statusText = if (permissionState.granted) "" else "(no permission)"
             if (v) "True $statusText" else "False $statusText"
@@ -44,7 +44,7 @@ fun AllowCameraSetting() {
             ) {
                 val buttonText = when {
                     permissionState.granted -> "Disable in App Settings"
-                    !permissionState.granted && !permissionState.shouldShowRationale -> "Request Camera Permission"
+                    !permissionState.granted && !permissionState.shouldShowRationale -> "Request Microphone Permission"
                     else -> "Enable in App Settings"
                 }
                 Text(buttonText)
