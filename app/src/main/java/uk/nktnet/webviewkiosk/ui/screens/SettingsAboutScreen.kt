@@ -126,7 +126,7 @@ fun SettingsAboutScreen(navController: NavController) {
             }
         ) {
             Text(
-                text = "Open App Details Setting",
+                text = "Open App Info",
                 textAlign = TextAlign.Center,
                 style = MaterialTheme.typography.labelMedium
             )

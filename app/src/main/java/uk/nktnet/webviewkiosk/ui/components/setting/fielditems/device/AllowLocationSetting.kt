@@ -80,12 +80,12 @@ fun AllowLocationSetting() {
                     onClick = requestPermission
                 ) {
                     val buttonText = if (permissionState.granted) {
-                        "Disable in App Details"
+                        "Disable in App Info"
                     } else if (!permissionState.shouldShowRationale) {
                         if (requestFine) "Request Fine Location Permission"
                         else "Request Coarse Location Permission"
                     } else {
-                        "Enable in App Details"
+                        "Enable in App Info"
                     }
 
                     Text(
