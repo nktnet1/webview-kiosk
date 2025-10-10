@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Bitmap
 import android.view.ViewGroup
+import android.webkit.GeolocationPermissions
 import android.webkit.HttpAuthHandler
 import android.webkit.PermissionRequest
 import android.webkit.WebResourceRequest
@@ -153,8 +154,12 @@ fun createCustomWebview(
 
                     request.resources.forEach { res ->
                         when (res) {
-                            PermissionRequest.RESOURCE_VIDEO_CAPTURE -> if (userSettings.allowCamera) grantedResources.add(res)
-                            PermissionRequest.RESOURCE_AUDIO_CAPTURE -> if (userSettings.allowMicrophone) grantedResources.add(res)
+                            PermissionRequest.RESOURCE_VIDEO_CAPTURE -> if (userSettings.allowCamera) {
+                                grantedResources.add(res)
+                            }
+                            PermissionRequest.RESOURCE_AUDIO_CAPTURE -> if (userSettings.allowMicrophone) {
+                                grantedResources.add(res)
+                            }
                         }
                     }
 
@@ -164,8 +169,14 @@ fun createCustomWebview(
                         request.deny()
                     }
                 }
-            }
 
+                override fun onGeolocationPermissionsShowPrompt(
+                    origin: String?,
+                    callback: GeolocationPermissions.Callback?
+                ) {
+                    callback?.invoke(origin, userSettings.allowLocation, false)
+                }
+            }
         }
     }
 
