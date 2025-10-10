@@ -1,0 +1,8 @@
+## New Features
+
+- feat: camera permission logic implemented
+- feat: microphone access for audio recording
+- feat: geo-location access (fine/coarse)
+- feat: allowFileAccessFromFileURLs and allowUniversalAccessFromFileURLs
+- feat: copy file URL or open file directly from files management settings
+- feat: button to open app details setting (app info) in about screen
