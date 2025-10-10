@@ -55,6 +55,7 @@ class UserSettings(context: Context) {
     var displayZoomControls by booleanPref(prefs, DISPLAY_ZOOM_CONTROLS, false)
     var allowFileAccessFromFileURLs by booleanPref(prefs, ALLOW_FILE_ACCESS_FROM_FILE_URLS, false)
     var allowUniversalAccessFromFileURLs by booleanPref(prefs, ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, false)
+    var mediaPlaybackRequiresUserGesture by booleanPref(prefs, MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, true)
 
     // Web Lifecycle
     var lockOnLaunch by booleanPref(prefs, LOCK_ON_LAUNCH, false)
@@ -62,7 +63,6 @@ class UserSettings(context: Context) {
     var resetOnInactivitySeconds by intPref(prefs, RESET_ON_INACTIVITY_SECONDS, 0)
 
     // Appearance
-    var blockedMessage by stringPref(prefs, BLOCKED_MESSAGE, "This site is blocked by Webview Kiosk.")
     var theme: ThemeOption
         get() = ThemeOption.fromString(prefs.getString(THEME, null))
         set(value) = prefs.edit { putString(THEME, value.name) }
@@ -72,6 +72,7 @@ class UserSettings(context: Context) {
     var webViewInset: WebViewInset
         get() = WebViewInset.fromString(prefs.getString(WEBVIEW_INSET, null))
         set(value) = prefs.edit { putString(WEBVIEW_INSET, value.name) }
+    var blockedMessage by stringPref(prefs, BLOCKED_MESSAGE, "This site is blocked by Webview Kiosk.")
 
     // Device
     var keepScreenOn by booleanPref(prefs, KEEP_SCREEN_ON, false)
@@ -96,6 +97,7 @@ class UserSettings(context: Context) {
             put(WEBSITE_WHITELIST, websiteWhitelist)
             put(WEBSITE_BOOKMARKS, websiteBookmarks)
             put(ALLOW_LOCAL_FILES, allowLocalFiles)
+
             put(ALLOW_REFRESH, allowRefresh)
             put(ALLOW_BACKWARDS_NAVIGATION, allowBackwardsNavigation)
             put(ALLOW_GO_HOME, allowGoHome)
@@ -104,6 +106,7 @@ class UserSettings(context: Context) {
             put(ALLOW_BOOKMARK_ACCESS, allowBookmarkAccess)
             put(ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
             put(SEARCH_PROVIDER_URL, searchProviderUrl)
+
             put(ENABLE_JAVASCRIPT, enableJavaScript)
             put(ENABLE_DOM_STORAGE, enableDomStorage)
             put(ACCEPT_COOKIES, acceptCookies)
@@ -117,19 +120,24 @@ class UserSettings(context: Context) {
             put(DISPLAY_ZOOM_CONTROLS, displayZoomControls)
             put(ALLOW_FILE_ACCESS_FROM_FILE_URLS, allowFileAccessFromFileURLs)
             put(ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, allowUniversalAccessFromFileURLs)
+            put(MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
+
             put(LOCK_ON_LAUNCH, lockOnLaunch)
             put(RESET_ON_LAUNCH, resetOnLaunch)
             put(RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
+
             put(BLOCKED_MESSAGE, blockedMessage)
             put(THEME, theme.name)
             put(ADDRESS_BAR_MODE, addressBarMode.name)
             put(WEBVIEW_INSET, webViewInset.name)
+
             put(KEEP_SCREEN_ON, keepScreenOn)
             put(DEVICE_ROTATION, deviceRotation.degrees)
             put(ALLOW_CAMERA, allowCamera)
             put(ALLOW_MICROPHONE, allowMicrophone)
             put(ALLOW_LOCATION, allowLocation)
             put(CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
+
             put(JS_APPLY_APP_THEME, applyAppTheme)
             put(JS_APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
             put(JS_CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
@@ -141,11 +149,13 @@ class UserSettings(context: Context) {
     fun importFromBase64(base64: String): Boolean {
         return try {
             val json = JSONObject(String(Base64.decode(base64, Base64.NO_WRAP)))
+
             homeUrl = json.optString(HOME_URL, homeUrl)
             websiteBlacklist = json.optString(WEBSITE_BLACKLIST, websiteBlacklist)
             websiteWhitelist = json.optString(WEBSITE_WHITELIST, websiteWhitelist)
             websiteBookmarks = json.optString(WEBSITE_BOOKMARKS, websiteBookmarks)
             allowLocalFiles = json.optBoolean(ALLOW_LOCAL_FILES, allowLocalFiles)
+
             allowRefresh = json.optBoolean(ALLOW_REFRESH, allowRefresh)
             allowBackwardsNavigation = json.optBoolean(ALLOW_BACKWARDS_NAVIGATION, allowBackwardsNavigation)
             allowGoHome = json.optBoolean(ALLOW_GO_HOME, allowGoHome)
@@ -154,6 +164,7 @@ class UserSettings(context: Context) {
             allowBookmarkAccess = json.optBoolean(ALLOW_BOOKMARK_ACCESS, allowBookmarkAccess)
             allowOtherUrlSchemes = json.optBoolean(ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
             searchProviderUrl = json.optString(SEARCH_PROVIDER_URL, searchProviderUrl)
+
             enableJavaScript = json.optBoolean(ENABLE_JAVASCRIPT, enableJavaScript)
             enableDomStorage = json.optBoolean(ENABLE_DOM_STORAGE, enableDomStorage)
             acceptCookies = json.optBoolean(ACCEPT_COOKIES, acceptCookies)
@@ -169,19 +180,24 @@ class UserSettings(context: Context) {
             displayZoomControls = json.optBoolean(DISPLAY_ZOOM_CONTROLS, displayZoomControls)
             allowFileAccessFromFileURLs = json.optBoolean(ALLOW_FILE_ACCESS_FROM_FILE_URLS, allowFileAccessFromFileURLs)
             allowUniversalAccessFromFileURLs = json.optBoolean(ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, allowUniversalAccessFromFileURLs)
+            mediaPlaybackRequiresUserGesture = json.optBoolean(MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
+
             lockOnLaunch = json.optBoolean(LOCK_ON_LAUNCH, lockOnLaunch)
             resetOnLaunch = json.optBoolean(RESET_ON_LAUNCH, resetOnLaunch)
             resetOnInactivitySeconds = json.optInt(RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
-            blockedMessage = json.optString(BLOCKED_MESSAGE, blockedMessage)
+
             theme = ThemeOption.fromString(json.optString(THEME, theme.name))
             addressBarMode = AddressBarOption.fromString(json.optString(ADDRESS_BAR_MODE, addressBarMode.name))
             webViewInset = WebViewInset.fromString(json.optString(WEBVIEW_INSET, webViewInset.name))
+            blockedMessage = json.optString(BLOCKED_MESSAGE, blockedMessage)
+
             keepScreenOn = json.optBoolean(KEEP_SCREEN_ON, keepScreenOn)
             deviceRotation = DeviceRotationOption.fromString(json.optString(DEVICE_ROTATION, deviceRotation.degrees))
             allowCamera = json.optBoolean(ALLOW_CAMERA, allowCamera)
             allowMicrophone = json.optBoolean(ALLOW_MICROPHONE, allowMicrophone)
             allowLocation = json.optBoolean(ALLOW_LOCATION, allowLocation)
             customUnlockShortcut = json.optString(CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
+
             applyAppTheme = json.optBoolean(JS_APPLY_APP_THEME, applyAppTheme)
             applyDesktopViewportWidth = json.optInt(JS_APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
             customScriptOnPageStart = json.optString(JS_CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
@@ -223,15 +239,16 @@ class UserSettings(context: Context) {
         private const val DISPLAY_ZOOM_CONTROLS = "web_engine.display_zoom_controls"
         private const val ALLOW_FILE_ACCESS_FROM_FILE_URLS = "web_engine.allow_file_access_from_file_urls"
         private const val ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS = "web_engine.allow_universal_access_from_file_urls"
+        private const val MEDIA_PLAYBACK_REQUIRES_USER_GESTURE = "web_engine.media_playback_requires_user_gesture"
 
         private const val LOCK_ON_LAUNCH = "web_lifecycle.lock_on_launch"
         private const val RESET_ON_LAUNCH = "web_lifecycle.reset_on_launch"
         private const val RESET_ON_INACTIVITY_SECONDS = "web_lifecycle.reset_on_inactivity_seconds"
 
-        private const val BLOCKED_MESSAGE = "appearance.blocked_message"
         private const val THEME = "appearance.theme"
         private const val ADDRESS_BAR_MODE = "appearance.address_bar_mode"
         private const val WEBVIEW_INSET = "appearance.webview_inset"
+        private const val BLOCKED_MESSAGE = "appearance.blocked_message"
 
         private const val KEEP_SCREEN_ON = "device.keep_screen_on"
         private const val DEVICE_ROTATION = "device.rotation"

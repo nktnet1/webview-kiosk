@@ -75,11 +75,11 @@ fun createCustomWebview(
                 builtInZoomControls = userSettings.enableZoom
                 displayZoomControls = userSettings.displayZoomControls
                 allowFileAccess = userSettings.allowLocalFiles
-
                 @Suppress("DEPRECATION")
                 allowFileAccessFromFileURLs = userSettings.allowFileAccessFromFileURLs
                 @Suppress("DEPRECATION")
                 allowUniversalAccessFromFileURLs = userSettings.allowUniversalAccessFromFileURLs
+                mediaPlaybackRequiresUserGesture = userSettings.mediaPlaybackRequiresUserGesture
             }
 
             val isBlocked: (String) -> Boolean = { url ->
