@@ -117,6 +117,7 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                                 "application/javascript",
                                 "application/xml",
                                 "application/sql",
+                                "application/txt",
                             )
                         )
                     },

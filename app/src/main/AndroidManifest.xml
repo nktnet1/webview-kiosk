@@ -69,6 +69,7 @@
                 <data android:mimeType="application/javascript" />
                 <data android:mimeType="application/xml" />
                 <data android:mimeType="application/sql" />
+                <data android:mimeType="application/txt" />
                 <data android:scheme="content" />
             </intent-filter>
 
@@ -83,8 +84,8 @@
                 <data android:mimeType="application/javascript" />
                 <data android:mimeType="application/xml" />
                 <data android:mimeType="application/sql" />
+                <data android:mimeType="application/txt" />
             </intent-filter>
-
         </activity>
     </application>
 </manifest>
