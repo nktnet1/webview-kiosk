@@ -212,7 +212,6 @@ fun WebviewScreen(navController: NavController) {
         link = linkToOpen,
         onDismiss = { linkToOpen = null },
         onOpenLink = { url -> customLoadUrl(url) },
-        showToast = showToast
     )
 
 }

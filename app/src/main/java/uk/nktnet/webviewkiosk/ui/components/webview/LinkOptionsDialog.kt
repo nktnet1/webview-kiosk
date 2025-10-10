@@ -19,7 +19,6 @@ fun LinkOptionsDialog(
     link: String?,
     onDismiss: () -> Unit,
     onOpenLink: (String) -> Unit,
-    showToast: (String) -> Unit
 ) {
     val context = LocalContext.current
     if (link != null) {
@@ -49,7 +48,6 @@ fun LinkOptionsDialog(
                         onClick = {
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                             clipboard.setPrimaryClip(ClipData.newPlainText("Copied Link", link))
-                            showToast("Copied to clipboard")
                             onDismiss()
                         },
                         modifier = Modifier.fillMaxWidth()
