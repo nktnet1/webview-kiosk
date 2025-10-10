@@ -78,8 +78,9 @@ class UserSettings(context: Context) {
     var deviceRotation: DeviceRotationOption
         get() = DeviceRotationOption.fromString(prefs.getString(DEVICE_ROTATION, null))
         set(value) = prefs.edit { putString(DEVICE_ROTATION, value.degrees) }
-    var customUnlockShortcut by stringPrefOptional(prefs, CUSTOM_UNLOCK_SHORTCUT)
     var allowCamera by booleanPref(prefs, ALLOW_CAMERA, false)
+    var allowMicrophone by booleanPref(prefs, ALLOW_MICROPHONE, false)
+    var customUnlockShortcut by stringPrefOptional(prefs, CUSTOM_UNLOCK_SHORTCUT)
 
     // JS Scripts
     var applyAppTheme by booleanPref(prefs, JS_APPLY_APP_THEME, true)
@@ -124,8 +125,9 @@ class UserSettings(context: Context) {
             put(WEBVIEW_INSET, webViewInset.name)
             put(KEEP_SCREEN_ON, keepScreenOn)
             put(DEVICE_ROTATION, deviceRotation.degrees)
-            put(CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
             put(ALLOW_CAMERA, allowCamera)
+            put(ALLOW_MICROPHONE, allowMicrophone)
+            put(CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
             put(JS_APPLY_APP_THEME, applyAppTheme)
             put(JS_APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
             put(JS_CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
@@ -174,8 +176,9 @@ class UserSettings(context: Context) {
             webViewInset = WebViewInset.fromString(json.optString(WEBVIEW_INSET, webViewInset.name))
             keepScreenOn = json.optBoolean(KEEP_SCREEN_ON, keepScreenOn)
             deviceRotation = DeviceRotationOption.fromString(json.optString(DEVICE_ROTATION, deviceRotation.degrees))
-            customUnlockShortcut = json.optString(CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
             allowCamera = json.optBoolean(ALLOW_CAMERA, allowCamera)
+            allowMicrophone = json.optBoolean(ALLOW_MICROPHONE, allowMicrophone)
+            customUnlockShortcut = json.optString(CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
             applyAppTheme = json.optBoolean(JS_APPLY_APP_THEME, applyAppTheme)
             applyDesktopViewportWidth = json.optInt(JS_APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
             customScriptOnPageStart = json.optString(JS_CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
@@ -229,8 +232,9 @@ class UserSettings(context: Context) {
 
         private const val KEEP_SCREEN_ON = "device.keep_screen_on"
         private const val DEVICE_ROTATION = "device.rotation"
-        private const val CUSTOM_UNLOCK_SHORTCUT = "device.custom_unlock_shortcut"
         private const val ALLOW_CAMERA = "device.allow_camera"
+        private const val ALLOW_MICROPHONE = "device.allow_microphone"
+        private const val CUSTOM_UNLOCK_SHORTCUT = "device.custom_unlock_shortcut"
 
         private const val JS_APPLY_APP_THEME = "js_scripts.apply_app_theme"
         private const val JS_APPLY_DESKTOP_VIEWPORT_WIDTH = "js_scripts.apply_desktop_viewport_width"

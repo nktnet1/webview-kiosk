@@ -72,4 +72,3 @@ private fun openAppSettings(context: Context) {
     }
     context.startActivity(intent)
 }
-
