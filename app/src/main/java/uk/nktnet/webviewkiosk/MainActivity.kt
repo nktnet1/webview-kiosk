@@ -36,6 +36,7 @@ import uk.nktnet.webviewkiosk.utils.getLocalUrl
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handlePreviewKeyEvent
 import uk.nktnet.webviewkiosk.utils.tryLockTask
+import uk.nktnet.webviewkiosk.utils.validateUrl
 
 class MainActivity : AppCompatActivity() {
     private var uploadingFileUri: Uri? = null
@@ -120,17 +121,29 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun handleIntent(systemSettings: SystemSettings) {
+        if (systemSettings.intentUrl.isEmpty().not()) {
+            // Already have an intent to load (not yet consumed by webview)
+            return
+        }
         when (intent.action) {
             Intent.ACTION_VIEW -> {
                 intent.data?.let { dataUri ->
                     if (dataUri.scheme == "content") {
                         uploadingFileUri = dataUri
-                    } else if (systemSettings.intentUrl.isEmpty()) {
+                    } else {
                         systemSettings.intentUrl = dataUri.toString()
                     }
                 }
             }
             Intent.ACTION_SEND -> {
+                if (intent.type == "text/plain") {
+                    intent.getStringExtra(Intent.EXTRA_TEXT)?.let { text ->
+                        if (validateUrl(text)) {
+                            systemSettings.intentUrl = text.trim()
+                        }
+                    }
+                    return
+                }
                 val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
                 } else {
