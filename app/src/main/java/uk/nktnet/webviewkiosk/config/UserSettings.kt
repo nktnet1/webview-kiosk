@@ -87,8 +87,10 @@ class UserSettings(context: Context) {
     // JS Scripts
     var applyAppTheme by booleanPref(prefs, JS_APPLY_APP_THEME, true)
     var applyDesktopViewportWidth by intPref(prefs, JS_APPLY_DESKTOP_VIEWPORT_WIDTH, 0)
+    var enableLinkLongPressContextMenu by booleanPref(prefs, JS_LINK_LONG_PRESS_CONTEXT_MENU, true)
     var customScriptOnPageStart by stringPrefOptional(prefs, JS_CUSTOM_SCRIPT_ON_PAGE_START)
     var customScriptOnPageFinish by stringPrefOptional(prefs, JS_CUSTOM_SCRIPT_ON_PAGE_FINISH)
+
 
     fun exportToBase64(): String {
         val json = JSONObject().apply {
@@ -140,6 +142,7 @@ class UserSettings(context: Context) {
 
             put(JS_APPLY_APP_THEME, applyAppTheme)
             put(JS_APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
+            put(JS_LINK_LONG_PRESS_CONTEXT_MENU, enableLinkLongPressContextMenu)
             put(JS_CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             put(JS_CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
         }
@@ -200,6 +203,7 @@ class UserSettings(context: Context) {
 
             applyAppTheme = json.optBoolean(JS_APPLY_APP_THEME, applyAppTheme)
             applyDesktopViewportWidth = json.optInt(JS_APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
+            enableLinkLongPressContextMenu = json.optBoolean(JS_LINK_LONG_PRESS_CONTEXT_MENU, enableLinkLongPressContextMenu)
             customScriptOnPageStart = json.optString(JS_CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             customScriptOnPageFinish = json.optString(JS_CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
             true
@@ -259,6 +263,8 @@ class UserSettings(context: Context) {
 
         private const val JS_APPLY_APP_THEME = "js_scripts.apply_app_theme"
         private const val JS_APPLY_DESKTOP_VIEWPORT_WIDTH = "js_scripts.apply_desktop_viewport_width"
+        private const val JS_LINK_LONG_PRESS_CONTEXT_MENU = "js_scripts.link_long_press_context_menu"
+
         private const val JS_CUSTOM_SCRIPT_ON_PAGE_START = "js_scripts.custom_script_on_start"
         private const val JS_CUSTOM_SCRIPT_ON_PAGE_FINISH = "js_scripts.custom_script_on_finish"
     }

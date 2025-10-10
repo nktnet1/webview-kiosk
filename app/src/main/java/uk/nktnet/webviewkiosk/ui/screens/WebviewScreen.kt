@@ -99,7 +99,7 @@ fun WebviewScreen(navController: NavController) {
                 authHost = host
                 authRealm = realm
             },
-            onLinkLongClick = { link ->
+            onLinkLongPress = { link ->
                 linkToOpen = link
             }
         )

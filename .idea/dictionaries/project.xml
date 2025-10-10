@@ -2,6 +2,7 @@
   <dictionary name="project">
     <words>
       <w>autosizing</w>
+      <w>contextmenu</w>
       <w>densitydpi</w>
       <w>deps</w>
       <w>fdroid</w>

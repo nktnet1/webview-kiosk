@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.view.ViewGroup
 import android.webkit.GeolocationPermissions
 import android.webkit.HttpAuthHandler
+import android.webkit.JavascriptInterface
 import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
@@ -21,6 +22,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.utils.webview.generateBlockedPageHtml
 import uk.nktnet.webviewkiosk.utils.webview.generateDesktopViewportScript
+import uk.nktnet.webviewkiosk.utils.webview.generateLinkLongPressScript
 import uk.nktnet.webviewkiosk.utils.webview.generatePrefersColorSchemeOverrideScript
 import uk.nktnet.webviewkiosk.utils.webview.handleExternalScheme
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
@@ -33,7 +35,7 @@ data class WebViewConfig(
     val onPageFinished: (String) -> Unit,
     val doUpdateVisitedHistory: (String) -> Unit,
     val onHttpAuthRequest: (HttpAuthHandler?, String?, String?) -> Unit,
-    val onLinkLongClick: (String) -> Unit
+    val onLinkLongPress: (String) -> Unit
 ) {
     val blacklistRegexes: List<Regex> by lazy {
         userSettings.websiteBlacklist.lines()
@@ -45,6 +47,14 @@ data class WebViewConfig(
         userSettings.websiteWhitelist.lines()
             .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
             .mapNotNull { runCatching { Regex(it) }.getOrNull() }
+    }
+}
+
+@Suppress("unused")
+class WebAppInterface(private val onLinkLongPress: (String) -> Unit) {
+    @JavascriptInterface
+    fun jsOnLinkLongPress(url: String) {
+        onLinkLongPress(url)
     }
 }
 
@@ -65,7 +75,7 @@ fun createCustomWebview(
             )
 
             settings.apply {
-                javaScriptEnabled = userSettings.enableJavaScript
+                javaScriptEnabled = true
                 domStorageEnabled = userSettings.enableDomStorage
                 cacheMode = userSettings.cacheMode.mode
                 userAgentString = userSettings.userAgent.takeIf { it.isNotBlank() }
@@ -87,6 +97,10 @@ fun createCustomWebview(
                 isBlockedUrl(url, config.blacklistRegexes, config.whitelistRegexes)
             }
 
+            if (userSettings.enableLinkLongPressContextMenu){
+                addJavascriptInterface(WebAppInterface(config.onLinkLongPress), "AndroidInterface")
+            }
+
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     if (userSettings.applyAppTheme && config.theme != ThemeOption.SYSTEM) {
@@ -106,6 +120,11 @@ fun createCustomWebview(
                     if (userSettings.customScriptOnPageFinish.isNotBlank()) {
                         view?.evaluateJavascript(wrapJsInIIFE(userSettings.customScriptOnPageFinish), null)
                     }
+
+                    if (userSettings.enableLinkLongPressContextMenu) {
+                        evaluateJavascript(generateLinkLongPressScript()) {}
+                    }
+
                     url?.let { config.onPageFinished(it) }
                     isShowingBlockedPage = false
                 }
@@ -180,16 +199,6 @@ fun createCustomWebview(
                     callback?.invoke(origin, userSettings.allowLocation, false)
                 }
 
-            }
-
-            setOnLongClickListener {
-                val result = hitTestResult
-                if (result.type == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
-                    result.extra?.let { link -> config.onLinkLongClick(link) }
-                    false
-                } else {
-                    true
-                }
             }
         }
     }
