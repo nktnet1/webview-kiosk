@@ -3,9 +3,9 @@
 > Google's new developer verification requirements for 2026-2027 will
 > mean the end for side-loading and many alternate stores and projects
 > such as F-Droid and New Pipe.
-> 
+>
 > For more information, please refer to the following sources:
-> 
+>
 > - F-Droid: https://f-droid.org/2025/09/29/google-developer-registration-decree.html
 > - Video context: https://www.youtube.com/watch?v=wRvqdLsnsKY
 > - Actions you can take: https://www.reddit.com/r/androiddev/comments/1nc0p8o/collection_of_actions_that_can_be_done_regarding
