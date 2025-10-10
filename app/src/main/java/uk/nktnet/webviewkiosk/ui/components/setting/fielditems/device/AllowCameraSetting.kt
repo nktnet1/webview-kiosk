@@ -44,9 +44,9 @@ fun AllowCameraSetting() {
                 onClick = requestPermission
             ) {
                 val buttonText = when {
-                    permissionState.granted -> "Disable in App Settings"
+                    permissionState.granted -> "Disable in App Details"
                     !permissionState.granted && !permissionState.shouldShowRationale -> "Request Camera Permission"
-                    else -> "Enable in App Settings"
+                    else -> "Enable in App Details"
                 }
                 Text(
                     text = buttonText,

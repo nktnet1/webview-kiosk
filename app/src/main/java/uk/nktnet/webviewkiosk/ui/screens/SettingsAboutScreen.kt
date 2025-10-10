@@ -10,11 +10,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
 
 @Composable
 fun InfoItem(label: String, value: String) {
@@ -114,5 +116,20 @@ fun SettingsAboutScreen(navController: NavController) {
         InfoItem(label = "Debug Build", value = debugFlag)
         InfoItem(label = "Supported ABIs", value = supportedABIs)
         InfoItem(label = "Installer", value = installerPackage)
+
+        Button(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            onClick = {
+                openAppDetailsSettings(context)
+            }
+        ) {
+            Text(
+                text = "Open App Details Setting",
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.labelMedium
+            )
+        }
     }
 }

@@ -1,10 +1,6 @@
 package uk.nktnet.webviewkiosk.utils
 
-import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
-import android.provider.Settings
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -59,16 +55,10 @@ fun rememberPermissionState(permission: String): Pair<PermissionState, () -> Uni
         if (!granted && !shouldShowRationale) {
             launcher.launch(permission)
         } else {
-            openAppSettings(context)
+            openAppDetailsSettings(context)
         }
     }
 
     return PermissionState(granted, shouldShowRationale) to requestPermission
 }
-private fun openAppSettings(context: Context) {
-    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-        data = Uri.fromParts("package", context.packageName, null)
-        flags = Intent.FLAG_ACTIVITY_NEW_TASK
-    }
-    context.startActivity(intent)
-}
+
