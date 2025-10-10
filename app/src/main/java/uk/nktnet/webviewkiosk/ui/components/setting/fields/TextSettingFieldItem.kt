@@ -146,7 +146,6 @@ fun TextSettingFieldItem(
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                     )
                 }
-
                 extraContent?.invoke { draftValue = it; draftError = !validator(it) }
             }
         }

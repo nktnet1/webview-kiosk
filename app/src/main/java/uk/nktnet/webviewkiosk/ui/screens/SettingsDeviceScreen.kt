@@ -10,6 +10,7 @@ import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowCameraSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.CustomUnlockShortcutSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.DeviceRotationSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.KeepScreenOnSetting
@@ -34,5 +35,6 @@ fun SettingsDeviceScreen(
         KeepScreenOnSetting(keepScreenOnState)
         DeviceRotationSetting(deviceRotationState)
         CustomUnlockShortcutSetting()
+        AllowCameraSetting()
     }
 }

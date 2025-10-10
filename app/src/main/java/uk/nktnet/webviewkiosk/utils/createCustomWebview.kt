@@ -5,10 +5,15 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.view.ViewGroup
 import android.webkit.HttpAuthHandler
+import android.webkit.PermissionRequest
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
@@ -18,6 +23,7 @@ import uk.nktnet.webviewkiosk.utils.webview.generatePrefersColorSchemeOverrideSc
 import uk.nktnet.webviewkiosk.utils.webview.handleExternalScheme
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
+
 
 data class WebViewConfig(
     val userSettings: UserSettings,
@@ -139,6 +145,24 @@ fun createCustomWebview(
 
                 override fun onReceivedHttpAuthRequest(view: WebView?, handler: HttpAuthHandler?, host: String?, realm: String?) {
                     config.onHttpAuthRequest(handler, host, realm)
+                }
+            }
+
+            webChromeClient = object : android.webkit.WebChromeClient() {
+                override fun onPermissionRequest(request: PermissionRequest) {
+                    val grantedResources = mutableListOf<String>()
+                    if (
+                        userSettings.allowCamera
+                        && PermissionRequest.RESOURCE_VIDEO_CAPTURE in request.resources
+                    ) {
+                        grantedResources.add(PermissionRequest.RESOURCE_VIDEO_CAPTURE)
+                    }
+
+                    if (grantedResources.isNotEmpty()) {
+                        request.grant(grantedResources.toTypedArray())
+                    } else {
+                        request.deny()
+                    }
                 }
             }
         }

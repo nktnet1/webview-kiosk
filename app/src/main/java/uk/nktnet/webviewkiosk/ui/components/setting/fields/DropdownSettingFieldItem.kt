@@ -14,6 +14,7 @@ fun <T> DropdownSettingFieldItem(
     infoText: String,
     options: List<T>,
     initialValue: T,
+    extraContent: (@Composable ((setValue: (T) -> Unit) -> Unit))? = null,
     onSave: (T) -> Unit,
     itemText: (T) -> String
 ) {
@@ -27,7 +28,7 @@ fun <T> DropdownSettingFieldItem(
         onClick = {
             draftValue = value
             showDialog = true
-        }
+        },
     ) {
         Text(
             text = itemText(value),
@@ -64,6 +65,7 @@ fun <T> DropdownSettingFieldItem(
                     }
                 )
             }
+            extraContent?.invoke { draftValue = it }
         }
     }
 }
