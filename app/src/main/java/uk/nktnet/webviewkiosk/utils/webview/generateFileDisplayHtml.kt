@@ -53,7 +53,7 @@ fun generateFileMissingPage(file: File, theme: ThemeOption): String {
             </style>
           </head>
           <body>
-            <h2>File Not Found</h2>
+            <h1>File Not Found</h1>
             <hr />
             <p>${Html.escapeHtml(file.absolutePath)}</p>
           </body>

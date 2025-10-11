@@ -21,7 +21,6 @@ val supportedMimeTypesArray = arrayOf(
     "application/json",
     "application/javascript",
     "application/xml",
-    "application/sql",
     "application/txt"
 )
 

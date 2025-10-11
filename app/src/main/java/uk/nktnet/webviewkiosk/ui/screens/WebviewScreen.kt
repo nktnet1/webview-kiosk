@@ -115,7 +115,7 @@ fun WebviewScreen(navController: NavController) {
         val uri = newUrl.toUri()
 
         // Handle invalid or unrenderable files here.
-        // For valid files, createCustomWebview can handle.
+        // For valid files, delegate to createCustomWebview.
         if (uri.scheme == "file" && userSettings.allowLocalFiles) {
             val mimeType = getMimeType(context, uri)
             val file = File(uri.path ?: "")
