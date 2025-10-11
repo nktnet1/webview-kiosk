@@ -26,18 +26,32 @@
 Webview Kiosk is a free and open-source Android application for secure,
 kiosk-style web browsing.
 
-The app is designed for small businesses and device owners who are looking for
-a simpler alternative to Enterprise Mobility Management (EMM) or Mobile Device
-Management (MDM) systems.
+Designed for small businesses and device owners who are looking for a simple
+alternative to Enterprise Mobility Management (EMM) or Mobile Device Management
+(MDM) systems.
 
 ## Key Features
 
-- **Lock Task Mode (Pin):** prevent users from opening other apps or accessing the
-  status bar. You can also enable the "Lock device when unpinning" android feature to
-  further enhance security
-- **Protected Settings:** protect app settings with biometrics or device credentials
-- **URL Filtering:** supports regex-based blacklist and whitelist to control web access
-- **Export/Import:** allow for backups of settings & configurations
+- **Lock Task Mode (Pin):** prevent users from accessing other features on your device such
+as other apps or the status bar
+- **Protected Settings:** all configurations are secured with biometrics or device credentials
+- **URL Filtering:** use regular expression to control web access through blacklisting and whitelisting
+- **Export/Import:** allows for the backup and restore of user settings and configurations
+- **Local files:** display an image, audio, video, or HTML file in kiosk mode from your device
+
+## Additional Permissions
+
+The Android permissions below are **optional**, and their corresponding features
+are **disabled in the app settings by default**:
+
+- CAMERA
+- RECORD_AUDIO
+- ACCESS_FINE_LOCATION
+- ACCESS_COARSE_LOCATION
+
+You should only enable them if they are needed by your website or web application.
+
+These permissions will not be used for any other purpose.
 
 ## Installation Notes
 
