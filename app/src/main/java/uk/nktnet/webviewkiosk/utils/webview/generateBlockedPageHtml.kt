@@ -3,45 +3,20 @@ package uk.nktnet.webviewkiosk.utils.webview
 import android.text.Html
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 
-fun generateBlockedPageHtml(url: String, message: String, theme: ThemeOption): String {
-    val style = when (theme) {
-        ThemeOption.DARK -> """
-            body {
-                background-color: #121212;
-                color: #ffffff;
-            }
-            hr {
-                border-top: 1px solid #aaaaaa;
-            }
-        """
-        ThemeOption.LIGHT -> """
-            body {
-                background-color: #ffffff;
-                color: #000000;
-            }
-            hr {
-                border-top: 1px solid #555555;
-            }
-        """
-        ThemeOption.SYSTEM -> """
-            body {
-                background-color: #ffffff;
-                color: #000000;
-            }
-            hr {
-                border-top: 1px solid #555555;
-            }
-            @media (prefers-color-scheme: dark) {
-                body {
-                    background-color: #121212;
-                    color: #ffffff;
-                }
-                hr {
-                    border-top: 1px solid #aaaaaa;
-                }
-            }
-        """
-    }
+enum class BlockCause(val label: String) {
+    BLACKLIST("Blacklist"),
+    INTENT_URL_SCHEME("Intent URL Scheme"),
+    LOCAL_FILE("Local File");
+
+    override fun toString() = label
+}
+fun generateBlockedPageHtml(
+    theme: ThemeOption,
+    blockCause: BlockCause = BlockCause.BLACKLIST,
+    message: String,
+    url: String,
+): String {
+    val themeCss = generateThemeCss(theme)
 
     return """
         <html>
@@ -66,15 +41,20 @@ fun generateBlockedPageHtml(url: String, message: String, theme: ThemeOption): S
                     border: none;
                     margin: 20px 0 30px 0px;
                 }
-                $style
+                $themeCss
             </style>
           </head>
           <body>
             <h2>🚫 Access Blocked</h2>
             <p>${Html.escapeHtml(message)}</p>
             <hr />
-            <b>URL:</b>
+            
+            <b>URL</b>
             <p>${Html.escapeHtml(url)}</p>
+            <hr />
+
+            <b>CAUSE</b>
+            <p>${blockCause}</p>
           </body>
         </html>
     """.trimIndent()

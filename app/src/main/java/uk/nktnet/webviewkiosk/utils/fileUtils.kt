@@ -1,15 +1,28 @@
 package uk.nktnet.webviewkiosk.utils
 
+import android.content.ContentResolver
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.text.format.Formatter
+import android.webkit.MimeTypeMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.config.Constants
 import java.io.File
 import java.util.UUID
+
+val supportedMimeTypesArray = arrayOf(
+    "text/*",
+    "image/*",
+    "audio/*",
+    "video/*",
+    "application/json",
+    "application/javascript",
+    "application/xml",
+    "application/txt"
+)
 
 fun listLocalFiles(dir: File): List<File> {
     return dir.listFiles { it.isFile }?.sortedByDescending { it.lastModified() } ?: emptyList()
@@ -81,7 +94,7 @@ suspend fun saveContentIntentToFile(
     var originalName = contentUri.lastPathSegment ?: "uploaded_file"
     val mimeType = context.contentResolver.getType(contentUri)
     if (!originalName.contains('.') && mimeType != null) {
-        android.webkit.MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)?.let {
+        MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)?.let {
             originalName += ".$it"
         }
     }
@@ -104,6 +117,28 @@ fun humanReadableSize(context: Context, size: Long): String {
     return Formatter.formatFileSize(context, size)
 }
 
+fun getMimeType(context: Context, uri: Uri): String? {
+    return if (ContentResolver.SCHEME_CONTENT == uri.scheme) {
+        context.contentResolver.getType(uri)
+    } else {
+        val extension = MimeTypeMap.getFileExtensionFromUrl(uri.toString())
+        MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.lowercase())
+    }
+}
+
+fun isSupportedFileURLMimeType(mimeType: String?): Boolean {
+    if (mimeType == null) {
+        return false
+    }
+    return supportedMimeTypesArray.any { supported ->
+        supported == mimeType
+        || (
+            supported.endsWith("/*")
+            && mimeType.startsWith(supported.substringBefore("/*"))
+        )
+    }
+}
+
 fun File.getUUID(): String {
     return this.name.split("|", limit = 2).getOrElse(0) { "" }
 }
@@ -113,5 +148,5 @@ fun File.getDisplayName(): String {
 }
 
 fun File.getLocalUrl(): String {
-    return "file://${this.absolutePath}"
+    return "file://${Uri.encode(this.absolutePath, "/")}"
 }

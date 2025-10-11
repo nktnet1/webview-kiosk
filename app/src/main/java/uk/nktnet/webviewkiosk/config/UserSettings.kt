@@ -73,7 +73,7 @@ class UserSettings(context: Context) {
     var webViewInset: WebViewInset
         get() = WebViewInset.fromString(prefs.getString(WEBVIEW_INSET, null))
         set(value) = prefs.edit { putString(WEBVIEW_INSET, value.name) }
-    var blockedMessage by stringPref(prefs, BLOCKED_MESSAGE, "This site is blocked by Webview Kiosk.")
+    var blockedMessage by stringPref(prefs, BLOCKED_MESSAGE, "This site is blocked by ${Constants.APP_NAME}.")
 
     // Device
     var keepScreenOn by booleanPref(prefs, KEEP_SCREEN_ON, false)

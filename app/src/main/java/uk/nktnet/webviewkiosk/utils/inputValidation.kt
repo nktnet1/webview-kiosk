@@ -17,7 +17,7 @@ fun validateUrl(input: String): Boolean {
     val parsedUrl = runCatching { URL(trimmedInput) }.getOrElse { return false }
     return when (parsedUrl.protocol) {
         "file" -> {
-            val filePath = URLDecoder.decode(trimmedInput.removePrefix("file:///"), StandardCharsets.UTF_8.name())
+            val filePath = URLDecoder.decode(trimmedInput.removePrefix("file://"), StandardCharsets.UTF_8.name())
             File(filePath).exists()
         }
         "http", "https" -> {

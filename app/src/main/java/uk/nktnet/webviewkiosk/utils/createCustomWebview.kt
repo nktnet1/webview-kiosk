@@ -16,9 +16,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
+import uk.nktnet.webviewkiosk.utils.webview.BlockCause
 import uk.nktnet.webviewkiosk.utils.webview.generateBlockedPageHtml
 import uk.nktnet.webviewkiosk.utils.webview.generateDesktopViewportScript
 import uk.nktnet.webviewkiosk.utils.webview.generatePrefersColorSchemeOverrideScript
@@ -28,7 +30,6 @@ import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 
 data class WebViewConfig(
     val userSettings: UserSettings,
-    val theme: ThemeOption,
     val onPageStarted: () -> Unit,
     val onPageFinished: (String) -> Unit,
     val doUpdateVisitedHistory: (String) -> Unit,
@@ -81,31 +82,48 @@ fun createCustomWebview(
                 @Suppress("DEPRECATION")
                 allowUniversalAccessFromFileURLs = userSettings.allowUniversalAccessFromFileURLs
                 mediaPlaybackRequiresUserGesture = userSettings.mediaPlaybackRequiresUserGesture
-
-                if (userSettings.allowLinkLongPressContextMenu) {
-                    setOnLongClickListener {
-                        val result = hitTestResult
-                        if (result.type == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
-                            result.extra?.let { link -> config.onLinkLongClick(link) }
-                            false
-                        } else {
-                            true
-                        }
-                    }
-                }
             }
 
             val isBlocked: (String) -> Boolean = { url ->
                 isBlockedUrl(url, config.blacklistRegexes, config.whitelistRegexes)
             }
 
+            val loadBlockedPage: (url: String, blockCause: BlockCause) -> Unit = { url, blockCause ->
+                if (!isShowingBlockedPage) {
+                    loadDataWithBaseURL(
+                        url,
+                        generateBlockedPageHtml(
+                            userSettings.theme,
+                            blockCause,
+                            userSettings.blockedMessage,
+                            url
+                        ),
+                        "text/html",
+                        "UTF-8",
+                        null
+                    )
+                    isShowingBlockedPage = true
+                    config.onPageFinished(url)
+                }
+            }
+
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                    if (userSettings.applyAppTheme && config.theme != ThemeOption.SYSTEM) {
-                        evaluateJavascript(generatePrefersColorSchemeOverrideScript(config.theme), null)
+                    if (userSettings.applyAppTheme && userSettings.theme != ThemeOption.SYSTEM) {
+                        evaluateJavascript(generatePrefersColorSchemeOverrideScript(userSettings.theme), null)
                     }
                     if (userSettings.customScriptOnPageStart.isNotBlank()) {
                         view?.evaluateJavascript(wrapJsInIIFE(userSettings.customScriptOnPageStart), null)
+                    }
+
+                    if (!isShowingBlockedPage) {
+                        val uri = url?.toUri()
+                        if (uri?.scheme == "file") {
+                            if (!userSettings.allowLocalFiles) {
+                                loadBlockedPage(url, BlockCause.LOCAL_FILE)
+                                return
+                            }
+                        }
                     }
                     super.onPageStarted(view, url, favicon)
                     config.onPageStarted()
@@ -126,20 +144,20 @@ fun createCustomWebview(
                     val url = request?.url?.toString() ?: ""
                     val scheme = request?.url?.scheme?.lowercase() ?: ""
 
-                    if (scheme !in listOf("http", "https")) {
-                        if (!userSettings.allowOtherUrlSchemes) {
-                            view?.loadBlockedPage(url, userSettings.blockedMessage, config.theme)
-                            isShowingBlockedPage = true
+                    if (!isShowingBlockedPage) {
+                        if (scheme !in listOf("http", "https")) {
+                            if (!userSettings.allowOtherUrlSchemes) {
+                                loadBlockedPage(url, BlockCause.INTENT_URL_SCHEME)
+                                return true
+                            }
+                            handleExternalScheme(context, url)
                             return true
                         }
-                        handleExternalScheme(context, url)
-                        return true
-                    }
 
-                    if (!isShowingBlockedPage && isBlocked(url)) {
-                        view?.loadBlockedPage(url, userSettings.blockedMessage, config.theme)
-                        isShowingBlockedPage = true
-                        return true
+                        if (isBlocked(url)) {
+                            loadBlockedPage(url, BlockCause.BLACKLIST)
+                            return true
+                        }
                     }
 
                     return false
@@ -147,10 +165,11 @@ fun createCustomWebview(
 
                 override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
                     url?.let {
-                        if (!isShowingBlockedPage && isBlocked(it)) {
-                            isShowingBlockedPage = true
-                            view?.loadBlockedPage(it, userSettings.blockedMessage, config.theme)
-                            return
+                        if (!isShowingBlockedPage) {
+                            if (isBlocked(it)) {
+                                loadBlockedPage(url,BlockCause.BLACKLIST)
+                                return
+                            }
                         }
                         config.doUpdateVisitedHistory(it)
                     }
@@ -191,7 +210,18 @@ fun createCustomWebview(
                 ) {
                     callback?.invoke(origin, userSettings.allowLocation, false)
                 }
+            }
 
+            if (userSettings.allowLinkLongPressContextMenu) {
+                setOnLongClickListener {
+                    val result = hitTestResult
+                    if (result.type == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
+                        result.extra?.let { link -> config.onLinkLongClick(link) }
+                        false
+                    } else {
+                        true
+                    }
+                }
             }
         }
     }
@@ -199,12 +229,3 @@ fun createCustomWebview(
     return webView
 }
 
-private fun WebView.loadBlockedPage(url: String, message: String, theme: ThemeOption) {
-    loadDataWithBaseURL(
-        url,
-        generateBlockedPageHtml(url, message, theme),
-        "text/html",
-        "UTF-8",
-        null
-    )
-}
