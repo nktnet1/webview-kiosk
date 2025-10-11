@@ -1,0 +1,7 @@
+## Changes:
+
+fix: remove sql - non standard type
+fix: display message for files that cannot be rendered by WebView
+docs: simplify lock task mode feature description
+docs: updated description with permission section
+chore: be explicit that android hardware biometrics/fingerprints are not required
