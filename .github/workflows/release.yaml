@@ -53,7 +53,7 @@ jobs:
             touch metadata/en-US/changelogs/${VERSION_CODE}.txt
           fi
 
-      - name: Create Draf GitHub Release
+      - name: Create Draft GitHub Release
         id: create_release
         uses: ncipollo/release-action@v1
         with:
@@ -62,3 +62,4 @@ jobs:
           bodyFile: metadata/en-US/changelogs/${{ env.VERSION_CODE }}.txt
           artifacts: app/build/outputs/apk/release/*.apk
           draft: true
+
