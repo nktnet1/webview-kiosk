@@ -19,3 +19,4 @@ local.properties
 /.kotlin
 
 .env*
+*.jks
