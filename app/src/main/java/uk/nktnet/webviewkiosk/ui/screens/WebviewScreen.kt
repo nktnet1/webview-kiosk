@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.net.toUri
 import androidx.navigation.NavController
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import uk.nktnet.webviewkiosk.config.Constants
@@ -33,10 +34,15 @@ import uk.nktnet.webviewkiosk.ui.components.common.LoadingIndicator
 import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.LinkOptionsDialog
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
+import uk.nktnet.webviewkiosk.utils.getMimeType
+import uk.nktnet.webviewkiosk.utils.isSupportedFileURLMimeType
 import uk.nktnet.webviewkiosk.utils.rememberLockedState
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+import uk.nktnet.webviewkiosk.utils.webview.generateFileMissingPage
+import uk.nktnet.webviewkiosk.utils.webview.generateUnsupportedMimeTypePage
 import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
+import java.io.File
 
 private enum class TransitionState { TRANSITIONING, PAGE_STARTED, PAGE_FINISHED }
 
@@ -83,7 +89,6 @@ fun WebviewScreen(navController: NavController) {
         context = context,
         config = uk.nktnet.webviewkiosk.utils.WebViewConfig(
             userSettings = userSettings,
-            theme = userSettings.theme,
             onPageStarted = { transitionState = TransitionState.PAGE_STARTED },
             onPageFinished = { url ->
                 transitionState = TransitionState.PAGE_FINISHED
@@ -107,6 +112,23 @@ fun WebviewScreen(navController: NavController) {
 
     fun customLoadUrl(newUrl: String) {
         transitionState = TransitionState.TRANSITIONING
+        val uri = newUrl.toUri()
+
+        // Handle invalid or unrenderable files here.
+        // For valid files, createCustomWebview can handle.
+        if (uri.scheme == "file" && userSettings.allowLocalFiles) {
+            val mimeType = getMimeType(context, uri)
+            val file = File(uri.path ?: "")
+            val pageContent = when {
+                !file.exists() -> generateFileMissingPage(file, userSettings.theme)
+                !isSupportedFileURLMimeType(mimeType) -> generateUnsupportedMimeTypePage(context, file, mimeType, userSettings.theme)
+                else -> null
+            }
+            pageContent?.let {
+                webView.loadDataWithBaseURL(newUrl, it, "text/html", "UTF-8", null)
+                return
+            }
+        }
         webView.loadUrl(newUrl)
     }
 
@@ -161,7 +183,9 @@ fun WebviewScreen(navController: NavController) {
 
                         urlBarText = urlBarText.copy(text = initialUrl)
 
-                        fun initWebviewApply(initialUrl: String) = webView.apply {customLoadUrl(initialUrl) }
+                        fun initWebviewApply(initialUrl: String) = webView.apply {
+                            customLoadUrl(initialUrl)
+                        }
 
                         if (userSettings.allowRefresh) {
                             WebviewAwareSwipeRefreshLayout(ctx, webView).apply {

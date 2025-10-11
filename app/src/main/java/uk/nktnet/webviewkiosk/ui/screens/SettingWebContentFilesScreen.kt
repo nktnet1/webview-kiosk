@@ -25,6 +25,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.files.LocalFileList
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.listLocalFiles
+import uk.nktnet.webviewkiosk.utils.supportedMimeTypesArray
 import uk.nktnet.webviewkiosk.utils.uploadFile
 import java.util.concurrent.CancellationException
 
@@ -108,17 +109,7 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                 Button(
                     onClick = {
                         fileUploadLauncher.launch(
-                            arrayOf(
-                                "text/*",
-                                "image/*",
-                                "audio/*",
-                                "video/*",
-                                "application/json",
-                                "application/javascript",
-                                "application/xml",
-                                "application/sql",
-                                "application/txt",
-                            )
+                            supportedMimeTypesArray
                         )
                     },
                     modifier = Modifier.fillMaxWidth().height(50.dp),

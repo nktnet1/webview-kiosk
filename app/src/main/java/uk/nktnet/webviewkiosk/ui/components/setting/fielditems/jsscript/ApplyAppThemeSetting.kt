@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
@@ -15,7 +16,7 @@ fun ApplyAppThemeSetting() {
         label = "Apply App Theme",
         infoText = """
             This script injects JavaScript code that will set prefers-color-scheme
-            according to your selected theme in Webview Kiosk Appearance settings,
+            according to your selected theme in ${Constants.APP_NAME} Appearance settings,
             thus keeping the Webpage's theme consistent with the App's theme.
             
             This script will run immediately "on page start".
