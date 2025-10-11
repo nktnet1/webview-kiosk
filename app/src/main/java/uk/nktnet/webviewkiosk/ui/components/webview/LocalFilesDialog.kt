@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.webview
+package com.nktnet.webview_kiosk.ui.components.webview
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,10 +17,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import uk.nktnet.webviewkiosk.utils.getDisplayName
-import uk.nktnet.webviewkiosk.utils.getLocalUrl
-import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
-import uk.nktnet.webviewkiosk.utils.listLocalFiles
+import com.nktnet.webview_kiosk.utils.getDisplayName
+import com.nktnet.webview_kiosk.utils.getLocalUrl
+import com.nktnet.webview_kiosk.utils.getWebContentFilesDir
+import com.nktnet.webview_kiosk.utils.listLocalFiles
 
 @Composable
 fun LocalFilesDialog(

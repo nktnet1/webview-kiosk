@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device
+package com.nktnet.webview_kiosk.ui.components.setting.fielditems.device
 
 import android.Manifest
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,9 +11,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
-import uk.nktnet.webviewkiosk.utils.rememberPermissionState
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import com.nktnet.webview_kiosk.utils.rememberPermissionState
 
 @Composable
 fun AllowMicrophoneSetting() {

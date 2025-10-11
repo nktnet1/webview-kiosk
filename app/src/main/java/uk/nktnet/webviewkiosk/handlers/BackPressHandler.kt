@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.handlers
+package com.nktnet.webview_kiosk.handlers
 
 import android.webkit.WebView
 import androidx.activity.OnBackPressedCallback
@@ -7,9 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.utils.webview.WebViewNavigation
 
 @Composable
 fun BackPressHandler(

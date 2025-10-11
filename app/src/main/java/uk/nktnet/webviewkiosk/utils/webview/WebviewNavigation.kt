@@ -1,8 +1,8 @@
-package uk.nktnet.webviewkiosk.utils.webview
+package com.nktnet.webview_kiosk.utils.webview
 
-import uk.nktnet.webviewkiosk.config.HistoryEntry
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.HistoryEntry
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.config.UserSettings
 
 object WebViewNavigation {
     private var isProgrammaticNavigation = false

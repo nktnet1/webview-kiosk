@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import android.util.Patterns
 import android.webkit.URLUtil.isValidUrl

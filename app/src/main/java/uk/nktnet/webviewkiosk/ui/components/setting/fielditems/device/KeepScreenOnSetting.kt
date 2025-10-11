@@ -1,11 +1,11 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device
+package com.nktnet.webview_kiosk.ui.components.setting.fielditems.device
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
 fun KeepScreenOnSetting(keepScreenOnState: MutableState<Boolean>) {

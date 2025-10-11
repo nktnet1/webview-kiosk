@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.screens
+package com.nktnet.webview_kiosk.ui.screens
 
 import android.content.pm.PackageManager
 import android.os.Build
@@ -14,9 +14,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
+import com.nktnet.webview_kiosk.utils.openAppDetailsSettings
 
 @Composable
 fun InfoItem(label: String, value: String) {

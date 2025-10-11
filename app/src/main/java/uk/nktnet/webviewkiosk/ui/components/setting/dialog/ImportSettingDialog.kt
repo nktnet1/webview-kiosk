@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.dialog
+package com.nktnet.webview_kiosk.ui.components.setting.dialog
 
 import android.content.ClipboardManager
 import android.content.Context
@@ -23,7 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import uk.nktnet.webviewkiosk.R
+import com.nktnet.webview_kiosk.R
 
 @Composable
 fun ImportSettingsDialog(

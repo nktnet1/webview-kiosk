@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import android.app.Activity
 import android.app.ActivityManager
@@ -8,7 +8,7 @@ import androidx.compose.ui.input.key.isAltPressed
 import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.isShiftPressed
-import uk.nktnet.webviewkiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.UserSettings
 
 val modifierKeyCodes = setOf(
     AndroidKeyEvent.KEYCODE_SHIFT_LEFT,

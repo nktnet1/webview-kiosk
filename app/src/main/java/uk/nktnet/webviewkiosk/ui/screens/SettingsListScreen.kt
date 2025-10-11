@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.screens
+package com.nktnet.webview_kiosk.ui.screens
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,10 +13,10 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.config.Screen
-import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingsHeaderMenu
+import com.nktnet.webview_kiosk.config.Screen
+import com.nktnet.webview_kiosk.config.option.ThemeOption
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
+import com.nktnet.webview_kiosk.ui.components.setting.SettingsHeaderMenu
 
 @Composable
 fun SettingsListScreen(
