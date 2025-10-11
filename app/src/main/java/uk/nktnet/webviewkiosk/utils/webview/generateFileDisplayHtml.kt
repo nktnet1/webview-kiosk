@@ -55,7 +55,7 @@ fun generateFileMissingPage(file: File, theme: ThemeOption): String {
           <body>
             <h1>File Not Found</h1>
             <hr />
-            <p>${Html.escapeHtml(file.absolutePath)}</p>
+            <p style="text-align:center;">${Html.escapeHtml(file.absolutePath)}</p>
           </body>
         </html>
     """.trimIndent()
