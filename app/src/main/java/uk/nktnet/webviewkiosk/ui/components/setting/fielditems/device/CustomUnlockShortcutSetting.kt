@@ -119,6 +119,7 @@ fun CustomUnlockShortcutSetting() {
                         }
                     },
                     modifier = Modifier
+                        .fillMaxWidth()
                         .focusRequester(focusRequester)
                         .focusable()
                         .background(
