@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
-import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
@@ -50,10 +49,6 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                 uploading = true
                 progress = 0f
                 try {
-                    context.contentResolver.takePersistableUriPermission(
-                        uri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
                     withContext(Dispatchers.IO) {
                         uploadFile(context, uri, filesDir) { p ->
                             progress = p
