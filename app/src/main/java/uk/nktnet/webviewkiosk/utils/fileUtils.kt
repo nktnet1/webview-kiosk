@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.config.Constants
 import java.io.File
+import java.net.URL
 import java.util.UUID
 
 val supportedMimeTypesArray = arrayOf(
@@ -46,7 +47,7 @@ fun generateUuidFileName(originalName: String): String {
     return "${UUID.randomUUID()}|$originalName"
 }
 
-private fun copyInputStreamToFile(
+fun copyInputStreamToFile(
     input: java.io.InputStream,
     targetFile: File,
     onProgress: ((Float) -> Unit)? = null
@@ -68,6 +69,39 @@ private fun copyInputStreamToFile(
     }
     return targetFile
 }
+
+fun downloadUrlToFile(
+    url: String,
+    targetFile: File,
+    onProgress: ((Float) -> Unit)? = null
+): File {
+    val connection = URL(url).openConnection().apply { connect() }
+
+    val totalBytes: Long = if (android.os.Build.VERSION.SDK_INT >= 24) {
+        connection.contentLengthLong.takeIf { it > 0 } ?: -1L
+    } else {
+        connection.contentLength.toLong().takeIf { it > 0 } ?: -1L
+    }
+
+    connection.getInputStream().use { input ->
+        targetFile.outputStream().use { output ->
+            val buffer = ByteArray(8192)
+            var bytesRead: Int
+            var copiedBytes = 0L
+            while (input.read(buffer).also { bytesRead = it } != -1) {
+                output.write(buffer, 0, bytesRead)
+                copiedBytes += bytesRead
+                if (totalBytes > 0) {
+                    onProgress?.invoke(copiedBytes.toFloat() / totalBytes)
+                }
+            }
+        }
+    }
+
+    return targetFile
+}
+
+
 
 fun uploadFile(
     context: Context,

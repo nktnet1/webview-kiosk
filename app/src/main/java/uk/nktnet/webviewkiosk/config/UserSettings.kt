@@ -31,6 +31,7 @@ class UserSettings(context: Context) {
     var allowBookmarkAccess by booleanPref(prefs, ALLOW_BOOKMARK_ACCESS, true)
     var allowOtherUrlSchemes by booleanPref(prefs, ALLOW_OTHER_URL_SCHEMES, false)
     var allowLinkLongPressContextMenu by booleanPref(prefs, ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, true)
+    var allowDownload by booleanPref(prefs, ALLOW_DOWNLOAD, false)
     var searchProviderUrl by stringPref(prefs, SEARCH_PROVIDER_URL, Constants.DEFAULT_SEARCH_PROVIDER_URL)
 
     // Web Engine
@@ -107,6 +108,7 @@ class UserSettings(context: Context) {
             put(ALLOW_BOOKMARK_ACCESS, allowBookmarkAccess)
             put(ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
             put(ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, allowLinkLongPressContextMenu)
+            put(ALLOW_DOWNLOAD, allowDownload)
             put(SEARCH_PROVIDER_URL, searchProviderUrl)
 
             put(ENABLE_JAVASCRIPT, enableJavaScript)
@@ -166,6 +168,7 @@ class UserSettings(context: Context) {
             allowBookmarkAccess = json.optBoolean(ALLOW_BOOKMARK_ACCESS, allowBookmarkAccess)
             allowOtherUrlSchemes = json.optBoolean(ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
             allowLinkLongPressContextMenu = json.optBoolean(ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, allowLinkLongPressContextMenu)
+            allowDownload = json.optBoolean(ALLOW_DOWNLOAD, allowDownload)
             searchProviderUrl = json.optString(SEARCH_PROVIDER_URL, searchProviderUrl)
 
             enableJavaScript = json.optBoolean(ENABLE_JAVASCRIPT, enableJavaScript)
@@ -228,6 +231,7 @@ class UserSettings(context: Context) {
         private const val ALLOW_BOOKMARK_ACCESS = "web_browsing.allow_bookmark_access"
         private const val ALLOW_OTHER_URL_SCHEMES = "web_browsing.allow_other_url_schemes"
         private const val ALLOW_LINK_LONG_PRESS_CONTEXT_MENU = "web_browsing.allow_link_long_press_context_menu"
+        private const val ALLOW_DOWNLOAD = "web_browsing.allow_download"
         private const val SEARCH_PROVIDER_URL = "web_browsing.search_provider_url"
 
         private const val ENABLE_JAVASCRIPT = "web_engine.enable_javascript"
