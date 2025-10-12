@@ -31,6 +31,10 @@ class WebviewAwareSwipeRefreshLayout : SwipeRefreshLayout {
     }
 
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
+        if (ev.pointerCount > 1) {
+            return false
+        }
+
         when (ev.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 initialY = ev.y
@@ -39,7 +43,9 @@ class WebviewAwareSwipeRefreshLayout : SwipeRefreshLayout {
             }
         }
 
-        if (!canRefresh) return false
+        if (!canRefresh) {
+            return false
+        }
 
         return super.onInterceptTouchEvent(ev)
     }
