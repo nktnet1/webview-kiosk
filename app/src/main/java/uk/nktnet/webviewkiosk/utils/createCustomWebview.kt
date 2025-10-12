@@ -215,14 +215,10 @@ fun createCustomWebview(
                     }
 
                     val activity = context as? Activity ?: return
-                    fullScreenContainer = FrameLayout(activity)
-                    fullScreenContainer?.addView(
-                        view,
-                        ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                        )
-                    )
+                    fullScreenContainer = FrameLayout(activity).apply {
+                        addView(view, ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+                    }
+
                     customView = view
                     customViewCallback = callback
 
@@ -234,16 +230,48 @@ fun createCustomWebview(
                         )
                     )
 
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                        activity.window.insetsController?.let { controller ->
+                            controller.hide(
+                                android.view.WindowInsets.Type.statusBars()
+                                    or android.view.WindowInsets.Type.navigationBars()
+                            )
+                            controller.systemBarsBehavior =
+                                android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                        }
+                    } else {
+                        @Suppress("DEPRECATION")
+                        activity.window.decorView.systemUiVisibility = (
+                            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                                or View.SYSTEM_UI_FLAG_FULLSCREEN
+                                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                            )
+                    }
+
                     visibility = View.GONE
                     fullScreenContainer?.visibility = View.VISIBLE
                 }
 
                 override fun onHideCustomView() {
+                    val activity = context as? Activity
+
                     fullScreenContainer?.removeView(customView)
                     fullScreenContainer?.visibility = View.GONE
                     customView = null
                     visibility = View.VISIBLE
                     customViewCallback?.onCustomViewHidden()
+
+                    activity?.let {
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                            it.window.insetsController?.show(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
+                        } else {
+                            @Suppress("DEPRECATION")
+                            it.window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+                        }
+                    }
                 }
             }
 
