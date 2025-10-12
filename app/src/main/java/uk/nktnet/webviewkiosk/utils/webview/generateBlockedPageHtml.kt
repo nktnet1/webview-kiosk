@@ -4,9 +4,9 @@ import android.text.Html
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 
 enum class BlockCause(val label: String) {
-    BLACKLIST("Blacklist"),
-    INTENT_URL_SCHEME("Intent URL Scheme"),
-    LOCAL_FILE("Local File");
+    BLACKLIST("URL matches blacklist"),
+    INTENT_URL_SCHEME("Intent URL scheme are forbidden"),
+    LOCAL_FILE("Local files are forbidden");
 
     override fun toString() = label
 }

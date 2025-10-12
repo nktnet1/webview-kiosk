@@ -52,10 +52,13 @@ fun generateFileMissingPage(file: File, theme: ThemeOption): String {
                 ${fileDisplayCommonCss(theme)}
             </style>
           </head>
-          <body>
-            <h1>File Not Found</h1>
-            <hr />
-            <p style="text-align:center;">${Html.escapeHtml(file.absolutePath)}</p>
+          <body style="text-align:center;">
+            <h1 style="padding-top:50px">File Not Found</h1>
+            <p>You may have renamed or removed this file.</p>
+            <hr style="margin-top:10px; margin-bottom:20px;"/>
+
+            <b>File Path</b>
+            <p>${Html.escapeHtml(file.absolutePath)}</p>
           </body>
         </html>
     """.trimIndent()
