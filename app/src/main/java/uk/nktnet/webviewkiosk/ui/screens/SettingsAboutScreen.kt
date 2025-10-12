@@ -10,10 +10,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.navigation.NavController
+import androidx.webkit.WebViewCompat
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
@@ -38,6 +40,7 @@ fun InfoItem(label: String, value: String) {
 @Composable
 fun SettingsAboutScreen(navController: NavController) {
     val context = LocalContext.current
+    val resources = LocalResources.current
     val packageManager = context.packageManager
     val packageName = context.packageName
 
@@ -57,6 +60,21 @@ fun SettingsAboutScreen(navController: NavController) {
         try {
             val info = packageManager.getPackageInfo(packageName, 0)
             PackageInfoCompat.getLongVersionCode(info).toString()
+        } catch (_: PackageManager.NameNotFoundException) {
+            "N/A"
+        }
+    }
+
+    val minSdk = remember {
+        try {
+            val ai = context.packageManager
+                .getPackageInfo(context.packageName, 0)
+                .applicationInfo
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                ai?.minSdkVersion.toString()
+            } else {
+                "N/A"
+            }
         } catch (_: PackageManager.NameNotFoundException) {
             "N/A"
         }
@@ -96,6 +114,19 @@ fun SettingsAboutScreen(navController: NavController) {
         }
     }
 
+    val webViewVersion = remember {
+        try {
+            WebViewCompat.getCurrentWebViewPackage(context)?.versionName ?: "Unknown"
+        } catch (_: Exception) {
+            "N/A"
+        }
+    }
+
+    val screenInfo = remember {
+        val metrics = resources.displayMetrics
+        "${metrics.widthPixels} x ${metrics.heightPixels} px, density: ${metrics.density}"
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -108,14 +139,6 @@ fun SettingsAboutScreen(navController: NavController) {
         SettingLabel(navController = navController, label = "About")
 
         SettingDivider()
-
-        InfoItem(label = "App", value = appName)
-        InfoItem(label = "Package", value = packageName)
-        InfoItem(label = "Version", value = "$versionCode ($versionName)")
-        InfoItem(label = "Target SDK", value = targetSdkVersion)
-        InfoItem(label = "Debug Build", value = debugFlag)
-        InfoItem(label = "Supported ABIs", value = supportedABIs)
-        InfoItem(label = "Installer", value = installerPackage)
 
         Button(
             modifier = Modifier
@@ -131,5 +154,18 @@ fun SettingsAboutScreen(navController: NavController) {
                 style = MaterialTheme.typography.labelMedium
             )
         }
+
+        InfoItem(label = "App", value = appName)
+        InfoItem(label = "Package", value = packageName)
+        InfoItem(label = "Version", value = "$versionCode ($versionName)")
+        InfoItem(label = "Min SDK", value = minSdk)
+        InfoItem(label = "Target SDK", value = targetSdkVersion)
+        InfoItem(label = "Debug Build", value = debugFlag)
+        InfoItem(label = "Supported ABIs", value = supportedABIs)
+        InfoItem(label = "Installer", value = installerPackage)
+        InfoItem(label = "Android Version", value = Build.VERSION.RELEASE)
+        InfoItem(label = "WebView Version", value = webViewVersion)
+        InfoItem(label = "Screen / Display", value = screenInfo)
+        InfoItem(label = "Device Build Fingerprint", value = Build.FINGERPRINT)
     }
 }
