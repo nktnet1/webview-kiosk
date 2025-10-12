@@ -128,10 +128,10 @@ fun LocalFileList(
                         DropdownMenuItem(
                             text = { Text("Copy URL") },
                             onClick = {
-                                menuExpanded = false
-                                val clipData = ClipData.newPlainText("URL", file.getLocalUrl())
                                 scope.launch {
+                                    val clipData = ClipData.newPlainText("File URL", file.getLocalUrl())
                                     clipboard.setClipEntry(clipData.toClipEntry())
+                                    menuExpanded = false
                                 }
                             },
                             leadingIcon = {

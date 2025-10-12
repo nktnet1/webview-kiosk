@@ -1,8 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.webview
 
 import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,9 +8,12 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 
 @Composable
 fun LinkOptionsDialog(
@@ -20,7 +21,9 @@ fun LinkOptionsDialog(
     onDismiss: () -> Unit,
     onOpenLink: (String) -> Unit,
 ) {
-    val context = LocalContext.current
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
+
     if (link != null) {
         AlertDialog(
             onDismissRequest = onDismiss,
@@ -46,9 +49,11 @@ fun LinkOptionsDialog(
                     }
                     Button(
                         onClick = {
-                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            clipboard.setPrimaryClip(ClipData.newPlainText("Copied Link", link))
-                            onDismiss()
+                            scope.launch {
+                                val clipData = ClipData.newPlainText("Link", link)
+                                clipboard.setClipEntry(clipData.toClipEntry())
+                                onDismiss()
+                            }
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {

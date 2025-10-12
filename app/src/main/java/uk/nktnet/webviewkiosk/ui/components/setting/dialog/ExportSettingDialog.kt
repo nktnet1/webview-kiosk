@@ -39,7 +39,6 @@ fun ExportSettingsDialog(
             TextButton(
                 onClick = {
                     onCopy()
-                    onDismiss()
                 },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,

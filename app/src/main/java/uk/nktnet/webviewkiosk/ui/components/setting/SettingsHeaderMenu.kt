@@ -1,8 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.setting
 
 import android.content.ClipData
-import android.content.ClipboardManager
-import android.content.Context
 import android.content.Intent
 import android.provider.Settings
 import android.widget.Toast
@@ -11,13 +9,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.config.UserSettings
 import androidx.core.net.toUri
+import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ExportSettingsDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ImportSettingsDialog
@@ -43,6 +44,9 @@ fun SettingsHeaderMenu(
         toastRef.value?.cancel()
         toastRef.value = Toast.makeText(context, message, Toast.LENGTH_SHORT).also { it.show() }
     }
+
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
 
     ImportSettingsDialog(
         showDialog = showImportDialog,
@@ -70,9 +74,11 @@ fun SettingsHeaderMenu(
         onDismiss = { showExportDialog = false },
         exportText = exportText,
         onCopy = {
-            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            clipboard.setPrimaryClip(ClipData.newPlainText("Exported Settings", exportText))
-            showToast("Copied to clipboard")
+            scope.launch {
+                val clipData = ClipData.newPlainText("Exported Data", exportText)
+                clipboard.setClipEntry(clipData.toClipEntry())
+                showExportDialog = false
+            }
         }
     )
 

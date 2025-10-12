@@ -1,7 +1,5 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
-import android.content.ClipboardManager
-import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,11 +16,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 
 @Composable
@@ -35,7 +35,10 @@ fun ImportSettingsDialog(
     onImportConfirm: () -> Unit
 ) {
     if (!showDialog) return
-    val context = LocalContext.current
+
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
+
     AlertDialog(
         onDismissRequest = onDismiss,
         modifier = Modifier.padding(bottom = 16.dp),
@@ -88,10 +91,11 @@ fun ImportSettingsDialog(
                     }
                     IconButton(
                         onClick = {
-                            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                            val clipData = clipboard.primaryClip
-                            val pasteData = clipData?.getItemAt(0)?.text?.toString() ?: ""
-                            onImportTextChange(pasteData)
+                            scope.launch {
+                                val clipEntry = clipboard.getClipEntry()
+                                val pasteData = clipEntry?.clipData?.getItemAt(0)?.text?.toString() ?: ""
+                                onImportTextChange(pasteData)
+                            }
                         }
                     ) {
                         Icon(
