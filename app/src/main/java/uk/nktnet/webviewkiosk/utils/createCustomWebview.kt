@@ -1,8 +1,10 @@
 package uk.nktnet.webviewkiosk.utils
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
+import android.view.View
 import android.view.ViewGroup
 import android.webkit.GeolocationPermissions
 import android.webkit.HttpAuthHandler
@@ -11,6 +13,7 @@ import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.FrameLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -183,25 +186,19 @@ fun createCustomWebview(
             }
 
             webChromeClient = object : WebChromeClient() {
+                private var customView: View? = null
+                private var customViewCallback: CustomViewCallback? = null
+                private var fullScreenContainer: FrameLayout? = null
+
                 override fun onPermissionRequest(request: PermissionRequest) {
                     val grantedResources = mutableListOf<String>()
-
                     request.resources.forEach { res ->
                         when (res) {
-                            PermissionRequest.RESOURCE_VIDEO_CAPTURE -> if (userSettings.allowCamera) {
-                                grantedResources.add(res)
-                            }
-                            PermissionRequest.RESOURCE_AUDIO_CAPTURE -> if (userSettings.allowMicrophone) {
-                                grantedResources.add(res)
-                            }
+                            PermissionRequest.RESOURCE_VIDEO_CAPTURE -> if (userSettings.allowCamera) grantedResources.add(res)
+                            PermissionRequest.RESOURCE_AUDIO_CAPTURE -> if (userSettings.allowMicrophone) grantedResources.add(res)
                         }
                     }
-
-                    if (grantedResources.isNotEmpty()) {
-                        request.grant(grantedResources.toTypedArray())
-                    } else {
-                        request.deny()
-                    }
+                    if (grantedResources.isNotEmpty()) request.grant(grantedResources.toTypedArray()) else request.deny()
                 }
 
                 override fun onGeolocationPermissionsShowPrompt(
@@ -209,6 +206,44 @@ fun createCustomWebview(
                     callback: GeolocationPermissions.Callback?
                 ) {
                     callback?.invoke(origin, userSettings.allowLocation, false)
+                }
+
+                override fun onShowCustomView(view: View, callback: CustomViewCallback) {
+                    if (customView != null) {
+                        callback.onCustomViewHidden()
+                        return
+                    }
+
+                    val activity = context as? Activity ?: return
+                    fullScreenContainer = FrameLayout(activity)
+                    fullScreenContainer?.addView(
+                        view,
+                        ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                        )
+                    )
+                    customView = view
+                    customViewCallback = callback
+
+                    activity.addContentView(
+                        fullScreenContainer,
+                        ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT
+                        )
+                    )
+
+                    visibility = View.GONE
+                    fullScreenContainer?.visibility = View.VISIBLE
+                }
+
+                override fun onHideCustomView() {
+                    fullScreenContainer?.removeView(customView)
+                    fullScreenContainer?.visibility = View.GONE
+                    customView = null
+                    visibility = View.VISIBLE
+                    customViewCallback?.onCustomViewHidden()
                 }
             }
 
