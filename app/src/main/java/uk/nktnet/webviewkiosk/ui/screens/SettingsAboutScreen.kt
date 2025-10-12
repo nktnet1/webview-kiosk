@@ -193,7 +193,6 @@ fun SettingsAboutScreen(navController: NavController) {
         InfoItem(label = "Screen / Display", value = screenInfo)
         InfoItem(label = "Build Fingerprint", value = Build.FINGERPRINT)
 
-
         Spacer(modifier = Modifier.padding(bottom = 8.dp))
     }
 }
