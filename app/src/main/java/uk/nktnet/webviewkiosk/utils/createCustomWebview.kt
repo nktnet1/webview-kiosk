@@ -33,6 +33,7 @@ import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 
 data class WebViewConfig(
     val userSettings: UserSettings,
+    val showToast: (message: String) -> Unit,
     val onPageStarted: () -> Unit,
     val onPageFinished: (String) -> Unit,
     val doUpdateVisitedHistory: (String) -> Unit,
@@ -285,6 +286,12 @@ fun createCustomWebview(
                         true
                     }
                 }
+            }
+
+            setDownloadListener { url, _, _, _, _ ->
+                 config.showToast(
+                     "Downloading files is not yet supported in ${Constants.APP_NAME}."
+                 )
             }
         }
     }

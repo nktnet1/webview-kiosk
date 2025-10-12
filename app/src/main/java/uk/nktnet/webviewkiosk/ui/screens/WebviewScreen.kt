@@ -89,6 +89,7 @@ fun WebviewScreen(navController: NavController) {
         context = context,
         config = uk.nktnet.webviewkiosk.utils.WebViewConfig(
             userSettings = userSettings,
+            showToast = showToast,
             onPageStarted = { transitionState = TransitionState.PAGE_STARTED },
             onPageFinished = { url ->
                 transitionState = TransitionState.PAGE_FINISHED
@@ -106,7 +107,7 @@ fun WebviewScreen(navController: NavController) {
             },
             onLinkLongClick = { link ->
                 linkToOpen = link
-            }
+            },
         )
     )
 
