@@ -1,4 +1,4 @@
-## Changes:
+## Changes
 
 - fix: regression of textfield being set to default readOnly
 - feat: added link context menu on long press <a>
