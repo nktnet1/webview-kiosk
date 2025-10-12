@@ -9,6 +9,9 @@ fun generateThemeCss(theme: ThemeOption): String {
                 background-color: #121212;
                 color: #ffffff;
             }
+            a {
+                color: #64b5f6;
+            }
             hr {
                 border-top: 1px solid #aaaaaa;
             }
@@ -17,6 +20,9 @@ fun generateThemeCss(theme: ThemeOption): String {
             body {
                 background-color: #ffffff;
                 color: #000000;
+            }
+            a {
+                color: #1a73e8;
             }
             hr {
                 border-top: 1px solid #555555;
@@ -27,6 +33,9 @@ fun generateThemeCss(theme: ThemeOption): String {
                 background-color: #ffffff;
                 color: #000000;
             }
+            a {
+                color: #1a73e8;
+            }
             hr {
                 border-top: 1px solid #555555;
             }
@@ -34,6 +43,9 @@ fun generateThemeCss(theme: ThemeOption): String {
                 body {
                     background-color: #121212;
                     color: #ffffff;
+                }
+                a {
+                    color: #64b5f6;
                 }
                 hr {
                     border-top: 1px solid #aaaaaa;

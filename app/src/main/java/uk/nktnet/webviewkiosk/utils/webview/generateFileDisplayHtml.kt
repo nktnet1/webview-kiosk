@@ -87,13 +87,13 @@ fun generateUnsupportedMimeTypePage(
 
             <p style="font-size:0.8rem; text-align:center; white-space:normal; margin-bottom:25px">
                 <i>
-                    You are seeing this screen because ${Constants.APP_NAME} may not be able to
-                    render this file.
-                    This may be because the mime type, detected from the file extension, does not
-                    indicate a HTML, image, audio or video file.
+                    This page is displayed because ${Constants.APP_NAME} cannot render this file.
+                    This is because the mime type, detected from the file extension, does not
+                    indicate a HTML, image, audio or video file. PDF files are not supported.
                     <br><br>
-                    Please try renaming the file extension, or if you believe it to be a bug,
-                    please create an issue on GitHub.
+                    You can try renaming the file extension if you think the detected mime type
+                    is incorrect. Otherwise, if you believe this to be a bug, please create an
+                    <a href="${Constants.GITHUB_URL}/issues">issue on GitHub</a>.
                 </i>
             </p>
             <hr />
