@@ -238,9 +238,9 @@ fun LocalFileList(
             text = {
                 Text("""
                     Are you sure you want to delete this file?
-                    
+
                       ${activeFile?.getDisplayName()}
-                      
+
                     This will only remove the app's copy and not the original file on your device.
                 """.trimIndent())
             },

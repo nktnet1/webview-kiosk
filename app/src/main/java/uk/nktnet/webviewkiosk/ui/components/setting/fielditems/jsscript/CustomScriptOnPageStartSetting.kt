@@ -16,7 +16,7 @@ fun CustomScriptOnPageStartSetting() {
         infoText = """
             JavaScript to run immediately when the page starts loading.
             You can use this for early DOM manipulation or overriding functions.
- 
+
             Your code content will be wrapped as follows to prevent
             polluting the global scope and avoid conflicts with
             other scripts:

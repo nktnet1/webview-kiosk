@@ -14,4 +14,3 @@ Note that this patch currently only for F-Droid and Accrescent.
 
 Google Play Store package name will remain as com.nktnet.webview_kiosk for the time
 being, as it is not as trivial to change.
-

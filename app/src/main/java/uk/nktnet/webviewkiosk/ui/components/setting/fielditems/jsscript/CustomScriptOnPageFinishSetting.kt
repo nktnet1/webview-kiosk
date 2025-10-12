@@ -16,7 +16,7 @@ fun CustomScriptOnPageFinishSetting() {
         infoText = """
             JavaScript to run after the page has fully loaded.
             Useful for DOM updates, styling, or injecting behavior.
-            
+
             Your code content will be wrapped as follows to prevent
             polluting the global scope and avoid conflicts with
             other scripts:

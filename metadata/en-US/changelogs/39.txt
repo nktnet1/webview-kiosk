@@ -1,2 +1,1 @@
 fix: avoid re-creating main activity on screen rotation
-

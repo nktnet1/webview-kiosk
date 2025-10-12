@@ -1,3 +1,2 @@
 feat: setting for device rotations (auto/0/90/180/270)
 feat: prompt and handler for basic auth in websites
-

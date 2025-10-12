@@ -16,11 +16,11 @@ fun LayoutAlgorithmSetting() {
         label = "Layout Algorithm",
         infoText = """
             - NORMAL: no rendering changes
-            
+
             - SINGLE_COLUMN: all content in one column the width of the view
-            
+
             - NARROW_COLUMNS: columns no wider than screen (pre-KitKat)
-            
+
             - TEXT_AUTOSIZING: boosts font size heuristically (API 19+)
         """.trimIndent(),
         options = LayoutAlgorithmOption.entries,

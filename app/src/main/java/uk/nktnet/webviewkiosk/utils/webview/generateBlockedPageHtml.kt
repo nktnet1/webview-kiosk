@@ -48,7 +48,7 @@ fun generateBlockedPageHtml(
             <h2>🚫 Access Blocked</h2>
             <p>${Html.escapeHtml(message)}</p>
             <hr />
-            
+
             <b>URL</b>
             <p>${Html.escapeHtml(url)}</p>
             <hr />

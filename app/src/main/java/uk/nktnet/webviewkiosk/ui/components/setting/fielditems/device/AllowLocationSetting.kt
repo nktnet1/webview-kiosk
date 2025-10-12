@@ -38,9 +38,9 @@ fun AllowLocationSetting() {
         label = "Allow Location",
         infoText = """
             When enabled, websites can request the device's location.
-            
+
             You can choose to request precise location (FINE) or approximate location (COARSE).
-            
+
             You will need to grant either ACCESS_FINE_LOCATION or ACCESS_COARSE_LOCATION,
             required for the WebView's GeolocationPermissions.
         """.trimIndent(),

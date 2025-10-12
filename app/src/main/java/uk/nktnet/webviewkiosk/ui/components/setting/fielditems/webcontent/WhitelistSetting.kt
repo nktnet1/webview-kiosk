@@ -19,7 +19,7 @@ fun WhitelistSetting() {
 
             Escaping with backslash (\) is required for special characters
             in regex like '.' and '?'.
-            
+
             These patterns also use partial matching.
             If you need strict control, anchor your regex with `^` and `$`.
 

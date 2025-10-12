@@ -61,4 +61,3 @@ fun rememberPermissionState(permission: String): Pair<PermissionState, () -> Uni
 
     return PermissionState(granted, shouldShowRationale) to requestPermission
 }
-

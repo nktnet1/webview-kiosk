@@ -62,4 +62,3 @@ jobs:
           bodyFile: metadata/en-US/changelogs/${{ env.VERSION_CODE }}.txt
           artifacts: app/build/outputs/apk/release/*.apk
           draft: true
-

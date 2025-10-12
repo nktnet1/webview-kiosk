@@ -84,7 +84,6 @@ class MainActivity : AppCompatActivity() {
                 insetsController?.isAppearanceLightNavigationBars = !isDarkTheme
             }
 
-
             WebviewKioskTheme(darkTheme = isDarkTheme) {
                 Surface(
                     color = MaterialTheme.colorScheme.background,

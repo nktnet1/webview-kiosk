@@ -16,7 +16,7 @@ fun ResetOnLaunchSetting() {
         infoText = """
              When enabled, the app will always start fresh at the Home URL when
              closed and re-opened, as opposed to the last visited URL.
-             
+
              The navigation history will also be cleared.
         """.trimIndent(),
         initialValue = userSettings.resetOnLaunch,

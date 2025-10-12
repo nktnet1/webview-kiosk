@@ -18,7 +18,7 @@ fun ApplyAppThemeSetting() {
             This script injects JavaScript code that will set prefers-color-scheme
             according to your selected theme in ${Constants.APP_NAME} Appearance settings,
             thus keeping the Webpage's theme consistent with the App's theme.
-            
+
             This script will run immediately "on page start".
 
             If the theme setting is "System", this script is a no-op (does nothing).

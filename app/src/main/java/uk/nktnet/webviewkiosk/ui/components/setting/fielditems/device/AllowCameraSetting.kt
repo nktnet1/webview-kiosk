@@ -29,7 +29,7 @@ fun AllowCameraSetting() {
         label = "Allow Camera",
         infoText = """
             Set to true to give WebView access to your device's camera.
-                    
+
             You will need to grant the CAMERA permission, which is required for the
             WebView's RESOURCE_VIDEO_CAPTURE feature.
         """.trimIndent(),

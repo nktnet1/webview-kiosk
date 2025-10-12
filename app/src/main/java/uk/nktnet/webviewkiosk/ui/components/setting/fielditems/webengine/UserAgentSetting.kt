@@ -35,7 +35,7 @@ fun UserAgentSetting() {
         infoText = """
             The User Agent string controls how the web engine identifies itself
             to websites. Some sites may behave differently depending on this value.
-            
+
             Leave blank to use the system default User Agent.
         """.trimIndent(),
         placeholder = "(leave blank for system default)",

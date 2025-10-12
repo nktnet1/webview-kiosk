@@ -22,7 +22,7 @@ fun BlacklistSetting() {
 
             These patterns also use partial matching.
             If you need strict control, anchor your regex with `^` and `$`.
-            
+
             Whitelist patterns take precedence over blacklist patterns.
         """.trimIndent(),
         placeholder = """

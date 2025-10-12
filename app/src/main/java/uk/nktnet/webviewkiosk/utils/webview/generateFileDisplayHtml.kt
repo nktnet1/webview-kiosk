@@ -84,7 +84,7 @@ fun generateUnsupportedMimeTypePage(
           <body>
             <h1>Local File Info</h1>
             <hr />
-            
+
             <p style="font-size:0.8rem; text-align:center; white-space:normal; margin-bottom:25px">
                 <i>
                     You are seeing this screen because ${Constants.APP_NAME} may not be able to
@@ -97,43 +97,43 @@ fun generateUnsupportedMimeTypePage(
                 </i>
             </p>
             <hr />
-            
+
             <b>Name</b>
             <div>${Html.escapeHtml(file.getDisplayName())}</div>
             <hr />
-            
+
             <b>Mime Type</b>
             <div>${mimeType ?: "N/A"}</div>
             <hr />
-            
+
             <b>ID</b>
             <div>${Html.escapeHtml(file.getUUID())}</div>
             <hr />
-            
+
             <b>Path</b>
             <div>${Html.escapeHtml(file.absolutePath)}</div>
             <hr />
-            
+
             <b>Size</b>
             <div>${humanReadableSize(context, file.length())}</div>
             <hr />
-            
+
             <b>Last Modified</b>
             <div>$lastModified</div>
             <hr />
-            
+
             <b>Readable</b>
             <div>${file.canRead()}</div>
             <hr />
-            
+
             <b>Writable</b>
             <div>${file.canWrite()}</div>
             <hr />
-            
+
             <b>Executable</b>
             <div>${file.canExecute()}</div>
             <hr />
-            
+
             <b>Is Directory</b>
             <div>${file.isDirectory}</div>
           </body>

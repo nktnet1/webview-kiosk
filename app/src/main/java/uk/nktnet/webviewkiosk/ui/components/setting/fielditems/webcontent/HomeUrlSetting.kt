@@ -36,7 +36,7 @@ fun HomeUrlSetting() {
               1. tapping the screen 10 times in quick succession
               2. using the floating toolbar icon
               3. using the address bar menu
-              
+
             This is also controlled by the "Allow Go Home" setting under web browsing.
         """.trimIndent(),
         placeholder = "e.g. ${Constants.WEBSITE_URL}",
