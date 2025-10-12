@@ -1,0 +1,5 @@
+## Changes
+
+- fix: show toast explaining that downloading files is not supported
+- fix: prevent swipe refresh from intercepting pinch-to-zoom gestures
+- fix: remove Intent.FLAG_GRANT_READ_URI_PERMISSION - file is copied so no longer needed
