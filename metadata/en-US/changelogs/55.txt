@@ -1,0 +1,3 @@
+## Hot Fix
+
+- fix: hide system bars (status/navigation) while in full-screen mode
