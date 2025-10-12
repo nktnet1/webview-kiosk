@@ -10,7 +10,9 @@ plugins {
 android {
     namespace = "uk.nktnet.webviewkiosk"
     compileSdk = 36
-
+    buildFeatures {
+        buildConfig = true
+    }
     defaultConfig {
         applicationId = "uk.nktnet.webviewkiosk"
         minSdk = 21
@@ -19,6 +21,8 @@ android {
         versionName = "0.22.3"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         setProperty("archivesBaseName", "${applicationId}-v${versionCode}-${versionName}")
+
+        buildConfigField("int", "MIN_SDK_VERSION", "$minSdk")
     }
 
     signingConfigs {

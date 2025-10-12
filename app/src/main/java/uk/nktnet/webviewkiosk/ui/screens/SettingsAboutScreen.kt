@@ -1,28 +1,49 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.content.ClipData
 import android.content.pm.PackageManager
 import android.os.Build
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.navigation.NavController
 import androidx.webkit.WebViewCompat
+import kotlinx.coroutines.launch
+import uk.nktnet.webviewkiosk.BuildConfig
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
 
 @Composable
 fun InfoItem(label: String, value: String) {
-    Column(modifier = Modifier.padding(vertical = 12.dp)) {
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp)
+            .clickable {
+                scope.launch {
+                    clipboard.setClipEntry(
+                        ClipData.newPlainText(label, value).toClipEntry()
+                    )
+                }
+            }
+    ) {
         Text(
             text = label,
             style = MaterialTheme.typography.titleMedium,
@@ -60,21 +81,6 @@ fun SettingsAboutScreen(navController: NavController) {
         try {
             val info = packageManager.getPackageInfo(packageName, 0)
             PackageInfoCompat.getLongVersionCode(info).toString()
-        } catch (_: PackageManager.NameNotFoundException) {
-            "N/A"
-        }
-    }
-
-    val minSdk = remember {
-        try {
-            val ai = context.packageManager
-                .getPackageInfo(context.packageName, 0)
-                .applicationInfo
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                ai?.minSdkVersion.toString()
-            } else {
-                "N/A"
-            }
         } catch (_: PackageManager.NameNotFoundException) {
             "N/A"
         }
@@ -155,17 +161,39 @@ fun SettingsAboutScreen(navController: NavController) {
             )
         }
 
-        InfoItem(label = "App", value = appName)
+        Text(
+            text = "App Details",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
+        )
+        HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+
+        InfoItem(label = "Name", value = appName)
         InfoItem(label = "Package", value = packageName)
         InfoItem(label = "Version", value = "$versionCode ($versionName)")
-        InfoItem(label = "Min SDK", value = minSdk)
+        InfoItem(label = "Min SDK", value = BuildConfig.MIN_SDK_VERSION.toString())
         InfoItem(label = "Target SDK", value = targetSdkVersion)
         InfoItem(label = "Debug Build", value = debugFlag)
         InfoItem(label = "Supported ABIs", value = supportedABIs)
         InfoItem(label = "Installer", value = installerPackage)
-        InfoItem(label = "Android Version", value = Build.VERSION.RELEASE)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Device Info",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+        )
+        HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+
+        InfoItem(label = "Android Version", value = "${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})")
         InfoItem(label = "WebView Version", value = webViewVersion)
         InfoItem(label = "Screen / Display", value = screenInfo)
-        InfoItem(label = "Device Build Fingerprint", value = Build.FINGERPRINT)
+        InfoItem(label = "Build Fingerprint", value = Build.FINGERPRINT)
+
+
+        Spacer(modifier = Modifier.padding(bottom = 8.dp))
     }
 }
