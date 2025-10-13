@@ -35,6 +35,7 @@ import uk.nktnet.webviewkiosk.utils.authComposable
 import uk.nktnet.webviewkiosk.utils.getLocalUrl
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handlePreviewKeyEvent
+import uk.nktnet.webviewkiosk.utils.setupDeviceOwner
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.validateUrl
 
@@ -63,6 +64,10 @@ class MainActivity : AppCompatActivity() {
         handleIntent(systemSettings)
 
         val activityManager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+
+        systemSettings.isDeviceOwner = setupDeviceOwner(this)
+
+        showToast("Is device owner: ${systemSettings.isDeviceOwner}")
 
         if (userSettings.lockOnLaunch) {
             tryLockTask(this, showToast)

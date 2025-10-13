@@ -48,6 +48,8 @@ class SystemSettings(context: Context) {
 
     var isFreshLaunch: Boolean by booleanPref(prefs, IS_FRESH_LAUNCH, true)
 
+    var isDeviceOwner: Boolean by booleanPref(prefs, IS_DEVICE_OWNER, false)
+
     fun clearHistory() {
         historyStack = emptyList()
         historyIndex = -1
@@ -61,5 +63,6 @@ class SystemSettings(context: Context) {
         private const val HISTORY_INDEX = "history_index"
         private const val INTENT_URL = "intent_url"
         private const val IS_FRESH_LAUNCH = "is_fresh_launch"
+        private const val IS_DEVICE_OWNER = "is_device_owner"
     }
 }
