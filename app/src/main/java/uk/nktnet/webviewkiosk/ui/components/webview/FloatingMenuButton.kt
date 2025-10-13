@@ -95,7 +95,6 @@ fun FloatingMenuButton(
         val minY = boxBounds?.top ?: 0f
         val maxX = (boxBounds?.right ?: buttonSizePx) - buttonSizePx
         val maxY = (boxBounds?.bottom ?: buttonSizePx) - buttonSizePx
-
         Box(
             modifier = Modifier
                 .zIndex(1f)
@@ -148,7 +147,11 @@ fun FloatingMenuButton(
                 modifier = Modifier.fillMaxSize()
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.baseline_build_24),
+                    painter = if (systemSettings.isDeviceOwner) {
+                        painterResource(R.drawable.baseline_file_open_24)
+                    } else {
+                        painterResource(R.drawable.baseline_build_24)
+                    },
                     contentDescription = "Menu",
                     tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(36.dp)
