@@ -148,7 +148,7 @@ fun FloatingMenuButton(
             ) {
                 Icon(
                     painter = if (systemSettings.isDeviceOwner) {
-                        painterResource(R.drawable.baseline_file_open_24)
+                        painterResource(R.drawable.baseline_admin_panel_settings_24)
                     } else {
                         painterResource(R.drawable.baseline_build_24)
                     },

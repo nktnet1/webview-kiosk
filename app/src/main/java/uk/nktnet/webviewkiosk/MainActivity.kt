@@ -67,8 +67,6 @@ class MainActivity : AppCompatActivity() {
 
         systemSettings.isDeviceOwner = setupDeviceOwner(this)
 
-        showToast("Is device owner: ${systemSettings.isDeviceOwner}")
-
         if (userSettings.lockOnLaunch) {
             tryLockTask(this, showToast)
         }
