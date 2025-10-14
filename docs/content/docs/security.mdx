@@ -32,23 +32,42 @@ To do this, use the `Launcher` option in <Link href="/docs/setting-actions">Sett
 
 ### 3.1. User-owned Devices
 
-On regular user-owned devices, to improve security, we recommend going to your device'same
-App Pinning setting, tap into it (instead of toggling) to view more options, then enable
-**Ask for PIN/pattern/password before unpinning**.
+On regular user-owned devices, to improve security, enable **Ask for
+PIN/pattern/password before unpinning** in your device settings.
 
 On some devices, it may be shown as **Lock device when unpinning** or equivalent.
 
+This setting is accessible by first finding **App Pinning**, then clicking
+into the setting option (and not the App Pinning toggle/switch) to see
+additional screen pinning settings.
+
 This will ensure that users cannot unpin (and thus unlock) the kiosk view without
-first entering the device's biometrics or credentials.
+the device first locking itself and requiring your biometrics or credentials.
 
 ### 3.2. Device Owner
 
-By setting {APP_NAME} as the device owner, it is possible to stop users from
-triggering the "unpin" action altogether, thus removing the side-effect of the
-device getting locked.
+When set as the device owner, {APP_NAME} automatically adds itself to the
+[allowlist for lock task packages](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode).
 
-You can set/unset Webview Kiosk as the device owner using the Android Debug 
-Bridge (ADB) commandline tool on a PC:
+This has the benefits of:
+
+1. removing warnings and instructions when you "lock" the app (as it is no
+   longer "screen pinning" like in user-owned devices) 
+1. stopping users from triggering the "unpin" action using gestures or holding
+   the back and overview button, thus removing the side-effect of the device
+   getting locked when users attempt to "unpin"
+
+In this mode, the only way to unlock {APP_NAME} would be using a methods
+provided in-app, which are always configurable and can be disabled. The
+supported methods are currently:
+
+1. Opening the Kiosk Control Panel by tapping the screen 10 times in
+   quick-succession (the default region is the top-left quadrant of
+   your screen), then clicking `Unlock`
+1. Adding a custom unlock shortcut (requires a physical keyboard or
+   a method of that sending key combinations, e.g. `CTRL+1`)
+
+You can set or remove {APP_NAME} as the device owner using Android Debug Bridge (ADB) on a PC.
 
 ```sh
 # Set Webview Kiosk as Device Owner
@@ -67,8 +86,16 @@ for a video demonstration.
 ### 3.3. Device Policy Controller
 
 If you have control over your Device Policy Controller (or your MDM/EMM has provided
-an interface to do so), you can simply add {APP_NAME} to the
-allowlist of apps for lock task packages.
+an interface to do so), you can simply add {APP_NAME} to the allowlist of apps for
+lock task packages.
+
+For example, using Google's sample Test DPC application available on the
+[Play Store](https://play.google.com/store/apps/details?id=com.afwsamples.testdpc&hl=en_AU),
+[GitHub](https://github.com/googlesamples/android-testdpc) and
+[IzzyOnDroid](https://apt.izzysoft.de/fdroid/index/apk/com.afwsamples.testdpc).
+Simply go to `Lock Task -> Manage lock task list` and enable {APP_NAME}.
+
+Alternatively, if you are writing your own DPC, the kotlin code to achieve this would be:
 
 ```kt
 val APP_PACKAGES = arrayOf(
