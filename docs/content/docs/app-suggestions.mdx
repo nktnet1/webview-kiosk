@@ -33,12 +33,19 @@ Find Hub makes it easy to locate, ring, or wipe your device from the web, even w
 they are offline. For more details, visit the
 [App on Google Play Store](https://play.google.com/store/apps/details?id=com.google.android.apps.adm).
 
-## 3. Terminal Emulator
+## 3. Termux
 
 While {APP_NAME} supports uploading local HTML files to the Android Webview, for
 web applications that heavily utilises JavaScript/routing, e.g. a single-page app
 built with React or Angular, this may not suffice.
 
-In these advanced use cases, we recommend installing an android terminal like
-[Termux](https://github.com/termux/termux-app), which can be used to host local
-web servers accessible at `http://localhost:<YOUR_PORT>`.
+In these advanced use cases, we recommend installing an android terminal emulator
+such as [Termux](https://github.com/termux/termux-app), which can be used to host
+local web servers accessible at `http://localhost:<YOUR_PORT>`.
+
+## 4. Shizuku
+
+You can use [shizuku](https://github.com/RikkaApps/Shizuku) to run `adb` commands
+(e.g. together with termux) to set Webview Kiosk as a Device Owner.
+
+For more information, see the Device Owner section under [security](/docs/security).
