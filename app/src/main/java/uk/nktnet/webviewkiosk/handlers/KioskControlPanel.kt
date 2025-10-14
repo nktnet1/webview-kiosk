@@ -243,18 +243,18 @@ fun KioskControlPanel(
 
                     if (isLocked) {
                         var waitingForUnlock by remember { mutableStateOf(false) }
-
-                        LaunchedEffect(biometricResult) {
-                            if (
-                                waitingForUnlock
-                                && (
+                        LaunchedEffect(biometricResult, waitingForUnlock) {
+                            if (waitingForUnlock) {
+                                if (
                                     biometricResult == BiometricPromptManager.BiometricResult.AuthenticationSuccess
                                     || biometricResult == BiometricPromptManager.BiometricResult.AuthenticationNotSet
-                                )
-                            ) {
-                                tryUnlockTask(activity, ::showToast)
+                                ) {
+                                    val res = tryUnlockTask(activity, ::showToast)
+                                    if (res) {
+                                        showDialog = false
+                                    }
+                                }
                                 waitingForUnlock = false
-                                showDialog = false
                             }
                         }
 

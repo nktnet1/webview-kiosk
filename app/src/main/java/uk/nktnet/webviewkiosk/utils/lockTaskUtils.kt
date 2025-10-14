@@ -20,29 +20,33 @@ private fun tryLockAction(
     action: Activity.() -> Unit,
     showToast: (String) -> Unit = {},
     defaultMsg: String
-) {
+): Boolean {
     if (activity == null) {
         showToast("Activity is not initialised.")
-        return
+        return false
     }
 
     try {
         activity.action()
     } catch (e: SecurityException) {
         showToast("[SecurityException] $defaultMsg: ${e.message}")
+        return false
     } catch (e: IllegalArgumentException) {
         showToast("[IllegalArgumentException] $defaultMsg: ${e.message}")
+        return false
     } catch (e: Exception) {
         showToast("[UnknownException] $defaultMsg: ${e.message}")
+        return false
     }
+    return true
 }
 
-fun tryLockTask(activity: Activity?, showToast: (String) -> Unit = {}) {
-    tryLockAction(activity, Activity::startLockTask, showToast, "Failed to lock app")
+fun tryLockTask(activity: Activity?, showToast: (String) -> Unit = {}): Boolean {
+    return tryLockAction(activity, Activity::startLockTask, showToast, "Failed to lock app")
 }
 
-fun tryUnlockTask(activity: Activity?, showToast: (String) -> Unit = {}) {
-    tryLockAction(activity, Activity::stopLockTask, showToast, "Failed to unlock app")
+fun tryUnlockTask(activity: Activity?, showToast: (String) -> Unit = {}): Boolean {
+    return tryLockAction(activity, Activity::stopLockTask, showToast, "Failed to unlock app")
 }
 
 fun setupLockTaskPackage(context: Context): Boolean {
