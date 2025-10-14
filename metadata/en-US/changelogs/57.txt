@@ -1,0 +1,10 @@
+## Changes
+
+- feat: device owner capability (enable lock task mode instead of screen pinning)
+- feat: introduce kiosk control panel to allow custom unlock
+  - Allow tapping screen 10-times at the top-left corner (default) region
+    of the screen to open the kiosk control panel
+  - Region is configurable - top-left, top-right, bottom-left, bottom-right,
+    top, bottom, full, and disabled
+  - In the panel, users can select "Forward", "Backward", "Home", "Refresh" or
+    "Unlock" (if in locked mode - biometrics or password will be required).
