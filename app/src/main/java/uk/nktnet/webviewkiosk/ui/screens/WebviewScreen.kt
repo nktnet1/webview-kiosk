@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -18,6 +19,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import uk.nktnet.webviewkiosk.config.Constants
@@ -33,10 +35,10 @@ import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayo
 import uk.nktnet.webviewkiosk.ui.components.common.LoadingIndicator
 import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.LinkOptionsDialog
+import uk.nktnet.webviewkiosk.utils.LockStateViewModel
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
 import uk.nktnet.webviewkiosk.utils.getMimeType
 import uk.nktnet.webviewkiosk.utils.isSupportedFileURLMimeType
-import uk.nktnet.webviewkiosk.utils.rememberLockedState
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.generateFileMissingPage
@@ -53,7 +55,7 @@ fun WebviewScreen(navController: NavController) {
 
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
-    val isPinned by rememberLockedState()
+    val isLocked by viewModel<LockStateViewModel>().isLocked
 
     var currentUrl by remember { mutableStateOf(systemSettings.currentUrl.takeIf { it.isNotEmpty() } ?: userSettings.homeUrl) }
     var urlBarText by remember { mutableStateOf(TextFieldValue(currentUrl)) }
@@ -66,7 +68,7 @@ fun WebviewScreen(navController: NavController) {
     val showAddressBar = when (userSettings.addressBarMode) {
         AddressBarOption.SHOWN -> true
         AddressBarOption.HIDDEN -> false
-        AddressBarOption.HIDDEN_WHEN_LOCKED -> !isPinned
+        AddressBarOption.HIDDEN_WHEN_LOCKED -> !isLocked
     }
 
     val focusRequester = remember { FocusRequester() }
@@ -212,7 +214,7 @@ fun WebviewScreen(navController: NavController) {
             }
         }
 
-        if (!isPinned) {
+        if (!isLocked) {
             Box(modifier = Modifier.fillMaxSize().background(Color.Transparent)) {
                 FloatingMenuButton(
                     onHomeClick = { WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings) },

@@ -17,11 +17,12 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.WebViewInset
-import uk.nktnet.webviewkiosk.utils.rememberLockedState
+import uk.nktnet.webviewkiosk.utils.LockStateViewModel
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
@@ -45,7 +46,8 @@ fun AddressBar(
     var showBookmarksDialog by remember { mutableStateOf(false) }
     var showLocalFilesDialog by remember { mutableStateOf(false) }
 
-    val isLocked by rememberLockedState()
+    val isLocked by viewModel<LockStateViewModel>().isLocked
+
     val addressBarInset = when (userSettings.webViewInset) {
         WebViewInset.StatusBars,
         WebViewInset.SystemBars,
