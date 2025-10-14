@@ -248,9 +248,10 @@ fun KioskControlPanel(
                             if (
                                 waitingForUnlock
                                 && (
-                                        biometricResult == BiometricPromptManager.BiometricResult.AuthenticationSuccess
-                                        || biometricResult == BiometricPromptManager.BiometricResult.AuthenticationNotSet
-                                        )) {
+                                    biometricResult == BiometricPromptManager.BiometricResult.AuthenticationSuccess
+                                    || biometricResult == BiometricPromptManager.BiometricResult.AuthenticationNotSet
+                                )
+                            ) {
                                 tryUnlockTask(activity, ::showToast)
                                 waitingForUnlock = false
                                 showDialog = false
