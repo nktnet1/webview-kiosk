@@ -175,24 +175,6 @@ fun KioskControlPanel(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    if (userSettings.allowGoHome) {
-                        Button(
-                            onClick = {
-                                WebViewNavigation.goHome(customLoadUrl, systemSettings, userSettings)
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_home_24),
-                                contentDescription = "Home",
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Home")
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                    }
-
                     if (userSettings.allowBackwardsNavigation) {
                         Button(
                             onClick = { WebViewNavigation.goBack(customLoadUrl, systemSettings) },
@@ -219,6 +201,24 @@ fun KioskControlPanel(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Forward")
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
+
+                    if (userSettings.allowGoHome) {
+                        Button(
+                            onClick = {
+                                WebViewNavigation.goHome(customLoadUrl, systemSettings, userSettings)
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_home_24),
+                                contentDescription = "Home",
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Home")
                         }
                         Spacer(modifier = Modifier.height(4.dp))
                     }
