@@ -31,6 +31,9 @@ class UserSettings(context: Context) {
     var allowBookmarkAccess by booleanPref(prefs, ALLOW_BOOKMARK_ACCESS, true)
     var allowOtherUrlSchemes by booleanPref(prefs, ALLOW_OTHER_URL_SCHEMES, false)
     var allowLinkLongPressContextMenu by booleanPref(prefs, ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, true)
+    var allowKioskControlPanel: KioskControlPanelOption
+        get() = KioskControlPanelOption.fromString(prefs.getString(ALLOW_KIOSK_CONTROL_PANEL, null))
+        set(value) = prefs.edit { putString(ALLOW_KIOSK_CONTROL_PANEL, value.name) }
     var searchProviderUrl by stringPref(prefs, SEARCH_PROVIDER_URL, Constants.DEFAULT_SEARCH_PROVIDER_URL)
 
     // Web Engine
@@ -122,6 +125,7 @@ class UserSettings(context: Context) {
             put(DISPLAY_ZOOM_CONTROLS, displayZoomControls)
             put(ALLOW_FILE_ACCESS_FROM_FILE_URLS, allowFileAccessFromFileURLs)
             put(ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, allowUniversalAccessFromFileURLs)
+            put(ALLOW_KIOSK_CONTROL_PANEL, allowKioskControlPanel.name)
             put(MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
 
             put(LOCK_ON_LAUNCH, lockOnLaunch)
@@ -166,6 +170,7 @@ class UserSettings(context: Context) {
             allowBookmarkAccess = json.optBoolean(ALLOW_BOOKMARK_ACCESS, allowBookmarkAccess)
             allowOtherUrlSchemes = json.optBoolean(ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
             allowLinkLongPressContextMenu = json.optBoolean(ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, allowLinkLongPressContextMenu)
+            json.optString(ALLOW_KIOSK_CONTROL_PANEL, allowKioskControlPanel.name)
             searchProviderUrl = json.optString(SEARCH_PROVIDER_URL, searchProviderUrl)
 
             enableJavaScript = json.optBoolean(ENABLE_JAVASCRIPT, enableJavaScript)
@@ -228,6 +233,7 @@ class UserSettings(context: Context) {
         private const val ALLOW_BOOKMARK_ACCESS = "web_browsing.allow_bookmark_access"
         private const val ALLOW_OTHER_URL_SCHEMES = "web_browsing.allow_other_url_schemes"
         private const val ALLOW_LINK_LONG_PRESS_CONTEXT_MENU = "web_browsing.allow_link_long_press_context_menu"
+        private const val ALLOW_KIOSK_CONTROL_PANEL = "web_browsing.allow_kiosk_control_panel"
         private const val SEARCH_PROVIDER_URL = "web_browsing.search_provider_url"
 
         private const val ENABLE_JAVASCRIPT = "web_engine.enable_javascript"

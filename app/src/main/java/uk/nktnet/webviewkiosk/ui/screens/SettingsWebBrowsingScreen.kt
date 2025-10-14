@@ -34,6 +34,7 @@ fun SettingsWebBrowsingScreen(
         AllowBookmarkAccessSetting()
         AllowOtherUrlSchemesSetting()
         AllowLinkLongPressContextMenuSetting()
+        KioskControlPanelSetting()
         SearchProviderUrlSetting()
     }
 }

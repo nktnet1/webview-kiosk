@@ -26,9 +26,10 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.AddressBarOption
+import uk.nktnet.webviewkiosk.config.option.KioskControlPanelOption
 import uk.nktnet.webviewkiosk.handlers.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.InactivityTimeoutHandler
-import uk.nktnet.webviewkiosk.handlers.MultitapHandler
+import uk.nktnet.webviewkiosk.handlers.KioskControlPanel
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
 import uk.nktnet.webviewkiosk.ui.components.webview.FloatingMenuButton
 import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
@@ -230,8 +231,8 @@ fun WebviewScreen(navController: NavController) {
     if (userSettings.resetOnInactivitySeconds >= Constants.MIN_INACTIVITY_TIMEOUT_SECONDS) {
         InactivityTimeoutHandler(systemSettings, userSettings, ::customLoadUrl)
     }
-    if (userSettings.allowGoHome) {
-        MultitapHandler { WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings) }
+    if (userSettings.allowKioskControlPanel != KioskControlPanelOption.DISABLED) {
+        KioskControlPanel(10, webView,::customLoadUrl)
     }
     BasicAuthDialog(authHandler, authHost, authRealm) { authHandler = null }
 
