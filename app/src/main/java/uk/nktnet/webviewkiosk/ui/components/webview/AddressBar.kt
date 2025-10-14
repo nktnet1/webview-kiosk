@@ -88,7 +88,9 @@ fun AddressBar(
                 imeAction = ImeAction.Go
             ),
             keyboardActions = KeyboardActions(onGo = {
-                if (urlBarText.text.isNotBlank()) addressBarSearch(urlBarText.text)
+                if (urlBarText.text.isNotBlank()) {
+                    addressBarSearch(urlBarText.text)
+                }
             }),
             trailingIcon = {
                 IconButton(onClick = { addressBarSearch(urlTextState) }) {
@@ -136,8 +138,6 @@ fun AddressBar(
                             enabled = systemSettings.historyIndex > 0,
                             onClick = {
                                 WebViewNavigation.goBack(customLoadUrl, systemSettings)
-                                val newUrl = systemSettings.historyStack[systemSettings.historyIndex].url
-                                onUrlBarTextChange(TextFieldValue(newUrl))
                                 menuExpanded = false
                             },
                             leadingIcon = {
@@ -152,8 +152,6 @@ fun AddressBar(
                             enabled = systemSettings.historyIndex < (systemSettings.historyStack.size - 1),
                             onClick = {
                                 WebViewNavigation.goForward(customLoadUrl, systemSettings)
-                                val newUrl = systemSettings.historyStack[systemSettings.historyIndex].url
-                                onUrlBarTextChange(TextFieldValue(newUrl))
                                 menuExpanded = false
                             },
                             leadingIcon = {
@@ -181,7 +179,6 @@ fun AddressBar(
                             text = { Text("Home") },
                             onClick = {
                                 WebViewNavigation.goHome(customLoadUrl, systemSettings, userSettings)
-                                onUrlBarTextChange(TextFieldValue(userSettings.homeUrl))
                                 menuExpanded = false
                             },
                             leadingIcon = {
