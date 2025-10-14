@@ -46,6 +46,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        setupLockTaskPackage(this)
 
         val systemSettings = SystemSettings(this)
         val userSettings = UserSettings(this)
