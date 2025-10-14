@@ -45,15 +45,17 @@ fun tryUnlockTask(activity: Activity?, showToast: (String) -> Unit = {}) {
     tryLockAction(activity, Activity::stopLockTask, showToast, "Failed to unlock app")
 }
 
-fun setupDeviceOwner(context: Context): Boolean {
+fun setupLockTaskPackage(context: Context): Boolean {
     try {
         val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        val appPackage = context.packageName
-        val receiverName = WebviewKioskAdminReceiver::class.java.name
-        val adminComponent = ComponentName(appPackage, receiverName)
-        dpm.setLockTaskPackages(adminComponent, arrayOf(appPackage))
+        if (!dpm.isDeviceOwnerApp(context.packageName)) {
+            return false
+        }
+        val adminComponent = ComponentName(context.packageName, WebviewKioskAdminReceiver::class.java.name)
+        dpm.setLockTaskPackages(adminComponent, arrayOf(context.packageName))
         return true
-    } catch (_: Exception) {
+    } catch (e: Exception) {
+        e.printStackTrace()
         return false
     }
 }

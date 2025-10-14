@@ -147,11 +147,7 @@ fun FloatingMenuButton(
                 modifier = Modifier.fillMaxSize()
             ) {
                 Icon(
-                    painter = if (systemSettings.isDeviceOwner) {
-                        painterResource(R.drawable.baseline_admin_panel_settings_24)
-                    } else {
-                        painterResource(R.drawable.baseline_build_24)
-                    },
+                    painter = painterResource(R.drawable.baseline_build_24),
                     contentDescription = "Menu",
                     tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(36.dp)
