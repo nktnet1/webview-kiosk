@@ -95,7 +95,6 @@ fun FloatingMenuButton(
         val minY = boxBounds?.top ?: 0f
         val maxX = (boxBounds?.right ?: buttonSizePx) - buttonSizePx
         val maxY = (boxBounds?.bottom ?: buttonSizePx) - buttonSizePx
-
         Box(
             modifier = Modifier
                 .zIndex(1f)

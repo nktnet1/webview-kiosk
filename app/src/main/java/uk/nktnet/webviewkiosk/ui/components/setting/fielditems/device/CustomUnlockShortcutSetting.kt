@@ -88,8 +88,8 @@ fun CustomUnlockShortcutSetting() {
             has a physical keyboard connected.
 
             Please note that the short-cut will only trigger when there is no app-specific
-            dropdown/alerts opened (e.g. from floating toolbar, address bar or "go home"
-            confirmation dialog from multitap).
+            dropdown/alerts opened (e.g. from floating toolbar, address bar, or the kiosk
+            control panel)
         """.trimIndent(),
         value = currentValue,
         onDismissCallback = {

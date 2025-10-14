@@ -17,11 +17,12 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.WebViewInset
-import uk.nktnet.webviewkiosk.utils.rememberLockedState
+import uk.nktnet.webviewkiosk.utils.LockStateViewModel
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
@@ -45,7 +46,8 @@ fun AddressBar(
     var showBookmarksDialog by remember { mutableStateOf(false) }
     var showLocalFilesDialog by remember { mutableStateOf(false) }
 
-    val isLocked by rememberLockedState()
+    val isLocked by viewModel<LockStateViewModel>().isLocked
+
     val addressBarInset = when (userSettings.webViewInset) {
         WebViewInset.StatusBars,
         WebViewInset.SystemBars,
@@ -86,7 +88,9 @@ fun AddressBar(
                 imeAction = ImeAction.Go
             ),
             keyboardActions = KeyboardActions(onGo = {
-                if (urlBarText.text.isNotBlank()) addressBarSearch(urlBarText.text)
+                if (urlBarText.text.isNotBlank()) {
+                    addressBarSearch(urlBarText.text)
+                }
             }),
             trailingIcon = {
                 IconButton(onClick = { addressBarSearch(urlTextState) }) {
@@ -134,8 +138,6 @@ fun AddressBar(
                             enabled = systemSettings.historyIndex > 0,
                             onClick = {
                                 WebViewNavigation.goBack(customLoadUrl, systemSettings)
-                                val newUrl = systemSettings.historyStack[systemSettings.historyIndex].url
-                                onUrlBarTextChange(TextFieldValue(newUrl))
                                 menuExpanded = false
                             },
                             leadingIcon = {
@@ -150,8 +152,6 @@ fun AddressBar(
                             enabled = systemSettings.historyIndex < (systemSettings.historyStack.size - 1),
                             onClick = {
                                 WebViewNavigation.goForward(customLoadUrl, systemSettings)
-                                val newUrl = systemSettings.historyStack[systemSettings.historyIndex].url
-                                onUrlBarTextChange(TextFieldValue(newUrl))
                                 menuExpanded = false
                             },
                             leadingIcon = {
@@ -179,7 +179,6 @@ fun AddressBar(
                             text = { Text("Home") },
                             onClick = {
                                 WebViewNavigation.goHome(customLoadUrl, systemSettings, userSettings)
-                                onUrlBarTextChange(TextFieldValue(userSettings.homeUrl))
                                 menuExpanded = false
                             },
                             leadingIcon = {
