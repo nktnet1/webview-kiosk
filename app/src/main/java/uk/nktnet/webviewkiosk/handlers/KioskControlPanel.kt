@@ -253,8 +253,8 @@ fun KioskControlPanel(
                                     if (res) {
                                         showDialog = false
                                     }
+                                    waitingForUnlock = false
                                 }
-                                waitingForUnlock = false
                             }
                         }
 
