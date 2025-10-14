@@ -15,10 +15,10 @@ fun KioskControlPanelSetting() {
     DropdownSettingFieldItem(
         label = "Kiosk Control Panel Region",
         infoText = """
-            Controls which part of the screen can be tapped to show the Kiosk Control Panel
-            when multi-tapping 10 times in quick succession.
+            Controls which part of the screen can be multi-tapped 10 times in quick
+            succession to show the Kiosk Control Panel.
 
-            The default is top-left (upper-left quadrant of the screen).
+            The default is Top Left (upper-left quadrant of the screen).
         """.trimIndent(),
         options = KioskControlPanelOption.entries,
         initialValue = userSettings.allowKioskControlPanel,
