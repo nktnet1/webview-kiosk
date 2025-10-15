@@ -32,7 +32,6 @@ fun UserAgentSetting() {
             "(KHTML, like Gecko) Chrome/118.0.0.0 Mobile Safari/537.36"
     val restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE)
 
-
     TextSettingFieldItem(
         label = "User Agent",
         infoText = """

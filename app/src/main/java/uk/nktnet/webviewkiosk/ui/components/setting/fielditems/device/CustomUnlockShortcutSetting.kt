@@ -107,10 +107,14 @@ fun CustomUnlockShortcutSetting() {
                 OutlinedTextField(
                     value = draftValue,
                     onValueChange = {},
+                    enabled = !restricted,
                     readOnly = true,
                     singleLine = true,
                     interactionSource = interactionSource,
                     trailingIcon = {
+                        if (restricted) {
+                            return@OutlinedTextField
+                        }
                         IconButton(onClick = {
                             draftValue = ""
                             isListening = false
