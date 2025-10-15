@@ -6,9 +6,10 @@ import android.content.SharedPreferences
 import android.util.Base64
 import android.webkit.WebSettings
 import org.json.JSONObject
-import androidx.core.content.edit
 import uk.nktnet.webviewkiosk.config.option.*
 import uk.nktnet.webviewkiosk.utils.booleanPref
+import uk.nktnet.webviewkiosk.utils.intEnumPref
+import uk.nktnet.webviewkiosk.utils.stringEnumPref
 import uk.nktnet.webviewkiosk.utils.intPref
 import uk.nktnet.webviewkiosk.utils.stringPref
 import uk.nktnet.webviewkiosk.utils.stringPrefOptional
@@ -34,15 +35,13 @@ class UserSettings(val context: Context) {
     var allowBookmarkAccess by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_BOOKMARK_ACCESS, true, restrictions)
     var allowOtherUrlSchemes by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_OTHER_URL_SCHEMES, false, restrictions)
     var allowLinkLongPressContextMenu by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, true, restrictions)
-    var allowKioskControlPanel: KioskControlPanelOption
-        get() = restrictions?.getString(UserSettingsKeys.WebBrowsing.ALLOW_KIOSK_CONTROL_PANEL)
-            ?.let { KioskControlPanelOption.fromString(it) }
-            ?: KioskControlPanelOption.fromString(prefs.getString(UserSettingsKeys.WebBrowsing.ALLOW_KIOSK_CONTROL_PANEL, null))
-        set(value) {
-            if (restrictions?.containsKey(UserSettingsKeys.WebBrowsing.ALLOW_KIOSK_CONTROL_PANEL) != true) {
-                prefs.edit { putString(UserSettingsKeys.WebBrowsing.ALLOW_KIOSK_CONTROL_PANEL, value.name) }
-            }
-        }
+    var allowKioskControlPanel by stringEnumPref(
+        prefs,
+        UserSettingsKeys.WebBrowsing.ALLOW_KIOSK_CONTROL_PANEL,
+        restrictions,
+        KioskControlPanelOption.TOP_LEFT.name,
+    ) { value -> KioskControlPanelOption.fromString(value) }
+
     var searchProviderUrl by stringPref(prefs, UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL, Constants.DEFAULT_SEARCH_PROVIDER_URL, restrictions)
 
     // Web Engine
@@ -50,25 +49,24 @@ class UserSettings(val context: Context) {
     var enableDomStorage by booleanPref(prefs, UserSettingsKeys.WebEngine.ENABLE_DOM_STORAGE, true, restrictions)
     var acceptCookies by booleanPref(prefs, UserSettingsKeys.WebEngine.ACCEPT_COOKIES, true, restrictions)
     var acceptThirdPartyCookies by booleanPref(prefs, UserSettingsKeys.WebEngine.ACCEPT_THIRD_PARTY_COOKIES, false, restrictions)
-    var cacheMode: CacheModeOption
-        get() = CacheModeOption.fromInt(prefs.getInt(UserSettingsKeys.WebEngine.CACHE_MODE, WebSettings.LOAD_DEFAULT))
-        set(value) {
-            if (restrictions?.containsKey(UserSettingsKeys.WebEngine.CACHE_MODE) != true) {
-                prefs.edit { putInt(UserSettingsKeys.WebEngine.CACHE_MODE, value.mode) }
-            }
-        }
-    var layoutAlgorithm: LayoutAlgorithmOption
-        get() = LayoutAlgorithmOption.fromAlgorithm(
-            when (val value = prefs.getString(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM, null)) {
-                null -> WebSettings.LayoutAlgorithm.NORMAL
-                else -> WebSettings.LayoutAlgorithm.valueOf(value)
-            }
+    var cacheMode by intEnumPref(
+        prefs,
+        UserSettingsKeys.WebEngine.CACHE_MODE,
+        restrictions,
+        CacheModeOption.DEFAULT.mode,
+    ) { value -> CacheModeOption.fromInt(value) }
+
+    var layoutAlgorithm by stringEnumPref(
+        prefs,
+        UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM,
+        restrictions,
+        LayoutAlgorithmOption.NORMAL.name
+    ) { value ->
+        LayoutAlgorithmOption.fromAlgorithm(
+            value?.let { WebSettings.LayoutAlgorithm.valueOf(it) } ?: WebSettings.LayoutAlgorithm.NORMAL
         )
-        set(value) {
-            if (restrictions?.containsKey(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM) != true) {
-                prefs.edit { putString(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM, value.algorithm.name) }
-            }
-        }
+    }
+
     var userAgent by stringPrefOptional(prefs, UserSettingsKeys.WebEngine.USER_AGENT, restrictions)
     var useWideViewPort by booleanPref(prefs, UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT, true, restrictions)
     var loadWithOverviewMode by booleanPref(prefs, UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE, true, restrictions)
@@ -84,38 +82,35 @@ class UserSettings(val context: Context) {
     var resetOnInactivitySeconds by intPref(prefs, UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS, 0, restrictions)
 
     // Appearance
-    var theme: ThemeOption
-        get() = ThemeOption.fromString(prefs.getString(UserSettingsKeys.Appearance.THEME, null))
-        set(value) {
-            if (restrictions?.containsKey(UserSettingsKeys.Appearance.THEME) != true) {
-                prefs.edit { putString(UserSettingsKeys.Appearance.THEME, value.name) }
-            }
-        }
-    var addressBarMode: AddressBarOption
-        get() = AddressBarOption.fromString(prefs.getString(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, null))
-        set(value) {
-            if (restrictions?.containsKey(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE) != true) {
-                prefs.edit { putString(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, value.name) }
-            }
-        }
-    var webViewInset: WebViewInset
-        get() = WebViewInset.fromString(prefs.getString(UserSettingsKeys.Appearance.WEBVIEW_INSET, null))
-        set(value) {
-            if (restrictions?.containsKey(UserSettingsKeys.Appearance.WEBVIEW_INSET) != true) {
-                prefs.edit { putString(UserSettingsKeys.Appearance.WEBVIEW_INSET, value.name) }
-            }
-        }
+    var theme by stringEnumPref(
+        prefs,
+        UserSettingsKeys.Appearance.THEME,
+        restrictions,
+        ThemeOption.SYSTEM.name,
+    ) { value -> ThemeOption.fromString(value) }
+    var addressBarMode by stringEnumPref(
+        prefs,
+        UserSettingsKeys.Appearance.ADDRESS_BAR_MODE,
+        restrictions,
+        AddressBarOption.HIDDEN_WHEN_LOCKED.name,
+    ) { value -> AddressBarOption.fromString((value)) }
+    var webViewInset by stringEnumPref(
+        prefs,
+        UserSettingsKeys.Appearance.WEBVIEW_INSET,
+        restrictions,
+        WebViewInset.SystemBars.name,
+    ) { value -> WebViewInset.fromString(value) }
+
     var blockedMessage by stringPref(prefs, UserSettingsKeys.Appearance.BLOCKED_MESSAGE, "This site is blocked by ${Constants.APP_NAME}.", restrictions)
 
     // Device
     var keepScreenOn by booleanPref(prefs, UserSettingsKeys.Device.KEEP_SCREEN_ON, false, restrictions)
-    var deviceRotation: DeviceRotationOption
-        get() = DeviceRotationOption.fromString(prefs.getString(UserSettingsKeys.Device.DEVICE_ROTATION, null))
-        set(value) {
-            if (restrictions?.containsKey(UserSettingsKeys.Device.DEVICE_ROTATION) != true) {
-                prefs.edit { putString(UserSettingsKeys.Device.DEVICE_ROTATION, value.degrees) }
-            }
-        }
+    var deviceRotation by stringEnumPref(
+        prefs,
+        UserSettingsKeys.Device.DEVICE_ROTATION,
+        restrictions,
+        DeviceRotationOption.AUTO.name,
+    ) { value -> DeviceRotationOption.fromString(value) }
     var allowCamera by booleanPref(prefs, UserSettingsKeys.Device.ALLOW_CAMERA, false, restrictions)
     var allowMicrophone by booleanPref(prefs, UserSettingsKeys.Device.ALLOW_MICROPHONE, false, restrictions)
     var allowLocation by booleanPref(prefs, UserSettingsKeys.Device.ALLOW_LOCATION, false, restrictions)
