@@ -22,8 +22,8 @@ class SystemSettings(val context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val json = Json { encodeDefaults = true; ignoreUnknownKeys = true }
 
-    var menuOffsetX: Float by floatPref(prefs, MENU_OFFSET_X, -1f)
-    var menuOffsetY: Float by floatPref(prefs, MENU_OFFSET_Y, -1f)
+    var menuOffsetX: Float by floatPref(prefs = prefs, key = MENU_OFFSET_X, default = -1f)
+    var menuOffsetY: Float by floatPref(prefs = prefs, key = MENU_OFFSET_Y, default = -1f)
 
     var historyStack: List<HistoryEntry>
         get() {
@@ -39,14 +39,14 @@ class SystemSettings(val context: Context) {
             prefs.edit { putString(HISTORY_STACK, serialized) }
         }
 
-    var historyIndex: Int by intPref(prefs, HISTORY_INDEX, -1)
+    var historyIndex: Int by intPref(prefs = prefs, key = HISTORY_INDEX, default = -1)
 
     val currentUrl: String
         get() = historyStack.getOrNull(historyIndex)?.url ?: ""
 
-    var intentUrl: String by stringPrefOptional(prefs, INTENT_URL)
+    var intentUrl: String by stringPrefOptional(prefs = prefs, key = INTENT_URL)
 
-    var isFreshLaunch: Boolean by booleanPref(prefs, IS_FRESH_LAUNCH, true)
+    var isFreshLaunch: Boolean by booleanPref(prefs = prefs, key = IS_FRESH_LAUNCH, default = true)
 
     fun clearHistory() {
         historyStack = emptyList()

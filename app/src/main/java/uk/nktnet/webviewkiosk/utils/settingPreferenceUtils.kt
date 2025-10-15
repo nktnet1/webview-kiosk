@@ -7,10 +7,10 @@ import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
 fun stringPref(
+    restrictions: Bundle? = null,
     prefs: SharedPreferences,
     key: String,
-    default: String,
-    restrictions: Bundle? = null
+    default: String
 ) = object : ReadWriteProperty<Any?, String> {
     override fun getValue(thisRef: Any?, property: KProperty<*>) =
         if (restrictions?.containsKey(key) == true) {
@@ -25,9 +25,9 @@ fun stringPref(
 }
 
 fun stringPrefOptional(
+    restrictions: Bundle? = null,
     prefs: SharedPreferences,
-    key: String,
-    restrictions: Bundle? = null
+    key: String
 ) = object : ReadWriteProperty<Any?, String> {
     override fun getValue(thisRef: Any?, property: KProperty<*>) =
         if (restrictions?.containsKey(key) == true) {
@@ -42,10 +42,10 @@ fun stringPrefOptional(
 }
 
 fun booleanPref(
+    restrictions: Bundle? = null,
     prefs: SharedPreferences,
     key: String,
-    default: Boolean,
-    restrictions: Bundle? = null
+    default: Boolean
 ) = object : ReadWriteProperty<Any?, Boolean> {
     override fun getValue(thisRef: Any?, property: KProperty<*>) =
         if (restrictions?.containsKey(key) == true) {
@@ -60,10 +60,10 @@ fun booleanPref(
 }
 
 fun intPref(
+    restrictions: Bundle? = null,
     prefs: SharedPreferences,
     key: String,
-    default: Int,
-    restrictions: Bundle? = null
+    default: Int
 ) = object : ReadWriteProperty<Any?, Int> {
     override fun getValue(thisRef: Any?, property: KProperty<*>) =
         if (restrictions?.containsKey(key) == true) {
@@ -78,10 +78,10 @@ fun intPref(
 }
 
 fun floatPref(
+    restrictions: Bundle? = null,
     prefs: SharedPreferences,
     key: String,
-    default: Float,
-    restrictions: Bundle? = null
+    default: Float
 ) = object : ReadWriteProperty<Any?, Float> {
     override fun getValue(thisRef: Any?, property: KProperty<*>) =
         if (restrictions?.containsKey(key) == true) {
@@ -96,9 +96,9 @@ fun floatPref(
 }
 
 fun <T : Enum<T>> stringEnumPref(
+    restrictions: Bundle? = null,
     prefs: SharedPreferences,
     key: String,
-    restrictions: Bundle? = null,
     default: String,
     fromString: ((String?) -> T)
 ) = object : ReadWriteProperty<Any?, T> {
@@ -119,9 +119,9 @@ fun <T : Enum<T>> stringEnumPref(
 }
 
 fun <T : Enum<T>> intEnumPref(
+    restrictions: Bundle? = null,
     prefs: SharedPreferences,
     key: String,
-    restrictions: Bundle? = null,
     default: Int,
     fromInt: (Int?) -> T
 ) = object : ReadWriteProperty<Any?, T> {

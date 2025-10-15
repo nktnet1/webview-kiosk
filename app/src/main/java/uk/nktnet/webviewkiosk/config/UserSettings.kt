@@ -20,107 +20,282 @@ class UserSettings(val context: Context) {
         ?.applicationRestrictions
 
     // Web Content
-    var homeUrl by stringPref(prefs, UserSettingsKeys.WebContent.HOME_URL, Constants.WEBSITE_URL, restrictions)
-    var websiteBlacklist by stringPrefOptional(prefs, UserSettingsKeys.WebContent.WEBSITE_BLACKLIST, restrictions)
-    var websiteWhitelist by stringPrefOptional(prefs, UserSettingsKeys.WebContent.WEBSITE_WHITELIST, restrictions)
-    var websiteBookmarks by stringPrefOptional(prefs, UserSettingsKeys.WebContent.WEBSITE_BOOKMARKS, restrictions)
-    var allowLocalFiles by booleanPref(prefs, UserSettingsKeys.WebContent.ALLOW_LOCAL_FILES, true, restrictions)
+    var homeUrl by stringPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebContent.HOME_URL,
+        Constants.WEBSITE_URL
+    )
+    var websiteBlacklist by stringPrefOptional(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebContent.WEBSITE_BLACKLIST
+    )
+    var websiteWhitelist by stringPrefOptional(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebContent.WEBSITE_WHITELIST
+    )
+    var websiteBookmarks by stringPrefOptional(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebContent.WEBSITE_BOOKMARKS
+    )
+    var allowLocalFiles by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebContent.ALLOW_LOCAL_FILES,
+        true
+    )
 
     // Web Browsing
-    var allowRefresh by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_REFRESH, true, restrictions)
-    var allowBackwardsNavigation by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_BACKWARDS_NAVIGATION, true, restrictions)
-    var allowGoHome by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_GO_HOME, true, restrictions)
-    var clearHistoryOnHome by booleanPref(prefs, UserSettingsKeys.WebBrowsing.CLEAR_HISTORY_ON_HOME, false, restrictions)
-    var allowHistoryAccess by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_HISTORY_ACCESS, true, restrictions)
-    var allowBookmarkAccess by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_BOOKMARK_ACCESS, true, restrictions)
-    var allowOtherUrlSchemes by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_OTHER_URL_SCHEMES, false, restrictions)
-    var allowLinkLongPressContextMenu by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, true, restrictions)
+    var allowRefresh by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebBrowsing.ALLOW_REFRESH,
+        true
+    )
+    var allowBackwardsNavigation by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebBrowsing.ALLOW_BACKWARDS_NAVIGATION,
+        true
+    )
+    var allowGoHome by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebBrowsing.ALLOW_GO_HOME,
+        true
+    )
+    var clearHistoryOnHome by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebBrowsing.CLEAR_HISTORY_ON_HOME,
+        false
+    )
+    var allowHistoryAccess by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebBrowsing.ALLOW_HISTORY_ACCESS,
+        true
+    )
+    var allowBookmarkAccess by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebBrowsing.ALLOW_BOOKMARK_ACCESS,
+        true
+    )
+    var allowOtherUrlSchemes by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebBrowsing.ALLOW_OTHER_URL_SCHEMES,
+        false
+    )
+    var allowLinkLongPressContextMenu by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU,
+        true
+    )
     var allowKioskControlPanel by stringEnumPref(
+        restrictions,
         prefs,
         UserSettingsKeys.WebBrowsing.ALLOW_KIOSK_CONTROL_PANEL,
-        restrictions,
         KioskControlPanelOption.TOP_LEFT.name,
     ) { value -> KioskControlPanelOption.fromString(value) }
 
-    var searchProviderUrl by stringPref(prefs, UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL, Constants.DEFAULT_SEARCH_PROVIDER_URL, restrictions)
+    var searchProviderUrl by stringPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL,
+        Constants.DEFAULT_SEARCH_PROVIDER_URL
+    )
 
     // Web Engine
-    var enableJavaScript by booleanPref(prefs, UserSettingsKeys.WebEngine.ENABLE_JAVASCRIPT, true, restrictions)
-    var enableDomStorage by booleanPref(prefs, UserSettingsKeys.WebEngine.ENABLE_DOM_STORAGE, true, restrictions)
-    var acceptCookies by booleanPref(prefs, UserSettingsKeys.WebEngine.ACCEPT_COOKIES, true, restrictions)
-    var acceptThirdPartyCookies by booleanPref(prefs, UserSettingsKeys.WebEngine.ACCEPT_THIRD_PARTY_COOKIES, false, restrictions)
+    var enableJavaScript by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.ENABLE_JAVASCRIPT,
+        true
+    )
+    var enableDomStorage by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.ENABLE_DOM_STORAGE,
+        true
+    )
+    var acceptCookies by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.ACCEPT_COOKIES,
+        true
+    )
+    var acceptThirdPartyCookies by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.ACCEPT_THIRD_PARTY_COOKIES,
+        false
+    )
     var cacheMode by intEnumPref(
+        restrictions,
         prefs,
         UserSettingsKeys.WebEngine.CACHE_MODE,
-        restrictions,
         CacheModeOption.DEFAULT.mode,
     ) { value -> CacheModeOption.fromInt(value) }
 
     var layoutAlgorithm by stringEnumPref(
+        restrictions,
         prefs,
         UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM,
-        restrictions,
         LayoutAlgorithmOption.NORMAL.name
     ) { value ->
         LayoutAlgorithmOption.fromAlgorithm(
-            value?.let { WebSettings.LayoutAlgorithm.valueOf(it) } ?: WebSettings.LayoutAlgorithm.NORMAL
+            value?.let { WebSettings.LayoutAlgorithm.valueOf(it) }
+                ?: WebSettings.LayoutAlgorithm.NORMAL
         )
     }
 
-    var userAgent by stringPrefOptional(prefs, UserSettingsKeys.WebEngine.USER_AGENT, restrictions)
-    var useWideViewPort by booleanPref(prefs, UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT, true, restrictions)
-    var loadWithOverviewMode by booleanPref(prefs, UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE, true, restrictions)
-    var enableZoom by booleanPref(prefs, UserSettingsKeys.WebEngine.ENABLE_ZOOM, true, restrictions)
-    var displayZoomControls by booleanPref(prefs, UserSettingsKeys.WebEngine.DISPLAY_ZOOM_CONTROLS, false, restrictions)
-    var allowFileAccessFromFileURLs by booleanPref(prefs, UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS, false, restrictions)
-    var allowUniversalAccessFromFileURLs by booleanPref(prefs, UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, false, restrictions)
-    var mediaPlaybackRequiresUserGesture by booleanPref(prefs, UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, true, restrictions)
+    var userAgent by stringPrefOptional(restrictions, prefs, UserSettingsKeys.WebEngine.USER_AGENT)
+    var useWideViewPort by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT,
+        true
+    )
+    var loadWithOverviewMode by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE,
+        true
+    )
+    var enableZoom by booleanPref(restrictions, prefs, UserSettingsKeys.WebEngine.ENABLE_ZOOM, true)
+    var displayZoomControls by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.DISPLAY_ZOOM_CONTROLS,
+        false
+    )
+    var allowFileAccessFromFileURLs by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS,
+        false
+    )
+    var allowUniversalAccessFromFileURLs by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS,
+        false
+    )
+    var mediaPlaybackRequiresUserGesture by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE,
+        true
+    )
 
     // Web Lifecycle
-    var lockOnLaunch by booleanPref(prefs, UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, false, restrictions)
-    var resetOnLaunch by booleanPref(prefs, UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, false, restrictions)
-    var resetOnInactivitySeconds by intPref(prefs, UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS, 0, restrictions)
+    var lockOnLaunch by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH,
+        false
+    )
+    var resetOnLaunch by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH,
+        false
+    )
+    var resetOnInactivitySeconds by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS,
+        0
+    )
 
     // Appearance
     var theme by stringEnumPref(
+        restrictions,
         prefs,
         UserSettingsKeys.Appearance.THEME,
-        restrictions,
         ThemeOption.SYSTEM.name,
     ) { value -> ThemeOption.fromString(value) }
     var addressBarMode by stringEnumPref(
+        restrictions,
         prefs,
         UserSettingsKeys.Appearance.ADDRESS_BAR_MODE,
-        restrictions,
         AddressBarOption.HIDDEN_WHEN_LOCKED.name,
     ) { value -> AddressBarOption.fromString((value)) }
     var webViewInset by stringEnumPref(
+        restrictions,
         prefs,
         UserSettingsKeys.Appearance.WEBVIEW_INSET,
-        restrictions,
         WebViewInset.SystemBars.name,
     ) { value -> WebViewInset.fromString(value) }
 
-    var blockedMessage by stringPref(prefs, UserSettingsKeys.Appearance.BLOCKED_MESSAGE, "This site is blocked by ${Constants.APP_NAME}.", restrictions)
+    var blockedMessage by stringPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Appearance.BLOCKED_MESSAGE,
+        "This site is blocked by ${Constants.APP_NAME}."
+    )
 
     // Device
-    var keepScreenOn by booleanPref(prefs, UserSettingsKeys.Device.KEEP_SCREEN_ON, false, restrictions)
+    var keepScreenOn by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Device.KEEP_SCREEN_ON,
+        false
+    )
     var deviceRotation by stringEnumPref(
+        restrictions,
         prefs,
         UserSettingsKeys.Device.DEVICE_ROTATION,
-        restrictions,
         DeviceRotationOption.AUTO.name,
     ) { value -> DeviceRotationOption.fromString(value) }
-    var allowCamera by booleanPref(prefs, UserSettingsKeys.Device.ALLOW_CAMERA, false, restrictions)
-    var allowMicrophone by booleanPref(prefs, UserSettingsKeys.Device.ALLOW_MICROPHONE, false, restrictions)
-    var allowLocation by booleanPref(prefs, UserSettingsKeys.Device.ALLOW_LOCATION, false, restrictions)
-    var customUnlockShortcut by stringPrefOptional(prefs, UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT, restrictions)
+    var allowCamera by booleanPref(restrictions, prefs, UserSettingsKeys.Device.ALLOW_CAMERA, false)
+    var allowMicrophone by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Device.ALLOW_MICROPHONE,
+        false
+    )
+    var allowLocation by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Device.ALLOW_LOCATION,
+        false
+    )
+    var customUnlockShortcut by stringPrefOptional(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT
+    )
 
     // JS Scripts
-    var applyAppTheme by booleanPref(prefs, UserSettingsKeys.JsScripts.APPLY_APP_THEME, true, restrictions)
-    var applyDesktopViewportWidth by intPref(prefs, UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, 0, restrictions)
-    var customScriptOnPageStart by stringPrefOptional(prefs, UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, restrictions)
-    var customScriptOnPageFinish by stringPrefOptional(prefs, UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, restrictions)
+    var applyAppTheme by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.JsScripts.APPLY_APP_THEME,
+        true
+    )
+    var applyDesktopViewportWidth by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH,
+        0
+    )
+    var customScriptOnPageStart by stringPrefOptional(
+        restrictions,
+        prefs,
+        UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START
+    )
+    var customScriptOnPageFinish by stringPrefOptional(
+        restrictions,
+        prefs,
+        UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH
+    )
 
     fun exportToBase64(): String {
         val json = JSONObject().apply {
