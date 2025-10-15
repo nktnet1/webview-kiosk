@@ -292,13 +292,13 @@
         android:description="@string/js_scripts_apply_desktop_viewport_width_description"
     />
     <restriction
-        android:key="js_scripts.custom_script_on_start"
+        android:key="js_scripts.custom_script_on_page_start"
         android:restrictionType="string"
         android:title="@string/js_scripts_custom_script_on_page_start_title"
         android:description="@string/js_scripts_custom_script_on_page_start_description"
     />
     <restriction
-        android:key="js_scripts.custom_script_on_finish"
+        android:key="js_scripts.custom_script_on_page_finish"
         android:restrictionType="string"
         android:title="@string/js_scripts_custom_script_on_page_finish_title"
         android:description="@string/js_scripts_custom_script_on_page_finish_description"

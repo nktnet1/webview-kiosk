@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldItem
 
 @Composable
@@ -39,6 +40,7 @@ fun ApplyDesktopViewportWidthSetting() {
             To disable, use the value 0.
         """.trimIndent(),
         initialValue = userSettings.applyDesktopViewportWidth,
+        restricted = userSettings.isRestricted(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH),
         min = Constants.MIN_DESKTOP_WIDTH,
         placeholder = "e.g. 1024 (or 0 to disable)",
         onSave = { userSettings.applyDesktopViewportWidth = it }

@@ -18,6 +18,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.shape.RoundedCornerShape
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 
 @Composable
@@ -29,6 +30,8 @@ fun UserAgentSetting() {
             "(KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
     val mobileAgent = "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 " +
             "(KHTML, like Gecko) Chrome/118.0.0.0 Mobile Safari/537.36"
+    val restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE)
+
 
     TextSettingFieldItem(
         label = "User Agent",
@@ -40,9 +43,13 @@ fun UserAgentSetting() {
         """.trimIndent(),
         placeholder = "(leave blank for system default)",
         initialValue = userSettings.userAgent,
+        restricted = restricted,
         isMultiline = false,
         onSave = { userSettings.userAgent = it },
         extraContent = { setValue: (String) -> Unit ->
+            if (restricted) {
+                return@TextSettingFieldItem
+            }
             Column(modifier = Modifier.fillMaxWidth()) {
                 Button(
                     onClick = { setValue(desktopAgent) },

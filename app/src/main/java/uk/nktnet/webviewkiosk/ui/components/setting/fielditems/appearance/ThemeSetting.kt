@@ -5,6 +5,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
 
@@ -22,6 +23,7 @@ fun ThemeSetting(themeState: MutableState<ThemeOption>) {
         """.trimIndent(),
         options = ThemeOption.entries,
         initialValue = userSettings.theme,
+        restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.THEME),
         onSave = {
             userSettings.theme = it
             themeState.value = it

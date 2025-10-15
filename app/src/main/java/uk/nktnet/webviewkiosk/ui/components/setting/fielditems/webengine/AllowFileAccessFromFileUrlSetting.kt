@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
@@ -27,6 +28,7 @@ fun AllowFileAccessFromFileURLsSetting() {
             cookies and app private data.
         """.trimIndent(),
         initialValue = userSettings.allowFileAccessFromFileURLs,
+        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS),
         onSave = { userSettings.allowFileAccessFromFileURLs = it }
     )
 }

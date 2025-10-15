@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldItem
 
 @Composable
@@ -24,6 +25,7 @@ fun ResetOnInactivitySecondsSetting() {
         """.trimIndent(),
         placeholder = "e.g. 3600 (for 1 hour)",
         initialValue = userSettings.resetOnInactivitySeconds,
+        restricted = userSettings.isRestricted(UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS),
         min = Constants.MIN_INACTIVITY_TIMEOUT_SECONDS,
         onSave = { userSettings.resetOnInactivitySeconds = it }
     )

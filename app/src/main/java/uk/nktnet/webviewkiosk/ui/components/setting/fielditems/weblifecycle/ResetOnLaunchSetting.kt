@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
@@ -20,6 +21,7 @@ fun ResetOnLaunchSetting() {
              The navigation history will also be cleared.
         """.trimIndent(),
         initialValue = userSettings.resetOnLaunch,
+        restricted = userSettings.isRestricted(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH),
         onSave = { userSettings.resetOnLaunch = it }
     )
 }

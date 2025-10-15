@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.validateUrl
 
@@ -26,6 +27,7 @@ fun BookmarksSetting() {
             ${Constants.GITHUB_URL}
         """.trimIndent(),
         initialValue = currentValue,
+        restricted = userSettings.isRestricted(UserSettingsKeys.WebContent.WEBSITE_BOOKMARKS),
         isMultiline = true,
         validator = { input ->
             input.isEmpty() || input.lines().all { validateUrl(it.trim()) }

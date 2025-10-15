@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.RestrictionsManager
 import android.content.SharedPreferences
 import android.util.Base64
-import android.webkit.WebSettings
 import org.json.JSONObject
 import uk.nktnet.webviewkiosk.config.option.*
 import uk.nktnet.webviewkiosk.utils.booleanPref
@@ -18,6 +17,9 @@ class UserSettings(val context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
     val restrictions = (context.getSystemService(Context.RESTRICTIONS_SERVICE) as? RestrictionsManager)
         ?.applicationRestrictions
+
+    fun isRestricted(key: String): Boolean =
+        restrictions?.containsKey(key) == true
 
     // Web Content
     var homeUrl by stringPref(
@@ -102,7 +104,8 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.WebBrowsing.ALLOW_KIOSK_CONTROL_PANEL,
         KioskControlPanelOption.TOP_LEFT.name,
-    ) { value -> KioskControlPanelOption.fromString(value) }
+        fromString = KioskControlPanelOption::fromString
+    )
 
     var searchProviderUrl by stringPref(
         restrictions,
@@ -141,19 +144,15 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.WebEngine.CACHE_MODE,
         CacheModeOption.DEFAULT.mode,
-    ) { value -> CacheModeOption.fromInt(value) }
-
+        fromInt = CacheModeOption::fromInt
+    )
     var layoutAlgorithm by stringEnumPref(
         restrictions,
         prefs,
         UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM,
-        LayoutAlgorithmOption.NORMAL.name
-    ) { value ->
-        LayoutAlgorithmOption.fromAlgorithm(
-            value?.let { WebSettings.LayoutAlgorithm.valueOf(it) }
-                ?: WebSettings.LayoutAlgorithm.NORMAL
-        )
-    }
+        LayoutAlgorithmOption.NORMAL.name,
+        fromString = LayoutAlgorithmOption::fromString
+    )
 
     var userAgent by stringPrefOptional(restrictions, prefs, UserSettingsKeys.WebEngine.USER_AGENT)
     var useWideViewPort by booleanPref(
@@ -220,19 +219,24 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.Appearance.THEME,
         ThemeOption.SYSTEM.name,
-    ) { value -> ThemeOption.fromString(value) }
+        fromString = ThemeOption::fromString
+    )
+
     var addressBarMode by stringEnumPref(
         restrictions,
         prefs,
         UserSettingsKeys.Appearance.ADDRESS_BAR_MODE,
         AddressBarOption.HIDDEN_WHEN_LOCKED.name,
-    ) { value -> AddressBarOption.fromString((value)) }
+        fromString = AddressBarOption::fromString
+    )
+
     var webViewInset by stringEnumPref(
         restrictions,
         prefs,
         UserSettingsKeys.Appearance.WEBVIEW_INSET,
         WebViewInset.SystemBars.name,
-    ) { value -> WebViewInset.fromString(value) }
+        fromString = WebViewInset::fromString
+    )
 
     var blockedMessage by stringPref(
         restrictions,
@@ -253,7 +257,8 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.Device.DEVICE_ROTATION,
         DeviceRotationOption.AUTO.name,
-    ) { value -> DeviceRotationOption.fromString(value) }
+        fromString = DeviceRotationOption::fromString
+    )
     var allowCamera by booleanPref(restrictions, prefs, UserSettingsKeys.Device.ALLOW_CAMERA, false)
     var allowMicrophone by booleanPref(
         restrictions,
@@ -381,8 +386,7 @@ class UserSettings(val context: Context) {
             acceptCookies = json.optBoolean(UserSettingsKeys.WebEngine.ACCEPT_COOKIES, acceptCookies)
             acceptThirdPartyCookies = json.optBoolean(UserSettingsKeys.WebEngine.ACCEPT_THIRD_PARTY_COOKIES, acceptThirdPartyCookies)
             cacheMode = CacheModeOption.fromInt(json.optInt(UserSettingsKeys.WebEngine.CACHE_MODE, cacheMode.mode))
-            layoutAlgorithm = LayoutAlgorithmOption.fromAlgorithm(
-                WebSettings.LayoutAlgorithm.valueOf(json.optString(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM, layoutAlgorithm.algorithm.name))
+            layoutAlgorithm = LayoutAlgorithmOption.fromString(json.optString(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM, layoutAlgorithm.algorithm.name)
             )
             userAgent = json.optString(UserSettingsKeys.WebEngine.USER_AGENT, userAgent)
             useWideViewPort = json.optBoolean(UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT, useWideViewPort)

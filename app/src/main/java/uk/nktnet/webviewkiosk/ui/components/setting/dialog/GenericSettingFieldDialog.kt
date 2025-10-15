@@ -84,7 +84,7 @@ fun GenericSettingFieldDialog(
             Column {
                 if (restricted) {
                     Text(
-                        text = "This setting is managed by your IT Admin",
+                        text = "This setting is managed by your IT Admin.",
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),

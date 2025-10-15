@@ -14,6 +14,7 @@ fun CustomSettingFieldItem(
     label: String,
     infoText: String,
     value: String,
+    restricted: Boolean = false,
     onSave: () -> Unit,
     onDismissCallback: () -> Unit = {},
     bodyContent: @Composable () -> Unit
@@ -23,6 +24,7 @@ fun CustomSettingFieldItem(
     GenericSettingFieldItem(
         label = label,
         value = value.ifBlank { "(blank)" },
+        restricted = restricted,
         onClick = { showDialog = true }
     ) { displayValue ->
         Text(
@@ -39,6 +41,7 @@ fun CustomSettingFieldItem(
         GenericSettingFieldDialog(
             title = label,
             infoText = infoText,
+            restricted = restricted,
             onDismiss = {
                 showDialog = false
                 onDismissCallback()

@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.LayoutAlgorithmOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
 
@@ -25,6 +26,7 @@ fun LayoutAlgorithmSetting() {
         """.trimIndent(),
         options = LayoutAlgorithmOption.entries,
         initialValue = userSettings.layoutAlgorithm,
+        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM),
         onSave = { userSettings.layoutAlgorithm = it },
         itemText = {
             when (it) {

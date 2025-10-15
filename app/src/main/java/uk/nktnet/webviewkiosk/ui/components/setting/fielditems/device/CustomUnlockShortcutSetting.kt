@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.CustomSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.keyEventToShortcutString
 import uk.nktnet.webviewkiosk.utils.modifierKeyCodes
@@ -68,6 +69,7 @@ fun CustomUnlockShortcutSetting() {
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    val restricted = userSettings.isRestricted(UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT)
 
     LaunchedEffect(isPressed) {
         if (isPressed && !isListening) {
@@ -92,6 +94,7 @@ fun CustomUnlockShortcutSetting() {
             control panel)
         """.trimIndent(),
         value = currentValue,
+        restricted = restricted,
         onDismissCallback = {
             isListening = false
         },
@@ -138,6 +141,7 @@ fun CustomUnlockShortcutSetting() {
                 )
 
                 Button(
+                    enabled = !restricted,
                     onClick = {
                         if (isListening) {
                             isListening = false

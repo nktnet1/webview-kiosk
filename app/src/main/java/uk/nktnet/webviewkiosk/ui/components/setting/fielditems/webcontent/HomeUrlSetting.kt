@@ -20,6 +20,7 @@ import androidx.compose.ui.text.style.TextAlign
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.validateUrl
 
@@ -28,6 +29,7 @@ fun HomeUrlSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
+    val restricted = userSettings.isRestricted(UserSettingsKeys.WebContent.HOME_URL)
 
     TextSettingFieldItem(
         label = "Home URL",
@@ -41,11 +43,15 @@ fun HomeUrlSetting() {
         """.trimIndent(),
         placeholder = "e.g. ${Constants.WEBSITE_URL}",
         initialValue = userSettings.homeUrl,
+        restricted = restricted,
         isMultiline = false,
         validator = { validateUrl(it) },
         validationMessage = "Invalid Home URL provided.",
         onSave = { userSettings.homeUrl = it },
         extraContent = { setValue: (String) -> Unit ->
+            if (restricted) {
+                return@TextSettingFieldItem
+            }
             val currentUrl = systemSettings.currentUrl
             Button(
                 onClick = { setValue(currentUrl) },

@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
@@ -19,6 +20,7 @@ fun AllowLocalFilesSetting() {
             This will be accessible using the 3-dot icon on the right of the address bar.
         """.trimIndent(),
         initialValue = userSettings.allowLocalFiles,
+        restricted = userSettings.isRestricted(UserSettingsKeys.WebContent.ALLOW_LOCAL_FILES),
         onSave = { userSettings.allowLocalFiles = it }
     )
 }

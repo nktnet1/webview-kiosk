@@ -28,7 +28,7 @@ fun <T> GenericSettingFieldItem(
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.fillMaxWidth(0.9f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Column {
                     Text(
                         text = label,
                         style = MaterialTheme.typography.titleMedium
@@ -38,7 +38,7 @@ fun <T> GenericSettingFieldItem(
                         Text(
                             text = "[Restricted]",
                             color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleSmall
                         )
                     }
                 }
@@ -46,7 +46,11 @@ fun <T> GenericSettingFieldItem(
                 description(value)
             }
             Icon(
-                painter = painterResource(R.drawable.baseline_edit_24),
+                painter = if (restricted) {
+                    painterResource(R.drawable.baseline_remove_red_eye_24)
+                } else {
+                    painterResource(R.drawable.baseline_edit_24)
+                },
                 contentDescription = "Edit",
                 modifier = Modifier.align(Alignment.CenterEnd)
             )

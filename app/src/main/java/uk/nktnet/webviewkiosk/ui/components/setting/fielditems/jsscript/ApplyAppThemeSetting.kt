@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
@@ -24,6 +25,7 @@ fun ApplyAppThemeSetting() {
             If the theme setting is "System", this script is a no-op (does nothing).
         """.trimIndent(),
         initialValue = userSettings.applyAppTheme,
+        restricted = userSettings.isRestricted(UserSettingsKeys.JsScripts.APPLY_APP_THEME),
         onSave = { userSettings.applyAppTheme = it }
     )
 }

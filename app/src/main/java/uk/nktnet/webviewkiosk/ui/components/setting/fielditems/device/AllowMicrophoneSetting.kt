@@ -12,6 +12,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.rememberPermissionState
 
@@ -34,6 +35,7 @@ fun AllowMicrophoneSetting() {
             WebView's RESOURCE_AUDIO_CAPTURE feature.
         """.trimIndent(),
         initialValue = userSettings.allowMicrophone,
+        restricted = userSettings.isRestricted(UserSettingsKeys.Device.ALLOW_MICROPHONE),
         onSave = { userSettings.allowMicrophone = it },
         itemText = { v ->
             val statusText = if (permissionState.granted) "" else "(no permission)"
