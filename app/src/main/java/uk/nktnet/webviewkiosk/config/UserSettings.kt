@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.config
 
 import android.content.Context
+import android.content.RestrictionsManager
 import android.content.SharedPreferences
 import android.util.Base64
 import android.webkit.WebSettings
@@ -12,38 +13,50 @@ import uk.nktnet.webviewkiosk.utils.intPref
 import uk.nktnet.webviewkiosk.utils.stringPref
 import uk.nktnet.webviewkiosk.utils.stringPrefOptional
 
-class UserSettings(context: Context) {
+class UserSettings(val context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
+    val restrictions = (context.getSystemService(Context.RESTRICTIONS_SERVICE) as? RestrictionsManager)
+        ?.applicationRestrictions
 
     // Web Content
-    var homeUrl by stringPref(prefs, UserSettingsKeys.WebContent.HOME_URL, Constants.WEBSITE_URL)
-    var websiteBlacklist by stringPrefOptional(prefs, UserSettingsKeys.WebContent.WEBSITE_BLACKLIST)
-    var websiteWhitelist by stringPrefOptional(prefs, UserSettingsKeys.WebContent.WEBSITE_WHITELIST)
-    var websiteBookmarks by stringPrefOptional(prefs, UserSettingsKeys.WebContent.WEBSITE_BOOKMARKS)
-    var allowLocalFiles by booleanPref(prefs, UserSettingsKeys.WebContent.ALLOW_LOCAL_FILES, true)
+    var homeUrl by stringPref(prefs, UserSettingsKeys.WebContent.HOME_URL, Constants.WEBSITE_URL, restrictions)
+    var websiteBlacklist by stringPrefOptional(prefs, UserSettingsKeys.WebContent.WEBSITE_BLACKLIST, restrictions)
+    var websiteWhitelist by stringPrefOptional(prefs, UserSettingsKeys.WebContent.WEBSITE_WHITELIST, restrictions)
+    var websiteBookmarks by stringPrefOptional(prefs, UserSettingsKeys.WebContent.WEBSITE_BOOKMARKS, restrictions)
+    var allowLocalFiles by booleanPref(prefs, UserSettingsKeys.WebContent.ALLOW_LOCAL_FILES, true, restrictions)
 
     // Web Browsing
-    var allowRefresh by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_REFRESH, true)
-    var allowBackwardsNavigation by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_BACKWARDS_NAVIGATION, true)
-    var allowGoHome by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_GO_HOME, true)
-    var clearHistoryOnHome by booleanPref(prefs, UserSettingsKeys.WebBrowsing.CLEAR_HISTORY_ON_HOME, false)
-    var allowHistoryAccess by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_HISTORY_ACCESS, true)
-    var allowBookmarkAccess by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_BOOKMARK_ACCESS, true)
-    var allowOtherUrlSchemes by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_OTHER_URL_SCHEMES, false)
-    var allowLinkLongPressContextMenu by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, true)
+    var allowRefresh by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_REFRESH, true, restrictions)
+    var allowBackwardsNavigation by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_BACKWARDS_NAVIGATION, true, restrictions)
+    var allowGoHome by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_GO_HOME, true, restrictions)
+    var clearHistoryOnHome by booleanPref(prefs, UserSettingsKeys.WebBrowsing.CLEAR_HISTORY_ON_HOME, false, restrictions)
+    var allowHistoryAccess by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_HISTORY_ACCESS, true, restrictions)
+    var allowBookmarkAccess by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_BOOKMARK_ACCESS, true, restrictions)
+    var allowOtherUrlSchemes by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_OTHER_URL_SCHEMES, false, restrictions)
+    var allowLinkLongPressContextMenu by booleanPref(prefs, UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, true, restrictions)
     var allowKioskControlPanel: KioskControlPanelOption
-        get() = KioskControlPanelOption.fromString(prefs.getString(UserSettingsKeys.WebBrowsing.ALLOW_KIOSK_CONTROL_PANEL, null))
-        set(value) = prefs.edit { putString(UserSettingsKeys.WebBrowsing.ALLOW_KIOSK_CONTROL_PANEL, value.name) }
-    var searchProviderUrl by stringPref(prefs, UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL, Constants.DEFAULT_SEARCH_PROVIDER_URL)
+        get() = restrictions?.getString(UserSettingsKeys.WebBrowsing.ALLOW_KIOSK_CONTROL_PANEL)
+            ?.let { KioskControlPanelOption.fromString(it) }
+            ?: KioskControlPanelOption.fromString(prefs.getString(UserSettingsKeys.WebBrowsing.ALLOW_KIOSK_CONTROL_PANEL, null))
+        set(value) {
+            if (restrictions?.containsKey(UserSettingsKeys.WebBrowsing.ALLOW_KIOSK_CONTROL_PANEL) != true) {
+                prefs.edit { putString(UserSettingsKeys.WebBrowsing.ALLOW_KIOSK_CONTROL_PANEL, value.name) }
+            }
+        }
+    var searchProviderUrl by stringPref(prefs, UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL, Constants.DEFAULT_SEARCH_PROVIDER_URL, restrictions)
 
     // Web Engine
-    var enableJavaScript by booleanPref(prefs, UserSettingsKeys.WebEngine.ENABLE_JAVASCRIPT, true)
-    var enableDomStorage by booleanPref(prefs, UserSettingsKeys.WebEngine.ENABLE_DOM_STORAGE, true)
-    var acceptCookies by booleanPref(prefs, UserSettingsKeys.WebEngine.ACCEPT_COOKIES, true)
-    var acceptThirdPartyCookies by booleanPref(prefs, UserSettingsKeys.WebEngine.ACCEPT_THIRD_PARTY_COOKIES, false)
+    var enableJavaScript by booleanPref(prefs, UserSettingsKeys.WebEngine.ENABLE_JAVASCRIPT, true, restrictions)
+    var enableDomStorage by booleanPref(prefs, UserSettingsKeys.WebEngine.ENABLE_DOM_STORAGE, true, restrictions)
+    var acceptCookies by booleanPref(prefs, UserSettingsKeys.WebEngine.ACCEPT_COOKIES, true, restrictions)
+    var acceptThirdPartyCookies by booleanPref(prefs, UserSettingsKeys.WebEngine.ACCEPT_THIRD_PARTY_COOKIES, false, restrictions)
     var cacheMode: CacheModeOption
         get() = CacheModeOption.fromInt(prefs.getInt(UserSettingsKeys.WebEngine.CACHE_MODE, WebSettings.LOAD_DEFAULT))
-        set(value) = prefs.edit { putInt(UserSettingsKeys.WebEngine.CACHE_MODE, value.mode) }
+        set(value) {
+            if (restrictions?.containsKey(UserSettingsKeys.WebEngine.CACHE_MODE) != true) {
+                prefs.edit { putInt(UserSettingsKeys.WebEngine.CACHE_MODE, value.mode) }
+            }
+        }
     var layoutAlgorithm: LayoutAlgorithmOption
         get() = LayoutAlgorithmOption.fromAlgorithm(
             when (val value = prefs.getString(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM, null)) {
@@ -51,48 +64,68 @@ class UserSettings(context: Context) {
                 else -> WebSettings.LayoutAlgorithm.valueOf(value)
             }
         )
-        set(value) = prefs.edit { putString(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM, value.algorithm.name) }
-    var userAgent by stringPrefOptional(prefs, UserSettingsKeys.WebEngine.USER_AGENT)
-    var useWideViewPort by booleanPref(prefs, UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT, true)
-    var loadWithOverviewMode by booleanPref(prefs, UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE, true)
-    var enableZoom by booleanPref(prefs, UserSettingsKeys.WebEngine.ENABLE_ZOOM, true)
-    var displayZoomControls by booleanPref(prefs, UserSettingsKeys.WebEngine.DISPLAY_ZOOM_CONTROLS, false)
-    var allowFileAccessFromFileURLs by booleanPref(prefs, UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS, false)
-    var allowUniversalAccessFromFileURLs by booleanPref(prefs, UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, false)
-    var mediaPlaybackRequiresUserGesture by booleanPref(prefs, UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, true)
+        set(value) {
+            if (restrictions?.containsKey(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM) != true) {
+                prefs.edit { putString(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM, value.algorithm.name) }
+            }
+        }
+    var userAgent by stringPrefOptional(prefs, UserSettingsKeys.WebEngine.USER_AGENT, restrictions)
+    var useWideViewPort by booleanPref(prefs, UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT, true, restrictions)
+    var loadWithOverviewMode by booleanPref(prefs, UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE, true, restrictions)
+    var enableZoom by booleanPref(prefs, UserSettingsKeys.WebEngine.ENABLE_ZOOM, true, restrictions)
+    var displayZoomControls by booleanPref(prefs, UserSettingsKeys.WebEngine.DISPLAY_ZOOM_CONTROLS, false, restrictions)
+    var allowFileAccessFromFileURLs by booleanPref(prefs, UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS, false, restrictions)
+    var allowUniversalAccessFromFileURLs by booleanPref(prefs, UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, false, restrictions)
+    var mediaPlaybackRequiresUserGesture by booleanPref(prefs, UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, true, restrictions)
 
     // Web Lifecycle
-    var lockOnLaunch by booleanPref(prefs, UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, false)
-    var resetOnLaunch by booleanPref(prefs, UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, false)
-    var resetOnInactivitySeconds by intPref(prefs, UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS, 0)
+    var lockOnLaunch by booleanPref(prefs, UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, false, restrictions)
+    var resetOnLaunch by booleanPref(prefs, UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, false, restrictions)
+    var resetOnInactivitySeconds by intPref(prefs, UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS, 0, restrictions)
 
     // Appearance
     var theme: ThemeOption
         get() = ThemeOption.fromString(prefs.getString(UserSettingsKeys.Appearance.THEME, null))
-        set(value) = prefs.edit { putString(UserSettingsKeys.Appearance.THEME, value.name) }
+        set(value) {
+            if (restrictions?.containsKey(UserSettingsKeys.Appearance.THEME) != true) {
+                prefs.edit { putString(UserSettingsKeys.Appearance.THEME, value.name) }
+            }
+        }
     var addressBarMode: AddressBarOption
         get() = AddressBarOption.fromString(prefs.getString(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, null))
-        set(value) = prefs.edit { putString(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, value.name) }
+        set(value) {
+            if (restrictions?.containsKey(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE) != true) {
+                prefs.edit { putString(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, value.name) }
+            }
+        }
     var webViewInset: WebViewInset
         get() = WebViewInset.fromString(prefs.getString(UserSettingsKeys.Appearance.WEBVIEW_INSET, null))
-        set(value) = prefs.edit { putString(UserSettingsKeys.Appearance.WEBVIEW_INSET, value.name) }
-    var blockedMessage by stringPref(prefs, UserSettingsKeys.Appearance.BLOCKED_MESSAGE, "This site is blocked by ${Constants.APP_NAME}.")
+        set(value) {
+            if (restrictions?.containsKey(UserSettingsKeys.Appearance.WEBVIEW_INSET) != true) {
+                prefs.edit { putString(UserSettingsKeys.Appearance.WEBVIEW_INSET, value.name) }
+            }
+        }
+    var blockedMessage by stringPref(prefs, UserSettingsKeys.Appearance.BLOCKED_MESSAGE, "This site is blocked by ${Constants.APP_NAME}.", restrictions)
 
     // Device
-    var keepScreenOn by booleanPref(prefs, UserSettingsKeys.Device.KEEP_SCREEN_ON, false)
+    var keepScreenOn by booleanPref(prefs, UserSettingsKeys.Device.KEEP_SCREEN_ON, false, restrictions)
     var deviceRotation: DeviceRotationOption
         get() = DeviceRotationOption.fromString(prefs.getString(UserSettingsKeys.Device.DEVICE_ROTATION, null))
-        set(value) = prefs.edit { putString(UserSettingsKeys.Device.DEVICE_ROTATION, value.degrees) }
-    var allowCamera by booleanPref(prefs, UserSettingsKeys.Device.ALLOW_CAMERA, false)
-    var allowMicrophone by booleanPref(prefs, UserSettingsKeys.Device.ALLOW_MICROPHONE, false)
-    var allowLocation by booleanPref(prefs, UserSettingsKeys.Device.ALLOW_LOCATION, false)
-    var customUnlockShortcut by stringPrefOptional(prefs, UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT)
+        set(value) {
+            if (restrictions?.containsKey(UserSettingsKeys.Device.DEVICE_ROTATION) != true) {
+                prefs.edit { putString(UserSettingsKeys.Device.DEVICE_ROTATION, value.degrees) }
+            }
+        }
+    var allowCamera by booleanPref(prefs, UserSettingsKeys.Device.ALLOW_CAMERA, false, restrictions)
+    var allowMicrophone by booleanPref(prefs, UserSettingsKeys.Device.ALLOW_MICROPHONE, false, restrictions)
+    var allowLocation by booleanPref(prefs, UserSettingsKeys.Device.ALLOW_LOCATION, false, restrictions)
+    var customUnlockShortcut by stringPrefOptional(prefs, UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT, restrictions)
 
     // JS Scripts
-    var applyAppTheme by booleanPref(prefs, UserSettingsKeys.JsScripts.APPLY_APP_THEME, true)
-    var applyDesktopViewportWidth by intPref(prefs, UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, 0)
-    var customScriptOnPageStart by stringPrefOptional(prefs, UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START)
-    var customScriptOnPageFinish by stringPrefOptional(prefs, UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH)
+    var applyAppTheme by booleanPref(prefs, UserSettingsKeys.JsScripts.APPLY_APP_THEME, true, restrictions)
+    var applyDesktopViewportWidth by intPref(prefs, UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, 0, restrictions)
+    var customScriptOnPageStart by stringPrefOptional(prefs, UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, restrictions)
+    var customScriptOnPageFinish by stringPrefOptional(prefs, UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, restrictions)
 
     fun exportToBase64(): String {
         val json = JSONObject().apply {

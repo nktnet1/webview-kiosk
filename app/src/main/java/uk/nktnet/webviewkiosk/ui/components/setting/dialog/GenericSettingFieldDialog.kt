@@ -27,6 +27,7 @@ fun GenericSettingFieldDialog(
     infoText: String,
     onDismiss: () -> Unit,
     onSave: () -> Unit,
+    restricted: Boolean = false,
     content: @Composable ColumnScope.() -> Unit
 ) {
     var showInfoDialog by remember { mutableStateOf(false) }
@@ -81,14 +82,34 @@ fun GenericSettingFieldDialog(
         },
         text = {
             Column {
+                if (restricted) {
+                    Text(
+                        text = "This setting is managed by your IT Admin",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp),
+                    )
+                }
                 content()
             }
         },
         confirmButton = {
-            TextButton(onClick = onSave) { Text("Save") }
+            if (!restricted) {
+                TextButton(onClick = onSave) {
+                    Text("Save")
+                }
+            }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) {
+                Text(
+                    if (restricted) {
+                        "Close"
+                    } else {
+                        "Cancel"
+                    }
+                )
+            }
         },
         properties = DialogProperties(
             dismissOnClickOutside = false,

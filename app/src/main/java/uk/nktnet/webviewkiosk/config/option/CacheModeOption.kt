@@ -11,5 +11,8 @@ enum class CacheModeOption(val mode: Int) {
     companion object {
         fun fromInt(value: Int?): CacheModeOption =
             entries.find { it.mode == value } ?: DEFAULT
+
+        fun fromString(value: String?): CacheModeOption =
+            entries.find { it.name == value } ?: DEFAULT
     }
 }

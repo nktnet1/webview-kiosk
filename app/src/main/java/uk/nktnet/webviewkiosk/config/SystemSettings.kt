@@ -18,7 +18,7 @@ data class HistoryEntry(
     val visitedAt: Long = System.currentTimeMillis()
 )
 
-class SystemSettings(context: Context) {
+class SystemSettings(val context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val json = Json { encodeDefaults = true; ignoreUnknownKeys = true }
 

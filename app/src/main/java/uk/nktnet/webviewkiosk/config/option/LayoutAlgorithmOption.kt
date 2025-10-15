@@ -11,5 +11,8 @@ enum class LayoutAlgorithmOption(val algorithm: WebSettings.LayoutAlgorithm) {
     companion object {
         fun fromAlgorithm(value: WebSettings.LayoutAlgorithm?): LayoutAlgorithmOption =
             entries.find { it.algorithm == value } ?: NORMAL
+
+        fun fromString(value: String?): LayoutAlgorithmOption =
+            entries.find { it.name.equals(value, ignoreCase = true) } ?: NORMAL
     }
 }

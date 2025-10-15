@@ -17,6 +17,7 @@ fun <T> GenericSettingFieldItem(
     label: String,
     value: T,
     onClick: () -> Unit,
+    restricted: Boolean = false,
     description: @Composable (T) -> Unit
 ) {
     Column(
@@ -27,10 +28,20 @@ fun <T> GenericSettingFieldItem(
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.fillMaxWidth(0.9f)) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.titleMedium
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    if (restricted) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "[Restricted]",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.height(2.dp))
                 description(value)
             }

@@ -29,6 +29,7 @@ fun <T> DropdownSelector(
     selected: T,
     onSelectedChange: (T) -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     itemContent: @Composable (T) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -43,6 +44,7 @@ fun <T> DropdownSelector(
                 .fillMaxWidth()
                 .onSizeChanged { buttonWidth = it.width },
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
+            enabled = enabled,
             shape = shape
         ) {
             Box(Modifier.weight(1f)) {
