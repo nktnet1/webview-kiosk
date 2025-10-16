@@ -14,7 +14,7 @@ fun <T> DropdownSettingFieldItem(
     infoText: String,
     options: List<T>,
     initialValue: T,
-    restricted: Boolean = false,
+    restricted: Boolean,
     extraContent: (@Composable ((setValue: (T) -> Unit) -> Unit))? = null,
     onSave: (T) -> Unit,
     itemText: (T) -> String

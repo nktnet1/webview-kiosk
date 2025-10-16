@@ -17,7 +17,7 @@ fun <T> GenericSettingFieldItem(
     label: String,
     value: T,
     onClick: () -> Unit,
-    restricted: Boolean = false,
+    restricted: Boolean,
     description: @Composable (T) -> Unit
 ) {
     Column(

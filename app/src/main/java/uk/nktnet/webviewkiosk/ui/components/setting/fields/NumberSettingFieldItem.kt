@@ -18,7 +18,7 @@ fun NumberSettingFieldItem(
     infoText: String,
     placeholder: String,
     initialValue: Int,
-    restricted: Boolean = false,
+    restricted: Boolean,
     min: Int? = null,
     max: Int? = null,
     validationMessage: String? = null,

@@ -24,7 +24,7 @@ fun TextSettingFieldItem(
     initialValue: String,
     isMultiline: Boolean,
     modifier: Modifier = Modifier,
-    restricted: Boolean = false,
+    restricted: Boolean,
     validator: (String) -> Boolean = { true },
     validationMessage: String? = null,
     onSave: (String) -> Unit,

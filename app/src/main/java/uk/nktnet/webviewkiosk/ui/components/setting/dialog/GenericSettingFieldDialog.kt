@@ -27,7 +27,7 @@ fun GenericSettingFieldDialog(
     infoText: String,
     onDismiss: () -> Unit,
     onSave: () -> Unit,
-    restricted: Boolean = false,
+    restricted: Boolean,
     content: @Composable ColumnScope.() -> Unit
 ) {
     var showInfoDialog by remember { mutableStateOf(false) }

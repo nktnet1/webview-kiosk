@@ -14,7 +14,7 @@ fun CustomSettingFieldItem(
     label: String,
     infoText: String,
     value: String,
-    restricted: Boolean = false,
+    restricted: Boolean,
     onSave: () -> Unit,
     onDismissCallback: () -> Unit = {},
     bodyContent: @Composable () -> Unit

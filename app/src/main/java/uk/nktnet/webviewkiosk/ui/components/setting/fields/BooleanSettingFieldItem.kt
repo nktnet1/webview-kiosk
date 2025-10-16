@@ -7,7 +7,7 @@ fun BooleanSettingFieldItem(
     label: String,
     infoText: String,
     initialValue: Boolean,
-    restricted: Boolean = false,
+    restricted: Boolean,
     onSave: (Boolean) -> Unit,
     itemText: (Boolean) -> String = { if (it) "True" else "False" },
     extraContent: (@Composable ((setValue: (Boolean) -> Unit) -> Unit))? = null,
