@@ -19,7 +19,7 @@ fun ThemeSetting(themeState: MutableState<ThemeOption>) {
         infoText = """
             Select the app theme: System (default), Dark or Light.
 
-            If either Dark or Light is selected, custom JavaScript will be injected to override the prefers-color-scheme property of the WebView page.
+            See also: Settings -> JS Scripts -> Apply App Theme .
         """.trimIndent(),
         options = ThemeOption.entries,
         initialValue = userSettings.theme,
