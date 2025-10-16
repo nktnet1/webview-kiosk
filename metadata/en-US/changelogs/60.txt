@@ -1,0 +1,7 @@
+## Hot Fix
+
+- fix: stop back button from requiring 2x clicks due to mismanaging focus
+
+Please also see the changelog for v0.24.0:
+
+- https://github.com/nktnet1/webview-kiosk/releases/tag/v0.24.0
