@@ -1,8 +1,11 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.app.admin.DevicePolicyManager
 import android.content.ClipData
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.UserManager
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -64,6 +67,9 @@ fun SettingsAboutScreen(navController: NavController) {
     val resources = LocalResources.current
     val packageManager = context.packageManager
     val packageName = context.packageName
+
+    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+    val um = context.getSystemService(Context.USER_SERVICE) as UserManager
 
     val appName = remember {
         context.applicationInfo.loadLabel(packageManager).toString()
@@ -133,6 +139,29 @@ fun SettingsAboutScreen(navController: NavController) {
         "${metrics.widthPixels} x ${metrics.heightPixels} px, density: ${metrics.density}"
     }
 
+    val deviceOwnerDisplay = remember {
+        if (dpm.isDeviceOwnerApp(context.packageName)) {
+            "Yes"
+        } else {
+            "No"
+        }
+    }
+
+    val lockTaskPermittedDisplay = remember {
+        if (dpm.isLockTaskPermitted(packageName)) {
+            "Yes"
+        } else {
+            "No"
+        }
+    }
+
+    val managedProfileDisplay = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (um.isManagedProfile) "Yes" else "No"
+        } else {
+            "Unknown"
+        }
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -177,6 +206,8 @@ fun SettingsAboutScreen(navController: NavController) {
         InfoItem(label = "Debug Build", value = debugFlag)
         InfoItem(label = "Supported ABIs", value = supportedABIs)
         InfoItem(label = "Installer", value = installerPackage)
+        InfoItem(label = "Device Owner", value = deviceOwnerDisplay)
+        InfoItem(label = "Lock Task Permitted", value = lockTaskPermittedDisplay)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -191,6 +222,7 @@ fun SettingsAboutScreen(navController: NavController) {
         InfoItem(label = "Android Version", value = "${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})")
         InfoItem(label = "WebView Version", value = webViewVersion)
         InfoItem(label = "Screen / Display", value = screenInfo)
+        InfoItem(label = "Managed Profile", value = managedProfileDisplay)
         InfoItem(label = "Build Fingerprint", value = Build.FINGERPRINT)
 
         Spacer(modifier = Modifier.padding(bottom = 8.dp))

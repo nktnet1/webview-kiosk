@@ -51,6 +51,19 @@ The package or store that installed the app, e.g.:
   - `com.google.android.packageinstaller` → Default installer for APKs outside of Play Store  
 - `com.aurora.com` → [Aurora Store](https://auroraoss.com/aurora-store)
 
+### 1.9. Device Owner
+
+Whether the app was set as the device owner or not, e.g. `Yes` / `No`
+
+See [DevicePolicyManager.isDeviceOwnerApp](https://developer.android.com/reference/android/app/admin/DevicePolicyManager#isDeviceOwnerApp(java.lang.String)).
+
+### 1.10. Lock Task Permitted
+
+Whether the app is allowed to use [Lock Task Mode](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode) or not, e.g. `Yes` /  `No`
+If no, screen pinning will be the fallback.
+
+See [DevicePolicyManager.isLockTaskPermitted](https://developer.android.com/reference/android/app/admin/DevicePolicyManager#isLockTaskPermitted(java.lang.String)).
+
 ## 2. Device Info
 
 ### 2.1. Android Version
@@ -65,7 +78,14 @@ Your device's WebView implementation's version, e.g. `141.0.7390.43`
 
 Height, width and density of your display, e.g. `1080 x 2400 px, density: 3.0`
 
-### 2.4. Build Fingerprint
+### 2.4. Managed Profile
+
+Whether the user's profile is managed (work profile/company-owned) or not, e.g. `Yes` / `No`
+
+See [UserManage.isManagedProfile](https://developer.android.com/reference/android/os/UserManager#isManagedProfile()).
+
+
+### 2.5. Build Fingerprint
 
 A string that uniquely identifies your device build, e.g.
 
