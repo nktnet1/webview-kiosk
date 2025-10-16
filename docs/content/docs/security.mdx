@@ -38,8 +38,7 @@ PIN/pattern/password before unpinning** in your device settings.
 On some devices, it may be shown as **Lock device when unpinning** or equivalent.
 
 This setting is accessible by first finding **App Pinning**, then clicking
-into the setting option (and not the App Pinning toggle/switch) to see
-additional screen pinning settings.
+into the item (instead of the toggle/switch) to see additional options.
 
 This will ensure that users cannot unpin (and thus unlock) the kiosk view without
 the device first locking itself and requiring your biometrics or credentials.
@@ -78,8 +77,10 @@ adb shell dpm remove-active-admin uk.nktnet.webviewkiosk/.WebviewKioskAdminRecei
 ```
 
 Alternatively, you can use [shizuku](https://github.com/RikkaApps/Shizuku) and
-[termux](https://github.com/termux/termux-app) to obtain ADB access on your
-device without a PC. Refer to
+[termux](https://github.com/termux/termux-app) to obtain direct ADB access on
+your android device (thus skipping the PC requirement).
+
+Refer to
 [GitHub Discussion #33](https://github.com/nktnet1/webview-kiosk/discussions/33#discussioncomment-14672999)
 for a video demonstration.
 
