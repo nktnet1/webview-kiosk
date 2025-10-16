@@ -19,7 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.KeyEvent
+import android.view.KeyEvent as AndroidKeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -33,7 +33,7 @@ import uk.nktnet.webviewkiosk.utils.keyEventToShortcutString
 import uk.nktnet.webviewkiosk.utils.modifierKeyCodes
 
 fun handleUnlockShortcutKeyEvent(
-    event: KeyEvent,
+    event: AndroidKeyEvent,
     isListening: Boolean,
     draftValue: String,
     showToast: (String) -> Unit
@@ -41,7 +41,7 @@ fun handleUnlockShortcutKeyEvent(
     if (!isListening) return draftValue to false
     val shortcut = keyEventToShortcutString(event)
     if (shortcut == null) {
-        if (event.nativeKeyEvent.keyCode !in modifierKeyCodes) {
+        if (event.keyCode !in modifierKeyCodes) {
             showToast("Shortcut must use CTRL/SHIFT/ALT/META.")
         }
         return draftValue to true
@@ -136,7 +136,7 @@ fun CustomUnlockShortcutSetting() {
                         )
                         .onPreviewKeyEvent { event ->
                             val (newDraft, newListening) =
-                                handleUnlockShortcutKeyEvent(event, isListening, draftValue, showToast)
+                                handleUnlockShortcutKeyEvent(event.nativeKeyEvent, isListening, draftValue, showToast)
                             val handled = newDraft != draftValue || newListening != isListening
                             draftValue = newDraft
                             isListening = newListening

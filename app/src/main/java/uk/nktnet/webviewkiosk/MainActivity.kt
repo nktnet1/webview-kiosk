@@ -18,8 +18,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.onPreviewKeyEvent
+import android.view.KeyEvent as AndroidKeyEvent
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -90,8 +89,6 @@ class MainActivity : AppCompatActivity() {
 
         handleIntent(systemSettings)
 
-        val activityManager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
-
         if (userSettings.lockOnLaunch) {
             tryLockTask(this, showToast)
         }
@@ -116,9 +113,6 @@ class MainActivity : AppCompatActivity() {
                     color = MaterialTheme.colorScheme.background,
                     modifier = Modifier
                         .fillMaxSize()
-                        .onPreviewKeyEvent { event: KeyEvent ->
-                            handlePreviewKeyEvent(this, activityManager, userSettings, event)
-                        }
                 ) {
                     uploadingFileUri?.let { uri ->
                         UploadFileProgress(
@@ -272,6 +266,14 @@ class MainActivity : AppCompatActivity() {
         if (!isChangingConfigurations) {
             BiometricPromptManager.resetAuthentication()
         }
+    }
+
+    override fun dispatchKeyEvent(event: AndroidKeyEvent): Boolean {
+        val activityManager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
+        if (handlePreviewKeyEvent(this, activityManager, userSettings, event)) {
+            return true
+        }
+        return super.dispatchKeyEvent(event)
     }
 
     override fun onDestroy() {

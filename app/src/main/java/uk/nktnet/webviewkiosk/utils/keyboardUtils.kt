@@ -3,11 +3,6 @@ package uk.nktnet.webviewkiosk.utils
 import android.app.Activity
 import android.app.ActivityManager
 import android.view.KeyEvent as AndroidKeyEvent
-import androidx.compose.ui.input.key.KeyEvent
-import androidx.compose.ui.input.key.isAltPressed
-import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.isMetaPressed
-import androidx.compose.ui.input.key.isShiftPressed
 import uk.nktnet.webviewkiosk.config.UserSettings
 
 val modifierKeyCodes = setOf(
@@ -20,8 +15,8 @@ val modifierKeyCodes = setOf(
     AndroidKeyEvent.KEYCODE_META_LEFT,
     AndroidKeyEvent.KEYCODE_META_RIGHT
 )
-fun keyEventToShortcutString(event: KeyEvent): String? {
-    if (event.nativeKeyEvent.action != AndroidKeyEvent.ACTION_DOWN) {
+fun keyEventToShortcutString(event: AndroidKeyEvent): String? {
+    if (event.action != AndroidKeyEvent.ACTION_DOWN) {
         return null
     }
     val modifiers = mutableListOf<String>()
@@ -37,7 +32,7 @@ fun keyEventToShortcutString(event: KeyEvent): String? {
     if (event.isMetaPressed) {
         modifiers.add("Meta")
     }
-    val keyCode = event.nativeKeyEvent.keyCode
+    val keyCode = event.keyCode
     if (keyCode in modifierKeyCodes) {
         return null
     }
@@ -48,7 +43,7 @@ fun keyEventToShortcutString(event: KeyEvent): String? {
     return modifiers.joinToString("+") + "+" + mainKey
 }
 
-fun isShortcutPressed(event: KeyEvent, storedShortcut: String): Boolean {
+fun isShortcutPressed(event: AndroidKeyEvent, storedShortcut: String): Boolean {
     val shortcut = keyEventToShortcutString(event) ?: return false
     return shortcut.equals(storedShortcut, ignoreCase = true)
 }
@@ -57,7 +52,7 @@ fun handlePreviewKeyEvent(
     activity: Activity,
     activityManager: ActivityManager,
     userSettings: UserSettings,
-    event: KeyEvent,
+    event: AndroidKeyEvent,
 ): Boolean {
     val shouldUnlock = getIsLocked(activityManager)
             && userSettings.customUnlockShortcut.isNotEmpty()

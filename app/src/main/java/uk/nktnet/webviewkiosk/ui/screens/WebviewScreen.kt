@@ -6,14 +6,11 @@ import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.TextFieldValue
@@ -72,7 +69,6 @@ fun WebviewScreen(navController: NavController) {
         AddressBarOption.HIDDEN_WHEN_LOCKED -> !isLocked
     }
 
-    val focusRequester = remember { FocusRequester() }
     val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     var authHandler by remember { mutableStateOf<HttpAuthHandler?>(null) }
     var authHost by remember { mutableStateOf<String?>(null) }
@@ -82,10 +78,6 @@ fun WebviewScreen(navController: NavController) {
     val showToast: (String) -> Unit = { msg ->
         toastRef?.cancel()
         toastRef = Toast.makeText(context, msg, Toast.LENGTH_SHORT).apply { show() }
-    }
-
-    LaunchedEffect(Unit) {
-        focusRequester.requestFocus()
     }
 
     val webView = createCustomWebview(
@@ -152,8 +144,6 @@ fun WebviewScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .focusRequester(focusRequester)
-            .focusable()
             .windowInsetsPadding(userSettings.webViewInset.toWindowInsets()))
     {
         Column(modifier = Modifier.fillMaxSize()) {
