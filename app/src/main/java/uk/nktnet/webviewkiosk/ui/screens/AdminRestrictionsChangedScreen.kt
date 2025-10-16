@@ -51,7 +51,10 @@ fun AdminRestrictionsChangedScreen(
                 onClick = {
                     navigateToWebViewScreen(navController)
                 },
-                modifier = Modifier.fillMaxWidth().height(60.dp)
+                modifier = Modifier
+                    .sizeIn(maxWidth = 200.dp)
+                    .fillMaxWidth()
+                    .height(60.dp),
             ) {
                 Text("I understand.")
             }
