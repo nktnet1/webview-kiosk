@@ -20,7 +20,7 @@ fun SearchProviderUrlSetting() {
             The URL used for search queries in the address bar.
 
             This URL must include a query parameter, e.g.
-                 ${Constants.DEFAULT_SEARCH_PROVIDER_URL}
+              ${Constants.DEFAULT_SEARCH_PROVIDER_URL}
         """.trimIndent(),
         placeholder = Constants.DEFAULT_SEARCH_PROVIDER_URL,
         initialValue = userSettings.searchProviderUrl,

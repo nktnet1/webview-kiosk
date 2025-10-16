@@ -14,7 +14,7 @@ fun BlockedMessageSetting() {
 
     TextSettingFieldItem(
         label = "Blocked Message",
-        infoText = "Custom message shown on blocked pages. Can be left empty.",
+        infoText = "Custom message shown on blocked pages.",
         placeholder = "e.g. This site is blocked by <Company Name>",
         restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.BLOCKED_MESSAGE),
         initialValue = userSettings.blockedMessage,

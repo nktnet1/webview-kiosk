@@ -15,7 +15,7 @@ fun AllowUniversalAccessFromFileURLsSetting() {
     BooleanSettingFieldItem(
         label = "Allow Universal Access from File URLs",
         infoText = """
-            This method was deprecated in API level 30.
+            This method was deprecated in API level 30 (Android 11).
 
             Sets whether cross-origin requests in the context of a file scheme URL
             should be allowed to access content from any origin. This includes access

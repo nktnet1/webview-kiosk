@@ -48,7 +48,10 @@ fun GenericSettingFieldDialog(
                     Text(
                         infoText
                             .replace("\t", "    ")
-                            .replace(Regex("(?m)(?<!\\n)\\n(?!\\n)(?!\\s*- )"), " ")
+                            .replace(
+                                Regex("(?m)(?<!\\n)\\n(?!\\n)(?!\\s*- )(?!\\s*\\d+\\. )(?!\\s)"),
+                                " "
+                            )
                     )
                 }
             },

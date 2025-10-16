@@ -14,7 +14,7 @@ fun AllowGoHomeSetting() {
 
     BooleanSettingFieldItem(
         label = "Allow Go Home",
-        infoText = "Whether the user can return to the configured home page",
+        infoText = "Whether the user can return to the configured home page.",
         initialValue = userSettings.allowGoHome,
         restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.ALLOW_GO_HOME),
         onSave = { value ->
