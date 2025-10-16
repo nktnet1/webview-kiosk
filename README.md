@@ -27,8 +27,7 @@ Webview Kiosk is a free and open-source Android application for secure,
 kiosk-style web browsing.
 
 Designed for small businesses and device owners who are looking for a simple
-alternative to Enterprise Mobility Management (EMM) or Mobile Device Management
-(MDM) systems.
+and standalone Kiosk solution.
 
 ## Key Features
 
@@ -37,6 +36,8 @@ alternative to Enterprise Mobility Management (EMM) or Mobile Device Management
 - **URL Filtering:** use regular expression to control web access through blacklisting and whitelisting
 - **Export/Import:** allows for the backup and restore of user settings and configurations
 - **Local files:** display an image, audio, video, or HTML file in kiosk mode from your device
+- **Managed Configurations:** for fully-managed (company-owned) devices, settings can be set
+  and restricted remotely through a certified MDM/EMM provider
 
 ## Additional Permissions
 

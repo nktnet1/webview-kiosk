@@ -112,11 +112,12 @@ dpm.setLockTaskPackages(adminName, APP_PACKAGES)
 For more information, see
 [Android's official documentation](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode#allowlist_apps).
 
-## 4. Managed App Configurations (Restriction Manager)
+## 4. Managed App Configurations
 
 If your device is fully managed (company-owned), you can use 
 [managed configurations](https://developer.android.com/work/managed-configurations) 
 to remotely restrict or modify {APP_NAME} settings from your MDM.
+
 It is also possible to set app restrictions using the
 [Test DPC](https://github.com/googlesamples/android-testdpc) application
 mentioned previously.
@@ -124,10 +125,7 @@ mentioned previously.
 For a list of available app restrictions, refer to
 [./app/src/main/res/xml/app_restrictions.xml](https://github.com/nktnet1/webview-kiosk/blob/main/app/src/main/res/xml/app_restrictions.xml).
 
-Managed configuration APIs can only be used by certified EMM providers. 
-For example, [Headwind MDM does not support this](https://github.com/h-mdm/hmdm-server/issues/49#issuecomment-1151156032).
-
-Below are instructionsffor certain EMM/MDMs:
+Below are instructions for certain EMM/MDM providers:
 
 - [Google Endpoint Management](https://support.google.com/work/android/answer/6257696?hl=en)
 - [Microsoft Intune](https://learn.microsoft.com/en-us/intune/intune-service/apps/app-configuration-policies-managed-app)
@@ -135,3 +133,6 @@ Below are instructionsffor certain EMM/MDMs:
 - [Manage Engine](https://www.manageengine.com/mobile-device-management/managed-app-configuration.html)
 - [Scale Fusion](https://help.scalefusion.com/v1/docs/application-configurations-for-android-applications)
 - [Hexnode](https://www.hexnode.com/mobile-device-management/help/set-up-permissions-and-configurations-for-an-app-using-hexnode-mdm)
+
+Managed configuration APIs can only be used by certified EMM providers. 
+For example, [Headwind MDM does not support this feature](https://github.com/h-mdm/hmdm-server/issues/49#issuecomment-1151156032).
