@@ -101,7 +101,7 @@ Alternatively, if you are writing your own DPC, the kotlin code to achieve this 
 val APP_PACKAGES = arrayOf(
   // Choose one depending on your installation method:
   "uk.nktnet.webviewkiosk",   // GitHub, F-Droid, IzzyOnDroid, etc
-  "com.nktnet.webview_kiosk", // Google Play
+  "com.nktnet.webview_kiosk", // Aurora Store, Google Play Store
 )
 
 val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
@@ -114,9 +114,9 @@ For more information, see
 
 ## 4. Managed App Configurations
 
-If your device is fully managed (company-owned), you can use 
+For fully managed (company-owned) devices, you can use 
 [managed configurations](https://developer.android.com/work/managed-configurations) 
-to remotely restrict or modify {APP_NAME} settings from your MDM.
+to restrict and remotely modify {APP_NAME} settings through your MDM/EMM.
 
 It is also possible to set app restrictions using the
 [Test DPC](https://github.com/googlesamples/android-testdpc) application
@@ -125,7 +125,7 @@ mentioned previously.
 For a list of available app restrictions, refer to
 [./app/src/main/res/xml/app_restrictions.xml](https://github.com/nktnet1/webview-kiosk/blob/main/app/src/main/res/xml/app_restrictions.xml).
 
-Below are instructions for certain EMM/MDM providers:
+Below are instructions for a few popular MDM/EMM providers:
 
 - [Google Endpoint Management](https://support.google.com/work/android/answer/6257696?hl=en)
 - [Microsoft Intune](https://learn.microsoft.com/en-us/intune/intune-service/apps/app-configuration-policies-managed-app)
