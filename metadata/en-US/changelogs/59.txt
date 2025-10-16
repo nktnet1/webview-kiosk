@@ -1,0 +1,3 @@
+## Hot Fix
+
+- cleanup receiver before calling onDestroy, preventing potential memory leak
