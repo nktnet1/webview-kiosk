@@ -10,9 +10,12 @@ plugins {
 android {
     namespace = "uk.nktnet.webviewkiosk"
     compileSdk = 36
+
     buildFeatures {
         buildConfig = true
+        compose = true
     }
+
     defaultConfig {
         applicationId = "uk.nktnet.webviewkiosk"
         minSdk = 21
@@ -58,10 +61,6 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    buildFeatures {
-        compose = true
     }
 
     dependenciesInfo {
