@@ -1,0 +1,14 @@
+## New Features
+
+- feat: support managed configurations (app restrictions) - for use with certified MDM/EMMs
+- feat: about screen display info about Device Owner, Locked Task Permitted and Managed Profile
+
+## Breaking Change
+
+Shared preference keys for custom JS scripts were renamed internally - they are now:
+- js_scripts.custom_script_on_page_start
+- js_scripts.custom_script_on_page_finish
+
+Please back up your scripts (if any) before updating, e.g. using the export feature.
+If you've upgraded by accident, you can simply downgrade to the previous version
+and back up those scripts.
