@@ -87,6 +87,7 @@
                 <data android:mimeType="application/txt" />
             </intent-filter>
         </activity>
+
         <receiver
             android:exported="false"
             android:name=".WebviewKioskAdminReceiver"
@@ -103,6 +104,5 @@
             android:name="android.content.APP_RESTRICTIONS"
             android:resource="@xml/app_restrictions"
         />
-
     </application>
 </manifest>

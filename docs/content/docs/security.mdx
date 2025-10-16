@@ -85,9 +85,9 @@ for a video demonstration.
 
 ### 3.3. Device Policy Controller
 
-If you have control over your Device Policy Controller (or your MDM/EMM has provided
-an interface to do so), you can simply add {APP_NAME} to the allowlist of apps for
-lock task packages.
+If you have control over your Device Policy Controller (DPC), or your MDM/EMM
+has provided an interface to do so, you can simply add {APP_NAME} to the
+allowlist of apps for lock task packages.
 
 For example, using Google's sample Test DPC application available on the
 [Play Store](https://play.google.com/store/apps/details?id=com.afwsamples.testdpc&hl=en_AU),
@@ -114,5 +114,13 @@ For more information, see
 
 ## 4. Managed App Configurations (Restriction Manager)
 
-This feature is soon to come. See
-[GitHub Discussion #35](https://github.com/nktnet1/webview-kiosk/discussions/35).
+If your device is fully-managed (company-owned), or you're using the
+[Test DPC](https://github.com/googlesamples/android-testdpc) app,
+you can make use of [managed configurations](https://developer.android.com/work/managed-configurations)
+to restrict the settings of {APP_NAME} or change them remotely from your MDM.
+
+For example, if your device is enrolled with Google Endpoint Management, refer to
+[Google's official instructions](https://github.com/h-mdm/hmdm-server/issues/49#issuecomment-115115603A).
+
+Please note that managed configuration APIs can only be used by certified EMM
+providers. For example, [Headwind MDM cannot not support this](https://github.com/h-mdm/hmdm-server/issues/49#issuecomment-1151156032).
