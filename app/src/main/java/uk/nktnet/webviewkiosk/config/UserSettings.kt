@@ -15,7 +15,7 @@ import uk.nktnet.webviewkiosk.utils.stringPrefOptional
 
 class UserSettings(val context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
-    val restrictions = (context.getSystemService(Context.RESTRICTIONS_SERVICE) as? RestrictionsManager)
+    private val restrictions = (context.getSystemService(Context.RESTRICTIONS_SERVICE) as? RestrictionsManager)
         ?.applicationRestrictions
 
     fun isRestricted(key: String): Boolean =

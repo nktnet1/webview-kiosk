@@ -1,7 +1,10 @@
 package uk.nktnet.webviewkiosk
 
 import android.app.ActivityManager
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Build
@@ -40,16 +43,39 @@ import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.validateUrl
 
 class MainActivity : AppCompatActivity() {
+    private val navControllerState = mutableStateOf<NavHostController?>(null)
     private var uploadingFileUri: Uri? = null
     private var uploadProgress by mutableFloatStateOf(0f)
-
+    private lateinit var userSettings: UserSettings
+    private lateinit var themeState: MutableState<ThemeOption>
+    private lateinit var keepScreenOnState: MutableState<Boolean>
+    private lateinit var deviceRotationState: MutableState<DeviceRotationOption>
+    val restrictionsReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (intent.action == Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED) {
+                val currentRoute = navControllerState.value?.currentBackStackEntry?.destination?.route
+                if (currentRoute != Screen.AdminRestrictionsChanged.route) {
+                    navControllerState.value?.navigate(Screen.AdminRestrictionsChanged.route)
+                }
+                updateUserSettings()
+            }
+        }
+    }
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setupLockTaskPackage(this)
+        registerReceiver(
+            restrictionsReceiver,
+            IntentFilter(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED)
+        )
+
+        userSettings = UserSettings(this)
+        themeState = mutableStateOf(userSettings.theme)
+        keepScreenOnState = mutableStateOf(userSettings.keepScreenOn)
+        deviceRotationState = mutableStateOf(userSettings.deviceRotation)
 
         val systemSettings = SystemSettings(this)
-        val userSettings = UserSettings(this)
         val webContentDir = getWebContentFilesDir(this)
 
         var toastRef: Toast? = null
@@ -71,9 +97,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         setContent {
-            val themeState = remember { mutableStateOf(userSettings.theme) }
-            val keepScreenOnState = remember { mutableStateOf(userSettings.keepScreenOn) }
-            val deviceRotationState = remember { mutableStateOf(userSettings.deviceRotation) }
+            val navController = rememberNavController()
+            navControllerState.value = navController
 
             KeepScreenOnOption(keepOn = keepScreenOnState.value)
             LaunchedEffect(deviceRotationState.value) { applyDeviceRotation(deviceRotationState.value) }
@@ -95,7 +120,6 @@ class MainActivity : AppCompatActivity() {
                             handlePreviewKeyEvent(this, activityManager, userSettings, event)
                         }
                 ) {
-                    val navController = rememberNavController()
                     uploadingFileUri?.let { uri ->
                         UploadFileProgress(
                             context = this@MainActivity,
@@ -177,6 +201,9 @@ class MainActivity : AppCompatActivity() {
             composable(Screen.WebView.route) {
                 WebviewScreen(navController)
             }
+            composable(Screen.AdminRestrictionsChanged.route) {
+                AdminRestrictionsChangedScreen(navController)
+            }
 
             navigation(startDestination = Screen.Settings.route, route = "settings_list") {
                 authComposable(Screen.Settings.route) {
@@ -223,9 +250,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun updateUserSettings(context: Context = this) {
+        userSettings = UserSettings(context)
+        themeState.value = userSettings.theme
+        keepScreenOnState.value = userSettings.keepScreenOn
+        deviceRotationState.value = userSettings.deviceRotation
+    }
+
     override fun onStart() {
         super.onStart()
         BiometricPromptManager.init(this)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        updateUserSettings()
     }
 
     override fun onStop() {
@@ -233,6 +272,11 @@ class MainActivity : AppCompatActivity() {
         if (!isChangingConfigurations) {
             BiometricPromptManager.resetAuthentication()
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(restrictionsReceiver)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
