@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
@@ -29,6 +30,7 @@ fun AllowUniversalAccessFromFileURLsSetting() {
             credentials used on arbitrary web sites.
         """.trimIndent(),
         initialValue = userSettings.allowUniversalAccessFromFileURLs,
+        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS),
         onSave = { userSettings.allowUniversalAccessFromFileURLs = it }
     )
 }

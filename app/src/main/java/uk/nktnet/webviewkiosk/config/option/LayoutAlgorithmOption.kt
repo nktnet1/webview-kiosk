@@ -9,7 +9,7 @@ enum class LayoutAlgorithmOption(val algorithm: WebSettings.LayoutAlgorithm) {
     TEXT_AUTOSIZING(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
 
     companion object {
-        fun fromAlgorithm(value: WebSettings.LayoutAlgorithm?): LayoutAlgorithmOption =
-            entries.find { it.algorithm == value } ?: NORMAL
+        fun fromString(value: String?): LayoutAlgorithmOption =
+            entries.find { it.name == value } ?: NORMAL
     }
 }

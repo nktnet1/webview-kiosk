@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
@@ -15,6 +16,7 @@ fun AllowHistoryAccessSetting() {
         label = "Allow History Access",
         infoText = "Whether the user can access browsing history from the address bar.",
         initialValue = userSettings.allowHistoryAccess,
+        restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.ALLOW_HISTORY_ACCESS),
         onSave = { userSettings.allowHistoryAccess = it }
     )
 }

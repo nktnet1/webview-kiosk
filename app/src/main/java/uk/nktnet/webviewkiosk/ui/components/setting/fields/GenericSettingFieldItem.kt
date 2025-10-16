@@ -17,6 +17,7 @@ fun <T> GenericSettingFieldItem(
     label: String,
     value: T,
     onClick: () -> Unit,
+    restricted: Boolean,
     description: @Composable (T) -> Unit
 ) {
     Column(
@@ -27,15 +28,29 @@ fun <T> GenericSettingFieldItem(
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.fillMaxWidth(0.9f)) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.titleMedium
-                )
+                Column {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    if (restricted) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "[Restricted]",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                    }
+                }
                 Spacer(modifier = Modifier.height(2.dp))
                 description(value)
             }
             Icon(
-                painter = painterResource(R.drawable.baseline_edit_24),
+                painter = if (restricted) {
+                    painterResource(R.drawable.baseline_remove_red_eye_24)
+                } else {
+                    painterResource(R.drawable.baseline_edit_24)
+                },
                 contentDescription = "Edit",
                 modifier = Modifier.align(Alignment.CenterEnd)
             )

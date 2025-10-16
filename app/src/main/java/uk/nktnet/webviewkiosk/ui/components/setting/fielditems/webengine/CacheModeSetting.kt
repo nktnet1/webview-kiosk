@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.CacheModeOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
 
@@ -17,6 +18,7 @@ fun CacheModeSetting() {
         infoText = "Control how the WebView uses its cache when loading pages.",
         options = CacheModeOption.entries,
         initialValue = userSettings.cacheMode,
+        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.CACHE_MODE),
         onSave = { userSettings.cacheMode = it },
         itemText = {
             when (it) {

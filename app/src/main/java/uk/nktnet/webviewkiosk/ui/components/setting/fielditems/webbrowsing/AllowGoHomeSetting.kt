@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
@@ -13,8 +14,11 @@ fun AllowGoHomeSetting() {
 
     BooleanSettingFieldItem(
         label = "Allow Go Home",
-        infoText = "Whether the user can return to the configured home page when tapping the top-left quadrant of the screen 10 times in quick succession (300ms interval).",
+        infoText = "Whether the user can return to the configured home page",
         initialValue = userSettings.allowGoHome,
-        onSave = { userSettings.allowGoHome = it }
+        restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.ALLOW_GO_HOME),
+        onSave = { value ->
+            userSettings.allowGoHome = value
+        }
     )
 }

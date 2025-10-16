@@ -14,6 +14,7 @@ fun <T> DropdownSettingFieldItem(
     infoText: String,
     options: List<T>,
     initialValue: T,
+    restricted: Boolean,
     extraContent: (@Composable ((setValue: (T) -> Unit) -> Unit))? = null,
     onSave: (T) -> Unit,
     itemText: (T) -> String
@@ -25,6 +26,7 @@ fun <T> DropdownSettingFieldItem(
     GenericSettingFieldItem(
         label = label,
         value = itemText(value),
+        restricted = restricted,
         onClick = {
             draftValue = value
             showDialog = true
@@ -43,6 +45,7 @@ fun <T> DropdownSettingFieldItem(
             title = label,
             infoText = infoText,
             onDismiss = { showDialog = false },
+            restricted = restricted,
             onSave = {
                 value = draftValue
                 onSave(draftValue)
@@ -52,14 +55,17 @@ fun <T> DropdownSettingFieldItem(
             DropdownSelector(
                 options = options,
                 selected = draftValue,
+                enabled = !restricted,
                 onSelectedChange = { draftValue = it }
             ) { option ->
                 val isSelected = option == draftValue
                 Text(
                     text = itemText(option),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (isSelected) {
-                        MaterialTheme.colorScheme.primary
+                    color = if (restricted) {
+                        MaterialTheme.colorScheme.error
+                    } else if (isSelected) {
+                            MaterialTheme.colorScheme.primary
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     }

@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 
 @Composable
@@ -26,6 +27,7 @@ fun CustomScriptOnPageFinishSetting() {
             """.trimIndent(),
         placeholder = "e.g. document.body.style.backgroundColor = 'green';",
         initialValue = userSettings.customScriptOnPageFinish,
+        restricted = userSettings.isRestricted(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH),
         isMultiline = true,
         onSave = { userSettings.customScriptOnPageFinish = it }
     )

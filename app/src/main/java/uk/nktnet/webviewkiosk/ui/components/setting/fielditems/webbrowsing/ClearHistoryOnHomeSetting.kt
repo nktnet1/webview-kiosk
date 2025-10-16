@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
@@ -15,6 +16,7 @@ fun ClearHistoryOnHomeSetting() {
         label = "Clear History on Home",
         infoText = "Clear the browser history whenever the user triggers an action to return home.",
         initialValue = userSettings.clearHistoryOnHome,
+        restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.CLEAR_HISTORY_ON_HOME),
         onSave = { userSettings.clearHistoryOnHome = it }
     )
 }

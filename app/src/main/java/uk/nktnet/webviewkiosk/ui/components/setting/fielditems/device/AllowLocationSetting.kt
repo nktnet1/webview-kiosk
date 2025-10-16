@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.combinedClickable
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.rememberPermissionState
 
@@ -45,6 +46,7 @@ fun AllowLocationSetting() {
             required for the WebView's GeolocationPermissions.
         """.trimIndent(),
         initialValue = userSettings.allowLocation,
+        restricted = userSettings.isRestricted(UserSettingsKeys.Device.ALLOW_LOCATION),
         onSave = { userSettings.allowLocation = it },
         itemText = { v ->
             if (v) "True $statusText" else "False $statusText"

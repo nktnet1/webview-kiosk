@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Appearance.Theme -->
+    <string-array name="entries_theme_option">
+        <item>System Default</item>
+        <item>Dark Mode</item>
+        <item>Light Mode</item>
+    </string-array>
+    <string-array name="entry_values_theme_option">
+        <item>SYSTEM</item>
+        <item>DARK</item>
+        <item>LIGHT</item>
+    </string-array>
+
+    <!-- Appearance.AddressBarMode -->
+    <string-array name="entries_address_bar_option">
+        <item>Hidden</item>
+        <item>Hidden When Locked</item>
+        <item>Shown</item>
+    </string-array>
+    <string-array name="entry_values_address_bar_option">
+        <item>HIDDEN</item>
+        <item>HIDDEN_WHEN_LOCKED</item>
+        <item>SHOWN</item>
+    </string-array>
+
+    <!-- WebEngine.CacheMode -->
+    <string-array name="entries_cache_mode_option">
+        <item>Default</item>
+        <item>Cache Else Network</item>
+        <item>No Cache</item>
+        <item>Cache Only</item>
+    </string-array>
+    <string-array name="entry_values_cache_mode_option">
+        <item>DEFAULT</item>
+        <item>CACHE_ELSE_NETWORK</item>
+        <item>NO_CACHE</item>
+        <item>CACHE_ONLY</item>
+    </string-array>
+
+    <!-- WebEngine.LayoutAlgorithm -->
+    <string-array name="entries_layout_algorithm_option">
+        <item>Normal</item>
+        <item>Single Column</item>
+        <item>Narrow Columns</item>
+        <item>Text Autosizing</item>
+    </string-array>
+    <string-array name="entry_values_layout_algorithm_option">
+        <item>NORMAL</item>
+        <item>SINGLE_COLUMN</item>
+        <item>NARROW_COLUMNS</item>
+        <item>TEXT_AUTOSIZING</item>
+    </string-array>
+
+    <!-- Device.DeviceRotation -->
+    <string-array name="entries_device_rotation_option">
+        <item>Auto</item>
+        <item>0°</item>
+        <item>90°</item>
+        <item>180°</item>
+        <item>270°</item>
+    </string-array>
+    <string-array name="entry_values_device_rotation_option">
+        <item>AUTO</item>
+        <item>ROTATION_0</item>
+        <item>ROTATION_90</item>
+        <item>ROTATION_180</item>
+        <item>ROTATION_270</item>
+    </string-array>
+
+    <!-- WebBrowsing.KioskControlPanel -->
+    <string-array name="entries_kiosk_control_panel_option">
+        <item>Top Left</item>
+        <item>Top Right</item>
+        <item>Bottom Left</item>
+        <item>Bottom Right</item>
+        <item>Top</item>
+        <item>Bottom</item>
+        <item>Full</item>
+        <item>Disabled</item>
+    </string-array>
+    <string-array name="entry_values_kiosk_control_panel_option">
+        <item>TOP_LEFT</item>
+        <item>TOP_RIGHT</item>
+        <item>BOTTOM_LEFT</item>
+        <item>BOTTOM_RIGHT</item>
+        <item>TOP</item>
+        <item>BOTTOM</item>
+        <item>FULL</item>
+        <item>DISABLED</item>
+    </string-array>
+
+    <!-- WebContent/WebEngine/WebViewInset -->
+    <string-array name="entries_webview_inset_option">
+        <item>None</item>
+        <item>Status Bars</item>
+        <item>Navigation Bars</item>
+        <item>System Bars</item>
+        <item>Display Cutout</item>
+        <item>Safe Drawing</item>
+        <item>Safe Gestures</item>
+        <item>Safe Content</item>
+    </string-array>
+    <string-array name="entry_values_webview_inset_option">
+        <item>None</item>
+        <item>StatusBars</item>
+        <item>NavigationBars</item>
+        <item>SystemBars</item>
+        <item>DisplayCutout</item>
+        <item>SafeDrawing</item>
+        <item>SafeGestures</item>
+        <item>SafeContent</item>
+    </string-array>
+
+</resources>

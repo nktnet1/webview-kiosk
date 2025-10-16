@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.validateMultilineRegex
 
@@ -31,6 +32,7 @@ fun BlacklistSetting() {
                 ^https://.*\.?google\.com/?.*
         """.trimIndent(),
         initialValue = userSettings.websiteBlacklist,
+        restricted = userSettings.isRestricted(UserSettingsKeys.WebContent.WEBSITE_BLACKLIST),
         isMultiline = true,
         validator = { validateMultilineRegex(it) },
         validationMessage = "Some lines contain invalid regular expressions.",

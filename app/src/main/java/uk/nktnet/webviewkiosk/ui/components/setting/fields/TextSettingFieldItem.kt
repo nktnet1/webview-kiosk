@@ -24,6 +24,7 @@ fun TextSettingFieldItem(
     initialValue: String,
     isMultiline: Boolean,
     modifier: Modifier = Modifier,
+    restricted: Boolean,
     validator: (String) -> Boolean = { true },
     validationMessage: String? = null,
     onSave: (String) -> Unit,
@@ -38,6 +39,7 @@ fun TextSettingFieldItem(
     GenericSettingFieldItem(
         label = label,
         value = value,
+        restricted = restricted,
         onClick = {
             draftValue = value
             draftError = false
@@ -65,6 +67,7 @@ fun TextSettingFieldItem(
         GenericSettingFieldDialog(
             title = label,
             infoText = infoText,
+            restricted = restricted,
             onDismiss = { showDialog = false },
             onSave = {
                 if (!draftError) {
@@ -77,6 +80,7 @@ fun TextSettingFieldItem(
             Column(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
                     value = draftValue,
+                    enabled = !restricted,
                     readOnly = readOnly,
                     onValueChange = {
                         draftValue = it
@@ -102,7 +106,7 @@ fun TextSettingFieldItem(
                             .defaultMinSize(minHeight = 200.dp)
                             .heightIn(max = 400.dp)
                     },
-                    trailingIcon = if (!isMultiline) {
+                    trailingIcon = if (!isMultiline && !restricted) {
                         {
                             IconButton(
                                 onClick = {
@@ -120,7 +124,7 @@ fun TextSettingFieldItem(
                     } else null
                 )
 
-                if (isMultiline) {
+                if (isMultiline && !restricted) {
                     IconButton(
                         onClick = {
                             draftValue = ""

@@ -18,6 +18,7 @@ fun NumberSettingFieldItem(
     infoText: String,
     placeholder: String,
     initialValue: Int,
+    restricted: Boolean,
     min: Int? = null,
     max: Int? = null,
     validationMessage: String? = null,
@@ -36,6 +37,7 @@ fun NumberSettingFieldItem(
     GenericSettingFieldItem(
         label = label,
         value = value.toString(),
+        restricted = restricted,
         onClick = {
             draftValue = value.toString()
             draftError = false
@@ -56,6 +58,7 @@ fun NumberSettingFieldItem(
         GenericSettingFieldDialog(
             title = label,
             infoText = infoText,
+            restricted = restricted,
             onDismiss = { showDialog = false },
             onSave = {
                 if (!draftError) {
@@ -68,6 +71,7 @@ fun NumberSettingFieldItem(
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 TextField(
+                    enabled = !restricted,
                     value = draftValue,
                     onValueChange = {
                         draftValue = it.filter { ch -> ch.isDigit() }
@@ -77,6 +81,9 @@ fun NumberSettingFieldItem(
                     singleLine = true,
                     placeholder = { Text(placeholder, fontStyle = FontStyle.Italic) },
                     trailingIcon = {
+                        if (restricted) {
+                            return@TextField
+                        }
                         IconButton(
                             onClick = { draftValue = ""; draftError = !validateNumber("") },
                             enabled = draftValue.isNotEmpty()
