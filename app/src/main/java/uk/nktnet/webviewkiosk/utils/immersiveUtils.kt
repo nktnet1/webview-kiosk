@@ -16,7 +16,7 @@ fun shouldBeImmersed(activity: Activity, userSettings: UserSettings): Boolean {
     return when(userSettings.immersiveMode) {
         ImmersiveModeOption.ALWAYS_ON -> true
         ImmersiveModeOption.ALWAYS_OFF -> false
-        else -> isLocked
+        ImmersiveModeOption.ONLY_WHEN_LOCKED -> isLocked
     }
 }
 
