@@ -221,7 +221,6 @@ class UserSettings(val context: Context) {
         ThemeOption.SYSTEM.name,
         fromString = ThemeOption::fromString
     )
-
     var addressBarMode by stringEnumPref(
         restrictions,
         prefs,
@@ -229,7 +228,6 @@ class UserSettings(val context: Context) {
         AddressBarOption.HIDDEN_WHEN_LOCKED.name,
         fromString = AddressBarOption::fromString
     )
-
     var webViewInset by stringEnumPref(
         restrictions,
         prefs,
@@ -237,7 +235,13 @@ class UserSettings(val context: Context) {
         WebViewInset.SystemBars.name,
         fromString = WebViewInset::fromString
     )
-
+    var immersiveMode by stringEnumPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Appearance.IMMERSIVE_MODE,
+        ImmersiveModeOption.ONLY_WHEN_LOCKED.name,
+        fromString = ImmersiveModeOption::fromString
+    )
     var blockedMessage by stringPref(
         restrictions,
         prefs,
@@ -340,10 +344,11 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, resetOnLaunch)
             put(UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
 
-            put(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
             put(UserSettingsKeys.Appearance.THEME, theme.name)
             put(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name)
             put(UserSettingsKeys.Appearance.WEBVIEW_INSET, webViewInset.name)
+            put(UserSettingsKeys.Appearance.IMMERSIVE_MODE, immersiveMode.name)
+            put(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
 
             put(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)
             put(UserSettingsKeys.Device.DEVICE_ROTATION, deviceRotation.degrees)
@@ -386,7 +391,8 @@ class UserSettings(val context: Context) {
             acceptCookies = json.optBoolean(UserSettingsKeys.WebEngine.ACCEPT_COOKIES, acceptCookies)
             acceptThirdPartyCookies = json.optBoolean(UserSettingsKeys.WebEngine.ACCEPT_THIRD_PARTY_COOKIES, acceptThirdPartyCookies)
             cacheMode = CacheModeOption.fromInt(json.optInt(UserSettingsKeys.WebEngine.CACHE_MODE, cacheMode.mode))
-            layoutAlgorithm = LayoutAlgorithmOption.fromString(json.optString(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM, layoutAlgorithm.algorithm.name)
+            layoutAlgorithm = LayoutAlgorithmOption.fromString(
+                json.optString(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM, layoutAlgorithm.algorithm.name)
             )
             userAgent = json.optString(UserSettingsKeys.WebEngine.USER_AGENT, userAgent)
             useWideViewPort = json.optBoolean(UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT, useWideViewPort)
@@ -404,6 +410,9 @@ class UserSettings(val context: Context) {
             theme = ThemeOption.fromString(json.optString(UserSettingsKeys.Appearance.THEME, theme.name))
             addressBarMode = AddressBarOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name))
             webViewInset = WebViewInset.fromString(json.optString(UserSettingsKeys.Appearance.WEBVIEW_INSET, webViewInset.name))
+            immersiveMode = ImmersiveModeOption.fromString(
+                json.optString(UserSettingsKeys.Appearance.IMMERSIVE_MODE, immersiveMode.name)
+            )
             blockedMessage = json.optString(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
 
             keepScreenOn = json.optBoolean(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)

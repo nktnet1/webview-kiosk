@@ -231,26 +231,7 @@ fun createCustomWebview(
                         )
                     )
 
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                        activity.window.insetsController?.let { controller ->
-                            controller.hide(
-                                android.view.WindowInsets.Type.statusBars()
-                                    or android.view.WindowInsets.Type.navigationBars()
-                            )
-                            controller.systemBarsBehavior =
-                                android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-                        }
-                    } else {
-                        @Suppress("DEPRECATION")
-                        activity.window.decorView.systemUiVisibility = (
-                            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                                or View.SYSTEM_UI_FLAG_FULLSCREEN
-                                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                            )
-                    }
+                    enterImmersiveMode(activity)
 
                     visibility = View.GONE
                     fullScreenContainer?.visibility = View.VISIBLE
@@ -266,11 +247,9 @@ fun createCustomWebview(
                     customViewCallback?.onCustomViewHidden()
 
                     activity?.let {
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-                            it.window.insetsController?.show(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
-                        } else {
-                            @Suppress("DEPRECATION")
-                            it.window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+                        val shouldExit = !shouldBeImmersed(activity, userSettings)
+                        if (shouldExit) {
+                            exitImmersiveMode(it)
                         }
                     }
                 }
@@ -289,9 +268,9 @@ fun createCustomWebview(
             }
 
             setDownloadListener { url, _, _, _, _ ->
-                 config.showToast(
-                     "Downloading files is not yet supported in ${Constants.APP_NAME}."
-                 )
+                config.showToast(
+                    "Downloading files is not yet supported in ${Constants.APP_NAME}."
+                )
             }
         }
     }

@@ -111,6 +111,9 @@
     <string name="appearance_webview_inset_title">WebView Inset</string>
     <string name="appearance_webview_inset_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
 
+    <string name="appearance_immersive_mode_title">Immersive Mode</string>
+    <string name="appearance_immersive_mode_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
+
     <string name="appearance_blocked_message_title">Blocked Message</string>
     <string name="appearance_blocked_message_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
 
