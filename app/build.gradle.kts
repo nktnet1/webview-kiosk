@@ -16,6 +16,17 @@ android {
         compose = true
     }
 
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    dependenciesInfo {
+        // https://gitlab.com/fdroid/fdroiddata/-/issues/3330
+        includeInApk = false
+        includeInBundle = false
+    }
+
     defaultConfig {
         applicationId = "uk.nktnet.webviewkiosk"
         minSdk = 21
@@ -56,17 +67,6 @@ android {
                 outputImpl.outputFileName = apkName
             }
         }
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    dependenciesInfo {
-        // https://gitlab.com/fdroid/fdroiddata/-/issues/3330
-        includeInApk = false
-        includeInBundle = false
     }
 }
 
