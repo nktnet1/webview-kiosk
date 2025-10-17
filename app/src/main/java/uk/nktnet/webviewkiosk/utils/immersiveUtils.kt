@@ -13,7 +13,7 @@ import uk.nktnet.webviewkiosk.config.option.ImmersiveModeOption
 fun shouldBeImmersed(activity: Activity, userSettings: UserSettings): Boolean {
     val activityManager = activity.getSystemService(ACTIVITY_SERVICE) as ActivityManager
     val isLocked = getIsLocked(activityManager)
-    return when(userSettings.immersiveMode) {
+    return when (userSettings.immersiveMode) {
         ImmersiveModeOption.ALWAYS_ON -> true
         ImmersiveModeOption.ALWAYS_OFF -> false
         ImmersiveModeOption.ONLY_WHEN_LOCKED -> isLocked

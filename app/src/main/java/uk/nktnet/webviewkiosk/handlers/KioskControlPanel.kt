@@ -134,7 +134,7 @@ fun KioskControlPanel(
                 }
         ) {
             if (tapsLeft in 1..5) {
-                val (boxWidth, boxHeight, boxAlignment) = when(userSettings.allowKioskControlPanel) {
+                val (boxWidth, boxHeight, boxAlignment) = when (userSettings.allowKioskControlPanel) {
                     KioskControlPanelOption.TOP_LEFT -> Triple(0.5f, 0.5f, Alignment.TopStart)
                     KioskControlPanelOption.TOP_RIGHT -> Triple(0.5f, 0.5f, Alignment.TopEnd)
                     KioskControlPanelOption.BOTTOM_LEFT -> Triple(0.5f, 0.5f, Alignment.BottomStart)
