@@ -1,0 +1,23 @@
+## New Feature: Immersive Mode 
+
+> settings -> appearance -> immersive mode
+
+In immersive mode, your system bars (status and navigation) are hidden.
+
+You can temporarily reveal the system bars with gestures such as swiping
+from the edge of the screen where the bar is hidden from.
+
+Note: immersive mode is enabled automatically when entering fullscreen
+(for example, when watching a video), irrespective of this setting.
+
+| Mode | Description |
+|-------|------------|
+| Always On | System bars are always hidden |
+| Always Off | System bars are never hidden (unless in fullscreen) |
+| Only when locked | System bars are only hidden when the device is in locked/pinned (kiosk) mode |
+
+For more details, refer to:
+- [Android Immersive Mode Official Documentation](https://developer.android.com/develop/ui/views/layout/immersive)
+- [BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE](https://developer.android.com/reference/androidx/core/view/WindowInsetsControllerCompat#BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE())
+
+**Default:** Only when locked
