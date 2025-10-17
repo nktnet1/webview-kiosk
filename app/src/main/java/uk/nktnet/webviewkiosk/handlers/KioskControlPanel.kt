@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.handlers
+package com.nktnet.webview_kiosk.handlers
 
 import android.webkit.WebView
 import androidx.activity.compose.LocalActivity
@@ -41,16 +41,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
-import uk.nktnet.webviewkiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.UserSettings
 import kotlin.math.max
 import kotlinx.coroutines.delay
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.option.KioskControlPanelOption
-import uk.nktnet.webviewkiosk.utils.LockStateViewModel
-import uk.nktnet.webviewkiosk.utils.tryUnlockTask
-import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.auth.BiometricPromptManager
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.config.option.KioskControlPanelOption
+import com.nktnet.webview_kiosk.utils.LockStateViewModel
+import com.nktnet.webview_kiosk.utils.tryUnlockTask
+import com.nktnet.webview_kiosk.utils.webview.WebViewNavigation
 
 @Composable
 fun KioskControlPanel(

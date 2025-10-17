@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.webview
+package com.nktnet.webview_kiosk.ui.components.webview
 
 import android.content.ClipData
 import androidx.compose.foundation.layout.Arrangement

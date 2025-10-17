@@ -25,7 +25,7 @@
         android:supportsRtl="true"
         android:launchMode="singleTask"
         android:documentLaunchMode="intoExisting"
-        android:taskAffinity="uk.nktnet.webviewkiosk.BROWSER"
+        android:taskAffinity="com.nktnet.webview_kiosk.BROWSER"
         android:theme="@style/Theme.AppCompat"
 
         tools:targetApi="24"
@@ -33,7 +33,7 @@
         android:networkSecurityConfig="@xml/network_security_config"
     >
         <activity
-            android:name="uk.nktnet.webviewkiosk.MainActivity"
+            android:name="com.nktnet.webview_kiosk.MainActivity"
             android:windowSoftInputMode="adjustResize"
             android:exported="true"
             android:theme="@style/Theme.WebviewKiosk"

@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -20,16 +20,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.net.toUri
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.utils.webview.BlockCause
-import uk.nktnet.webviewkiosk.utils.webview.generateBlockedPageHtml
-import uk.nktnet.webviewkiosk.utils.webview.generateDesktopViewportScript
-import uk.nktnet.webviewkiosk.utils.webview.generatePrefersColorSchemeOverrideScript
-import uk.nktnet.webviewkiosk.utils.webview.handleExternalScheme
-import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
-import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.option.ThemeOption
+import com.nktnet.webview_kiosk.utils.webview.BlockCause
+import com.nktnet.webview_kiosk.utils.webview.generateBlockedPageHtml
+import com.nktnet.webview_kiosk.utils.webview.generateDesktopViewportScript
+import com.nktnet.webview_kiosk.utils.webview.generatePrefersColorSchemeOverrideScript
+import com.nktnet.webview_kiosk.utils.webview.handleExternalScheme
+import com.nktnet.webview_kiosk.utils.webview.isBlockedUrl
+import com.nktnet.webview_kiosk.utils.webview.wrapJsInIIFE
 
 data class WebViewConfig(
     val userSettings: UserSettings,

@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils.webview
+package com.nktnet.webview_kiosk.utils.webview
 
 import android.content.Context
 import android.content.Intent

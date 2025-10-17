@@ -1,9 +1,9 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import android.app.Activity
 import android.app.ActivityManager
 import android.view.KeyEvent as AndroidKeyEvent
-import uk.nktnet.webviewkiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.UserSettings
 
 val modifierKeyCodes = setOf(
     AndroidKeyEvent.KEYCODE_SHIFT_LEFT,

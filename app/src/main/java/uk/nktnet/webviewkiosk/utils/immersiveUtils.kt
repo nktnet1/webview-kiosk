@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import android.app.Activity
 import android.app.ActivityManager
@@ -7,8 +7,8 @@ import android.os.Build
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.ImmersiveModeOption
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.option.ImmersiveModeOption
 
 fun shouldBeImmersed(activity: Activity, userSettings: UserSettings): Boolean {
     val activityManager = activity.getSystemService(ACTIVITY_SERVICE) as ActivityManager
