@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
-    <!-- Appearance.Theme -->
     <string-array name="entries_theme_option">
         <item>System Default</item>
         <item>Dark Mode</item>
@@ -13,7 +11,6 @@
         <item>LIGHT</item>
     </string-array>
 
-    <!-- Appearance.AddressBarMode -->
     <string-array name="entries_address_bar_option">
         <item>Hidden</item>
         <item>Hidden When Locked</item>
@@ -25,7 +22,6 @@
         <item>SHOWN</item>
     </string-array>
 
-    <!-- Appearance.ImmersionMode -->
     <string-array name="entries_immersive_mode_option">
         <item>Always On</item>
         <item>Always Off</item>
@@ -37,7 +33,6 @@
         <item>ONLY_WHEN_LOCKED</item>
     </string-array>
 
-    <!-- WebEngine.CacheMode -->
     <string-array name="entries_cache_mode_option">
         <item>Default</item>
         <item>Cache Else Network</item>
@@ -51,7 +46,6 @@
         <item>CACHE_ONLY</item>
     </string-array>
 
-    <!-- WebEngine.LayoutAlgorithm -->
     <string-array name="entries_layout_algorithm_option">
         <item>Normal</item>
         <item>Single Column</item>
@@ -65,7 +59,6 @@
         <item>TEXT_AUTOSIZING</item>
     </string-array>
 
-    <!-- Device.DeviceRotation -->
     <string-array name="entries_device_rotation_option">
         <item>Auto</item>
         <item>0°</item>
@@ -81,7 +74,6 @@
         <item>ROTATION_270</item>
     </string-array>
 
-    <!-- WebBrowsing.KioskControlPanel -->
     <string-array name="entries_kiosk_control_panel_option">
         <item>Top Left</item>
         <item>Top Right</item>
@@ -103,7 +95,6 @@
         <item>DISABLED</item>
     </string-array>
 
-    <!-- WebContent/WebEngine/WebViewInset -->
     <string-array name="entries_webview_inset_option">
         <item>None</item>
         <item>Status Bars</item>
@@ -124,5 +115,4 @@
         <item>SafeGestures</item>
         <item>SafeContent</item>
     </string-array>
-
 </resources>
