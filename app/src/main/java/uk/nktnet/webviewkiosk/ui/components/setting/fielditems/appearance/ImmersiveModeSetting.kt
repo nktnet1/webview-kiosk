@@ -1,0 +1,31 @@
+package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.config.option.ImmersiveModeOption
+import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+
+@Composable
+fun ImmersiveModeSetting() {
+    val context = LocalContext.current
+    val userSettings = remember { UserSettings(context) }
+
+    DropdownSettingFieldItem(
+        label = "Immersive Mode",
+        infoText = "Control when the app hides status and navigation bars.",
+        options = ImmersiveModeOption.entries,
+        restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.IMMERSIVE_MODE),
+        initialValue = userSettings.immersiveMode,
+        onSave = { userSettings.immersiveMode = it },
+        itemText = {
+            when (it) {
+                ImmersiveModeOption.ALWAYS_ON -> "Always on"
+                ImmersiveModeOption.ALWAYS_OFF -> "Always off"
+                ImmersiveModeOption.ONLY_WHEN_LOCKED -> "Only when locked"
+            }
+        }
+    )
+}

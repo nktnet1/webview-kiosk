@@ -15,6 +15,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.WebVie
 import androidx.compose.runtime.MutableState
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.ImmersiveModeSetting
 
 @Composable
 fun SettingsAppearanceScreen(
@@ -35,6 +36,7 @@ fun SettingsAppearanceScreen(
         ThemeSetting(themeState)
         AddressBarModeSetting()
         WebViewInsetSetting()
+        ImmersiveModeSetting()
         BlockedMessageSetting()
     }
 }

@@ -239,7 +239,7 @@ class UserSettings(val context: Context) {
         restrictions,
         prefs,
         UserSettingsKeys.Appearance.IMMERSIVE_MODE,
-        ImmersiveModeOption.ALWAYS_ON.name,
+        ImmersiveModeOption.ONLY_WHEN_LOCKED.name,
         fromString = ImmersiveModeOption::fromString
     )
     var blockedMessage by stringPref(

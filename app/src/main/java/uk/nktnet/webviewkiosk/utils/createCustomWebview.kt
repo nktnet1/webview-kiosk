@@ -20,8 +20,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.net.toUri
-import enterImmersiveMode
-import exitImmersiveMode
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
@@ -248,7 +246,12 @@ fun createCustomWebview(
                     visibility = View.VISIBLE
                     customViewCallback?.onCustomViewHidden()
 
-                    activity?.let { exitImmersiveMode(it) }
+                    activity?.let {
+                        val shouldExit = !shouldBeImmersed(activity, userSettings)
+                        if (shouldExit) {
+                            exitImmersiveMode(it)
+                        }
+                    }
                 }
             }
 

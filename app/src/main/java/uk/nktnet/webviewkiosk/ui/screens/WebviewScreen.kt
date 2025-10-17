@@ -35,8 +35,11 @@ import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.LinkOptionsDialog
 import uk.nktnet.webviewkiosk.utils.LockStateViewModel
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
+import uk.nktnet.webviewkiosk.utils.enterImmersiveMode
+import uk.nktnet.webviewkiosk.utils.exitImmersiveMode
 import uk.nktnet.webviewkiosk.utils.getMimeType
 import uk.nktnet.webviewkiosk.utils.isSupportedFileURLMimeType
+import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.generateFileMissingPage
@@ -78,6 +81,20 @@ fun WebviewScreen(navController: NavController) {
     val showToast: (String) -> Unit = { msg ->
         toastRef?.cancel()
         toastRef = Toast.makeText(context, msg, Toast.LENGTH_SHORT).apply { show() }
+    }
+
+    DisposableEffect( activity, isLocked) {
+        if (activity != null) {
+            val shouldImmerse = shouldBeImmersed(activity, userSettings)
+            if (shouldImmerse) {
+                enterImmersiveMode(activity)
+            } else {
+                exitImmersiveMode(activity)
+            }
+        }
+        onDispose {
+            activity?.let { exitImmersiveMode(it) }
+        }
     }
 
     val webView = createCustomWebview(
