@@ -32,13 +32,7 @@ but disappears when the app is locked (pinned) using the floating toolbar
 
 **Default:** Hidden when locked
 
-## 3. Blocked Message
-
-The message to display when a URL matches the blacklist regex filter rule.
-
-**Default:** This site is blocked by {APP_NAME}
-
-## 4. Window Insets
+## 3. Window Insets
 
 Controls padding for full-screen content relative to system UI elements. Use
 `WebViewInset` in your app to select the desired inset for full-height/width
@@ -57,3 +51,25 @@ components. For details, see the
 | Safe Content | Insets representing the safe content area where important UI should not be obscured by system UI. |
 
 **Default:** System Bars
+
+## 4. Immersive Mode
+
+In immersive mode, your system bars (status and navigation) are hidden.
+
+You can temporarily reveal the system bars with gestures such as swiping
+from the edge of the screen where the bar is hidden from.
+
+Note: immersive mode is enabled automatically when entering fullscreen
+(for example, when watching a video), irrespective of this setting.
+
+For more details, refer to:
+- [Android Immersive Mode Official Documentation](https://developer.android.com/develop/ui/views/layout/immersive)
+- [BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE](https://developer.android.com/reference/androidx/core/view/WindowInsetsControllerCompat#BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE())
+
+**Default:** Only when locked
+
+## 5. Blocked Message
+
+The message to display when a URL matches the blacklist regex filter rule.
+
+**Default:** This site is blocked by {APP_NAME}
