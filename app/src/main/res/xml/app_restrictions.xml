@@ -232,6 +232,14 @@
         android:description="@string/appearance_webview_inset_description"
     />
     <restriction
+        android:key="appearance.immersive_mode"
+        android:restrictionType="choice"
+        android:entries="@array/entries_immersive_mode_option"
+        android:entryValues="@array/entry_values_immersive_mode_option"
+        android:title="@string/appearance_immersive_mode_title"
+        android:description="@string/appearance_immersive_mode_description"
+    />
+    <restriction
         android:key="appearance.blocked_message"
         android:restrictionType="string"
         android:title="@string/appearance_blocked_message_title"
