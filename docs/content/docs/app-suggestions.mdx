@@ -13,27 +13,29 @@ find it worthwide to add another protection layer for sensitive applications.
 For example, using [App Lock](https://github.com/PranavPurwar/AppLock),
 an Open Source Android App Locker & Privacy Guard.
 
-## 2. Location Tracking
+## 2. FMD Android
 
 In case the Kiosk device is lost or stolen, having a way to trace its location
-can prove useful. 
-
-### 2.1. FMD Android
+("Find My Device") can prove useful.
 
 Using [FMD Android](https://gitlab.com/fmd-foss/fmd-android), you can find your
-device via SMS, instant messengers, or a web interface
-([FMD Server](https://gitlab.com/fmd-foss/fmd-server)).
+device via SMS, instant messengers, or a web interface using
+[FMD Server](https://gitlab.com/fmd-foss/fmd-server)
+which you can self-host.
 
-FMD allows you to locate, ring, wipe and issue other commands to your device when it's lost.
-It aims to be a secure open source alternative to Google's Find Hub.
+FMD allows you to locate, ring, wipe and issue other commands to your device
+when it's lost. It aims to be a secure open source alternative to
+[Google's Find Hub](https://play.google.com/store/apps/details?id=com.google.android.apps.adm).
 
-### 2.2. Google's Find Hub
+## 3. Stay Put
 
-Find Hub makes it easy to locate, ring, or wipe your device from the web, even when
-they are offline. For more details, visit the
-[App on Google Play Store](https://play.google.com/store/apps/details?id=com.google.android.apps.adm).
+[Stay Put - Unplug Alert](https://codeberg.org/y20k/stayput) deters casual
+theft by triggering a loud alarm if someone unplugs your device, and requires
+biometrics or device credentials to "disarm" it.
 
-## 3. Termux
+This can be useful if you need to leave your Kiosk device temporarily unattended.
+
+## 4. Termux
 
 While {APP_NAME} supports uploading local HTML files to the Android Webview, for
 web applications that heavily utilises JavaScript/routing, e.g. a single-page app
@@ -43,7 +45,7 @@ In these advanced use cases, we recommend installing an android terminal emulato
 such as [Termux](https://github.com/termux/termux-app), which can be used to host
 local web servers accessible at `http://localhost:<YOUR_PORT>`.
 
-## 4. Shizuku
+## 5. Shizuku
 
 You can use [shizuku](https://github.com/RikkaApps/Shizuku) to run `adb` commands
 (e.g. together with termux) to set Webview Kiosk as a Device Owner.
