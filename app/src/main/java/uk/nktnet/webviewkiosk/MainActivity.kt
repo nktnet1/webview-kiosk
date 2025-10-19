@@ -5,7 +5,6 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.content.pm.ActivityInfo
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -59,6 +58,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -80,7 +80,9 @@ class MainActivity : AppCompatActivity() {
         var toastRef: Toast? = null
         val showToast: (String) -> Unit = { msg ->
             toastRef?.cancel()
-            toastRef = Toast.makeText(this, msg, Toast.LENGTH_SHORT).apply { show() }
+            toastRef = Toast.makeText(
+                this, msg, Toast.LENGTH_SHORT
+            ).apply { show() }
         }
 
         BiometricPromptManager.init(this)
@@ -103,11 +105,16 @@ class MainActivity : AppCompatActivity() {
             navControllerState.value = navController
 
             KeepScreenOnOption(keepOn = keepScreenOnState.value)
-            LaunchedEffect(deviceRotationState.value) { applyDeviceRotation(deviceRotationState.value) }
+            LaunchedEffect(deviceRotationState.value) {
+                applyDeviceRotation(deviceRotationState.value)
+            }
 
             val isDarkTheme = resolveTheme(themeState.value)
             val window = (this as? AppCompatActivity)?.window
-            val insetsController = remember(window) { window?.let { WindowInsetsControllerCompat(it, it.decorView) } }
+            val insetsController = remember(window) {
+                window?.let { WindowInsetsControllerCompat(it, it.decorView) }
+            }
+
             LaunchedEffect(isDarkTheme) {
                 insetsController?.isAppearanceLightStatusBars = !isDarkTheme
                 insetsController?.isAppearanceLightNavigationBars = !isDarkTheme
@@ -128,16 +135,23 @@ class MainActivity : AppCompatActivity() {
                             onComplete = { file ->
                                 systemSettings.intentUrl = file.getLocalUrl()
                                 startActivity(
-                                    Intent(this@MainActivity, MainActivity::class.java).apply {
-                                        flags =
-                                            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                    Intent(
+                                        this@MainActivity,
+                                        MainActivity::class.java
+                                    ).apply {
+                                        flags = (
+                                            Intent.FLAG_ACTIVITY_NEW_TASK
+                                            or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                        )
                                     }
                                 )
                                 finish()
                             }
                         )
                     } ?: run {
-                        SetupNavHost(navController, themeState, keepScreenOnState, deviceRotationState)
+                        SetupNavHost(
+                            navController, themeState, keepScreenOnState, deviceRotationState
+                        )
                     }
                 }
             }
