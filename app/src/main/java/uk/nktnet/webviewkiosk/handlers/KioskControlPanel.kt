@@ -50,6 +50,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelOption
+import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
@@ -91,6 +92,12 @@ fun KioskControlPanel(
             if (System.currentTimeMillis() - lastTapTime >= maxInterval) {
                 tapsLeft = requiredTaps
             }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        BackButtonStateSingleton.longPressEvents.collect {
+            showDialog = true
         }
     }
 

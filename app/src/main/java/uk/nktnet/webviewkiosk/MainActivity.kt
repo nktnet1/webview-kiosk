@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk
 
+import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -19,8 +20,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import android.view.KeyEvent
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
 import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
@@ -28,6 +33,7 @@ import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.applyDeviceRotation
 import uk.nktnet.webviewkiosk.main.handleMainIntent
+import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
@@ -47,6 +53,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var themeState: MutableState<ThemeOption>
     private lateinit var keepScreenOnState: MutableState<Boolean>
     private lateinit var deviceRotationState: MutableState<DeviceRotationOption>
+    private var backButtonJob: Job? = null
+    private val longPressThreshold = 500L
     val restrictionsReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED) {
@@ -214,5 +222,27 @@ class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
             BiometricPromptManager.handleLollipopDeviceCredentialResult(requestCode, resultCode)
         }
+    }
+
+    @SuppressLint("GestureBackNavigation")
+    override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            backButtonJob ?: run {
+                backButtonJob = lifecycleScope.launch {
+                    delay(longPressThreshold)
+                    BackButtonStateSingleton.emitLongPress()
+                }
+            }
+        }
+        return super.onKeyDown(keyCode, event)
+    }
+
+    @SuppressLint("GestureBackNavigation")
+    override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            backButtonJob?.cancel()
+            backButtonJob = null
+        }
+        return super.onKeyUp(keyCode, event)
     }
 }
