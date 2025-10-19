@@ -216,7 +216,7 @@ fun AddressBar(
                                 menuExpanded = false
                                 showLocalFilesDialog = true
                             },
-                            leadingIcon = { Icon(painter = painterResource(R.drawable.outline_upload_file_24), contentDescription = "Local Files") }
+                            leadingIcon = { Icon(painter = painterResource(R.drawable.outline_folder_24), contentDescription = "Local Files") }
                         )
                     }
                 }
