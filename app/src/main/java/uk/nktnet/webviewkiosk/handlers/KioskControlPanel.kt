@@ -48,7 +48,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelOption
-import uk.nktnet.webviewkiosk.utils.LockStateViewModel
+import uk.nktnet.webviewkiosk.states.LockStateViewModel
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 

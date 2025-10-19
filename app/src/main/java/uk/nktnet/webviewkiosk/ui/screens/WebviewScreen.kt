@@ -33,7 +33,7 @@ import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayo
 import uk.nktnet.webviewkiosk.ui.components.common.LoadingIndicator
 import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.LinkOptionsDialog
-import uk.nktnet.webviewkiosk.utils.LockStateViewModel
+import uk.nktnet.webviewkiosk.states.LockStateViewModel
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
 import uk.nktnet.webviewkiosk.utils.enterImmersiveMode
 import uk.nktnet.webviewkiosk.utils.exitImmersiveMode
