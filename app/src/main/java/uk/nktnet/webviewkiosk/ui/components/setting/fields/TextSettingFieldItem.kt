@@ -1,6 +1,8 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.fields
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -9,10 +11,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.GenericSettingFieldDialog
 
@@ -31,6 +35,9 @@ fun TextSettingFieldItem(
     readOnly: Boolean = false,
     extraContent: (@Composable ((setValue: (String) -> Unit) -> Unit))? = null,
 ) {
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
+
     var showDialog by remember { mutableStateOf(false) }
     var value by remember { mutableStateOf(initialValue) }
     var draftValue by remember { mutableStateOf(initialValue) }
@@ -125,20 +132,41 @@ fun TextSettingFieldItem(
                 )
 
                 if (isMultiline && !restricted) {
-                    IconButton(
-                        onClick = {
-                            draftValue = ""
-                            draftError = !validator("")
-                        },
-                        enabled = draftValue.isNotEmpty(),
-                        modifier = Modifier
-                            .padding(top = 4.dp)
-                            .align(Alignment.End)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_clear_24),
-                            contentDescription = "Clear"
-                        )
+                        IconButton(
+                            enabled = draftValue.isNotEmpty(),
+                            onClick = {
+                                draftValue = ""
+                                draftError = !validator("")
+                            },
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_clear_24),
+                                contentDescription = "Clear",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    val clipEntry = clipboard.getClipEntry()
+                                    val pasteData =
+                                        clipEntry?.clipData?.getItemAt(0)?.text?.toString() ?: ""
+                                    draftValue = pasteData
+                                    draftError = !validator(pasteData)
+                                }
+                            }
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.outline_content_paste_24),
+                                contentDescription = "Paste",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
 
