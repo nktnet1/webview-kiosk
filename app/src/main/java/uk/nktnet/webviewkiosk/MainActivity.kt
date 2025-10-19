@@ -27,6 +27,7 @@ import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.main.SetupNavHost
+import uk.nktnet.webviewkiosk.main.handleMainIntent
 import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
@@ -37,7 +38,6 @@ import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handlePreviewKeyEvent
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
-import uk.nktnet.webviewkiosk.utils.validateUrl
 
 class MainActivity : AppCompatActivity() {
     private val navControllerState = mutableStateOf<NavHostController?>(null)
@@ -86,7 +86,12 @@ class MainActivity : AppCompatActivity() {
         applyDeviceRotation(userSettings.deviceRotation)
         systemSettings.isFreshLaunch = true
 
-        handleIntent(systemSettings)
+        val intentUrlResult = handleMainIntent(intent)
+        if (!intentUrlResult.url.isNullOrEmpty()) {
+            systemSettings.intentUrl = intentUrlResult.url
+        } else {
+            uploadingFileUri = intentUrlResult.uploadUri
+        }
 
         if (userSettings.lockOnLaunch) {
             tryLockTask(this, showToast)
@@ -134,42 +139,6 @@ class MainActivity : AppCompatActivity() {
                         SetupNavHost(navController, themeState, keepScreenOnState, deviceRotationState)
                     }
                 }
-            }
-        }
-    }
-
-    private fun handleIntent(systemSettings: SystemSettings) {
-        if (systemSettings.intentUrl.isEmpty().not()) {
-            // Already have an intent to load (not yet consumed by webview)
-            return
-        }
-        when (intent.action) {
-            Intent.ACTION_VIEW -> {
-                intent.data?.let { dataUri ->
-                    if (dataUri.scheme == "content") {
-                        uploadingFileUri = dataUri
-                    } else {
-                        systemSettings.intentUrl = dataUri.toString()
-                    }
-                }
-            }
-            Intent.ACTION_SEND -> {
-                if (intent.type == "text/plain") {
-                    intent.getStringExtra(Intent.EXTRA_TEXT)?.let { text ->
-                        if (validateUrl(text)) {
-                            systemSettings.intentUrl = text.trim()
-                        }
-                    }
-                    return
-                }
-                val uri = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                    intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
-                } else {
-                    @Suppress("DEPRECATION")
-                    intent.getParcelableExtra(Intent.EXTRA_STREAM)
-                } ?: intent.data
-
-                uri?.let { uploadingFileUri = it }
             }
         }
     }
