@@ -7,6 +7,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.os.Build
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+import uk.nktnet.webviewkiosk.states.LockStateSingleton
 
 private fun tryLockAction(
     activity: Activity?,

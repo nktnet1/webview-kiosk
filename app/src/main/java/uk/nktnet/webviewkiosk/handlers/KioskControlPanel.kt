@@ -40,7 +40,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.lifecycle.viewmodel.compose.viewModel
 import uk.nktnet.webviewkiosk.config.UserSettings
 import kotlin.math.max
 import kotlinx.coroutines.delay
@@ -48,7 +47,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelOption
-import uk.nktnet.webviewkiosk.states.LockStateViewModel
+import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
@@ -62,8 +61,7 @@ fun KioskControlPanel(
     val activity = LocalActivity.current
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
-    val isLocked by viewModel<LockStateViewModel>().isLocked
-
+    val isLocked by LockStateSingleton.isLocked
     val biometricResult by BiometricPromptManager.promptResults.collectAsState(initial = BiometricPromptManager.BiometricResult.Loading)
 
     val windowInfo = LocalWindowInfo.current
