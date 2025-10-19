@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.components.webview
 
 import android.content.ClipData
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -12,13 +13,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.launch
+import androidx.core.net.toUri
+import uk.nktnet.webviewkiosk.states.LockStateSingleton
 
 @Composable
 fun LinkOptionsDialog(
@@ -26,18 +31,19 @@ fun LinkOptionsDialog(
     onDismiss: () -> Unit,
     onOpenLink: (String) -> Unit,
 ) {
+    val context = LocalContext.current
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
 
+    val isLocked by LockStateSingleton.isLocked
+
     if (link != null) {
-        Dialog(
-            onDismissRequest = onDismiss,
-        ) {
+        Dialog(onDismissRequest = onDismiss) {
             Surface(
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 8.dp,
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(24.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
@@ -53,16 +59,6 @@ fun LinkOptionsDialog(
 
                     Button(
                         onClick = {
-                            onOpenLink(link)
-                            onDismiss()
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text("Open Link")
-                    }
-
-                    Button(
-                        onClick = {
                             scope.launch {
                                 val clipData = ClipData.newPlainText("Link", link)
                                 clipboard.setClipEntry(clipData.toClipEntry())
@@ -72,6 +68,29 @@ fun LinkOptionsDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Text("Copy Link")
+                    }
+
+                    Button(
+                        onClick = {
+                            onOpenLink(link)
+                            onDismiss()
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("Open Link")
+                    }
+
+                    if (!isLocked) {
+                        Button(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_VIEW, link.toUri())
+                                context.startActivity(intent)
+                                onDismiss()
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Open in Browser")
+                        }
                     }
                 }
             }
