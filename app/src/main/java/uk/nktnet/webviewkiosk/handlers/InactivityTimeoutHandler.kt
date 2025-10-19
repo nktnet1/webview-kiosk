@@ -53,7 +53,6 @@ fun InactivityTimeoutHandler(
         }
     }
 
-
     if (countdown > 0) {
         Box(
             Modifier.fillMaxSize()

@@ -18,7 +18,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import android.view.KeyEvent as AndroidKeyEvent
+import android.view.KeyEvent
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -276,7 +276,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun dispatchKeyEvent(event: AndroidKeyEvent): Boolean {
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val activityManager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
         if (handlePreviewKeyEvent(this, activityManager, userSettings, event)) {
             return true

@@ -19,7 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import android.view.KeyEvent as AndroidKeyEvent
+import android.view.KeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -33,7 +33,7 @@ import uk.nktnet.webviewkiosk.utils.keyEventToShortcutString
 import uk.nktnet.webviewkiosk.utils.modifierKeyCodes
 
 fun handleUnlockShortcutKeyEvent(
-    event: AndroidKeyEvent,
+    event: KeyEvent,
     isListening: Boolean,
     draftValue: String,
     showToast: (String) -> Unit
