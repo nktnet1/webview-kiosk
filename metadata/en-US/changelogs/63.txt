@@ -1,0 +1,3 @@
+## Changes
+
+- fix: setting actions icon occasionally trigger back navigation
