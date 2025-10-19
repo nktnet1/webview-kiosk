@@ -6,7 +6,7 @@ description: Package name, app version, debug build
 This page displays basic information about the app, including its package name,
 version, build type, supported ABIs, and installer source.
 
-## 1. App Details
+## 1. App
 
 ### 1.1. App Name
 
@@ -64,7 +64,17 @@ If no, screen pinning will be the fallback.
 
 See [DevicePolicyManager.isLockTaskPermitted](https://developer.android.com/reference/android/app/admin/DevicePolicyManager#isLockTaskPermitted(java.lang.String)).
 
-## 2. Device Info
+### 1.11. Instance ID
+
+App Instance ID is a UUID generated when you first view the `Settings -> About`
+page, e.g. `c345e39c-accd-11f0-9ea0-5a93ec0e6f91`
+
+This value can be reset by clearing data or uninstalling the app.
+
+It is currently unused, although there are plans to use it as a dynamic
+variable for topics for future MQTT integrations.
+
+## 2. Device
 
 ### 2.1. Android Version
 
