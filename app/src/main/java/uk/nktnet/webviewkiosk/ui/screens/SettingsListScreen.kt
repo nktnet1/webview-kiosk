@@ -31,7 +31,7 @@ fun SettingsListScreen(
         ),
         Triple(
             "Web Browsing",
-            "Refresh, navigation, history, search provider",
+            "Refresh, navigation, history, bookmark, search provider",
             Screen.SettingsWebBrowsing.route
         ),
         Triple(
@@ -41,12 +41,12 @@ fun SettingsListScreen(
         ),
         Triple(
             "Web Lifecycle",
-            "Startup behaviour, auto-reset on inactivity",
+            "Lock on launch, reset on launch, reset on inactivity",
             Screen.SettingsWebLifecycle.route
         ),
         Triple(
             "Appearance",
-            "Theme, address bar, insets, blocked message",
+            "Theme, address bar, insets, immersive, blocked message",
             Screen.SettingsAppearance.route
         ),
         Triple(
