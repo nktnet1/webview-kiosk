@@ -51,6 +51,7 @@ import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelOption
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
+import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
@@ -304,6 +305,23 @@ fun KioskControlPanel(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Unlock")
+                        }
+                        Spacer(modifier = Modifier.height(3.dp))
+                    } else {
+                        Button(
+                            onClick = {
+                                tryLockTask(activity, ::showToast)
+                                showDialog = isSticky
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_lock_24),
+                                contentDescription = "Lock",
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Lock")
                         }
                         Spacer(modifier = Modifier.height(3.dp))
                     }
