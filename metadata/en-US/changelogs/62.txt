@@ -1,0 +1,10 @@
+## Changes
+
+feat: add app instance id to system settings
+feat: added open in browser link action
+feat: added paste capability for multiline textfields
+feat: clear button for file name (in renaming)
+feat: search provider one-click selection in UI
+fix: change "files" icon in address bar to folder
+fix: timeout logic use userInteraction instead of overlay box - detects back button
+fix: update setting list item description for new features
