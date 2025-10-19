@@ -191,7 +191,20 @@ fun LocalFileList(
                     TextField(
                         value = newName,
                         onValueChange = { newName = it },
-                        singleLine = true
+                        singleLine = true,
+                        trailingIcon = {
+                            IconButton(
+                                enabled = newName.isNotEmpty(),
+                                onClick = {
+                                    newName = ""
+                                },
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_clear_24),
+                                    contentDescription = "Clear"
+                                )
+                            }
+                        }
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
