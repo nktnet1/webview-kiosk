@@ -26,6 +26,7 @@ import androidx.navigation.NavController
 import androidx.webkit.WebViewCompat
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.BuildConfig
+import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
@@ -64,6 +65,8 @@ fun InfoItem(label: String, value: String) {
 @Composable
 fun SettingsAboutScreen(navController: NavController) {
     val context = LocalContext.current
+    val systemSettings = remember { SystemSettings(context) }
+
     val resources = LocalResources.current
     val packageManager = context.packageManager
     val packageName = context.packageName
@@ -162,6 +165,7 @@ fun SettingsAboutScreen(navController: NavController) {
             "Unknown"
         }
     }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -191,7 +195,7 @@ fun SettingsAboutScreen(navController: NavController) {
         }
 
         Text(
-            text = "App Details",
+            text = "App",
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
@@ -208,11 +212,12 @@ fun SettingsAboutScreen(navController: NavController) {
         InfoItem(label = "Installer", value = installerPackage)
         InfoItem(label = "Device Owner", value = deviceOwnerDisplay)
         InfoItem(label = "Lock Task Permitted", value = lockTaskPermittedDisplay)
+        InfoItem(label = "Instance ID", value = systemSettings.appInstanceId)
 
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Device Info",
+            text = "Device",
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)

@@ -53,6 +53,16 @@ class SystemSettings(val context: Context) {
         historyIndex = -1
     }
 
+    val appInstanceId: String
+        get() {
+            var id = prefs.getString(APP_INSTANCE_ID, null)
+            if (id.isNullOrEmpty()) {
+                id = UUID.randomUUID().toString()
+                prefs.edit { putString(APP_INSTANCE_ID, id) }
+            }
+            return id
+        }
+
     companion object {
         private const val PREFS_NAME = "system_settings"
         private const val MENU_OFFSET_X = "menu_offset_x"
@@ -61,5 +71,7 @@ class SystemSettings(val context: Context) {
         private const val HISTORY_INDEX = "history_index"
         private const val INTENT_URL = "intent_url"
         private const val IS_FRESH_LAUNCH = "is_fresh_launch"
+        private const val APP_INSTANCE_ID = "app_instance_id"
+
     }
 }
