@@ -22,8 +22,8 @@ class SystemSettings(val context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
     private val json = Json { encodeDefaults = true; ignoreUnknownKeys = true }
 
-    var menuOffsetX: Float by floatPref(prefs = prefs, key = MENU_OFFSET_X, default = -1f)
-    var menuOffsetY: Float by floatPref(prefs = prefs, key = MENU_OFFSET_Y, default = -1f)
+    var menuOffsetX by floatPref(prefs = prefs, key = MENU_OFFSET_X, default = -1f)
+    var menuOffsetY by floatPref(prefs = prefs, key = MENU_OFFSET_Y, default = -1f)
 
     var historyStack: List<HistoryEntry>
         get() {
@@ -39,14 +39,16 @@ class SystemSettings(val context: Context) {
             prefs.edit { putString(HISTORY_STACK, serialized) }
         }
 
-    var historyIndex: Int by intPref(prefs = prefs, key = HISTORY_INDEX, default = -1)
+    var historyIndex by intPref(prefs = prefs, key = HISTORY_INDEX, default = -1)
 
-    val currentUrl: String
+    val currentUrl
         get() = historyStack.getOrNull(historyIndex)?.url ?: ""
 
-    var intentUrl: String by stringPrefOptional(prefs = prefs, key = INTENT_URL)
+    var intentUrl by stringPrefOptional(prefs = prefs, key = INTENT_URL)
 
-    var isFreshLaunch: Boolean by booleanPref(prefs = prefs, key = IS_FRESH_LAUNCH, default = true)
+    var isFreshLaunch by booleanPref(prefs = prefs, key = IS_FRESH_LAUNCH, default = true)
+
+    var isKioskControlPanelSticky by booleanPref(prefs = prefs, key = IS_KIOSK_CONTROL_PANEL_STICKY, default = false)
 
     fun clearHistory() {
         historyStack = emptyList()
@@ -71,7 +73,7 @@ class SystemSettings(val context: Context) {
         private const val HISTORY_INDEX = "history_index"
         private const val INTENT_URL = "intent_url"
         private const val IS_FRESH_LAUNCH = "is_fresh_launch"
+        private const val IS_KIOSK_CONTROL_PANEL_STICKY = "is_kiosk_control_panel_sticky"
         private const val APP_INSTANCE_ID = "app_instance_id"
-
     }
 }

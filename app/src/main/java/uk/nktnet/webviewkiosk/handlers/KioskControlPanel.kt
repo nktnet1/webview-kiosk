@@ -4,19 +4,23 @@ import android.webkit.WebView
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -36,7 +40,6 @@ import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -79,6 +82,7 @@ fun KioskControlPanel(
     }
 
     var showDialog by remember { mutableStateOf(false) }
+    var isSticky by remember { mutableStateOf(systemSettings.isKioskControlPanelSticky) }
 
     LaunchedEffect(tapsLeft, lastTapTime) {
         if (tapsLeft in 1..5) {
@@ -166,16 +170,38 @@ fun KioskControlPanel(
                 modifier = Modifier.padding(16.dp)
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        "Kiosk Control Panel", style = MaterialTheme.typography.titleLarge,
+                    Row (
                         modifier = Modifier.fillMaxWidth(),
-                        textAlign = TextAlign.Center,
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        Text(
+                            "Kiosk Control Panel",
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        IconButton(
+                            modifier = Modifier.offset(y = (-2).dp),
+                            onClick = {
+                                systemSettings.isKioskControlPanelSticky = !isSticky
+                                isSticky = !isSticky
+                                showToast("Sticky kiosk panel ${if (isSticky) "enabled." else "disabled."}")
+                            },
+                        ) {
+                            Icon(
+                                painter = if (isSticky) painterResource(R.drawable.custom_pin) else painterResource(R.drawable.custom_unpin),
+                                contentDescription = if (isSticky) "Sticky" else "Non-Sticky",
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     if (userSettings.allowBackwardsNavigation) {
                         Button(
-                            onClick = { WebViewNavigation.goBack(customLoadUrl, systemSettings) },
+                            onClick = {
+                                WebViewNavigation.goBack(customLoadUrl, systemSettings)
+                                showDialog = isSticky
+                            },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Icon(
@@ -189,7 +215,10 @@ fun KioskControlPanel(
                         Spacer(modifier = Modifier.height(4.dp))
 
                         Button(
-                            onClick = { WebViewNavigation.goForward(customLoadUrl, systemSettings) },
+                            onClick = {
+                                WebViewNavigation.goForward(customLoadUrl, systemSettings)
+                                showDialog = isSticky
+                            },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Icon(
@@ -200,13 +229,14 @@ fun KioskControlPanel(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Forward")
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
                     }
 
                     if (userSettings.allowGoHome) {
                         Button(
                             onClick = {
                                 WebViewNavigation.goHome(customLoadUrl, systemSettings, userSettings)
+                                showDialog = isSticky
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -218,13 +248,14 @@ fun KioskControlPanel(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Home")
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
                     }
 
                     if (userSettings.allowRefresh) {
                         Button(
                             onClick = {
                                 webView.reload()
+                                showDialog = isSticky
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {
@@ -236,7 +267,7 @@ fun KioskControlPanel(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Refresh")
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
                     }
 
                     if (isLocked) {
@@ -249,7 +280,7 @@ fun KioskControlPanel(
                                 ) {
                                     val res = tryUnlockTask(activity, ::showToast)
                                     if (res) {
-                                        showDialog = false
+                                        showDialog = isSticky
                                     }
                                     waitingForUnlock = false
                                 }
@@ -274,10 +305,13 @@ fun KioskControlPanel(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Unlock")
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(3.dp))
                     }
 
-                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        contentAlignment = Alignment.CenterEnd
+                    ) {
                         TextButton(
                             onClick = { showDialog = false },
                             colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
