@@ -27,6 +27,7 @@ import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.main.SetupNavHost
+import uk.nktnet.webviewkiosk.main.applyDeviceRotation
 import uk.nktnet.webviewkiosk.main.handleMainIntent
 import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
@@ -149,16 +150,6 @@ class MainActivity : AppCompatActivity() {
             ThemeOption.SYSTEM -> isSystemInDarkTheme()
             ThemeOption.DARK -> true
             ThemeOption.LIGHT -> false
-        }
-    }
-
-    private fun applyDeviceRotation(rotation: DeviceRotationOption) {
-        requestedOrientation = when (rotation) {
-            DeviceRotationOption.AUTO -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-            DeviceRotationOption.ROTATION_0 -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            DeviceRotationOption.ROTATION_90 -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-            DeviceRotationOption.ROTATION_180 -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
-            DeviceRotationOption.ROTATION_270 -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
         }
     }
 
