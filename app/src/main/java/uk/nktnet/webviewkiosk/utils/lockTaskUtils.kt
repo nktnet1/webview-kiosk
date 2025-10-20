@@ -7,8 +7,10 @@ import android.content.ComponentName
 import android.content.Context
 import android.os.Build
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
+import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 
 private fun tryLockAction(
     activity: Activity?,
@@ -77,4 +79,21 @@ fun requireAuthForUnlock(context: Context, userSettings: UserSettings): Boolean 
     }
     val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
     return dpm.isLockTaskPermitted(context.packageName)
+}
+
+fun unlockWithAuthIfRequired(
+    activity: Activity,
+    showToast: (String) -> Unit
+) {
+    val userSettings = UserSettings(activity)
+
+    if (requireAuthForUnlock(activity, userSettings)) {
+        WaitingForUnlockStateSingleton.startWaiting()
+        BiometricPromptManager.showBiometricPrompt(
+            title = "Authentication Required",
+            description = "Please authenticate to unlock Webview Kiosk"
+        )
+    } else {
+        tryUnlockTask(activity, showToast)
+    }
 }

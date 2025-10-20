@@ -43,7 +43,7 @@ import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
 import uk.nktnet.webviewkiosk.utils.getLocalUrl
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
-import uk.nktnet.webviewkiosk.utils.handlePreviewKeyEvent
+import uk.nktnet.webviewkiosk.utils.handlePreviewKeyUnlockEvent
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
@@ -233,7 +233,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
         val activityManager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
-        if (handlePreviewKeyEvent(this, activityManager, userSettings, event)) {
+        if (handlePreviewKeyUnlockEvent(this, activityManager, userSettings, event)) {
             return true
         }
         return super.dispatchKeyEvent(event)

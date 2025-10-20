@@ -50,16 +50,14 @@ import kotlin.math.max
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
 import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
-import uk.nktnet.webviewkiosk.utils.requireAuthForUnlock
 import uk.nktnet.webviewkiosk.utils.tryLockTask
-import uk.nktnet.webviewkiosk.utils.tryUnlockTask
+import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
@@ -123,7 +121,9 @@ fun KioskControlPanel(
 
     LaunchedEffect(Unit) {
         WaitingForUnlockStateSingleton.unlockSuccess.collect {
-            showDialog = isSticky
+            if (showDialog) {
+                showDialog = isSticky
+            }
         }
     }
 
@@ -324,14 +324,8 @@ fun KioskControlPanel(
                         Button(
                             enabled = enableInteraction,
                             onClick = {
-                                if (requireAuthForUnlock(context, userSettings)) {
-                                    WaitingForUnlockStateSingleton.startWaiting()
-                                    BiometricPromptManager.showBiometricPrompt(
-                                        title = "Authentication Required",
-                                        description = "Please authenticate to unlock Webview Kiosk"
-                                    )
-                                } else {
-                                    tryUnlockTask(activity, ::showToast)
+                                activity?.let {
+                                    unlockWithAuthIfRequired(activity, ::showToast)
                                 }
                             },
                             modifier = Modifier.fillMaxWidth()

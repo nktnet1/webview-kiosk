@@ -48,7 +48,7 @@ fun isShortcutPressed(event: KeyEvent, storedShortcut: String): Boolean {
     return shortcut.equals(storedShortcut, ignoreCase = true)
 }
 
-fun handlePreviewKeyEvent(
+fun handlePreviewKeyUnlockEvent(
     activity: Activity,
     activityManager: ActivityManager,
     userSettings: UserSettings,
@@ -57,8 +57,9 @@ fun handlePreviewKeyEvent(
     val shouldUnlock = getIsLocked(activityManager)
         && userSettings.customUnlockShortcut.isNotEmpty()
         && isShortcutPressed(event, userSettings.customUnlockShortcut)
+
     if (shouldUnlock) {
-        tryUnlockTask(activity)
+        unlockWithAuthIfRequired(activity, {})
     }
     return shouldUnlock
 }
