@@ -1,9 +1,9 @@
 ---
 title: Web Browsing
-description: Refresh, navigation, search provider
+description: Refresh, navigation, history, bookmark, search provider
 ---
 
-import { EllipsisVertical, Wrench } from 'lucide-react';
+import { EllipsisVertical, Wrench, Pin, PinOff } from 'lucide-react';
 
 ## 1. Allow Refresh
 
@@ -84,7 +84,13 @@ The actions available in the dialog are:
 | Lock | Trigger either screen pinning or lock task mode depending on your device |
 | Unlock | Trigger screen unpinning or unlock task. Will require biometrics or device credentials to succeed |
 
-You can also disable this option and instead use the setting provided in
+At the top-right corner of the dialog, there is an icon button that toggles the stickyness
+Kiosk Control Panel's stickiness behaviour. By default, sticky mode is disabled
+<span className="inline-flex">(<PinOff />)</span>.
+When enabled <span className="inline-flex">(<Pin />)</span>, clicking on the
+action buttons will not automatically close the dialog.
+
+You can also disable this setting and instead configure
 `Device -> Back Button Hold Action` to open the Kiosk Control Panel.
 
 **Default:** Top left

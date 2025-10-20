@@ -21,8 +21,8 @@ fun KioskControlPanelRegionSetting() {
 
             The default is Top Left (upper-left quadrant of the screen).
 
-            You can also disable this option and instead use the setting provided in
-            "Device -> Back Button Hold Action" to open the Kiosk Control Panel.
+            You can also disable this setting and instead configure
+            `Device -> Back Button Hold Action` to open the Kiosk Control Panel.
         """.trimIndent(),
         options = KioskControlPanelRegionOption.entries,
         initialValue = userSettings.kioskControlPanelRegion,
