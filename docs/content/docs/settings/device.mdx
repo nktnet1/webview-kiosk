@@ -3,6 +3,8 @@ title: Device
 description: Timeout, rotation, camera, microphone, location, unlock shortcut
 ---
 
+import { APP_NAME } from '@/config/app'
+
 ## 1. Keep Screen On
 
 Enable this option to keep your device awake (no screen timeout).
@@ -95,3 +97,19 @@ dropdown/alerts opened (e.g. from floating toolbar, address bar or "go home"
 confirmation dialog from multitap).
 
 **Default:** *(blank)*
+
+## 8. Unlock Auth Requirement
+
+This setting only applies to in-app unlock methods, e.g. when unlocking
+using `Kiosk Control Panel` or `Custom Unlock Shortcut`.
+
+| Option   | Description |
+|----------|-------------|
+| Default  | Require authentication for lock task mode (device owner, fully-managed/company-owned devices), off for screen pinning (user-owned devices). |
+| Off      | Unlock without requiring authentication. |
+| Require  | Prompt for biometrics or device credentials when unlocking. |
+
+For user-owned devices without lock task mode, the device will auto-lock when
+unpinning, which is outside the control of {APP_NAME}.
+
+**Default:** Default

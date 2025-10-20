@@ -18,20 +18,19 @@ fun UnlockAuthRequirementSetting() {
         label = "Unlock Auth Requirement",
         infoText = """
             This setting only applies to in-app unlock methods, e.g. when unlocking
-            using the Kiosk Control Panel or the Custom Unlock Shortcut.
+            using Kiosk Control Panel or Custom Unlock Shortcut.
 
             Available options are:
 
-              - DEFAULT: require authentication for lock task mode (device owner, fully-managed
-            and company-owned devices), off for screen pinning (user-owned devices)
+              - DEFAULT: require authentication for lock task mode (device owner,
+            fully-managed/company-owned devices), off for screen pinning (user-owned devices)
 
-              - OFF: unlock with no authentication
+              - OFF: unlock without requiring authentication
 
-              - REQUIRE: always prompt for biometrics or device credentials when unlocking
+              - REQUIRE: Prompt for biometrics or device credentials when unlocking
 
-            For user-owned devices without device owner (or lock task permitted), screen
-            pinning will auto-lock the device upon unpinning, which is outside the control
-            of ${Constants.APP_NAME}.
+            For user-owned devices without lock task mode, the device will auto-lock when
+            unpinning, which is outside the control of ${Constants.APP_NAME}.
         """.trimIndent(),
         options = UnlockAuthRequirementOption.entries,
         initialValue = userSettings.unlockAuthRequirement,
