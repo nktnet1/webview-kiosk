@@ -12,9 +12,9 @@ Note: immersive mode is enabled automatically when entering fullscreen
 
 | Mode | Description |
 |-------|------------|
-| Always On | System bars are always hidden |
-| Always Off | System bars are never hidden (unless in fullscreen) |
-| Only when locked | System bars are only hidden when the device is in locked/pinned (kiosk) mode |
+| Always On | System bars are always hidden. |
+| Always Off | System bars are never hidden (unless in fullscreen). |
+| Only when locked | System bars are only hidden when the device is in locked/pinned (kiosk) mode. |
 
 For more details, refer to:
 - [Android Immersive Mode Official Documentation](https://developer.android.com/develop/ui/views/layout/immersive)
