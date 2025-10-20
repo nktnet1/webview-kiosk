@@ -33,6 +33,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,16 +41,20 @@ import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import uk.nktnet.webviewkiosk.config.UserSettings
 import kotlin.math.max
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
 import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.option.KioskControlPanelOption
+import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
+import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
+import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
@@ -76,6 +81,9 @@ fun KioskControlPanel(
     var lastTapTime by remember { mutableLongStateOf(0L) }
     val maxInterval = 300L
 
+    val scope = rememberCoroutineScope()
+    var enableDismiss by remember { mutableStateOf(false) }
+
     val toastRef = remember { mutableStateOf<android.widget.Toast?>(null) }
     fun showToast(message: String) {
         toastRef.value?.cancel()
@@ -94,7 +102,24 @@ fun KioskControlPanel(
         }
     }
 
-    if (userSettings.allowKioskControlPanel != KioskControlPanelOption.DISABLED) {
+    val handleShowDialog = {
+        showDialog = true
+        enableDismiss = false
+        scope.launch {
+            delay(1000L)
+            enableDismiss = true
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (userSettings.backButtonHoldAction === BackButtonHoldActionOption.OPEN_KIOSK_CONTROL_PANEL) {
+            BackButtonStateSingleton.longPressEvents.collect {
+                handleShowDialog()
+            }
+        }
+    }
+
+    if (userSettings.kioskControlPanelRegion != KioskControlPanelRegionOption.DISABLED) {
         Box(
             Modifier
                 .fillMaxSize()
@@ -102,15 +127,15 @@ fun KioskControlPanel(
                     if (motionEvent.action == android.view.MotionEvent.ACTION_DOWN) {
                         val now = System.currentTimeMillis()
 
-                        val inRegion = when (userSettings.allowKioskControlPanel) {
-                            KioskControlPanelOption.TOP_LEFT -> motionEvent.x < screenWidthPx / 2f && motionEvent.y < screenHeightPx / 2f
-                            KioskControlPanelOption.TOP_RIGHT -> motionEvent.x >= screenWidthPx / 2f && motionEvent.y < screenHeightPx / 2f
-                            KioskControlPanelOption.BOTTOM_LEFT -> motionEvent.x < screenWidthPx / 2f && motionEvent.y >= screenHeightPx / 2f
-                            KioskControlPanelOption.BOTTOM_RIGHT -> motionEvent.x >= screenWidthPx / 2f && motionEvent.y >= screenHeightPx / 2f
-                            KioskControlPanelOption.TOP -> motionEvent.y < screenHeightPx / 2f
-                            KioskControlPanelOption.BOTTOM -> motionEvent.y >= screenHeightPx / 2f
-                            KioskControlPanelOption.FULL -> true
-                            KioskControlPanelOption.DISABLED -> false
+                        val inRegion = when (userSettings.kioskControlPanelRegion) {
+                            KioskControlPanelRegionOption.TOP_LEFT -> motionEvent.x < screenWidthPx / 2f && motionEvent.y < screenHeightPx / 2f
+                            KioskControlPanelRegionOption.TOP_RIGHT -> motionEvent.x >= screenWidthPx / 2f && motionEvent.y < screenHeightPx / 2f
+                            KioskControlPanelRegionOption.BOTTOM_LEFT -> motionEvent.x < screenWidthPx / 2f && motionEvent.y >= screenHeightPx / 2f
+                            KioskControlPanelRegionOption.BOTTOM_RIGHT -> motionEvent.x >= screenWidthPx / 2f && motionEvent.y >= screenHeightPx / 2f
+                            KioskControlPanelRegionOption.TOP -> motionEvent.y < screenHeightPx / 2f
+                            KioskControlPanelRegionOption.BOTTOM -> motionEvent.y >= screenHeightPx / 2f
+                            KioskControlPanelRegionOption.FULL -> true
+                            KioskControlPanelRegionOption.DISABLED -> false
                         }
 
                         if (inRegion) {
@@ -123,7 +148,7 @@ fun KioskControlPanel(
                                 tapsLeft <= 0 -> {
                                     tapsLeft = requiredTaps
                                     toastRef.value?.cancel()
-                                    showDialog = true
+                                    handleShowDialog()
                                 }
                                 tapsLeft <= 5 -> {
                                     showToast(
@@ -137,15 +162,15 @@ fun KioskControlPanel(
                 }
         ) {
             if (tapsLeft in 1..5) {
-                val (boxWidth, boxHeight, boxAlignment) = when (userSettings.allowKioskControlPanel) {
-                    KioskControlPanelOption.TOP_LEFT -> Triple(0.5f, 0.5f, Alignment.TopStart)
-                    KioskControlPanelOption.TOP_RIGHT -> Triple(0.5f, 0.5f, Alignment.TopEnd)
-                    KioskControlPanelOption.BOTTOM_LEFT -> Triple(0.5f, 0.5f, Alignment.BottomStart)
-                    KioskControlPanelOption.BOTTOM_RIGHT -> Triple(0.5f, 0.5f, Alignment.BottomEnd)
-                    KioskControlPanelOption.TOP -> Triple(1f, 0.5f, Alignment.TopCenter)
-                    KioskControlPanelOption.BOTTOM -> Triple(1f, 0.5f, Alignment.BottomCenter)
-                    KioskControlPanelOption.FULL -> Triple(1f, 1f, Alignment.Center)
-                    KioskControlPanelOption.DISABLED -> Triple(0f, 0f, Alignment.TopStart)
+                val (boxWidth, boxHeight, boxAlignment) = when (userSettings.kioskControlPanelRegion) {
+                    KioskControlPanelRegionOption.TOP_LEFT -> Triple(0.5f, 0.5f, Alignment.TopStart)
+                    KioskControlPanelRegionOption.TOP_RIGHT -> Triple(0.5f, 0.5f, Alignment.TopEnd)
+                    KioskControlPanelRegionOption.BOTTOM_LEFT -> Triple(0.5f, 0.5f, Alignment.BottomStart)
+                    KioskControlPanelRegionOption.BOTTOM_RIGHT -> Triple(0.5f, 0.5f, Alignment.BottomEnd)
+                    KioskControlPanelRegionOption.TOP -> Triple(1f, 0.5f, Alignment.TopCenter)
+                    KioskControlPanelRegionOption.BOTTOM -> Triple(1f, 0.5f, Alignment.BottomCenter)
+                    KioskControlPanelRegionOption.FULL -> Triple(1f, 1f, Alignment.Center)
+                    KioskControlPanelRegionOption.DISABLED -> Triple(0f, 0f, Alignment.TopStart)
                 }
                 Box(
                     Modifier
@@ -162,7 +187,10 @@ fun KioskControlPanel(
     if (showDialog) {
         Dialog(
             onDismissRequest = { showDialog = false },
-            properties = DialogProperties(dismissOnClickOutside = false)
+            properties = DialogProperties(
+                dismissOnClickOutside = enableDismiss,
+                dismissOnBackPress = enableDismiss,
+            )
         ) {
             Surface(
                 shape = MaterialTheme.shapes.medium,
@@ -185,7 +213,7 @@ fun KioskControlPanel(
                             onClick = {
                                 systemSettings.isKioskControlPanelSticky = !isSticky
                                 isSticky = !isSticky
-                                showToast("Sticky kiosk panel ${if (isSticky) "enabled." else "disabled."}")
+                                showToast("Sticky mode ${if (isSticky) "enabled." else "disabled."}")
                             },
                         ) {
                             Icon(
@@ -332,9 +360,14 @@ fun KioskControlPanel(
                     ) {
                         TextButton(
                             onClick = { showDialog = false },
-                            colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
                         ) {
-                            Text("Close")
+                            Text(
+                                text = "Close",
+                                fontWeight = FontWeight.Bold,
+                            )
                         }
                     }
                 }

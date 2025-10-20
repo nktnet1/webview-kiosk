@@ -1,6 +1,6 @@
 package uk.nktnet.webviewkiosk.config.option
 
-enum class KioskControlPanelOption {
+enum class KioskControlPanelRegionOption {
     TOP_LEFT,
     TOP_RIGHT,
     BOTTOM_LEFT,
@@ -11,7 +11,7 @@ enum class KioskControlPanelOption {
     DISABLED;
 
     companion object {
-        fun fromString(value: String?): KioskControlPanelOption {
+        fun fromString(value: String?): KioskControlPanelRegionOption {
             return entries.find { it.name == value } ?: TOP_LEFT
         }
     }

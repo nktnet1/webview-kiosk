@@ -133,6 +133,9 @@
     <string name="device_allow_location_title">Allow Location</string>
     <string name="device_allow_location_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
+    <string name="device_back_button_hold_action_title">Back Button Hold Action</string>
+    <string name="device_back_button_hold_action_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+
     <string name="device_custom_unlock_shortcut_title">Custom Unlock Shortcut</string>
     <string name="device_custom_unlock_shortcut_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
