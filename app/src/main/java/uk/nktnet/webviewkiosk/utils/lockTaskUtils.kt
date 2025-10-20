@@ -6,6 +6,9 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.os.Build
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -95,5 +98,8 @@ fun unlockWithAuthIfRequired(
         )
     } else {
         tryUnlockTask(activity, showToast)
+        CoroutineScope(Dispatchers.Main).launch {
+            WaitingForUnlockStateSingleton.emitUnlockSuccess()
+        }
     }
 }
