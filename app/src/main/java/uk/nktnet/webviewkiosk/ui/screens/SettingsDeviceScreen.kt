@@ -17,6 +17,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.BackButton
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.CustomUnlockShortcutSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.DeviceRotationSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.KeepScreenOnSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.UnlockAuthRequirementSetting
 
 @Composable
 fun SettingsDeviceScreen(
@@ -42,5 +43,6 @@ fun SettingsDeviceScreen(
         AllowLocationSetting()
         BackButtonHoldActionSetting()
         CustomUnlockShortcutSetting()
+        UnlockAuthRequirementSetting()
     }
 }

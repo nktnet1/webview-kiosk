@@ -7,6 +7,8 @@ import android.content.ComponentName
 import android.content.Context
 import android.os.Build
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
 
 private fun tryLockAction(
     activity: Activity?,
@@ -64,4 +66,15 @@ fun getIsLocked(activityManager: ActivityManager): Boolean {
         @Suppress("DEPRECATION")
         return activityManager.isInLockTaskMode
     }
+}
+
+fun requireAuthForUnlock(context: Context, userSettings: UserSettings): Boolean {
+    if (userSettings.unlockAuthRequirement === UnlockAuthRequirementOption.OFF) {
+        return false
+    }
+    if (userSettings.unlockAuthRequirement === UnlockAuthRequirementOption.REQUIRE) {
+        return true
+    }
+    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+    return dpm.isLockTaskPermitted(context.packageName)
 }

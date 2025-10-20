@@ -57,7 +57,9 @@ import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
 import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
+import uk.nktnet.webviewkiosk.utils.requireAuthForUnlock
 import uk.nktnet.webviewkiosk.utils.tryLockTask
+import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
@@ -322,11 +324,15 @@ fun KioskControlPanel(
                         Button(
                             enabled = enableInteraction,
                             onClick = {
-                                WaitingForUnlockStateSingleton.startWaiting()
-                                BiometricPromptManager.showBiometricPrompt(
-                                    title = "Authentication Required",
-                                    description = "Please authenticate to unlock Webview Kiosk"
-                                )
+                                if (requireAuthForUnlock(context, userSettings)) {
+                                    WaitingForUnlockStateSingleton.startWaiting()
+                                    BiometricPromptManager.showBiometricPrompt(
+                                        title = "Authentication Required",
+                                        description = "Please authenticate to unlock Webview Kiosk"
+                                    )
+                                } else {
+                                    tryUnlockTask(activity, ::showToast)
+                                }
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {

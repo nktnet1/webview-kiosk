@@ -288,6 +288,13 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT
     )
+    var unlockAuthRequirement by stringEnumPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT,
+        UnlockAuthRequirementOption.DEFAULT.name,
+        fromString = UnlockAuthRequirementOption::fromString
+    )
 
     // JS Scripts
     var applyAppTheme by booleanPref(
@@ -364,6 +371,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
             put(UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION, backButtonHoldAction.name)
             put(UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
+            put(UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT, unlockAuthRequirement.name)
 
             put(UserSettingsKeys.JsScripts.APPLY_APP_THEME, applyAppTheme)
             put(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
@@ -434,6 +442,9 @@ class UserSettings(val context: Context) {
                 json.optString(UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION, backButtonHoldAction.name)
             )
             customUnlockShortcut = json.optString(UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
+            unlockAuthRequirement = UnlockAuthRequirementOption.fromString(
+                json.optString(UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT, unlockAuthRequirement.name)
+            )
 
             applyAppTheme = json.optBoolean(UserSettingsKeys.JsScripts.APPLY_APP_THEME, applyAppTheme)
             applyDesktopViewportWidth = json.optInt(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)

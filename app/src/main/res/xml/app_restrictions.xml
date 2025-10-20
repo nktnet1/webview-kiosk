@@ -293,6 +293,14 @@
         android:title="@string/device_custom_unlock_shortcut_title"
         android:description="@string/device_custom_unlock_shortcut_description"
     />
+    <restriction
+        android:key="device.unlock_auth_requirement"
+        android:restrictionType="choice"
+        android:entries="@array/entries_unlock_auth_requirement_option"
+        android:entryValues="@array/entry_values_unlock_auth_requirement_option"
+        android:title="@string/device_unlock_auth_requirement_title"
+        android:description="@string/device_unlock_auth_requirement_description"
+    />
 
     <!-- JS Scripts -->
     <restriction

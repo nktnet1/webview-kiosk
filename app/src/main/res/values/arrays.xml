@@ -126,4 +126,15 @@
         <item>GO_HOME</item>
         <item>DISABLED</item>
     </string-array>
+
+    <string-array name="entries_unlock_auth_requirement_option">
+        <item>Default</item>
+        <item>Off</item>
+        <item>Require</item>
+    </string-array>
+    <string-array name="entry_values_unlock_auth_requirement_option">
+        <item>DEFAULT</item>
+        <item>OFF</item>
+        <item>REQUIRE</item>
+    </string-array>
 </resources>
