@@ -1,0 +1,23 @@
+## New features
+
+1. `Settings -> Device -> Back Button Hold Action` has been added. For now, you can
+   configure the behaviour of long-presssing the back key to be one of:
+
+   - Open Kiosk Control Panel
+   - Go Home
+   - Disabled
+
+2. `Lock` action button added to kiosk control panel
+
+3. Added sticky mode to kiosk control panel (enabled = don't auto-close dialog on action)
+
+## Potentially Breaking Change
+
+Kiosk control panel region key name has been renamed internally to
+
+```
+web_browsing.kiosk_control_panel_region
+```
+
+This means that the default region selection for multitap may get reset
+to `Top Left` upon update, if you have modified this value.
