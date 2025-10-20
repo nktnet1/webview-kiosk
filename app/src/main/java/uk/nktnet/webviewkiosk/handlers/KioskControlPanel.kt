@@ -83,6 +83,7 @@ fun KioskControlPanel(
 
     val scope = rememberCoroutineScope()
     var enableDismiss by remember { mutableStateOf(false) }
+    var enableInteraction by remember { mutableStateOf(true) }
 
     val toastRef = remember { mutableStateOf<android.widget.Toast?>(null) }
     fun showToast(message: String) {
@@ -148,7 +149,12 @@ fun KioskControlPanel(
                                 tapsLeft <= 0 -> {
                                     tapsLeft = requiredTaps
                                     toastRef.value?.cancel()
+                                    enableInteraction = false
                                     handleShowDialog()
+                                    scope.launch {
+                                        delay(600L)
+                                        enableInteraction = true
+                                    }
                                 }
                                 tapsLeft <= 5 -> {
                                     showToast(
@@ -209,6 +215,7 @@ fun KioskControlPanel(
                             style = MaterialTheme.typography.titleMedium,
                         )
                         IconButton(
+                            enabled = enableInteraction,
                             modifier = Modifier.offset(y = (-2).dp),
                             onClick = {
                                 systemSettings.isKioskControlPanelSticky = !isSticky
@@ -227,6 +234,7 @@ fun KioskControlPanel(
 
                     if (userSettings.allowBackwardsNavigation) {
                         Button(
+                            enabled = enableInteraction,
                             onClick = {
                                 WebViewNavigation.goBack(customLoadUrl, systemSettings)
                                 showDialog = isSticky
@@ -244,6 +252,7 @@ fun KioskControlPanel(
                         Spacer(modifier = Modifier.height(4.dp))
 
                         Button(
+                            enabled = enableInteraction,
                             onClick = {
                                 WebViewNavigation.goForward(customLoadUrl, systemSettings)
                                 showDialog = isSticky
@@ -263,6 +272,7 @@ fun KioskControlPanel(
 
                     if (userSettings.allowGoHome) {
                         Button(
+                            enabled = enableInteraction,
                             onClick = {
                                 WebViewNavigation.goHome(customLoadUrl, systemSettings, userSettings)
                                 showDialog = isSticky
@@ -282,6 +292,7 @@ fun KioskControlPanel(
 
                     if (userSettings.allowRefresh) {
                         Button(
+                            enabled = enableInteraction,
                             onClick = {
                                 webView.reload()
                                 showDialog = isSticky
@@ -317,6 +328,7 @@ fun KioskControlPanel(
                         }
 
                         Button(
+                            enabled = enableInteraction,
                             onClick = {
                                 waitingForUnlock = true
                                 BiometricPromptManager.showBiometricPrompt(
@@ -337,6 +349,7 @@ fun KioskControlPanel(
                         Spacer(modifier = Modifier.height(3.dp))
                     } else {
                         Button(
+                            enabled = enableInteraction,
                             onClick = {
                                 tryLockTask(activity, ::showToast)
                                 showDialog = isSticky
@@ -359,6 +372,7 @@ fun KioskControlPanel(
                         contentAlignment = Alignment.CenterEnd
                     ) {
                         TextButton(
+                            enabled = enableInteraction,
                             onClick = { showDialog = false },
                             colors = ButtonDefaults.textButtonColors(
                                 contentColor = MaterialTheme.colorScheme.error
