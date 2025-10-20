@@ -1,0 +1,7 @@
+## Changes
+
+- feat: device -> unlock auth requirement setting to configure
+   - kiosk control panel unlock
+   - custom unlock shortcut 
+- fix: on surface color 0.5f alpha when not interactable in panel
+- fix: temporarily disable interaction if kiosk control panel was opened from multitap
