@@ -1,0 +1,3 @@
+## Hot Fix
+
+- fix: sticky mode behaviour incorrect for unpinning
