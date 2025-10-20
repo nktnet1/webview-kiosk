@@ -213,7 +213,7 @@ fun KioskControlPanel(
                             onClick = {
                                 systemSettings.isKioskControlPanelSticky = !isSticky
                                 isSticky = !isSticky
-                                showToast("Sticky kiosk panel ${if (isSticky) "enabled." else "disabled."}")
+                                showToast("Sticky mode ${if (isSticky) "enabled." else "disabled."}")
                             },
                         ) {
                             Icon(
