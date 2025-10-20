@@ -19,6 +19,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import android.view.KeyEvent
+import androidx.activity.compose.LocalActivity
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
@@ -36,6 +37,7 @@ import uk.nktnet.webviewkiosk.main.handleMainIntent
 import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
+import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
@@ -44,6 +46,7 @@ import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handlePreviewKeyEvent
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
+import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 
 class MainActivity : AppCompatActivity() {
     private val navControllerState = mutableStateOf<NavHostController?>(null)
@@ -117,6 +120,28 @@ class MainActivity : AppCompatActivity() {
             KeepScreenOnOption(keepOn = keepScreenOnState.value)
             LaunchedEffect(deviceRotationState.value) {
                 applyDeviceRotation(deviceRotationState.value)
+            }
+
+            val waitingForUnlock by WaitingForUnlockStateSingleton.waitingForUnlock.collectAsState()
+            val biometricResult by BiometricPromptManager.promptResults.collectAsState()
+            val activity = LocalActivity.current
+
+            LaunchedEffect(waitingForUnlock, biometricResult) {
+                if (
+                    waitingForUnlock
+                ) {
+                    if (biometricResult === BiometricPromptManager.BiometricResult.Loading) {
+                        return@LaunchedEffect
+                    }
+                    if (
+                        biometricResult == BiometricPromptManager.BiometricResult.AuthenticationSuccess
+                        || biometricResult == BiometricPromptManager.BiometricResult.AuthenticationNotSet
+                    ) {
+                        tryUnlockTask(activity, showToast)
+                        WaitingForUnlockStateSingleton.emitUnlockSuccess()
+                    }
+                    WaitingForUnlockStateSingleton.stopWaiting()
+                }
             }
 
             val isDarkTheme = resolveTheme(themeState.value)

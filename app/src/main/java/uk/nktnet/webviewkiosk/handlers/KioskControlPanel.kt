@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.handlers
 
 import android.webkit.WebView
+import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,7 +28,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -56,8 +56,8 @@ import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
 import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
+import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 import uk.nktnet.webviewkiosk.utils.tryLockTask
-import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
@@ -71,7 +71,6 @@ fun KioskControlPanel(
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
     val isLocked by LockStateSingleton.isLocked
-    val biometricResult by BiometricPromptManager.promptResults.collectAsState(initial = BiometricPromptManager.BiometricResult.Loading)
 
     val windowInfo = LocalWindowInfo.current
     val screenWidthPx = windowInfo.containerSize.width.toFloat()
@@ -85,10 +84,10 @@ fun KioskControlPanel(
     var enableDismiss by remember { mutableStateOf(false) }
     var enableInteraction by remember { mutableStateOf(true) }
 
-    val toastRef = remember { mutableStateOf<android.widget.Toast?>(null) }
+    val toastRef = remember { mutableStateOf<Toast?>(null) }
     fun showToast(message: String) {
         toastRef.value?.cancel()
-        toastRef.value = android.widget.Toast.makeText(context, message, android.widget.Toast.LENGTH_SHORT).also { it.show() }
+        toastRef.value = Toast.makeText(context, message, Toast.LENGTH_SHORT).also { it.show() }
     }
 
     var showDialog by remember { mutableStateOf(false) }
@@ -117,6 +116,12 @@ fun KioskControlPanel(
             BackButtonStateSingleton.longPressEvents.collect {
                 handleShowDialog()
             }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        WaitingForUnlockStateSingleton.unlockSuccess.collect {
+            showDialog = isSticky
         }
     }
 
@@ -311,29 +316,13 @@ fun KioskControlPanel(
                     }
 
                     if (isLocked) {
-                        var waitingForUnlock by remember { mutableStateOf(false) }
-                        LaunchedEffect(biometricResult, waitingForUnlock) {
-                            if (waitingForUnlock) {
-                                if (
-                                    biometricResult == BiometricPromptManager.BiometricResult.AuthenticationSuccess
-                                    || biometricResult == BiometricPromptManager.BiometricResult.AuthenticationNotSet
-                                ) {
-                                    val res = tryUnlockTask(activity, ::showToast)
-                                    if (res) {
-                                        showDialog = isSticky
-                                    }
-                                    waitingForUnlock = false
-                                }
-                            }
-                        }
-
                         Button(
                             enabled = enableInteraction,
                             onClick = {
-                                waitingForUnlock = true
+                                WaitingForUnlockStateSingleton.startWaiting()
                                 BiometricPromptManager.showBiometricPrompt(
                                     title = "Authentication Required",
-                                    description = "Please authenticate to access settings"
+                                    description = "Please authenticate to unlock Webview Kiosk"
                                 )
                             },
                             modifier = Modifier.fillMaxWidth()
