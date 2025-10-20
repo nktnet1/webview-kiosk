@@ -20,7 +20,7 @@ object UserSettingsKeys {
         const val ALLOW_BOOKMARK_ACCESS = "web_browsing.allow_bookmark_access"
         const val ALLOW_OTHER_URL_SCHEMES = "web_browsing.allow_other_url_schemes"
         const val ALLOW_LINK_LONG_PRESS_CONTEXT_MENU = "web_browsing.allow_link_long_press_context_menu"
-        const val ALLOW_KIOSK_CONTROL_PANEL = "web_browsing.allow_kiosk_control_panel"
+        const val KIOSK_CONTROL_PANEL_REGION = "web_browsing.kiosk_control_panel_region"
         const val SEARCH_PROVIDER_URL = "web_browsing.search_provider_url"
     }
 
@@ -61,6 +61,7 @@ object UserSettingsKeys {
         const val ALLOW_CAMERA = "device.allow_camera"
         const val ALLOW_MICROPHONE = "device.allow_microphone"
         const val ALLOW_LOCATION = "device.allow_location"
+        const val BACK_BUTTON_HOLD_ACTION = "device.back_button_hold_action"
         const val CUSTOM_UNLOCK_SHORTCUT = "device.custom_unlock_shortcut"
     }
 

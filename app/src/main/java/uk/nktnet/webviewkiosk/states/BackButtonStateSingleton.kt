@@ -11,4 +11,3 @@ object BackButtonStateSingleton {
         _longPressEvents.emit(Unit)
     }
 }
-

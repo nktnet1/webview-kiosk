@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowCameraSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowLocationSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowMicrophoneSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.BackButtonHoldActionSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.CustomUnlockShortcutSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.DeviceRotationSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.KeepScreenOnSetting
@@ -39,6 +40,7 @@ fun SettingsDeviceScreen(
         AllowCameraSetting()
         AllowMicrophoneSetting()
         AllowLocationSetting()
+        BackButtonHoldActionSetting()
         CustomUnlockShortcutSetting()
     }
 }

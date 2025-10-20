@@ -280,6 +280,14 @@
         android:description="@string/device_allow_location_description"
     />
     <restriction
+        android:key="device.back_button_hold_action"
+        android:restrictionType="choice"
+        android:entries="@array/entries_back_button_hold_action_option"
+        android:entryValues="@array/entry_values_back_button_hold_action_option"
+        android:title="@string/device_back_button_hold_action_title"
+        android:description="@string/device_back_button_hold_action_description"
+    />
+    <restriction
         android:key="device.custom_unlock_shortcut"
         android:restrictionType="string"
         android:title="@string/device_custom_unlock_shortcut_title"

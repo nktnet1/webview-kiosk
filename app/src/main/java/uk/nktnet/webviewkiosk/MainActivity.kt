@@ -55,6 +55,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var deviceRotationState: MutableState<DeviceRotationOption>
     private var backButtonJob: Job? = null
     private val longPressThreshold = 500L
+    private var isLongPressHandled = false
+
     val restrictionsReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED) {
@@ -227,9 +229,10 @@ class MainActivity : AppCompatActivity() {
     @SuppressLint("GestureBackNavigation")
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
-            backButtonJob ?: run {
+            if (backButtonJob == null) {
                 backButtonJob = lifecycleScope.launch {
                     delay(longPressThreshold)
+                    isLongPressHandled = true
                     BackButtonStateSingleton.emitLongPress()
                 }
             }
@@ -242,6 +245,10 @@ class MainActivity : AppCompatActivity() {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             backButtonJob?.cancel()
             backButtonJob = null
+            if (isLongPressHandled) {
+                isLongPressHandled = false
+                return true
+            }
         }
         return super.onKeyUp(keyCode, event)
     }

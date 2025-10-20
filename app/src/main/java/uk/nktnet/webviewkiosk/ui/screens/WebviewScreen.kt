@@ -22,7 +22,8 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.AddressBarOption
-import uk.nktnet.webviewkiosk.config.option.KioskControlPanelOption
+import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
+import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
 import uk.nktnet.webviewkiosk.handlers.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.InactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.KioskControlPanel
@@ -214,7 +215,9 @@ fun WebviewScreen(navController: NavController) {
                 )
 
                 if (transitionState == TransitionState.TRANSITIONING) {
-                    Box(Modifier.fillMaxSize().background(Color(0x88000000)), contentAlignment = Alignment.Center) {
+                    Box(Modifier
+                        .fillMaxSize()
+                        .background(Color(0x88000000)), contentAlignment = Alignment.Center) {
                         LoadingIndicator("Loading...")
                     }
                 }
@@ -222,7 +225,9 @@ fun WebviewScreen(navController: NavController) {
         }
 
         if (!isLocked) {
-            Box(modifier = Modifier.fillMaxSize().background(Color.Transparent)) {
+            Box(modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Transparent)) {
                 FloatingMenuButton(
                     onHomeClick = { WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings) },
                     onLockClick = {
@@ -237,9 +242,14 @@ fun WebviewScreen(navController: NavController) {
     if (userSettings.resetOnInactivitySeconds >= Constants.MIN_INACTIVITY_TIMEOUT_SECONDS) {
         InactivityTimeoutHandler(systemSettings, userSettings, ::customLoadUrl)
     }
-    if (userSettings.allowKioskControlPanel != KioskControlPanelOption.DISABLED) {
+
+    if (
+        userSettings.kioskControlPanelRegion != KioskControlPanelRegionOption.DISABLED
+        || userSettings.backButtonHoldAction == BackButtonHoldActionOption.OPEN_KIOSK_CONTROL_PANEL
+    ) {
         KioskControlPanel(10, webView,::customLoadUrl)
     }
+
     BasicAuthDialog(authHandler, authHost, authRealm) { authHandler = null }
 
     LinkOptionsDialog(
@@ -247,5 +257,4 @@ fun WebviewScreen(navController: NavController) {
         onDismiss = { linkToOpen = null },
         onOpenLink = { url -> customLoadUrl(url) },
     )
-
 }

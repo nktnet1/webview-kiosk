@@ -99,12 +99,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU,
         true
     )
-    var allowKioskControlPanel by stringEnumPref(
+    var kioskControlPanelRegion by stringEnumPref(
         restrictions,
         prefs,
-        UserSettingsKeys.WebBrowsing.ALLOW_KIOSK_CONTROL_PANEL,
-        KioskControlPanelOption.TOP_LEFT.name,
-        fromString = KioskControlPanelOption::fromString
+        UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION,
+        KioskControlPanelRegionOption.TOP_LEFT.name,
+        fromString = KioskControlPanelRegionOption::fromString
     )
 
     var searchProviderUrl by stringPref(
@@ -276,6 +276,13 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Device.ALLOW_LOCATION,
         false
     )
+    var backButtonHoldAction by stringEnumPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION,
+        BackButtonHoldActionOption.OPEN_KIOSK_CONTROL_PANEL.name,
+        fromString = BackButtonHoldActionOption::fromString
+    )
     var customUnlockShortcut by stringPrefOptional(
         restrictions,
         prefs,
@@ -322,7 +329,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebBrowsing.ALLOW_BOOKMARK_ACCESS, allowBookmarkAccess)
             put(UserSettingsKeys.WebBrowsing.ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
             put(UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, allowLinkLongPressContextMenu)
-            put(UserSettingsKeys.WebBrowsing.ALLOW_KIOSK_CONTROL_PANEL, allowKioskControlPanel.name)
+            put(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION, kioskControlPanelRegion.name)
             put(UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL, searchProviderUrl)
 
             put(UserSettingsKeys.WebEngine.ENABLE_JAVASCRIPT, enableJavaScript)
@@ -355,6 +362,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Device.ALLOW_CAMERA, allowCamera)
             put(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             put(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
+            put(UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION, backButtonHoldAction.name)
             put(UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
 
             put(UserSettingsKeys.JsScripts.APPLY_APP_THEME, applyAppTheme)
@@ -383,7 +391,9 @@ class UserSettings(val context: Context) {
             allowBookmarkAccess = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_BOOKMARK_ACCESS, allowBookmarkAccess)
             allowOtherUrlSchemes = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
             allowLinkLongPressContextMenu = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, allowLinkLongPressContextMenu)
-            json.optString(UserSettingsKeys.WebBrowsing.ALLOW_KIOSK_CONTROL_PANEL, allowKioskControlPanel.name)
+            kioskControlPanelRegion = KioskControlPanelRegionOption.fromString(
+                json.optString(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION, kioskControlPanelRegion.name)
+            )
             searchProviderUrl = json.optString(UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL, searchProviderUrl)
 
             enableJavaScript = json.optBoolean(UserSettingsKeys.WebEngine.ENABLE_JAVASCRIPT, enableJavaScript)
@@ -420,6 +430,9 @@ class UserSettings(val context: Context) {
             allowCamera = json.optBoolean(UserSettingsKeys.Device.ALLOW_CAMERA, allowCamera)
             allowMicrophone = json.optBoolean(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             allowLocation = json.optBoolean(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
+            backButtonHoldAction = BackButtonHoldActionOption.fromString(
+                json.optString(UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION, backButtonHoldAction.name)
+            )
             customUnlockShortcut = json.optString(UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
 
             applyAppTheme = json.optBoolean(UserSettingsKeys.JsScripts.APPLY_APP_THEME, applyAppTheme)

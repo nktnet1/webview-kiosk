@@ -115,4 +115,15 @@
         <item>SafeGestures</item>
         <item>SafeContent</item>
     </string-array>
+
+    <string-array name="entries_back_button_hold_action_option">
+        <item>Open Kiosk Control Panel</item>
+        <item>Go Home</item>
+        <item>Disabled</item>
+    </string-array>
+    <string-array name="entry_values_back_button_hold_action_option">
+        <item>OPEN_KIOSK_CONTROL_PANEL</item>
+        <item>GO_HOME</item>
+        <item>DISABLED</item>
+    </string-array>
 </resources>
