@@ -218,6 +218,9 @@ fun KioskControlPanel(
                         Text(
                             "Kiosk Control Panel",
                             style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(
+                                alpha = if (enableInteraction) 1f else 0.5f
+                            )
                         )
                         IconButton(
                             enabled = enableInteraction,
