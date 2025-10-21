@@ -38,6 +38,9 @@
             android:exported="true"
             android:theme="@style/Theme.WebviewKiosk"
             android:configChanges="orientation|screenSize"
+
+            tools:targetApi="33"
+            android:enableOnBackInvokedCallback="@bool/enableOnBackInvokedCallback"
         >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

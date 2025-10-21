@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk
 
-import android.annotation.SuppressLint
 import android.app.ActivityManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -53,7 +52,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var themeState: MutableState<ThemeOption>
     private lateinit var keepScreenOnState: MutableState<Boolean>
     private lateinit var deviceRotationState: MutableState<DeviceRotationOption>
-    private lateinit var backButtonHandler: BackButtonLongPressService
+    private lateinit var backButtonLongPressService: BackButtonLongPressService
 
     val restrictionsReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -72,7 +71,17 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         LockStateSingleton.startMonitoring(application)
         setupLockTaskPackage(this)
-        backButtonHandler = BackButtonLongPressService(lifecycleScope)
+
+        backButtonLongPressService = BackButtonLongPressService(
+            lifecycleScope = lifecycleScope,
+            fragmentManager = supportFragmentManager,
+            onBackPressedDispatcher = onBackPressedDispatcher,
+        )
+        onBackPressedDispatcher.addCallback(
+            owner = this,
+            onBackPressedCallback = backButtonLongPressService.onBackPressedCallback,
+        )
+
         registerReceiver(
             restrictionsReceiver,
             IntentFilter(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED)
@@ -247,11 +256,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    @SuppressLint("GestureBackNavigation")
     override fun onKeyDown(keyCode: Int, event: KeyEvent) =
-        backButtonHandler.onKeyDown(keyCode) || super.onKeyDown(keyCode, event)
+        backButtonLongPressService.onKeyDown(keyCode) || super.onKeyDown(keyCode, event)
 
-    @SuppressLint("GestureBackNavigation")
     override fun onKeyUp(keyCode: Int, event: KeyEvent) =
-        backButtonHandler.onKeyUp(keyCode) || super.onKeyUp(keyCode, event)
+        backButtonLongPressService.onKeyUp(keyCode) || super.onKeyUp(keyCode, event)
+
+    override fun onKeyLongPress(keyCode: Int, event: KeyEvent) =
+        backButtonLongPressService.onKeyLongPress(keyCode) || super.onKeyLongPress(keyCode, event)
 }
