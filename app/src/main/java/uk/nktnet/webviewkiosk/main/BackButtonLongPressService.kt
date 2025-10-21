@@ -16,7 +16,7 @@ class BackButtonLongPressService(
     private var isLongPressHandled = false
 
     @SuppressLint("GestureBackNavigation")
-    fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
+    fun onKeyDown(keyCode: Int): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             if (backButtonJob == null) {
                 backButtonJob = lifecycleScope.launch {
@@ -30,7 +30,7 @@ class BackButtonLongPressService(
     }
 
     @SuppressLint("GestureBackNavigation")
-    fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
+    fun onKeyUp(keyCode: Int): Boolean {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             backButtonJob?.cancel()
             backButtonJob = null

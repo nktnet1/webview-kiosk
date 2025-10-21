@@ -249,9 +249,9 @@ class MainActivity : AppCompatActivity() {
 
     @SuppressLint("GestureBackNavigation")
     override fun onKeyDown(keyCode: Int, event: KeyEvent) =
-        backButtonHandler.onKeyDown(keyCode, event) || super.onKeyDown(keyCode, event)
+        backButtonHandler.onKeyDown(keyCode) || super.onKeyDown(keyCode, event)
 
     @SuppressLint("GestureBackNavigation")
     override fun onKeyUp(keyCode: Int, event: KeyEvent) =
-        backButtonHandler.onKeyUp(keyCode, event) || super.onKeyUp(keyCode, event)
+        backButtonHandler.onKeyUp(keyCode) || super.onKeyUp(keyCode, event)
 }
