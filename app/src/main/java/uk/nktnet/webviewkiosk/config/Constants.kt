@@ -13,5 +13,7 @@ object Constants {
 
     const val WEB_CONTENT_FILES_DIR = "web-content-files"
 
+    const val BACK_BUTTON_LONG_PRESS_THRESHOLD = 500L
+
     const val REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL = 9999
 }

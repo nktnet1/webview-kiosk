@@ -57,7 +57,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var keepScreenOnState: MutableState<Boolean>
     private lateinit var deviceRotationState: MutableState<DeviceRotationOption>
     private var backButtonJob: Job? = null
-    private val longPressThreshold = 500L
     private var isLongPressHandled = false
 
     val restrictionsReceiver = object : BroadcastReceiver() {
@@ -256,7 +255,7 @@ class MainActivity : AppCompatActivity() {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             if (backButtonJob == null) {
                 backButtonJob = lifecycleScope.launch {
-                    delay(longPressThreshold)
+                    delay(Constants.BACK_BUTTON_LONG_PRESS_THRESHOLD)
                     isLongPressHandled = true
                     BackButtonStateSingleton.emitLongPress()
                 }
