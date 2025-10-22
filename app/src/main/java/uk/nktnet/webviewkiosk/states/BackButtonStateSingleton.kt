@@ -4,10 +4,12 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
 object BackButtonStateSingleton {
-    private val _longPressEvents = MutableSharedFlow<Unit>()
-    val longPressEvents = _longPressEvents.asSharedFlow()
+    private val _longPress = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val longPressEvents = _longPress.asSharedFlow()
 
-    suspend fun emitLongPress() {
-        _longPressEvents.emit(Unit)
-    }
+    private val _shortPress = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val shortPressEvents = _shortPress.asSharedFlow()
+
+    suspend fun emitLongPress()  { _longPress.emit(Unit) }
+    suspend fun emitShortPress() { _shortPress.emit(Unit) }
 }

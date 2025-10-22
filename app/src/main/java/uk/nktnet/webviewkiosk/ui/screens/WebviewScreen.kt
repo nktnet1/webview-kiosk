@@ -4,7 +4,6 @@ import android.webkit.CookieManager
 import android.webkit.HttpAuthHandler
 import android.widget.Toast
 import androidx.activity.compose.LocalActivity
-import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.*
@@ -24,7 +23,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.AddressBarOption
 import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
-import uk.nktnet.webviewkiosk.handlers.BackPressHandler
+import uk.nktnet.webviewkiosk.handlers.backbutton.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.InactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.KioskControlPanel
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
@@ -72,7 +71,6 @@ fun WebviewScreen(navController: NavController) {
         AddressBarOption.HIDDEN_WHEN_LOCKED -> !isLocked
     }
 
-    val onBackPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
     var authHandler by remember { mutableStateOf<HttpAuthHandler?>(null) }
     var authHost by remember { mutableStateOf<String?>(null) }
     var authRealm by remember { mutableStateOf<String?>(null) }
@@ -148,7 +146,7 @@ fun WebviewScreen(navController: NavController) {
     val cookieManager = CookieManager.getInstance()
     cookieManager.setAcceptCookie(userSettings.acceptCookies)
     cookieManager.setAcceptThirdPartyCookies(webView, userSettings.acceptThirdPartyCookies)
-    BackPressHandler(webView, ::customLoadUrl, onBackPressedDispatcher)
+    BackPressHandler(::customLoadUrl)
 
     val addressBarSearch: (String) -> Unit = { input ->
         val searchUrl = resolveUrlOrSearch(userSettings.searchProviderUrl, input.trim())
