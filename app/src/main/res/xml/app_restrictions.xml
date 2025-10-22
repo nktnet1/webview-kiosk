@@ -76,6 +76,12 @@
         android:description="@string/web_browsing_allow_other_url_schemes_description"
     />
     <restriction
+        android:key="web_browsing.allow_default_long_press"
+        android:restrictionType="bool"
+        android:title="@string/web_browsing_allow_default_long_press_title"
+        android:description="@string/web_browsing_allow_default_long_press_description"
+    />
+    <restriction
         android:key="web_browsing.allow_link_long_press_context_menu"
         android:restrictionType="bool"
         android:title="@string/web_browsing_allow_link_long_press_context_menu_title"

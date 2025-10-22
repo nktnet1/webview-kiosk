@@ -18,6 +18,9 @@ fun AllowLinkLongPressContextMenuSetting() {
             When enabled, long-pressing links in the WebView will trigger
             a custom context menu.
 
+            This will take precedence over the "Allow Default Long Press"
+            setting (i.e. overrides it).
+
             This allows actions like opening or copying the link.
         """.trimIndent(),
         initialValue = userSettings.allowLinkLongPressContextMenu,

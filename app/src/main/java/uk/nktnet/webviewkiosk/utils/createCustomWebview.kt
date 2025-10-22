@@ -263,7 +263,7 @@ fun createCustomWebview(
                         true
                     }
                 }
-                false
+                userSettings.allowDefaultLongPress.not()
             }
 
             setDownloadListener { url, _, _, _, _ ->
