@@ -39,7 +39,10 @@
     <string name="web_browsing_allow_other_url_schemes_title">Allow Other URL Schemes</string>
     <string name="web_browsing_allow_other_url_schemes_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
-    <string name="web_browsing_allow_link_long_press_context_menu_title">Allow Link Long-Press Menu</string>
+    <string name="web_browsing_allow_default_long_press_title">Allow Default Long Press</string>
+    <string name="web_browsing_allow_default_long_press_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+
+    <string name="web_browsing_allow_link_long_press_context_menu_title">Allow Link Long Press Context Menu</string>
     <string name="web_browsing_allow_link_long_press_context_menu_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_allow_kiosk_control_panel_title">Allow Kiosk Control Panel</string>
