@@ -27,7 +27,7 @@ import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
 import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.main.BackButtonLongPressService
+import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonLongPressService
 import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.applyDeviceRotation
 import uk.nktnet.webviewkiosk.main.handleMainIntent
@@ -74,12 +74,10 @@ class MainActivity : AppCompatActivity() {
 
         backButtonLongPressService = BackButtonLongPressService(
             lifecycleScope = lifecycleScope,
-            fragmentManager = supportFragmentManager,
-            onBackPressedDispatcher = onBackPressedDispatcher,
         )
         onBackPressedDispatcher.addCallback(
-            owner = this,
-            onBackPressedCallback = backButtonLongPressService.onBackPressedCallback,
+            this,
+            backButtonLongPressService.onBackPressedCallback,
         )
 
         registerReceiver(
@@ -222,6 +220,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         updateUserSettings()
+        backButtonLongPressService.onBackPressedCallback.isEnabled = true
     }
 
     override fun onUserInteraction() {

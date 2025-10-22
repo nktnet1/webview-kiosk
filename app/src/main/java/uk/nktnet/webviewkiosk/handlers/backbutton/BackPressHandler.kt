@@ -1,10 +1,6 @@
-package uk.nktnet.webviewkiosk.handlers
+package uk.nktnet.webviewkiosk.handlers.backbutton
 
-import android.webkit.WebView
-import androidx.activity.OnBackPressedCallback
-import androidx.activity.OnBackPressedDispatcher
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,9 +18,7 @@ import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
 fun BackPressHandler(
-    webView: WebView,
     customLoadUrl: (newUrl: String) -> Unit,
-    dispatcher: OnBackPressedDispatcher?,
 ) {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
@@ -32,6 +26,14 @@ fun BackPressHandler(
 
     val scope = rememberCoroutineScope()
     var enableBack by remember { mutableStateOf(true) }
+
+    LaunchedEffect(userSettings.allowBackwardsNavigation) {
+        BackButtonStateSingleton.shortPressEvents.collect {
+            if (userSettings.allowBackwardsNavigation && enableBack) {
+                WebViewNavigation.goBack(customLoadUrl, systemSettings)
+            }
+        }
+    }
 
     LaunchedEffect(userSettings.backButtonHoldAction) {
         if (userSettings.backButtonHoldAction != BackButtonHoldActionOption.DISABLED) {
@@ -46,18 +48,5 @@ fun BackPressHandler(
                 }
             }
         }
-    }
-
-    DisposableEffect(webView, dispatcher, userSettings.allowBackwardsNavigation) {
-        val callback = object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (!userSettings.allowBackwardsNavigation || !enableBack) {
-                    return
-                }
-                WebViewNavigation.goBack(customLoadUrl, systemSettings)
-            }
-        }
-        dispatcher?.addCallback(callback)
-        onDispose { callback.remove() }
     }
 }
