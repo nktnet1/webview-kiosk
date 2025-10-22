@@ -27,7 +27,7 @@ import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
 import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonLongPressService
+import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonService
 import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.applyDeviceRotation
 import uk.nktnet.webviewkiosk.main.handleMainIntent
@@ -52,7 +52,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var themeState: MutableState<ThemeOption>
     private lateinit var keepScreenOnState: MutableState<Boolean>
     private lateinit var deviceRotationState: MutableState<DeviceRotationOption>
-    private lateinit var backButtonLongPressService: BackButtonLongPressService
+    private lateinit var backButtonService: BackButtonService
 
     val restrictionsReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -72,12 +72,12 @@ class MainActivity : AppCompatActivity() {
         LockStateSingleton.startMonitoring(application)
         setupLockTaskPackage(this)
 
-        backButtonLongPressService = BackButtonLongPressService(
+        backButtonService = BackButtonService(
             lifecycleScope = lifecycleScope,
         )
         onBackPressedDispatcher.addCallback(
             this,
-            backButtonLongPressService.onBackPressedCallback,
+            backButtonService.onBackPressedCallback,
         )
 
         registerReceiver(
@@ -220,7 +220,7 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         updateUserSettings()
-        backButtonLongPressService.onBackPressedCallback.isEnabled = true
+        backButtonService.onBackPressedCallback.isEnabled = true
     }
 
     override fun onUserInteraction() {
@@ -256,11 +256,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent) =
-        backButtonLongPressService.onKeyDown(keyCode) || super.onKeyDown(keyCode, event)
+        backButtonService.onKeyDown(keyCode) || super.onKeyDown(keyCode, event)
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent) =
-        backButtonLongPressService.onKeyUp(keyCode) || super.onKeyUp(keyCode, event)
+        backButtonService.onKeyUp(keyCode) || super.onKeyUp(keyCode, event)
 
     override fun onKeyLongPress(keyCode: Int, event: KeyEvent) =
-        backButtonLongPressService.onKeyLongPress(keyCode) || super.onKeyLongPress(keyCode, event)
+        backButtonService.onKeyLongPress(keyCode) || super.onKeyLongPress(keyCode, event)
 }
