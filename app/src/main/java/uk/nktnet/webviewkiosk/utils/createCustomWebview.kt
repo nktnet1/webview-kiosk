@@ -255,16 +255,15 @@ fun createCustomWebview(
                 }
             }
 
-            if (userSettings.allowLinkLongPressContextMenu) {
-                setOnLongClickListener {
+            setOnLongClickListener {
+                if (userSettings.allowLinkLongPressContextMenu) {
                     val result = hitTestResult
                     if (result.type == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
                         result.extra?.let { link -> config.onLinkLongClick(link) }
-                        false
-                    } else {
                         true
                     }
                 }
+                false
             }
 
             setDownloadListener { url, _, _, _, _ ->
