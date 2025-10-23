@@ -23,7 +23,7 @@ fun handlePermissionRequest(
     systemSettings: SystemSettings,
     userSettings: UserSettings
 ) {
-    val host = request.origin.host.toString()
+    val host = request.origin.toString()
 
     val permissions = request.resources.mapNotNull { res ->
         when (res) {
@@ -100,7 +100,7 @@ fun handlePermissionRequest(
         builder.setPositiveButton("Close") { _, _ -> request.deny() }
         builder.show()
     } else {
-        val checkBox = CheckBox(context).apply { text = "Remember this choice." }
+        val checkBox = CheckBox(context).apply { text = "Remember my choice" }
         val layout = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(80, 20, 40, 0)
