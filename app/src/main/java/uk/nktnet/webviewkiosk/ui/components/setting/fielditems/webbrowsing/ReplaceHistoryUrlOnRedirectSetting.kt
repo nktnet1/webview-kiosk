@@ -15,9 +15,9 @@ fun ReplaceHistoryUrlOnRedirectSetting() {
     BooleanSettingFieldItem(
         label = "Replace History URL on Redirect",
         infoText = """
-            When enabled, replace the current history entry with the final URL
-            if any page redirections occurred, rather than adding multiple history
-            entries to the navigation stack.
+            Set to true to replace the current history entry with the final URL if
+            any page redirections occurs, rather than adding multiple entries to the
+            history navigation stack.
         """.trimIndent(),
         initialValue = userSettings.replaceHistoryUrlOnRedirect,
         restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.REPLACE_HISTORY_URL_ON_REDIRECT),
