@@ -29,6 +29,7 @@ import uk.nktnet.webviewkiosk.utils.webview.generateBlockedPageHtml
 import uk.nktnet.webviewkiosk.utils.webview.generateDesktopViewportScript
 import uk.nktnet.webviewkiosk.utils.webview.generatePrefersColorSchemeOverrideScript
 import uk.nktnet.webviewkiosk.utils.webview.handleExternalScheme
+import uk.nktnet.webviewkiosk.utils.webview.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
@@ -203,7 +204,9 @@ fun createCustomWebview(
                     origin: String?,
                     callback: GeolocationPermissions.Callback?
                 ) {
-                    callback?.invoke(origin, userSettings.allowLocation, false)
+                    origin?.let {
+                        handleGeolocationRequest(context, it, callback, systemSettings, userSettings)
+                    }
                 }
 
                 override fun onShowCustomView(view: View, callback: CustomViewCallback) {

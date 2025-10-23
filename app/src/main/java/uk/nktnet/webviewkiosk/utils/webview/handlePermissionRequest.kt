@@ -46,7 +46,7 @@ fun handlePermissionRequest(
     val blockedPermissions = permissions.filter { !it.allowed }
     val unhandledPermissions = request.resources.filter { res ->
         res != PermissionRequest.RESOURCE_VIDEO_CAPTURE &&
-                res != PermissionRequest.RESOURCE_AUDIO_CAPTURE
+            res != PermissionRequest.RESOURCE_AUDIO_CAPTURE
     }
 
     if (allowedPermissions.isEmpty() && blockedPermissions.isEmpty()) {
