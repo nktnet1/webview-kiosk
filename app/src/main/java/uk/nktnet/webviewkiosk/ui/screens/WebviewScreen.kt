@@ -105,10 +105,17 @@ fun WebviewScreen(navController: NavController) {
                 transitionState = TransitionState.PAGE_FINISHED
                 isRefreshing = false
             },
-            doUpdateVisitedHistory = { url ->
-                if (!hasFocus) urlBarText = urlBarText.copy(text = url)
+            doUpdateVisitedHistory = { url, originalUrl ->
+                if (!hasFocus) {
+                    urlBarText = urlBarText.copy(text = url)
+                }
                 currentUrl = url
-                WebViewNavigation.appendWebviewHistory(systemSettings, url)
+                WebViewNavigation.appendWebviewHistory(
+                    systemSettings,
+                    url,
+                    originalUrl,
+                    userSettings.replaceHistoryUrlOnRedirect
+                )
             },
             onHttpAuthRequest = { handler, host, realm ->
                 authHandler = handler

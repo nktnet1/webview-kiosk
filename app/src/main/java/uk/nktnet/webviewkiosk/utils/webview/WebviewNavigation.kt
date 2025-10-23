@@ -49,7 +49,12 @@ object WebViewNavigation {
         }
     }
 
-    fun appendWebviewHistory(systemSettings: SystemSettings, url: String) {
+    fun appendWebviewHistory(
+        systemSettings: SystemSettings,
+        url: String,
+        originalUrl: String?,
+        shouldReplaceRedirect: Boolean
+    ) {
         if (isProgrammaticNavigation) {
             isProgrammaticNavigation = false
             return
@@ -58,7 +63,20 @@ object WebViewNavigation {
         val newUrl = url.trimEnd('/')
         val stack = systemSettings.historyStack.toMutableList()
         val currentIndex = systemSettings.historyIndex
-        val currentUrl = stack.getOrNull(currentIndex)?.url?.trimEnd('/')
+        val currentEntry = stack.getOrNull(currentIndex)
+
+        val replace = (
+            shouldReplaceRedirect
+            && originalUrl?.isNotEmpty() == true
+            && originalUrl.trimEnd('/') != newUrl
+        )
+        if (replace && currentEntry != null) {
+            stack[currentIndex] = currentEntry.copy(url = newUrl)
+            systemSettings.historyStack = stack
+            return
+        }
+
+        val currentUrl = currentEntry?.url?.trimEnd('/')
 
         if (currentUrl != newUrl) {
             val updatedStack = if (currentIndex < stack.lastIndex) {

@@ -36,7 +36,7 @@ data class WebViewConfig(
     val showToast: (message: String) -> Unit,
     val onPageStarted: () -> Unit,
     val onPageFinished: (String) -> Unit,
-    val doUpdateVisitedHistory: (String) -> Unit,
+    val doUpdateVisitedHistory: (url: String, originalUrl: String?) -> Unit,
     val onHttpAuthRequest: (HttpAuthHandler?, String?, String?) -> Unit,
     val onLinkLongClick: (String) -> Unit
 ) {
@@ -175,7 +175,7 @@ fun createCustomWebview(
                                 return
                             }
                         }
-                        config.doUpdateVisitedHistory(it)
+                        config.doUpdateVisitedHistory(it, originalUrl)
                     }
                     super.doUpdateVisitedHistory(view, url, isReload)
                 }

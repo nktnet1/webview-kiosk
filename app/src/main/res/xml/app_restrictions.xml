@@ -58,6 +58,12 @@
         android:description="@string/web_browsing_clear_history_on_home_description"
     />
     <restriction
+        android:key="web_browsing.replace_history_url_on_redirect"
+        android:restrictionType="bool"
+        android:title="@string/web_browsing_replace_history_url_on_redirect_title"
+        android:description="@string/web_browsing_replace_history_url_on_redirect_description"
+    />
+    <restriction
         android:key="web_browsing.allow_history_access"
         android:restrictionType="bool"
         android:title="@string/web_browsing_allow_history_access_title"
