@@ -16,6 +16,7 @@ object UserSettingsKeys {
         const val ALLOW_BACKWARDS_NAVIGATION = "web_browsing.allow_backwards_navigation"
         const val ALLOW_GO_HOME = "web_browsing.allow_go_home"
         const val CLEAR_HISTORY_ON_HOME = "web_browsing.clear_history_on_home"
+        const val REPLACE_HISTORY_URL_ON_REDIRECT = "web_browsing.replace_history_url_on_redirect"
         const val ALLOW_HISTORY_ACCESS = "web_browsing.allow_history_access"
         const val ALLOW_BOOKMARK_ACCESS = "web_browsing.allow_bookmark_access"
         const val ALLOW_OTHER_URL_SCHEMES = "web_browsing.allow_other_url_schemes"

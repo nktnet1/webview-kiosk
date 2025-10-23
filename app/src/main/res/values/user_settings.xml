@@ -30,6 +30,9 @@
     <string name="web_browsing_clear_history_on_home_title">Clear History on Home</string>
     <string name="web_browsing_clear_history_on_home_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
+    <string name="web_browsing_replace_history_url_on_redirect_title">Clear History on Home</string>
+    <string name="web_browsing_replace_history_url_on_redirect_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+
     <string name="web_browsing_allow_history_access_title">Allow History Access</string>
     <string name="web_browsing_allow_history_access_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
