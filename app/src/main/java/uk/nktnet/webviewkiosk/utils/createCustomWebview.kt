@@ -146,10 +146,14 @@ fun createCustomWebview(
                         view?.evaluateJavascript(wrapJsInIIFE(userSettings.customScriptOnPageFinish), null)
                     }
                     url?.let { config.onPageFinished(it) }
+                    systemSettings.urlBeforeNavigation = ""
                     isShowingBlockedPage = false
                 }
 
                 override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                    if (systemSettings.urlBeforeNavigation.isEmpty()) {
+                        systemSettings.urlBeforeNavigation = systemSettings.currentUrl
+                    }
                     val url = request?.url?.toString() ?: ""
                     val scheme = request?.url?.scheme?.lowercase() ?: ""
 
@@ -175,12 +179,12 @@ fun createCustomWebview(
                 override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
                     url?.let {
                         if (!isShowingBlockedPage) {
-                            if (isBlocked(it)) {
-                                loadBlockedPage(url,BlockCause.BLACKLIST)
+                            if (isBlocked(url)) {
+                                loadBlockedPage(url, BlockCause.BLACKLIST)
                                 return
                             }
                         }
-                        config.doUpdateVisitedHistory(it, originalUrl)
+                        config.doUpdateVisitedHistory(url, originalUrl)
                     }
                     super.doUpdateVisitedHistory(view, url, isReload)
                 }

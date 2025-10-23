@@ -64,19 +64,19 @@ object WebViewNavigation {
         val stack = systemSettings.historyStack.toMutableList()
         val currentIndex = systemSettings.historyIndex
         val currentEntry = stack.getOrNull(currentIndex)
+        val currentUrl = currentEntry?.url?.trimEnd('/')
 
         val replace = (
             shouldReplaceRedirect
-            && originalUrl?.isNotEmpty() == true
+            && originalUrl.isNullOrEmpty().not()
             && originalUrl.trimEnd('/') != newUrl
+            && systemSettings.urlBeforeNavigation != currentUrl
         )
         if (replace && currentEntry != null) {
             stack[currentIndex] = currentEntry.copy(url = newUrl)
             systemSettings.historyStack = stack
             return
         }
-
-        val currentUrl = currentEntry?.url?.trimEnd('/')
 
         if (currentUrl != newUrl) {
             val updatedStack = if (currentIndex < stack.lastIndex) {
