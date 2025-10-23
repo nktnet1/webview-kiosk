@@ -78,7 +78,6 @@ object WebViewNavigation {
             return
         }
 
-
         if (currentUrl != newUrl) {
             val updatedStack = if (currentIndex < stack.lastIndex) {
                 stack.subList(0, currentIndex + 1).toMutableList()
