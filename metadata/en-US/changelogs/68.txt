@@ -1,0 +1,11 @@
+# New Features
+
+1. feat: permission request per origin
+    - permissions must now be granted explicitly per site/origin via the popup dialog.
+    - you can retain permission for the origin by ticking the "remember" checkbox
+    - retained permissions can be removed in "Web Browsing -> Site Permissions"
+
+2. feat: replace history url on redirect (new setting under "Web Browsing")
+    - resolves the back button needing to be clicked twice if the previous page
+    was a redirect link.
+    - more context: https://github.com/nktnet1/webview-kiosk/discussions/32
