@@ -35,13 +35,6 @@ fun handlePermissionRequest(
         }
     }
 
-    val remembered = systemSettings.getSitePermissions(host)
-
-    if (permissions.all { remembered.contains(it.resource) }) {
-        request.grant(permissions.map { it.resource }.toTypedArray())
-        return
-    }
-
     val allowedPermissions = permissions.filter { it.allowed }
     val blockedPermissions = permissions.filter { !it.allowed }
     val unhandledPermissions = request.resources.filter { res ->
@@ -55,6 +48,13 @@ fun handlePermissionRequest(
     }
 
     val isBlockedDialog = blockedPermissions.isNotEmpty()
+
+    val remembered = systemSettings.getSitePermissions(host)
+    if (!isBlockedDialog && permissions.all { remembered.contains(it.resource) }) {
+        request.grant(permissions.map { it.resource }.toTypedArray())
+        return
+    }
+
     val title: String
     val message: String
 
