@@ -19,10 +19,10 @@ import uk.nktnet.webviewkiosk.utils.getPermissionDisplay
 
 @Composable
 fun SitePermissionsList(
-    systemSettings: SystemSettings,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val systemSettings = remember { SystemSettings(context) }
     var sitePermissions by remember { mutableStateOf(systemSettings.sitePermissionsMap) }
 
     val toastRef = remember { mutableStateOf<Toast?>(null) }
