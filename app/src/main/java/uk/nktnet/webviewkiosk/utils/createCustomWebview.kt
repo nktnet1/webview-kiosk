@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.config.Constants
+import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.utils.webview.BlockCause
@@ -28,10 +29,13 @@ import uk.nktnet.webviewkiosk.utils.webview.generateBlockedPageHtml
 import uk.nktnet.webviewkiosk.utils.webview.generateDesktopViewportScript
 import uk.nktnet.webviewkiosk.utils.webview.generatePrefersColorSchemeOverrideScript
 import uk.nktnet.webviewkiosk.utils.webview.handleExternalScheme
+import uk.nktnet.webviewkiosk.utils.webview.handleGeolocationRequest
+import uk.nktnet.webviewkiosk.utils.webview.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 
 data class WebViewConfig(
+    val systemSettings: SystemSettings,
     val userSettings: UserSettings,
     val showToast: (message: String) -> Unit,
     val onPageStarted: () -> Unit,
@@ -59,6 +63,7 @@ fun createCustomWebview(
     context: Context,
     config: WebViewConfig
 ): WebView {
+    val systemSettings = config.systemSettings
     val userSettings = config.userSettings
     var isShowingBlockedPage by remember { mutableStateOf(false) }
 
@@ -192,21 +197,16 @@ fun createCustomWebview(
                 private var fullScreenContainer: FrameLayout? = null
 
                 override fun onPermissionRequest(request: PermissionRequest) {
-                    val grantedResources = mutableListOf<String>()
-                    request.resources.forEach { res ->
-                        when (res) {
-                            PermissionRequest.RESOURCE_VIDEO_CAPTURE -> if (userSettings.allowCamera) grantedResources.add(res)
-                            PermissionRequest.RESOURCE_AUDIO_CAPTURE -> if (userSettings.allowMicrophone) grantedResources.add(res)
-                        }
-                    }
-                    if (grantedResources.isNotEmpty()) request.grant(grantedResources.toTypedArray()) else request.deny()
+                    handlePermissionRequest(context, request, systemSettings, userSettings)
                 }
 
                 override fun onGeolocationPermissionsShowPrompt(
                     origin: String?,
                     callback: GeolocationPermissions.Callback?
                 ) {
-                    callback?.invoke(origin, userSettings.allowLocation, false)
+                    origin?.let {
+                        handleGeolocationRequest(context, it.trimEnd('/'), callback, systemSettings, userSettings)
+                    }
                 }
 
                 override fun onShowCustomView(view: View, callback: CustomViewCallback) {

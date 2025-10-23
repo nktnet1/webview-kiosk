@@ -13,5 +13,7 @@ object Constants {
 
     const val WEB_CONTENT_FILES_DIR = "web-content-files"
 
+    const val GEOLOCATION_RESOURCE = "webviewkiosk.custom-permission.geolocation"
+
     const val REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL = 9999
 }

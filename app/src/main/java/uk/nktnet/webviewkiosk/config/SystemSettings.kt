@@ -65,6 +65,43 @@ class SystemSettings(val context: Context) {
             return id
         }
 
+    var sitePermissionsMap: Map<String, Set<String>>
+        get() {
+            val raw = prefs.getString(SITE_PERMISSIONS, null) ?: return emptyMap()
+            return try {
+                json.decodeFromString(raw)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                emptyMap()
+            }
+        }
+        set(value) {
+            val serialized = json.encodeToString(value)
+            prefs.edit { putString(SITE_PERMISSIONS, serialized) }
+        }
+
+    fun getSitePermissions(origin: String): Set<String> {
+        return sitePermissionsMap[origin] ?: emptySet()
+    }
+
+    fun setSitePermissions(origin: String, resources: Set<String>) {
+        val current = sitePermissionsMap.toMutableMap()
+        if (resources.isEmpty()) {
+            current.remove(origin)
+        } else {
+            current[origin] = resources
+        }
+        sitePermissionsMap = current
+    }
+
+    fun saveSitePermissions(origin: String, resource: String) {
+        val current = sitePermissionsMap.toMutableMap()
+        val set = current[origin]?.toMutableSet() ?: mutableSetOf()
+        set.add(resource)
+        current[origin] = set
+        sitePermissionsMap = current
+    }
+
     companion object {
         private const val PREFS_NAME = "system_settings"
         private const val MENU_OFFSET_X = "menu_offset_x"
@@ -75,5 +112,6 @@ class SystemSettings(val context: Context) {
         private const val IS_FRESH_LAUNCH = "is_fresh_launch"
         private const val IS_KIOSK_CONTROL_PANEL_STICKY = "is_kiosk_control_panel_sticky"
         private const val APP_INSTANCE_ID = "app_instance_id"
+        private const val SITE_PERMISSIONS = "site_permissions"
     }
 }

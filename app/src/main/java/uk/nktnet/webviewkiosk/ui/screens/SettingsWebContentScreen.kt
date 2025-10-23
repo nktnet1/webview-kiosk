@@ -45,5 +45,7 @@ fun SettingsWebContentScreen(navController: NavController) {
         ) {
             Text("Manage Local Files")
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }

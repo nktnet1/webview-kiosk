@@ -8,6 +8,8 @@ sealed class Screen(val route: String) {
     object SettingsWebContent : Screen("settings/web-content")
     object SettingsWebContentFiles : Screen("settings/web-content/files")
     object SettingsWebBrowsing : Screen("settings/web-browsing")
+    object SettingsWebBrowsingSitePermissions : Screen("settings/web-browsing/site-permissions")
+
     object SettingsWebEngine : Screen("settings/web-engine")
     object SettingsWebLifecycle : Screen("settings/web-lifecycle")
 
