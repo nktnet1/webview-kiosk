@@ -146,10 +146,14 @@ fun createCustomWebview(
                         view?.evaluateJavascript(wrapJsInIIFE(userSettings.customScriptOnPageFinish), null)
                     }
                     url?.let { config.onPageFinished(it) }
+                    systemSettings.urlBeforeNavigation = ""
                     isShowingBlockedPage = false
                 }
 
                 override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                    if (systemSettings.urlBeforeNavigation.isEmpty()) {
+                        systemSettings.urlBeforeNavigation = systemSettings.currentUrl
+                    }
                     val url = request?.url?.toString() ?: ""
                     val scheme = request?.url?.scheme?.lowercase() ?: ""
 

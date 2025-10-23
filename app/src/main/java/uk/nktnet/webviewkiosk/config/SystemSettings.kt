@@ -48,6 +48,8 @@ class SystemSettings(val context: Context) {
 
     var isFreshLaunch by booleanPref(prefs = prefs, key = IS_FRESH_LAUNCH, default = true)
 
+    var urlBeforeNavigation by stringPrefOptional(prefs = prefs, key = URL_BEFORE_NAVIGATION)
+
     var isKioskControlPanelSticky by booleanPref(prefs = prefs, key = IS_KIOSK_CONTROL_PANEL_STICKY, default = false)
 
     fun clearHistory() {
@@ -113,5 +115,7 @@ class SystemSettings(val context: Context) {
         private const val IS_KIOSK_CONTROL_PANEL_STICKY = "is_kiosk_control_panel_sticky"
         private const val APP_INSTANCE_ID = "app_instance_id"
         private const val SITE_PERMISSIONS = "site_permissions"
+        private const val URL_BEFORE_NAVIGATION = "url_before_navigation"
+
     }
 }
