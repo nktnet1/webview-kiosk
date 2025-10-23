@@ -98,6 +98,7 @@ fun WebviewScreen(navController: NavController) {
     val webView = createCustomWebview(
         context = context,
         config = uk.nktnet.webviewkiosk.utils.WebViewConfig(
+            systemSettings = systemSettings,
             userSettings = userSettings,
             showToast = showToast,
             onPageStarted = { transitionState = TransitionState.PAGE_STARTED },
