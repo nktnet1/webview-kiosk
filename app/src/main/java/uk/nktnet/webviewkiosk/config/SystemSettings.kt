@@ -65,7 +65,7 @@ class SystemSettings(val context: Context) {
             return id
         }
 
-    private var sitePermissionsMap: Map<String, Set<String>>
+    var sitePermissionsMap: Map<String, Set<String>>
         get() {
             val raw = prefs.getString(SITE_PERMISSIONS, null) ?: return emptyMap()
             return try {
@@ -82,6 +82,16 @@ class SystemSettings(val context: Context) {
 
     fun getSitePermissions(origin: String): Set<String> {
         return sitePermissionsMap[origin] ?: emptySet()
+    }
+
+    fun setSitePermissions(origin: String, resources: Set<String>) {
+        val current = sitePermissionsMap.toMutableMap()
+        if (resources.isEmpty()) {
+            current.remove(origin)
+        } else {
+            current[origin] = resources
+        }
+        sitePermissionsMap = current
     }
 
     fun saveSitePermissions(origin: String, resource: String) {

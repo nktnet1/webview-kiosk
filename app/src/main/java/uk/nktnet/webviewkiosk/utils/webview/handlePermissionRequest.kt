@@ -9,6 +9,7 @@ import androidx.appcompat.app.AlertDialog
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.utils.hasPermissionForResource
 
 data class WebPermission(
     val resource: String,
@@ -23,14 +24,20 @@ fun handlePermissionRequest(
     systemSettings: SystemSettings,
     userSettings: UserSettings
 ) {
-    val host = request.origin.toString()
+    val host = request.origin.toString().trimEnd('/')
 
     val permissions = request.resources.mapNotNull { res ->
         when (res) {
             PermissionRequest.RESOURCE_VIDEO_CAPTURE ->
-                WebPermission(res, "Camera", userSettings.allowCamera)
+                WebPermission(
+                    res, "Camera",
+                    userSettings.allowCamera && hasPermissionForResource(context, res)
+                )
             PermissionRequest.RESOURCE_AUDIO_CAPTURE ->
-                WebPermission(res, "Microphone", userSettings.allowMicrophone)
+                WebPermission(res,
+                    "Microphone",
+                    userSettings.allowMicrophone && hasPermissionForResource(context, res))
+
             else -> null
         }
     }
@@ -73,7 +80,7 @@ fun handlePermissionRequest(
             }
             appendLine()
             appendLine()
-            append("However, these permissions are disabled in ${Constants.APP_NAME}.")
+            append("However, these permissions are either disabled in settings or not yet granted to ${Constants.APP_NAME}.")
         }
     } else {
         title = "Permission request"

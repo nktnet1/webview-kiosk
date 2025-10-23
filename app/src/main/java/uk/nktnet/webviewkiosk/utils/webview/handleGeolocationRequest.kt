@@ -9,6 +9,7 @@ import androidx.appcompat.app.AlertDialog
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.utils.hasPermissionForResource
 
 @SuppressLint("SetTextI18n")
 fun handleGeolocationRequest(
@@ -18,14 +19,16 @@ fun handleGeolocationRequest(
     systemSettings: SystemSettings,
     userSettings: UserSettings
 ) {
-    if (!userSettings.allowLocation) {
+    val isALlowed = userSettings.allowLocation && hasPermissionForResource(context, Constants.GEOLOCATION_RESOURCE)
+    if (!isALlowed) {
         AlertDialog.Builder(context)
             .setTitle("Permission blocked")
             .setMessage(
                 """
                 $origin requested access to your location.
 
-                However, location permission is disabled in ${Constants.APP_NAME}.
+                However, location permission is either disabled in settings or
+                not yet granted to ${Constants.APP_NAME}.
                 """.trimIndent()
             )
             .setPositiveButton("Close") { _, _ -> callback?.invoke(origin, false, false) }

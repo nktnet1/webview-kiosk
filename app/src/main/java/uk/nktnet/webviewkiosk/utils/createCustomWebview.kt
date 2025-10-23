@@ -205,7 +205,7 @@ fun createCustomWebview(
                     callback: GeolocationPermissions.Callback?
                 ) {
                     origin?.let {
-                        handleGeolocationRequest(context, it, callback, systemSettings, userSettings)
+                        handleGeolocationRequest(context, it.trimEnd('/'), callback, systemSettings, userSettings)
                     }
                 }
 

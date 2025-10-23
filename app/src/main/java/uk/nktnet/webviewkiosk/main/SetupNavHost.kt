@@ -40,6 +40,9 @@ fun SetupNavHost(
             authComposable(Screen.SettingsWebBrowsing.route) {
                 SettingsWebBrowsingScreen(navController)
             }
+            authComposable(Screen.SettingsWebBrowsingSitePermissions.route) {
+                SettingsWebBrowsingSitePermissionsScreen(navController)
+            }
             authComposable(Screen.SettingsWebEngine.route) {
                 SettingsWebEngineScreen(navController)
             }
