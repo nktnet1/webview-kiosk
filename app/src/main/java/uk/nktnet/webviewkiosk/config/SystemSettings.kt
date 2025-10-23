@@ -19,7 +19,9 @@ data class HistoryEntry(
 )
 
 class SystemSettings(val context: Context) {
-    private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val prefs: SharedPreferences = context.getSharedPreferences(
+        PREFS_NAME, Context.MODE_PRIVATE
+    )
     private val json = Json { encodeDefaults = true; ignoreUnknownKeys = true }
 
     var menuOffsetX by floatPref(prefs = prefs, key = MENU_OFFSET_X, default = -1f)
@@ -44,18 +46,7 @@ class SystemSettings(val context: Context) {
     val currentUrl
         get() = historyStack.getOrNull(historyIndex)?.url ?: ""
 
-    var intentUrl by stringPrefOptional(prefs = prefs, key = INTENT_URL)
-
-    var isFreshLaunch by booleanPref(prefs = prefs, key = IS_FRESH_LAUNCH, default = true)
-
-    var urlBeforeNavigation by stringPrefOptional(prefs = prefs, key = URL_BEFORE_NAVIGATION)
-
     var isKioskControlPanelSticky by booleanPref(prefs = prefs, key = IS_KIOSK_CONTROL_PANEL_STICKY, default = false)
-
-    fun clearHistory() {
-        historyStack = emptyList()
-        historyIndex = -1
-    }
 
     val appInstanceId: String
         get() {
@@ -82,6 +73,29 @@ class SystemSettings(val context: Context) {
             prefs.edit { putString(SITE_PERMISSIONS, serialized) }
         }
 
+    var intentUrl by stringPrefOptional(prefs = prefs, key = INTENT_URL)
+    var isFreshLaunch by booleanPref(prefs = prefs, key = IS_FRESH_LAUNCH, default = true)
+    var urlBeforeNavigation by stringPrefOptional(prefs = prefs, key = URL_BEFORE_NAVIGATION)
+
+    companion object {
+        private const val PREFS_NAME = "system_settings"
+        private const val MENU_OFFSET_X = "menu_offset_x"
+        private const val MENU_OFFSET_Y = "menu_offset_y"
+        private const val HISTORY_STACK = "history_stack"
+        private const val HISTORY_INDEX = "history_index"
+        private const val IS_KIOSK_CONTROL_PANEL_STICKY = "is_kiosk_control_panel_sticky"
+        private const val APP_INSTANCE_ID = "app_instance_id"
+        private const val SITE_PERMISSIONS = "site_permissions"
+        private const val IS_FRESH_LAUNCH = "is_fresh_launch"
+        private const val INTENT_URL = "intent_url"
+        private const val URL_BEFORE_NAVIGATION = "url_before_navigation"
+    }
+
+    fun clearHistory() {
+        historyStack = emptyList()
+        historyIndex = -1
+    }
+
     fun getSitePermissions(origin: String): Set<String> {
         return sitePermissionsMap[origin] ?: emptySet()
     }
@@ -102,20 +116,5 @@ class SystemSettings(val context: Context) {
         set.add(resource)
         current[origin] = set
         sitePermissionsMap = current
-    }
-
-    companion object {
-        private const val PREFS_NAME = "system_settings"
-        private const val MENU_OFFSET_X = "menu_offset_x"
-        private const val MENU_OFFSET_Y = "menu_offset_y"
-        private const val HISTORY_STACK = "history_stack"
-        private const val HISTORY_INDEX = "history_index"
-        private const val INTENT_URL = "intent_url"
-        private const val IS_FRESH_LAUNCH = "is_fresh_launch"
-        private const val IS_KIOSK_CONTROL_PANEL_STICKY = "is_kiosk_control_panel_sticky"
-        private const val APP_INSTANCE_ID = "app_instance_id"
-        private const val SITE_PERMISSIONS = "site_permissions"
-        private const val URL_BEFORE_NAVIGATION = "url_before_navigation"
-
     }
 }
