@@ -175,12 +175,12 @@ fun createCustomWebview(
                 override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
                     url?.let {
                         if (!isShowingBlockedPage) {
-                            if (isBlocked(it)) {
-                                loadBlockedPage(url,BlockCause.BLACKLIST)
+                            if (isBlocked(url)) {
+                                loadBlockedPage(url, BlockCause.BLACKLIST)
                                 return
                             }
                         }
-                        config.doUpdateVisitedHistory(it, originalUrl)
+                        config.doUpdateVisitedHistory(url, originalUrl)
                     }
                     super.doUpdateVisitedHistory(view, url, isReload)
                 }
