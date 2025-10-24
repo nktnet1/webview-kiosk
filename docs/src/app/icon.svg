@@ -19,8 +19,6 @@
     <!-- Lock: rectangle body -->
     <rect x="30.5" y="43" width="39" height="30" rx="5" ry="5" fill="#f6f5f6" stroke="#283d59"
       stroke-width="2.5" />
-    <!-- Lock: handle fill -->
-    <path d="M38.5 44 38.5 37A11.5 11.5 0 0 1 61.5 37L61.5 44Z" fill="#283d59" />
     <!-- Lock: handle outer -->
     <path d="M38.5 44 38.5 37A11.5 11.5 0 0 1 61.5 37L61.5 44" fill="none" stroke="#283d59"
       stroke-width="8" />
