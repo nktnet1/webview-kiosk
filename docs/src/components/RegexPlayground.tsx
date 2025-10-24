@@ -35,8 +35,7 @@ export default function RegexPlayground() {
         return false;
       }
       const hostname = parsed.hostname;
-      if (hostname === "localhost") return true;
-      return hostname.includes(".");
+      return parsed.protocol === "http:" || /\.[^.]{2,}$/.test(hostname);
     } catch {
       return false;
     }
