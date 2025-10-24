@@ -1,4 +1,4 @@
-# New Features
+## New Features
 
 1. feat: permission request per origin
     - permissions must now be granted explicitly per site/origin via the popup dialog.

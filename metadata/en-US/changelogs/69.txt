@@ -1,4 +1,4 @@
-# Changes
+## Changes
 
 - fix: relax http url validation
 - feat: remake icons using vector graphics (svg)

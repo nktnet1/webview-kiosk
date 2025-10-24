@@ -1,4 +1,4 @@
-# New Features
+## New Features
 
 - feat: added "web browsing -> allow default long press" setting
 - feat: back button service handling similar to Mozilla Firefox Mobile (Fenix)
