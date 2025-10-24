@@ -20,11 +20,13 @@ fun validateUrl(input: String): Boolean {
             val filePath = URLDecoder.decode(trimmedInput.removePrefix("file://"), StandardCharsets.UTF_8.name())
             File(filePath).exists()
         }
-        "http", "https" -> {
+        "http" -> {
+            isValidUrl(trimmedInput)
+        }
+        "https" -> {
             isValidUrl(trimmedInput)
             && (
                 Patterns.WEB_URL.matcher(trimmedInput).matches()
-                || parsedUrl.host == "localhost"
                 || parsedUrl.host.matches(Regex("""\[[0-9a-fA-F:]+]"""))
             )
         }
