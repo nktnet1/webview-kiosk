@@ -15,7 +15,6 @@ import android.webkit.SslErrorHandler
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
-import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
@@ -38,7 +37,6 @@ import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorRequest
 import uk.nktnet.webviewkiosk.utils.webview.html.generateErrorPage
-import uk.nktnet.webviewkiosk.utils.webview.html.generateHttpErrorPage
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 
@@ -192,8 +190,6 @@ fun createCustomWebview(
                     }
 
                     val requestUrl = request?.url?.toString() ?: ""
-                    systemSettings.urlPendingNavigation =  requestUrl
-
                     val scheme = request?.url?.scheme?.lowercase() ?: ""
 
                     if (!isShowingBlockedPage) {
@@ -212,6 +208,7 @@ fun createCustomWebview(
                         }
                     }
 
+                    systemSettings.urlPendingNavigation =  requestUrl
                     return false
                 }
 
@@ -239,23 +236,6 @@ fun createCustomWebview(
                     realm: String?
                 ) {
                     config.onHttpAuthRequest(handler, host, realm)
-                }
-
-                override fun onReceivedHttpError(
-                    view: WebView?,
-                    request: WebResourceRequest?,
-                    errorResponse: WebResourceResponse?
-                ) {
-                    if (isMainFrameGetForPendingUrl(request, systemSettings)) {
-                        val html = generateHttpErrorPage(userSettings.theme, request, errorResponse)
-                        view?.loadDataWithBaseURL(
-                            request?.url.toString(),
-                            html,
-                            "text/html",
-                            "UTF-8",
-                            null
-                        )
-                    }
                 }
 
                 override fun onReceivedError(
