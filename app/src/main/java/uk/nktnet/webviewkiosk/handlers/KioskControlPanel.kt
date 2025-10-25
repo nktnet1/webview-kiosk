@@ -304,7 +304,7 @@ fun KioskControlPanel(
                         Button(
                             enabled = enableInteraction,
                             onClick = {
-                                webView.reload()
+                                WebViewNavigation.refresh(customLoadUrl, systemSettings, userSettings)
                                 showDialog = isSticky
                             },
                             modifier = Modifier.fillMaxWidth()

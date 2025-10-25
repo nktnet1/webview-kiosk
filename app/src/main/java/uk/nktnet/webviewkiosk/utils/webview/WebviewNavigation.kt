@@ -41,6 +41,16 @@ object WebViewNavigation {
         }
     }
 
+    fun refresh(
+        customLoadUrl: (newUrl: String) -> Unit,
+        systemSettings: SystemSettings,
+        userSettings: UserSettings,
+    ) {
+        if (userSettings.allowRefresh) {
+            customLoadUrl(systemSettings.currentUrl)
+        }
+    }
+
     fun navigateToIndex(customLoadUrl: (newUrl: String) -> Unit, systemSettings: SystemSettings, index: Int) {
         if (index in 0..systemSettings.historyStack.lastIndex) {
             isProgrammaticNavigation = true

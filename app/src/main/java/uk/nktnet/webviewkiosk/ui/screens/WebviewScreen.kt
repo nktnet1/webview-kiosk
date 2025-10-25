@@ -194,7 +194,6 @@ fun WebviewScreen(navController: NavController) {
                     hasFocus = hasFocus,
                     onFocusChanged = { focusState -> hasFocus = focusState.isFocused },
                     addressBarSearch = addressBarSearch,
-                    webView = webView,
                     customLoadUrl = ::customLoadUrl,
                 )
             }
@@ -225,7 +224,7 @@ fun WebviewScreen(navController: NavController) {
                             WebviewAwareSwipeRefreshLayout(ctx, webView).apply {
                                 setOnRefreshListener {
                                     isRefreshing = true
-                                    webView.reload()
+                                    WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
                                 }
                                 addView(initWebviewApply(initialUrl))
                             }

@@ -240,7 +240,6 @@ fun createCustomWebview(
                             "UTF-8",
                             null
                         )
-                        return
                     }
                     super.onReceivedHttpError(view, request, errorResponse)
                 }

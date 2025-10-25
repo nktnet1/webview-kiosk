@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.ui.components.webview
 
-import android.webkit.WebView
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -33,7 +32,6 @@ fun AddressBar(
     hasFocus: Boolean,
     onFocusChanged: (FocusState) -> Unit,
     addressBarSearch: (String) -> Unit,
-    webView: WebView,
     customLoadUrl: (newUrl: String) -> Unit,
 ) {
     val context = LocalContext.current
@@ -170,7 +168,10 @@ fun AddressBar(
                     if (userSettings.allowRefresh) {
                         DropdownMenuItem(
                             text = { Text("Refresh") },
-                            onClick = { webView.reload(); menuExpanded = false },
+                            onClick = {
+                                WebViewNavigation.refresh(customLoadUrl, systemSettings, userSettings)
+                                menuExpanded = false
+                            },
                             leadingIcon = {
                                 Icon(
                                     painter = painterResource(R.drawable.baseline_refresh_24),
