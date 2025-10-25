@@ -64,17 +64,6 @@ data class WebViewConfig(
     }
 }
 
-fun isMainFrameGetForPendingUrl(
-    request: WebResourceRequest?,
-    systemSettings: SystemSettings
-): Boolean {
-    return (
-        request?.isForMainFrame == true
-        && request.method.equals("GET", ignoreCase = true)
-        && request.url.toString() == systemSettings.urlPendingNavigation
-    )
-}
-
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun createCustomWebview(
@@ -177,7 +166,6 @@ fun createCustomWebview(
                     }
                     url?.let { config.onPageFinished(it) }
                     systemSettings.urlBeforeNavigation = ""
-                    systemSettings.urlPendingNavigation = ""
                     isShowingBlockedPage = false
                 }
 
@@ -207,8 +195,6 @@ fun createCustomWebview(
                             return true
                         }
                     }
-
-                    systemSettings.urlPendingNavigation =  requestUrl
                     return false
                 }
 
@@ -245,7 +231,7 @@ fun createCustomWebview(
                 ) {
                     if (
                         Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                        && isMainFrameGetForPendingUrl(request, systemSettings)
+                        && request?.isForMainFrame == true
                     ) {
                         val html = generateErrorPage(
                             userSettings.theme,
@@ -272,10 +258,7 @@ fun createCustomWebview(
                     description: String?,
                     failingUrl: String?
                 ) {
-                    if (
-                        Build.VERSION.SDK_INT < Build.VERSION_CODES.M
-                        && failingUrl == systemSettings.urlPendingNavigation
-                    ) {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
                         val html = generateErrorPage(
                             userSettings.theme,
                             errorCode,
