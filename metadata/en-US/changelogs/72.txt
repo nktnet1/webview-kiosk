@@ -1,0 +1,5 @@
+## Hot Fixes
+
+- fix: revert http error page, not compatible with sites that do prefetching
+- fix: word-break: normal for onReceivedError page
+- mark old webview API (for backwards compatibility with Android 5.0) as deprecated
