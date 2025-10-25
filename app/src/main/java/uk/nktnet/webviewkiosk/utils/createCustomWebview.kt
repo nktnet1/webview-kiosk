@@ -33,6 +33,7 @@ import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOv
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleExternalScheme
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
+import uk.nktnet.webviewkiosk.utils.webview.html.generateErrorPage
 import uk.nktnet.webviewkiosk.utils.webview.html.generateHttpErrorPage
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
@@ -123,10 +124,16 @@ fun createCustomWebview(
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     if (userSettings.applyAppTheme && userSettings.theme != ThemeOption.SYSTEM) {
-                        evaluateJavascript(generatePrefersColorSchemeOverrideScript(userSettings.theme), null)
+                        evaluateJavascript(
+                            generatePrefersColorSchemeOverrideScript(userSettings.theme),
+                            null
+                        )
                     }
                     if (userSettings.customScriptOnPageStart.isNotBlank()) {
-                        view?.evaluateJavascript(wrapJsInIIFE(userSettings.customScriptOnPageStart), null)
+                        view?.evaluateJavascript(
+                            wrapJsInIIFE(userSettings.customScriptOnPageStart),
+                            null
+                        )
                     }
 
                     if (!isShowingBlockedPage) {
@@ -144,17 +151,26 @@ fun createCustomWebview(
 
                 override fun onPageFinished(view: WebView?, url: String?) {
                     if (userSettings.applyDesktopViewportWidth >= Constants.MIN_DESKTOP_WIDTH) {
-                        view?.evaluateJavascript(generateDesktopViewportScript(userSettings.applyDesktopViewportWidth), null)
+                        view?.evaluateJavascript(
+                            generateDesktopViewportScript(userSettings.applyDesktopViewportWidth),
+                            null
+                        )
                     }
                     if (userSettings.customScriptOnPageFinish.isNotBlank()) {
-                        view?.evaluateJavascript(wrapJsInIIFE(userSettings.customScriptOnPageFinish), null)
+                        view?.evaluateJavascript(
+                            wrapJsInIIFE(userSettings.customScriptOnPageFinish),
+                            null
+                        )
                     }
                     url?.let { config.onPageFinished(it) }
                     systemSettings.urlBeforeNavigation = ""
                     isShowingBlockedPage = false
                 }
 
-                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                override fun shouldOverrideUrlLoading(
+                    view: WebView?,
+                    request: WebResourceRequest?
+                ): Boolean {
                     if (systemSettings.urlBeforeNavigation.isEmpty()) {
                         systemSettings.urlBeforeNavigation = systemSettings.currentUrl
                     }
@@ -180,7 +196,11 @@ fun createCustomWebview(
                     return false
                 }
 
-                override fun doUpdateVisitedHistory(view: WebView?, url: String?, isReload: Boolean) {
+                override fun doUpdateVisitedHistory(
+                    view: WebView?,
+                    url: String?,
+                    isReload: Boolean
+                ) {
                     url?.let {
                         if (!isShowingBlockedPage) {
                             if (isBlocked(url)) {
@@ -193,17 +213,13 @@ fun createCustomWebview(
                     super.doUpdateVisitedHistory(view, url, isReload)
                 }
 
-                override fun onReceivedHttpAuthRequest(view: WebView?, handler: HttpAuthHandler?, host: String?, realm: String?) {
-                    config.onHttpAuthRequest(handler, host, realm)
-                }
-
-                override fun onReceivedError(
+                override fun onReceivedHttpAuthRequest(
                     view: WebView?,
-                    request: WebResourceRequest?,
-                    error: WebResourceError?
+                    handler: HttpAuthHandler?,
+                    host: String?,
+                    realm: String?
                 ) {
-                    println("[DEBUG] onReceivedError")
-                    super.onReceivedError(view, request, error)
+                    config.onHttpAuthRequest(handler, host, realm)
                 }
 
                 override fun onReceivedHttpError(
@@ -223,6 +239,30 @@ fun createCustomWebview(
                         return
                     }
                     super.onReceivedHttpError(view, request, errorResponse)
+                }
+
+                override fun onReceivedError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    error: WebResourceError?
+                ) {
+                    if (request?.isForMainFrame == true) {
+                        val html = generateErrorPage(
+                            userSettings.theme,
+                            error?.errorCode,
+                            error?.description?.toString(),
+                            request.url?.toString()
+                        )
+                        view?.loadDataWithBaseURL(
+                            request.url.toString(),
+                            html,
+                            "text/html",
+                            "UTF-8",
+                            null
+                        )
+                        return
+                    }
+                    super.onReceivedError(view, request, error)
                 }
             }
 
