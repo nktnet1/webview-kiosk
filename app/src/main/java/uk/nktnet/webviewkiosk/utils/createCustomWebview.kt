@@ -273,7 +273,7 @@ fun createCustomWebview(
                     handler: SslErrorHandler?,
                     error: SslError?
                 ) {
-                    handleSslErrorRequest(context, view,error?.url, handler, error)
+                    handleSslErrorRequest(context, view, handler, error)
                 }
             }
 

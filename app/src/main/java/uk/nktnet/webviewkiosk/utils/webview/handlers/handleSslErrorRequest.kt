@@ -16,7 +16,6 @@ import android.webkit.WebView
 fun handleSslErrorRequest(
     context: Context,
     webView: WebView?,
-    url: String?,
     handler: SslErrorHandler?,
     error: SslError?,
 ) {
@@ -37,14 +36,15 @@ fun handleSslErrorRequest(
         SslError.SSL_IDMISMATCH -> "The certificate Hostname mismatch."
         SslError.SSL_UNTRUSTED -> "The certificate authority is not trusted."
         SslError.SSL_NOTYETVALID -> "The certificate is not yet valid."
-        else -> "There is an unknown SSL error."
+        else -> "Unknown SSL error."
     }
 
     val messageView = TextView(context).apply {
         text = """
             $errorDescription
             
-            URL: $url
+            URL:
+                ${error?.url}
         """.trimIndent()
         setPadding(0, 0, 0, 30)
     }
