@@ -1,0 +1,5 @@
+## Hot Fixes
+
+- fix: url pending navigation to avoid site preloading/prefetching triggering error page
+- fix: custom refresh method to force-refresh on block page
+- fix: onReceivedError api 21 compatible
