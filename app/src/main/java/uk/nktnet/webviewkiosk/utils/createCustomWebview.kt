@@ -4,11 +4,13 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
+import android.net.http.SslError
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.GeolocationPermissions
 import android.webkit.HttpAuthHandler
 import android.webkit.PermissionRequest
+import android.webkit.SslErrorHandler
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
@@ -33,6 +35,7 @@ import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOv
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleExternalScheme
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
+import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorRequest
 import uk.nktnet.webviewkiosk.utils.webview.html.generateErrorPage
 import uk.nktnet.webviewkiosk.utils.webview.html.generateHttpErrorPage
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
@@ -263,6 +266,14 @@ fun createCustomWebview(
                         return
                     }
                     super.onReceivedError(view, request, error)
+                }
+
+                override fun onReceivedSslError(
+                    view: WebView?,
+                    handler: SslErrorHandler?,
+                    error: SslError?
+                ) {
+                    handleSslErrorRequest(context, view,error?.url, handler, error)
                 }
             }
 
