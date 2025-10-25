@@ -63,7 +63,6 @@ import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 @Composable
 fun KioskControlPanel(
     requiredTaps: Int,
-    webView: WebView,
     customLoadUrl: (newUrl: String) -> Unit,
 ) {
     val context = LocalContext.current

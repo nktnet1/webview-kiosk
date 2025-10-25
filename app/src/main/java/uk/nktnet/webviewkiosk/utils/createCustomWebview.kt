@@ -46,10 +46,10 @@ data class WebViewConfig(
     val showToast: (message: String) -> Unit,
     val onProgressChanged: (newProgress: Int) -> Unit,
     val onPageStarted: () -> Unit,
-    val onPageFinished: (String) -> Unit,
+    val onPageFinished: (url: String) -> Unit,
     val doUpdateVisitedHistory: (url: String, originalUrl: String?) -> Unit,
-    val onHttpAuthRequest: (HttpAuthHandler?, String?, String?) -> Unit,
-    val onLinkLongClick: (String) -> Unit
+    val onHttpAuthRequest: (handler: HttpAuthHandler?, host: String?, realm: String?) -> Unit,
+    val onLinkLongClick: (url: String) -> Unit
 ) {
     val blacklistRegexes: List<Regex> by lazy {
         userSettings.websiteBlacklist.lines()
@@ -237,10 +237,10 @@ fun createCustomWebview(
                             userSettings.theme,
                             error?.errorCode,
                             error?.description?.toString(),
-                            request?.url?.toString()
+                            request.url?.toString()
                         )
                         view?.loadDataWithBaseURL(
-                            request?.url.toString(),
+                            request.url.toString(),
                             html,
                             "text/html",
                             "UTF-8",
@@ -357,13 +357,13 @@ fun createCustomWebview(
                     val result = hitTestResult
                     if (result.type == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
                         result.extra?.let { link -> config.onLinkLongClick(link) }
-                        true
+                        return@setOnLongClickListener true
                     }
                 }
                 userSettings.allowDefaultLongPress.not()
             }
 
-            setDownloadListener { url, _, _, _, _ ->
+            setDownloadListener { _, _, _, _, _ ->
                 config.showToast(
                     "Downloading files is not yet supported in ${Constants.APP_NAME}."
                 )

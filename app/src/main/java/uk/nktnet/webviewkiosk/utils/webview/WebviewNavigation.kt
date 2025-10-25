@@ -78,7 +78,7 @@ object WebViewNavigation {
 
         val replace = (
             shouldReplaceRedirect
-            && originalUrl.isNullOrEmpty().not()
+            && !originalUrl.isNullOrEmpty()
             && originalUrl.trimEnd('/') != newUrl
             && systemSettings.urlBeforeNavigation != currentUrl
         )

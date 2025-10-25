@@ -107,7 +107,7 @@ fun WebviewScreen(navController: NavController) {
             showToast = showToast,
             onProgressChanged = { newProgress -> progress = newProgress },
             onPageStarted = { },
-            onPageFinished = { url ->
+            onPageFinished = {
                 isRefreshing = false
             },
             doUpdateVisitedHistory = { url, originalUrl ->
@@ -280,7 +280,7 @@ fun WebviewScreen(navController: NavController) {
         userSettings.kioskControlPanelRegion != KioskControlPanelRegionOption.DISABLED
         || userSettings.backButtonHoldAction == BackButtonHoldActionOption.OPEN_KIOSK_CONTROL_PANEL
     ) {
-        KioskControlPanel(10, webView,::customLoadUrl)
+        KioskControlPanel(10, ::customLoadUrl)
     }
 
     BackPressHandler(::customLoadUrl)

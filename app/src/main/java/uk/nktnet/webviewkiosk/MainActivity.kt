@@ -248,6 +248,7 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
+    @Deprecated("For Android 5.0 (SDK 21-22)")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
