@@ -76,6 +76,7 @@ class SystemSettings(val context: Context) {
     var intentUrl by stringPrefOptional(prefs = prefs, key = INTENT_URL)
     var isFreshLaunch by booleanPref(prefs = prefs, key = IS_FRESH_LAUNCH, default = true)
     var urlBeforeNavigation by stringPrefOptional(prefs = prefs, key = URL_BEFORE_NAVIGATION)
+    var urlPendingNavigation by stringPrefOptional(prefs = prefs, key = URL_PENDING_NAVIGATION)
 
     companion object {
         private const val PREFS_NAME = "system_settings"
@@ -89,6 +90,7 @@ class SystemSettings(val context: Context) {
         private const val IS_FRESH_LAUNCH = "is_fresh_launch"
         private const val INTENT_URL = "intent_url"
         private const val URL_BEFORE_NAVIGATION = "url_before_navigation"
+        private const val URL_PENDING_NAVIGATION = "url_pending_navigation"
     }
 
     fun clearHistory() {

@@ -162,6 +162,7 @@ fun WebviewScreen(navController: NavController) {
         if (systemSettings.urlBeforeNavigation.isEmpty()) {
             systemSettings.urlBeforeNavigation = systemSettings.currentUrl
         }
+        systemSettings.urlPendingNavigation = newUrl
         webView.loadUrl(newUrl)
     }
 

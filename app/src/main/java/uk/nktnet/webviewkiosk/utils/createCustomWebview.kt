@@ -66,6 +66,17 @@ data class WebViewConfig(
     }
 }
 
+fun isMainFrameGetForPendingUrl(
+    request: WebResourceRequest?,
+    systemSettings: SystemSettings
+): Boolean {
+    return (
+        request?.isForMainFrame == true
+        && request.method.equals("GET", ignoreCase = true)
+        && request.url.toString() == systemSettings.urlPendingNavigation
+    )
+}
+
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun createCustomWebview(
@@ -168,6 +179,7 @@ fun createCustomWebview(
                     }
                     url?.let { config.onPageFinished(it) }
                     systemSettings.urlBeforeNavigation = ""
+                    systemSettings.urlPendingNavigation = ""
                     isShowingBlockedPage = false
                 }
 
@@ -178,21 +190,24 @@ fun createCustomWebview(
                     if (systemSettings.urlBeforeNavigation.isEmpty()) {
                         systemSettings.urlBeforeNavigation = systemSettings.currentUrl
                     }
-                    val url = request?.url?.toString() ?: ""
+
+                    val requestUrl = request?.url?.toString() ?: ""
+                    systemSettings.urlPendingNavigation =  requestUrl
+
                     val scheme = request?.url?.scheme?.lowercase() ?: ""
 
                     if (!isShowingBlockedPage) {
                         if (scheme !in listOf("http", "https")) {
                             if (!userSettings.allowOtherUrlSchemes) {
-                                loadBlockedPage(url, BlockCause.INTENT_URL_SCHEME)
+                                loadBlockedPage(requestUrl, BlockCause.INTENT_URL_SCHEME)
                                 return true
                             }
-                            handleExternalScheme(context, url)
+                            handleExternalScheme(context, requestUrl)
                             return true
                         }
 
-                        if (isBlocked(url)) {
-                            loadBlockedPage(url, BlockCause.BLACKLIST)
+                        if (isBlocked(requestUrl)) {
+                            loadBlockedPage(requestUrl, BlockCause.BLACKLIST)
                             return true
                         }
                     }
@@ -231,17 +246,16 @@ fun createCustomWebview(
                     request: WebResourceRequest?,
                     errorResponse: WebResourceResponse?
                 ) {
-                    if (request?.isForMainFrame == true) {
+                    if (isMainFrameGetForPendingUrl(request, systemSettings)) {
                         val html = generateHttpErrorPage(userSettings.theme, request, errorResponse)
                         view?.loadDataWithBaseURL(
-                            request.url.toString(),
+                            request?.url.toString(),
                             html,
                             "text/html",
                             "UTF-8",
                             null
                         )
                     }
-                    super.onReceivedHttpError(view, request, errorResponse)
                 }
 
                 override fun onReceivedError(
@@ -249,15 +263,18 @@ fun createCustomWebview(
                     request: WebResourceRequest?,
                     error: WebResourceError?
                 ) {
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && request?.isForMainFrame == true) {
+                    if (
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                        && isMainFrameGetForPendingUrl(request, systemSettings)
+                    ) {
                         val html = generateErrorPage(
                             userSettings.theme,
                             error?.errorCode,
                             error?.description?.toString(),
-                            request.url?.toString()
+                            request?.url?.toString()
                         )
                         view?.loadDataWithBaseURL(
-                            request.url.toString(),
+                            request?.url.toString(),
                             html,
                             "text/html",
                             "UTF-8",
@@ -274,7 +291,10 @@ fun createCustomWebview(
                     description: String?,
                     failingUrl: String?
                 ) {
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                    if (
+                        Build.VERSION.SDK_INT < Build.VERSION_CODES.M
+                        && failingUrl == systemSettings.urlPendingNavigation
+                    ) {
                         val html = generateErrorPage(
                             userSettings.theme,
                             errorCode,
