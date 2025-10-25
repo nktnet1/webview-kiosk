@@ -52,7 +52,7 @@ fun generateErrorPage(
                 overflow-wrap: break-word;
               }
               p {
-                word-break: break-all;
+                word-break: normal;
                 overflow-wrap: break-word;
               }
               body {
