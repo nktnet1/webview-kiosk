@@ -13,7 +13,7 @@ fun handleExternalScheme(context: Context, url: String) {
             val intent = Intent(Intent.ACTION_VIEW, url.toUri())
             context.startActivity(intent)
         }
-    } catch (_: Exception) {
-        // Do nothing
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 }
