@@ -6,6 +6,7 @@ import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -30,7 +31,6 @@ import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
 import uk.nktnet.webviewkiosk.ui.components.webview.FloatingMenuButton
 import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
-import uk.nktnet.webviewkiosk.ui.components.common.LoadingIndicator
 import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.LinkOptionsDialog
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
@@ -46,8 +46,6 @@ import uk.nktnet.webviewkiosk.utils.webview.generateUnsupportedMimeTypePage
 import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
 import java.io.File
 
-private enum class TransitionState { TRANSITIONING, PAGE_STARTED, PAGE_FINISHED }
-
 @Composable
 fun WebviewScreen(navController: NavController) {
     val context = LocalContext.current
@@ -59,11 +57,11 @@ fun WebviewScreen(navController: NavController) {
 
     var currentUrl by remember { mutableStateOf(systemSettings.currentUrl.takeIf { it.isNotEmpty() } ?: userSettings.homeUrl) }
     var urlBarText by remember { mutableStateOf(TextFieldValue(currentUrl)) }
-    var transitionState by remember { mutableStateOf(TransitionState.PAGE_FINISHED) }
     var isRefreshing by remember { mutableStateOf(false) }
     var hasFocus by remember { mutableStateOf(false) }
 
     var linkToOpen by remember { mutableStateOf<String?>(null) }
+    var progress by remember { mutableIntStateOf(0) }
 
     val showAddressBar = when (userSettings.addressBarMode) {
         AddressBarOption.SHOWN -> true
@@ -101,9 +99,9 @@ fun WebviewScreen(navController: NavController) {
             systemSettings = systemSettings,
             userSettings = userSettings,
             showToast = showToast,
-            onPageStarted = { transitionState = TransitionState.PAGE_STARTED },
+            onProgressChanged = { newProgress -> progress = newProgress },
+            onPageStarted = { },
             onPageFinished = { url ->
-                transitionState = TransitionState.PAGE_FINISHED
                 isRefreshing = false
             },
             doUpdateVisitedHistory = { url, originalUrl ->
@@ -130,7 +128,6 @@ fun WebviewScreen(navController: NavController) {
     )
 
     fun customLoadUrl(newUrl: String) {
-        transitionState = TransitionState.TRANSITIONING
         val uri = newUrl.toUri()
 
         // Handle invalid or unrenderable files here.
@@ -157,7 +154,6 @@ fun WebviewScreen(navController: NavController) {
     val cookieManager = CookieManager.getInstance()
     cookieManager.setAcceptCookie(userSettings.acceptCookies)
     cookieManager.setAcceptThirdPartyCookies(webView, userSettings.acceptThirdPartyCookies)
-    BackPressHandler(::customLoadUrl)
 
     val addressBarSearch: (String) -> Unit = { input ->
         val searchUrl = resolveUrlOrSearch(userSettings.searchProviderUrl, input.trim())
@@ -223,12 +219,13 @@ fun WebviewScreen(navController: NavController) {
                     modifier = Modifier.fillMaxSize()
                 )
 
-                if (transitionState == TransitionState.TRANSITIONING) {
-                    Box(Modifier
-                        .fillMaxSize()
-                        .background(Color(0x88000000)), contentAlignment = Alignment.Center) {
-                        LoadingIndicator("Loading...")
-                    }
+                if (progress < 100) {
+                    LinearProgressIndicator(
+                        progress = { progress / 100f },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.TopCenter)
+                    )
                 }
             }
         }
@@ -258,6 +255,8 @@ fun WebviewScreen(navController: NavController) {
     ) {
         KioskControlPanel(10, webView,::customLoadUrl)
     }
+
+    BackPressHandler(::customLoadUrl)
 
     BasicAuthDialog(authHandler, authHost, authRealm) { authHandler = null }
 

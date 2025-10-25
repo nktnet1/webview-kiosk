@@ -38,6 +38,7 @@ data class WebViewConfig(
     val systemSettings: SystemSettings,
     val userSettings: UserSettings,
     val showToast: (message: String) -> Unit,
+    val onProgressChanged: (newProgress: Int) -> Unit,
     val onPageStarted: () -> Unit,
     val onPageFinished: (String) -> Unit,
     val doUpdateVisitedHistory: (url: String, originalUrl: String?) -> Unit,
@@ -199,6 +200,10 @@ fun createCustomWebview(
                 private var customView: View? = null
                 private var customViewCallback: CustomViewCallback? = null
                 private var fullScreenContainer: FrameLayout? = null
+
+                override fun onProgressChanged(view: WebView?, newProgress: Int) {
+                    config.onProgressChanged(newProgress)
+                }
 
                 override fun onPermissionRequest(request: PermissionRequest) {
                     handlePermissionRequest(context, request, systemSettings, userSettings)
