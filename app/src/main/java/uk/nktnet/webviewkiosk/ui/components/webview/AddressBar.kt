@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
@@ -36,6 +37,7 @@ fun AddressBar(
     customLoadUrl: (newUrl: String) -> Unit,
 ) {
     val context = LocalContext.current
+    val focusManager = LocalFocusManager.current
 
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
@@ -116,7 +118,10 @@ fun AddressBar(
                     .padding(start = 4.dp)
             ) {
                 IconButton(
-                    onClick = { menuExpanded = true },
+                    onClick = {
+                        focusManager.clearFocus()
+                        menuExpanded = true
+                    },
                     modifier = Modifier
                         .padding(0.dp)
                         .size(width = 24.dp, height = 80.dp)

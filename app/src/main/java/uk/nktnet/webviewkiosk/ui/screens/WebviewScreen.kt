@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
@@ -50,6 +51,7 @@ import java.io.File
 fun WebviewScreen(navController: NavController) {
     val context = LocalContext.current
     val activity = LocalActivity.current
+    val focusManager = LocalFocusManager.current
 
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
@@ -256,11 +258,13 @@ fun WebviewScreen(navController: NavController) {
                 .background(Color.Transparent)) {
                 FloatingMenuButton(
                     onHomeClick = {
+                        focusManager.clearFocus()
                         WebViewNavigation.goHome(
                             ::customLoadUrl, systemSettings, userSettings
                         )
                     },
                     onLockClick = {
+                        focusManager.clearFocus()
                         tryLockTask(activity, showToast)
                     },
                     navController = navController
