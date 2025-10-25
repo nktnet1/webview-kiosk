@@ -20,9 +20,11 @@
     <rect x="30.5" y="43" width="39" height="30" rx="5" ry="5" fill="#f6f5f6" stroke="#283d59"
       stroke-width="2.5" />
     <!-- Lock: handle outer -->
-    <path d="M39 44 39 35A10.5 10.5 0 0 1 61 35L61 44" fill="none" stroke="#283d59" stroke-width="9" />
+    <path d="M39 44 39 37.48A10.5 10.5 0 0 1 61 37.48L61 44" fill="none" stroke="#283d59"
+      stroke-width="9" />
     <!-- Lock: handle inner -->
-    <path d="M39 45 39 35A11 11 0 0 1 61 35L61 45" fill="none" stroke="#f6f5f6" stroke-width="4" />
+    <path d="M39 45 39 37.48A11 11 0 0 1 61 37.48L61 45" fill="none" stroke="#f6f5f6"
+      stroke-width="4" />
     <!-- Lock: keyhole circle -->
     <circle cx="50" cy="55" r="4.3" fill="#283d59" />
     <!-- Lock: keyhole shaft -->
