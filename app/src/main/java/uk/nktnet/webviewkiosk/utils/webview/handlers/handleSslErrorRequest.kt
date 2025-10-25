@@ -42,7 +42,7 @@ fun handleSslErrorRequest(
     val messageView = TextView(context).apply {
         text = """
             $errorDescription
-            
+
             URL:
                 ${error?.url}
         """.trimIndent()
