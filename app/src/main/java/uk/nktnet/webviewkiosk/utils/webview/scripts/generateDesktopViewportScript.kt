@@ -1,4 +1,6 @@
-package uk.nktnet.webviewkiosk.utils.webview
+package uk.nktnet.webviewkiosk.utils.webview.scripts
+
+import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 
 fun generateDesktopViewportScript(widthPx: Int = 1024): String {
     val rawScript = """

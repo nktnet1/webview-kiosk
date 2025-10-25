@@ -24,13 +24,13 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.utils.webview.BlockCause
-import uk.nktnet.webviewkiosk.utils.webview.generateBlockedPageHtml
-import uk.nktnet.webviewkiosk.utils.webview.generateDesktopViewportScript
-import uk.nktnet.webviewkiosk.utils.webview.generatePrefersColorSchemeOverrideScript
-import uk.nktnet.webviewkiosk.utils.webview.handleExternalScheme
-import uk.nktnet.webviewkiosk.utils.webview.handleGeolocationRequest
-import uk.nktnet.webviewkiosk.utils.webview.handlePermissionRequest
+import uk.nktnet.webviewkiosk.utils.webview.html.BlockCause
+import uk.nktnet.webviewkiosk.utils.webview.html.generateBlockedPageHtml
+import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScript
+import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOverrideScript
+import uk.nktnet.webviewkiosk.utils.webview.handlers.handleExternalScheme
+import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
+import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 

@@ -41,8 +41,8 @@ import uk.nktnet.webviewkiosk.utils.isSupportedFileURLMimeType
 import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
-import uk.nktnet.webviewkiosk.utils.webview.generateFileMissingPage
-import uk.nktnet.webviewkiosk.utils.webview.generateUnsupportedMimeTypePage
+import uk.nktnet.webviewkiosk.utils.webview.html.generateFileMissingPage
+import uk.nktnet.webviewkiosk.utils.webview.html.generateUnsupportedMimeTypePage
 import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
 import java.io.File
 

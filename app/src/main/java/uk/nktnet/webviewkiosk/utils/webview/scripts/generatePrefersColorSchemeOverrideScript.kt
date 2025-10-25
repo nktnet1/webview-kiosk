@@ -1,6 +1,7 @@
-package uk.nktnet.webviewkiosk.utils.webview
+package uk.nktnet.webviewkiosk.utils.webview.scripts
 
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
+import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 
 fun generatePrefersColorSchemeOverrideScript(theme: ThemeOption): String {
     if (theme == ThemeOption.SYSTEM) {

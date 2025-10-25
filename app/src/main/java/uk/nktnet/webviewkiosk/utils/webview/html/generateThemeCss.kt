@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils.webview
+package uk.nktnet.webviewkiosk.utils.webview.html
 
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 

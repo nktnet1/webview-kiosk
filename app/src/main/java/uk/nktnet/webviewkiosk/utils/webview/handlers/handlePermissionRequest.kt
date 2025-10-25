@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils.webview
+package uk.nktnet.webviewkiosk.utils.webview.handlers
 
 import android.annotation.SuppressLint
 import android.content.Context
