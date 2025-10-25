@@ -43,12 +43,12 @@
         android:fillColor="#f6f5f6"
         android:strokeColor="#283d59"/>
     <path
-        android:pathData="M38.5,44 L38.5,37A11.5,11.5 0,0 1,61.5 37L61.5,44"
-        android:strokeWidth="8"
+        android:pathData="M39,44 L39,37.48A10.5,10.5 0,0 1,61 37.48L61,44"
+        android:strokeWidth="9"
         android:fillColor="#00000000"
         android:strokeColor="#283d59"/>
     <path
-        android:pathData="M39,45 L39,37A11,11 0,0 1,61 37L61,45"
+        android:pathData="M39,45 L39,37.48A11,11 0,0 1,61 37.48L61,45"
         android:strokeWidth="4"
         android:fillColor="#00000000"
         android:strokeColor="#f6f5f6"/>
