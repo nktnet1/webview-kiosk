@@ -10,7 +10,9 @@ import android.webkit.GeolocationPermissions
 import android.webkit.HttpAuthHandler
 import android.webkit.PermissionRequest
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
@@ -31,6 +33,7 @@ import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOv
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleExternalScheme
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
+import uk.nktnet.webviewkiosk.utils.webview.html.generateHttpErrorPage
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 
@@ -194,6 +197,33 @@ fun createCustomWebview(
                     config.onHttpAuthRequest(handler, host, realm)
                 }
 
+                override fun onReceivedError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    error: WebResourceError?
+                ) {
+                    println("[DEBUG] onReceivedError")
+                    super.onReceivedError(view, request, error)
+                }
+
+                override fun onReceivedHttpError(
+                    view: WebView?,
+                    request: WebResourceRequest?,
+                    errorResponse: WebResourceResponse?
+                ) {
+                    if (request?.isForMainFrame == true) {
+                        val html = generateHttpErrorPage(userSettings.theme, request, errorResponse)
+                        view?.loadDataWithBaseURL(
+                            request.url.toString(),
+                            html,
+                            "text/html",
+                            "UTF-8",
+                            null
+                        )
+                        return
+                    }
+                    super.onReceivedHttpError(view, request, errorResponse)
+                }
             }
 
             webChromeClient = object : WebChromeClient() {
