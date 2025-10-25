@@ -1,0 +1,6 @@
+## Changes
+
+fix: clear focus when opening address bar menu options
+feat: custom error pages (SSL, HTTP, connection)
+feat: use linear progress to show loading state
+fix: icon assets, feature graphics, github socials (#76)
