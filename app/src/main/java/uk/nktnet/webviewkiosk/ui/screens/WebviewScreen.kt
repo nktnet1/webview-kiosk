@@ -55,7 +55,9 @@ fun WebviewScreen(navController: NavController) {
     val systemSettings = remember { SystemSettings(context) }
     val isLocked by LockStateSingleton.isLocked
 
-    var currentUrl by remember { mutableStateOf(systemSettings.currentUrl.takeIf { it.isNotEmpty() } ?: userSettings.homeUrl) }
+    var currentUrl by remember { mutableStateOf(systemSettings.currentUrl.takeIf {
+        it.isNotEmpty() } ?: userSettings.homeUrl)
+    }
     var urlBarText by remember { mutableStateOf(TextFieldValue(currentUrl)) }
     var isRefreshing by remember { mutableStateOf(false) }
     var hasFocus by remember { mutableStateOf(false) }
@@ -76,7 +78,9 @@ fun WebviewScreen(navController: NavController) {
     var toastRef: Toast? = null
     val showToast: (String) -> Unit = { msg ->
         toastRef?.cancel()
-        toastRef = Toast.makeText(context, msg, Toast.LENGTH_SHORT).apply { show() }
+        toastRef = Toast.makeText(context, msg, Toast.LENGTH_SHORT).apply {
+            show()
+        }
     }
 
     DisposableEffect( activity, isLocked) {
@@ -137,11 +141,19 @@ fun WebviewScreen(navController: NavController) {
             val file = File(uri.path ?: "")
             val pageContent = when {
                 !file.exists() -> generateFileMissingPage(file, userSettings.theme)
-                !isSupportedFileURLMimeType(mimeType) -> generateUnsupportedMimeTypePage(context, file, mimeType, userSettings.theme)
+                !isSupportedFileURLMimeType(mimeType) -> generateUnsupportedMimeTypePage(
+                    context, file, mimeType, userSettings.theme
+                )
                 else -> null
             }
             pageContent?.let {
-                webView.loadDataWithBaseURL(newUrl, it, "text/html", "UTF-8", null)
+                webView.loadDataWithBaseURL(
+                    newUrl,
+                    it,
+                    "text/html",
+                    "UTF-8",
+                    null
+                )
                 return
             }
         }
@@ -153,10 +165,14 @@ fun WebviewScreen(navController: NavController) {
 
     val cookieManager = CookieManager.getInstance()
     cookieManager.setAcceptCookie(userSettings.acceptCookies)
-    cookieManager.setAcceptThirdPartyCookies(webView, userSettings.acceptThirdPartyCookies)
+    cookieManager.setAcceptThirdPartyCookies(
+        webView, userSettings.acceptThirdPartyCookies
+    )
 
     val addressBarSearch: (String) -> Unit = { input ->
-        val searchUrl = resolveUrlOrSearch(userSettings.searchProviderUrl, input.trim())
+        val searchUrl = resolveUrlOrSearch(
+            userSettings.searchProviderUrl, input.trim()
+        )
         if (searchUrl.isNotBlank() && (searchUrl != currentUrl || userSettings.allowRefresh)) {
             webView.requestFocus()
             customLoadUrl(searchUrl)
@@ -166,8 +182,8 @@ fun WebviewScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(userSettings.webViewInset.toWindowInsets()))
-    {
+            .windowInsetsPadding(userSettings.webViewInset.toWindowInsets())
+    ) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (showAddressBar) {
                 AddressBar(
@@ -215,7 +231,11 @@ fun WebviewScreen(navController: NavController) {
                             initWebviewApply(initialUrl)
                         }
                     },
-                    update = { view -> if (view is SwipeRefreshLayout) view.isRefreshing = isRefreshing },
+                    update = { view ->
+                        if (view is SwipeRefreshLayout) {
+                            view.isRefreshing = isRefreshing
+                        }
+                    },
                     modifier = Modifier.fillMaxSize()
                 )
 
@@ -235,7 +255,11 @@ fun WebviewScreen(navController: NavController) {
                 .fillMaxSize()
                 .background(Color.Transparent)) {
                 FloatingMenuButton(
-                    onHomeClick = { WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings) },
+                    onHomeClick = {
+                        WebViewNavigation.goHome(
+                            ::customLoadUrl, systemSettings, userSettings
+                        )
+                    },
                     onLockClick = {
                         tryLockTask(activity, showToast)
                     },
