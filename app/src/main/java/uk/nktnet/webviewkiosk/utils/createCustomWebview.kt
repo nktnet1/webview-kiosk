@@ -285,6 +285,7 @@ fun createCustomWebview(
                     super.onReceivedError(view, request, error)
                 }
 
+                @Deprecated("For API < 23")
                 override fun onReceivedError(
                     view: WebView?,
                     errorCode: Int,
