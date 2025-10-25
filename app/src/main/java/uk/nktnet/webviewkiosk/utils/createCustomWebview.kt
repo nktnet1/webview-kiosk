@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.Context
 import android.graphics.Bitmap
 import android.net.http.SslError
+import android.os.Build
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.GeolocationPermissions
@@ -249,7 +250,7 @@ fun createCustomWebview(
                     request: WebResourceRequest?,
                     error: WebResourceError?
                 ) {
-                    if (request?.isForMainFrame == true) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && request?.isForMainFrame == true) {
                         val html = generateErrorPage(
                             userSettings.theme,
                             error?.errorCode,
@@ -266,6 +267,29 @@ fun createCustomWebview(
                         return
                     }
                     super.onReceivedError(view, request, error)
+                }
+
+                override fun onReceivedError(
+                    view: WebView?,
+                    errorCode: Int,
+                    description: String?,
+                    failingUrl: String?
+                ) {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                        val html = generateErrorPage(
+                            userSettings.theme,
+                            errorCode,
+                            description,
+                            failingUrl
+                        )
+                        view?.loadDataWithBaseURL(
+                            failingUrl,
+                            html,
+                            "text/html",
+                            "UTF-8",
+                            null
+                        )
+                    }
                 }
 
                 override fun onReceivedSslError(
