@@ -39,7 +39,7 @@ class WebviewAwareSwipeRefreshLayout : SwipeRefreshLayout {
             MotionEvent.ACTION_DOWN -> {
                 initialY = ev.y
                 val wv = webview
-                canRefresh = wv != null && wv.scrollY == 0 && initialY <= height / 2
+                canRefresh = wv != null && wv.scrollY == 0 && initialY <= height / 4
             }
         }
 

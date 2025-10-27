@@ -14,7 +14,7 @@ fun AllowRefreshSetting() {
 
     BooleanSettingFieldItem(
         label = "Allow Refresh",
-        infoText = "Whether the user can pull down at the top of a webpage to refresh.",
+        infoText = "Whether the user can pull down at the top 1/4 of a webpage to refresh.",
         restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.ALLOW_REFRESH),
         initialValue = userSettings.allowRefresh,
         onSave = { userSettings.allowRefresh = it }
