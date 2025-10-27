@@ -124,7 +124,7 @@ fun createCustomWebview(
                                 )
                             }
                             systemSettings.urlBeforeNavigation = ""
-                            println("[DEBUG] onPageFinished | $url")
+                            //println("[DEBUG] onPageFinished | $url")
                         }
                     }
                 }
@@ -143,7 +143,7 @@ fun createCustomWebview(
                         systemSettings.urlBeforeNavigation = systemSettings.currentUrl
                     }
 
-                    println("[DEBUG] shouldOverrideUrlLoading $requestUrl")
+                    //println("[DEBUG] shouldOverrideUrlLoading $requestUrl")
 
                     val (schemeType, blockCause) = getBlockInfo(
                         url = requestUrl,
@@ -181,16 +181,21 @@ fun createCustomWebview(
                     if (
                         systemSettings.urlBeingHandled.trimEnd('/') == url.trimEnd('/')
                     ) {
-                        println("\t[DEBUG] doUpdateVisitedHistory url=$url | update history only")
+                        //println("\t[DEBUG] doUpdateVisitedHistory url=$url | update history only")
                         config.updateAddressBarAndHistory(url, originalUrl)
                         return
                     }
+
+                    /**
+                     * This section of the code is only ever reached if either customLoadUrl or
+                     * shouldOverrideUrlLoading was not triggered, e.g. during JS navigation in
+                     * Single Page Applications (e.g. a React SPA).
+                     */
                     if (systemSettings.urlBeforeNavigation.isEmpty()) {
-                        // [URL_BEFORE_NAVIGATION] first to run for for SPA
                         systemSettings.urlBeforeNavigation = systemSettings.currentUrl
                     }
 
-                    println("[DEBUG] doUpdateVisitedHistory url=$url | lastPageHandled=${systemSettings.urlBeingHandled}")
+                    //println("[DEBUG] doUpdateVisitedHistory url=$url | lastPageHandled=${systemSettings.urlBeingHandled}")
                     systemSettings.urlBeingHandled = url
 
                     val (schemeType, blockCause) = getBlockInfo(
@@ -400,7 +405,7 @@ fun getBlockInfo(
         else -> null
     }
 
-    println("\t[DEBUG] getBlockInfo $schemeType | $blockCause | $url")
+    //println("\t[DEBUG] getBlockInfo $schemeType | $blockCause | $url")
     return schemeType to blockCause
 }
 

@@ -119,7 +119,6 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
-
     fun updateAddressBarAndHistory(url: String, originalUrl: String?) {
         urlBarText = urlBarText.copy(text = url)
         WebViewNavigation.appendWebviewHistory(
@@ -155,7 +154,7 @@ fun WebviewScreen(navController: NavController) {
     )
 
     fun customLoadUrl(newUrl: String) {
-        println("[DEBUG] customLoadUrl $newUrl")
+        //println("[DEBUG] customLoadUrl $newUrl")
         systemSettings.urlBeingHandled = newUrl
         val (schemeType, blockCause) = getBlockInfo(
             url = newUrl,
