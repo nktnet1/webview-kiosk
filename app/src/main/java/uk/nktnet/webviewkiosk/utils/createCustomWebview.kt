@@ -43,6 +43,7 @@ data class WebViewConfig(
     val blacklistRegexes: List<Regex>,
     val whitelistRegexes: List<Regex>,
     val showToast: (message: String) -> Unit,
+    val finishSwipeRefresh: () -> Unit,
     val onProgressChanged: (newProgress: Int) -> Unit,
     val updateAddressBarAndHistory: (url: String, originalUrl: String?) -> Unit,
     val onHttpAuthRequest: (handler: HttpAuthHandler?, host: String?, realm: String?) -> Unit,
@@ -57,9 +58,6 @@ fun createCustomWebview(
 ): WebView {
     val systemSettings = config.systemSettings
     val userSettings = config.userSettings
-    var lastHistoryUrl: String? = systemSettings.currentUrl
-    var lastPageFinishedUrl: String? = null
-
 
     val webView = remember {
         WebView(context).apply {
@@ -105,17 +103,14 @@ fun createCustomWebview(
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    systemSettings.isRefreshing = false
-                    if (lastPageFinishedUrl?.trimEnd('/') == url?.trimEnd('/')) {
-                        return
-                    }
+                    config.finishSwipeRefresh()
+
                     url?.let {
                         // [URL_BEFORE_NAVIGATION] reset when loaded - must check
                         // progress = 100 due to webview bug where onPageFinished
                         // gets called multiple times.
                         // https://issuetracker.google.com/issues/36983315
                         if (progress == 100) {
-
                             if (userSettings.applyDesktopViewportWidth >= Constants.MIN_DESKTOP_WIDTH) {
                                 view?.evaluateJavascript(
                                     generateDesktopViewportScript(userSettings.applyDesktopViewportWidth),
@@ -129,8 +124,7 @@ fun createCustomWebview(
                                 )
                             }
                             systemSettings.urlBeforeNavigation = ""
-                            lastPageFinishedUrl = url
-                            println("[DEBUG] onPageFinished $progress | $url")
+                            println("[DEBUG] onPageFinished | $url")
                         }
                     }
                 }
@@ -139,36 +133,38 @@ fun createCustomWebview(
                     view: WebView?,
                     request: WebResourceRequest?
                 ): Boolean {
+                    val requestUrl = request?.url.toString()
+                    if (requestUrl.isEmpty()) {
+                        return false
+                    }
+                    systemSettings.urlBeingHandled = requestUrl
                     if (systemSettings.urlBeforeNavigation.isEmpty()) {
                         // [URL_BEFORE_NAVIGATION] first to run for native navigation (non-SPA)
                         systemSettings.urlBeforeNavigation = systemSettings.currentUrl
                     }
 
-                    val requestUrl = request?.url.toString()
                     println("[DEBUG] shouldOverrideUrlLoading $requestUrl")
 
-                    if (requestUrl.isNotEmpty()) {
-                        val (schemeType, blockCause) = getBlockInfo(
-                            url = requestUrl,
-                            blacklistRegexes = config.blacklistRegexes,
-                            whitelistRegexes = config.whitelistRegexes,
-                            userSettings = userSettings
+                    val (schemeType, blockCause) = getBlockInfo(
+                        url = requestUrl,
+                        blacklistRegexes = config.blacklistRegexes,
+                        whitelistRegexes = config.whitelistRegexes,
+                        userSettings = userSettings
+                    )
+                    if (schemeType == SchemeType.OTHER) {
+                        if (userSettings.allowOtherUrlSchemes) {
+                            handleExternalScheme(context, requestUrl)
+                        }
+                        return true
+                    }
+                    if (blockCause != null) {
+                        loadBlockedPage(
+                            view,
+                            userSettings,
+                            requestUrl,
+                            blockCause,
                         )
-                        if (schemeType == SchemeType.OTHER) {
-                            if (userSettings.allowOtherUrlSchemes) {
-                                handleExternalScheme(context, requestUrl)
-                            }
-                            return true
-                        }
-                        if (blockCause != null) {
-                            loadBlockedPage(
-                                view,
-                                userSettings,
-                                requestUrl,
-                                blockCause,
-                            )
-                            return true
-                        }
+                        return true
                     }
                     return false
                 }
@@ -178,15 +174,24 @@ fun createCustomWebview(
                     url: String?,
                     isReload: Boolean
                 ) {
+
+                    if (url == null) {
+                        return
+                    }
+                    if (
+                        systemSettings.urlBeingHandled.trimEnd('/') == url.trimEnd('/')
+                    ) {
+                        println("\t[DEBUG] doUpdateVisitedHistory url=$url | update history only")
+                        config.updateAddressBarAndHistory(url, originalUrl)
+                        return
+                    }
                     if (systemSettings.urlBeforeNavigation.isEmpty()) {
                         // [URL_BEFORE_NAVIGATION] first to run for for SPA
                         systemSettings.urlBeforeNavigation = systemSettings.currentUrl
                     }
-                    if (url == null || lastHistoryUrl?.trimEnd('/') == url.trimEnd('/')) {
-                        return
-                    }
-                    println("[DEBUG] doUpdateVisitedHistory url=$url | lastHistoryUrl=$lastHistoryUrl")
-                    lastHistoryUrl = url
+
+                    println("[DEBUG] doUpdateVisitedHistory url=$url | lastPageHandled=${systemSettings.urlBeingHandled}")
+                    systemSettings.urlBeingHandled = url
 
                     val (schemeType, blockCause) = getBlockInfo(
                         url = url,
@@ -395,6 +400,7 @@ fun getBlockInfo(
         else -> null
     }
 
+    println("\t[DEBUG] getBlockInfo $schemeType | $blockCause | $url")
     return schemeType to blockCause
 }
 

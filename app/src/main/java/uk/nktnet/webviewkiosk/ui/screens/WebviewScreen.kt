@@ -34,11 +34,14 @@ import uk.nktnet.webviewkiosk.ui.components.webview.FloatingMenuButton
 import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
 import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.LinkOptionsDialog
+import uk.nktnet.webviewkiosk.utils.SchemeType
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
 import uk.nktnet.webviewkiosk.utils.enterImmersiveMode
 import uk.nktnet.webviewkiosk.utils.exitImmersiveMode
+import uk.nktnet.webviewkiosk.utils.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.getMimeType
 import uk.nktnet.webviewkiosk.utils.isSupportedFileURLMimeType
+import uk.nktnet.webviewkiosk.utils.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
@@ -66,6 +69,7 @@ fun WebviewScreen(navController: NavController) {
         )
     }
 
+    var isSwipeRefreshing by remember { mutableStateOf(false) }
     var addressBarHasFocus by remember { mutableStateOf(false) }
 
     var linkToOpen by remember { mutableStateOf<String?>(null) }
@@ -135,6 +139,9 @@ fun WebviewScreen(navController: NavController) {
             whitelistRegexes = whitelistRegexes,
             showToast = showToast,
             onProgressChanged = { newProgress -> progress = newProgress },
+            finishSwipeRefresh = {
+                isSwipeRefreshing = false
+            },
             updateAddressBarAndHistory = ::updateAddressBarAndHistory,
             onHttpAuthRequest = { handler, host, realm ->
                 authHandler = handler
@@ -149,8 +156,24 @@ fun WebviewScreen(navController: NavController) {
 
     fun customLoadUrl(newUrl: String) {
         println("[DEBUG] customLoadUrl $newUrl")
-        val uri = newUrl.toUri()
-        if (uri.scheme == "file") {
+        systemSettings.urlBeingHandled = newUrl
+        val (schemeType, blockCause) = getBlockInfo(
+            url = newUrl,
+            blacklistRegexes = blacklistRegexes,
+            whitelistRegexes = whitelistRegexes,
+            userSettings = userSettings
+        )
+        if (blockCause != null) {
+            loadBlockedPage(
+                webView,
+                userSettings,
+                newUrl,
+                blockCause,
+            )
+            return
+        }
+        if (schemeType == SchemeType.FILE) {
+            val uri = newUrl.toUri()
             val mimeType = getMimeType(context, uri)
             val file = File(uri.path ?: "")
             val pageContent = when {
@@ -232,7 +255,7 @@ fun WebviewScreen(navController: NavController) {
                         if (userSettings.allowRefresh) {
                             WebviewAwareSwipeRefreshLayout(ctx, webView).apply {
                                 setOnRefreshListener {
-                                    systemSettings.isRefreshing = true
+                                    isSwipeRefreshing = true
                                     WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
                                 }
                                 addView(initWebviewApply(initialUrl))
@@ -243,7 +266,7 @@ fun WebviewScreen(navController: NavController) {
                     },
                     update = { view ->
                         if (view is SwipeRefreshLayout) {
-                            view.isRefreshing = systemSettings.isRefreshing
+                            view.isRefreshing = isSwipeRefreshing
                         }
                     },
                     modifier = Modifier.fillMaxSize()

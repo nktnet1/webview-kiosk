@@ -78,8 +78,9 @@ class SystemSettings(val context: Context) {
 
     var intentUrl by stringPrefOptional(prefs = prefs, key = INTENT_URL)
     var isFreshLaunch by mutableStateOf(true)
-    var isRefreshing by mutableStateOf(false)
+
     var urlBeforeNavigation by mutableStateOf("")
+    var urlBeingHandled by mutableStateOf("")
 
     companion object {
         private const val PREFS_NAME = "system_settings"
