@@ -34,14 +34,11 @@ import uk.nktnet.webviewkiosk.ui.components.webview.FloatingMenuButton
 import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
 import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.LinkOptionsDialog
-import uk.nktnet.webviewkiosk.utils.SchemeType
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
 import uk.nktnet.webviewkiosk.utils.enterImmersiveMode
 import uk.nktnet.webviewkiosk.utils.exitImmersiveMode
-import uk.nktnet.webviewkiosk.utils.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.getMimeType
 import uk.nktnet.webviewkiosk.utils.isSupportedFileURLMimeType
-import uk.nktnet.webviewkiosk.utils.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
@@ -60,12 +57,16 @@ fun WebviewScreen(navController: NavController) {
     val systemSettings = remember { SystemSettings(context) }
     val isLocked by LockStateSingleton.isLocked
 
-    var currentUrl by remember { mutableStateOf(systemSettings.currentUrl.takeIf {
-        it.isNotEmpty() } ?: userSettings.homeUrl)
+    val lastVisitedUrl = systemSettings.currentUrl.takeIf { it.isNotEmpty() } ?: userSettings.homeUrl
+    var urlBarText by remember {
+        mutableStateOf(
+            TextFieldValue(
+                lastVisitedUrl
+            )
+        )
     }
-    var urlBarText by remember { mutableStateOf(TextFieldValue(currentUrl)) }
-    var isRefreshing by remember { mutableStateOf(false) }
-    var hasFocus by remember { mutableStateOf(false) }
+
+    var addressBarHasFocus by remember { mutableStateOf(false) }
 
     var linkToOpen by remember { mutableStateOf<String?>(null) }
     var progress by remember { mutableIntStateOf(0) }
@@ -114,9 +115,15 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    fun onPageFinished(url: String) {
-        isRefreshing = false
+
+    fun updateAddressBarAndHistory(url: String, originalUrl: String?) {
+        urlBarText = urlBarText.copy(text = url)
+        WebViewNavigation.appendWebviewHistory(
+            systemSettings,
+            url,
+            originalUrl,
+            userSettings.replaceHistoryUrlOnRedirect
+        )
     }
 
     val webView = createCustomWebview(
@@ -128,20 +135,7 @@ fun WebviewScreen(navController: NavController) {
             whitelistRegexes = whitelistRegexes,
             showToast = showToast,
             onProgressChanged = { newProgress -> progress = newProgress },
-            onPageStarted = { },
-            onPageFinished = ::onPageFinished,
-            doUpdateVisitedHistory = { url, originalUrl ->
-                if (!hasFocus) {
-                    urlBarText = urlBarText.copy(text = url)
-                }
-                currentUrl = url
-                WebViewNavigation.appendWebviewHistory(
-                    systemSettings,
-                    url,
-                    originalUrl,
-                    userSettings.replaceHistoryUrlOnRedirect
-                )
-            },
+            updateAddressBarAndHistory = ::updateAddressBarAndHistory,
             onHttpAuthRequest = { handler, host, realm ->
                 authHandler = handler
                 authHost = host
@@ -154,26 +148,9 @@ fun WebviewScreen(navController: NavController) {
     )
 
     fun customLoadUrl(newUrl: String) {
-        if (systemSettings.urlBeforeNavigation.isEmpty()) {
-            // [URL_BEFORE_NAVIGATION] first to run for programmatic navigations
-            systemSettings.urlBeforeNavigation = systemSettings.currentUrl
-        }
-
-        val (schemeType, blockCause) = getBlockInfo(
-            url = newUrl,
-            blacklistRegexes = blacklistRegexes,
-            whitelistRegexes = whitelistRegexes,
-            userSettings = userSettings
-        )
-        if (blockCause != null) {
-            println("[DEBUG] WebviewScreen.customLoadUrl $newUrl")
-            loadBlockedPage(webView, userSettings, newUrl, blockCause, ::onPageFinished)
-            return
-        }
-
+        println("[DEBUG] customLoadUrl $newUrl")
         val uri = newUrl.toUri()
-
-        if (schemeType == SchemeType.FILE) {
+        if (uri.scheme == "file") {
             val mimeType = getMimeType(context, uri)
             val file = File(uri.path ?: "")
             val pageContent = when {
@@ -207,7 +184,7 @@ fun WebviewScreen(navController: NavController) {
         val searchUrl = resolveUrlOrSearch(
             userSettings.searchProviderUrl, input.trim()
         )
-        if (searchUrl.isNotBlank() && (searchUrl != currentUrl || userSettings.allowRefresh)) {
+        if (searchUrl.isNotBlank() && (searchUrl != systemSettings.currentUrl || userSettings.allowRefresh)) {
             webView.requestFocus()
             customLoadUrl(searchUrl)
         }
@@ -223,8 +200,8 @@ fun WebviewScreen(navController: NavController) {
                 AddressBar(
                     urlBarText = urlBarText,
                     onUrlBarTextChange = { urlBarText = it },
-                    hasFocus = hasFocus,
-                    onFocusChanged = { focusState -> hasFocus = focusState.isFocused },
+                    hasFocus = addressBarHasFocus,
+                    onFocusChanged = { focusState -> addressBarHasFocus = focusState.isFocused },
                     addressBarSearch = addressBarSearch,
                     customLoadUrl = ::customLoadUrl,
                 )
@@ -233,7 +210,7 @@ fun WebviewScreen(navController: NavController) {
             Box(modifier = Modifier.weight(1f)) {
                 AndroidView(
                     factory = { ctx ->
-                        var initialUrl = currentUrl
+                        var initialUrl = lastVisitedUrl
 
                         if (systemSettings.intentUrl.isNotEmpty()) {
                             initialUrl = systemSettings.intentUrl
@@ -255,7 +232,7 @@ fun WebviewScreen(navController: NavController) {
                         if (userSettings.allowRefresh) {
                             WebviewAwareSwipeRefreshLayout(ctx, webView).apply {
                                 setOnRefreshListener {
-                                    isRefreshing = true
+                                    systemSettings.isRefreshing = true
                                     WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
                                 }
                                 addView(initWebviewApply(initialUrl))
@@ -266,7 +243,7 @@ fun WebviewScreen(navController: NavController) {
                     },
                     update = { view ->
                         if (view is SwipeRefreshLayout) {
-                            view.isRefreshing = isRefreshing
+                            view.isRefreshing = systemSettings.isRefreshing
                         }
                     },
                     modifier = Modifier.fillMaxSize()

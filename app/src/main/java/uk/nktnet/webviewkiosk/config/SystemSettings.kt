@@ -2,6 +2,9 @@ package uk.nktnet.webviewkiosk.config
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.core.content.edit
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -74,8 +77,9 @@ class SystemSettings(val context: Context) {
         }
 
     var intentUrl by stringPrefOptional(prefs = prefs, key = INTENT_URL)
-    var isFreshLaunch by booleanPref(prefs = prefs, key = IS_FRESH_LAUNCH, default = true)
-    var urlBeforeNavigation by stringPrefOptional(prefs = prefs, key = URL_BEFORE_NAVIGATION)
+    var isFreshLaunch by mutableStateOf(true)
+    var isRefreshing by mutableStateOf(false)
+    var urlBeforeNavigation by mutableStateOf("")
 
     companion object {
         private const val PREFS_NAME = "system_settings"
@@ -86,9 +90,7 @@ class SystemSettings(val context: Context) {
         private const val IS_KIOSK_CONTROL_PANEL_STICKY = "is_kiosk_control_panel_sticky"
         private const val APP_INSTANCE_ID = "app_instance_id"
         private const val SITE_PERMISSIONS = "site_permissions"
-        private const val IS_FRESH_LAUNCH = "is_fresh_launch"
         private const val INTENT_URL = "intent_url"
-        private const val URL_BEFORE_NAVIGATION = "url_before_navigation"
     }
 
     fun clearHistory() {

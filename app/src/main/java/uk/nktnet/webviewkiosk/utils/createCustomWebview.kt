@@ -44,9 +44,7 @@ data class WebViewConfig(
     val whitelistRegexes: List<Regex>,
     val showToast: (message: String) -> Unit,
     val onProgressChanged: (newProgress: Int) -> Unit,
-    val onPageStarted: () -> Unit,
-    val onPageFinished: (url: String) -> Unit,
-    val doUpdateVisitedHistory: (url: String, originalUrl: String?) -> Unit,
+    val updateAddressBarAndHistory: (url: String, originalUrl: String?) -> Unit,
     val onHttpAuthRequest: (handler: HttpAuthHandler?, host: String?, realm: String?) -> Unit,
     val onLinkLongClick: (url: String) -> Unit
 )
@@ -59,7 +57,9 @@ fun createCustomWebview(
 ): WebView {
     val systemSettings = config.systemSettings
     val userSettings = config.userSettings
-    var lastHistoryUrl: String? = null
+    var lastHistoryUrl: String? = systemSettings.currentUrl
+    var lastPageFinishedUrl: String? = null
+
 
     val webView = remember {
         WebView(context).apply {
@@ -87,22 +87,6 @@ fun createCustomWebview(
                 mediaPlaybackRequiresUserGesture = userSettings.mediaPlaybackRequiresUserGesture
             }
 
-//            val loadBlockedPage: (url: String, blockCause: BlockCause) -> Unit = { url, blockCause ->
-//                loadDataWithBaseURL(
-//                    url,
-//                    generateBlockedPageHtml(
-//                        userSettings.theme,
-//                        blockCause,
-//                        userSettings.blockedMessage,
-//                        url
-//                    ),
-//                    "text/html",
-//                    "UTF-8",
-//                    null
-//                )
-//                config.onPageFinished(url)
-//            }
-
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     if (userSettings.applyAppTheme && userSettings.theme != ThemeOption.SYSTEM) {
@@ -118,27 +102,35 @@ fun createCustomWebview(
                         )
                     }
                     super.onPageStarted(view, url, favicon)
-                    config.onPageStarted()
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    if (userSettings.applyDesktopViewportWidth >= Constants.MIN_DESKTOP_WIDTH) {
-                        view?.evaluateJavascript(
-                            generateDesktopViewportScript(userSettings.applyDesktopViewportWidth),
-                            null
-                        )
+                    systemSettings.isRefreshing = false
+                    if (lastPageFinishedUrl?.trimEnd('/') == url?.trimEnd('/')) {
+                        return
                     }
-                    if (userSettings.customScriptOnPageFinish.isNotBlank()) {
-                        view?.evaluateJavascript(
-                            wrapJsInIIFE(userSettings.customScriptOnPageFinish),
-                            null
-                        )
-                    }
-                    println("[DEBUG] onPageFinished progress=$progress | $url")
                     url?.let {
-                        config.onPageFinished(it)
+                        // [URL_BEFORE_NAVIGATION] reset when loaded - must check
+                        // progress = 100 due to webview bug where onPageFinished
+                        // gets called multiple times.
+                        // https://issuetracker.google.com/issues/36983315
                         if (progress == 100) {
+
+                            if (userSettings.applyDesktopViewportWidth >= Constants.MIN_DESKTOP_WIDTH) {
+                                view?.evaluateJavascript(
+                                    generateDesktopViewportScript(userSettings.applyDesktopViewportWidth),
+                                    null
+                                )
+                            }
+                            if (userSettings.customScriptOnPageFinish.isNotBlank()) {
+                                view?.evaluateJavascript(
+                                    wrapJsInIIFE(userSettings.customScriptOnPageFinish),
+                                    null
+                                )
+                            }
                             systemSettings.urlBeforeNavigation = ""
+                            lastPageFinishedUrl = url
+                            println("[DEBUG] onPageFinished $progress | $url")
                         }
                     }
                 }
@@ -154,7 +146,6 @@ fun createCustomWebview(
 
                     val requestUrl = request?.url.toString()
                     println("[DEBUG] shouldOverrideUrlLoading $requestUrl")
-
 
                     if (requestUrl.isNotEmpty()) {
                         val (schemeType, blockCause) = getBlockInfo(
@@ -175,7 +166,6 @@ fun createCustomWebview(
                                 userSettings,
                                 requestUrl,
                                 blockCause,
-                                config.onPageFinished
                             )
                             return true
                         }
@@ -192,14 +182,10 @@ fun createCustomWebview(
                         // [URL_BEFORE_NAVIGATION] first to run for for SPA
                         systemSettings.urlBeforeNavigation = systemSettings.currentUrl
                     }
-                    if (url == null) {
+                    if (url == null || lastHistoryUrl?.trimEnd('/') == url.trimEnd('/')) {
                         return
                     }
-                    if (lastHistoryUrl == url) {
-                        config.doUpdateVisitedHistory(url, originalUrl)
-                        return
-                    }
-                    println("[DEBUG] doUpdateVisitedHistory $url")
+                    println("[DEBUG] doUpdateVisitedHistory url=$url | lastHistoryUrl=$lastHistoryUrl")
                     lastHistoryUrl = url
 
                     val (schemeType, blockCause) = getBlockInfo(
@@ -214,14 +200,14 @@ fun createCustomWebview(
                             userSettings,
                             url,
                             blockCause,
-                            config.onPageFinished
                         )
+                        config.updateAddressBarAndHistory(url, originalUrl)
                         return
                     }
                     if (schemeType == SchemeType.OTHER) {
                         return
                     }
-                    config.doUpdateVisitedHistory(url, originalUrl)
+                    config.updateAddressBarAndHistory(url, originalUrl)
                 }
 
                 override fun onReceivedHttpAuthRequest(
@@ -417,7 +403,6 @@ fun loadBlockedPage(
     userSettings: UserSettings,
     url: String,
     blockCause: BlockCause,
-    callBack: (url: String) -> Unit
 ) {
     webView?.loadDataWithBaseURL(
         url,
@@ -431,5 +416,4 @@ fun loadBlockedPage(
         "UTF-8",
         null
     )
-    callBack(url)
 }

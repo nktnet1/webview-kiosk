@@ -39,7 +39,6 @@ fun AddressBar(
 
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
-    var urlTextState by remember { mutableStateOf(urlBarText.text) }
 
     var menuExpanded by remember { mutableStateOf(false) }
     var showHistoryDialog by remember { mutableStateOf(false) }
@@ -73,7 +72,6 @@ fun AddressBar(
             value = urlBarText,
             onValueChange = {
                 onUrlBarTextChange(it)
-                urlTextState = it.text
             },
             singleLine = true,
             modifier = Modifier
@@ -93,7 +91,7 @@ fun AddressBar(
                 }
             }),
             trailingIcon = {
-                IconButton(onClick = { addressBarSearch(urlTextState) }) {
+                IconButton(onClick = { addressBarSearch(urlBarText.text) }) {
                     Icon(
                         painter = painterResource(R.drawable.baseline_search_24),
                         contentDescription = "Go"
