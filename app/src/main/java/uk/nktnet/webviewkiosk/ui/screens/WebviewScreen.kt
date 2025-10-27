@@ -34,11 +34,14 @@ import uk.nktnet.webviewkiosk.ui.components.webview.FloatingMenuButton
 import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
 import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.LinkOptionsDialog
+import uk.nktnet.webviewkiosk.utils.SchemeType
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
 import uk.nktnet.webviewkiosk.utils.enterImmersiveMode
 import uk.nktnet.webviewkiosk.utils.exitImmersiveMode
+import uk.nktnet.webviewkiosk.utils.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.getMimeType
 import uk.nktnet.webviewkiosk.utils.isSupportedFileURLMimeType
+import uk.nktnet.webviewkiosk.utils.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
@@ -85,6 +88,18 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
+    val blacklistRegexes: List<Regex> by lazy {
+        userSettings.websiteBlacklist.lines()
+            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+            .mapNotNull { runCatching { Regex(it) }.getOrNull() }
+    }
+
+    val whitelistRegexes: List<Regex> by lazy {
+        userSettings.websiteWhitelist.lines()
+            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+            .mapNotNull { runCatching { Regex(it) }.getOrNull() }
+    }
+
     DisposableEffect( activity, isLocked) {
         if (activity != null) {
             val shouldImmerse = shouldBeImmersed(activity, userSettings)
@@ -99,17 +114,22 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
+    @Suppress("UNUSED_PARAMETER")
+    fun onPageFinished(url: String) {
+        isRefreshing = false
+    }
+
     val webView = createCustomWebview(
         context = context,
         config = uk.nktnet.webviewkiosk.utils.WebViewConfig(
             systemSettings = systemSettings,
             userSettings = userSettings,
+            blacklistRegexes = blacklistRegexes,
+            whitelistRegexes = whitelistRegexes,
             showToast = showToast,
             onProgressChanged = { newProgress -> progress = newProgress },
             onPageStarted = { },
-            onPageFinished = {
-                isRefreshing = false
-            },
+            onPageFinished = ::onPageFinished,
             doUpdateVisitedHistory = { url, originalUrl ->
                 if (!hasFocus) {
                     urlBarText = urlBarText.copy(text = url)
@@ -134,11 +154,26 @@ fun WebviewScreen(navController: NavController) {
     )
 
     fun customLoadUrl(newUrl: String) {
+        if (systemSettings.urlBeforeNavigation.isEmpty()) {
+            // [URL_BEFORE_NAVIGATION] first to run for programmatic navigations
+            systemSettings.urlBeforeNavigation = systemSettings.currentUrl
+        }
+
+        val (schemeType, blockCause) = getBlockInfo(
+            url = newUrl,
+            blacklistRegexes = blacklistRegexes,
+            whitelistRegexes = whitelistRegexes,
+            userSettings = userSettings
+        )
+        if (blockCause != null) {
+            println("[DEBUG] WebviewScreen.customLoadUrl $newUrl")
+            loadBlockedPage(webView, userSettings, newUrl, blockCause, ::onPageFinished)
+            return
+        }
+
         val uri = newUrl.toUri()
 
-        // Handle invalid or unrenderable files here.
-        // For valid files, delegate to createCustomWebview.
-        if (uri.scheme == "file" && userSettings.allowLocalFiles) {
+        if (schemeType == SchemeType.FILE) {
             val mimeType = getMimeType(context, uri)
             val file = File(uri.path ?: "")
             val pageContent = when {
@@ -158,9 +193,6 @@ fun WebviewScreen(navController: NavController) {
                 )
                 return
             }
-        }
-        if (systemSettings.urlBeforeNavigation.isEmpty()) {
-            systemSettings.urlBeforeNavigation = systemSettings.currentUrl
         }
         webView.loadUrl(newUrl)
     }

@@ -40,6 +40,8 @@ import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 data class WebViewConfig(
     val systemSettings: SystemSettings,
     val userSettings: UserSettings,
+    val blacklistRegexes: List<Regex>,
+    val whitelistRegexes: List<Regex>,
     val showToast: (message: String) -> Unit,
     val onProgressChanged: (newProgress: Int) -> Unit,
     val onPageStarted: () -> Unit,
@@ -47,19 +49,7 @@ data class WebViewConfig(
     val doUpdateVisitedHistory: (url: String, originalUrl: String?) -> Unit,
     val onHttpAuthRequest: (handler: HttpAuthHandler?, host: String?, realm: String?) -> Unit,
     val onLinkLongClick: (url: String) -> Unit
-) {
-    val blacklistRegexes: List<Regex> by lazy {
-        userSettings.websiteBlacklist.lines()
-            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
-            .mapNotNull { runCatching { Regex(it) }.getOrNull() }
-    }
-
-    val whitelistRegexes: List<Regex> by lazy {
-        userSettings.websiteWhitelist.lines()
-            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
-            .mapNotNull { runCatching { Regex(it) }.getOrNull() }
-    }
-}
+)
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -97,21 +87,21 @@ fun createCustomWebview(
                 mediaPlaybackRequiresUserGesture = userSettings.mediaPlaybackRequiresUserGesture
             }
 
-            val loadBlockedPage: (url: String, blockCause: BlockCause) -> Unit = { url, blockCause ->
-                loadDataWithBaseURL(
-                    url,
-                    generateBlockedPageHtml(
-                        userSettings.theme,
-                        blockCause,
-                        userSettings.blockedMessage,
-                        url
-                    ),
-                    "text/html",
-                    "UTF-8",
-                    null
-                )
-                config.onPageFinished(url)
-            }
+//            val loadBlockedPage: (url: String, blockCause: BlockCause) -> Unit = { url, blockCause ->
+//                loadDataWithBaseURL(
+//                    url,
+//                    generateBlockedPageHtml(
+//                        userSettings.theme,
+//                        blockCause,
+//                        userSettings.blockedMessage,
+//                        url
+//                    ),
+//                    "text/html",
+//                    "UTF-8",
+//                    null
+//                )
+//                config.onPageFinished(url)
+//            }
 
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
@@ -144,9 +134,12 @@ fun createCustomWebview(
                             null
                         )
                     }
-                    systemSettings.urlBeforeNavigation = ""
+                    println("[DEBUG] onPageFinished progress=$progress | $url")
                     url?.let {
                         config.onPageFinished(it)
+                        if (progress == 100) {
+                            systemSettings.urlBeforeNavigation = ""
+                        }
                     }
                 }
 
@@ -155,10 +148,13 @@ fun createCustomWebview(
                     request: WebResourceRequest?
                 ): Boolean {
                     if (systemSettings.urlBeforeNavigation.isEmpty()) {
+                        // [URL_BEFORE_NAVIGATION] first to run for native navigation (non-SPA)
                         systemSettings.urlBeforeNavigation = systemSettings.currentUrl
                     }
 
                     val requestUrl = request?.url.toString()
+                    println("[DEBUG] shouldOverrideUrlLoading $requestUrl")
+
 
                     if (requestUrl.isNotEmpty()) {
                         val (schemeType, blockCause) = getBlockInfo(
@@ -174,7 +170,13 @@ fun createCustomWebview(
                             return true
                         }
                         if (blockCause != null) {
-                            loadBlockedPage(requestUrl, blockCause)
+                            loadBlockedPage(
+                                view,
+                                userSettings,
+                                requestUrl,
+                                blockCause,
+                                config.onPageFinished
+                            )
                             return true
                         }
                     }
@@ -186,6 +188,10 @@ fun createCustomWebview(
                     url: String?,
                     isReload: Boolean
                 ) {
+                    if (systemSettings.urlBeforeNavigation.isEmpty()) {
+                        // [URL_BEFORE_NAVIGATION] first to run for for SPA
+                        systemSettings.urlBeforeNavigation = systemSettings.currentUrl
+                    }
                     if (url == null) {
                         return
                     }
@@ -193,8 +199,8 @@ fun createCustomWebview(
                         config.doUpdateVisitedHistory(url, originalUrl)
                         return
                     }
+                    println("[DEBUG] doUpdateVisitedHistory $url")
                     lastHistoryUrl = url
-                    println("[DEBUG] doUpdateVisitedHistory")
 
                     val (schemeType, blockCause) = getBlockInfo(
                         url = url,
@@ -203,7 +209,13 @@ fun createCustomWebview(
                         userSettings = userSettings
                     )
                     if (blockCause != null) {
-                        loadBlockedPage(url, blockCause)
+                        loadBlockedPage(
+                            view,
+                            userSettings,
+                            url,
+                            blockCause,
+                            config.onPageFinished
+                        )
                         return
                     }
                     if (schemeType == SchemeType.OTHER) {
@@ -400,3 +412,24 @@ fun getBlockInfo(
     return schemeType to blockCause
 }
 
+fun loadBlockedPage(
+    webView: WebView?,
+    userSettings: UserSettings,
+    url: String,
+    blockCause: BlockCause,
+    callBack: (url: String) -> Unit
+) {
+    webView?.loadDataWithBaseURL(
+        url,
+        generateBlockedPageHtml(
+            userSettings.theme,
+            blockCause,
+            userSettings.blockedMessage,
+            url
+        ),
+        "text/html",
+        "UTF-8",
+        null
+    )
+    callBack(url)
+}

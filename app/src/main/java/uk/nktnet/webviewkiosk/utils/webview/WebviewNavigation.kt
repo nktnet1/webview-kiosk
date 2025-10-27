@@ -82,6 +82,7 @@ object WebViewNavigation {
             && originalUrl.trimEnd('/') != newUrl
             && systemSettings.urlBeforeNavigation != currentUrl
         )
+        println("[DEBUG] replace=$replace | ${systemSettings.urlBeforeNavigation} | $currentUrl | ${systemSettings.currentUrl}")
         if (replace && currentEntry != null) {
             stack[currentIndex] = currentEntry.copy(url = newUrl)
             systemSettings.historyStack = stack
