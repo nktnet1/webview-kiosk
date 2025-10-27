@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.handlers
 
-import android.webkit.WebView
 import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
@@ -111,7 +110,7 @@ fun KioskControlPanel(
     }
 
     LaunchedEffect(Unit) {
-        if (userSettings.backButtonHoldAction === BackButtonHoldActionOption.OPEN_KIOSK_CONTROL_PANEL) {
+        if (userSettings.backButtonHoldAction == BackButtonHoldActionOption.OPEN_KIOSK_CONTROL_PANEL) {
             BackButtonStateSingleton.longPressEvents.collect {
                 handleShowDialog()
             }

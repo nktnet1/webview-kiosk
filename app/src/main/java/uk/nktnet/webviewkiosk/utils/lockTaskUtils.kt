@@ -74,10 +74,10 @@ fun getIsLocked(activityManager: ActivityManager): Boolean {
 }
 
 fun requireAuthForUnlock(context: Context, userSettings: UserSettings): Boolean {
-    if (userSettings.unlockAuthRequirement === UnlockAuthRequirementOption.OFF) {
+    if (userSettings.unlockAuthRequirement == UnlockAuthRequirementOption.OFF) {
         return false
     }
-    if (userSettings.unlockAuthRequirement === UnlockAuthRequirementOption.REQUIRE) {
+    if (userSettings.unlockAuthRequirement == UnlockAuthRequirementOption.REQUIRE) {
         return true
     }
     val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager

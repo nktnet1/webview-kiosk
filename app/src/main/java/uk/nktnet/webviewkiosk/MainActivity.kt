@@ -133,7 +133,7 @@ class MainActivity : AppCompatActivity() {
                 if (
                     waitingForUnlock
                 ) {
-                    if (biometricResult === BiometricPromptManager.BiometricResult.Loading) {
+                    if (biometricResult == BiometricPromptManager.BiometricResult.Loading) {
                         return@LaunchedEffect
                     }
                     if (
