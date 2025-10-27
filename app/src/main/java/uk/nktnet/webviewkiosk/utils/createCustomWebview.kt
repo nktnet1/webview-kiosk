@@ -19,20 +19,17 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
+import uk.nktnet.webviewkiosk.utils.webview.handlers.handleExternalScheme
 import uk.nktnet.webviewkiosk.utils.webview.html.BlockCause
 import uk.nktnet.webviewkiosk.utils.webview.html.generateBlockedPageHtml
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOverrideScript
-import uk.nktnet.webviewkiosk.utils.webview.handlers.handleExternalScheme
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorRequest
@@ -43,26 +40,15 @@ import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 data class WebViewConfig(
     val systemSettings: SystemSettings,
     val userSettings: UserSettings,
+    val blacklistRegexes: List<Regex>,
+    val whitelistRegexes: List<Regex>,
     val showToast: (message: String) -> Unit,
+    val finishSwipeRefresh: () -> Unit,
     val onProgressChanged: (newProgress: Int) -> Unit,
-    val onPageStarted: () -> Unit,
-    val onPageFinished: (url: String) -> Unit,
-    val doUpdateVisitedHistory: (url: String, originalUrl: String?) -> Unit,
+    val updateAddressBarAndHistory: (url: String, originalUrl: String?) -> Unit,
     val onHttpAuthRequest: (handler: HttpAuthHandler?, host: String?, realm: String?) -> Unit,
     val onLinkLongClick: (url: String) -> Unit
-) {
-    val blacklistRegexes: List<Regex> by lazy {
-        userSettings.websiteBlacklist.lines()
-            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
-            .mapNotNull { runCatching { Regex(it) }.getOrNull() }
-    }
-
-    val whitelistRegexes: List<Regex> by lazy {
-        userSettings.websiteWhitelist.lines()
-            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
-            .mapNotNull { runCatching { Regex(it) }.getOrNull() }
-    }
-}
+)
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
@@ -72,7 +58,6 @@ fun createCustomWebview(
 ): WebView {
     val systemSettings = config.systemSettings
     val userSettings = config.userSettings
-    var isShowingBlockedPage by remember { mutableStateOf(false) }
 
     val webView = remember {
         WebView(context).apply {
@@ -100,29 +85,6 @@ fun createCustomWebview(
                 mediaPlaybackRequiresUserGesture = userSettings.mediaPlaybackRequiresUserGesture
             }
 
-            val isBlocked: (String) -> Boolean = { url ->
-                isBlockedUrl(url, config.blacklistRegexes, config.whitelistRegexes)
-            }
-
-            val loadBlockedPage: (url: String, blockCause: BlockCause) -> Unit = { url, blockCause ->
-                if (!isShowingBlockedPage) {
-                    loadDataWithBaseURL(
-                        url,
-                        generateBlockedPageHtml(
-                            userSettings.theme,
-                            blockCause,
-                            userSettings.blockedMessage,
-                            url
-                        ),
-                        "text/html",
-                        "UTF-8",
-                        null
-                    )
-                    isShowingBlockedPage = true
-                    config.onPageFinished(url)
-                }
-            }
-
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     if (userSettings.applyAppTheme && userSettings.theme != ThemeOption.SYSTEM) {
@@ -137,63 +99,72 @@ fun createCustomWebview(
                             null
                         )
                     }
-
-                    if (!isShowingBlockedPage) {
-                        val uri = url?.toUri()
-                        if (uri?.scheme == "file") {
-                            if (!userSettings.allowLocalFiles) {
-                                loadBlockedPage(url, BlockCause.LOCAL_FILE)
-                                return
-                            }
-                        }
-                    }
                     super.onPageStarted(view, url, favicon)
-                    config.onPageStarted()
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    if (userSettings.applyDesktopViewportWidth >= Constants.MIN_DESKTOP_WIDTH) {
-                        view?.evaluateJavascript(
-                            generateDesktopViewportScript(userSettings.applyDesktopViewportWidth),
-                            null
-                        )
+                    config.finishSwipeRefresh()
+
+                    url?.let {
+                        // [URL_BEFORE_NAVIGATION] reset when loaded - must check
+                        // progress = 100 due to webview bug where onPageFinished
+                        // gets called multiple times.
+                        // https://issuetracker.google.com/issues/36983315
+                        if (progress == 100) {
+                            if (userSettings.applyDesktopViewportWidth >= Constants.MIN_DESKTOP_WIDTH) {
+                                view?.evaluateJavascript(
+                                    generateDesktopViewportScript(userSettings.applyDesktopViewportWidth),
+                                    null
+                                )
+                            }
+                            if (userSettings.customScriptOnPageFinish.isNotBlank()) {
+                                view?.evaluateJavascript(
+                                    wrapJsInIIFE(userSettings.customScriptOnPageFinish),
+                                    null
+                                )
+                            }
+                            systemSettings.urlBeforeNavigation = ""
+                            //println("[DEBUG] onPageFinished | $url")
+                        }
                     }
-                    if (userSettings.customScriptOnPageFinish.isNotBlank()) {
-                        view?.evaluateJavascript(
-                            wrapJsInIIFE(userSettings.customScriptOnPageFinish),
-                            null
-                        )
-                    }
-                    url?.let { config.onPageFinished(it) }
-                    systemSettings.urlBeforeNavigation = ""
-                    isShowingBlockedPage = false
                 }
 
                 override fun shouldOverrideUrlLoading(
                     view: WebView?,
                     request: WebResourceRequest?
                 ): Boolean {
+                    val requestUrl = request?.url.toString()
+                    if (requestUrl.isEmpty()) {
+                        return false
+                    }
+                    systemSettings.urlBeingHandled = requestUrl
                     if (systemSettings.urlBeforeNavigation.isEmpty()) {
+                        // [URL_BEFORE_NAVIGATION] first to run for native navigation (non-SPA)
                         systemSettings.urlBeforeNavigation = systemSettings.currentUrl
                     }
 
-                    val requestUrl = request?.url?.toString() ?: ""
-                    val scheme = request?.url?.scheme?.lowercase() ?: ""
+                    //println("[DEBUG] shouldOverrideUrlLoading $requestUrl")
 
-                    if (!isShowingBlockedPage) {
-                        if (scheme !in listOf("http", "https")) {
-                            if (!userSettings.allowOtherUrlSchemes) {
-                                loadBlockedPage(requestUrl, BlockCause.INTENT_URL_SCHEME)
-                                return true
-                            }
+                    val (schemeType, blockCause) = getBlockInfo(
+                        url = requestUrl,
+                        blacklistRegexes = config.blacklistRegexes,
+                        whitelistRegexes = config.whitelistRegexes,
+                        userSettings = userSettings
+                    )
+                    if (schemeType == SchemeType.OTHER) {
+                        if (userSettings.allowOtherUrlSchemes) {
                             handleExternalScheme(context, requestUrl)
-                            return true
                         }
-
-                        if (isBlocked(requestUrl)) {
-                            loadBlockedPage(requestUrl, BlockCause.BLACKLIST)
-                            return true
-                        }
+                        return true
+                    }
+                    if (blockCause != null) {
+                        loadBlockedPage(
+                            view,
+                            userSettings,
+                            requestUrl,
+                            blockCause,
+                        )
+                        return true
                     }
                     return false
                 }
@@ -203,16 +174,50 @@ fun createCustomWebview(
                     url: String?,
                     isReload: Boolean
                 ) {
-                    url?.let {
-                        if (!isShowingBlockedPage) {
-                            if (isBlocked(url)) {
-                                loadBlockedPage(url, BlockCause.BLACKLIST)
-                                return
-                            }
-                        }
-                        config.doUpdateVisitedHistory(url, originalUrl)
+
+                    if (url == null) {
+                        return
                     }
-                    super.doUpdateVisitedHistory(view, url, isReload)
+                    if (
+                        systemSettings.urlBeingHandled.trimEnd('/') == url.trimEnd('/')
+                    ) {
+                        //println("\t[DEBUG] doUpdateVisitedHistory url=$url | update history only")
+                        config.updateAddressBarAndHistory(url, originalUrl)
+                        return
+                    }
+
+                    /**
+                     * This section of the code is only ever reached if either customLoadUrl or
+                     * shouldOverrideUrlLoading was not triggered, e.g. during JS navigation in
+                     * Single Page Applications (e.g. a React SPA).
+                     */
+                    if (systemSettings.urlBeforeNavigation.isEmpty()) {
+                        systemSettings.urlBeforeNavigation = systemSettings.currentUrl
+                    }
+
+                    //println("[DEBUG] doUpdateVisitedHistory url=$url | lastPageHandled=${systemSettings.urlBeingHandled}")
+                    systemSettings.urlBeingHandled = url
+
+                    val (schemeType, blockCause) = getBlockInfo(
+                        url = url,
+                        blacklistRegexes = config.blacklistRegexes,
+                        whitelistRegexes = config.whitelistRegexes,
+                        userSettings = userSettings
+                    )
+                    if (blockCause != null) {
+                        loadBlockedPage(
+                            view,
+                            userSettings,
+                            url,
+                            blockCause,
+                        )
+                        config.updateAddressBarAndHistory(url, originalUrl)
+                        return
+                    }
+                    if (schemeType == SchemeType.OTHER) {
+                        return
+                    }
+                    config.updateAddressBarAndHistory(url, originalUrl)
                 }
 
                 override fun onReceivedHttpAuthRequest(
@@ -372,4 +377,54 @@ fun createCustomWebview(
     }
 
     return webView
+}
+
+enum class SchemeType {
+    FILE,
+    WEB,
+    OTHER
+}
+
+fun getBlockInfo(
+    url: String,
+    blacklistRegexes: List<Regex>,
+    whitelistRegexes: List<Regex>,
+    userSettings: UserSettings
+): Pair<SchemeType, BlockCause?> {
+    val uri = url.toUri()
+    val scheme = uri.scheme?.lowercase() ?: ""
+    val schemeType = when (scheme) {
+        "file" -> SchemeType.FILE
+        "http", "https" -> SchemeType.WEB
+        else -> SchemeType.OTHER
+    }
+
+    val blockCause = when {
+        isBlockedUrl(url, blacklistRegexes, whitelistRegexes) -> BlockCause.BLACKLIST
+        schemeType == SchemeType.FILE && !userSettings.allowLocalFiles -> BlockCause.LOCAL_FILE
+        else -> null
+    }
+
+    //println("\t[DEBUG] getBlockInfo $schemeType | $blockCause | $url")
+    return schemeType to blockCause
+}
+
+fun loadBlockedPage(
+    webView: WebView?,
+    userSettings: UserSettings,
+    url: String,
+    blockCause: BlockCause,
+) {
+    webView?.loadDataWithBaseURL(
+        url,
+        generateBlockedPageHtml(
+            userSettings.theme,
+            blockCause,
+            userSettings.blockedMessage,
+            url
+        ),
+        "text/html",
+        "UTF-8",
+        null
+    )
 }
