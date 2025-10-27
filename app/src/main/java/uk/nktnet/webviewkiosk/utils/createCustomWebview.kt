@@ -19,20 +19,17 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
+import uk.nktnet.webviewkiosk.utils.webview.handlers.handleExternalScheme
 import uk.nktnet.webviewkiosk.utils.webview.html.BlockCause
 import uk.nktnet.webviewkiosk.utils.webview.html.generateBlockedPageHtml
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOverrideScript
-import uk.nktnet.webviewkiosk.utils.webview.handlers.handleExternalScheme
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorRequest
@@ -72,7 +69,7 @@ fun createCustomWebview(
 ): WebView {
     val systemSettings = config.systemSettings
     val userSettings = config.userSettings
-    var isShowingBlockedPage by remember { mutableStateOf(false) }
+    var lastHistoryUrl: String? = null
 
     val webView = remember {
         WebView(context).apply {
@@ -100,27 +97,20 @@ fun createCustomWebview(
                 mediaPlaybackRequiresUserGesture = userSettings.mediaPlaybackRequiresUserGesture
             }
 
-            val isBlocked: (String) -> Boolean = { url ->
-                isBlockedUrl(url, config.blacklistRegexes, config.whitelistRegexes)
-            }
-
             val loadBlockedPage: (url: String, blockCause: BlockCause) -> Unit = { url, blockCause ->
-                if (!isShowingBlockedPage) {
-                    loadDataWithBaseURL(
-                        url,
-                        generateBlockedPageHtml(
-                            userSettings.theme,
-                            blockCause,
-                            userSettings.blockedMessage,
-                            url
-                        ),
-                        "text/html",
-                        "UTF-8",
-                        null
-                    )
-                    isShowingBlockedPage = true
-                    config.onPageFinished(url)
-                }
+                loadDataWithBaseURL(
+                    url,
+                    generateBlockedPageHtml(
+                        userSettings.theme,
+                        blockCause,
+                        userSettings.blockedMessage,
+                        url
+                    ),
+                    "text/html",
+                    "UTF-8",
+                    null
+                )
+                config.onPageFinished(url)
             }
 
             webViewClient = object : WebViewClient() {
@@ -136,16 +126,6 @@ fun createCustomWebview(
                             wrapJsInIIFE(userSettings.customScriptOnPageStart),
                             null
                         )
-                    }
-
-                    if (!isShowingBlockedPage) {
-                        val uri = url?.toUri()
-                        if (uri?.scheme == "file") {
-                            if (!userSettings.allowLocalFiles) {
-                                loadBlockedPage(url, BlockCause.LOCAL_FILE)
-                                return
-                            }
-                        }
                     }
                     super.onPageStarted(view, url, favicon)
                     config.onPageStarted()
@@ -164,9 +144,10 @@ fun createCustomWebview(
                             null
                         )
                     }
-                    url?.let { config.onPageFinished(it) }
                     systemSettings.urlBeforeNavigation = ""
-                    isShowingBlockedPage = false
+                    url?.let {
+                        config.onPageFinished(it)
+                    }
                 }
 
                 override fun shouldOverrideUrlLoading(
@@ -177,21 +158,23 @@ fun createCustomWebview(
                         systemSettings.urlBeforeNavigation = systemSettings.currentUrl
                     }
 
-                    val requestUrl = request?.url?.toString() ?: ""
-                    val scheme = request?.url?.scheme?.lowercase() ?: ""
+                    val requestUrl = request?.url.toString()
 
-                    if (!isShowingBlockedPage) {
-                        if (scheme !in listOf("http", "https")) {
-                            if (!userSettings.allowOtherUrlSchemes) {
-                                loadBlockedPage(requestUrl, BlockCause.INTENT_URL_SCHEME)
-                                return true
+                    if (requestUrl.isNotEmpty()) {
+                        val (schemeType, blockCause) = getBlockInfo(
+                            url = requestUrl,
+                            blacklistRegexes = config.blacklistRegexes,
+                            whitelistRegexes = config.whitelistRegexes,
+                            userSettings = userSettings
+                        )
+                        if (schemeType == SchemeType.OTHER) {
+                            if (userSettings.allowOtherUrlSchemes) {
+                                handleExternalScheme(context, requestUrl)
                             }
-                            handleExternalScheme(context, requestUrl)
                             return true
                         }
-
-                        if (isBlocked(requestUrl)) {
-                            loadBlockedPage(requestUrl, BlockCause.BLACKLIST)
+                        if (blockCause != null) {
+                            loadBlockedPage(requestUrl, blockCause)
                             return true
                         }
                     }
@@ -203,16 +186,30 @@ fun createCustomWebview(
                     url: String?,
                     isReload: Boolean
                 ) {
-                    url?.let {
-                        if (!isShowingBlockedPage) {
-                            if (isBlocked(url)) {
-                                loadBlockedPage(url, BlockCause.BLACKLIST)
-                                return
-                            }
-                        }
-                        config.doUpdateVisitedHistory(url, originalUrl)
+                    if (url == null) {
+                        return
                     }
-                    super.doUpdateVisitedHistory(view, url, isReload)
+                    if (lastHistoryUrl == url) {
+                        config.doUpdateVisitedHistory(url, originalUrl)
+                        return
+                    }
+                    lastHistoryUrl = url
+                    println("[DEBUG] doUpdateVisitedHistory")
+
+                    val (schemeType, blockCause) = getBlockInfo(
+                        url = url,
+                        blacklistRegexes = config.blacklistRegexes,
+                        whitelistRegexes = config.whitelistRegexes,
+                        userSettings = userSettings
+                    )
+                    if (blockCause != null) {
+                        loadBlockedPage(url, blockCause)
+                        return
+                    }
+                    if (schemeType == SchemeType.OTHER) {
+                        return
+                    }
+                    config.doUpdateVisitedHistory(url, originalUrl)
                 }
 
                 override fun onReceivedHttpAuthRequest(
@@ -373,3 +370,33 @@ fun createCustomWebview(
 
     return webView
 }
+
+enum class SchemeType {
+    FILE,
+    WEB,
+    OTHER
+}
+
+fun getBlockInfo(
+    url: String,
+    blacklistRegexes: List<Regex>,
+    whitelistRegexes: List<Regex>,
+    userSettings: UserSettings
+): Pair<SchemeType, BlockCause?> {
+    val uri = url.toUri()
+    val scheme = uri.scheme?.lowercase() ?: ""
+    val schemeType = when (scheme) {
+        "file" -> SchemeType.FILE
+        "http", "https" -> SchemeType.WEB
+        else -> SchemeType.OTHER
+    }
+
+    val blockCause = when {
+        isBlockedUrl(url, blacklistRegexes, whitelistRegexes) -> BlockCause.BLACKLIST
+        schemeType == SchemeType.FILE && !userSettings.allowLocalFiles -> BlockCause.LOCAL_FILE
+        else -> null
+    }
+
+    return schemeType to blockCause
+}
+
