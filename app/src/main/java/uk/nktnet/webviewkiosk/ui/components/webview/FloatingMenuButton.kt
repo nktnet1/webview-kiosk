@@ -32,6 +32,35 @@ import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import kotlin.math.roundToInt
 
+data class Bounds(val minX: Float, val minY: Float, val maxX: Float, val maxY: Float)
+
+fun clampOffset(x: Float, y: Float, bounds: Bounds): Pair<Float, Float> =
+    x.coerceIn(bounds.minX, bounds.maxX) to y.coerceIn(bounds.minY, bounds.maxY)
+
+fun calculateBounds(boxBounds: Rect?, buttonSizePx: Float): Bounds {
+    val minX = boxBounds?.left ?: 0f
+    val minY = boxBounds?.top ?: 0f
+    val maxX = (boxBounds?.right ?: buttonSizePx) - buttonSizePx
+    val maxY = (boxBounds?.bottom ?: buttonSizePx) - buttonSizePx
+    return Bounds(minX, minY, maxX.coerceAtLeast(minX), maxY.coerceAtLeast(minY))
+}
+
+@Composable
+fun MenuItem(text: String, iconRes: Int, tint: Color, onClick: () -> Unit) {
+    DropdownMenuItem(
+        text = { Text(text, color = tint) },
+        onClick = onClick,
+        leadingIcon = {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = tint
+            )
+        }
+    )
+}
+
 @Composable
 fun FloatingMenuButton(
     onHomeClick: () -> Unit,
@@ -40,13 +69,11 @@ fun FloatingMenuButton(
 ) {
     val context = LocalContext.current
     val systemSettings = remember { SystemSettings(context) }
-
     val density = LocalDensity.current
     val buttonSizeDp = 64.dp
     val buttonSizePx = with(density) { buttonSizeDp.toPx() }
 
     var boxBounds by remember { mutableStateOf<Rect?>(null) }
-
     var offsetX by remember { mutableFloatStateOf(-1f) }
     var offsetY by remember { mutableFloatStateOf(-1f) }
     var menuExpanded by remember { mutableStateOf(false) }
@@ -68,14 +95,18 @@ fun FloatingMenuButton(
 
                 if (offsetX < 0f || offsetY < 0f) {
                     val marginPx = with(density) { 40.dp.toPx() }
-                    val maxX = bounds.right - buttonSizePx
-                    val maxY = bounds.bottom - buttonSizePx
+                    val b = calculateBounds(bounds, buttonSizePx)
                     val savedX = systemSettings.menuOffsetX
                     val savedY = systemSettings.menuOffsetY
-
-                    offsetX = if (savedX in bounds.left..maxX) savedX else (maxX - marginPx).coerceAtLeast(bounds.left)
-                    offsetY = if (savedY in bounds.top..maxY) savedY else (maxY - marginPx).coerceAtLeast(bounds.top)
-
+                    val (clampedX, clampedY) = clampOffset(
+                        savedX.takeIf { it in b.minX..b.maxX }
+                            ?: (b.maxX - marginPx).coerceAtLeast(b.minX),
+                        savedY.takeIf { it in b.minY..b.maxY }
+                            ?: (b.maxY - marginPx).coerceAtLeast(b.minY),
+                        b
+                    )
+                    offsetX = clampedX
+                    offsetY = clampedY
                     visible = true
                 }
             }
@@ -91,18 +122,13 @@ fun FloatingMenuButton(
             )
         }
 
-        val minX = boxBounds?.left ?: 0f
-        val minY = boxBounds?.top ?: 0f
-        val maxX = (boxBounds?.right ?: buttonSizePx) - buttonSizePx
-        val maxY = (boxBounds?.bottom ?: buttonSizePx) - buttonSizePx
+        val bounds = calculateBounds(boxBounds, buttonSizePx)
         Box(
             modifier = Modifier
                 .zIndex(1f)
                 .offset {
-                    IntOffset(
-                        x = offsetX.coerceIn(minX, maxX).roundToInt(),
-                        y = offsetY.coerceIn(minY, maxY).roundToInt(),
-                    )
+                    val (clampedX, clampedY) = clampOffset(offsetX, offsetY, bounds)
+                    IntOffset(clampedX.roundToInt(), clampedY.roundToInt())
                 }
                 .alpha(if (visible) 1f else 0f)
                 .size(buttonSizeDp)
@@ -110,18 +136,11 @@ fun FloatingMenuButton(
                     val radiusPx = size.minDimension / 2
                     drawContext.canvas.nativeCanvas.apply {
                         drawCircle(
-                            radiusPx,
-                            radiusPx,
-                            radiusPx,
+                            radiusPx, radiusPx, radiusPx,
                             Paint().apply {
                                 color = primaryColor.toArgb()
                                 isAntiAlias = true
-                                setShadowLayer(
-                                    20.dp.toPx(),
-                                    0f,
-                                    0f,
-                                    primaryColor.toArgb()
-                                )
+                                setShadowLayer(20.dp.toPx(), 0f, 0f, primaryColor.toArgb())
                             }
                         )
                     }
@@ -135,8 +154,11 @@ fun FloatingMenuButton(
                         onDragCancel = { isDragging = false }
                     ) { change, dragAmount ->
                         change.consume()
-                        offsetX = (offsetX + dragAmount.x).coerceIn(minX, maxX)
-                        offsetY = (offsetY + dragAmount.y).coerceIn(minY, maxY)
+                        val (clampedX, clampedY) = clampOffset(
+                            offsetX + dragAmount.x, offsetY + dragAmount.y, bounds
+                        )
+                        offsetX = clampedX
+                        offsetY = clampedY
                         systemSettings.menuOffsetX = offsetX
                         systemSettings.menuOffsetY = offsetY
                     }
@@ -158,51 +180,22 @@ fun FloatingMenuButton(
                 expanded = menuExpanded,
                 onDismissRequest = { menuExpanded = false }
             ) {
-                DropdownMenuItem(
-                    text = { Text("Home", color = tintColor) },
-                    onClick = {
-                        menuExpanded = false
-                        onHomeClick()
-                    },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_home_24),
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = tintColor
-                        )
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Lock", color = tintColor) },
-                    onClick = {
-                        menuExpanded = false
-                        onLockClick()
-                    },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_lock_24),
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = tintColor
-                        )
-                    }
-                )
-                DropdownMenuItem(
-                    text = { Text("Settings", color = tintColor) },
-                    onClick = {
-                        navController.navigate(Screen.Settings.route)
-                        menuExpanded = false
-                    },
-                    leadingIcon = {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_settings_24),
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = tintColor
-                        )
-                    }
-                )
+                MenuItem("Home", R.drawable.baseline_home_24, tintColor) {
+                    menuExpanded = false
+                    onHomeClick()
+                }
+                MenuItem("Lock", R.drawable.baseline_lock_24, tintColor) {
+                    menuExpanded = false
+                    onLockClick()
+                }
+                MenuItem(
+                    "Settings",
+                    R.drawable.baseline_settings_24,
+                    tintColor
+                ) {
+                    navController.navigate(Screen.Settings.route)
+                    menuExpanded = false
+                }
             }
         }
     }
