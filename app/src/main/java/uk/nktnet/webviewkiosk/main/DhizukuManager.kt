@@ -7,30 +7,22 @@ import android.os.RemoteException
 import com.rosan.dhizuku.api.Dhizuku
 import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
 
-object DhizukuManager {
-    private var initialized = false
-    private var permissionGranted = false
 
-    fun initialize(context: Context): Boolean {
+object DhizukuManager {
+    private var isInit = false
+
+    fun init(context: Context): Boolean {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return false
         }
 
-        initialized = try {
+        isInit = try {
             Dhizuku.init(context)
         } catch (_: Throwable) {
             false
         }
 
-        if (initialized) {
-            permissionGranted = try {
-                Dhizuku.isPermissionGranted()
-            } catch (_: Throwable) {
-                false
-            }
-        }
-
-        return initialized
+        return isInit
     }
 
     fun requestPermission(onGranted: () -> Unit = {}, onDenied: () -> Unit = {}) {
@@ -39,14 +31,13 @@ object DhizukuManager {
             return
         }
 
-        if (!initialized) {
+        if (!isInit) {
             onDenied()
             return
         }
 
         try {
             if (Dhizuku.isPermissionGranted()) {
-                permissionGranted = true
                 onGranted()
                 return
             }
@@ -55,10 +46,8 @@ object DhizukuManager {
                 @Throws(RemoteException::class)
                 override fun onRequestPermission(grantResult: Int) {
                     if (grantResult == PackageManager.PERMISSION_GRANTED) {
-                        permissionGranted = true
                         onGranted()
                     } else {
-                        permissionGranted = false
                         onDenied()
                     }
                 }

@@ -75,11 +75,9 @@ class MainActivity : AppCompatActivity() {
         val deviceOwnerSuccess = setupLockTaskPackage(this)
         if (!deviceOwnerSuccess) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                DhizukuManager.initialize(this)
+                DhizukuManager.init(this)
                 DhizukuManager.requestPermission(
-                    onGranted = {
-                        setupLockTaskPackage(this)
-                    }
+                    onGranted = {}
                 )
             }
         }
