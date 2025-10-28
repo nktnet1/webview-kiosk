@@ -28,6 +28,7 @@ import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonService
+import uk.nktnet.webviewkiosk.main.DhizukuManager
 import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.applyDeviceRotation
 import uk.nktnet.webviewkiosk.main.handleMainIntent
@@ -70,7 +71,18 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         LockStateSingleton.startMonitoring(application)
-        setupLockTaskPackage(this)
+
+        val deviceOwnerSuccess = setupLockTaskPackage(this)
+        if (!deviceOwnerSuccess) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                DhizukuManager.initialize(this)
+                DhizukuManager.requestPermission(
+                    onGranted = {
+                        setupLockTaskPackage(this)
+                    }
+                )
+            }
+        }
 
         backButtonService = BackButtonService(
             lifecycleScope = lifecycleScope,

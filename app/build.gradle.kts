@@ -91,6 +91,7 @@ dependencies {
     implementation(libs.androidx.webkit)
     implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.dhizuku.api)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
