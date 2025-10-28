@@ -64,11 +64,9 @@ fun handleSslErrorRequest(
         .setView(layout)
         .setNegativeButton("Cancel") { _, _ ->
             handler?.cancel()
-            webView?.reload()
         }
         .setOnCancelListener {
             handler?.cancel()
-            webView?.reload()
         }
         .show()
 
