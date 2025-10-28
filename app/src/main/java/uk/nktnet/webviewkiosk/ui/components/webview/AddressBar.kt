@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusState
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -18,6 +19,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -44,6 +46,7 @@ fun AddressBar(
     var showHistoryDialog by remember { mutableStateOf(false) }
     var showBookmarksDialog by remember { mutableStateOf(false) }
     var showLocalFilesDialog by remember { mutableStateOf(false) }
+    var allowFocus by remember { mutableStateOf(false) }
 
     val isLocked by LockStateSingleton.isLocked
 
@@ -58,6 +61,11 @@ fun AddressBar(
         } else {
             WindowInsets()
         }
+    }
+
+    LaunchedEffect(Unit) {
+        delay(100)
+        allowFocus = true
     }
 
     Row(
@@ -76,7 +84,8 @@ fun AddressBar(
             singleLine = true,
             modifier = Modifier
                 .weight(1f)
-                .onFocusChanged(onFocusChanged),
+                .onFocusChanged(onFocusChanged)
+                .focusProperties { canFocus = allowFocus },
             shape = RoundedCornerShape(percent = 50),
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
