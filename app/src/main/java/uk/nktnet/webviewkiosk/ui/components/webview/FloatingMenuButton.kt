@@ -42,7 +42,12 @@ fun calculateBounds(boxBounds: Rect?, buttonSizePx: Float): Bounds {
     val minY = boxBounds?.top ?: 0f
     val maxX = (boxBounds?.right ?: buttonSizePx) - buttonSizePx
     val maxY = (boxBounds?.bottom ?: buttonSizePx) - buttonSizePx
-    return Bounds(minX, minY, maxX.coerceAtLeast(minX), maxY.coerceAtLeast(minY))
+    return Bounds(
+        minX,
+        minY,
+        maxX.coerceAtLeast(minX),
+        maxY.coerceAtLeast(minY)
+    )
 }
 
 @Composable
@@ -140,7 +145,12 @@ fun FloatingMenuButton(
                             Paint().apply {
                                 color = primaryColor.toArgb()
                                 isAntiAlias = true
-                                setShadowLayer(20.dp.toPx(), 0f, 0f, primaryColor.toArgb())
+                                setShadowLayer(
+                                    20.dp.toPx(),
+                                    0f,
+                                    0f,
+                                    primaryColor.toArgb()
+                                )
                             }
                         )
                     }
@@ -180,11 +190,19 @@ fun FloatingMenuButton(
                 expanded = menuExpanded,
                 onDismissRequest = { menuExpanded = false }
             ) {
-                MenuItem("Home", R.drawable.baseline_home_24, tintColor) {
+                MenuItem(
+                    "Home",
+                    R.drawable.baseline_home_24,
+                    tintColor
+                ) {
                     menuExpanded = false
                     onHomeClick()
                 }
-                MenuItem("Lock", R.drawable.baseline_lock_24, tintColor) {
+                MenuItem(
+                    "Lock",
+                    R.drawable.baseline_lock_24,
+                    tintColor
+                ) {
                     menuExpanded = false
                     onLockClick()
                 }
@@ -193,8 +211,8 @@ fun FloatingMenuButton(
                     R.drawable.baseline_settings_24,
                     tintColor
                 ) {
-                    navController.navigate(Screen.Settings.route)
                     menuExpanded = false
+                    navController.navigate(Screen.Settings.route)
                 }
             }
         }
