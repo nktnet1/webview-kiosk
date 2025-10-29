@@ -31,6 +31,9 @@ fun SetupNavHost(
             authComposable(Screen.Settings.route) {
                 SettingsListScreen(navController, themeState = themeState)
             }
+            authComposable(Screen.SettingsMoreActions.route) {
+                MoreActionsScreen(navController)
+            }
             authComposable(Screen.SettingsWebContent.route) {
                 SettingsWebContentScreen(navController)
             }
