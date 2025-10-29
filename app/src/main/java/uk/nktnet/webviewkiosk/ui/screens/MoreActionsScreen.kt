@@ -9,10 +9,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
@@ -40,7 +43,63 @@ fun MoreActionsScreen(navController: NavController) {
             color = DividerDefaults.color
         )
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = {
+                openAppDetailsSettings(context)
+            }
+        ) {
+            Text(
+                text = "Open App Info",
+                textAlign = TextAlign.Center,
+            )
+        }
+
+        Text(
+            text = "Manage",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = 22.dp, bottom = 8.dp)
+        )
+        HorizontalDivider(
+            Modifier.padding(bottom = 8.dp),
+            DividerDefaults.Thickness,
+            DividerDefaults.color
+        )
+
+        Button(
+            onClick = { navController.navigate(Screen.SettingsWebContentFiles.route) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp),
+        ) {
+            Text("Local Files")
+        }
+
+        Button(
+            onClick = { navController.navigate(
+                Screen.SettingsWebBrowsingSitePermissions.route)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp),
+        ) {
+            Text("Site Permissions")
+        }
+
+        Text(
+            text = "Clear",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(top = 22.dp, bottom = 8.dp)
+        )
+        HorizontalDivider(
+            Modifier.padding(bottom = 8.dp),
+            DividerDefaults.Thickness,
+            DividerDefaults.color
+        )
 
         Button(
             onClick = {
@@ -50,7 +109,7 @@ fun MoreActionsScreen(navController: NavController) {
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp)
+                .padding(vertical = 2.dp)
         ) {
             Text("Clear Cookies")
         }
@@ -64,7 +123,7 @@ fun MoreActionsScreen(navController: NavController) {
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp)
+                .padding(vertical = 2.dp)
         ) {
             Text("Clear Cache")
         }
@@ -78,7 +137,7 @@ fun MoreActionsScreen(navController: NavController) {
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp)
+                .padding(vertical = 2.dp)
         ) {
             Text("Clear Form Data")
         }
@@ -93,7 +152,7 @@ fun MoreActionsScreen(navController: NavController) {
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp)
+                .padding(vertical = 2.dp)
         ) {
             Text("Clear History")
         }
@@ -107,7 +166,7 @@ fun MoreActionsScreen(navController: NavController) {
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp)
+                .padding(vertical = 2.dp)
         ) {
             Text("Clear SSL Preferences")
         }
@@ -119,7 +178,7 @@ fun MoreActionsScreen(navController: NavController) {
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp)
+                .padding(vertical = 2.dp)
         ) {
             Text("Clear Web Storage")
         }
