@@ -5,6 +5,8 @@ sealed class Screen(val route: String) {
     object WebView : Screen("webview")
     object Settings : Screen("settings")
 
+    object SettingsMoreActions : Screen("settings/more-actions")
+
     object SettingsWebContent : Screen("settings/web-content")
     object SettingsWebContentFiles : Screen("settings/web-content/files")
     object SettingsWebBrowsing : Screen("settings/web-browsing")

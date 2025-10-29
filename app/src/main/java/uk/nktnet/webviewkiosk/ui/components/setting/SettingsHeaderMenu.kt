@@ -20,6 +20,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import androidx.core.net.toUri
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.Constants
+import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ExportSettingsDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ImportSettingsDialog
 
@@ -175,6 +176,20 @@ fun SettingsHeaderMenu(
                             leadingIcon = {
                                 Icon(
                                     painter = painterResource(R.drawable.baseline_info_24),
+                                    contentDescription = null,
+                                    tint = tintColor
+                                )
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("More", color = tintColor) },
+                            onClick = {
+                                showMenu = false
+                                navController.navigate(Screen.SettingsMoreActions.route)
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.outline_widgets_24),
                                     contentDescription = null,
                                     tint = tintColor
                                 )
