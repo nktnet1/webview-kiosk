@@ -21,6 +21,9 @@
     <string name="web_browsing_allow_refresh_title">Allow Refresh</string>
     <string name="web_browsing_allow_refresh_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
+    <string name="web_browsing_allow_pull_to_refresh_title">Allow Pull to Refresh</string>
+    <string name="web_browsing_allow_pull_to_refresh_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+
     <string name="web_browsing_allow_backwards_navigation_title">Allow Backwards Navigation</string>
     <string name="web_browsing_allow_backwards_navigation_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 

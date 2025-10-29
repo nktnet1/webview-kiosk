@@ -30,6 +30,7 @@ fun SettingsWebBrowsingScreen(
         SettingDivider()
 
         AllowRefreshSetting()
+        AllowPullToRefreshSetting()
         AllowBackwardsNavigationSetting()
         AllowGoHomeSetting()
         ClearHistoryOnHomeSetting()
