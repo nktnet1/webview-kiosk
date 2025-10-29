@@ -19,7 +19,7 @@ fun AllowPullToRefreshSetting() {
             from the top 1/4 of the screen.
 
             Note that this requires:
-            - the allow refresh setting to also be true
+            - the "Allow Refresh" setting to also be true
             - the page to have been scrolled fully to the top prior to the gesture
             - a single finger (touch) is used
         """.trimIndent(),
