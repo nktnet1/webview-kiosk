@@ -13,6 +13,7 @@ object UserSettingsKeys {
 
     object WebBrowsing {
         const val ALLOW_REFRESH = "web_browsing.allow_refresh"
+        const val ALLOW_PULL_TO_REFRESH = "web_browsing.allow_pull_to_refresh"
         const val ALLOW_BACKWARDS_NAVIGATION = "web_browsing.allow_backwards_navigation"
         const val ALLOW_GO_HOME = "web_browsing.allow_go_home"
         const val CLEAR_HISTORY_ON_HOME = "web_browsing.clear_history_on_home"

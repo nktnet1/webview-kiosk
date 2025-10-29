@@ -57,6 +57,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebBrowsing.ALLOW_REFRESH,
         true
     )
+    var allowPullToRefresh by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebBrowsing.ALLOW_PULL_TO_REFRESH,
+        true
+    )
     var allowBackwardsNavigation by booleanPref(
         restrictions,
         prefs,
@@ -347,6 +353,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebContent.ALLOW_LOCAL_FILES, allowLocalFiles)
 
             put(UserSettingsKeys.WebBrowsing.ALLOW_REFRESH, allowRefresh)
+            put(UserSettingsKeys.WebBrowsing.ALLOW_PULL_TO_REFRESH, allowPullToRefresh)
             put(UserSettingsKeys.WebBrowsing.ALLOW_BACKWARDS_NAVIGATION, allowBackwardsNavigation)
             put(UserSettingsKeys.WebBrowsing.ALLOW_GO_HOME, allowGoHome)
             put(UserSettingsKeys.WebBrowsing.CLEAR_HISTORY_ON_HOME, clearHistoryOnHome)
@@ -413,6 +420,7 @@ class UserSettings(val context: Context) {
             allowLocalFiles = json.optBoolean(UserSettingsKeys.WebContent.ALLOW_LOCAL_FILES, allowLocalFiles)
 
             allowRefresh = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_REFRESH, allowRefresh)
+            allowPullToRefresh = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_PULL_TO_REFRESH, allowPullToRefresh)
             allowBackwardsNavigation = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_BACKWARDS_NAVIGATION, allowBackwardsNavigation)
             allowGoHome = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_GO_HOME, allowGoHome)
             clearHistoryOnHome = json.optBoolean(UserSettingsKeys.WebBrowsing.CLEAR_HISTORY_ON_HOME, clearHistoryOnHome)

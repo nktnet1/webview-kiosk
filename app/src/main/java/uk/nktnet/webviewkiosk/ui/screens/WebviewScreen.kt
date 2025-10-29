@@ -251,7 +251,7 @@ fun WebviewScreen(navController: NavController) {
                             customLoadUrl(initialUrl)
                         }
 
-                        if (userSettings.allowRefresh) {
+                        if (userSettings.allowRefresh && userSettings.allowPullToRefresh) {
                             WebviewAwareSwipeRefreshLayout(ctx, webView).apply {
                                 setOnRefreshListener {
                                     isSwipeRefreshing = true
