@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -55,6 +57,8 @@ import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
 import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
+import uk.nktnet.webviewkiosk.ui.components.webview.BookmarksDialog
+import uk.nktnet.webviewkiosk.ui.components.webview.HistoryDialog
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
@@ -90,6 +94,8 @@ fun KioskControlPanel(
 
     var showDialog by remember { mutableStateOf(false) }
     var isSticky by remember { mutableStateOf(systemSettings.isKioskControlPanelSticky) }
+    var showBookmarksDialog by remember { mutableStateOf(false) }
+    var showHistoryDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(tapsLeft, lastTapTime) {
         if (tapsLeft in 1..5) {
@@ -123,6 +129,14 @@ fun KioskControlPanel(
                 showDialog = isSticky
             }
         }
+    }
+
+    if (showHistoryDialog) {
+        HistoryDialog(customLoadUrl, onDismiss = { showHistoryDialog = false })
+    }
+
+    if (showBookmarksDialog) {
+        BookmarksDialog(customLoadUrl, onDismiss = { showBookmarksDialog = false })
     }
 
     if (userSettings.kioskControlPanelRegion != KioskControlPanelRegionOption.DISABLED) {
@@ -209,7 +223,12 @@ fun KioskControlPanel(
                 tonalElevation = 8.dp,
                 modifier = Modifier.padding(16.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                val scrollState = rememberScrollState()
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .verticalScroll(scrollState)
+                ) {
                     Row (
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -241,39 +260,49 @@ fun KioskControlPanel(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     if (userSettings.allowBackwardsNavigation) {
-                        Button(
-                            enabled = enableInteraction,
-                            onClick = {
-                                WebViewNavigation.goBack(customLoadUrl, systemSettings)
-                                showDialog = isSticky
-                            },
-                            modifier = Modifier.fillMaxWidth()
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_arrow_back_24),
-                                contentDescription = "Back",
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Back")
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
+                            Button(
+                                enabled = enableInteraction,
+                                onClick = {
+                                    WebViewNavigation.goBack(customLoadUrl, systemSettings)
+                                    showDialog = isSticky
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_arrow_back_24),
+                                    contentDescription = "Back",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Back",
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
 
-                        Button(
-                            enabled = enableInteraction,
-                            onClick = {
-                                WebViewNavigation.goForward(customLoadUrl, systemSettings)
-                                showDialog = isSticky
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_arrow_forward_24),
-                                contentDescription = "Forward",
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Forward")
+                            Button(
+                                enabled = enableInteraction,
+                                onClick = {
+                                    WebViewNavigation.goForward(customLoadUrl, systemSettings)
+                                    showDialog = isSticky
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_arrow_forward_24),
+                                    contentDescription = "Forward",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "Forward",
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            }
                         }
                         Spacer(modifier = Modifier.height(3.dp))
                     }
@@ -314,6 +343,46 @@ fun KioskControlPanel(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Refresh")
+                        }
+                        Spacer(modifier = Modifier.height(3.dp))
+                    }
+
+                    if (userSettings.allowHistoryAccess) {
+                        Button(
+                            enabled = enableInteraction,
+                            onClick = {
+                                showDialog = isSticky
+                                showHistoryDialog = true
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.outline_history_24),
+                                contentDescription = "History",
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("History")
+                        }
+                        Spacer(modifier = Modifier.height(3.dp))
+                    }
+
+                    if (userSettings.allowBookmarkAccess) {
+                        Button(
+                            enabled = enableInteraction,
+                            onClick = {
+                                showDialog = isSticky
+                                showBookmarksDialog = true
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.outline_bookmark_24),
+                                contentDescription = "Bookmark",
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Bookmark")
                         }
                         Spacer(modifier = Modifier.height(3.dp))
                     }
