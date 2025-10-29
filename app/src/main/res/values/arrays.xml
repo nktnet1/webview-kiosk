@@ -137,4 +137,15 @@
         <item>OFF</item>
         <item>REQUIRE</item>
     </string-array>
+
+    <string-array name="entries_ssl_error_mode_option">
+        <item>Block</item>
+        <item>Prompt</item>
+        <item>Proceed</item>
+    </string-array>
+    <string-array name="entry_values_ssl_error_mode_option">
+        <item>BLOCK</item>
+        <item>PROMPT</item>
+        <item>PROCEED</item>
+    </string-array>
 </resources>
