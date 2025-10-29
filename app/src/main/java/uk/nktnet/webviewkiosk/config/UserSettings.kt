@@ -165,7 +165,6 @@ class UserSettings(val context: Context) {
         LayoutAlgorithmOption.NORMAL.name,
         fromString = LayoutAlgorithmOption::fromString
     )
-
     var userAgent by stringPrefOptional(restrictions, prefs, UserSettingsKeys.WebEngine.USER_AGENT)
     var useWideViewPort by booleanPref(
         restrictions,
@@ -203,6 +202,13 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE,
         true
+    )
+    var sslErrorMode by stringEnumPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.SSL_ERROR_MODE,
+        SslErrorModeOption.BLOCK.name,
+        fromString = SslErrorModeOption::fromString
     )
 
     // Web Lifecycle
@@ -367,6 +373,8 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS, allowFileAccessFromFileURLs)
             put(UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, allowUniversalAccessFromFileURLs)
             put(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
+            put(UserSettingsKeys.WebEngine.SSL_ERROR_MODE, sslErrorMode.name)
+
 
             put(UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, lockOnLaunch)
             put(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, resetOnLaunch)
@@ -436,6 +444,9 @@ class UserSettings(val context: Context) {
             allowFileAccessFromFileURLs = json.optBoolean(UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS, allowFileAccessFromFileURLs)
             allowUniversalAccessFromFileURLs = json.optBoolean(UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, allowUniversalAccessFromFileURLs)
             mediaPlaybackRequiresUserGesture = json.optBoolean(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
+            sslErrorMode = SslErrorModeOption.fromString(
+                json.optString(UserSettingsKeys.WebEngine.SSL_ERROR_MODE, sslErrorMode.name)
+            )
 
             lockOnLaunch = json.optBoolean(UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, lockOnLaunch)
             resetOnLaunch = json.optBoolean(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, resetOnLaunch)

@@ -24,6 +24,7 @@ import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleExternalScheme
 import uk.nktnet.webviewkiosk.utils.webview.html.BlockCause
@@ -32,7 +33,7 @@ import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScrip
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOverrideScript
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
-import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorRequest
+import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorPromptRequest
 import uk.nktnet.webviewkiosk.utils.webview.html.generateErrorPage
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
@@ -280,12 +281,19 @@ fun createCustomWebview(
                     }
                 }
 
+                @SuppressLint("WebViewClientOnReceivedSslError")
                 override fun onReceivedSslError(
                     view: WebView?,
                     handler: SslErrorHandler?,
                     error: SslError?
                 ) {
-                    handleSslErrorRequest(context, view, handler, error)
+                    when (userSettings.sslErrorMode) {
+                        SslErrorModeOption.BLOCK -> handler?.cancel()
+                        SslErrorModeOption.PROMPT -> handleSslErrorPromptRequest(
+                            context, handler, error
+                        )
+                        SslErrorModeOption.PROCEED -> handler?.proceed()
+                    }
                 }
             }
 
