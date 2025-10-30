@@ -78,7 +78,9 @@ fun FloatingMenuButton(
     val buttonSizeDp = 64.dp
     val buttonSizePx = with(density) { buttonSizeDp.toPx() }
 
-    var boxBounds by remember { mutableStateOf<Rect?>(null) }
+    var bounds by remember {
+        mutableStateOf(Bounds(0f, 0f, 0f, 0f))
+    }
     var offsetX by remember { mutableFloatStateOf(-1f) }
     var offsetY by remember { mutableFloatStateOf(-1f) }
     var menuExpanded by remember { mutableStateOf(false) }
@@ -95,23 +97,23 @@ fun FloatingMenuButton(
             .windowInsetsPadding(WindowInsets.safeContent)
             .onGloballyPositioned { coordinates ->
                 val size = coordinates.size.toSize()
-                val bounds = Rect(0f, 0f, size.width, size.height)
-                boxBounds = bounds
-
+                val rect = Rect(0f, 0f, size.width, size.height)
+                bounds = calculateBounds(rect, buttonSizePx)
                 if (offsetX < 0f || offsetY < 0f) {
                     val marginPx = with(density) { 40.dp.toPx() }
-                    val b = calculateBounds(bounds, buttonSizePx)
                     val savedX = systemSettings.menuOffsetX
                     val savedY = systemSettings.menuOffsetY
-                    val (clampedX, clampedY) = clampOffset(
-                        savedX.takeIf { it in b.minX..b.maxX }
-                            ?: (b.maxX - marginPx).coerceAtLeast(b.minX),
-                        savedY.takeIf { it in b.minY..b.maxY }
-                            ?: (b.maxY - marginPx).coerceAtLeast(b.minY),
-                        b
+                    val (newX, newY) = clampOffset(
+                        savedX.takeIf {
+                            it in bounds.minX..bounds.maxX
+                        } ?: (bounds.maxX - marginPx).coerceAtLeast(bounds.minX),
+                        savedY.takeIf {
+                            it in bounds.minY..bounds.maxY
+                        } ?: (bounds.maxY - marginPx).coerceAtLeast(bounds.minY),
+                        bounds
                     )
-                    offsetX = clampedX
-                    offsetY = clampedY
+                    offsetX = newX
+                    offsetY = newY
                     visible = true
                 }
             }
@@ -121,13 +123,14 @@ fun FloatingMenuButton(
                 modifier = Modifier
                     .fillMaxSize()
                     .blur(16.dp)
-                    .background(MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.1f))
+                    .background(
+                        MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.1f)
+                    )
                     .zIndex(0f)
                     .border(2.dp, primaryColor)
             )
         }
 
-        val bounds = calculateBounds(boxBounds, buttonSizePx)
         Box(
             modifier = Modifier
                 .zIndex(1f)
