@@ -1,0 +1,5 @@
+## Hot Fix
+
+Floating menu button incorrect boundaries:
+- when starting the app in landscape, then rotating to portrait, the draggable
+  area gets incorrectly restricted to the top half of the screen.
