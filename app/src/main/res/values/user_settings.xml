@@ -113,6 +113,9 @@
     <string name="web_lifecycle_reset_on_inactivity_seconds_title">Reset on Inactivity</string>
     <string name="web_lifecycle_reset_on_inactivity_seconds_description">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
 
+    <string name="web_lifecycle_refresh_on_loading_error_interval_seconds_title">Refresh on Loading Error Interval (seconds)</string>
+    <string name="web_lifecycle_refresh_on_loading_error_interval_seconds_description">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
+
     <!-- Appearance -->
     <string name="appearance_theme_title">Theme</string>
     <string name="appearance_theme_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>

@@ -231,6 +231,12 @@
         android:title="@string/web_lifecycle_reset_on_inactivity_seconds_title"
         android:description="@string/web_lifecycle_reset_on_inactivity_seconds_description"
     />
+    <restriction
+        android:key="web_lifecycle.refresh_on_loading_error_interval_seconds"
+        android:restrictionType="integer"
+        android:title="@string/web_lifecycle_refresh_on_loading_error_interval_seconds_title"
+        android:description="@string/web_lifecycle_refresh_on_loading_error_interval_seconds_description"
+    />
 
     <!-- Appearance -->
     <restriction
