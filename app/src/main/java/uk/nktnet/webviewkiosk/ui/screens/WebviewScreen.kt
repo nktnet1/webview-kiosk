@@ -19,6 +19,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -105,6 +106,8 @@ fun WebviewScreen(navController: NavController) {
             .mapNotNull { runCatching { Regex(it) }.getOrNull() }
     }
 
+    var lastErrorUrl by remember { mutableStateOf("") }
+
     DisposableEffect( activity, isLocked) {
         if (activity != null) {
             val shouldImmerse = shouldBeImmersed(activity, userSettings)
@@ -137,6 +140,9 @@ fun WebviewScreen(navController: NavController) {
             blacklistRegexes = blacklistRegexes,
             whitelistRegexes = whitelistRegexes,
             showToast = showToast,
+            setLastErrorUrl = { errorUrl ->
+                lastErrorUrl = errorUrl
+            },
             onProgressChanged = { newProgress -> progress = newProgress },
             finishSwipeRefresh = {
                 isSwipeRefreshing = false
@@ -154,7 +160,6 @@ fun WebviewScreen(navController: NavController) {
     )
 
     fun customLoadUrl(newUrl: String) {
-        //println("[DEBUG] customLoadUrl $newUrl")
         systemSettings.urlBeingHandled = newUrl
         val (schemeType, blockCause) = getBlockInfo(
             url = newUrl,
@@ -194,6 +199,13 @@ fun WebviewScreen(navController: NavController) {
             }
         }
         webView.loadUrl(newUrl)
+    }
+
+    LaunchedEffect(lastErrorUrl) {
+        while (lastErrorUrl.isNotEmpty()) {
+            delay(5000)
+            WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
+        }
     }
 
     val cookieManager = CookieManager.getInstance()
