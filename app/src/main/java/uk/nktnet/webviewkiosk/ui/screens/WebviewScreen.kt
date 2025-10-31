@@ -201,10 +201,17 @@ fun WebviewScreen(navController: NavController) {
         webView.loadUrl(newUrl)
     }
 
-    LaunchedEffect(lastErrorUrl) {
-        while (lastErrorUrl.isNotEmpty()) {
-            delay(5000)
-            WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
+    if (
+        userSettings.refreshOnLoadingErrorIntervalSeconds
+        >= Constants.MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS
+    ) {
+        LaunchedEffect(lastErrorUrl) {
+            while (lastErrorUrl.isNotEmpty()) {
+                delay(userSettings.refreshOnLoadingErrorIntervalSeconds * 1000L)
+                WebViewNavigation.refresh(
+                    ::customLoadUrl, systemSettings, userSettings
+                )
+            }
         }
     }
 
