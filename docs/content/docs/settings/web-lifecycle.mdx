@@ -39,6 +39,11 @@ Interval in seconds between automatic refresh attempts when a page fails
 to load. This usually indicate the inability to connect to the server,
 e.g. due to no internet connection or the server is offline.
 
+This is detected using the Android API:
+[WebViewClient#onReceivedError](https://developer.android.com/reference/android/webkit/WebViewClient#onReceivedError(android.webkit.WebView,%20android.webkit.WebResourceRequest,%20android.webkit.WebResourceError))
+in conjunction with
+[WebResourceRequest#isForMainFrame](https://developer.android.com/reference/android/webkit/WebResourceRequest#isForMainFrame()).
+
 To disable, use the value `0`.
 
 **Minimum:** 5
