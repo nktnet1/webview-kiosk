@@ -1,7 +1,7 @@
 ## New features
 
 1. `Settings -> Device -> Back Button Hold Action` has been added. For now, you can
-   configure the behaviour of long-presssing the back key to be one of:
+   configure the behaviour of long-pressing the back key to be one of:
 
    - Open Kiosk Control Panel
    - Go Home

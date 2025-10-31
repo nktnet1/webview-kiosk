@@ -16,10 +16,11 @@ fun RefreshOnLoadingErrorIntervalSecondsSetting() {
     NumberSettingFieldItem(
         label = "Refresh on Loading Error Interval (seconds)",
         infoText = """
-            Interval in seconds between automatic refresh attempts when a page fails to load.
-            Minimum: ${Constants.MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS}
+            Interval in seconds between automatic refresh attempts when a page fails
+            to load. This usually indicate the inability to connect to the server,
+            e.g. due to no internet connection or the server is offline.
 
-            The app will keep retrying until the page loads successfully.
+            Minimum: ${Constants.MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS}
 
             To disable, use the value 0.
         """.trimIndent(),
