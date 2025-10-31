@@ -34,7 +34,6 @@ import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOv
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorPromptRequest
-import uk.nktnet.webviewkiosk.utils.webview.html.generateErrorPage
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 
@@ -44,6 +43,7 @@ data class WebViewConfig(
     val blacklistRegexes: List<Regex>,
     val whitelistRegexes: List<Regex>,
     val showToast: (message: String) -> Unit,
+    val setLastErrorUrl: (errorUrl: String) -> Unit,
     val finishSwipeRefresh: () -> Unit,
     val onProgressChanged: (newProgress: Int) -> Unit,
     val updateAddressBarAndHistory: (url: String, originalUrl: String?) -> Unit,
@@ -88,6 +88,7 @@ fun createCustomWebview(
 
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                    config.setLastErrorUrl("")
                     if (userSettings.applyAppTheme && userSettings.theme != ThemeOption.SYSTEM) {
                         evaluateJavascript(
                             generatePrefersColorSchemeOverrideScript(userSettings.theme),
@@ -125,7 +126,6 @@ fun createCustomWebview(
                                 )
                             }
                             systemSettings.urlBeforeNavigation = ""
-                            //println("[DEBUG] onPageFinished | $url")
                         }
                     }
                 }
@@ -143,8 +143,6 @@ fun createCustomWebview(
                         // [URL_BEFORE_NAVIGATION] first to run for native navigation (non-SPA)
                         systemSettings.urlBeforeNavigation = systemSettings.currentUrl
                     }
-
-                    //println("[DEBUG] shouldOverrideUrlLoading $requestUrl")
 
                     val (schemeType, blockCause) = getBlockInfo(
                         url = requestUrl,
@@ -182,7 +180,6 @@ fun createCustomWebview(
                     if (
                         systemSettings.urlBeingHandled.trimEnd('/') == url.trimEnd('/')
                     ) {
-                        //println("\t[DEBUG] doUpdateVisitedHistory url=$url | update history only")
                         config.updateAddressBarAndHistory(url, originalUrl)
                         return
                     }
@@ -196,7 +193,6 @@ fun createCustomWebview(
                         systemSettings.urlBeforeNavigation = systemSettings.currentUrl
                     }
 
-                    //println("[DEBUG] doUpdateVisitedHistory url=$url | lastPageHandled=${systemSettings.urlBeingHandled}")
                     systemSettings.urlBeingHandled = url
 
                     val (schemeType, blockCause) = getBlockInfo(
@@ -239,19 +235,7 @@ fun createCustomWebview(
                         Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                         && request?.isForMainFrame == true
                     ) {
-                        val html = generateErrorPage(
-                            userSettings.theme,
-                            error?.errorCode,
-                            error?.description?.toString(),
-                            request.url?.toString()
-                        )
-                        view?.loadDataWithBaseURL(
-                            request.url.toString(),
-                            html,
-                            "text/html",
-                            "UTF-8",
-                            null
-                        )
+                        config.setLastErrorUrl(request.url.toString())
                         return
                     }
                     super.onReceivedError(view, request, error)
@@ -264,20 +248,8 @@ fun createCustomWebview(
                     description: String?,
                     failingUrl: String?
                 ) {
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-                        val html = generateErrorPage(
-                            userSettings.theme,
-                            errorCode,
-                            description,
-                            failingUrl
-                        )
-                        view?.loadDataWithBaseURL(
-                            failingUrl,
-                            html,
-                            "text/html",
-                            "UTF-8",
-                            null
-                        )
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M && !failingUrl.isNullOrEmpty()) {
+                        config.setLastErrorUrl(failingUrl)
                     }
                 }
 
@@ -412,8 +384,6 @@ fun getBlockInfo(
         schemeType == SchemeType.FILE && !userSettings.allowLocalFiles -> BlockCause.LOCAL_FILE
         else -> null
     }
-
-    //println("\t[DEBUG] getBlockInfo $schemeType | $blockCause | $url")
     return schemeType to blockCause
 }
 

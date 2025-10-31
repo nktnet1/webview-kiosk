@@ -236,6 +236,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS,
         0
     )
+    var refreshOnLoadingErrorIntervalSeconds by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS,
+        0
+    )
 
     // Appearance
     var theme by stringEnumPref(
@@ -385,6 +391,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, lockOnLaunch)
             put(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, resetOnLaunch)
             put(UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
+            put(UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS, refreshOnLoadingErrorIntervalSeconds)
 
             put(UserSettingsKeys.Appearance.THEME, theme.name)
             put(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name)
@@ -458,6 +465,7 @@ class UserSettings(val context: Context) {
             lockOnLaunch = json.optBoolean(UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, lockOnLaunch)
             resetOnLaunch = json.optBoolean(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, resetOnLaunch)
             resetOnInactivitySeconds = json.optInt(UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
+            refreshOnLoadingErrorIntervalSeconds = json.optInt(UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS, refreshOnLoadingErrorIntervalSeconds)
 
             theme = ThemeOption.fromString(json.optString(UserSettingsKeys.Appearance.THEME, theme.name))
             addressBarMode = AddressBarOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name))
