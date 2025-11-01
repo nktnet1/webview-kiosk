@@ -42,6 +42,7 @@ fun SettingsWebBrowsingScreen(
         AllowLinkLongPressContextMenuSetting()
         KioskControlPanelRegionSetting()
         SearchProviderUrlSetting()
+        SearchSuggestionEngineSetting()
 
         Spacer(modifier = Modifier.height(16.dp))
 

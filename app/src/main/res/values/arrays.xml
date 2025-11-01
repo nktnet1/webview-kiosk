@@ -74,7 +74,7 @@
         <item>ROTATION_270</item>
     </string-array>
 
-    <string-array name="entries_kiosk_control_panel_option">
+    <string-array name="entries_kiosk_control_panel_region_option">
         <item>Top Left</item>
         <item>Top Right</item>
         <item>Bottom Left</item>
@@ -84,7 +84,7 @@
         <item>Full</item>
         <item>Disabled</item>
     </string-array>
-    <string-array name="entry_values_kiosk_control_panel_option">
+    <string-array name="entry_values_kiosk_control_panel_region_option">
         <item>TOP_LEFT</item>
         <item>TOP_RIGHT</item>
         <item>BOTTOM_LEFT</item>
@@ -147,5 +147,19 @@
         <item>BLOCK</item>
         <item>PROMPT</item>
         <item>PROCEED</item>
+    </string-array>
+
+    <string-array name="entries_search_suggestion_engine_option">
+        <item>None</item>
+        <item>Google</item>
+        <item>DuckDuckGo</item>
+        <item>Yahoo</item>
+    </string-array>
+
+    <string-array name="entry_values_search_suggestion_engine_option">
+        <item>NONE</item>
+        <item>GOOGLE</item>
+        <item>DUCKDUCKGO</item>
+        <item>YAHOO</item>
     </string-array>
 </resources>

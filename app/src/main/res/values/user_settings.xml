@@ -51,11 +51,14 @@
     <string name="web_browsing_allow_link_long_press_context_menu_title">Allow Link Long Press Context Menu</string>
     <string name="web_browsing_allow_link_long_press_context_menu_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
-    <string name="web_browsing_allow_kiosk_control_panel_title">Allow Kiosk Control Panel</string>
-    <string name="web_browsing_allow_kiosk_control_panel_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_kiosk_control_panel_region_title">Allow Kiosk Control Panel</string>
+    <string name="web_browsing_kiosk_control_panel_region_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_search_provider_url_title">Search Provider URL</string>
     <string name="web_browsing_search_provider_url_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+
+    <string name="web_browsing_search_suggestion_engine_title">Allow Kiosk Control Panel</string>
+    <string name="web_browsing_search_suggestion_engine_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <!-- Web Engine -->
     <string name="web_engine_enable_javascript_title">Enable JavaScript</string>

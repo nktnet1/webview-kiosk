@@ -141,54 +141,41 @@ You can also disable this setting and instead configure
 
 ## 13. Search Provider URL
 
-The URL used for search queries in the address bar. This URL must include the search string query parameter.
+The URL used for search queries in the address bar. This URL must include the
+search string query parameter.
+
+For example,
+
+| Provider      | Search URL |
+|---------------|-----------------------------------|
+| Google        | `https://google.com/search?q=` |
+| DuckDuckGo    | `https://duckduckgo.com/?q=` |
+| Bing          | `https://bing.com/search?q=` |
+| Yahoo         | `https://search.yahoo.com/search?p=` |
+| Startpage     | `https://startpage.com/do/search?q=` |
+| Ecosia        | `https://ecosia.org/search?q=` |
+| Unduck        | `https://unduck.link?q=` |
+| Unduckified   | `https://s.dunkirk.sh?q=` |
 
 **Default:** https://google.com/search?q=
 
-### 13.1. Google
+## 13. Search Suggestion Engine
 
-```
-https://google.com/search?q=
-```
+Configure the search engine for text suggestions (autocomplete/hints)
+when typing in the address bar.
 
-### 13.2. DuckDuckGo
+For example, when searching for "new", you may get suggested
+- news
+- new recipes
+- new york times
 
-```
-https://duckduckgo.com/?q=
-```
+Supported options are:
 
-### 13.3. Bing
+| Engine     | Endpoint |
+|------------|----------|
+| None       | No search suggestions/autocomplete will be shown |
+| Google     | `https://suggestqueries.google.com/complete/search?client=firefox&q=` |
+| DuckDuckGo | `https://duckduckgo.com/ac?q=` |
+| Yahoo      | `https://api.search.yahoo.com/sugg/gossip/gossip-in-ura?output=sd1&command=` |
 
-```
-https://bing.com/search?q=
-```
-
-### 13.4. Yahoo
-
-```
-https://search.yahoo.com/search?p=
-```
-
-### 13.5. Startpage
-
-```
-https://startpage.com/do/search?q=
-```
-
-### 13.6. Ecosia
-
-```
-https://ecosia.org/search?q=
-```
-
-### 13.7. Unduck
-
-```
-https://unduck.link?q=
-```
-
-### 13.8. Unduckified
-
-```
-https://s.dunkirk.sh?q=
-```
+**Default:** NONE

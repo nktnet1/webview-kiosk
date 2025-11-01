@@ -66,6 +66,12 @@ fun AddressBar(
         allowFocus = true
     }
 
+    LaunchedEffect(hasFocus) {
+        if (hasFocus) {
+            onUrlBarTextChange(urlBarText.copy(selection = TextRange(0, urlBarText.text.length)))
+        }
+    }
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -81,6 +87,7 @@ fun AddressBar(
             },
             singleLine = true,
             modifier = Modifier
+                .fillMaxWidth()
                 .weight(1f)
                 .onFocusChanged(onFocusChanged)
                 .focusProperties { canFocus = allowFocus },
@@ -248,11 +255,5 @@ fun AddressBar(
             onDismiss = { showLocalFilesDialog = false },
             customLoadUrl = customLoadUrl
         )
-    }
-
-    LaunchedEffect(hasFocus) {
-        if (hasFocus) {
-            onUrlBarTextChange(urlBarText.copy(selection = TextRange(0, urlBarText.text.length)))
-        }
     }
 }
