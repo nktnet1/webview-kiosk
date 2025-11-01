@@ -2,22 +2,29 @@ package uk.nktnet.webviewkiosk.utils
 
 import android.util.Patterns
 import android.webkit.URLUtil.isValidUrl
+import androidx.core.net.toUri
 import java.io.File
 
-import java.net.URL
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
+
+fun isDataSchemeUrl(url: String): Boolean {
+    val dataUrlRegex = Regex("""^data:(?:[a-zA-Z0-9!#$&.+\-^_]+/[a-zA-Z0-9!#$&.+\-^_]+)?(?:;base64)?,.*""")
+    return url.startsWith("data:") && dataUrlRegex.matches(url)
+}
 
 fun validateUrl(input: String): Boolean {
     if (input.isEmpty()) {
         return true
     }
     val trimmedInput = input.trim()
-
-    val parsedUrl = runCatching { URL(trimmedInput) }.getOrElse { return false }
-    return when (parsedUrl.protocol) {
+    val uri = trimmedInput.toUri()
+    return when (uri.scheme) {
         "file" -> {
-            val filePath = URLDecoder.decode(trimmedInput.removePrefix("file://"), StandardCharsets.UTF_8.name())
+            val filePath = URLDecoder.decode(
+                trimmedInput.removePrefix("file://"),
+                StandardCharsets.UTF_8.name()
+            )
             File(filePath).exists()
         }
         "http" -> {
@@ -27,8 +34,11 @@ fun validateUrl(input: String): Boolean {
             isValidUrl(trimmedInput)
             && (
                 Patterns.WEB_URL.matcher(trimmedInput).matches()
-                || parsedUrl.host.matches(Regex("""\[[0-9a-fA-F:]+]"""))
+                || uri.host?.matches(Regex("""\[[0-9a-fA-F:]+]""")) == true
             )
+        }
+        "data" -> {
+            isDataSchemeUrl(trimmedInput)
         }
         else -> false
     }

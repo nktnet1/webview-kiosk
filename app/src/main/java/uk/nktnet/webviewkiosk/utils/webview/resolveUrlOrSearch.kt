@@ -2,10 +2,11 @@ package uk.nktnet.webviewkiosk.utils.webview
 
 import android.net.Uri
 import android.webkit.URLUtil
+import uk.nktnet.webviewkiosk.utils.isDataSchemeUrl
 
 fun resolveUrlOrSearch(searchProviderUrl: String, input: String): String {
     val trimmed = input.trim()
-    if (URLUtil.isValidUrl(trimmed)) {
+    if (URLUtil.isValidUrl(trimmed) || isDataSchemeUrl(trimmed)) {
         return trimmed
     }
     val domainRegex = Regex("""^(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:/.*)?$""")
