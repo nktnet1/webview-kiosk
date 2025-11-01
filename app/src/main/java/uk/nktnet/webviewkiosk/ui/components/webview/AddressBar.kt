@@ -19,16 +19,11 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.PopupProperties
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.WebViewInset
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
-import uk.nktnet.webviewkiosk.utils.webview.Suggest
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
@@ -67,22 +62,13 @@ fun AddressBar(
         }
     }
 
-    var suggestions by remember { mutableStateOf(listOf<String>()) }
-
     LaunchedEffect(Unit) {
         allowFocus = true
     }
 
-    LaunchedEffect(urlBarText.text) {
-        if (urlBarText.text.isNotBlank()) {
-            delay(300)
-            suggestions = try {
-                withContext(Dispatchers.IO) {
-                    Suggest.duckduckgo(urlBarText.text)
-                }
-            } catch (_: Exception) {
-                emptyList()
-            }
+    LaunchedEffect(hasFocus) {
+        if (hasFocus) {
+            onUrlBarTextChange(urlBarText.copy(selection = TextRange(0, urlBarText.text.length)))
         }
     }
 
@@ -94,68 +80,41 @@ fun AddressBar(
             .height(70.dp)
             .padding(horizontal = 8.dp)
     ) {
-        Box(
-            contentAlignment = Alignment.TopCenter,
-            modifier = Modifier.weight(1f)
-        ) {
-            OutlinedTextField(
-                value = urlBarText,
-                onValueChange = {
-                    onUrlBarTextChange(it)
-                },
-                singleLine = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onFocusChanged {
-                        onFocusChanged(it)
-                    }
-                    .focusProperties { canFocus = allowFocus },
-                shape = RoundedCornerShape(percent = 50),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                    focusedContainerColor = MaterialTheme.colorScheme.surface,
-                ),
-                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Go),
-                keyboardActions = KeyboardActions(onGo = {
-                    if (urlBarText.text.isNotBlank()) {
-                        addressBarSearch(urlBarText.text)
-                    }
-                }),
-                trailingIcon = {
-                    IconButton(onClick = {
-                        addressBarSearch(urlBarText.text)
-                    }) {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_search_24),
-                            contentDescription = "Go"
-                        )
-                    }
+        OutlinedTextField(
+            value = urlBarText,
+            onValueChange = {
+                onUrlBarTextChange(it)
+            },
+            singleLine = true,
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+                .onFocusChanged {
+                    onFocusChanged(it)
                 }
-            )
-
-            DropdownMenu(
-                expanded = hasFocus && urlBarText.text.isNotBlank() && suggestions.isNotEmpty(),
-                onDismissRequest = { suggestions = emptyList() },
-                shape = RoundedCornerShape(16.dp),
-                modifier = Modifier
-                    .padding(horizontal = 2.dp)
-                    .fillMaxWidth(0.9f),
-                properties = PopupProperties(
-                    focusable = false
-                ),
-            ) {
-                suggestions.forEach { suggestion ->
-                    DropdownMenuItem(
-                        text = { Text(suggestion) },
-                        onClick = {
-                            onUrlBarTextChange(TextFieldValue(suggestion))
-                            addressBarSearch(suggestion)
-                        },
-                        modifier = Modifier
+                .focusProperties { canFocus = allowFocus },
+            shape = RoundedCornerShape(percent = 50),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                focusedContainerColor = MaterialTheme.colorScheme.surface,
+            ),
+            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Go),
+            keyboardActions = KeyboardActions(onGo = {
+                if (urlBarText.text.isNotBlank()) {
+                    addressBarSearch(urlBarText.text)
+                }
+            }),
+            trailingIcon = {
+                IconButton(onClick = {
+                    addressBarSearch(urlBarText.text)
+                }) {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_search_24),
+                        contentDescription = "Go"
                     )
                 }
             }
-        }
+        )
 
         val showMenu =
             userSettings.allowBackwardsNavigation
@@ -298,11 +257,5 @@ fun AddressBar(
             onDismiss = { showLocalFilesDialog = false },
             customLoadUrl = customLoadUrl
         )
-    }
-
-    LaunchedEffect(hasFocus) {
-        if (hasFocus) {
-            onUrlBarTextChange(urlBarText.copy(selection = TextRange(0, urlBarText.text.length)))
-        }
     }
 }

@@ -19,7 +19,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -34,6 +36,7 @@ import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
 import uk.nktnet.webviewkiosk.ui.components.webview.FloatingMenuButton
 import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
 import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
+import uk.nktnet.webviewkiosk.ui.components.webview.AddressBarSearchSuggestions
 import uk.nktnet.webviewkiosk.ui.components.webview.LinkOptionsDialog
 import uk.nktnet.webviewkiosk.utils.SchemeType
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
@@ -45,6 +48,7 @@ import uk.nktnet.webviewkiosk.utils.isSupportedFileURLMimeType
 import uk.nktnet.webviewkiosk.utils.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
+import uk.nktnet.webviewkiosk.utils.webview.Suggest
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.html.generateFileMissingPage
 import uk.nktnet.webviewkiosk.utils.webview.html.generateUnsupportedMimeTypePage
@@ -108,6 +112,21 @@ fun WebviewScreen(navController: NavController) {
 
     var lastErrorUrl by remember { mutableStateOf("") }
 
+    var suggestions by remember { mutableStateOf(listOf<String>()) }
+
+    LaunchedEffect(urlBarText.text) {
+        if (urlBarText.text.isNotBlank()) {
+            delay(300)
+            suggestions = try {
+                withContext(Dispatchers.IO) {
+                    Suggest.duckduckgo(urlBarText.text)
+                }
+            } catch (_: Exception) {
+                emptyList()
+            }
+        }
+    }
+
     DisposableEffect( activity, isLocked) {
         if (activity != null) {
             val shouldImmerse = shouldBeImmersed(activity, userSettings)
@@ -123,7 +142,9 @@ fun WebviewScreen(navController: NavController) {
     }
 
     fun updateAddressBarAndHistory(url: String, originalUrl: String?) {
-        urlBarText = urlBarText.copy(text = url)
+        if (!addressBarHasFocus) {
+            urlBarText = urlBarText.copy(text = url)
+        }
         WebViewNavigation.appendWebviewHistory(
             systemSettings,
             url,
@@ -225,6 +246,7 @@ fun WebviewScreen(navController: NavController) {
         val searchUrl = resolveUrlOrSearch(
             userSettings.searchProviderUrl, input.trim()
         )
+        focusManager.clearFocus()
         if (searchUrl.isNotBlank() && (searchUrl != systemSettings.currentUrl || userSettings.allowRefresh)) {
             webView.requestFocus()
             customLoadUrl(searchUrl)
@@ -274,7 +296,11 @@ fun WebviewScreen(navController: NavController) {
                             WebviewAwareSwipeRefreshLayout(ctx, webView).apply {
                                 setOnRefreshListener {
                                     isSwipeRefreshing = true
-                                    WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
+                                    WebViewNavigation.refresh(
+                                        ::customLoadUrl,
+                                        systemSettings,
+                                        userSettings
+                                    )
                                 }
                                 addView(initWebviewApply(initialUrl))
                             }
@@ -298,6 +324,17 @@ fun WebviewScreen(navController: NavController) {
                             .align(Alignment.TopCenter)
                     )
                 }
+            }
+            if (addressBarHasFocus && suggestions.isNotEmpty()) {
+                AddressBarSearchSuggestions(
+                    suggestions = suggestions,
+                    onSelect = { selected ->
+                        urlBarText = urlBarText.copy(text = selected)
+                        addressBarSearch(selected)
+                    },
+                    modifier = Modifier
+                        .fillMaxSize()
+                )
             }
         }
 
