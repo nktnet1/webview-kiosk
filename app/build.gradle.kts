@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.android.retrofix)
 }
 
 android {
@@ -68,6 +69,26 @@ android {
             }
         }
     }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+
+    packaging {
+        resources {
+            excludes += listOf(
+                "META-INF/INDEX.LIST",
+                "META-INF/io.netty.versions.properties"
+            )
+        }
+    }
+
+    dependenciesInfo {
+        // https://gitlab.com/fdroid/fdroiddata/-/issues/3330
+        includeInApk = false
+        includeInBundle = false
+    }
 }
 
 kotlin {
@@ -91,6 +112,9 @@ dependencies {
     implementation(libs.androidx.webkit)
     implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.hivemq.mqtt.client)
+    retrofix(libs.android.retrostreams)
+    retrofix(libs.android.retrofuture)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

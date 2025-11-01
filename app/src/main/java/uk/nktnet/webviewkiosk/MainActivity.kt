@@ -27,6 +27,8 @@ import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
 import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
+import uk.nktnet.webviewkiosk.mqtt.MqttConfig
+import uk.nktnet.webviewkiosk.mqtt.MqttSubscriber
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonService
 import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.applyDeviceRotation
@@ -48,6 +50,7 @@ class MainActivity : AppCompatActivity() {
     private val navControllerState = mutableStateOf<NavHostController?>(null)
     private var uploadingFileUri: Uri? = null
     private var uploadProgress by mutableFloatStateOf(0f)
+    private lateinit var subscriber: MqttSubscriber
     private lateinit var userSettings: UserSettings
     private lateinit var themeState: MutableState<ThemeOption>
     private lateinit var keepScreenOnState: MutableState<Boolean>
@@ -92,6 +95,19 @@ class MainActivity : AppCompatActivity() {
 
         val systemSettings = SystemSettings(this)
         val webContentDir = getWebContentFilesDir(this)
+
+        val config = MqttConfig(
+            brokerUrl = "broker.hivemq.com",
+            port = 1883,
+            clientId = "android-client-${System.currentTimeMillis()}",
+            topic = "webviewkiosk/1"
+        )
+
+        subscriber = MqttSubscriber(config)
+        subscriber.connect(
+            onConnected = { println("Connected to MQTT broker") },
+            onError = { println("Failed to connect: ${it.message}") }
+        )
 
         var toastRef: Toast? = null
         val showToast: (String) -> Unit = { msg ->
@@ -245,6 +261,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         unregisterReceiver(restrictionsReceiver)
+        subscriber.disconnect { println("Disconnected from MQTT broker") }
         super.onDestroy()
     }
 
