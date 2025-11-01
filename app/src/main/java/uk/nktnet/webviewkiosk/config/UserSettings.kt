@@ -124,12 +124,18 @@ class UserSettings(val context: Context) {
         KioskControlPanelRegionOption.TOP_LEFT.name,
         fromString = KioskControlPanelRegionOption::fromString
     )
-
     var searchProviderUrl by stringPref(
         restrictions,
         prefs,
         UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL,
         Constants.DEFAULT_SEARCH_PROVIDER_URL
+    )
+    var searchSuggestionEngine by stringEnumPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebBrowsing.SEARCH_SUGGESTION_ENGINE,
+        SearchSuggestionEngineOption.NONE.name,
+        fromString = SearchSuggestionEngineOption::fromString
     )
 
     // Web Engine
@@ -371,6 +377,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, allowLinkLongPressContextMenu)
             put(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION, kioskControlPanelRegion.name)
             put(UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL, searchProviderUrl)
+            put(UserSettingsKeys.WebBrowsing.SEARCH_SUGGESTION_ENGINE, searchSuggestionEngine.name)
 
             put(UserSettingsKeys.WebEngine.ENABLE_JAVASCRIPT, enableJavaScript)
             put(UserSettingsKeys.WebEngine.ENABLE_DOM_STORAGE, enableDomStorage)
@@ -441,6 +448,9 @@ class UserSettings(val context: Context) {
                 json.optString(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION, kioskControlPanelRegion.name)
             )
             searchProviderUrl = json.optString(UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL, searchProviderUrl)
+            searchSuggestionEngine = SearchSuggestionEngineOption.fromString(
+                json.optString(UserSettingsKeys.WebBrowsing.SEARCH_SUGGESTION_ENGINE, searchSuggestionEngine.name)
+            )
 
             enableJavaScript = json.optBoolean(UserSettingsKeys.WebEngine.ENABLE_JAVASCRIPT, enableJavaScript)
             enableDomStorage = json.optBoolean(UserSettingsKeys.WebEngine.ENABLE_DOM_STORAGE, enableDomStorage)

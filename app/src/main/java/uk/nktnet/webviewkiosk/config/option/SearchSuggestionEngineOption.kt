@@ -4,7 +4,6 @@ enum class SearchSuggestionEngineOption {
     NONE,
     GOOGLE,
     DUCKDUCKGO,
-    BRAVE,
     YAHOO;
 
     companion object {

@@ -12,7 +12,6 @@ data class SearchEngineInterface(
 )
 
 object SearchSuggestionEngine {
-
     private val engines: Map<SearchSuggestionEngineOption, SearchEngineInterface> = mapOf(
         SearchSuggestionEngineOption.GOOGLE to SearchEngineInterface(
             "https://suggestqueries.google.com/complete/search?client=firefox&q="
@@ -27,20 +26,15 @@ object SearchSuggestionEngine {
             val jsonArray = JSONArray(response)
             (0 until jsonArray.length()).map { jsonArray.getJSONObject(it).getString("phrase") }
         },
-        SearchSuggestionEngineOption.BRAVE to SearchEngineInterface(
-            "https://search.brave.com/api/suggest?q="
-        ) { response ->
-            val jsonArray = JSONArray(response)
-            val suggestionsArray = jsonArray.getJSONArray(1)
-            (0 until suggestionsArray.length()).map { suggestionsArray.getString(it) }
-        },
         SearchSuggestionEngineOption.YAHOO to SearchEngineInterface(
             "https://api.search.yahoo.com/sugg/gossip/gossip-in-ura?output=sd1&command="
         ) { response ->
-            val jsonArray = JSONArray(response)
-            val suggestionsArray = jsonArray.getJSONArray(1)
-            (0 until suggestionsArray.length()).map { suggestionsArray.getString(it) }
-        },
+            val jsonObject = org.json.JSONObject(response)
+            val suggestionsArray = jsonObject.getJSONArray("r")
+            (0 until suggestionsArray.length()).map { i ->
+                suggestionsArray.getJSONObject(i).getString("k")
+            }
+        }
     )
 
     private fun get(urlString: String): String {
@@ -53,7 +47,6 @@ object SearchSuggestionEngine {
     }
 
     fun suggest(engineOption: SearchSuggestionEngineOption, query: String): List<String> {
-        if (engineOption == SearchSuggestionEngineOption.NONE) return emptyList()
         val engine = engines[engineOption] ?: return emptyList()
         val response = get(engine.baseUrl + query)
         return engine.parse(response)

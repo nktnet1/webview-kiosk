@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.ui.screens
 
 import android.webkit.CookieManager
 import android.webkit.HttpAuthHandler
+import android.webkit.URLUtil.isValidUrl
 import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
@@ -115,18 +116,26 @@ fun WebviewScreen(navController: NavController) {
 
     var suggestions by remember { mutableStateOf(listOf<String>()) }
 
-    LaunchedEffect(urlBarText.text) {
-        if (urlBarText.text.isNotBlank()) {
-            delay(300)
-            suggestions = try {
-                withContext(Dispatchers.IO) {
-                    SearchSuggestionEngine.suggest(
-                        SearchSuggestionEngineOption.GOOGLE,
-                        urlBarText.text
-                    )
+    if (userSettings.searchSuggestionEngine != SearchSuggestionEngineOption.NONE) {
+        LaunchedEffect(addressBarHasFocus, urlBarText.text) {
+            if (
+                addressBarHasFocus
+                && urlBarText.text.isNotBlank()
+                && !isValidUrl(urlBarText.text)
+            ) {
+                delay(300)
+                suggestions = try {
+                    withContext(Dispatchers.IO) {
+                        SearchSuggestionEngine.suggest(
+                            userSettings.searchSuggestionEngine,
+                            urlBarText.text
+                        )
+                    }
+                } catch (_: Exception) {
+                    emptyList()
                 }
-            } catch (_: Exception) {
-                emptyList()
+            } else {
+                suggestions = emptyList()
             }
         }
     }
@@ -329,15 +338,17 @@ fun WebviewScreen(navController: NavController) {
                     )
                 }
             }
-            if (addressBarHasFocus && suggestions.isNotEmpty()) {
+            if (
+                addressBarHasFocus
+                && suggestions.isNotEmpty()
+                && userSettings.searchSuggestionEngine != SearchSuggestionEngineOption.NONE
+            ) {
                 AddressBarSearchSuggestions(
                     suggestions = suggestions,
                     onSelect = { selected ->
-                        urlBarText = urlBarText.copy(text = selected)
                         addressBarSearch(selected)
                     },
-                    modifier = Modifier
-                        .fillMaxSize()
+                    modifier = Modifier.fillMaxSize()
                 )
             }
         }
