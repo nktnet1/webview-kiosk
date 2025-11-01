@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.TextFieldValue
@@ -272,13 +273,26 @@ fun WebviewScreen(navController: NavController) {
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (showAddressBar) {
-                AddressBar(
-                    urlBarText = urlBarText,
-                    onUrlBarTextChange = { urlBarText = it },
-                    hasFocus = addressBarHasFocus,
-                    onFocusChanged = { focusState -> addressBarHasFocus = focusState.isFocused },
-                    addressBarSearch = addressBarSearch,
-                    customLoadUrl = ::customLoadUrl,
+                /**
+                 * Wrap in AndroidView to avoid breaking autofill (e.g. Bitwarden/Proton Pass)
+                 * in the WebView further below. Unsure why this is necessary.
+                 */
+                AndroidView(
+                    factory = { ctx ->
+                        ComposeView(ctx).apply {
+                            setContent {
+                                AddressBar(
+                                    urlBarText = urlBarText,
+                                    onUrlBarTextChange = { urlBarText = it },
+                                    hasFocus = addressBarHasFocus,
+                                    onFocusChanged = { focusState -> addressBarHasFocus = focusState.isFocused },
+                                    addressBarSearch = addressBarSearch,
+                                    customLoadUrl = ::customLoadUrl,
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
