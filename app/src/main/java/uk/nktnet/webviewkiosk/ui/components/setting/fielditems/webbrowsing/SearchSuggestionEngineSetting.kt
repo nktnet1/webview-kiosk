@@ -16,7 +16,7 @@ fun SearchSuggestionEngineSetting() {
     DropdownSettingFieldItem(
         label = "Search Suggestion Engine",
         infoText = """
-            Configure the search engine for text suggestions (autocomplete)
+            Configure the search engine for text suggestions (autocomplete/hints)
             when typing in the address bar.
 
             For example, when searching for "new", you may get suggested
