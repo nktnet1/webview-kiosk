@@ -9,7 +9,9 @@ import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
 fun isDataSchemeUrl(url: String): Boolean {
-    val dataUrlRegex = Regex("""^data:(?:[a-zA-Z0-9!#$&.+\-^_]+/[a-zA-Z0-9!#$&.+\-^_]+)?(?:;base64)?,.*""")
+    val dataUrlRegex = Regex(
+        """^data:(?:[a-zA-Z0-9!#$&.+\-^_]+/[a-zA-Z0-9!#$&.+\-^_]+)?(?:;base64)?,.*"""
+    )
     return url.startsWith("data:") && dataUrlRegex.matches(url)
 }
 
