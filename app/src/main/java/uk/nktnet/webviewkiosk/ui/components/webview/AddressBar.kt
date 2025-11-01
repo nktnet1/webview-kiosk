@@ -20,11 +20,15 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.PopupProperties
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.WebViewInset
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
+import uk.nktnet.webviewkiosk.utils.webview.Suggest
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
@@ -63,11 +67,23 @@ fun AddressBar(
         }
     }
 
-    var suggestionsExpanded by remember { mutableStateOf(false) }
-    val suggestions = listOf("https://example.com", "https://google.com")
+    var suggestions by remember { mutableStateOf(listOf<String>()) }
 
     LaunchedEffect(Unit) {
         allowFocus = true
+    }
+
+    LaunchedEffect(urlBarText.text) {
+        if (urlBarText.text.isNotBlank()) {
+            delay(300)
+            suggestions = try {
+                withContext(Dispatchers.IO) {
+                    Suggest.duckduckgo(urlBarText.text)
+                }
+            } catch (_: Exception) {
+                emptyList()
+            }
+        }
     }
 
     Row(
@@ -86,14 +102,12 @@ fun AddressBar(
                 value = urlBarText,
                 onValueChange = {
                     onUrlBarTextChange(it)
-                    suggestionsExpanded = it.text.isNotBlank()
                 },
                 singleLine = true,
                 modifier = Modifier
                     .fillMaxWidth()
                     .onFocusChanged {
                         onFocusChanged(it)
-                        suggestionsExpanded = it.isFocused && urlBarText.text.isNotBlank()
                     }
                     .focusProperties { canFocus = allowFocus },
                 shape = RoundedCornerShape(percent = 50),
@@ -105,13 +119,11 @@ fun AddressBar(
                 keyboardActions = KeyboardActions(onGo = {
                     if (urlBarText.text.isNotBlank()) {
                         addressBarSearch(urlBarText.text)
-                        suggestionsExpanded = false
                     }
                 }),
                 trailingIcon = {
                     IconButton(onClick = {
                         addressBarSearch(urlBarText.text)
-                        suggestionsExpanded = false
                     }) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_search_24),
@@ -122,8 +134,8 @@ fun AddressBar(
             )
 
             DropdownMenu(
-                expanded = suggestionsExpanded && suggestions.isNotEmpty(),
-                onDismissRequest = { suggestionsExpanded = false },
+                expanded = hasFocus && urlBarText.text.isNotBlank() && suggestions.isNotEmpty(),
+                onDismissRequest = { suggestions = emptyList() },
                 shape = RoundedCornerShape(16.dp),
                 modifier = Modifier
                     .padding(horizontal = 2.dp)
@@ -138,7 +150,6 @@ fun AddressBar(
                         onClick = {
                             onUrlBarTextChange(TextFieldValue(suggestion))
                             addressBarSearch(suggestion)
-                            suggestionsExpanded = false
                         },
                         modifier = Modifier
                     )
