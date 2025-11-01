@@ -234,7 +234,6 @@ fun WebviewScreen(navController: NavController) {
         }
         focusManager.clearFocus()
         webView.loadUrl(newUrl)
-        webView.requestFocus()
     }
 
     if (
