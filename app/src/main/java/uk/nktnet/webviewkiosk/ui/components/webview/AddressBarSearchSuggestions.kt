@@ -22,19 +22,17 @@ fun AddressBarSearchSuggestions(
             .fillMaxWidth()
     ) {
         suggestions.forEach { suggestion ->
-            suggestions.forEach { suggestion ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onSelect(suggestion) }
-                ) {
-                    Text(
-                        text = suggestion,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 15.dp)
-                    )
-                }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onSelect(suggestion) }
+            ) {
+                Text(
+                    text = suggestion,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.fillMaxWidth()
+                        .padding(horizontal = 25.dp, vertical = 15.dp)
+                )
             }
         }
     }

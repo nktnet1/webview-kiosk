@@ -28,6 +28,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.AddressBarOption
 import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
+import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.InactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.KioskControlPanel
@@ -48,7 +49,7 @@ import uk.nktnet.webviewkiosk.utils.isSupportedFileURLMimeType
 import uk.nktnet.webviewkiosk.utils.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
-import uk.nktnet.webviewkiosk.utils.webview.Suggest
+import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.html.generateFileMissingPage
 import uk.nktnet.webviewkiosk.utils.webview.html.generateUnsupportedMimeTypePage
@@ -119,7 +120,10 @@ fun WebviewScreen(navController: NavController) {
             delay(300)
             suggestions = try {
                 withContext(Dispatchers.IO) {
-                    Suggest.duckduckgo(urlBarText.text)
+                    SearchSuggestionEngine.suggest(
+                        SearchSuggestionEngineOption.GOOGLE,
+                        urlBarText.text
+                    )
                 }
             } catch (_: Exception) {
                 emptyList()
