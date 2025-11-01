@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.os.Build
 import android.webkit.CookieManager
 import android.webkit.HttpAuthHandler
 import android.webkit.URLUtil.isValidUrl
@@ -232,8 +233,22 @@ fun WebviewScreen(navController: NavController) {
                 return
             }
         }
-        focusManager.clearFocus()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            focusManager.clearFocus()
+        }
         webView.loadUrl(newUrl)
+    }
+
+    val addressBarSearch: (String) -> Unit = { input ->
+        val searchUrl = resolveUrlOrSearch(
+            userSettings.searchProviderUrl, input.trim()
+        )
+        if (searchUrl.isNotBlank() && (searchUrl != systemSettings.currentUrl || userSettings.allowRefresh)) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+                webView.requestFocus()
+            }
+            customLoadUrl(searchUrl)
+        }
     }
 
     if (
@@ -255,15 +270,6 @@ fun WebviewScreen(navController: NavController) {
     cookieManager.setAcceptThirdPartyCookies(
         webView, userSettings.acceptThirdPartyCookies
     )
-
-    val addressBarSearch: (String) -> Unit = { input ->
-        val searchUrl = resolveUrlOrSearch(
-            userSettings.searchProviderUrl, input.trim()
-        )
-        if (searchUrl.isNotBlank() && (searchUrl != systemSettings.currentUrl || userSettings.allowRefresh)) {
-            customLoadUrl(searchUrl)
-        }
-    }
 
     Box(
         modifier = Modifier
