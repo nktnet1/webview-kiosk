@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
-import android.os.Build
 import android.webkit.CookieManager
 import android.webkit.HttpAuthHandler
 import android.webkit.URLUtil.isValidUrl
@@ -233,9 +232,6 @@ fun WebviewScreen(navController: NavController) {
                 return
             }
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            focusManager.clearFocus()
-        }
         webView.loadUrl(newUrl)
     }
 
@@ -244,9 +240,7 @@ fun WebviewScreen(navController: NavController) {
             userSettings.searchProviderUrl, input.trim()
         )
         if (searchUrl.isNotBlank() && (searchUrl != systemSettings.currentUrl || userSettings.allowRefresh)) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-                webView.requestFocus()
-            }
+            webView.requestFocus()
             customLoadUrl(searchUrl)
         }
     }
@@ -342,26 +336,28 @@ fun WebviewScreen(navController: NavController) {
                             .align(Alignment.TopCenter)
                     )
                 }
-            }
-            if (
-                addressBarHasFocus
-                && suggestions.isNotEmpty()
-                && userSettings.searchSuggestionEngine != SearchSuggestionEngineOption.NONE
-            ) {
-                AddressBarSearchSuggestions(
-                    suggestions = suggestions,
-                    onSelect = { selected ->
-                        addressBarSearch(selected)
-                    },
-                    modifier = Modifier.fillMaxSize()
-                )
+
+                if (
+                    addressBarHasFocus
+                    && suggestions.isNotEmpty()
+                    && userSettings.searchSuggestionEngine != SearchSuggestionEngineOption.NONE
+                ) {
+                    AddressBarSearchSuggestions(
+                        suggestions = suggestions,
+                        onSelect = { selected ->
+                            addressBarSearch(selected)
+                        },
+                        modifier = Modifier.align(Alignment.TopStart)
+                    )
+                }
             }
         }
 
         if (!isLocked) {
             Box(modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Transparent)) {
+                .background(Color.Transparent)
+            ) {
                 FloatingMenuButton(
                     onHomeClick = {
                         focusManager.clearFocus()
