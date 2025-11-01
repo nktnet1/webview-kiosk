@@ -89,25 +89,23 @@ fun AddressBar(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .onFocusChanged {
-                    onFocusChanged(it)
-                }
+                .onFocusChanged(onFocusChanged)
                 .focusProperties { canFocus = allowFocus },
             shape = RoundedCornerShape(percent = 50),
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                 focusedContainerColor = MaterialTheme.colorScheme.surface,
             ),
-            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Go),
+            keyboardOptions = KeyboardOptions.Default.copy(
+                imeAction = ImeAction.Go
+            ),
             keyboardActions = KeyboardActions(onGo = {
                 if (urlBarText.text.isNotBlank()) {
                     addressBarSearch(urlBarText.text)
                 }
             }),
             trailingIcon = {
-                IconButton(onClick = {
-                    addressBarSearch(urlBarText.text)
-                }) {
+                IconButton(onClick = { addressBarSearch(urlBarText.text) }) {
                     Icon(
                         painter = painterResource(R.drawable.baseline_search_24),
                         contentDescription = "Go"

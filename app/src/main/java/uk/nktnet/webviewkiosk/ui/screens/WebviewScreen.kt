@@ -232,7 +232,9 @@ fun WebviewScreen(navController: NavController) {
                 return
             }
         }
+        focusManager.clearFocus()
         webView.loadUrl(newUrl)
+        webView.requestFocus()
     }
 
     if (
@@ -259,9 +261,7 @@ fun WebviewScreen(navController: NavController) {
         val searchUrl = resolveUrlOrSearch(
             userSettings.searchProviderUrl, input.trim()
         )
-        focusManager.clearFocus()
         if (searchUrl.isNotBlank() && (searchUrl != systemSettings.currentUrl || userSettings.allowRefresh)) {
-            webView.requestFocus()
             customLoadUrl(searchUrl)
         }
     }
