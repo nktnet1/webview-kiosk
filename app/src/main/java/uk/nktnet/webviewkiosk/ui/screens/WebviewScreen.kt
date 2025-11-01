@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
-import android.os.Build
 import android.webkit.CookieManager
 import android.webkit.HttpAuthHandler
 import android.webkit.URLUtil.isValidUrl
@@ -14,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.TextFieldValue
@@ -233,9 +233,6 @@ fun WebviewScreen(navController: NavController) {
                 return
             }
         }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            focusManager.clearFocus()
-        }
         webView.loadUrl(newUrl)
     }
 
@@ -244,9 +241,7 @@ fun WebviewScreen(navController: NavController) {
             userSettings.searchProviderUrl, input.trim()
         )
         if (searchUrl.isNotBlank() && (searchUrl != systemSettings.currentUrl || userSettings.allowRefresh)) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-                webView.requestFocus()
-            }
+            webView.requestFocus()
             customLoadUrl(searchUrl)
         }
     }
@@ -278,13 +273,26 @@ fun WebviewScreen(navController: NavController) {
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (showAddressBar) {
-                AddressBar(
-                    urlBarText = urlBarText,
-                    onUrlBarTextChange = { urlBarText = it },
-                    hasFocus = addressBarHasFocus,
-                    onFocusChanged = { focusState -> addressBarHasFocus = focusState.isFocused },
-                    addressBarSearch = addressBarSearch,
-                    customLoadUrl = ::customLoadUrl,
+                /**
+                 * Wrap in AndroidView to avoid breaking autofill (e.g. Bitwarden/Proton Pass)
+                 * in the WebView further below. Unsure why this is necessary.
+                 */
+                AndroidView(
+                    factory = { ctx ->
+                        ComposeView(ctx).apply {
+                            setContent {
+                                AddressBar(
+                                    urlBarText = urlBarText,
+                                    onUrlBarTextChange = { urlBarText = it },
+                                    hasFocus = addressBarHasFocus,
+                                    onFocusChanged = { focusState -> addressBarHasFocus = focusState.isFocused },
+                                    addressBarSearch = addressBarSearch,
+                                    customLoadUrl = ::customLoadUrl,
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
@@ -342,26 +350,28 @@ fun WebviewScreen(navController: NavController) {
                             .align(Alignment.TopCenter)
                     )
                 }
-            }
-            if (
-                addressBarHasFocus
-                && suggestions.isNotEmpty()
-                && userSettings.searchSuggestionEngine != SearchSuggestionEngineOption.NONE
-            ) {
-                AddressBarSearchSuggestions(
-                    suggestions = suggestions,
-                    onSelect = { selected ->
-                        addressBarSearch(selected)
-                    },
-                    modifier = Modifier.fillMaxSize()
-                )
+
+                if (
+                    addressBarHasFocus
+                    && suggestions.isNotEmpty()
+                    && userSettings.searchSuggestionEngine != SearchSuggestionEngineOption.NONE
+                ) {
+                    AddressBarSearchSuggestions(
+                        suggestions = suggestions,
+                        onSelect = { selected ->
+                            addressBarSearch(selected)
+                        },
+                        modifier = Modifier.align(Alignment.TopStart)
+                    )
+                }
             }
         }
 
         if (!isLocked) {
             Box(modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Transparent)) {
+                .background(Color.Transparent)
+            ) {
                 FloatingMenuButton(
                     onHomeClick = {
                         focusManager.clearFocus()
