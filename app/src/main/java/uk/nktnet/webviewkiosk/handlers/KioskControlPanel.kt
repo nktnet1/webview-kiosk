@@ -59,6 +59,7 @@ import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.webview.BookmarksDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.HistoryDialog
+import uk.nktnet.webviewkiosk.ui.components.webview.LocalFilesDialog
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
@@ -96,6 +97,7 @@ fun KioskControlPanel(
     var isSticky by remember { mutableStateOf(systemSettings.isKioskControlPanelSticky) }
     var showBookmarksDialog by remember { mutableStateOf(false) }
     var showHistoryDialog by remember { mutableStateOf(false) }
+    var showLocalFilesDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(tapsLeft, lastTapTime) {
         if (tapsLeft in 1..5) {
@@ -137,6 +139,13 @@ fun KioskControlPanel(
 
     if (showBookmarksDialog) {
         BookmarksDialog(customLoadUrl, onDismiss = { showBookmarksDialog = false })
+    }
+
+    if (showLocalFilesDialog) {
+        LocalFilesDialog(
+            onDismiss = { showLocalFilesDialog = false },
+            customLoadUrl = customLoadUrl
+        )
     }
 
     if (userSettings.kioskControlPanelRegion != KioskControlPanelRegionOption.DISABLED) {
@@ -383,6 +392,26 @@ fun KioskControlPanel(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Bookmark")
+                        }
+                        Spacer(modifier = Modifier.height(3.dp))
+                    }
+
+                    if (userSettings.allowLocalFiles) {
+                        Button(
+                            enabled = enableInteraction,
+                            onClick = {
+                                showDialog = isSticky
+                                showLocalFilesDialog = true
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.outline_folder_24),
+                                contentDescription = "Files",
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Files")
                         }
                         Spacer(modifier = Modifier.height(3.dp))
                     }
