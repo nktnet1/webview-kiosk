@@ -36,6 +36,7 @@ import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorPromptRequest
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
+import java.net.URLEncoder
 
 data class WebViewConfig(
     val systemSettings: SystemSettings,
@@ -150,12 +151,20 @@ fun createCustomWebview(
                         whitelistRegexes = config.whitelistRegexes,
                         userSettings = userSettings
                     )
-                    if (schemeType == SchemeType.OTHER) {
+                    val uri = requestUrl.toUri()
+                    if (schemeType === SchemeType.WEBVIEW_KIOSK && uri.host == "block") {
+                        val blockUrl = uri.getQueryParameter("url")
+                        if (blockUrl != null) {
+                            loadUrl(blockUrl)
+                            return true
+                        }
+                    } else if (schemeType == SchemeType.OTHER) {
                         if (userSettings.allowOtherUrlSchemes) {
                             handleExternalScheme(context, requestUrl)
                         }
                         return true
                     }
+
                     if (blockCause != null) {
                         loadBlockedPage(
                             view,
@@ -173,7 +182,6 @@ fun createCustomWebview(
                     url: String?,
                     isReload: Boolean
                 ) {
-
                     if (url == null) {
                         return
                     }
@@ -362,6 +370,8 @@ fun createCustomWebview(
 enum class SchemeType {
     FILE,
     WEB,
+    DATA,
+    WEBVIEW_KIOSK,
     OTHER
 }
 
@@ -376,6 +386,8 @@ fun getBlockInfo(
     val schemeType = when (scheme) {
         "file" -> SchemeType.FILE
         "http", "https" -> SchemeType.WEB
+        "data" -> SchemeType.DATA
+        "webviewkiosk" -> SchemeType.WEBVIEW_KIOSK
         else -> SchemeType.OTHER
     }
 
@@ -393,8 +405,14 @@ fun loadBlockedPage(
     url: String,
     blockCause: BlockCause,
 ) {
+    val baseUrl = if ( url.toUri().scheme !in setOf("http", "https", "file")) {
+        "webviewkiosk://block?cause=${blockCause.name}&url=${URLEncoder.encode(url, "UTF-8")}"
+    } else {
+        url
+    }
+
     webView?.loadDataWithBaseURL(
-        url,
+        baseUrl,
         generateBlockedPageHtml(
             userSettings.theme,
             blockCause,
