@@ -211,8 +211,14 @@ fun WebviewScreen(navController: NavController) {
             )
             return
         }
-        if (schemeType == SchemeType.FILE) {
-            val uri = newUrl.toUri()
+        val uri = newUrl.toUri()
+
+        if (schemeType === SchemeType.WEBVIEW_KIOSK && uri.host == "block") {
+            val blockUrl = uri.getQueryParameter("url")
+            if (blockUrl != null) {
+                webView.loadUrl(blockUrl)
+            }
+        } else if (schemeType == SchemeType.FILE) {
             val mimeType = getMimeType(context, uri)
             val file = File(uri.path ?: "")
             val pageContent = when {
@@ -230,10 +236,10 @@ fun WebviewScreen(navController: NavController) {
                     "UTF-8",
                     null
                 )
-                return
             }
+        } else {
+            webView.loadUrl(newUrl)
         }
-        webView.loadUrl(newUrl)
     }
 
     val addressBarSearch: (String) -> Unit = { input ->

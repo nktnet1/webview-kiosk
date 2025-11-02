@@ -9,6 +9,7 @@ enum class BlockCause(val label: String) {
 
     override fun toString() = label
 }
+
 fun generateBlockedPageHtml(
     theme: ThemeOption,
     blockCause: BlockCause = BlockCause.BLACKLIST,
