@@ -356,6 +356,96 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH
     )
 
+    // MQTT
+    var mqttEnabled by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.ENABLED,
+        false
+    )
+    var mqttBrokerUrl by stringPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.BROKER_URL,
+        ""
+    )
+    var mqttPort by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.PORT,
+        1883
+    )
+    var mqttClientId by stringPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.CLIENT_ID,
+        "webviewkiosk-client"
+    )
+    var mqttUsername by stringPrefOptional(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.USERNAME
+    )
+    var mqttPassword by stringPrefOptional(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.PASSWORD
+    )
+    var mqttPublishEventTopic by stringPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Publish.EVENT,
+        "webviewkiosk/publish/event"
+    )
+    var mqttPublishEventQos by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Publish.EVENT_QOS,
+        0
+    )
+    var mqttPublishEventRetain by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Publish.EVENT_RETAIN,
+        false
+    )
+    var mqttSubscribeCommandTopic by stringPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.COMMAND,
+        "webviewkiosk/subscribe/command"
+    )
+    var mqttSubscribeCommandQos by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.COMMAND_QOS,
+        0
+    )
+    var mqttSubscribeCommandRetain by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.COMMAND_RETAIN,
+        false
+    )
+    var mqttSubscribeSettingsTopic by stringPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.SETTINGS,
+        "webviewkiosk/subscribe/settings"
+    )
+    var mqttSubscribeSettingsQos by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.SETTINGS_QOS,
+        0
+    )
+    var mqttSubscribeSettingsRetain by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.SETTINGS_RETAIN,
+        false
+    )
+
     fun exportToBase64(): String {
         val json = JSONObject().apply {
             put(UserSettingsKeys.WebContent.HOME_URL, homeUrl)
@@ -419,6 +509,23 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
+
+            put(UserSettingsKeys.Mqtt.ENABLED, mqttEnabled)
+            put(UserSettingsKeys.Mqtt.BROKER_URL, mqttBrokerUrl)
+            put(UserSettingsKeys.Mqtt.PORT, mqttPort)
+            put(UserSettingsKeys.Mqtt.CLIENT_ID, mqttClientId)
+            put(UserSettingsKeys.Mqtt.USERNAME, mqttUsername)
+            put(UserSettingsKeys.Mqtt.PASSWORD, mqttPassword)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.EVENT, mqttPublishEventTopic)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.EVENT_QOS, mqttPublishEventQos)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.EVENT_RETAIN, mqttPublishEventRetain)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.COMMAND, mqttSubscribeCommandTopic)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.COMMAND_QOS, mqttSubscribeCommandQos)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.COMMAND_RETAIN, mqttSubscribeCommandRetain)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.SETTINGS, mqttSubscribeSettingsTopic)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.SETTINGS_QOS, mqttSubscribeSettingsQos)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.SETTINGS_RETAIN, mqttSubscribeSettingsRetain)
+
         }
         return Base64.encodeToString(json.toString().toByteArray(), Base64.NO_WRAP)
     }
@@ -502,6 +609,22 @@ class UserSettings(val context: Context) {
             applyDesktopViewportWidth = json.optInt(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
             customScriptOnPageStart = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             customScriptOnPageFinish = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
+
+            mqttEnabled = json.optBoolean(UserSettingsKeys.Mqtt.ENABLED, mqttEnabled)
+            mqttBrokerUrl = json.optString(UserSettingsKeys.Mqtt.BROKER_URL, mqttBrokerUrl)
+            mqttPort = json.optInt(UserSettingsKeys.Mqtt.PORT, mqttPort)
+            mqttClientId = json.optString(UserSettingsKeys.Mqtt.CLIENT_ID, mqttClientId)
+            mqttUsername = json.optString(UserSettingsKeys.Mqtt.USERNAME, mqttUsername)
+            mqttPassword = json.optString(UserSettingsKeys.Mqtt.PASSWORD, mqttPassword)
+            mqttPublishEventTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Publish.EVENT, mqttPublishEventTopic)
+            mqttPublishEventQos = json.optInt(UserSettingsKeys.Mqtt.Topics.Publish.EVENT_QOS, mqttPublishEventQos)
+            mqttPublishEventRetain = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Publish.EVENT_RETAIN, mqttPublishEventRetain)
+            mqttSubscribeCommandTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.COMMAND, mqttSubscribeCommandTopic)
+            mqttSubscribeCommandQos = json.optInt(UserSettingsKeys.Mqtt.Topics.Subscribe.COMMAND_QOS, mqttSubscribeCommandQos)
+            mqttSubscribeCommandRetain = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Subscribe.COMMAND_RETAIN, mqttSubscribeCommandRetain)
+            mqttSubscribeSettingsTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.SETTINGS, mqttSubscribeSettingsTopic)
+            mqttSubscribeSettingsQos = json.optInt(UserSettingsKeys.Mqtt.Topics.Subscribe.SETTINGS_QOS, mqttSubscribeSettingsQos)
+            mqttSubscribeSettingsRetain = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Subscribe.SETTINGS_RETAIN, mqttSubscribeSettingsRetain)
             true
         } catch (e: Exception) {
             e.printStackTrace()
