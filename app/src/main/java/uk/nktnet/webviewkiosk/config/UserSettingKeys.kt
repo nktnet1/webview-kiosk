@@ -89,24 +89,20 @@ object UserSettingsKeys {
 
         const val CLEAN_START = "mqtt.clean_start"
         const val KEEP_ALIVE = "mqtt.keep_alive"
-        const val AUTO_RECONNECT = "mqtt.auto_reconnect"
         const val CONNECTION_TIMEOUT = "mqtt.connection_timeout"
 
         object Topics {
             object Publish {
                 const val EVENT = "mqtt.publish.event"
                 const val EVENT_QOS = "mqtt.publish.event.qos"
-                const val EVENT_RETAIN = "mqtt.publish.event.retain"
             }
 
             object Subscribe {
                 const val COMMAND = "mqtt.subscribe.command"
                 const val COMMAND_QOS = "mqtt.subscribe.command.qos"
-                const val COMMAND_RETAIN = "mqtt.subscribe.command.retain"
 
                 const val SETTINGS = "mqtt.subscribe.settings"
                 const val SETTINGS_QOS = "mqtt.subscribe.settings.qos"
-                const val SETTINGS_RETAIN = "mqtt.subscribe.settings.retain"
             }
         }
     }
