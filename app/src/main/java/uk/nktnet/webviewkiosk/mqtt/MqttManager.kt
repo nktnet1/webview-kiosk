@@ -4,36 +4,22 @@ import android.annotation.SuppressLint
 import com.hivemq.client.mqtt.MqttClientState
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
 import com.hivemq.client.mqtt.mqtt5.Mqtt5Client
+import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.option.MqttQosOption
 
-/**
- * For @SuppressLint("NewApi") regarding API 24 warnings, this is resolved with
- * https://hivemq.github.io/hivemq-mqtt-client/docs/installation/android/#android-api-levels-below-24
- */
+open class MqttSubscriber(private val userSettings: UserSettings) {
+    private var client: Mqtt5AsyncClient = buildClient()
 
-data class MqttConfig(
-    val brokerUrl: String,
-    val port: Int = 1883,
-    val clientId: String = "webviewkiosk-client",
-    val username: String? = null,
-    val password: String? = null,
-    val topic: String
-)
-
-open class MqttSubscriber(initialConfig: MqttConfig) {
-
-    private var config: MqttConfig = initialConfig
-    private var client: Mqtt5AsyncClient = buildClient(config)
-
-    private fun buildClient(cfg: MqttConfig): Mqtt5AsyncClient {
+    private fun buildClient(): Mqtt5AsyncClient {
         return Mqtt5Client.builder()
-            .identifier(cfg.clientId)
-            .serverHost(cfg.brokerUrl)
-            .serverPort(cfg.port)
+            .identifier(userSettings.mqttClientId)
+            .serverHost(userSettings.mqttBrokerUrl)
+            .serverPort(userSettings.mqttPort)
             .apply {
-                if (!cfg.username.isNullOrEmpty() && cfg.password != null) {
+                if (userSettings.mqttUsername.isNotEmpty()) {
                     simpleAuth()
-                        .username(cfg.username)
-                        .password(cfg.password.toByteArray())
+                        .username(userSettings.mqttUsername)
+                        .password(userSettings.mqttPassword.toByteArray())
                         .applySimpleAuth()
                 }
             }
@@ -48,51 +34,49 @@ open class MqttSubscriber(initialConfig: MqttConfig) {
                     onError?.invoke(throwable)
                 } else {
                     onConnected?.invoke()
-                    subscribeToTopic()
+                    subscribeToTopics()
                 }
             }
     }
 
-    private fun subscribeToTopic() {
+    private fun subscribeToTopics() {
+        subscribe(userSettings.mqttSubscribeCommandTopic, userSettings.mqttSubscribeCommandQos)
+        subscribe(userSettings.mqttSubscribeSettingsTopic, userSettings.mqttSubscribeSettingsQos)
+    }
+
+    private fun subscribe(topic: String, qos: MqttQosOption) {
         client.subscribeWith()
-            .topicFilter(config.topic)
+            .topicFilter(topic)
+            .qos(qos.toMqttQos())
             .callback { publish ->
                 val payloadStr = publish.payloadAsBytes.toString(Charsets.UTF_8)
-                onMessageReceived(config.topic, payloadStr)
+                onMessageReceived(topic, payloadStr)
             }
             .send()
     }
 
-    private fun onMessageReceived(topic: String, message: String) {
+    protected open fun onMessageReceived(topic: String, message: String) {
         println("Received MQTT message on topic [$topic]: $message")
     }
 
     @SuppressLint("NewApi")
     fun disconnect(onDisconnected: (() -> Unit)? = null) {
         if (client.state == MqttClientState.CONNECTED) {
-            client.disconnect()
-                .whenComplete { _, _ -> onDisconnected?.invoke() }
+            client.disconnect().whenComplete { _, _ -> onDisconnected?.invoke() }
         } else {
             onDisconnected?.invoke()
         }
     }
 
-    /**
-     * Update the config at runtime.
-     * If connected, the current client is disconnected first, then a new client is created and connected.
-     */
     @SuppressLint("NewApi")
-    fun updateConfig(newConfig: MqttConfig, onConnected: (() -> Unit)? = null, onError: ((Throwable) -> Unit)? = null) {
+    fun refreshConfig(onConnected: (() -> Unit)? = null, onError: ((Throwable) -> Unit)? = null) {
         if (client.state == MqttClientState.CONNECTED) {
-            client.disconnect()
-                .whenComplete { _, _ ->
-                    config = newConfig
-                    client = buildClient(config)
-                    connect(onConnected, onError)
-                }
+            client.disconnect().whenComplete { _, _ ->
+                client = buildClient()
+                connect(onConnected, onError)
+            }
         } else {
-            config = newConfig
-            client = buildClient(config)
+            client = buildClient()
             connect(onConnected, onError)
         }
     }

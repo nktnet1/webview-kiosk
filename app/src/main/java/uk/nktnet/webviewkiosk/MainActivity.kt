@@ -27,7 +27,6 @@ import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
 import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.mqtt.MqttConfig
 import uk.nktnet.webviewkiosk.mqtt.MqttSubscriber
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonService
 import uk.nktnet.webviewkiosk.main.SetupNavHost
@@ -96,14 +95,8 @@ class MainActivity : AppCompatActivity() {
         val systemSettings = SystemSettings(this)
         val webContentDir = getWebContentFilesDir(this)
 
-        val config = MqttConfig(
-            brokerUrl = "broker.hivemq.com",
-            port = 1883,
-            clientId = "android-client-${System.currentTimeMillis()}",
-            topic = "webviewkiosk/1"
-        )
 
-        subscriber = MqttSubscriber(config)
+        subscriber = MqttSubscriber(userSettings)
         subscriber.connect(
             onConnected = { println("Connected to MQTT broker") },
             onError = { println("Failed to connect: ${it.message}") }
