@@ -363,16 +363,16 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Mqtt.ENABLED,
         false
     )
-    var mqttBrokerUrl by stringPref(
+    var mqttServerHost by stringPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.BROKER_URL,
+        UserSettingsKeys.Mqtt.SERVER_HOST,
         "broker.hivemq.com"
     )
-    var mqttPort by intPref(
+    var mqttServerPort by intPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.PORT,
+        UserSettingsKeys.Mqtt.SERVER_PORT,
         1883
     )
     var mqttClientId by stringPref(
@@ -514,8 +514,8 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
 
             put(UserSettingsKeys.Mqtt.ENABLED, mqttEnabled)
-            put(UserSettingsKeys.Mqtt.BROKER_URL, mqttBrokerUrl)
-            put(UserSettingsKeys.Mqtt.PORT, mqttPort)
+            put(UserSettingsKeys.Mqtt.SERVER_HOST, mqttServerHost)
+            put(UserSettingsKeys.Mqtt.SERVER_PORT, mqttServerPort)
             put(UserSettingsKeys.Mqtt.CLIENT_ID, mqttClientId)
             put(UserSettingsKeys.Mqtt.USERNAME, mqttUsername)
             put(UserSettingsKeys.Mqtt.PASSWORD, mqttPassword)
@@ -614,8 +614,8 @@ class UserSettings(val context: Context) {
             customScriptOnPageFinish = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
 
             mqttEnabled = json.optBoolean(UserSettingsKeys.Mqtt.ENABLED, mqttEnabled)
-            mqttBrokerUrl = json.optString(UserSettingsKeys.Mqtt.BROKER_URL, mqttBrokerUrl)
-            mqttPort = json.optInt(UserSettingsKeys.Mqtt.PORT, mqttPort)
+            mqttServerHost = json.optString(UserSettingsKeys.Mqtt.SERVER_HOST, mqttServerHost)
+            mqttServerPort = json.optInt(UserSettingsKeys.Mqtt.SERVER_PORT, mqttServerPort)
             mqttClientId = json.optString(UserSettingsKeys.Mqtt.CLIENT_ID, mqttClientId)
             mqttUsername = json.optString(UserSettingsKeys.Mqtt.USERNAME, mqttUsername)
             mqttPassword = json.optString(UserSettingsKeys.Mqtt.PASSWORD, mqttPassword)

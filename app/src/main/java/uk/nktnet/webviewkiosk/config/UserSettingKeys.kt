@@ -81,8 +81,8 @@ object UserSettingsKeys {
 
     object Mqtt {
         const val ENABLED = "mqtt.enabled"
-        const val BROKER_URL = "mqtt.broker_url"
-        const val PORT = "mqtt.port"
+        const val SERVER_HOST = "mqtt.server_host"
+        const val SERVER_PORT = "mqtt.server_port"
         const val CLIENT_ID = "mqtt.client_id"
         const val USERNAME = "mqtt.username"
         const val PASSWORD = "mqtt.password"

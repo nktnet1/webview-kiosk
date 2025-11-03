@@ -98,8 +98,8 @@ class MainActivity : AppCompatActivity() {
 
         subscriber = MqttManager(userSettings)
         subscriber.connect(
-            onConnected = { println("Connected to MQTT broker") },
-            onError = { println("Failed to connect: ${it.message}") }
+            onConnected = { println("[MQTT] Connected to MQTT broker") },
+            onError = { println("[MQTT] Failed to connect: ${it.message}") }
         )
 
         var toastRef: Toast? = null

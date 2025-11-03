@@ -1,23 +1,32 @@
 package uk.nktnet.webviewkiosk.mqtt
 
 import android.annotation.SuppressLint
+import com.hivemq.client.mqtt.MqttClient
 import com.hivemq.client.mqtt.MqttClientState
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
-import com.hivemq.client.mqtt.mqtt5.Mqtt5Client
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.MqttQosOption
 import java.util.concurrent.TimeUnit
+import kotlin.text.Charsets.UTF_8
 
 open class MqttManager(private val userSettings: UserSettings) {
     private var client: Mqtt5AsyncClient = buildClient()
 
     private fun buildClient(): Mqtt5AsyncClient {
-        return Mqtt5Client.builder()
+        var builder = MqttClient.builder()
+            .useMqttVersion5()
             .identifier(userSettings.mqttClientId)
-            .serverHost(userSettings.mqttBrokerUrl)
-            .serverPort(userSettings.mqttPort)
+            .serverHost(userSettings.mqttServerHost)
+            .serverPort(userSettings.mqttServerPort)
+
+        /**
+         * TODO: make this configurable
+         */
+        builder = builder.sslWithDefaultConfig()
+
+        return builder
             .transportConfig()
-            .mqttConnectTimeout(userSettings.mqttConnectionTimeout * 1000L, TimeUnit.MILLISECONDS)
+            .mqttConnectTimeout(userSettings.mqttConnectionTimeout * 1L, TimeUnit.SECONDS)
             .applyTransportConfig()
             .buildAsync()
     }
@@ -25,11 +34,9 @@ open class MqttManager(private val userSettings: UserSettings) {
     @SuppressLint("NewApi")
     fun connect(onConnected: (() -> Unit)? = null, onError: ((Throwable) -> Unit)? = null) {
         client.connectWith()
-            .cleanStart(userSettings.mqttCleanStart)
-            .keepAlive(userSettings.mqttKeepAlive)
             .simpleAuth()
             .username(userSettings.mqttUsername)
-            .password(userSettings.mqttPassword.toByteArray())
+            .password(UTF_8.encode(userSettings.mqttPassword))
             .applySimpleAuth()
             .send()
             .whenComplete { _, throwable ->
@@ -52,14 +59,14 @@ open class MqttManager(private val userSettings: UserSettings) {
             .topicFilter(topic)
             .qos(qos.toMqttQos())
             .callback { publish ->
-                val payloadStr = publish.payloadAsBytes.toString(Charsets.UTF_8)
+                val payloadStr = publish.payloadAsBytes.toString(UTF_8)
                 onMessageReceived(topic, payloadStr)
             }
             .send()
     }
 
     protected open fun onMessageReceived(topic: String, message: String) {
-        println("Received MQTT message on topic [$topic]: $message")
+        println("[MQTT] Received MQTT message on topic [$topic]: $message")
     }
 
     @SuppressLint("NewApi")
