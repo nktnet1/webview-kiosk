@@ -518,7 +518,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.SERVER_PORT, mqttServerPort)
             put(UserSettingsKeys.Mqtt.CLIENT_ID, mqttClientId)
             put(UserSettingsKeys.Mqtt.USERNAME, mqttUsername)
-            put(UserSettingsKeys.Mqtt.PASSWORD, mqttPassword)
+            // put(UserSettingsKeys.Mqtt.PASSWORD, mqttPassword)
             put(UserSettingsKeys.Mqtt.CLEAN_START, mqttCleanStart)
             put(UserSettingsKeys.Mqtt.KEEP_ALIVE, mqttKeepAlive)
             put(UserSettingsKeys.Mqtt.CONNECTION_TIMEOUT, mqttConnectionTimeout)
