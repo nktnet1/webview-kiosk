@@ -33,6 +33,7 @@ fun TextSettingFieldItem(
     validationMessage: String? = null,
     onSave: (String) -> Unit,
     readOnly: Boolean = false,
+    descriptionFormatter: ((String) -> String)? = null,
     extraContent: (@Composable ((setValue: (String) -> Unit) -> Unit))? = null,
 ) {
     val clipboard = LocalClipboard.current
@@ -53,9 +54,13 @@ fun TextSettingFieldItem(
             showDialog = true
         }
     ) { v ->
-        val description = if (isMultiline) {
-            v.split("\n").joinToString(" | ").ifBlank { "(blank)" }
-        } else v.ifBlank { "(blank)" }
+        val description = descriptionFormatter?.invoke(v) ?: run {
+            if (isMultiline) {
+                v.split("\n").joinToString(" | ").ifBlank { "(blank)" }
+            } else {
+                v.ifBlank { "(blank)" }
+            }
+        }
 
         Text(
             text = description,

@@ -60,6 +60,11 @@ fun SettingsListScreen(
             Screen.SettingsJsScript.route
         ),
         Triple(
+            "MQTT",
+            "Automation, change settings remotely",
+            Screen.SettingsMqtt.route
+        ),
+        Triple(
             "About",
             "Package name, app version, debug build, installer",
             Screen.SettingsAbout.route

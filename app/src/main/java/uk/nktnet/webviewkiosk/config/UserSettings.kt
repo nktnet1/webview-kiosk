@@ -373,7 +373,7 @@ class UserSettings(val context: Context) {
         restrictions,
         prefs,
         UserSettingsKeys.Mqtt.SERVER_PORT,
-        1883
+        8883
     )
     var mqttClientId by stringPref(
         restrictions,

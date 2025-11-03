@@ -19,5 +19,6 @@ sealed class Screen(val route: String) {
     object SettingsDevice : Screen("settings/device")
     object SettingsJsScript : Screen("settings/js-script")
 
+    object SettingsMqtt : Screen("settings/mqtt")
     object SettingsAbout : Screen("settings/about")
 }

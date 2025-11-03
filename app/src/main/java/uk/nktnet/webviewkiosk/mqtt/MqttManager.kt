@@ -26,8 +26,8 @@ open class MqttManager(private val userSettings: UserSettings) {
 
         return builder
             .transportConfig()
-            .mqttConnectTimeout(userSettings.mqttConnectionTimeout * 1L, TimeUnit.SECONDS)
-            .applyTransportConfig()
+                .mqttConnectTimeout(userSettings.mqttConnectionTimeout * 1L, TimeUnit.SECONDS)
+                .applyTransportConfig()
             .buildAsync()
     }
 
@@ -35,9 +35,9 @@ open class MqttManager(private val userSettings: UserSettings) {
     fun connect(onConnected: (() -> Unit)? = null, onError: ((Throwable) -> Unit)? = null) {
         client.connectWith()
             .simpleAuth()
-            .username(userSettings.mqttUsername)
-            .password(UTF_8.encode(userSettings.mqttPassword))
-            .applySimpleAuth()
+                .username(userSettings.mqttUsername)
+                .password(UTF_8.encode(userSettings.mqttPassword))
+                .applySimpleAuth()
             .send()
             .whenComplete { _, throwable ->
                 if (throwable != null) {

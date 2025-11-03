@@ -61,6 +61,9 @@ fun SetupNavHost(
             authComposable(Screen.SettingsJsScript.route) {
                 SettingsJsScriptsScreen(navController)
             }
+            authComposable(Screen.SettingsMqtt.route) {
+                SettingsMqttScreen(navController)
+            }
             authComposable(Screen.SettingsAbout.route) {
                 SettingsAboutScreen(navController)
             }
