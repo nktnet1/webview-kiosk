@@ -93,16 +93,27 @@ object UserSettingsKeys {
 
         object Topics {
             object Publish {
-                const val EVENT = "mqtt.publish.event"
-                const val EVENT_QOS = "mqtt.publish.event.qos"
+                object Event {
+                    const val TOPIC = "mqtt.publish.event.topic"
+                    const val QOS = "mqtt.publish.event.qos"
+                    const val RETAIN = "mqtt.publish.event.retain"
+                }
             }
 
             object Subscribe {
-                const val COMMAND = "mqtt.subscribe.command"
-                const val COMMAND_QOS = "mqtt.subscribe.command.qos"
+                object Command {
+                    const val TOPIC = "mqtt.subscribe.command.topic"
+                    const val QOS = "mqtt.subscribe.command.qos"
+                    const val RETAIN_HANDLING = "mqtt.subscribe.command.retain_handling"
+                    const val RETAIN_AS_PUBLISHED = "mqtt.subscribe.command.retain_as_published"
+                }
 
-                const val SETTINGS = "mqtt.subscribe.settings"
-                const val SETTINGS_QOS = "mqtt.subscribe.settings.qos"
+                object Settings {
+                    const val TOPIC = "mqtt.subscribe.settings"
+                    const val QOS = "mqtt.subscribe.settings.qos"
+                    const val RETAIN_HANDLING = "mqtt.subscribe.settings.retain_handling"
+                    const val RETAIN_AS_PUBLISHED = "mqtt.subscribe.settings.retain_as_published"
+                }
             }
         }
     }

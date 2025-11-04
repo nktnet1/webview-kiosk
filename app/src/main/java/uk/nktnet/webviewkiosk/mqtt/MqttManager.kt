@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.MqttQosOption
+import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption
 import java.util.concurrent.TimeUnit
 import kotlin.text.Charsets.UTF_8
 
@@ -58,14 +59,32 @@ open class MqttManager(private val userSettings: UserSettings) {
     }
 
     private fun subscribeToTopics() {
-        subscribe(userSettings.mqttSubscribeCommandTopic, userSettings.mqttSubscribeCommandQos)
-        subscribe(userSettings.mqttSubscribeSettingsTopic, userSettings.mqttSubscribeSettingsQos)
+        subscribe(
+            userSettings.mqttSubscribeCommandTopic,
+            userSettings.mqttSubscribeCommandQos,
+            userSettings.mqttSubscribeCommandRetainHandling,
+            userSettings.mqttSubscribeCommandRetainAsPublished
+        )
+        subscribe(
+            userSettings.mqttSubscribeSettingsTopic,
+            userSettings.mqttSubscribeSettingsQos,
+            userSettings.mqttSubscribeSettingsRetainHandling,
+            userSettings.mqttSubscribeSettingsRetainAsPublished
+        )
     }
 
-    private fun subscribe(topic: String, qos: MqttQosOption) {
+    private fun subscribe(
+        topic: String,
+        qos: MqttQosOption,
+        retainHandling: MqttRetainHandlingOption,
+        retainAsPublished: Boolean
+    ) {
         client.subscribeWith()
             .topicFilter(topic)
             .qos(qos.toMqttQos())
+            .retainHandling(retainHandling.toMqttRetainHandling())
+            .retainAsPublished(retainAsPublished)
+            .noLocal(true)
             .callback { publish ->
                 val json = Json {
                     ignoreUnknownKeys = true

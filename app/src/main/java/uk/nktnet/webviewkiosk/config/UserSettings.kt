@@ -412,41 +412,73 @@ class UserSettings(val context: Context) {
     var mqttPublishEventTopic by stringPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.Topics.Publish.EVENT,
+        UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC,
         "webviewkiosk/publish/event"
     )
     var mqttPublishEventQos by intEnumPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.Topics.Publish.EVENT_QOS,
+        UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS,
         MqttQosOption.AT_MOST_ONCE.code,
         fromInt = MqttQosOption::fromCode
+    )
+    var mqttPublishEventRetain by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN,
+        false,
     )
     var mqttSubscribeCommandTopic by stringPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.Topics.Subscribe.COMMAND,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC,
         "webviewkiosk/subscribe/command"
     )
     var mqttSubscribeCommandQos by intEnumPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.Topics.Subscribe.COMMAND_QOS,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS,
         MqttQosOption.AT_MOST_ONCE.code,
         fromInt = MqttQosOption::fromCode
+    )
+    var mqttSubscribeCommandRetainHandling by intEnumPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING,
+        MqttRetainHandlingOption.DO_NOT_SEND.code,
+        fromInt = MqttRetainHandlingOption::fromCode
+    )
+    var mqttSubscribeCommandRetainAsPublished by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_AS_PUBLISHED,
+        false,
     )
     var mqttSubscribeSettingsTopic by stringPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.Topics.Subscribe.SETTINGS,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.TOPIC,
         "webviewkiosk/subscribe/settings"
     )
     var mqttSubscribeSettingsQos by intEnumPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.Topics.Subscribe.SETTINGS_QOS,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.QOS,
         MqttQosOption.AT_MOST_ONCE.code,
         fromInt = MqttQosOption::fromCode
+    )
+    var mqttSubscribeSettingsRetainHandling by intEnumPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING,
+        MqttRetainHandlingOption.DO_NOT_SEND.code,
+        fromInt = MqttRetainHandlingOption::fromCode
+    )
+    var mqttSubscribeSettingsRetainAsPublished by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_AS_PUBLISHED,
+        false,
     )
 
     fun exportToBase64(): String {
@@ -522,12 +554,18 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.CLEAN_START, mqttCleanStart)
             put(UserSettingsKeys.Mqtt.KEEP_ALIVE, mqttKeepAlive)
             put(UserSettingsKeys.Mqtt.CONNECTION_TIMEOUT, mqttConnectionTimeout)
-            put(UserSettingsKeys.Mqtt.Topics.Publish.EVENT, mqttPublishEventTopic)
-            put(UserSettingsKeys.Mqtt.Topics.Publish.EVENT_QOS, mqttPublishEventQos)
-            put(UserSettingsKeys.Mqtt.Topics.Subscribe.COMMAND, mqttSubscribeCommandTopic)
-            put(UserSettingsKeys.Mqtt.Topics.Subscribe.COMMAND_QOS, mqttSubscribeCommandQos)
-            put(UserSettingsKeys.Mqtt.Topics.Subscribe.SETTINGS, mqttSubscribeSettingsTopic)
-            put(UserSettingsKeys.Mqtt.Topics.Subscribe.SETTINGS_QOS, mqttSubscribeSettingsQos)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.code)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN, mqttPublishEventRetain)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC, mqttSubscribeCommandTopic)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS, mqttSubscribeCommandQos.code)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING, mqttSubscribeCommandRetainHandling.code)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_AS_PUBLISHED, mqttSubscribeCommandRetainAsPublished)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_AS_PUBLISHED, mqttSubscribeCommandRetainAsPublished)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.TOPIC, mqttSubscribeSettingsTopic)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.QOS, mqttSubscribeSettingsQos.code)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_HANDLING, mqttSubscribeSettingsRetainHandling.code)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_AS_PUBLISHED, mqttSubscribeSettingsRetainAsPublished)
         }
         return Base64.encodeToString(json.toString().toByteArray(), Base64.NO_WRAP)
     }
@@ -621,18 +659,27 @@ class UserSettings(val context: Context) {
             mqttCleanStart = json.optBoolean(UserSettingsKeys.Mqtt.CLEAN_START, mqttCleanStart)
             mqttKeepAlive = json.optInt(UserSettingsKeys.Mqtt.KEEP_ALIVE, mqttKeepAlive)
             mqttConnectionTimeout = json.optInt(UserSettingsKeys.Mqtt.CONNECTION_TIMEOUT, mqttConnectionTimeout)
-            mqttPublishEventTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Publish.EVENT, mqttPublishEventTopic)
+            mqttPublishEventTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
             mqttPublishEventQos = MqttQosOption.fromCode(
-                json.optInt(UserSettingsKeys.Mqtt.Topics.Publish.EVENT_QOS, mqttPublishEventQos.code)
+                json.optInt(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.code)
             )
-            mqttSubscribeCommandTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.COMMAND, mqttSubscribeCommandTopic)
+            mqttPublishEventRetain = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN, mqttPublishEventRetain)
+            mqttSubscribeCommandTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC, mqttSubscribeCommandTopic)
             mqttSubscribeCommandQos = MqttQosOption.fromCode(
-                json.optInt(UserSettingsKeys.Mqtt.Topics.Subscribe.COMMAND_QOS, mqttSubscribeCommandQos.code)
+                json.optInt(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS, mqttSubscribeCommandQos.code)
             )
-            mqttSubscribeSettingsTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.SETTINGS, mqttSubscribeSettingsTopic)
+            mqttSubscribeCommandRetainHandling = MqttRetainHandlingOption.fromCode(
+                json.optInt(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING, mqttSubscribeCommandRetainHandling.code)
+            )
+            mqttSubscribeCommandRetainAsPublished = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_AS_PUBLISHED, mqttSubscribeCommandRetainAsPublished)
+            mqttSubscribeSettingsTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.TOPIC, mqttSubscribeSettingsTopic)
             mqttSubscribeSettingsQos = MqttQosOption.fromCode(
-                json.optInt(UserSettingsKeys.Mqtt.Topics.Subscribe.SETTINGS_QOS, mqttSubscribeSettingsQos.code)
+                json.optInt(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.QOS, mqttSubscribeSettingsQos.code)
             )
+            mqttSubscribeSettingsRetainHandling = MqttRetainHandlingOption.fromCode(
+                json.optInt(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_HANDLING, mqttSubscribeSettingsRetainHandling.code)
+            )
+            mqttSubscribeSettingsRetainAsPublished = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_AS_PUBLISHED, mqttSubscribeSettingsRetainAsPublished)
             true
         } catch (e: Exception) {
             e.printStackTrace()

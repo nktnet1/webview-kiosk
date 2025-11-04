@@ -95,7 +95,6 @@ class MainActivity : AppCompatActivity() {
         val systemSettings = SystemSettings(this)
         val webContentDir = getWebContentFilesDir(this)
 
-
         subscriber = MqttManager(userSettings)
         subscriber.connect(
             onConnected = { println("[MQTT] Connected to MQTT broker") },
