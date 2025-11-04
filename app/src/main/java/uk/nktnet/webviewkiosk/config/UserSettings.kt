@@ -391,6 +391,12 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.Mqtt.PASSWORD
     )
+    var mqttUseTls by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.USE_TLS,
+        true
+    )
     var mqttCleanStart by booleanPref(
         restrictions,
         prefs,
@@ -403,10 +409,10 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Mqtt.KEEP_ALIVE,
         60
     )
-    var mqttConnectionTimeout by intPref(
+    var mqttConnectTimeout by intPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.CONNECTION_TIMEOUT,
+        UserSettingsKeys.Mqtt.CONNECT_TIMEOUT,
         30
     )
     var mqttPublishEventTopic by stringPref(
@@ -551,9 +557,10 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.CLIENT_ID, mqttClientId)
             put(UserSettingsKeys.Mqtt.USERNAME, mqttUsername)
             // put(UserSettingsKeys.Mqtt.PASSWORD, mqttPassword)
+            put(UserSettingsKeys.Mqtt.USE_TLS, mqttUseTls)
             put(UserSettingsKeys.Mqtt.CLEAN_START, mqttCleanStart)
             put(UserSettingsKeys.Mqtt.KEEP_ALIVE, mqttKeepAlive)
-            put(UserSettingsKeys.Mqtt.CONNECTION_TIMEOUT, mqttConnectionTimeout)
+            put(UserSettingsKeys.Mqtt.CONNECT_TIMEOUT, mqttConnectTimeout)
             put(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
             put(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.code)
             put(UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN, mqttPublishEventRetain)
@@ -656,9 +663,10 @@ class UserSettings(val context: Context) {
             mqttClientId = json.optString(UserSettingsKeys.Mqtt.CLIENT_ID, mqttClientId)
             mqttUsername = json.optString(UserSettingsKeys.Mqtt.USERNAME, mqttUsername)
             mqttPassword = json.optString(UserSettingsKeys.Mqtt.PASSWORD, mqttPassword)
+            mqttUseTls = json.optBoolean(UserSettingsKeys.Mqtt.USE_TLS, mqttUseTls)
             mqttCleanStart = json.optBoolean(UserSettingsKeys.Mqtt.CLEAN_START, mqttCleanStart)
             mqttKeepAlive = json.optInt(UserSettingsKeys.Mqtt.KEEP_ALIVE, mqttKeepAlive)
-            mqttConnectionTimeout = json.optInt(UserSettingsKeys.Mqtt.CONNECTION_TIMEOUT, mqttConnectionTimeout)
+            mqttConnectTimeout = json.optInt(UserSettingsKeys.Mqtt.CONNECT_TIMEOUT, mqttConnectTimeout)
             mqttPublishEventTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
             mqttPublishEventQos = MqttQosOption.fromCode(
                 json.optInt(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.code)

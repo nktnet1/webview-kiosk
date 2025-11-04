@@ -35,7 +35,7 @@ open class MqttManager(private val userSettings: UserSettings) {
 
         return builder
             .transportConfig()
-                .mqttConnectTimeout(userSettings.mqttConnectionTimeout * 1L, TimeUnit.SECONDS)
+                .mqttConnectTimeout(userSettings.mqttConnectTimeout * 1L, TimeUnit.SECONDS)
                 .applyTransportConfig()
             .buildAsync()
     }
@@ -43,6 +43,8 @@ open class MqttManager(private val userSettings: UserSettings) {
     @SuppressLint("NewApi")
     fun connect(onConnected: (() -> Unit)? = null, onError: ((Throwable) -> Unit)? = null) {
         client.connectWith()
+            .cleanStart(userSettings.mqttCleanStart)
+            .keepAlive(userSettings.mqttKeepAlive)
             .simpleAuth()
                 .username(userSettings.mqttUsername)
                 .password(UTF_8.encode(userSettings.mqttPassword))

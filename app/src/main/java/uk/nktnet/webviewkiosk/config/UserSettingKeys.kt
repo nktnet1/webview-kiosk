@@ -87,9 +87,10 @@ object UserSettingsKeys {
         const val USERNAME = "mqtt.username"
         const val PASSWORD = "mqtt.password"
 
+        const val USE_TLS = "mqtt.clean_start"
         const val CLEAN_START = "mqtt.clean_start"
         const val KEEP_ALIVE = "mqtt.keep_alive"
-        const val CONNECTION_TIMEOUT = "mqtt.connection_timeout"
+        const val CONNECT_TIMEOUT = "mqtt.connect_timeout"
 
         object Topics {
             object Publish {
