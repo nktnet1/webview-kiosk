@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.mqtt
 import android.annotation.SuppressLint
 import com.hivemq.client.mqtt.MqttClient
 import com.hivemq.client.mqtt.MqttClientState
+import com.hivemq.client.mqtt.lifecycle.MqttClientAutoReconnect
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -28,10 +29,12 @@ open class MqttManager(private val userSettings: UserSettings) {
             .serverHost(userSettings.mqttServerHost)
             .serverPort(userSettings.mqttServerPort)
 
-        /**
-         * TODO: make this configurable
-         */
-        builder = builder.sslWithDefaultConfig()
+        if (userSettings.mqttUseTls) {
+            builder = builder.sslWithDefaultConfig()
+        }
+        if (userSettings.mqttAutomaticReconnect) {
+            builder = builder.automaticReconnectWithDefaultConfig()
+        }
 
         return builder
             .transportConfig()

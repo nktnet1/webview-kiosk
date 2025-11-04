@@ -415,6 +415,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Mqtt.CONNECT_TIMEOUT,
         30
     )
+    var mqttAutomaticReconnect by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.CLEAN_START,
+        true
+    )
     var mqttPublishEventTopic by stringPref(
         restrictions,
         prefs,
@@ -561,6 +567,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.CLEAN_START, mqttCleanStart)
             put(UserSettingsKeys.Mqtt.KEEP_ALIVE, mqttKeepAlive)
             put(UserSettingsKeys.Mqtt.CONNECT_TIMEOUT, mqttConnectTimeout)
+            put(UserSettingsKeys.Mqtt.AUTOMATIC_RECONNECT, mqttAutomaticReconnect)
             put(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
             put(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.code)
             put(UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN, mqttPublishEventRetain)
@@ -667,6 +674,7 @@ class UserSettings(val context: Context) {
             mqttCleanStart = json.optBoolean(UserSettingsKeys.Mqtt.CLEAN_START, mqttCleanStart)
             mqttKeepAlive = json.optInt(UserSettingsKeys.Mqtt.KEEP_ALIVE, mqttKeepAlive)
             mqttConnectTimeout = json.optInt(UserSettingsKeys.Mqtt.CONNECT_TIMEOUT, mqttConnectTimeout)
+            mqttAutomaticReconnect = json.optBoolean(UserSettingsKeys.Mqtt.AUTOMATIC_RECONNECT, mqttAutomaticReconnect)
             mqttPublishEventTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
             mqttPublishEventQos = MqttQosOption.fromCode(
                 json.optInt(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.code)

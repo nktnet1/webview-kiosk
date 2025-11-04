@@ -9,6 +9,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttAutomaticReconnectSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttCleanStartSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttConnectTimeoutSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttEnabledSetting
@@ -37,8 +38,9 @@ fun SettingsMqttScreen(navController: NavController) {
         MqttUsernameSetting()
         MqttPasswordSetting()
         MqttUseTlsSetting()
-        MqttConnectTimeoutSetting()
         MqttCleanStartSetting()
         MqttKeepAliveSetting()
+        MqttConnectTimeoutSetting()
+        MqttAutomaticReconnectSetting()
     }
 }

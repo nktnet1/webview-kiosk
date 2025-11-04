@@ -91,6 +91,7 @@ object UserSettingsKeys {
         const val CLEAN_START = "mqtt.clean_start"
         const val KEEP_ALIVE = "mqtt.keep_alive"
         const val CONNECT_TIMEOUT = "mqtt.connect_timeout"
+        const val AUTOMATIC_RECONNECT = "mqtt.automatic_reconnect"
 
         object Topics {
             object Publish {
