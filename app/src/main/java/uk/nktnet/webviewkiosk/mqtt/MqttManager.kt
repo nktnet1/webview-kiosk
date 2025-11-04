@@ -3,7 +3,6 @@ package uk.nktnet.webviewkiosk.mqtt
 import android.annotation.SuppressLint
 import com.hivemq.client.mqtt.MqttClient
 import com.hivemq.client.mqtt.MqttClientState
-import com.hivemq.client.mqtt.lifecycle.MqttClientAutoReconnect
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
