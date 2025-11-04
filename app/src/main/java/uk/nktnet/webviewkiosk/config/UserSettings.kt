@@ -528,7 +528,6 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.COMMAND_QOS, mqttSubscribeCommandQos)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.SETTINGS, mqttSubscribeSettingsTopic)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.SETTINGS_QOS, mqttSubscribeSettingsQos)
-
         }
         return Base64.encodeToString(json.toString().toByteArray(), Base64.NO_WRAP)
     }

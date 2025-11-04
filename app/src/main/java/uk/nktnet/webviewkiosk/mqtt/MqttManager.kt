@@ -4,10 +4,18 @@ import android.annotation.SuppressLint
 import com.hivemq.client.mqtt.MqttClient
 import com.hivemq.client.mqtt.MqttClientState
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.MqttQosOption
 import java.util.concurrent.TimeUnit
 import kotlin.text.Charsets.UTF_8
+
+@Serializable
+data class Payload(
+    val key1: String,
+    val key2: Int
+)
 
 open class MqttManager(private val userSettings: UserSettings) {
     private var client: Mqtt5AsyncClient = buildClient()
@@ -59,7 +67,16 @@ open class MqttManager(private val userSettings: UserSettings) {
             .topicFilter(topic)
             .qos(qos.toMqttQos())
             .callback { publish ->
+                val json = Json {
+                    ignoreUnknownKeys = true
+                    coerceInputValues = true
+                    isLenient = true
+                }
                 val payloadStr = publish.payloadAsBytes.toString(UTF_8)
+
+                val payload = json.decodeFromString<Payload>(payloadStr)
+                println("[MQTT] Payload: $payload")
+
                 onMessageReceived(topic, payloadStr)
             }
             .send()
