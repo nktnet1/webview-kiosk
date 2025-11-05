@@ -95,12 +95,17 @@ class MainActivity : AppCompatActivity() {
         val systemSettings = SystemSettings(this)
         val webContentDir = getWebContentFilesDir(this)
 
-        subscriber = MqttManager(userSettings)
-        subscriber.connect(
-            onConnected = { println("[MQTT] Connected to MQTT broker") },
-            onError = { println("[MQTT] Failed to connect: ${it.message}") }
-        )
-
+        MqttManager.init(userSettings)
+        if (userSettings.mqttEnabled) {
+            MqttManager.connect(
+                onConnected = {
+                    println("[MQTT] connected")
+                },
+                onError = { e ->
+                    println("[MQTT] failed to connect: ${e.toString()}")
+                }
+            )
+        }
         var toastRef: Toast? = null
         val showToast: (String) -> Unit = { msg ->
             toastRef?.cancel()
@@ -222,6 +227,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        if (!MqttManager.isConnected()) {
+            MqttManager.connect(
+                onConnected = { println("[MQTT] onStart connected") },
+                onError = { throwable -> throwable.printStackTrace() }
+            )
+        }
         BiometricPromptManager.init(this)
     }
 
@@ -240,6 +251,7 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         if (!isChangingConfigurations) {
             BiometricPromptManager.resetAuthentication()
+            MqttManager.disconnect { println("[MQTT[ onStop disconnected") }
         }
     }
 

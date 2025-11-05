@@ -4,58 +4,80 @@ import android.annotation.SuppressLint
 import com.hivemq.client.mqtt.MqttClient
 import com.hivemq.client.mqtt.MqttClientState
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.MqttQosOption
-import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption
 import java.util.concurrent.TimeUnit
 import kotlin.text.Charsets.UTF_8
 
-@Serializable
-data class Payload(
-    val key1: String,
-    val key2: Int
-)
+object MqttManager {
+    private var client: Mqtt5AsyncClient? = null
+    private lateinit var config: MqttConfig
 
-open class MqttManager(private val userSettings: UserSettings) {
-    private var client: Mqtt5AsyncClient = buildClient()
+    private val scope = CoroutineScope(Dispatchers.Default)
+    private val _commands = MutableSharedFlow<CommandMessage>(extraBufferCapacity = 100)
+    val commands: SharedFlow<CommandMessage> get() = _commands
+
+    fun init(userSettings: UserSettings) {
+        disconnect {
+            config = MqttConfig(
+                clientId = userSettings.mqttClientId,
+                serverHost = userSettings.mqttServerHost,
+                serverPort = userSettings.mqttServerPort,
+                username = userSettings.mqttUsername,
+                password = userSettings.mqttPassword,
+                useTls = userSettings.mqttUseTls,
+                automaticReconnect = userSettings.mqttAutomaticReconnect,
+                cleanStart = userSettings.mqttCleanStart,
+                keepAlive = userSettings.mqttKeepAlive,
+                connectTimeout = userSettings.mqttConnectTimeout,
+                subscribeCommandTopic = userSettings.mqttSubscribeCommandTopic,
+                subscribeCommandQos = userSettings.mqttSubscribeCommandQos,
+                subscribeCommandRetainHandling = userSettings.mqttSubscribeCommandRetainHandling,
+                subscribeCommandRetainAsPublished = userSettings.mqttSubscribeCommandRetainAsPublished,
+                subscribeSettingsTopic = userSettings.mqttSubscribeSettingsTopic,
+                subscribeSettingsQos = userSettings.mqttSubscribeSettingsQos,
+                subscribeSettingsRetainHandling = userSettings.mqttSubscribeSettingsRetainHandling,
+                subscribeSettingsRetainAsPublished = userSettings.mqttSubscribeSettingsRetainAsPublished
+            )
+            client = buildClient()
+        }
+    }
 
     private fun buildClient(): Mqtt5AsyncClient {
         var builder = MqttClient.builder()
             .useMqttVersion5()
-            .identifier(userSettings.mqttClientId)
-            .serverHost(userSettings.mqttServerHost)
-            .serverPort(userSettings.mqttServerPort)
+            .identifier(config.clientId)
+            .serverHost(config.serverHost)
+            .serverPort(config.serverPort)
 
-        if (userSettings.mqttUseTls) {
-            builder = builder.sslWithDefaultConfig()
-        }
-        if (userSettings.mqttAutomaticReconnect) {
-            builder = builder.automaticReconnectWithDefaultConfig()
-        }
+        if (config.useTls) builder = builder.sslWithDefaultConfig()
+        if (config.automaticReconnect) builder = builder.automaticReconnectWithDefaultConfig()
 
         return builder
             .transportConfig()
-                .mqttConnectTimeout(userSettings.mqttConnectTimeout * 1L, TimeUnit.SECONDS)
-                .applyTransportConfig()
+            .mqttConnectTimeout(config.connectTimeout.toLong(), TimeUnit.SECONDS)
+            .applyTransportConfig()
             .buildAsync()
     }
 
     @SuppressLint("NewApi")
     fun connect(onConnected: (() -> Unit)? = null, onError: ((Throwable) -> Unit)? = null) {
-        client.connectWith()
-            .cleanStart(userSettings.mqttCleanStart)
-            .keepAlive(userSettings.mqttKeepAlive)
+        val c = client ?: return
+        c.connectWith()
+            .cleanStart(config.cleanStart)
+            .keepAlive(config.keepAlive)
             .simpleAuth()
-                .username(userSettings.mqttUsername)
-                .password(UTF_8.encode(userSettings.mqttPassword))
-                .applySimpleAuth()
+            .username(config.username)
+            .password(UTF_8.encode(config.password))
+            .applySimpleAuth()
             .send()
             .whenComplete { _, throwable ->
-                if (throwable != null) {
-                    onError?.invoke(throwable)
-                } else {
+                if (throwable != null) onError?.invoke(throwable)
+                else {
                     onConnected?.invoke()
                     subscribeToTopics()
                 }
@@ -63,58 +85,45 @@ open class MqttManager(private val userSettings: UserSettings) {
     }
 
     private fun subscribeToTopics() {
-        subscribe(
-            userSettings.mqttSubscribeCommandTopic,
-            userSettings.mqttSubscribeCommandQos,
-            userSettings.mqttSubscribeCommandRetainHandling,
-            userSettings.mqttSubscribeCommandRetainAsPublished
-        )
-        subscribe(
-            userSettings.mqttSubscribeSettingsTopic,
-            userSettings.mqttSubscribeSettingsQos,
-            userSettings.mqttSubscribeSettingsRetainHandling,
-            userSettings.mqttSubscribeSettingsRetainAsPublished
-        )
+        subscribeCommandTopic()
     }
 
-    private fun subscribe(
-        topic: String,
-        qos: MqttQosOption,
-        retainHandling: MqttRetainHandlingOption,
-        retainAsPublished: Boolean
-    ) {
-        client.subscribeWith()
-            .topicFilter(topic)
-            .qos(qos.toMqttQos())
-            .retainHandling(retainHandling.toMqttRetainHandling())
-            .retainAsPublished(retainAsPublished)
-            .noLocal(true)
-            .callback { publish ->
-                val json = Json {
-                    ignoreUnknownKeys = true
-                    coerceInputValues = true
-                    isLenient = true
+    private fun subscribeCommandTopic() {
+        val c = client ?: return
+        try {
+            c.subscribeWith()
+                .topicFilter(config.subscribeCommandTopic)
+                .qos(config.subscribeCommandQos.toMqttQos())
+                .retainHandling(config.subscribeCommandRetainHandling.toMqttRetainHandling())
+                .retainAsPublished(config.subscribeCommandRetainAsPublished)
+                .noLocal(true)
+                .callback { publish ->
+                    println("[MQTT] received topic: ${publish.topic}")
+                    val payloadStr = publish.payloadAsBytes.toString(UTF_8)
+                    try {
+                        val command = JsonParser.decodeFromString<CommandMessage>(payloadStr)
+                        scope.launch { _commands.emit(command) }
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
                 }
-                val payloadStr = publish.payloadAsBytes.toString(UTF_8)
-
-                val payload = json.decodeFromString<Payload>(payloadStr)
-                println("[MQTT] Payload: $payload")
-
-                onMessageReceived(topic, payloadStr)
-            }
-            .send()
-    }
-
-    protected open fun onMessageReceived(topic: String, message: String) {
-        println("[MQTT] Received MQTT message on topic [$topic]: $message")
+                .send()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     @SuppressLint("NewApi")
     fun disconnect(onDisconnected: (() -> Unit)? = null) {
-        if (client.state == MqttClientState.CONNECTED) {
-            client.disconnect().whenComplete { _, _ -> onDisconnected?.invoke() }
-        } else {
+        val c = client ?: run {
             onDisconnected?.invoke()
+            return
         }
+        if (c.state == MqttClientState.CONNECTED) c.disconnect().whenComplete { _, _ -> onDisconnected?.invoke() }
+        else onDisconnected?.invoke()
+    }
+
+    fun isConnected(): Boolean {
+        return client?.state?.isConnected ?: false
     }
 }

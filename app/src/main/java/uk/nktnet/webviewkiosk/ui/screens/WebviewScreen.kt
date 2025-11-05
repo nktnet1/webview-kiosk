@@ -34,6 +34,14 @@ import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.InactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.KioskControlPanel
+import uk.nktnet.webviewkiosk.mqtt.MqttGoBackCommand
+import uk.nktnet.webviewkiosk.mqtt.MqttGoForwardCommand
+import uk.nktnet.webviewkiosk.mqtt.MqttLockCommand
+import uk.nktnet.webviewkiosk.mqtt.MqttGoHomeCommand
+import uk.nktnet.webviewkiosk.mqtt.MqttGoToUrlCommand
+import uk.nktnet.webviewkiosk.mqtt.MqttManager
+import uk.nktnet.webviewkiosk.mqtt.MqttRefreshCommand
+import uk.nktnet.webviewkiosk.mqtt.MqttUnlockCommand
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
 import uk.nktnet.webviewkiosk.ui.components.webview.FloatingMenuButton
@@ -51,6 +59,7 @@ import uk.nktnet.webviewkiosk.utils.isSupportedFileURLMimeType
 import uk.nktnet.webviewkiosk.utils.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
+import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.html.generateFileMissingPage
@@ -416,4 +425,19 @@ fun WebviewScreen(navController: NavController) {
         onDismiss = { linkToOpen = null },
         onOpenLink = { url -> customLoadUrl(url) },
     )
+
+    LaunchedEffect(Unit) {
+        MqttManager.commands.collect { commandMessage ->
+            println(commandMessage)
+            when (commandMessage) {
+                is MqttGoBackCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)
+                is MqttGoForwardCommand -> WebViewNavigation.goForward(::customLoadUrl, systemSettings)
+                is MqttGoHomeCommand -> WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings)
+                is MqttRefreshCommand -> WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
+                is MqttGoToUrlCommand -> customLoadUrl(commandMessage.url)
+                is MqttLockCommand -> tryLockTask(activity)
+                is MqttUnlockCommand -> tryUnlockTask(activity)
+            }
+        }
+    }
 }
