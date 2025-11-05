@@ -15,7 +15,7 @@ fun MqttUsernameSetting() {
     val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.USERNAME)
 
     TextSettingFieldItem(
-        label = "MQTT Username",
+        label = "Username",
         infoText = """
             The username used to authenticate with the MQTT broker.
         """.trimIndent(),

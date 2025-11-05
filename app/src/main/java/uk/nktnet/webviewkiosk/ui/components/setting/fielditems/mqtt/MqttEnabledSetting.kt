@@ -13,7 +13,7 @@ fun MqttEnabledSetting() {
     val userSettings = remember { UserSettings(context) }
 
     BooleanSettingFieldItem(
-        label = "Enable MQTT",
+        label = "Enabled",
         infoText = """
             Enable or disable MQTT connectivity for this device.
 

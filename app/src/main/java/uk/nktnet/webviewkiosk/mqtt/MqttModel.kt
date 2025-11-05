@@ -10,19 +10,19 @@ sealed interface CommandMessage
 
 @Serializable
 @SerialName("go_back")
-object MqttGoBackCommand : CommandMessage
+data class MqttGoBackCommand(val unused: Unit = Unit) : CommandMessage
 
 @Serializable
 @SerialName("go_forward")
-object MqttGoForwardCommand : CommandMessage
+data class MqttGoForwardCommand(val unused: Unit = Unit) : CommandMessage
 
 @Serializable
 @SerialName("go_home")
-object MqttGoHomeCommand : CommandMessage
+data class MqttGoHomeCommand(val unused: Unit = Unit) : CommandMessage
 
 @Serializable
 @SerialName("refresh")
-object MqttRefreshCommand : CommandMessage
+data class MqttRefreshCommand(val unused: Unit = Unit) : CommandMessage
 
 @Serializable
 @SerialName("go_to_url")
@@ -30,11 +30,11 @@ data class MqttGoToUrlCommand(val url: String) : CommandMessage
 
 @Serializable
 @SerialName("lock")
-object MqttLockCommand : CommandMessage
+data class MqttLockCommand(val unused: Unit = Unit) : CommandMessage
 
 @Serializable
 @SerialName("unlock")
-object MqttUnlockCommand : CommandMessage
+data class MqttUnlockCommand(val unused: Unit = Unit) : CommandMessage
 
 data class MqttConfig(
     val clientId: String,

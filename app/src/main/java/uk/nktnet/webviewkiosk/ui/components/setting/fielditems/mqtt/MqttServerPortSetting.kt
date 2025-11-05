@@ -13,7 +13,7 @@ fun MqttServerPortSetting() {
     val userSettings = remember { UserSettings(context) }
 
     NumberSettingFieldItem(
-        label = "MQTT Server Port",
+        label = "Server Port",
         infoText = """
             The port of the MQTT broker the app should connect to.
             Typically 1883 for unencrypted connections or 8883 for TLS.

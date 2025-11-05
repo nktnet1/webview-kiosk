@@ -2,7 +2,6 @@ package uk.nktnet.webviewkiosk.mqtt
 
 import android.annotation.SuppressLint
 import com.hivemq.client.mqtt.MqttClient
-import com.hivemq.client.mqtt.MqttClientState
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -10,7 +9,11 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.UserSettings
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.TimeUnit
+import kotlin.collections.ArrayDeque
 import kotlin.text.Charsets.UTF_8
 
 object MqttManager {
@@ -20,6 +23,25 @@ object MqttManager {
     private val scope = CoroutineScope(Dispatchers.Default)
     private val _commands = MutableSharedFlow<CommandMessage>(extraBufferCapacity = 100)
     val commands: SharedFlow<CommandMessage> get() = _commands
+
+    private val logHistory = ArrayDeque<String>(100)
+    private val _debugLog = MutableSharedFlow<String>(extraBufferCapacity = 100)
+    val debugLog: SharedFlow<String> get() = _debugLog
+
+    private fun addDebugLog(tag: String, message: String? = null) {
+        val timestamp = SimpleDateFormat("yyyy/MM/dd hh:mm:ss a", Locale.getDefault())
+            .format(Date())
+        val entry = "$timestamp | $tag${if (!message.isNullOrEmpty()) "\n$message" else ""}"
+        synchronized(logHistory) {
+            if (logHistory.size >= 100) logHistory.removeFirst()
+            logHistory.addLast(entry)
+        }
+        println("[MQTT] $entry")
+        scope.launch { _debugLog.emit(entry) }
+    }
+
+    val debugLogHistory: List<String>
+        get() = synchronized(logHistory) { logHistory.toList() }
 
     fun init(userSettings: UserSettings) {
         disconnect {
@@ -44,6 +66,7 @@ object MqttManager {
                 subscribeSettingsRetainAsPublished = userSettings.mqttSubscribeSettingsRetainAsPublished
             )
             client = buildClient()
+            addDebugLog("initialised", "host=${config.serverHost}\nport=${config.serverPort}")
         }
     }
 
@@ -76,8 +99,11 @@ object MqttManager {
             .applySimpleAuth()
             .send()
             .whenComplete { _, throwable ->
-                if (throwable != null) onError?.invoke(throwable)
-                else {
+                if (throwable != null) {
+                    addDebugLog("connect failed", "${throwable.message}.")
+                    onError?.invoke(throwable)
+                } else {
+                    addDebugLog("connected")
                     onConnected?.invoke()
                     subscribeToTopics()
                 }
@@ -98,32 +124,36 @@ object MqttManager {
                 .retainAsPublished(config.subscribeCommandRetainAsPublished)
                 .noLocal(true)
                 .callback { publish ->
-                    println("[MQTT] received topic: ${publish.topic}")
                     val payloadStr = publish.payloadAsBytes.toString(UTF_8)
                     try {
                         val command = JsonParser.decodeFromString<CommandMessage>(payloadStr)
                         scope.launch { _commands.emit(command) }
+                        addDebugLog("command","topic=${publish.topic}\ncommand=$command")
                     } catch (e: Exception) {
+                        addDebugLog("command", e.message)
                         e.printStackTrace()
                     }
                 }
                 .send()
         } catch (e: Exception) {
+            addDebugLog("subscribe (command) failed: ${e.message}")
             e.printStackTrace()
         }
     }
 
+    fun isConnectedOrReconnect(): Boolean = client?.state?.isConnectedOrReconnect ?: false
+
     @SuppressLint("NewApi")
     fun disconnect(onDisconnected: (() -> Unit)? = null) {
-        val c = client ?: run {
+        val c = client
+        if (c == null || !isConnectedOrReconnect()) {
             onDisconnected?.invoke()
             return
         }
-        if (c.state == MqttClientState.CONNECTED) c.disconnect().whenComplete { _, _ -> onDisconnected?.invoke() }
-        else onDisconnected?.invoke()
-    }
 
-    fun isConnected(): Boolean {
-        return client?.state?.isConnected ?: false
+        c.disconnect().whenComplete { _, _ ->
+            addDebugLog("disconnected")
+            onDisconnected?.invoke()
+        }
     }
 }

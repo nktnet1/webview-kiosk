@@ -15,7 +15,7 @@ fun MqttPasswordSetting() {
     val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.PASSWORD)
 
     TextSettingFieldItem(
-        label = "MQTT Password",
+        label = "Password",
         infoText = """
             The password used to authenticate with the MQTT broker.
         """.trimIndent(),
