@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.mqtt
 
 import android.annotation.SuppressLint
 import com.hivemq.client.mqtt.MqttClient
+import com.hivemq.client.mqtt.MqttClientState
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -50,34 +51,29 @@ object MqttManager {
     val debugLogHistory: List<MqttLogEntry>
         get() = synchronized(logHistory) { logHistory.toList() }
 
-    fun init(userSettings: UserSettings) {
-        disconnect {
-            config = MqttConfig(
-                clientId = userSettings.mqttClientId,
-                serverHost = userSettings.mqttServerHost,
-                serverPort = userSettings.mqttServerPort,
-                username = userSettings.mqttUsername,
-                password = userSettings.mqttPassword,
-                useTls = userSettings.mqttUseTls,
-                automaticReconnect = userSettings.mqttAutomaticReconnect,
-                cleanStart = userSettings.mqttCleanStart,
-                keepAlive = userSettings.mqttKeepAlive,
-                connectTimeout = userSettings.mqttConnectTimeout,
-                subscribeCommandTopic = userSettings.mqttSubscribeCommandTopic,
-                subscribeCommandQos = userSettings.mqttSubscribeCommandQos,
-                subscribeCommandRetainHandling = userSettings.mqttSubscribeCommandRetainHandling,
-                subscribeCommandRetainAsPublished = userSettings.mqttSubscribeCommandRetainAsPublished,
-                subscribeSettingsTopic = userSettings.mqttSubscribeSettingsTopic,
-                subscribeSettingsQos = userSettings.mqttSubscribeSettingsQos,
-                subscribeSettingsRetainHandling = userSettings.mqttSubscribeSettingsRetainHandling,
-                subscribeSettingsRetainAsPublished = userSettings.mqttSubscribeSettingsRetainAsPublished
-            )
-            client = buildClient()
-            addDebugLog(
-                "initialised",
-                "host: ${config.serverHost}\nport: ${config.serverPort}"
-            )
-        }
+    private fun updateConfig(userSettings: UserSettings) {
+        config = MqttConfig(
+            enabled = userSettings.mqttEnabled,
+            clientId = userSettings.mqttClientId,
+            serverHost = userSettings.mqttServerHost,
+            serverPort = userSettings.mqttServerPort,
+            username = userSettings.mqttUsername,
+            password = userSettings.mqttPassword,
+            useTls = userSettings.mqttUseTls,
+            automaticReconnect = userSettings.mqttAutomaticReconnect,
+            cleanStart = userSettings.mqttCleanStart,
+            keepAlive = userSettings.mqttKeepAlive,
+            connectTimeout = userSettings.mqttConnectTimeout,
+            subscribeCommandTopic = userSettings.mqttSubscribeCommandTopic,
+            subscribeCommandQos = userSettings.mqttSubscribeCommandQos,
+            subscribeCommandRetainHandling = userSettings.mqttSubscribeCommandRetainHandling,
+            subscribeCommandRetainAsPublished = userSettings.mqttSubscribeCommandRetainAsPublished,
+            subscribeSettingsTopic = userSettings.mqttSubscribeSettingsTopic,
+            subscribeSettingsQos = userSettings.mqttSubscribeSettingsQos,
+            subscribeSettingsRetainHandling = userSettings.mqttSubscribeSettingsRetainHandling,
+            subscribeSettingsRetainAsPublished = userSettings.mqttSubscribeSettingsRetainAsPublished
+        )
+        client = buildClient()
     }
 
     private fun buildClient(): Mqtt5AsyncClient {
@@ -87,8 +83,14 @@ object MqttManager {
             .serverHost(config.serverHost)
             .serverPort(config.serverPort)
 
-        if (config.useTls) builder = builder.sslWithDefaultConfig()
-        if (config.automaticReconnect) builder = builder.automaticReconnectWithDefaultConfig()
+        if (config.useTls) {
+            builder = builder.sslWithDefaultConfig()
+        }
+        builder = if (config.automaticReconnect) {
+            builder.automaticReconnectWithDefaultConfig()
+        } else {
+            builder.automaticReconnect(null)
+        }
 
         return builder
             .transportConfig()
@@ -98,8 +100,24 @@ object MqttManager {
     }
 
     @SuppressLint("NewApi")
-    fun connect(onConnected: (() -> Unit)? = null, onError: ((Throwable) -> Unit)? = null) {
-        val c = client ?: return
+    fun connect(
+        userSettings: UserSettings,
+        onConnected: (() -> Unit)? = null,
+        onError: ((String?) -> Unit)? = null
+    ) {
+        updateConfig(userSettings)
+
+        if (!config.enabled) {
+            onError?.invoke("MQTT is not enabled in app settings.")
+            addDebugLog("connect failed", "MQTT is not enabled in settings")
+            return
+        }
+        val c = client
+        if (c == null) {
+            onError?.invoke("MQTT client is not initialised.")
+            addDebugLog("connect failed", "client is not initialised")
+            return
+        }
         c.connectWith()
             .cleanStart(config.cleanStart)
             .keepAlive(config.keepAlive)
@@ -108,14 +126,15 @@ object MqttManager {
             .password(UTF_8.encode(config.password))
             .applySimpleAuth()
             .send()
-            .whenComplete { _, throwable ->
+            .whenComplete { conn, throwable ->
                 if (throwable != null) {
                     addDebugLog("connect failed", "${throwable.message}.")
-                    onError?.invoke(throwable)
+                    throwable.printStackTrace()
+                    onError?.invoke(throwable.message)
                 } else {
+                    subscribeToTopics()
                     addDebugLog("connect success")
                     onConnected?.invoke()
-                    subscribeToTopics()
                 }
             }
     }
@@ -166,14 +185,15 @@ object MqttManager {
 
     fun isConnectedOrReconnect(): Boolean = client?.state?.isConnectedOrReconnect ?: false
 
+    fun getState() = client?.state ?: MqttClientState.DISCONNECTED
+
     @SuppressLint("NewApi")
     fun disconnect(onDisconnected: (() -> Unit)? = null) {
         val c = client
-        if (c == null || !isConnectedOrReconnect()) {
+        if (c == null) {
             onDisconnected?.invoke()
             return
         }
-
         c.disconnect().whenComplete { _, _ ->
             addDebugLog("disconnected")
             onDisconnected?.invoke()

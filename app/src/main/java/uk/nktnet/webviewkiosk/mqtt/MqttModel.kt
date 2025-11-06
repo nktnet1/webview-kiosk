@@ -65,6 +65,7 @@ data class MqttCommandError(
 }
 
 data class MqttConfig(
+    val enabled: Boolean,
     val clientId: String,
     val serverHost: String,
     val serverPort: Int,

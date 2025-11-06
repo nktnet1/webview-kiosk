@@ -95,7 +95,6 @@ class MainActivity : AppCompatActivity() {
         val systemSettings = SystemSettings(this)
         val webContentDir = getWebContentFilesDir(this)
 
-        MqttManager.init(userSettings)
         var toastRef: Toast? = null
         val showToast: (String) -> Unit = { msg ->
             toastRef?.cancel()
@@ -219,8 +218,7 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         if (userSettings.mqttEnabled && !MqttManager.isConnectedOrReconnect()) {
             MqttManager.connect(
-                onConnected = {},
-                onError = { throwable -> throwable.printStackTrace() }
+                userSettings,
             )
         }
         BiometricPromptManager.init(this)

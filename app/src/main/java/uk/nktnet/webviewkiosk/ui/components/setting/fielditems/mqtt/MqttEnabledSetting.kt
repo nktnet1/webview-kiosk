@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.mqtt.MqttManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
@@ -22,6 +23,16 @@ fun MqttEnabledSetting() {
         """.trimIndent(),
         initialValue = userSettings.mqttEnabled,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.ENABLED),
-        onSave = { userSettings.mqttEnabled = it }
+        onSave = { isEnabled ->
+            val isChanged = isEnabled != userSettings.mqttEnabled
+            if (isChanged) {
+                userSettings.mqttEnabled = isEnabled
+                if (isEnabled) {
+                    MqttManager.connect(userSettings)
+                } else {
+                    MqttManager.disconnect()
+                }
+            }
+        }
     )
 }
