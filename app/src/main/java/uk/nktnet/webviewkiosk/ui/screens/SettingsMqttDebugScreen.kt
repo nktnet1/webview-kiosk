@@ -1,26 +1,40 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.*
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.flow.collectLatest
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.mqtt.MqttManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.mqtt.MqttLogEntry
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 @Composable
 fun SettingsMqttDebugScreen(navController: NavController) {
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var ascending by remember { mutableStateOf(false) }
+    val dateFormat = SimpleDateFormat("yyyy/MM/dd h:mm:ss a", Locale.getDefault())
 
     val logs = remember {
-        mutableStateListOf<String>().apply {
+        mutableStateListOf<MqttLogEntry>().apply {
             addAll(MqttManager.debugLogHistory.asReversed())
         }
     }
@@ -31,10 +45,19 @@ fun SettingsMqttDebugScreen(navController: NavController) {
         }
     }
 
-    val filteredLogs = remember(logs, searchQuery.text, ascending) {
-        logs.filter { it.contains(searchQuery.text, ignoreCase = true) }
-            .let { if (ascending) it.reversed() else it }
+    val filteredLogs by remember {
+        derivedStateOf {
+            logs
+                .filter {
+                    it.tag.contains(searchQuery.text, ignoreCase = true)
+                    || (it.message?.contains(searchQuery.text, ignoreCase = true) == true)
+                    || (it.identifier?.contains(searchQuery.text, ignoreCase = true) == true)
+                }
+                .sortedBy { it.timestamp }
+                .let { if (ascending) it else it.reversed() }
+        }
     }
+
 
     Column(
         modifier = Modifier
@@ -42,20 +65,76 @@ fun SettingsMqttDebugScreen(navController: NavController) {
             .padding(horizontal = 16.dp)
             .windowInsetsPadding(WindowInsets.safeContent)
     ) {
-        SettingLabel(navController = navController, label = "MQTT Debug Log")
+        SettingLabel(navController = navController, label = "Debug Log")
 
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier
+                .height(50.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { searchQuery = it },
-                label = { Text("Search") },
-                modifier = Modifier.weight(1f)
+            BasicTextField(
+                value = searchQuery.text,
+                onValueChange = { searchQuery = TextFieldValue(it) },
+                singleLine = true,
+                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                textStyle = LocalTextStyle.current.copy(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = MaterialTheme.typography.bodySmall.fontSize
+                ),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(43.dp),
+                decorationBox = { innerTextField ->
+                    Box(
+                        contentAlignment = Alignment.CenterStart,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(
+                                1.dp,
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                MaterialTheme.shapes.small
+                            )
+                            .padding(horizontal = 12.dp)
+                    ) {
+                        if (searchQuery.text.isEmpty()) {
+                            Text(
+                                text = "Search",
+                                style = LocalTextStyle.current.copy(
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                                    fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                                    fontStyle = FontStyle.Italic,
+                                )
+                            )
+                        }
+                        innerTextField()
+                    }
+                }
             )
-            Button(onClick = { ascending = !ascending }) {
-                Text(if (ascending) "Asc" else "Desc")
+
+            IconButton(
+                onClick = { ascending = !ascending },
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
+                    .graphicsLayer(
+                        scaleX = 0.9f,
+                        scaleY = 0.9f
+                    )
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        MaterialTheme.shapes.small
+                    )
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.baseline_sort_24),
+                    contentDescription = "Sort Order",
+                    modifier = Modifier
+                        .size(22.dp)
+                        .graphicsLayer(scaleY = if (ascending) -1f else 1f, scaleX = -1f)
+                )
             }
         }
 
@@ -80,16 +159,37 @@ fun SettingsMqttDebugScreen(navController: NavController) {
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(filteredLogs) { logEntry ->
-                    Text(
-                        text = logEntry,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(vertical = 2.dp)
-                    )
-                    HorizontalDivider(
-                        thickness = DividerDefaults.Thickness,
-                        color = DividerDefaults.color
-                    )
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            text = "${dateFormat.format(logEntry.timestamp)} - ${logEntry.tag}",
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface,
+
+                        )
+                        logEntry.identifier?.let {
+                            Text(
+                                text = "identifier: $it",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                        logEntry.message?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(top = 4.dp)
+                            )
+                        }
+                        HorizontalDivider(
+                            thickness = DividerDefaults.Thickness,
+                            color = DividerDefaults.color,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
                 }
             }
         }

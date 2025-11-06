@@ -34,6 +34,7 @@ import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.InactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.KioskControlPanel
+import uk.nktnet.webviewkiosk.mqtt.MqttCommandError
 import uk.nktnet.webviewkiosk.mqtt.MqttGoBackCommand
 import uk.nktnet.webviewkiosk.mqtt.MqttGoForwardCommand
 import uk.nktnet.webviewkiosk.mqtt.MqttLockCommand
@@ -428,7 +429,6 @@ fun WebviewScreen(navController: NavController) {
 
     LaunchedEffect(Unit) {
         MqttManager.commands.collect { commandMessage ->
-            println(commandMessage)
             when (commandMessage) {
                 is MqttGoBackCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)
                 is MqttGoForwardCommand -> WebViewNavigation.goForward(::customLoadUrl, systemSettings)
@@ -437,6 +437,7 @@ fun WebviewScreen(navController: NavController) {
                 is MqttGoToUrlCommand -> customLoadUrl(commandMessage.url)
                 is MqttLockCommand -> tryLockTask(activity)
                 is MqttUnlockCommand -> tryUnlockTask(activity)
+                is MqttCommandError -> showToast("Received invalid MQTT command. See debug logs in MQTT settings.")
             }
         }
     }

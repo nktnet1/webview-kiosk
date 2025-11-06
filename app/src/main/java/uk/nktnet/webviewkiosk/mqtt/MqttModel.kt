@@ -6,35 +6,63 @@ import uk.nktnet.webviewkiosk.config.option.MqttQosOption
 import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption
 
 @Serializable
-sealed interface CommandMessage
+sealed interface CommandMessage {
+    val identifier: String? get() = null
+}
 
 @Serializable
 @SerialName("go_back")
-data class MqttGoBackCommand(val unused: Unit = Unit) : CommandMessage
+data class MqttGoBackCommand(override val identifier: String? = null) : CommandMessage {
+    override fun toString() = "Go Back"
+}
 
 @Serializable
 @SerialName("go_forward")
-data class MqttGoForwardCommand(val unused: Unit = Unit) : CommandMessage
+data class MqttGoForwardCommand(override val identifier: String? = null) : CommandMessage {
+    override fun toString() = "Go Forward"
+}
 
 @Serializable
 @SerialName("go_home")
-data class MqttGoHomeCommand(val unused: Unit = Unit) : CommandMessage
+data class MqttGoHomeCommand(override val identifier: String? = null) : CommandMessage {
+    override fun toString() = "Go Home"
+}
 
 @Serializable
 @SerialName("refresh")
-data class MqttRefreshCommand(val unused: Unit = Unit) : CommandMessage
+data class MqttRefreshCommand(override val identifier: String? = null) : CommandMessage {
+    override fun toString() = "Refresh"
+}
 
 @Serializable
 @SerialName("go_to_url")
-data class MqttGoToUrlCommand(val url: String) : CommandMessage
+data class MqttGoToUrlCommand(
+    val url: String,
+    override val identifier: String? = null
+) : CommandMessage {
+    override fun toString() = "Go to URL: $url"
+}
 
 @Serializable
 @SerialName("lock")
-data class MqttLockCommand(val unused: Unit = Unit) : CommandMessage
+data class MqttLockCommand(override val identifier: String? = null) : CommandMessage {
+    override fun toString() = "Lock"
+}
 
 @Serializable
 @SerialName("unlock")
-data class MqttUnlockCommand(val unused: Unit = Unit) : CommandMessage
+data class MqttUnlockCommand(override val identifier: String? = null) : CommandMessage {
+    override fun toString() = "Unlock"
+}
+
+@Serializable
+@SerialName("error")
+data class MqttCommandError(
+    val error: String = "unknown command",
+    override val identifier: String? = null
+) : CommandMessage {
+    override fun toString() = "Command Error: $error"
+}
 
 data class MqttConfig(
     val clientId: String,
@@ -57,9 +85,12 @@ data class MqttConfig(
     val subscribeSettingsRetainAsPublished: Boolean
 )
 
+@OptIn(ExperimentalSerializationApi::class)
 val JsonParser = Json {
     ignoreUnknownKeys = true
     coerceInputValues = true
     isLenient = true
+    allowTrailingComma = true
+    allowComments = true
     classDiscriminator = "command"
 }

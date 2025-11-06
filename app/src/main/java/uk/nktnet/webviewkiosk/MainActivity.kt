@@ -219,7 +219,7 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         if (userSettings.mqttEnabled && !MqttManager.isConnectedOrReconnect()) {
             MqttManager.connect(
-                onConnected = { println("[MQTT] onStart connected") },
+                onConnected = {},
                 onError = { throwable -> throwable.printStackTrace() }
             )
         }
@@ -241,7 +241,7 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         if (!isChangingConfigurations) {
             BiometricPromptManager.resetAuthentication()
-            MqttManager.disconnect { println("[MQTT] onStop disconnected") }
+            MqttManager.disconnect { }
         }
     }
 
@@ -255,7 +255,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         unregisterReceiver(restrictionsReceiver)
-        subscriber.disconnect { println("Disconnected from MQTT broker") }
+        subscriber.disconnect()
         super.onDestroy()
     }
 

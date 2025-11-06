@@ -8,13 +8,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import uk.nktnet.webviewkiosk.config.UserSettings
-import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.collections.ArrayDeque
 import kotlin.text.Charsets.UTF_8
+
+data class MqttLogEntry(
+    val timestamp: Date,
+    val tag: String,
+    val message: String?,
+    val identifier: String?,
+)
 
 object MqttManager {
     private var client: Mqtt5AsyncClient? = null
@@ -24,23 +32,22 @@ object MqttManager {
     private val _commands = MutableSharedFlow<CommandMessage>(extraBufferCapacity = 100)
     val commands: SharedFlow<CommandMessage> get() = _commands
 
-    private val logHistory = ArrayDeque<String>(100)
-    private val _debugLog = MutableSharedFlow<String>(extraBufferCapacity = 100)
-    val debugLog: SharedFlow<String> get() = _debugLog
+    private val logHistory = ArrayDeque<MqttLogEntry>(100)
+    private val _debugLog = MutableSharedFlow<MqttLogEntry>(extraBufferCapacity = 100)
+    val debugLog: SharedFlow<MqttLogEntry> get() = _debugLog
 
-    private fun addDebugLog(tag: String, message: String? = null) {
-        val timestamp = SimpleDateFormat("yyyy/MM/dd hh:mm:ss a", Locale.getDefault())
-            .format(Date())
-        val entry = "$timestamp | $tag${if (!message.isNullOrEmpty()) "\n$message" else ""}"
+    private fun addDebugLog(tag: String, message: String? = null, identifier: String? = null) {
+        val logEntry = MqttLogEntry(Date(), tag, message, identifier)
         synchronized(logHistory) {
             if (logHistory.size >= 100) logHistory.removeFirst()
-            logHistory.addLast(entry)
+            logHistory.addLast(logEntry)
         }
-        println("[MQTT] $entry")
-        scope.launch { _debugLog.emit(entry) }
+        scope.launch {
+            _debugLog.emit(logEntry)
+        }
     }
 
-    val debugLogHistory: List<String>
+    val debugLogHistory: List<MqttLogEntry>
         get() = synchronized(logHistory) { logHistory.toList() }
 
     fun init(userSettings: UserSettings) {
@@ -66,7 +73,10 @@ object MqttManager {
                 subscribeSettingsRetainAsPublished = userSettings.mqttSubscribeSettingsRetainAsPublished
             )
             client = buildClient()
-            addDebugLog("initialised", "host=${config.serverHost}\nport=${config.serverPort}")
+            addDebugLog(
+                "initialised",
+                "host: ${config.serverHost}\nport: ${config.serverPort}"
+            )
         }
     }
 
@@ -103,7 +113,7 @@ object MqttManager {
                     addDebugLog("connect failed", "${throwable.message}.")
                     onError?.invoke(throwable)
                 } else {
-                    addDebugLog("connected")
+                    addDebugLog("connect success")
                     onConnected?.invoke()
                     subscribeToTopics()
                 }
@@ -128,15 +138,28 @@ object MqttManager {
                     try {
                         val command = JsonParser.decodeFromString<CommandMessage>(payloadStr)
                         scope.launch { _commands.emit(command) }
-                        addDebugLog("command","topic=${publish.topic}\ncommand=$command")
+                        addDebugLog(
+                            "command received",
+                            "topic: ${publish.topic}\ncommand: $command",
+                            command.identifier,
+                        )
                     } catch (e: Exception) {
-                        addDebugLog("command", e.message)
-                        e.printStackTrace()
+                        scope.launch {
+                            _commands.emit(MqttCommandError(e.message ?: e.toString()))
+                        }
+                        val identifier = runCatching {
+                            JsonParser.parseToJsonElement(payloadStr)
+                                .jsonObject["identifier"]?.jsonPrimitive?.contentOrNull
+                        }.getOrNull()
+                        addDebugLog("command error", e.message, identifier)
                     }
                 }
                 .send()
         } catch (e: Exception) {
-            addDebugLog("subscribe (command) failed: ${e.message}")
+            addDebugLog(
+                "subscribe (command) failed",
+                e.message,
+            )
             e.printStackTrace()
         }
     }
