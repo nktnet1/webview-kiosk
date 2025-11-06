@@ -93,6 +93,9 @@ object MqttManager {
         }
 
         return builder
+            .addConnectedListener {
+                subscribeToTopics()
+            }
             .transportConfig()
             .mqttConnectTimeout(config.connectTimeout.toLong(), TimeUnit.SECONDS)
             .applyTransportConfig()
@@ -127,14 +130,13 @@ object MqttManager {
             .applySimpleAuth()
             .send()
             .whenComplete { conn, throwable ->
-                if (throwable != null) {
+                if (throwable == null) {
+                    addDebugLog("connect success")
+                    onConnected?.invoke()
+                } else {
                     addDebugLog("connect failed", "${throwable.message}.")
                     throwable.printStackTrace()
                     onError?.invoke(throwable.message)
-                } else {
-                    subscribeToTopics()
-                    addDebugLog("connect success")
-                    onConnected?.invoke()
                 }
             }
     }
@@ -187,16 +189,29 @@ object MqttManager {
 
     fun getState() = client?.state ?: MqttClientState.DISCONNECTED
 
+    fun unsetClient() {
+        client = null
+    }
+
     @SuppressLint("NewApi")
-    fun disconnect(onDisconnected: (() -> Unit)? = null) {
+    fun disconnect(
+        onDisconnected: (() -> Unit)? = null,
+        onError: ((String?) -> Unit)? = null
+    ) {
         val c = client
         if (c == null) {
+            addDebugLog("disconnect - not initialised")
             onDisconnected?.invoke()
             return
         }
-        c.disconnect().whenComplete { _, _ ->
-            addDebugLog("disconnected")
-            onDisconnected?.invoke()
+        c.disconnect().whenComplete { _, throwable ->
+            if (throwable == null) {
+                addDebugLog("disconnect success")
+                onDisconnected?.invoke()
+            } else {
+                addDebugLog("disconnect failed", throwable.message)
+                onError?.invoke(throwable.message)
+            }
         }
     }
 }

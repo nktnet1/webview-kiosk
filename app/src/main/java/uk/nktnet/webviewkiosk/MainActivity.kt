@@ -239,7 +239,7 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         if (!isChangingConfigurations) {
             BiometricPromptManager.resetAuthentication()
-            MqttManager.disconnect { }
+            MqttManager.disconnect {}
         }
     }
 

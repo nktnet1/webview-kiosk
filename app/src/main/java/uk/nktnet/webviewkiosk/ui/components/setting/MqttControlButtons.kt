@@ -30,7 +30,8 @@ fun MqttControlButtons(navController: NavController) {
     val showToast: (String) -> Unit = { msg ->
         toastRef?.cancel()
         coroutineScope.launch(Dispatchers.Main) {
-            toastRef = Toast.makeText(context, msg, Toast.LENGTH_SHORT).apply { show() }
+            toastRef = Toast.makeText(context, msg, Toast.LENGTH_SHORT)
+                .apply { show() }
         }
     }
 
@@ -82,10 +83,9 @@ fun MqttControlButtons(navController: NavController) {
                 }
             }
 
-            if (state.isConnectedOrReconnect) {
+            if (state.isConnected) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Button(
-                        enabled = state.isConnectedOrReconnect,
                         onClick = {
                             MqttManager.disconnect {
                                 mqttClientState = MqttManager.getState()
@@ -100,30 +100,46 @@ fun MqttControlButtons(navController: NavController) {
                     ) { Text("Disconnect") }
 
                     Button(
-                        enabled = state.isConnected,
                         onClick = {
                             mqttClientState = MqttClientState.CONNECTING
-                            MqttManager.disconnect {
-                                mqttClientState = MqttManager.getState()
-                                MqttManager.connect(
-                                    userSettings,
-                                    onConnected = {
-                                        mqttClientState = MqttManager.getState()
-                                        showToast("MQTT reconnected successfully.")
-                                    },
-                                    onError = {
-                                        mqttClientState = MqttManager.getState()
-                                        showToast("Error: $it")
-                                    }
-                                )
-                            }
+                            MqttManager.disconnect(
+                                onDisconnected = {
+                                    mqttClientState = MqttManager.getState()
+                                    MqttManager.connect(
+                                        userSettings,
+                                        onConnected = {
+                                            mqttClientState = MqttManager.getState()
+                                            showToast("Reconnected successfully.")
+                                        },
+                                        onError = {
+                                            mqttClientState = MqttManager.getState()
+                                            showToast("Error reconnecting: $it")
+                                        }
+                                    )
+                                },
+                                onError = {
+                                    mqttClientState = MqttManager.getState()
+                                    showToast("Error disconnecting: $it")
+                                }
+                            )
+
                         },
                         modifier = Modifier.weight(1f)
                     ) { Text("Reconnect") }
                 }
+            } else if (state.isConnectedOrReconnect) {
+                Button(
+                    onClick = {
+                        MqttManager.unsetClient()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.secondary
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) { Text("Cancel Reconnect") }
             } else {
                 Button(
-                    enabled = !state.isConnected,
                     onClick = {
                         mqttClientState = MqttClientState.CONNECTING
                         MqttManager.connect(
