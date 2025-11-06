@@ -19,7 +19,7 @@ fun MqttServerPortSetting() {
             Typically 1883 for unencrypted connections or 8883 for TLS.
         """.trimIndent(),
         initialValue = userSettings.mqttServerPort,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.SERVER_PORT),
+        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.SERVER_PORT),
         min = 0,
         placeholder = "e.g. 1883",
         onSave = { userSettings.mqttServerPort = it }

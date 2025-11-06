@@ -23,7 +23,7 @@ fun MqttKeepAliveSetting() {
         """.trimIndent(),
         placeholder = "e.g. 60",
         initialValue = userSettings.mqttKeepAlive,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.KEEP_ALIVE),
+        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.KEEP_ALIVE),
         min = 0,
         max = 65535,
         onSave = { userSettings.mqttKeepAlive = it }

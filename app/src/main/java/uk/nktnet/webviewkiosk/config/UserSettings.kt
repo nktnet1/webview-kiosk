@@ -366,59 +366,59 @@ class UserSettings(val context: Context) {
     var mqttServerHost by stringPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.SERVER_HOST,
+        UserSettingsKeys.Mqtt.Connection.SERVER_HOST,
         "broker.hivemq.com"
     )
     var mqttServerPort by intPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.SERVER_PORT,
+        UserSettingsKeys.Mqtt.Connection.SERVER_PORT,
         8883
     )
     var mqttClientId by stringPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.CLIENT_ID,
+        UserSettingsKeys.Mqtt.Connection.CLIENT_ID,
         "webviewkiosk-client"
     )
     var mqttUsername by stringPrefOptional(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.USERNAME
+        UserSettingsKeys.Mqtt.Connection.USERNAME
     )
     var mqttPassword by stringPrefOptional(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.PASSWORD
+        UserSettingsKeys.Mqtt.Connection.PASSWORD
     )
     var mqttUseTls by booleanPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.USE_TLS,
+        UserSettingsKeys.Mqtt.Connection.USE_TLS,
         true
     )
     var mqttCleanStart by booleanPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.CLEAN_START,
+        UserSettingsKeys.Mqtt.Connection.CLEAN_START,
         true
     )
     var mqttKeepAlive by intPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.KEEP_ALIVE,
+        UserSettingsKeys.Mqtt.Connection.KEEP_ALIVE,
         60
     )
     var mqttConnectTimeout by intPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.CONNECT_TIMEOUT,
+        UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT,
         30
     )
     var mqttAutomaticReconnect by booleanPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.CLEAN_START,
+        UserSettingsKeys.Mqtt.Connection.CLEAN_START,
         true
     )
     var mqttPublishEventTopic by stringPref(
@@ -558,16 +558,16 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
 
             put(UserSettingsKeys.Mqtt.ENABLED, mqttEnabled)
-            put(UserSettingsKeys.Mqtt.SERVER_HOST, mqttServerHost)
-            put(UserSettingsKeys.Mqtt.SERVER_PORT, mqttServerPort)
-            put(UserSettingsKeys.Mqtt.CLIENT_ID, mqttClientId)
-            put(UserSettingsKeys.Mqtt.USERNAME, mqttUsername)
-            // put(UserSettingsKeys.Mqtt.PASSWORD, mqttPassword)
-            put(UserSettingsKeys.Mqtt.USE_TLS, mqttUseTls)
-            put(UserSettingsKeys.Mqtt.CLEAN_START, mqttCleanStart)
-            put(UserSettingsKeys.Mqtt.KEEP_ALIVE, mqttKeepAlive)
-            put(UserSettingsKeys.Mqtt.CONNECT_TIMEOUT, mqttConnectTimeout)
-            put(UserSettingsKeys.Mqtt.AUTOMATIC_RECONNECT, mqttAutomaticReconnect)
+            put(UserSettingsKeys.Mqtt.Connection.SERVER_HOST, mqttServerHost)
+            put(UserSettingsKeys.Mqtt.Connection.SERVER_PORT, mqttServerPort)
+            put(UserSettingsKeys.Mqtt.Connection.CLIENT_ID, mqttClientId)
+            put(UserSettingsKeys.Mqtt.Connection.USERNAME, mqttUsername)
+            // put(UserSettingsKeys.Mqtt.Connection.PASSWORD, mqttPassword)
+            put(UserSettingsKeys.Mqtt.Connection.USE_TLS, mqttUseTls)
+            put(UserSettingsKeys.Mqtt.Connection.CLEAN_START, mqttCleanStart)
+            put(UserSettingsKeys.Mqtt.Connection.KEEP_ALIVE, mqttKeepAlive)
+            put(UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT, mqttConnectTimeout)
+            put(UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT, mqttAutomaticReconnect)
             put(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
             put(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.code)
             put(UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN, mqttPublishEventRetain)
@@ -665,16 +665,16 @@ class UserSettings(val context: Context) {
             customScriptOnPageFinish = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
 
             mqttEnabled = json.optBoolean(UserSettingsKeys.Mqtt.ENABLED, mqttEnabled)
-            mqttServerHost = json.optString(UserSettingsKeys.Mqtt.SERVER_HOST, mqttServerHost)
-            mqttServerPort = json.optInt(UserSettingsKeys.Mqtt.SERVER_PORT, mqttServerPort)
-            mqttClientId = json.optString(UserSettingsKeys.Mqtt.CLIENT_ID, mqttClientId)
-            mqttUsername = json.optString(UserSettingsKeys.Mqtt.USERNAME, mqttUsername)
-            mqttPassword = json.optString(UserSettingsKeys.Mqtt.PASSWORD, mqttPassword)
-            mqttUseTls = json.optBoolean(UserSettingsKeys.Mqtt.USE_TLS, mqttUseTls)
-            mqttCleanStart = json.optBoolean(UserSettingsKeys.Mqtt.CLEAN_START, mqttCleanStart)
-            mqttKeepAlive = json.optInt(UserSettingsKeys.Mqtt.KEEP_ALIVE, mqttKeepAlive)
-            mqttConnectTimeout = json.optInt(UserSettingsKeys.Mqtt.CONNECT_TIMEOUT, mqttConnectTimeout)
-            mqttAutomaticReconnect = json.optBoolean(UserSettingsKeys.Mqtt.AUTOMATIC_RECONNECT, mqttAutomaticReconnect)
+            mqttServerHost = json.optString(UserSettingsKeys.Mqtt.Connection.SERVER_HOST, mqttServerHost)
+            mqttServerPort = json.optInt(UserSettingsKeys.Mqtt.Connection.SERVER_PORT, mqttServerPort)
+            mqttClientId = json.optString(UserSettingsKeys.Mqtt.Connection.CLIENT_ID, mqttClientId)
+            mqttUsername = json.optString(UserSettingsKeys.Mqtt.Connection.USERNAME, mqttUsername)
+            mqttPassword = json.optString(UserSettingsKeys.Mqtt.Connection.PASSWORD, mqttPassword)
+            mqttUseTls = json.optBoolean(UserSettingsKeys.Mqtt.Connection.USE_TLS, mqttUseTls)
+            mqttCleanStart = json.optBoolean(UserSettingsKeys.Mqtt.Connection.CLEAN_START, mqttCleanStart)
+            mqttKeepAlive = json.optInt(UserSettingsKeys.Mqtt.Connection.KEEP_ALIVE, mqttKeepAlive)
+            mqttConnectTimeout = json.optInt(UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT, mqttConnectTimeout)
+            mqttAutomaticReconnect = json.optBoolean(UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT, mqttAutomaticReconnect)
             mqttPublishEventTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
             mqttPublishEventQos = MqttQosOption.fromCode(
                 json.optInt(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.code)

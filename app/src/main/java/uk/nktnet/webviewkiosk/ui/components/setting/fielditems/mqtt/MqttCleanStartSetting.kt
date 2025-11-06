@@ -22,7 +22,7 @@ fun MqttCleanStartSetting() {
             (subscriptions, in-flight messages, etc.) if it exists.
         """.trimIndent(),
         initialValue = userSettings.mqttCleanStart,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.CLEAN_START),
+        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.CLEAN_START),
         onSave = { userSettings.mqttCleanStart = it }
     )
 }

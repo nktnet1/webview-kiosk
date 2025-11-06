@@ -19,7 +19,7 @@ fun MqttAutomaticReconnectSetting() {
             Uses exponential backoff delays when enabled.
         """.trimIndent(),
         initialValue = userSettings.mqttAutomaticReconnect,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.AUTOMATIC_RECONNECT),
+        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT),
         onSave = { userSettings.mqttAutomaticReconnect = it }
     )
 }

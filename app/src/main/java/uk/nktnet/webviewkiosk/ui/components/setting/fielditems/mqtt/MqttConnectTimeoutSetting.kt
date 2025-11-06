@@ -20,7 +20,7 @@ fun MqttConnectTimeoutSetting() {
         """.trimIndent(),
         placeholder = "e.g. 30",
         initialValue = userSettings.mqttConnectTimeout,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.CONNECT_TIMEOUT),
+        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT),
         min = 0,
         max = 300,
         onSave = { userSettings.mqttConnectTimeout = it }

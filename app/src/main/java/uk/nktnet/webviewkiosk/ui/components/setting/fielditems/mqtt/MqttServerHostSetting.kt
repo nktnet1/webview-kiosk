@@ -12,7 +12,7 @@ fun MqttServerHostSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
 
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.SERVER_HOST)
+    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.SERVER_HOST)
 
     TextSettingFieldItem(
         label = "Server Host",

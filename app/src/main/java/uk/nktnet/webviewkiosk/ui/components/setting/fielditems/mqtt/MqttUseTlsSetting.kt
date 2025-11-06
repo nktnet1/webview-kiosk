@@ -21,7 +21,7 @@ fun MqttUseTlsSetting() {
             using TLS. Ensure the broker supports TLS on the configured port.
         """.trimIndent(),
         initialValue = userSettings.mqttUseTls,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.USE_TLS),
+        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.USE_TLS),
         onSave = { userSettings.mqttUseTls = it }
     )
 }

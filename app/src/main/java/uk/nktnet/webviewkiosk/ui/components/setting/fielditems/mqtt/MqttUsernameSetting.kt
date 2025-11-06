@@ -12,7 +12,7 @@ fun MqttUsernameSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
 
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.USERNAME)
+    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.USERNAME)
 
     TextSettingFieldItem(
         label = "Username",

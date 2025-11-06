@@ -12,7 +12,7 @@ fun MqttClientIdSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
 
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.CLIENT_ID)
+    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.CLIENT_ID)
 
     TextSettingFieldItem(
         label = "Client ID",

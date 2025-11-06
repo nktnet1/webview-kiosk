@@ -12,7 +12,7 @@ fun MqttPasswordSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
 
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.PASSWORD)
+    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.PASSWORD)
 
     TextSettingFieldItem(
         label = "Password",

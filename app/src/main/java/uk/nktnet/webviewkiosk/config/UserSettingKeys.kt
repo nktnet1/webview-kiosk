@@ -81,17 +81,19 @@ object UserSettingsKeys {
 
     object Mqtt {
         const val ENABLED = "mqtt.enabled"
-        const val SERVER_HOST = "mqtt.server_host"
-        const val SERVER_PORT = "mqtt.server_port"
-        const val CLIENT_ID = "mqtt.client_id"
-        const val USERNAME = "mqtt.username"
-        const val PASSWORD = "mqtt.password"
 
-        const val USE_TLS = "mqtt.use_tls"
-        const val CLEAN_START = "mqtt.clean_start"
-        const val KEEP_ALIVE = "mqtt.keep_alive"
-        const val CONNECT_TIMEOUT = "mqtt.connect_timeout"
-        const val AUTOMATIC_RECONNECT = "mqtt.automatic_reconnect"
+        object Connection {
+            const val SERVER_HOST = "mqtt.connection.server_host"
+            const val SERVER_PORT = "mqtt.connection.server_port"
+            const val CLIENT_ID = "mqtt.connection.client_id"
+            const val USERNAME = "mqtt.connection.username"
+            const val PASSWORD = "mqtt.connection.password"
+            const val USE_TLS = "mqtt.connection.connection.use_tls"
+            const val CLEAN_START = "mqtt.connection.clean_start"
+            const val KEEP_ALIVE = "mqtt.connection.keep_alive"
+            const val CONNECT_TIMEOUT = "mqtt.connection.connect_timeout"
+            const val AUTOMATIC_RECONNECT = "mqtt.connection.automatic_reconnect"
+        }
 
         object Topics {
             object Publish {
