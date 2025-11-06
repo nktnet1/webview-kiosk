@@ -100,7 +100,7 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                     ) {
                         if (searchQuery.text.isEmpty()) {
                             Text(
-                                text = "Search",
+                                text = "Search the last 100 logs",
                                 style = LocalTextStyle.current.copy(
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                                     fontSize = MaterialTheme.typography.bodySmall.fontSize,
