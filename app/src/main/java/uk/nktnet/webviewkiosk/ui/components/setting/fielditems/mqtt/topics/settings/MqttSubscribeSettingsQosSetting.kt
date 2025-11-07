@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.command
+package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.settings
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -9,7 +9,7 @@ import uk.nktnet.webviewkiosk.config.option.MqttQosOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
 
 @Composable
-fun MqttSubscribeCommandQosSetting() {
+fun MqttSubscribeSettingsQosSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
 
@@ -17,12 +17,12 @@ fun MqttSubscribeCommandQosSetting() {
         label = "QoS",
         infoText = """
             Quality of Service (QoS) ensures different message delivery guarantees
-            in case of connection failures.
+            for settings subscriptions.
         """.trimIndent(),
         options = MqttQosOption.entries,
-        initialValue = userSettings.mqttSubscribeCommandQos,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS),
-        onSave = { userSettings.mqttSubscribeCommandQos = it },
+        initialValue = userSettings.mqttSubscribeSettingsQos,
+        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.QOS),
+        onSave = { userSettings.mqttSubscribeSettingsQos = it },
         itemText = {
             when (it) {
                 MqttQosOption.AT_MOST_ONCE -> "At most once"

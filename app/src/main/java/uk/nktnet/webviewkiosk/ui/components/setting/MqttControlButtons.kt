@@ -10,9 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import kotlinx.coroutines.delay
-import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.mqtt.MqttManager
 import com.hivemq.client.mqtt.MqttClientState
@@ -20,7 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 @Composable
-fun MqttControlButtons(navController: NavController) {
+fun MqttControlButtons() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
     var mqttClientState by remember { mutableStateOf(MqttManager.getState()) }
@@ -109,11 +107,11 @@ fun MqttControlButtons(navController: NavController) {
                                         userSettings,
                                         onConnected = {
                                             mqttClientState = MqttManager.getState()
-                                            showToast("Reconnected successfully.")
+                                            showToast("Restart successfully.")
                                         },
                                         onError = {
                                             mqttClientState = MqttManager.getState()
-                                            showToast("Error reconnecting: $it")
+                                            showToast("Error restarting: $it")
                                         }
                                     )
                                 },
@@ -125,7 +123,7 @@ fun MqttControlButtons(navController: NavController) {
 
                         },
                         modifier = Modifier.weight(1f)
-                    ) { Text("Reconnect") }
+                    ) { Text("Restart") }
                 }
             } else if (
                 state in listOf(
@@ -168,17 +166,6 @@ fun MqttControlButtons(navController: NavController) {
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Connect") }
             }
-
-            Button(
-                onClick = {
-                    navController.navigate(Screen.SettingsMqttDebug.route)
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                ),
-                modifier = Modifier.fillMaxWidth()
-            ) { Text("Debug Logs") }
         }
     }
 }

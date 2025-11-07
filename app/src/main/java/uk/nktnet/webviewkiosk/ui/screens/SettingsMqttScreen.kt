@@ -24,6 +24,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttServerHo
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttServerPortSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttUseTlsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttUsernameSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsButton
 
 @Composable
 fun SettingsMqttScreen(navController: NavController) {
@@ -38,7 +39,7 @@ fun SettingsMqttScreen(navController: NavController) {
 
         SettingDivider()
 
-        MqttControlButtons(navController)
+        MqttControlButtons()
         HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
         MqttEnabledSetting()
@@ -60,6 +61,10 @@ fun SettingsMqttScreen(navController: NavController) {
             "Topics",
             "Publish and subscribe topic configurations",
         ) { navController.navigate(Screen.SettingsMqttTopics.route) }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        MqttDebugLogsButton(navController)
 
         Spacer(modifier = Modifier.height(16.dp))
     }

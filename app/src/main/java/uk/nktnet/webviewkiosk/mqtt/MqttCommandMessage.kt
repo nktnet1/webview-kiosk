@@ -1,9 +1,9 @@
 package uk.nktnet.webviewkiosk.mqtt
 
-import kotlinx.serialization.*
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import uk.nktnet.webviewkiosk.config.option.MqttQosOption
-import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption
 
 @Serializable
 sealed interface CommandMessage {
@@ -64,30 +64,8 @@ data class MqttCommandError(
     override fun toString() = "Command Error: $error"
 }
 
-data class MqttConfig(
-    val enabled: Boolean,
-    val clientId: String,
-    val serverHost: String,
-    val serverPort: Int,
-    val username: String,
-    val password: String,
-    val useTls: Boolean,
-    val automaticReconnect: Boolean,
-    val cleanStart: Boolean,
-    val keepAlive: Int,
-    val connectTimeout: Int,
-    val subscribeCommandTopic: String,
-    val subscribeCommandQos: MqttQosOption,
-    val subscribeCommandRetainHandling: MqttRetainHandlingOption,
-    val subscribeCommandRetainAsPublished: Boolean,
-    val subscribeSettingsTopic: String,
-    val subscribeSettingsQos: MqttQosOption,
-    val subscribeSettingsRetainHandling: MqttRetainHandlingOption,
-    val subscribeSettingsRetainAsPublished: Boolean
-)
-
 @OptIn(ExperimentalSerializationApi::class)
-val JsonParser = Json {
+val MqttCommandJsonParser = Json {
     ignoreUnknownKeys = true
     coerceInputValues = true
     isLenient = true

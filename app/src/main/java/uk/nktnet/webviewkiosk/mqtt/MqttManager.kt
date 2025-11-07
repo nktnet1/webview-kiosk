@@ -171,7 +171,7 @@ object MqttManager {
                 .callback { publish ->
                     val payloadStr = publish.payloadAsBytes.toString(UTF_8)
                     try {
-                        val command = JsonParser.decodeFromString<CommandMessage>(payloadStr)
+                        val command = MqttCommandJsonParser.decodeFromString<CommandMessage>(payloadStr)
                         scope.launch { _commands.emit(command) }
                         addDebugLog(
                             "command received",
@@ -183,7 +183,7 @@ object MqttManager {
                             _commands.emit(MqttCommandError(e.message ?: e.toString()))
                         }
                         val identifier = runCatching {
-                            JsonParser.parseToJsonElement(payloadStr)
+                            MqttCommandJsonParser.parseToJsonElement(payloadStr)
                                 .jsonObject["identifier"]?.jsonPrimitive?.contentOrNull
                         }.getOrNull()
                         addDebugLog("command error", e.message, identifier)
