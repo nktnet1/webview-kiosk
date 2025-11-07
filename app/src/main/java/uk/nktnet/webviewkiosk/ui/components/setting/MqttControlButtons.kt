@@ -95,7 +95,7 @@ fun MqttControlButtons(navController: NavController) {
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.error
+                            contentColor = MaterialTheme.colorScheme.onErrorContainer
                         )
                     ) { Text("Disconnect") }
 
@@ -145,7 +145,7 @@ fun MqttControlButtons(navController: NavController) {
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.secondary
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                     ),
                     modifier = Modifier.fillMaxWidth()
                 ) { Text("Cancel Connection") }
@@ -173,6 +173,10 @@ fun MqttControlButtons(navController: NavController) {
                 onClick = {
                     navController.navigate(Screen.SettingsMqttDebug.route)
                 },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                ),
                 modifier = Modifier.fillMaxWidth()
             ) { Text("Debug Logs") }
         }

@@ -424,20 +424,20 @@ class UserSettings(val context: Context) {
     var mqttPublishEventTopic by stringPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC,
+        UserSettingsKeys.Mqtt.Topics.Publish.Telemetry.TOPIC,
         "webviewkiosk/publish/event"
     )
     var mqttPublishEventQos by intEnumPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS,
+        UserSettingsKeys.Mqtt.Topics.Publish.Telemetry.QOS,
         MqttQosOption.AT_MOST_ONCE.code,
         fromInt = MqttQosOption::fromCode
     )
     var mqttPublishEventRetain by booleanPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN,
+        UserSettingsKeys.Mqtt.Topics.Publish.Telemetry.RETAIN,
         false,
     )
     var mqttSubscribeCommandTopic by stringPref(
@@ -568,9 +568,9 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.Connection.KEEP_ALIVE, mqttKeepAlive)
             put(UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT, mqttConnectTimeout)
             put(UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT, mqttAutomaticReconnect)
-            put(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
-            put(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.code)
-            put(UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN, mqttPublishEventRetain)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.Telemetry.TOPIC, mqttPublishEventTopic)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.Telemetry.QOS, mqttPublishEventQos.code)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.Telemetry.RETAIN, mqttPublishEventRetain)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC, mqttSubscribeCommandTopic)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS, mqttSubscribeCommandQos.code)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING, mqttSubscribeCommandRetainHandling.code)
@@ -675,11 +675,11 @@ class UserSettings(val context: Context) {
             mqttKeepAlive = json.optInt(UserSettingsKeys.Mqtt.Connection.KEEP_ALIVE, mqttKeepAlive)
             mqttConnectTimeout = json.optInt(UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT, mqttConnectTimeout)
             mqttAutomaticReconnect = json.optBoolean(UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT, mqttAutomaticReconnect)
-            mqttPublishEventTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
+            mqttPublishEventTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Telemetry.TOPIC, mqttPublishEventTopic)
             mqttPublishEventQos = MqttQosOption.fromCode(
-                json.optInt(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.code)
+                json.optInt(UserSettingsKeys.Mqtt.Topics.Publish.Telemetry.QOS, mqttPublishEventQos.code)
             )
-            mqttPublishEventRetain = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN, mqttPublishEventRetain)
+            mqttPublishEventRetain = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Publish.Telemetry.RETAIN, mqttPublishEventRetain)
             mqttSubscribeCommandTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC, mqttSubscribeCommandTopic)
             mqttSubscribeCommandQos = MqttQosOption.fromCode(
                 json.optInt(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS, mqttSubscribeCommandQos.code)

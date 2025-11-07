@@ -9,6 +9,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.command.MqttSubscribeCommandQosSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.command.MqttSubscribeCommandRetainHandlingSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.command.MqttSubscribeCommandRetainedAsPublishedSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.command.MqttSubscribeCommandTopicSetting
 
 @Composable
 fun SettingsMqttTopicsSubscribeCommandScreen(navController: NavController) {
@@ -21,5 +25,10 @@ fun SettingsMqttTopicsSubscribeCommandScreen(navController: NavController) {
     ) {
         SettingLabel(navController = navController, label = "Command")
         SettingDivider()
+
+        MqttSubscribeCommandTopicSetting()
+        MqttSubscribeCommandQosSetting()
+        MqttSubscribeCommandRetainHandlingSetting()
+        MqttSubscribeCommandRetainedAsPublishedSetting()
     }
 }
