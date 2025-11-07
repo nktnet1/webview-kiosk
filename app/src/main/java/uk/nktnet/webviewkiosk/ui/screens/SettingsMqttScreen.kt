@@ -8,9 +8,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.setting.MqttControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.ui.components.setting.SettingListItem
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttAutomaticReconnectSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttCleanStartSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttClientIdSetting
@@ -37,9 +39,10 @@ fun SettingsMqttScreen(navController: NavController) {
         SettingDivider()
 
         MqttControlButtons(navController)
-        HorizontalDivider()
+        HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
         MqttEnabledSetting()
+
         MqttClientIdSetting()
         MqttServerHostSetting()
         MqttServerPortSetting()
@@ -50,6 +53,13 @@ fun SettingsMqttScreen(navController: NavController) {
         MqttKeepAliveSetting()
         MqttConnectTimeoutSetting()
         MqttAutomaticReconnectSetting()
+
+        Spacer(modifier = Modifier.height(6.dp))
+
+        SettingListItem(
+            "Topics",
+            "Publish and subscribe topic configurations",
+        ) { navController.navigate(Screen.SettingsMqttTopics.route) }
 
         Spacer(modifier = Modifier.height(16.dp))
     }

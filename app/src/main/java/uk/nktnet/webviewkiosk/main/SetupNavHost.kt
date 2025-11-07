@@ -67,6 +67,21 @@ fun SetupNavHost(
             authComposable(Screen.SettingsMqttDebug.route) {
                 SettingsMqttDebugScreen(navController)
             }
+            authComposable(Screen.SettingsMqttTopics.route) {
+                SettingsMqttTopicsScreen(navController)
+            }
+            authComposable(Screen.SettingsMqttTopicsPublishTelemetry.route) {
+                SettingsMqttTopicsPublishTelemetryScreen(navController)
+            }
+            authComposable(Screen.SettingsMqttTopicsPublishResponse.route) {
+                SettingsMqttTopicsPublishResponseScreen(navController)
+            }
+            authComposable(Screen.SettingsMqttTopicsSubscribeCommand.route) {
+                SettingsMqttTopicsSubscribeCommandScreen(navController)
+            }
+            authComposable(Screen.SettingsMqttTopicsSubscribeSettings.route) {
+                SettingsMqttTopicsSubscribeSettingsScreen(navController)
+            }
             authComposable(Screen.SettingsAbout.route) {
                 SettingsAboutScreen(navController)
             }
