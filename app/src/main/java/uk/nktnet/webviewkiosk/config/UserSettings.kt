@@ -493,7 +493,7 @@ class UserSettings(val context: Context) {
         false,
     )
 
-    fun exportToBase64(): String {
+    fun exportJson(): String {
         val json = JSONObject().apply {
             put(UserSettingsKeys.WebContent.HOME_URL, homeUrl)
             put(UserSettingsKeys.WebContent.WEBSITE_BLACKLIST, websiteBlacklist)
@@ -581,12 +581,16 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_HANDLING, mqttSubscribeSettingsRetainHandling.code)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_AS_PUBLISHED, mqttSubscribeSettingsRetainAsPublished)
         }
-        return Base64.encodeToString(json.toString().toByteArray(), Base64.NO_WRAP)
+        return json.toString()
     }
 
-    fun importFromBase64(base64: String): Boolean {
+    fun exportBase64(): String {
+        return Base64.encodeToString(exportJson().toByteArray(), Base64.NO_WRAP)
+    }
+
+    fun importJson(jsonStr: String): Boolean {
         return try {
-            val json = JSONObject(String(Base64.decode(base64, Base64.NO_WRAP)))
+            val json = JSONObject(jsonStr)
 
             homeUrl = json.optString(UserSettingsKeys.WebContent.HOME_URL, homeUrl)
             websiteBlacklist = json.optString(UserSettingsKeys.WebContent.WEBSITE_BLACKLIST, websiteBlacklist)
@@ -697,6 +701,16 @@ class UserSettings(val context: Context) {
             )
             mqttSubscribeSettingsRetainAsPublished = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_AS_PUBLISHED, mqttSubscribeSettingsRetainAsPublished)
             true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    fun importBase64(base64: String): Boolean {
+        return try {
+            val decoded = String(Base64.decode(base64, Base64.NO_WRAP))
+            importJson(decoded)
         } catch (e: Exception) {
             e.printStackTrace()
             false
