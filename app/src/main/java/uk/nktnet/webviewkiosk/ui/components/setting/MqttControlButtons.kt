@@ -28,8 +28,8 @@ fun MqttControlButtons(navController: NavController) {
     var toastRef: Toast? = null
     val coroutineScope = rememberCoroutineScope()
     val showToast: (String) -> Unit = { msg ->
-        toastRef?.cancel()
         coroutineScope.launch(Dispatchers.Main) {
+            toastRef?.cancel()
             toastRef = Toast.makeText(context, msg, Toast.LENGTH_SHORT)
                 .apply { show() }
         }
@@ -127,17 +127,28 @@ fun MqttControlButtons(navController: NavController) {
                         modifier = Modifier.weight(1f)
                     ) { Text("Reconnect") }
                 }
-            } else if (state.isConnectedOrReconnect) {
+            } else if (
+                state in listOf(
+                    MqttClientState.CONNECTING,
+                    MqttClientState.CONNECTING_RECONNECT,
+                    MqttClientState.DISCONNECTED_RECONNECT
+                )
+            ) {
                 Button(
                     onClick = {
-                        MqttManager.unsetClient()
+                        val res = MqttManager.cancelConnect()
+                        if (res) {
+                            showToast("Requested cancellation...")
+                        } else {
+                            showToast("Cancellation is already requested.")
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         contentColor = MaterialTheme.colorScheme.secondary
                     ),
                     modifier = Modifier.fillMaxWidth()
-                ) { Text("Cancel Reconnect") }
+                ) { Text("Cancel Connection") }
             } else {
                 Button(
                     onClick = {

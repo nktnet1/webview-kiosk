@@ -50,148 +50,174 @@ fun SettingsMqttDebugScreen(navController: NavController) {
             logs
                 .filter {
                     it.tag.contains(searchQuery.text, ignoreCase = true)
-                    || (it.message?.contains(searchQuery.text, ignoreCase = true) == true)
-                    || (it.identifier?.contains(searchQuery.text, ignoreCase = true) == true)
+                            || (it.message?.contains(searchQuery.text, ignoreCase = true) == true)
+                            || (it.identifier?.contains(searchQuery.text, ignoreCase = true) == true)
                 }
                 .sortedBy { it.timestamp }
                 .let { if (ascending) it else it.reversed() }
         }
     }
 
-
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
             .windowInsetsPadding(WindowInsets.safeContent)
+            .padding(horizontal = 16.dp)
     ) {
-        SettingLabel(navController = navController, label = "Debug Log")
+        Column(modifier = Modifier.fillMaxSize()) {
+            SettingLabel(navController = navController, label = "Debug Log")
 
-        Row(
-            modifier = Modifier
-                .height(50.dp)
-                .fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            BasicTextField(
-                value = searchQuery.text,
-                onValueChange = { searchQuery = TextFieldValue(it) },
-                singleLine = true,
-                cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                textStyle = LocalTextStyle.current.copy(
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = MaterialTheme.typography.bodySmall.fontSize
-                ),
+            Row(
                 modifier = Modifier
-                    .weight(1f)
-                    .height(43.dp),
-                decorationBox = { innerTextField ->
-                    Box(
-                        contentAlignment = Alignment.CenterStart,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .border(
-                                1.dp,
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                MaterialTheme.shapes.small
-                            )
-                            .padding(horizontal = 12.dp)
-                    ) {
-                        if (searchQuery.text.isEmpty()) {
-                            Text(
-                                text = "Search the last 100 logs",
-                                style = LocalTextStyle.current.copy(
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                                    fontSize = MaterialTheme.typography.bodySmall.fontSize,
-                                    fontStyle = FontStyle.Italic,
+                    .height(50.dp)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                BasicTextField(
+                    value = searchQuery.text,
+                    onValueChange = { searchQuery = TextFieldValue(it) },
+                    singleLine = true,
+                    cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+                    textStyle = LocalTextStyle.current.copy(
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = MaterialTheme.typography.bodySmall.fontSize
+                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(43.dp),
+                    decorationBox = { innerTextField ->
+                        Box(
+                            contentAlignment = Alignment.CenterStart,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                                    MaterialTheme.shapes.small
                                 )
-                            )
+                                .padding(horizontal = 12.dp)
+                        ) {
+                            if (searchQuery.text.isEmpty()) {
+                                Text(
+                                    text = "Search the last 100 logs",
+                                    style = LocalTextStyle.current.copy(
+                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                                        fontStyle = FontStyle.Italic,
+                                    )
+                                )
+                            }
+                            innerTextField()
                         }
-                        innerTextField()
                     }
+                )
+
+                IconButton(
+                    onClick = { ascending = !ascending },
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier
+                        .align(Alignment.CenterVertically)
+                        .graphicsLayer(scaleX = 0.9f, scaleY = 0.9f)
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            MaterialTheme.shapes.small
+                        )
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_sort_24),
+                        contentDescription = "Sort Order",
+                        modifier = Modifier
+                            .size(22.dp)
+                            .graphicsLayer(scaleY = if (ascending) -1f else 1f, scaleX = -1f)
+                    )
                 }
+            }
+
+            HorizontalDivider(
+                modifier = Modifier.padding(vertical = 8.dp),
+                thickness = DividerDefaults.Thickness,
+                color = DividerDefaults.color
             )
 
-            IconButton(
-                onClick = { ascending = !ascending },
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier
-                    .align(Alignment.CenterVertically)
-                    .graphicsLayer(
-                        scaleX = 0.9f,
-                        scaleY = 0.9f
-                    )
-                    .border(
-                        1.dp,
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                        MaterialTheme.shapes.small
-                    )
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.baseline_sort_24),
-                    contentDescription = "Sort Order",
+            if (filteredLogs.isEmpty()) {
+                Box(
                     modifier = Modifier
-                        .size(22.dp)
-                        .graphicsLayer(scaleY = if (ascending) -1f else 1f, scaleX = -1f)
-                )
-            }
-        }
-
-        HorizontalDivider(
-            modifier = Modifier.padding(vertical = 8.dp),
-            thickness = DividerDefaults.Thickness,
-            color = DividerDefaults.color
-        )
-
-        if (filteredLogs.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
-            ) {
-                Text(
-                    text = "No logs yet.",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        } else {
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(filteredLogs) { logEntry ->
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            text = "${dateFormat.format(logEntry.timestamp)} - ${logEntry.tag}",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface,
-
-                        )
-                        logEntry.identifier?.let {
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No logs yet.",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
+                    items(filteredLogs) { logEntry ->
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
-                                text = "identifier: $it",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(top = 4.dp)
+                                text = "${dateFormat.format(logEntry.timestamp)} - ${logEntry.tag}",
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            logEntry.identifier?.let {
+                                Text(
+                                    text = "identifier: $it",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                            logEntry.message?.let {
+                                Text(
+                                    text = it,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 4.dp)
+                                )
+                            }
+                            HorizontalDivider(
+                                thickness = DividerDefaults.Thickness,
+                                color = DividerDefaults.color,
+                                modifier = Modifier.padding(vertical = 8.dp)
                             )
                         }
-                        logEntry.message?.let {
-                            Text(
-                                text = it,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(top = 4.dp)
-                            )
-                        }
-                        HorizontalDivider(
-                            thickness = DividerDefaults.Thickness,
-                            color = DividerDefaults.color,
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(60.dp))
+        }
+
+        OutlinedButton(
+            onClick = {
+                MqttManager.clearLogs()
+                logs.clear()
+            },
+            shape = RoundedCornerShape(12.dp),
+            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(bottom = 12.dp)
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.baseline_clear_24),
+                contentDescription = null,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text("Clear Logs", style = MaterialTheme.typography.labelLarge)
         }
     }
 }

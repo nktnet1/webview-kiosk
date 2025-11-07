@@ -54,4 +54,3 @@ fun SettingsMqttScreen(navController: NavController) {
         Spacer(modifier = Modifier.height(16.dp))
     }
 }
-

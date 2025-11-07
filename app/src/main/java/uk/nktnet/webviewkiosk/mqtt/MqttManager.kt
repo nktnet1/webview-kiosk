@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.mqtt
 import android.annotation.SuppressLint
 import com.hivemq.client.mqtt.MqttClient
 import com.hivemq.client.mqtt.MqttClientState
+import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -15,7 +16,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import uk.nktnet.webviewkiosk.config.UserSettings
 import java.util.Date
 import java.util.concurrent.TimeUnit
-import kotlin.collections.ArrayDeque
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.text.Charsets.UTF_8
 
 data class MqttLogEntry(
@@ -36,6 +37,7 @@ object MqttManager {
     private val logHistory = ArrayDeque<MqttLogEntry>(100)
     private val _debugLog = MutableSharedFlow<MqttLogEntry>(extraBufferCapacity = 100)
     val debugLog: SharedFlow<MqttLogEntry> get() = _debugLog
+    private val pendingCancelConnect: AtomicBoolean = AtomicBoolean(false)
 
     private fun addDebugLog(tag: String, message: String? = null, identifier: String? = null) {
         val logEntry = MqttLogEntry(Date(), tag, message, identifier)
@@ -86,15 +88,27 @@ object MqttManager {
         if (config.useTls) {
             builder = builder.sslWithDefaultConfig()
         }
-        builder = if (config.automaticReconnect) {
-            builder.automaticReconnectWithDefaultConfig()
-        } else {
-            builder.automaticReconnect(null)
-        }
 
         return builder
             .addConnectedListener {
+                addDebugLog("connect success")
                 subscribeToTopics()
+            }
+            .addDisconnectedListener { context ->
+                if (pendingCancelConnect.get()) {
+                    context.reconnector.reconnect(false)
+                    pendingCancelConnect.set(false)
+                    return@addDisconnectedListener
+                }
+                if (config.automaticReconnect) {
+                    context.reconnector
+                        .reconnect(context.source != MqttDisconnectSource.USER)
+                        .delay(5, TimeUnit.SECONDS)
+                }
+                addDebugLog(
+                    "disconnected",
+                    "source: ${context.source}\nreconnect: ${context.reconnector.isReconnect}\ncause: ${context.cause}"
+                )
             }
             .transportConfig()
             .mqttConnectTimeout(config.connectTimeout.toLong(), TimeUnit.SECONDS)
@@ -121,6 +135,7 @@ object MqttManager {
             addDebugLog("connect failed", "client is not initialised")
             return
         }
+        addDebugLog("connect pending", "Attempting to connect...")
         c.connectWith()
             .cleanStart(config.cleanStart)
             .keepAlive(config.keepAlive)
@@ -131,7 +146,6 @@ object MqttManager {
             .send()
             .whenComplete { conn, throwable ->
                 if (throwable == null) {
-                    addDebugLog("connect success")
                     onConnected?.invoke()
                 } else {
                     addDebugLog("connect failed", "${throwable.message}.")
@@ -189,8 +203,13 @@ object MqttManager {
 
     fun getState() = client?.state ?: MqttClientState.DISCONNECTED
 
-    fun unsetClient() {
-        client = null
+    fun cancelConnect(): Boolean {
+        if (pendingCancelConnect.get()) {
+            return false
+        }
+        pendingCancelConnect.set(true)
+        addDebugLog("connect cancel requested", "User manually triggered cancellation request.")
+        return true
     }
 
     @SuppressLint("NewApi")
@@ -206,12 +225,17 @@ object MqttManager {
         }
         c.disconnect().whenComplete { _, throwable ->
             if (throwable == null) {
-                addDebugLog("disconnect success")
                 onDisconnected?.invoke()
             } else {
                 addDebugLog("disconnect failed", throwable.message)
                 onError?.invoke(throwable.message)
             }
+        }
+    }
+
+    fun clearLogs() {
+        synchronized(logHistory) {
+            logHistory.clear()
         }
     }
 }
