@@ -58,7 +58,7 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
             text = "Publish",
             style = MaterialTheme.typography.titleLarge,
             color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
+            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
         )
         HorizontalDivider(
             Modifier.padding(bottom = 8.dp),
