@@ -95,15 +95,6 @@ object UserSettingsKeys {
             const val AUTOMATIC_RECONNECT = "mqtt.connection.automatic_reconnect"
         }
 
-        object Will {
-            const val TOPIC = "mqtt.will.topic"
-            const val QOS = "mqtt.will.qos"
-            const val PAYLOAD = "mqtt.will.payload"
-            const val RETAIN = "mqtt.will.retain"
-            const val MESSAGE_EXPIRY_INTERVAL = "mqtt.will.message_expiry_interval"
-            const val DELAY_INTERVAL = "mqtt.will.delay_interval"
-        }
-
         object Topics {
             object Publish {
                 object Event {
@@ -128,6 +119,15 @@ object UserSettingsKeys {
                     const val RETAIN_AS_PUBLISHED = "mqtt.subscribe.settings.retain_as_published"
                 }
             }
+        }
+
+        object Will {
+            const val TOPIC = "mqtt.will.topic"
+            const val QOS = "mqtt.will.qos"
+            const val PAYLOAD = "mqtt.will.payload"
+            const val RETAIN = "mqtt.will.retain"
+            const val MESSAGE_EXPIRY_INTERVAL = "mqtt.will.message_expiry_interval"
+            const val DELAY_INTERVAL = "mqtt.will.delay_interval"
         }
     }
 }

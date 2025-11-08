@@ -5,6 +5,7 @@ import com.hivemq.client.mqtt.MqttClient
 import com.hivemq.client.mqtt.MqttClientState
 import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
+import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PayloadFormatIndicator
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -73,14 +74,23 @@ object MqttManager {
             cleanStart = userSettings.mqttCleanStart,
             keepAlive = userSettings.mqttKeepAlive,
             connectTimeout = userSettings.mqttConnectTimeout,
+
             subscribeCommandTopic = mqttVariableReplacement(systemSettings, userSettings.mqttSubscribeCommandTopic),
             subscribeCommandQos = userSettings.mqttSubscribeCommandQos,
             subscribeCommandRetainHandling = userSettings.mqttSubscribeCommandRetainHandling,
             subscribeCommandRetainAsPublished = userSettings.mqttSubscribeCommandRetainAsPublished,
+
             subscribeSettingsTopic = mqttVariableReplacement(systemSettings, userSettings.mqttSubscribeSettingsTopic),
             subscribeSettingsQos = userSettings.mqttSubscribeSettingsQos,
             subscribeSettingsRetainHandling = userSettings.mqttSubscribeSettingsRetainHandling,
-            subscribeSettingsRetainAsPublished = userSettings.mqttSubscribeSettingsRetainAsPublished
+            subscribeSettingsRetainAsPublished = userSettings.mqttSubscribeSettingsRetainAsPublished,
+
+            willTopic = userSettings.mqttWillTopic,
+            willPayload = userSettings.mqttWillPayload,
+            willQos = userSettings.mqttWillQos,
+            willRetain = userSettings.mqttWillRetain,
+            willMessageExpiryInterval = userSettings.mqttWillMessageExpiryInterval,
+            willDelayInterval = userSettings.mqttWillDelayInterval
         )
         client = buildClient()
     }
@@ -154,6 +164,16 @@ object MqttManager {
             .username(config.username)
             .password(UTF_8.encode(config.password))
             .applySimpleAuth()
+            .willPublish()
+                .topic(config.willTopic)
+                .qos(config.willQos.toMqttQos())
+                .retain(config.willRetain)
+                .messageExpiryInterval(config.willMessageExpiryInterval * 1L)
+                .delayInterval(config.willDelayInterval * 1L)
+                .payloadFormatIndicator(Mqtt5PayloadFormatIndicator.UTF_8)
+                .contentType("text/plain")
+                .payload(config.willPayload.toByteArray())
+                .applyWillPublish()
             .send()
             .whenComplete { conn, throwable ->
                 if (throwable == null) {

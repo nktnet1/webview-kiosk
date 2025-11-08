@@ -492,10 +492,11 @@ class UserSettings(val context: Context) {
         false,
     )
 
-    var mqttWillTopic by stringPrefOptional(
+    var mqttWillTopic by stringPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.Will.TOPIC
+        UserSettingsKeys.Mqtt.Will.TOPIC,
+        "wk/will"
     )
     var mqttWillQos by intEnumPref(
         restrictions,
@@ -504,10 +505,11 @@ class UserSettings(val context: Context) {
         MqttQosOption.AT_MOST_ONCE.code,
         fromInt = MqttQosOption::fromCode
     )
-    var mqttWillPayload by stringPrefOptional(
+    var mqttWillPayload by stringPref(
         restrictions,
         prefs,
-        UserSettingsKeys.Mqtt.Will.PAYLOAD
+        UserSettingsKeys.Mqtt.Will.PAYLOAD,
+        "${Constants.APP_NAME} has disconnected."
     )
     var mqttWillRetain by booleanPref(
         restrictions,

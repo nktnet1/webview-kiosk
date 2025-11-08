@@ -16,12 +16,21 @@ data class MqttConfig(
     val cleanStart: Boolean,
     val keepAlive: Int,
     val connectTimeout: Int,
+
     val subscribeCommandTopic: String,
     val subscribeCommandQos: MqttQosOption,
     val subscribeCommandRetainHandling: MqttRetainHandlingOption,
     val subscribeCommandRetainAsPublished: Boolean,
+
     val subscribeSettingsTopic: String,
     val subscribeSettingsQos: MqttQosOption,
     val subscribeSettingsRetainHandling: MqttRetainHandlingOption,
-    val subscribeSettingsRetainAsPublished: Boolean
+    val subscribeSettingsRetainAsPublished: Boolean,
+
+    val willTopic: String,
+    val willPayload: String,
+    val willQos: MqttQosOption,
+    val willRetain: Boolean,
+    val willMessageExpiryInterval: Int,
+    val willDelayInterval: Int
 )

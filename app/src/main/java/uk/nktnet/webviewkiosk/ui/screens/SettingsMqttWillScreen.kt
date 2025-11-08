@@ -8,34 +8,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.setting.MqttControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingListItem
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttEnabledSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWillDelayIntervalSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWillMessageExpiryIntervalSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWillPayloadSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWillQosSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWillRetainSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWillTopicSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsButton
 
 @Composable
-fun SettingsMqttScreen(navController: NavController) {
-    val settingsItems = listOf(
-        Triple(
-            "Connection",
-            "Specify how to connect to your broker server",
-            Screen.SettingsMqttConnection.route
-        ),
-        Triple(
-            "Topics",
-            "Publish and subscribe topic configurations",
-            Screen.SettingsMqttTopics.route
-        ),
-        Triple(
-            "Will (LWT)",
-            "Send message if the client disconnects unexpectedly",
-            Screen.SettingsMqttWill.route
-        ),
-    )
-
+fun SettingsMqttWillScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -47,26 +32,23 @@ fun SettingsMqttScreen(navController: NavController) {
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
         ) {
-            SettingLabel(navController = navController, label = "MQTT")
-
+            SettingLabel(navController = navController, label = "Will (LWT)")
             SettingDivider()
 
             MqttControlButtons()
             HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
-            MqttEnabledSetting()
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            settingsItems.forEach { (title, description, route) ->
-                SettingListItem(title, description) { navController.navigate(route) }
-            }
+            MqttWillTopicSetting()
+            MqttWillQosSetting()
+            MqttWillPayloadSetting()
+            MqttWillRetainSetting()
+            MqttWillMessageExpiryIntervalSetting()
+            MqttWillDelayIntervalSetting()
 
             Spacer(modifier = Modifier.height(8.dp))
         }
 
         MqttDebugLogsButton(navController)
-
         Spacer(modifier = Modifier.height(16.dp))
     }
 }
