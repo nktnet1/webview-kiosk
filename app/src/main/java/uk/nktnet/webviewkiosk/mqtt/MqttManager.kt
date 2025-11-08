@@ -68,11 +68,11 @@ object MqttManager {
             cleanStart = userSettings.mqttCleanStart,
             keepAlive = userSettings.mqttKeepAlive,
             connectTimeout = userSettings.mqttConnectTimeout,
-            subscribeCommandTopic = userSettings.mqttSubscribeCommandTopic,
+            subscribeCommandTopic = mqttVariableReplacement(systemSettings, userSettings.mqttSubscribeCommandTopic),
             subscribeCommandQos = userSettings.mqttSubscribeCommandQos,
             subscribeCommandRetainHandling = userSettings.mqttSubscribeCommandRetainHandling,
             subscribeCommandRetainAsPublished = userSettings.mqttSubscribeCommandRetainAsPublished,
-            subscribeSettingsTopic = userSettings.mqttSubscribeSettingsTopic,
+            subscribeSettingsTopic = mqttVariableReplacement(systemSettings, userSettings.mqttSubscribeSettingsTopic),
             subscribeSettingsQos = userSettings.mqttSubscribeSettingsQos,
             subscribeSettingsRetainHandling = userSettings.mqttSubscribeSettingsRetainHandling,
             subscribeSettingsRetainAsPublished = userSettings.mqttSubscribeSettingsRetainAsPublished

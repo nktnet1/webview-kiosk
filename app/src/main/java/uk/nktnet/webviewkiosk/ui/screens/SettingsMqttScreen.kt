@@ -18,11 +18,10 @@ import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsBut
 
 @Composable
 fun SettingsMqttScreen(navController: NavController) {
-
     val settingsItems = listOf(
         Triple(
             "Connection",
-            "More connection settings",
+            "Specify how to connect to your broker server",
             Screen.SettingsMqttConnection.route
         ),
         Triple(

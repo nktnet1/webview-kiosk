@@ -36,7 +36,7 @@ fun SettingsMqttConnectionScreen(navController: NavController) {
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
         ) {
-            SettingLabel(navController = navController, label = "MQTT")
+            SettingLabel(navController = navController, label = "Connection")
 
             SettingDivider()
 
