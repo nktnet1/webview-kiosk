@@ -97,10 +97,10 @@ object UserSettingsKeys {
 
         object Topics {
             object Publish {
-                object Telemetry {
-                    const val TOPIC = "mqtt.publish.telemetry.topic"
-                    const val QOS = "mqtt.publish.telemetry.qos"
-                    const val RETAIN = "mqtt.publish.telemetry.retain"
+                object Event {
+                    const val TOPIC = "mqtt.publish.event.topic"
+                    const val QOS = "mqtt.publish.event.qos"
+                    const val RETAIN = "mqtt.publish.event.retain"
                 }
 
                 object Response {

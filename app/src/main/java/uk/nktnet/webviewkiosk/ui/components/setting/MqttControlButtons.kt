@@ -16,11 +16,14 @@ import uk.nktnet.webviewkiosk.mqtt.MqttManager
 import com.hivemq.client.mqtt.MqttClientState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import uk.nktnet.webviewkiosk.config.SystemSettings
 
 @Composable
 fun MqttControlButtons() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val systemSettings = remember { SystemSettings(context) }
+
     var mqttClientState by remember { mutableStateOf(MqttManager.getState()) }
 
     var toastRef: Toast? = null
@@ -104,6 +107,7 @@ fun MqttControlButtons() {
                                 onDisconnected = {
                                     mqttClientState = MqttManager.getState()
                                     MqttManager.connect(
+                                        systemSettings,
                                         userSettings,
                                         onConnected = {
                                             mqttClientState = MqttManager.getState()
@@ -152,6 +156,7 @@ fun MqttControlButtons() {
                     onClick = {
                         mqttClientState = MqttClientState.CONNECTING
                         MqttManager.connect(
+                            systemSettings,
                             userSettings,
                             onConnected = {
                                 mqttClientState = MqttManager.getState()

@@ -51,6 +51,7 @@ class MainActivity : AppCompatActivity() {
     private var uploadProgress by mutableFloatStateOf(0f)
     private lateinit var subscriber: MqttManager
     private lateinit var userSettings: UserSettings
+    private lateinit var systemSettings: SystemSettings
     private lateinit var themeState: MutableState<ThemeOption>
     private lateinit var keepScreenOnState: MutableState<Boolean>
     private lateinit var deviceRotationState: MutableState<DeviceRotationOption>
@@ -88,6 +89,8 @@ class MainActivity : AppCompatActivity() {
         )
 
         userSettings = UserSettings(this)
+        systemSettings = SystemSettings(this)
+
         themeState = mutableStateOf(userSettings.theme)
         keepScreenOnState = mutableStateOf(userSettings.keepScreenOn)
         deviceRotationState = mutableStateOf(userSettings.deviceRotation)
@@ -218,6 +221,7 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         if (userSettings.mqttEnabled && !MqttManager.isConnectedOrReconnect()) {
             MqttManager.connect(
+                systemSettings,
                 userSettings,
             )
         }

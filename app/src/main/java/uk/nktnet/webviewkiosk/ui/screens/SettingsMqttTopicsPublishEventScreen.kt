@@ -11,7 +11,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 
 @Composable
-fun SettingsMqttTopicsPublishTelemetryScreen(navController: NavController) {
+fun SettingsMqttTopicsPublishEventScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -19,7 +19,7 @@ fun SettingsMqttTopicsPublishTelemetryScreen(navController: NavController) {
             .windowInsetsPadding(WindowInsets.safeContent)
             .verticalScroll(rememberScrollState())
     ) {
-        SettingLabel(navController = navController, label = "Telemetry")
+        SettingLabel(navController = navController, label = "Event")
         SettingDivider()
     }
 }

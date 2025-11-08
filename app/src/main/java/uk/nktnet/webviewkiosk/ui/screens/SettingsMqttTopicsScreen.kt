@@ -20,13 +20,13 @@ import uk.nktnet.webviewkiosk.ui.components.setting.SettingListItem
 fun SettingsMqttTopicsScreen(navController: NavController) {
     val publishTopics = listOf(
         Triple(
-            "Telemetry",
-            "Publish general stats",
-            Screen.SettingsMqttTopicsPublishTelemetry.route
+            "Event",
+            "Changes to device state",
+            Screen.SettingsMqttTopicsPublishEvent.route
         ),
         Triple(
             "Responses",
-            "Respond to subscribed events",
+            "Respond to commands",
             Screen.SettingsMqttTopicsPublishResponse.route
         ),
     )

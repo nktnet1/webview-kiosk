@@ -13,6 +13,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import java.util.Date
 import java.util.concurrent.TimeUnit
@@ -25,6 +26,7 @@ data class MqttLogEntry(
     val message: String?,
     val identifier: String?,
 )
+
 
 object MqttManager {
     private var client: Mqtt5AsyncClient? = null
@@ -53,10 +55,11 @@ object MqttManager {
     val debugLogHistory: List<MqttLogEntry>
         get() = synchronized(logHistory) { logHistory.toList() }
 
-    private fun updateConfig(userSettings: UserSettings) {
+    private fun updateConfig(systemSettings: SystemSettings, userSettings: UserSettings) {
+
         config = MqttConfig(
             enabled = userSettings.mqttEnabled,
-            clientId = userSettings.mqttClientId,
+            clientId = mqttVariableReplacement(systemSettings, userSettings.mqttClientId),
             serverHost = userSettings.mqttServerHost,
             serverPort = userSettings.mqttServerPort,
             username = userSettings.mqttUsername,
@@ -81,9 +84,12 @@ object MqttManager {
     private fun buildClient(): Mqtt5AsyncClient {
         var builder = MqttClient.builder()
             .useMqttVersion5()
-            .identifier(config.clientId)
             .serverHost(config.serverHost)
             .serverPort(config.serverPort)
+
+        if (config.clientId.isNotEmpty()) {
+            builder = builder.identifier(config.clientId)
+        }
 
         if (config.useTls) {
             builder = builder.sslWithDefaultConfig()
@@ -103,7 +109,7 @@ object MqttManager {
                 if (config.automaticReconnect) {
                     context.reconnector
                         .reconnect(context.source != MqttDisconnectSource.USER)
-                        .delay(5, TimeUnit.SECONDS)
+                        .delay(3, TimeUnit.SECONDS)
                 }
                 addDebugLog(
                     "disconnected",
@@ -118,11 +124,12 @@ object MqttManager {
 
     @SuppressLint("NewApi")
     fun connect(
+        systemSettings: SystemSettings,
         userSettings: UserSettings,
         onConnected: (() -> Unit)? = null,
         onError: ((String?) -> Unit)? = null
     ) {
-        updateConfig(userSettings)
+        updateConfig(systemSettings, userSettings)
 
         if (!config.enabled) {
             onError?.invoke("MQTT is not enabled in app settings.")
@@ -236,6 +243,17 @@ object MqttManager {
     fun clearLogs() {
         synchronized(logHistory) {
             logHistory.clear()
+        }
+    }
+
+    fun mqttVariableReplacement(systemSettings: SystemSettings, input: String): String {
+        val variableMap = mapOf(
+            "APP_INSTANCE_ID" to systemSettings.appInstanceId,
+        )
+        val regex = "\\$\\{([^}]+)\\}".toRegex()
+        return regex.replace(input) { matchResult ->
+            val key = matchResult.groupValues[1]
+            variableMap[key] ?: matchResult.value
         }
     }
 }
