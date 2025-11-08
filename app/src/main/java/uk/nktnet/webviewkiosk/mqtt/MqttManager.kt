@@ -39,7 +39,7 @@ object MqttManager {
     val commands: SharedFlow<CommandMessage> get() = _commands
 
     private val _settings = MutableSharedFlow<String>(extraBufferCapacity = 100)
-    val settings: SharedFlow<String> get() = settings
+    val settings: SharedFlow<String> get() = _settings
 
     private val logHistory = ArrayDeque<MqttLogEntry>(100)
     private val _debugLog = MutableSharedFlow<MqttLogEntry>(extraBufferCapacity = 100)

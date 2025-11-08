@@ -41,6 +41,7 @@ import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
 import uk.nktnet.webviewkiosk.utils.getLocalUrl
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handlePreviewKeyUnlockEvent
+import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
@@ -133,6 +134,17 @@ class MainActivity : AppCompatActivity() {
             val waitingForUnlock by WaitingForUnlockStateSingleton.waitingForUnlock.collectAsState()
             val biometricResult by BiometricPromptManager.promptResults.collectAsState()
             val activity = LocalActivity.current
+
+            LaunchedEffect(Unit) {
+                MqttManager.settings.collect { payload ->
+                    if (userSettings.mqttEnabled) {
+                        showToast("MQTT: updating settings.")
+                        userSettings.importJson(payload)
+                        updateUserSettings()
+                        navigateToWebViewScreen(navController)
+                    }
+                }
+            }
 
             LaunchedEffect(waitingForUnlock, biometricResult) {
                 if (
