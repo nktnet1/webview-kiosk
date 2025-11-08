@@ -64,6 +64,9 @@ fun SetupNavHost(
             authComposable(Screen.SettingsMqtt.route) {
                 SettingsMqttScreen(navController)
             }
+            authComposable(Screen.SettingsMqttConnection.route) {
+                SettingsMqttConnectionScreen(navController)
+            }
             authComposable(Screen.SettingsMqttDebug.route) {
                 SettingsMqttDebugScreen(navController)
             }

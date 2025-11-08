@@ -12,9 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.config.Screen
+import uk.nktnet.webviewkiosk.ui.components.setting.MqttControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingListItem
+import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsButton
 
 @Composable
 fun SettingsMqttTopicsScreen(navController: NavController) {
@@ -49,39 +51,50 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
             .fillMaxSize()
             .padding(horizontal = 16.dp)
             .windowInsetsPadding(WindowInsets.safeContent)
-            .verticalScroll(rememberScrollState())
     ) {
-        SettingLabel(navController = navController, label = "Topics")
-        SettingDivider()
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+        ) {
+            SettingLabel(navController = navController, label = "Topics")
+            SettingDivider()
 
-        Text(
-            text = "Publish",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-        )
-        HorizontalDivider(
-            Modifier.padding(bottom = 8.dp),
-            DividerDefaults.Thickness,
-            DividerDefaults.color
-        )
-        publishTopics.forEach { (title, description, route) ->
-            SettingListItem(title, description) { navController.navigate(route) }
+            MqttControlButtons()
+            HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+
+            Text(
+                text = "Publish",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+            )
+            HorizontalDivider(
+                Modifier.padding(bottom = 8.dp),
+                DividerDefaults.Thickness,
+                DividerDefaults.color
+            )
+            publishTopics.forEach { (title, description, route) ->
+                SettingListItem(title, description) { navController.navigate(route) }
+            }
+
+            Text(
+                text = "Subscribe",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
+            )
+            HorizontalDivider(
+                Modifier.padding(bottom = 8.dp),
+                DividerDefaults.Thickness,
+                DividerDefaults.color
+            )
+            subscribeTopics.forEach { (title, description, route) ->
+                SettingListItem(title, description) { navController.navigate(route) }
+            }
         }
 
-        Text(
-            text = "Subscribe",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
-        )
-        HorizontalDivider(
-            Modifier.padding(bottom = 8.dp),
-            DividerDefaults.Thickness,
-            DividerDefaults.color
-        )
-        subscribeTopics.forEach { (title, description, route) ->
-            SettingListItem(title, description) { navController.navigate(route) }
-        }
+        MqttDebugLogsButton(navController)
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }

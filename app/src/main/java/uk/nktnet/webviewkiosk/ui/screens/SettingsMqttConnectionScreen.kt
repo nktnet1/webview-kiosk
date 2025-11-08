@@ -8,30 +8,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.setting.MqttControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingListItem
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttEnabledSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttAutomaticReconnectSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttCleanStartSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttClientIdSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttConnectTimeoutSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttKeepAliveSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttPasswordSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttServerHostSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttServerPortSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttUseTlsSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttUsernameSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsButton
 
 @Composable
-fun SettingsMqttScreen(navController: NavController) {
-
-    val settingsItems = listOf(
-        Triple(
-            "Connection",
-            "More connection settings",
-            Screen.SettingsMqttConnection.route
-        ),
-        Triple(
-            "Topics",
-            "Publish and subscribe topic configurations",
-            Screen.SettingsMqttTopics.route
-        ),
-    )
-
+fun SettingsMqttConnectionScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -50,15 +43,19 @@ fun SettingsMqttScreen(navController: NavController) {
             MqttControlButtons()
             HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
-            MqttEnabledSetting()
+            MqttServerHostSetting()
+            MqttServerPortSetting()
+            MqttUsernameSetting()
+            MqttPasswordSetting()
+            MqttUseTlsSetting()
+
+            MqttClientIdSetting()
+            MqttCleanStartSetting()
+            MqttKeepAliveSetting()
+            MqttConnectTimeoutSetting()
+            MqttAutomaticReconnectSetting()
 
             Spacer(modifier = Modifier.height(6.dp))
-
-            settingsItems.forEach { (title, description, route) ->
-                SettingListItem(title, description) { navController.navigate(route) }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
         }
 
         MqttDebugLogsButton(navController)

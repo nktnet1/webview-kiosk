@@ -24,21 +24,27 @@ fun SettingsMqttTopicsSubscribeSettingsScreen(navController: NavController) {
             .fillMaxSize()
             .padding(horizontal = 16.dp)
             .windowInsetsPadding(WindowInsets.safeContent)
-            .verticalScroll(rememberScrollState())
     ) {
-        SettingLabel(navController = navController, label = "Settings")
-        SettingDivider()
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState())
+        ) {
+            SettingLabel(navController = navController, label = "Settings")
+            SettingDivider()
 
-        MqttControlButtons()
-        HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
+            MqttControlButtons()
+            HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
-        MqttSubscribeSettingsTopicSetting()
-        MqttSubscribeSettingsQosSetting()
-        MqttSubscribeSettingsRetainHandlingSetting()
-        MqttSubscribeSettingsRetainedAsPublishedSetting()
+            MqttSubscribeSettingsTopicSetting()
+            MqttSubscribeSettingsQosSetting()
+            MqttSubscribeSettingsRetainHandlingSetting()
+            MqttSubscribeSettingsRetainedAsPublishedSetting()
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
         MqttDebugLogsButton(navController)
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }

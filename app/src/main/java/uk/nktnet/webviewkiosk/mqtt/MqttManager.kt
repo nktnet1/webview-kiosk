@@ -27,7 +27,6 @@ data class MqttLogEntry(
     val identifier: String?,
 )
 
-
 object MqttManager {
     private var client: Mqtt5AsyncClient? = null
     private lateinit var config: MqttConfig
