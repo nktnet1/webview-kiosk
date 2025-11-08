@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt
+package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember

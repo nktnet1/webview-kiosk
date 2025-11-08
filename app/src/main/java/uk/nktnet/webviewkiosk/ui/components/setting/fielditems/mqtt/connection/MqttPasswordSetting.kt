@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt
+package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -8,21 +8,22 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 
 @Composable
-fun MqttServerHostSetting() {
+fun MqttPasswordSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
 
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.SERVER_HOST)
+    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.PASSWORD)
 
     TextSettingFieldItem(
-        label = "Server Host",
+        label = "Password",
         infoText = """
-            The hostname or IP address of the MQTT broker the app should connect to.
+            The password used to authenticate with the MQTT broker.
         """.trimIndent(),
-        placeholder = "e.g. broker.example.com",
-        initialValue = userSettings.mqttServerHost,
+        placeholder = "e.g. **********",
+        initialValue = userSettings.mqttPassword,
         restricted = restricted,
         isMultiline = false,
-        onSave = { userSettings.mqttServerHost = it }
+        descriptionFormatter = { v -> if (v.isNotBlank()) "*".repeat(20) else "(blank)" },
+        onSave = { userSettings.mqttPassword = it }
     )
 }

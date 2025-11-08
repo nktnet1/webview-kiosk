@@ -443,7 +443,7 @@ class UserSettings(val context: Context) {
         restrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC,
-        "webviewkiosk/subscribe/command"
+        "wk/command"
     )
     var mqttSubscribeCommandQos by intEnumPref(
         restrictions,
@@ -469,7 +469,7 @@ class UserSettings(val context: Context) {
         restrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.TOPIC,
-        "webviewkiosk/subscribe/settings"
+        "wk/settings"
     )
     var mqttSubscribeSettingsQos by intEnumPref(
         restrictions,

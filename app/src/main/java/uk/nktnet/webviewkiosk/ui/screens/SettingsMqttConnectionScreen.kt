@@ -11,16 +11,16 @@ import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.ui.components.setting.MqttControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttAutomaticReconnectSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttCleanStartSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttClientIdSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttConnectTimeoutSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttKeepAliveSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttPasswordSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttServerHostSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttServerPortSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttUseTlsSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttUsernameSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttAutomaticReconnectSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttCleanStartSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttClientIdSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttConnectTimeoutSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttKeepAliveSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttPasswordSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttServerHostSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttServerPortSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttUseTlsSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttUsernameSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsButton
 
 @Composable
