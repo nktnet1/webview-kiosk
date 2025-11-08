@@ -10,11 +10,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.option.MqttQosOption
+import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption
 import java.util.Date
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -34,6 +37,9 @@ object MqttManager {
     private val scope = CoroutineScope(Dispatchers.Default)
     private val _commands = MutableSharedFlow<CommandMessage>(extraBufferCapacity = 100)
     val commands: SharedFlow<CommandMessage> get() = _commands
+
+    private val _settings = MutableSharedFlow<String>(extraBufferCapacity = 100)
+    val settings: SharedFlow<String> get() = settings
 
     private val logHistory = ArrayDeque<MqttLogEntry>(100)
     private val _debugLog = MutableSharedFlow<MqttLogEntry>(extraBufferCapacity = 100)
@@ -55,7 +61,6 @@ object MqttManager {
         get() = synchronized(logHistory) { logHistory.toList() }
 
     private fun updateConfig(systemSettings: SystemSettings, userSettings: UserSettings) {
-
         config = MqttConfig(
             enabled = userSettings.mqttEnabled,
             clientId = mqttVariableReplacement(systemSettings, userSettings.mqttClientId),
@@ -162,45 +167,72 @@ object MqttManager {
     }
 
     private fun subscribeToTopics() {
-        subscribeCommandTopic()
+        subscribeTopic(
+            topic = config.subscribeCommandTopic,
+            qos = config.subscribeCommandQos,
+            retainHandling = config.subscribeCommandRetainHandling,
+            retainAsPublished = config.subscribeCommandRetainAsPublished,
+            onMessage = { publishTopic, payloadStr ->
+                try {
+                    val command = MqttCommandJsonParser.decodeFromString<CommandMessage>(payloadStr)
+                    scope.launch { _commands.emit(command) }
+                    addDebugLog(
+                        "command received",
+                        "topic: $publishTopic\ncommand: $command",
+                        command.identifier
+                    )
+                } catch (e: Exception) {
+                    scope.launch { _commands.emit(MqttCommandError(e.message ?: e.toString())) }
+                    val identifier = getIdentifier(payloadStr)
+                    addDebugLog("command error", e.message, identifier)
+                }
+            }
+        )
+
+        subscribeTopic(
+            topic = config.subscribeSettingsTopic,
+            qos = config.subscribeSettingsQos,
+            retainHandling = config.subscribeSettingsRetainHandling,
+            retainAsPublished = config.subscribeSettingsRetainAsPublished,
+            onMessage = { publishTopic, payloadStr ->
+                addDebugLog(
+                    "settings received",
+                    "topic: $publishTopic\npayload: $payloadStr",
+                    identifier = getIdentifier(payloadStr)
+                )
+                scope.launch { _settings.emit(payloadStr) }
+            }
+        )
     }
 
-    private fun subscribeCommandTopic() {
+    private fun getIdentifier(payloadStr: String): String? {
+        return runCatching {
+            Json.parseToJsonElement(payloadStr)
+                .jsonObject["identifier"]?.jsonPrimitive?.contentOrNull
+        }.getOrNull()
+    }
+    private fun subscribeTopic(
+        topic: String,
+        qos: MqttQosOption,
+        retainHandling: MqttRetainHandlingOption,
+        retainAsPublished: Boolean,
+        onMessage: (publishTopic: String, payloadStr: String) -> Unit
+    ) {
         val c = client ?: return
         try {
             c.subscribeWith()
-                .topicFilter(config.subscribeCommandTopic)
-                .qos(config.subscribeCommandQos.toMqttQos())
-                .retainHandling(config.subscribeCommandRetainHandling.toMqttRetainHandling())
-                .retainAsPublished(config.subscribeCommandRetainAsPublished)
+                .topicFilter(topic)
+                .qos(qos.toMqttQos())
+                .retainHandling(retainHandling.toMqttRetainHandling())
+                .retainAsPublished(retainAsPublished)
                 .noLocal(true)
                 .callback { publish ->
                     val payloadStr = publish.payloadAsBytes.toString(UTF_8)
-                    try {
-                        val command = MqttCommandJsonParser.decodeFromString<CommandMessage>(payloadStr)
-                        scope.launch { _commands.emit(command) }
-                        addDebugLog(
-                            "command received",
-                            "topic: ${publish.topic}\ncommand: $command",
-                            command.identifier,
-                        )
-                    } catch (e: Exception) {
-                        scope.launch {
-                            _commands.emit(MqttCommandError(e.message ?: e.toString()))
-                        }
-                        val identifier = runCatching {
-                            MqttCommandJsonParser.parseToJsonElement(payloadStr)
-                                .jsonObject["identifier"]?.jsonPrimitive?.contentOrNull
-                        }.getOrNull()
-                        addDebugLog("command error", e.message, identifier)
-                    }
+                    onMessage(publish.topic.toString(), payloadStr)
                 }
                 .send()
         } catch (e: Exception) {
-            addDebugLog(
-                "subscribe (command) failed",
-                e.message,
-            )
+            addDebugLog("subscribe ($topic) failed", e.message)
             e.printStackTrace()
         }
     }
