@@ -26,11 +26,6 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
             "Changes to device state",
             Screen.SettingsMqttTopicsPublishEvent.route
         ),
-        Triple(
-            "Responses",
-            "Respond to commands",
-            Screen.SettingsMqttTopicsPublishResponse.route
-        ),
     )
 
     val subscribeTopics = listOf(
@@ -61,7 +56,6 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
             SettingDivider()
 
             MqttControlButtons()
-            HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
             Text(
                 text = "Publish",

@@ -492,6 +492,42 @@ class UserSettings(val context: Context) {
         false,
     )
 
+    var mqttWillTopic by stringPrefOptional(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Will.TOPIC
+    )
+    var mqttWillQos by intEnumPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Will.QOS,
+        MqttQosOption.AT_MOST_ONCE.code,
+        fromInt = MqttQosOption::fromCode
+    )
+    var mqttWillPayload by stringPrefOptional(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Will.PAYLOAD
+    )
+    var mqttWillRetain by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Will.RETAIN,
+        false
+    )
+    var mqttWillMessageExpiryInterval by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Will.MESSAGE_EXPIRY_INTERVAL,
+        0
+    )
+    var mqttWillDelayInterval by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Will.DELAY_INTERVAL,
+        0
+    )
+
     fun exportJson(): String {
         val json = JSONObject().apply {
             put(UserSettingsKeys.WebContent.HOME_URL, homeUrl)
@@ -579,6 +615,12 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.QOS, mqttSubscribeSettingsQos.code)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_HANDLING, mqttSubscribeSettingsRetainHandling.code)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_AS_PUBLISHED, mqttSubscribeSettingsRetainAsPublished)
+            put(UserSettingsKeys.Mqtt.Will.TOPIC, mqttWillTopic)
+            put(UserSettingsKeys.Mqtt.Will.QOS, mqttWillQos.code)
+            put(UserSettingsKeys.Mqtt.Will.PAYLOAD, mqttWillPayload)
+            put(UserSettingsKeys.Mqtt.Will.RETAIN, mqttWillRetain)
+            put(UserSettingsKeys.Mqtt.Will.MESSAGE_EXPIRY_INTERVAL, mqttWillMessageExpiryInterval)
+            put(UserSettingsKeys.Mqtt.Will.DELAY_INTERVAL, mqttWillDelayInterval)
         }
         return json.toString()
     }
@@ -699,6 +741,14 @@ class UserSettings(val context: Context) {
                 json.optInt(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_HANDLING, mqttSubscribeSettingsRetainHandling.code)
             )
             mqttSubscribeSettingsRetainAsPublished = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_AS_PUBLISHED, mqttSubscribeSettingsRetainAsPublished)
+            mqttWillTopic = json.optString(UserSettingsKeys.Mqtt.Will.TOPIC, mqttWillTopic)
+            mqttWillQos = MqttQosOption.fromCode(
+                json.optInt(UserSettingsKeys.Mqtt.Will.QOS, mqttWillQos.code)
+            )
+            mqttWillPayload = json.optString(UserSettingsKeys.Mqtt.Will.PAYLOAD, mqttWillPayload)
+            mqttWillRetain = json.optBoolean(UserSettingsKeys.Mqtt.Will.RETAIN, mqttWillRetain)
+            mqttWillMessageExpiryInterval = json.optInt(UserSettingsKeys.Mqtt.Will.MESSAGE_EXPIRY_INTERVAL, mqttWillMessageExpiryInterval)
+            mqttWillDelayInterval = json.optInt(UserSettingsKeys.Mqtt.Will.DELAY_INTERVAL, mqttWillDelayInterval)
             true
         } catch (e: Exception) {
             e.printStackTrace()
