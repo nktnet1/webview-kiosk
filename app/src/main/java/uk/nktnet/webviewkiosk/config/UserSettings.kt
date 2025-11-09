@@ -367,13 +367,13 @@ class UserSettings(val context: Context) {
         restrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.SERVER_HOST,
-        "broker.hivemq.com"
+        "127.0.0.1"
     )
     var mqttServerPort by intPref(
         restrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.SERVER_PORT,
-        8883
+        1883
     )
     var mqttClientId by stringPrefOptional(
         restrictions,
@@ -394,7 +394,7 @@ class UserSettings(val context: Context) {
         restrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.USE_TLS,
-        true
+        false
     )
     var mqttCleanStart by booleanPref(
         restrictions,
