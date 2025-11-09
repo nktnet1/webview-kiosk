@@ -73,7 +73,8 @@ object MqttManager {
             automaticReconnect = userSettings.mqttAutomaticReconnect,
             cleanStart = userSettings.mqttCleanStart,
             keepAlive = userSettings.mqttKeepAlive,
-            connectTimeout = userSettings.mqttConnectTimeout,
+            mqttConnectTimeout = userSettings.mqttConnectTimeout,
+            socketConnectTimeout = userSettings.mqttSocketConnectTimeout,
 
             subscribeCommandTopic = mqttVariableReplacement(systemSettings, userSettings.mqttSubscribeCommandTopic),
             subscribeCommandQos = userSettings.mqttSubscribeCommandQos,
@@ -131,7 +132,8 @@ object MqttManager {
                 )
             }
             .transportConfig()
-            .mqttConnectTimeout(config.connectTimeout.toLong(), TimeUnit.SECONDS)
+            .mqttConnectTimeout(config.mqttConnectTimeout.toLong(), TimeUnit.SECONDS)
+            .socketConnectTimeout(config.socketConnectTimeout.toLong(), TimeUnit.SECONDS)
             .applyTransportConfig()
             .buildAsync()
     }
@@ -168,14 +170,14 @@ object MqttManager {
                 .topic(config.willTopic)
                 .qos(config.willQos.toMqttQos())
                 .retain(config.willRetain)
-                .messageExpiryInterval(config.willMessageExpiryInterval * 1L)
-                .delayInterval(config.willDelayInterval * 1L)
+                .messageExpiryInterval(config.willMessageExpiryInterval.toLong())
+                .delayInterval(config.willDelayInterval.toLong())
                 .payloadFormatIndicator(Mqtt5PayloadFormatIndicator.UTF_8)
                 .contentType("text/plain")
                 .payload(config.willPayload.toByteArray())
                 .applyWillPublish()
             .send()
-            .whenComplete { conn, throwable ->
+            .whenComplete { _, throwable ->
                 if (throwable == null) {
                     onConnected?.invoke()
                 } else {

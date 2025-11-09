@@ -15,7 +15,8 @@ data class MqttConfig(
     val automaticReconnect: Boolean,
     val cleanStart: Boolean,
     val keepAlive: Int,
-    val connectTimeout: Int,
+    val mqttConnectTimeout: Int,
+    val socketConnectTimeout: Int,
 
     val subscribeCommandTopic: String,
     val subscribeCommandQos: MqttQosOption,
