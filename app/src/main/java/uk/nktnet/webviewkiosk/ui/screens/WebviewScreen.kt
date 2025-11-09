@@ -28,9 +28,7 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.AddressBarModeOption
-import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
 import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
-import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
 import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.InactivityTimeoutHandler
@@ -414,12 +412,7 @@ fun WebviewScreen(navController: NavController) {
         InactivityTimeoutHandler(systemSettings, userSettings, ::customLoadUrl)
     }
 
-    if (
-        userSettings.kioskControlPanelRegion != KioskControlPanelRegionOption.DISABLED
-        || userSettings.backButtonHoldAction == BackButtonHoldActionOption.OPEN_KIOSK_CONTROL_PANEL
-    ) {
-        KioskControlPanel(10, ::customLoadUrl)
-    }
+    KioskControlPanel(navController, 10, ::customLoadUrl)
 
     BackPressHandler(::customLoadUrl)
 

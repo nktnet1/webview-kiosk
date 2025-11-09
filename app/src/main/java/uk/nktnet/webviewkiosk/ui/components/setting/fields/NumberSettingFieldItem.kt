@@ -40,7 +40,7 @@ fun NumberSettingFieldItem(
         restricted = restricted,
         onClick = {
             draftValue = value.toString()
-            draftError = false
+            draftError = !validateNumber(value.toString())
             showDialog = true
         },
     ) { v ->

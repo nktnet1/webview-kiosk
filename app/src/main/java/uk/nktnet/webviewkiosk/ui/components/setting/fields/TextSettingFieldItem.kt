@@ -49,7 +49,7 @@ fun TextSettingFieldItem(
         restricted = restricted,
         onClick = {
             draftValue = value
-            draftError = false
+            draftError = !validator(value)
             showDialog = true
         }
     ) { v ->

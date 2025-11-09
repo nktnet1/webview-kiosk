@@ -7,6 +7,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.utils.canDisableKioskControlPanelRegion
 
 @Composable
 fun KioskControlPanelRegionSetting() {
@@ -21,13 +22,24 @@ fun KioskControlPanelRegionSetting() {
 
             The default is Top Left (upper-left quadrant of the screen).
 
-            You can also disable this setting and instead configure
-            `Device -> Back Button Hold Action` to open the Kiosk Control Panel.
+            If both of the following are true:
+              1. [Web Browsing -> Kiosk Control Panel Region] is disabled
+              2. [Device -> Back Button Hold Action] is not set to "Open Kiosk Control Panel"
+            Then this option cannot be disabled, and will default to TOP_LEFT.
         """.trimIndent(),
         options = KioskControlPanelRegionOption.entries,
         initialValue = userSettings.kioskControlPanelRegion,
         restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION),
         onSave = { userSettings.kioskControlPanelRegion = it },
+        validator = {
+            it != KioskControlPanelRegionOption.DISABLED
+            || canDisableKioskControlPanelRegion(userSettings)
+        },
+        validationMessage = """
+            You cannot disable this option because:
+              1. [Web Browsing -> Kiosk Control Panel Region] is disabled
+              2. [Device -> Back Button Hold Action] is not set to "Open Kiosk Control Panel"
+            """.trimIndent(),
         itemText = {
             when (it) {
                 KioskControlPanelRegionOption.TOP_LEFT -> "Top Left"
@@ -37,7 +49,11 @@ fun KioskControlPanelRegionSetting() {
                 KioskControlPanelRegionOption.TOP -> "Top"
                 KioskControlPanelRegionOption.BOTTOM -> "Bottom"
                 KioskControlPanelRegionOption.FULL -> "Full Screen"
-                KioskControlPanelRegionOption.DISABLED -> "Disabled"
+                KioskControlPanelRegionOption.DISABLED -> if (canDisableKioskControlPanelRegion(userSettings)) {
+                    "Disabled"
+                } else {
+                    "Top Left (cannot disable)"
+                }
             }
         }
     )
