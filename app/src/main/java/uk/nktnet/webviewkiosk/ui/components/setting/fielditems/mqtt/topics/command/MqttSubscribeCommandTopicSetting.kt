@@ -8,6 +8,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.mqtt.MqttManager.mqttVariableReplacement
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
+import uk.nktnet.webviewkiosk.utils.isValidMqttSubscribeTopic
 
 @Composable
 fun MqttSubscribeCommandTopicSetting() {
@@ -23,6 +24,7 @@ fun MqttSubscribeCommandTopicSetting() {
         placeholder = "e.g. devices/+/command",
         initialValue = userSettings.mqttSubscribeCommandTopic,
         restricted = restricted,
+        validator = { isValidMqttSubscribeTopic(it) },
         descriptionFormatter = {
             mqttVariableReplacement(systemSettings, it)
         },

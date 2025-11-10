@@ -20,6 +20,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.MqttQosOption
 import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption
 import java.util.Date
+import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.text.Charsets.UTF_8
@@ -36,8 +37,8 @@ object MqttManager {
     private lateinit var config: MqttConfig
 
     private val scope = CoroutineScope(Dispatchers.Default)
-    private val _commands = MutableSharedFlow<CommandMessage>(extraBufferCapacity = 100)
-    val commands: SharedFlow<CommandMessage> get() = _commands
+    private val _commands = MutableSharedFlow<MqttCommandMessage>(extraBufferCapacity = 100)
+    val commands: SharedFlow<MqttCommandMessage> get() = _commands
 
     private val _settings = MutableSharedFlow<String>(extraBufferCapacity = 100)
     val settings: SharedFlow<String> get() = _settings
@@ -75,6 +76,10 @@ object MqttManager {
             keepAlive = userSettings.mqttKeepAlive,
             mqttConnectTimeout = userSettings.mqttConnectTimeout,
             socketConnectTimeout = userSettings.mqttSocketConnectTimeout,
+
+            publishEventTopic = userSettings.mqttPublishEventTopic,
+            publishEventQos = userSettings.mqttPublishEventQos,
+            publishEventRetain = userSettings.mqttPublishEventRetain,
 
             subscribeCommandTopic = mqttVariableReplacement(systemSettings, userSettings.mqttSubscribeCommandTopic),
             subscribeCommandQos = userSettings.mqttSubscribeCommandQos,
@@ -188,6 +193,24 @@ object MqttManager {
             }
     }
 
+    fun publishUrlLoaded(url: String) {
+        val event = MqttUrlChangeEvent(identifier = UUID.randomUUID().toString(), url = url)
+        val payload = Json.encodeToString(event)
+        publishEvent(payload)
+    }
+
+    private fun publishEvent(payload: String) {
+        val c = client ?: return
+        c.publishWith()
+            .topic(config.publishEventTopic)
+            .qos(config.publishEventQos.toMqttQos())
+            .retain(config.publishEventRetain)
+            .payloadFormatIndicator(Mqtt5PayloadFormatIndicator.UTF_8)
+            .contentType("application/json")
+            .payload(payload.toByteArray())
+            .send()
+    }
+
     private fun subscribeToTopics() {
         subscribeTopic(
             topic = config.subscribeCommandTopic,
@@ -196,7 +219,7 @@ object MqttManager {
             retainAsPublished = config.subscribeCommandRetainAsPublished,
             onMessage = { publishTopic, payloadStr ->
                 try {
-                    val command = MqttCommandJsonParser.decodeFromString<CommandMessage>(payloadStr)
+                    val command = MqttCommandJsonParser.decodeFromString<MqttCommandMessage>(payloadStr)
                     scope.launch { _commands.emit(command) }
                     addDebugLog(
                         "command received",
@@ -204,7 +227,7 @@ object MqttManager {
                         command.identifier
                     )
                 } catch (e: Exception) {
-                    scope.launch { _commands.emit(MqttCommandError(e.message ?: e.toString())) }
+                    scope.launch { _commands.emit(MqttMqttCommandError(e.message ?: e.toString())) }
                     val identifier = getIdentifier(payloadStr)
                     addDebugLog("command error", e.message, identifier)
                 }

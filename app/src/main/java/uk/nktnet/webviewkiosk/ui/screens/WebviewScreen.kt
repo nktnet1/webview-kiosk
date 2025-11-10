@@ -22,7 +22,9 @@ import androidx.core.net.toUri
 import androidx.navigation.NavController
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -33,15 +35,15 @@ import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.InactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.KioskControlPanel
-import uk.nktnet.webviewkiosk.mqtt.MqttCommandError
-import uk.nktnet.webviewkiosk.mqtt.MqttGoBackCommand
-import uk.nktnet.webviewkiosk.mqtt.MqttGoForwardCommand
-import uk.nktnet.webviewkiosk.mqtt.MqttLockCommand
-import uk.nktnet.webviewkiosk.mqtt.MqttGoHomeCommand
-import uk.nktnet.webviewkiosk.mqtt.MqttGoToUrlCommand
+import uk.nktnet.webviewkiosk.mqtt.MqttMqttCommandError
+import uk.nktnet.webviewkiosk.mqtt.MqttGoBackMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.MqttGoForwardMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.MqttLockMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.MqttGoHomeMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.MqttGoToUrlMqttCommand
 import uk.nktnet.webviewkiosk.mqtt.MqttManager
-import uk.nktnet.webviewkiosk.mqtt.MqttRefreshCommand
-import uk.nktnet.webviewkiosk.mqtt.MqttUnlockCommand
+import uk.nktnet.webviewkiosk.mqtt.MqttRefreshMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.MqttUnlockMqttCommand
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
 import uk.nktnet.webviewkiosk.ui.components.webview.FloatingToolbar
@@ -77,6 +79,8 @@ fun WebviewScreen(navController: NavController) {
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
     val isLocked by LockStateSingleton.isLocked
+    val scope = rememberCoroutineScope()
+    var publishUrlLoadedJob: Job? = null
 
     val lastVisitedUrl = systemSettings.currentUrl.takeIf { it.isNotEmpty() } ?: userSettings.homeUrl
     var urlBarText by remember {
@@ -181,6 +185,13 @@ fun WebviewScreen(navController: NavController) {
             originalUrl,
             userSettings.replaceHistoryUrlOnRedirect
         )
+        if (userSettings.mqttEnabled) {
+            publishUrlLoadedJob?.cancel()
+            publishUrlLoadedJob = scope.launch {
+                delay(1000)
+                MqttManager.publishUrlLoaded(url)
+            }
+        }
     }
 
     val webView = createCustomWebview(
@@ -437,14 +448,14 @@ fun WebviewScreen(navController: NavController) {
     LaunchedEffect(Unit) {
         MqttManager.commands.collect { commandMessage ->
             when (commandMessage) {
-                is MqttGoBackCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)
-                is MqttGoForwardCommand -> WebViewNavigation.goForward(::customLoadUrl, systemSettings)
-                is MqttGoHomeCommand -> WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings)
-                is MqttRefreshCommand -> WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
-                is MqttGoToUrlCommand -> customLoadUrl(commandMessage.url)
-                is MqttLockCommand -> tryLockTask(activity)
-                is MqttUnlockCommand -> tryUnlockTask(activity)
-                is MqttCommandError -> showToast("Received invalid MQTT command. See debug logs in MQTT settings.")
+                is MqttGoBackMqttCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)
+                is MqttGoForwardMqttCommand -> WebViewNavigation.goForward(::customLoadUrl, systemSettings)
+                is MqttGoHomeMqttCommand -> WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings)
+                is MqttRefreshMqttCommand -> WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
+                is MqttGoToUrlMqttCommand -> customLoadUrl(commandMessage.url)
+                is MqttLockMqttCommand -> tryLockTask(activity)
+                is MqttUnlockMqttCommand -> tryUnlockTask(activity)
+                is MqttMqttCommandError -> showToast("Received invalid MQTT command. See debug logs in MQTT settings.")
             }
         }
     }

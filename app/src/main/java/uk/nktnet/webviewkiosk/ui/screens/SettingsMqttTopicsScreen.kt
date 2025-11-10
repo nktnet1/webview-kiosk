@@ -61,10 +61,10 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
                 text = "Publish",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
             )
             HorizontalDivider(
-                Modifier.padding(bottom = 8.dp),
+                Modifier.padding(bottom = 4.dp),
                 DividerDefaults.Thickness,
                 DividerDefaults.color
             )
@@ -76,10 +76,10 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
                 text = "Subscribe",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
+                modifier = Modifier.padding(top = 24.dp, bottom = 4.dp)
             )
             HorizontalDivider(
-                Modifier.padding(bottom = 8.dp),
+                Modifier.padding(bottom = 4.dp),
                 DividerDefaults.Thickness,
                 DividerDefaults.color
             )

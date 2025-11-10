@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.settings
+package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.event
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -8,29 +8,29 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.mqtt.MqttManager.mqttVariableReplacement
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
-import uk.nktnet.webviewkiosk.utils.isValidMqttSubscribeTopic
+import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
 
 @Composable
-fun MqttSubscribeSettingsTopicSetting() {
+fun MqttPublishEventTopicSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
 
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.TOPIC)
+    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC)
 
     TextSettingFieldItem(
         label = "Topic",
         infoText = """
-            The MQTT topic to subscribe for settings messages.
+            The MQTT topic to publish event messages.
         """.trimIndent(),
-        placeholder = "e.g. devices/+/settings",
-        initialValue = userSettings.mqttSubscribeSettingsTopic,
-        validator = { isValidMqttSubscribeTopic(it) },
+        placeholder = "e.g. wk/event",
+        initialValue = userSettings.mqttPublishEventTopic,
         descriptionFormatter = {
             mqttVariableReplacement(systemSettings, it)
         },
+        validator = { isValidMqttPublishTopic(it) },
         restricted = restricted,
         isMultiline = false,
-        onSave = { userSettings.mqttSubscribeSettingsTopic = it }
+        onSave = { userSettings.mqttPublishEventTopic = it }
     )
 }

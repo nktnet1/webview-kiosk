@@ -437,7 +437,7 @@ class UserSettings(val context: Context) {
         restrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC,
-        "webviewkiosk/publish/event"
+        "wk/event"
     )
     var mqttPublishEventQos by intEnumPref(
         restrictions,

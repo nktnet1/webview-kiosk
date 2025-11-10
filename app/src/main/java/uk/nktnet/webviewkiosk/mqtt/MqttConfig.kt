@@ -18,6 +18,10 @@ data class MqttConfig(
     val mqttConnectTimeout: Int,
     val socketConnectTimeout: Int,
 
+    val publishEventTopic: String,
+    val publishEventQos: MqttQosOption,
+    val publishEventRetain: Boolean,
+
     val subscribeCommandTopic: String,
     val subscribeCommandQos: MqttQosOption,
     val subscribeCommandRetainHandling: MqttRetainHandlingOption,

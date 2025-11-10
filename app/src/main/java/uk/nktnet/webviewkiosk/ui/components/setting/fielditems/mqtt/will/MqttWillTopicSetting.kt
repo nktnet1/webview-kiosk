@@ -8,6 +8,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.mqtt.MqttManager.mqttVariableReplacement
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
+import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
 
 @Composable
 fun MqttWillTopicSetting() {
@@ -23,6 +24,7 @@ fun MqttWillTopicSetting() {
         placeholder = "e.g. wk/will",
         initialValue = userSettings.mqttWillTopic,
         restricted = restricted,
+        validator = { isValidMqttPublishTopic(it) },
         descriptionFormatter = {
             mqttVariableReplacement(systemSettings, it)
         },
