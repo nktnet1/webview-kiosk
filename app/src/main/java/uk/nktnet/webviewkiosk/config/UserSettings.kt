@@ -222,6 +222,12 @@ class UserSettings(val context: Context) {
         SslErrorModeOption.BLOCK.name,
         fromString = SslErrorModeOption::fromString
     )
+    var enableBatteryApi by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.ENABLE_BATTERY_API,
+        false
+    )
 
     // Web Lifecycle
     var lockOnLaunch by booleanPref(

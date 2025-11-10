@@ -31,11 +31,13 @@ import uk.nktnet.webviewkiosk.utils.webview.html.BlockCause
 import uk.nktnet.webviewkiosk.utils.webview.html.generateBlockedPageHtml
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOverrideScript
+import uk.nktnet.webviewkiosk.utils.webview.scripts.generateBatterySetupScript
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorPromptRequest
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
+import uk.nktnet.webviewkiosk.utils.webview.BatteryInterface
 import java.net.URLEncoder
 
 data class WebViewConfig(
@@ -87,6 +89,11 @@ fun createCustomWebview(
                 mediaPlaybackRequiresUserGesture = userSettings.mediaPlaybackRequiresUserGesture
             }
 
+            // Add JavaScript interface for battery status if enabled
+            if (userSettings.enableBatteryApi) {
+                addJavascriptInterface(BatteryInterface(context), "AndroidBattery")
+            }
+
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     config.setLastErrorUrl("")
@@ -125,6 +132,9 @@ fun createCustomWebview(
                                     wrapJsInIIFE(userSettings.customScriptOnPageFinish),
                                     null
                                 )
+                            }
+                            if (userSettings.enableBatteryApi) {
+                                view?.evaluateJavascript(generateBatterySetupScript(), null)
                             }
                             systemSettings.urlBeforeNavigation = ""
                         }

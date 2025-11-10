@@ -39,5 +39,6 @@ fun SettingsWebEngineScreen(navController: NavController) {
         AllowUniversalAccessFromFileURLsSetting()
         MediaPlaybackRequiresUserGestureSetting()
         SslErrorModeSetting()
+        EnableBatteryApiSetting()
     }
 }
