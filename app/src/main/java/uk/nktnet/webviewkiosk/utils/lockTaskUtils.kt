@@ -42,6 +42,7 @@ private fun tryLockAction(
 }
 
 fun tryLockTask(activity: Activity?, showToast: (String) -> Unit = {}): Boolean {
+    BiometricPromptManager.resetAuthentication()
     return tryLockAction(activity, Activity::startLockTask, showToast, "Failed to lock app")
 }
 
