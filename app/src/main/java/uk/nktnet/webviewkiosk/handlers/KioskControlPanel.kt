@@ -113,8 +113,6 @@ fun KioskControlPanel(
         userSettings.kioskControlPanelRegion
     }
 
-    println("[DEBUG] kioskControlPanelRegion = $kioskControlPanelRegion")
-
     LaunchedEffect(tapsLeft, lastTapTime) {
         if (tapsLeft in 1..5) {
             delay(maxInterval)
