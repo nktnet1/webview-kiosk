@@ -46,13 +46,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.config.UserSettings
 import kotlin.math.max
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
+import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
 import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
@@ -60,12 +63,14 @@ import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.webview.BookmarksDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.HistoryDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.LocalFilesDialog
+import uk.nktnet.webviewkiosk.utils.canDisableKioskControlPanelRegion
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
 fun KioskControlPanel(
+    navController: NavController,
     requiredTaps: Int,
     customLoadUrl: (newUrl: String) -> Unit,
 ) {
@@ -98,6 +103,17 @@ fun KioskControlPanel(
     var showBookmarksDialog by remember { mutableStateOf(false) }
     var showHistoryDialog by remember { mutableStateOf(false) }
     var showLocalFilesDialog by remember { mutableStateOf(false) }
+
+    val kioskControlPanelRegion = if (
+        userSettings.kioskControlPanelRegion == KioskControlPanelRegionOption.DISABLED
+        && !canDisableKioskControlPanelRegion(userSettings)
+    ) {
+        KioskControlPanelRegionOption.TOP_LEFT
+    } else {
+        userSettings.kioskControlPanelRegion
+    }
+
+    println("[DEBUG] kioskControlPanelRegion = $kioskControlPanelRegion")
 
     LaunchedEffect(tapsLeft, lastTapTime) {
         if (tapsLeft in 1..5) {
@@ -148,7 +164,7 @@ fun KioskControlPanel(
         )
     }
 
-    if (userSettings.kioskControlPanelRegion != KioskControlPanelRegionOption.DISABLED) {
+    if (kioskControlPanelRegion != KioskControlPanelRegionOption.DISABLED) {
         Box(
             Modifier
                 .fillMaxSize()
@@ -156,7 +172,7 @@ fun KioskControlPanel(
                     if (motionEvent.action == android.view.MotionEvent.ACTION_DOWN) {
                         val now = System.currentTimeMillis()
 
-                        val inRegion = when (userSettings.kioskControlPanelRegion) {
+                        val inRegion = when (kioskControlPanelRegion) {
                             KioskControlPanelRegionOption.TOP_LEFT -> motionEvent.x < screenWidthPx / 2f && motionEvent.y < screenHeightPx / 2f
                             KioskControlPanelRegionOption.TOP_RIGHT -> motionEvent.x >= screenWidthPx / 2f && motionEvent.y < screenHeightPx / 2f
                             KioskControlPanelRegionOption.BOTTOM_LEFT -> motionEvent.x < screenWidthPx / 2f && motionEvent.y >= screenHeightPx / 2f
@@ -164,7 +180,7 @@ fun KioskControlPanel(
                             KioskControlPanelRegionOption.TOP -> motionEvent.y < screenHeightPx / 2f
                             KioskControlPanelRegionOption.BOTTOM -> motionEvent.y >= screenHeightPx / 2f
                             KioskControlPanelRegionOption.FULL -> true
-                            KioskControlPanelRegionOption.DISABLED -> false
+                            else -> false
                         }
 
                         if (inRegion) {
@@ -196,7 +212,7 @@ fun KioskControlPanel(
                 }
         ) {
             if (tapsLeft in 1..5) {
-                val (boxWidth, boxHeight, boxAlignment) = when (userSettings.kioskControlPanelRegion) {
+                val (boxWidth, boxHeight, boxAlignment) = when (kioskControlPanelRegion) {
                     KioskControlPanelRegionOption.TOP_LEFT -> Triple(0.5f, 0.5f, Alignment.TopStart)
                     KioskControlPanelRegionOption.TOP_RIGHT -> Triple(0.5f, 0.5f, Alignment.TopEnd)
                     KioskControlPanelRegionOption.BOTTOM_LEFT -> Triple(0.5f, 0.5f, Alignment.BottomStart)
@@ -204,7 +220,7 @@ fun KioskControlPanel(
                     KioskControlPanelRegionOption.TOP -> Triple(1f, 0.5f, Alignment.TopCenter)
                     KioskControlPanelRegionOption.BOTTOM -> Triple(1f, 0.5f, Alignment.BottomCenter)
                     KioskControlPanelRegionOption.FULL -> Triple(1f, 1f, Alignment.Center)
-                    KioskControlPanelRegionOption.DISABLED -> Triple(0f, 0f, Alignment.TopStart)
+                    else -> Triple(0f, 0f, Alignment.TopStart)
                 }
                 Box(
                     Modifier
@@ -436,6 +452,25 @@ fun KioskControlPanel(
                         }
                         Spacer(modifier = Modifier.height(3.dp))
                     } else {
+                        if (userSettings.floatingToolbarMode == FloatingToolbarModeOption.HIDDEN) {
+                            Button(
+                                enabled = enableInteraction,
+                                onClick = {
+                                    showDialog = false
+                                    navController.navigate(Screen.Settings.route)
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_settings_24),
+                                    contentDescription = "Settings",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Settings")
+                            }
+                            Spacer(modifier = Modifier.height(3.dp))
+                        }
                         Button(
                             enabled = enableInteraction,
                             onClick = {

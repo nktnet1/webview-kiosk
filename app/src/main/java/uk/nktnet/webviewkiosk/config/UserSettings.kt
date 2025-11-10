@@ -261,8 +261,15 @@ class UserSettings(val context: Context) {
         restrictions,
         prefs,
         UserSettingsKeys.Appearance.ADDRESS_BAR_MODE,
-        AddressBarOption.HIDDEN_WHEN_LOCKED.name,
-        fromString = AddressBarOption::fromString
+        AddressBarModeOption.HIDDEN_WHEN_LOCKED.name,
+        fromString = AddressBarModeOption::fromString
+    )
+    var floatingToolbarMode by stringEnumPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Appearance.FLOATING_TOOLBAR_MODE,
+        FloatingToolbarModeOption.HIDDEN_WHEN_LOCKED.name,
+        fromString = FloatingToolbarModeOption::fromString
     )
     var webViewInset by stringEnumPref(
         restrictions,
@@ -582,6 +589,7 @@ class UserSettings(val context: Context) {
 
             put(UserSettingsKeys.Appearance.THEME, theme.name)
             put(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name)
+            put(UserSettingsKeys.Appearance.FLOATING_TOOLBAR_MODE, floatingToolbarMode.name)
             put(UserSettingsKeys.Appearance.WEBVIEW_INSET, webViewInset.name)
             put(UserSettingsKeys.Appearance.IMMERSIVE_MODE, immersiveMode.name)
             put(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
@@ -693,7 +701,8 @@ class UserSettings(val context: Context) {
             refreshOnLoadingErrorIntervalSeconds = json.optInt(UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS, refreshOnLoadingErrorIntervalSeconds)
 
             theme = ThemeOption.fromString(json.optString(UserSettingsKeys.Appearance.THEME, theme.name))
-            addressBarMode = AddressBarOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name))
+            addressBarMode = AddressBarModeOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name))
+            floatingToolbarMode = FloatingToolbarModeOption.fromString(json.optString(UserSettingsKeys.Appearance.FLOATING_TOOLBAR_MODE, floatingToolbarMode.name))
             webViewInset = WebViewInset.fromString(json.optString(UserSettingsKeys.Appearance.WEBVIEW_INSET, webViewInset.name))
             immersiveMode = ImmersiveModeOption.fromString(
                 json.optString(UserSettingsKeys.Appearance.IMMERSIVE_MODE, immersiveMode.name)

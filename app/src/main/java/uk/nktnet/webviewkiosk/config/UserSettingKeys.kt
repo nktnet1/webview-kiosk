@@ -56,6 +56,7 @@ object UserSettingsKeys {
     object Appearance {
         const val THEME = "appearance.theme"
         const val ADDRESS_BAR_MODE = "appearance.address_bar_mode"
+        const val FLOATING_TOOLBAR_MODE = "appearance.floating_toolbar_mode"
         const val WEBVIEW_INSET = "appearance.webview_inset"
         const val IMMERSIVE_MODE = "appearance.immersive_mode"
         const val BLOCKED_MESSAGE = "appearance.blocked_message"
