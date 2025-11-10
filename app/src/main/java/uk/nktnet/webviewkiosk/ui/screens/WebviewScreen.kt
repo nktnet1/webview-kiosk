@@ -27,16 +27,15 @@ import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.AddressBarOption
-import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
-import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
+import uk.nktnet.webviewkiosk.config.option.AddressBarModeOption
+import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
 import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.InactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.KioskControlPanel
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
-import uk.nktnet.webviewkiosk.ui.components.webview.FloatingMenuButton
+import uk.nktnet.webviewkiosk.ui.components.webview.FloatingToolbar
 import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
 import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBarSearchSuggestions
@@ -51,6 +50,7 @@ import uk.nktnet.webviewkiosk.utils.isSupportedFileURLMimeType
 import uk.nktnet.webviewkiosk.utils.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
+import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
 import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.html.generateFileMissingPage
@@ -84,9 +84,15 @@ fun WebviewScreen(navController: NavController) {
     var progress by remember { mutableIntStateOf(0) }
 
     val showAddressBar = when (userSettings.addressBarMode) {
-        AddressBarOption.SHOWN -> true
-        AddressBarOption.HIDDEN -> false
-        AddressBarOption.HIDDEN_WHEN_LOCKED -> !isLocked
+        AddressBarModeOption.SHOWN -> true
+        AddressBarModeOption.HIDDEN -> false
+        AddressBarModeOption.HIDDEN_WHEN_LOCKED -> !isLocked
+    }
+
+    val showFloatingToolbar = when (userSettings.floatingToolbarMode) {
+        FloatingToolbarModeOption.SHOWN -> true
+        FloatingToolbarModeOption.HIDDEN -> false
+        FloatingToolbarModeOption.HIDDEN_WHEN_LOCKED -> !isLocked
     }
 
     var authHandler by remember { mutableStateOf<HttpAuthHandler?>(null) }
@@ -374,12 +380,12 @@ fun WebviewScreen(navController: NavController) {
             }
         }
 
-        if (!isLocked) {
+        if (showFloatingToolbar) {
             Box(modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Transparent)
             ) {
-                FloatingMenuButton(
+                FloatingToolbar(
                     onHomeClick = {
                         focusManager.clearFocus()
                         WebViewNavigation.goHome(
@@ -389,6 +395,12 @@ fun WebviewScreen(navController: NavController) {
                     onLockClick = {
                         focusManager.clearFocus()
                         tryLockTask(activity, showToast)
+                    },
+                    onUnlockClick = {
+                        activity?.let {
+                            focusManager.clearFocus()
+                            unlockWithAuthIfRequired(activity, showToast)
+                        }
                     },
                     navController = navController
                 )
@@ -400,12 +412,7 @@ fun WebviewScreen(navController: NavController) {
         InactivityTimeoutHandler(systemSettings, userSettings, ::customLoadUrl)
     }
 
-    if (
-        userSettings.kioskControlPanelRegion != KioskControlPanelRegionOption.DISABLED
-        || userSettings.backButtonHoldAction == BackButtonHoldActionOption.OPEN_KIOSK_CONTROL_PANEL
-    ) {
-        KioskControlPanel(10, ::customLoadUrl)
-    }
+    KioskControlPanel(navController, 10, ::customLoadUrl)
 
     BackPressHandler(::customLoadUrl)
 

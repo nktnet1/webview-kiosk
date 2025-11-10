@@ -26,7 +26,7 @@ fun AuthenticationErrorDisplay(
         Text(
             text = when (errorResult) {
                 is BiometricPromptManager.BiometricResult.AuthenticationError ->
-                    "Authentication Error: ${errorResult.error}"
+                    "Error: ${errorResult.error}"
                 BiometricPromptManager.BiometricResult.HardwareUnavailable ->
                     "Biometric hardware unavailable"
                 BiometricPromptManager.BiometricResult.AuthenticationNotSet ->
