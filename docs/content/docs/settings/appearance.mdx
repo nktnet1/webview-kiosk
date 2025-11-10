@@ -32,7 +32,28 @@ but disappears when the app is locked (pinned) using the floating toolbar
 
 **Default:** Hidden when locked
 
-## 3. Window Insets
+## 3. Floating Toolbar Mode
+
+Control the visibility and behaviour of the floating toolbar menu button:
+
+1. Hidden  
+1. Hidden when locked  
+1. Shown  
+
+When set to **Hidden**, the "Settings" button will be available from the
+Kiosk Control Panel.
+
+Additionally, when set to **Hidden**, if both of the following are true:
+
+1. `Web Browsing -> Kiosk Control Panel Region` is disabled
+2. `Device -> Back Button Hold Action` is not set to "Open Kiosk Control Panel"
+
+Then the `Web Browsing -> Kiosk Control Panel Region` cannot be disabled and
+will default to `Top Left`.
+
+**Default:** Hidden when locked
+
+## 4. Window Insets
 
 Controls padding for full-screen content relative to system UI elements. Use
 `WebViewInset` in your app to select the desired inset for full-height/width
@@ -52,7 +73,7 @@ components. For details, see the
 
 **Default:** System Bars
 
-## 4. Immersive Mode
+## 5. Immersive Mode
 
 In immersive mode, your system bars (status and navigation) are hidden.
 
@@ -74,7 +95,7 @@ For more details, refer to:
 
 **Default:** Only when locked
 
-## 5. Blocked Message
+## 6. Blocked Message
 
 The message to display when a URL matches the blacklist regex filter rule.
 
