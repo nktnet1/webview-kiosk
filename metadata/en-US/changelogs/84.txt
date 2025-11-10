@@ -1,0 +1,20 @@
+## New Feature
+
+> Appearance -> Floating Toolbar Mode
+
+Control the visibility and behaviour of the floating toolbar menu button:
+
+1. Hidden  
+2. Hidden when locked  
+3. Shown  
+
+When set to **Hidden**, the "Settings" button will be available from the Kiosk Control Panel.
+
+Additionally, when set to **Hidden**, if both of the following are true:
+
+1. `Web Browsing -> Kiosk Control Panel Region` is disabled
+2. `Device -> Back Button Hold Action` is not set to "Open Kiosk Control Panel"
+
+Then the `Web Browsing -> Kiosk Control Panel Region` cannot be disabled and will default to `Top Left`.
+
+**Default:** Hidden when locked
