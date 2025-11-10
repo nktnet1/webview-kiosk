@@ -307,6 +307,6 @@ object MqttManager {
         return regex.replace(input) { matchResult ->
             val key = matchResult.groupValues[1]
             variableMap[key] ?: matchResult.value
-        }
+        }.trim()
     }
 }
