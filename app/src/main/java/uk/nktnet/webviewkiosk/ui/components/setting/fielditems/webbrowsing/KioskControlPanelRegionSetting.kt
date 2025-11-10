@@ -25,7 +25,7 @@ fun KioskControlPanelRegionSetting() {
             If both of the following are true:
               1. [Web Browsing -> Kiosk Control Panel Region] is disabled
               2. [Device -> Back Button Hold Action] is not set to "Open Kiosk Control Panel"
-            Then this option cannot be disabled, and will default to TOP_LEFT.
+            Then this option cannot be disabled, and will default to Top Left.
         """.trimIndent(),
         options = KioskControlPanelRegionOption.entries,
         initialValue = userSettings.kioskControlPanelRegion,

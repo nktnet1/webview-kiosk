@@ -18,18 +18,8 @@ fun FloatingToolbarModeSetting() {
         infoText = """
             Control the visibility and behaviour of the floating toolbar menu button.
 
-            When set to "Hidden", the "Settings" button will be available from the
+            When set to "Hidden", the "Settings" button will be visible from the
             Kiosk Control Panel.
-
-            ---
-
-            Additionally, when set to "Hidden", if both of the following are true:
-
-              1. [Web Browsing -> Kiosk Control Panel Region] is disabled
-              2. [Device -> Back Button Hold Action] is not set to "Open Kiosk Control Panel"
-
-            Then the [Web Browsing -> Kiosk Control Panel Region] cannot be disabled and
-            will default to TOP_LEFT.
         """.trimIndent(),
         options = FloatingToolbarModeOption.entries,
         restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.FLOATING_TOOLBAR_MODE),
