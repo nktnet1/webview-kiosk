@@ -80,7 +80,7 @@ fun WebviewScreen(navController: NavController) {
     val systemSettings = remember { SystemSettings(context) }
     val isLocked by LockStateSingleton.isLocked
     val scope = rememberCoroutineScope()
-    var publishUrlLoadedJob: Job? = null
+    var publishUrlChangeJob: Job? = null
 
     val lastVisitedUrl = systemSettings.currentUrl.takeIf { it.isNotEmpty() } ?: userSettings.homeUrl
     var urlBarText by remember {
@@ -186,10 +186,10 @@ fun WebviewScreen(navController: NavController) {
             userSettings.replaceHistoryUrlOnRedirect
         )
         if (userSettings.mqttEnabled) {
-            publishUrlLoadedJob?.cancel()
-            publishUrlLoadedJob = scope.launch {
+            publishUrlChangeJob?.cancel()
+            publishUrlChangeJob = scope.launch {
                 delay(1000)
-                MqttManager.publishUrlLoaded(url)
+                MqttManager.publishUrlChange(url)
             }
         }
     }

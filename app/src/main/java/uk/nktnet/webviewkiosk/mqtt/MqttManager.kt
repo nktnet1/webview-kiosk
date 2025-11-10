@@ -193,7 +193,7 @@ object MqttManager {
             }
     }
 
-    fun publishUrlLoaded(url: String) {
+    fun publishUrlChange(url: String) {
         val event = MqttUrlChangeEvent(identifier = UUID.randomUUID().toString(), url = url)
         val payload = Json.encodeToString(event)
         publishEvent(payload)
@@ -201,6 +201,9 @@ object MqttManager {
 
     private fun publishEvent(payload: String) {
         val c = client ?: return
+        if (!config.enabled || !c.state.isConnected) {
+            return
+        }
         c.publishWith()
             .topic(config.publishEventTopic)
             .qos(config.publishEventQos.toMqttQos())
@@ -256,6 +259,7 @@ object MqttManager {
                 .jsonObject["identifier"]?.jsonPrimitive?.contentOrNull
         }.getOrNull()
     }
+
     private fun subscribeTopic(
         topic: String,
         qos: MqttQosOption,
