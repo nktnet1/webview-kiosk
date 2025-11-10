@@ -21,6 +21,9 @@
     <string name="web_browsing_allow_refresh_title">Allow Refresh</string>
     <string name="web_browsing_allow_refresh_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
+    <string name="web_browsing_allow_pull_to_refresh_title">Allow Pull to Refresh</string>
+    <string name="web_browsing_allow_pull_to_refresh_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+
     <string name="web_browsing_allow_backwards_navigation_title">Allow Backwards Navigation</string>
     <string name="web_browsing_allow_backwards_navigation_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
@@ -48,11 +51,14 @@
     <string name="web_browsing_allow_link_long_press_context_menu_title">Allow Link Long Press Context Menu</string>
     <string name="web_browsing_allow_link_long_press_context_menu_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
-    <string name="web_browsing_allow_kiosk_control_panel_title">Allow Kiosk Control Panel</string>
-    <string name="web_browsing_allow_kiosk_control_panel_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+    <string name="web_browsing_kiosk_control_panel_region_title">Allow Kiosk Control Panel</string>
+    <string name="web_browsing_kiosk_control_panel_region_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_search_provider_url_title">Search Provider URL</string>
     <string name="web_browsing_search_provider_url_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+
+    <string name="web_browsing_search_suggestion_engine_title">Allow Kiosk Control Panel</string>
+    <string name="web_browsing_search_suggestion_engine_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <!-- Web Engine -->
     <string name="web_engine_enable_javascript_title">Enable JavaScript</string>
@@ -97,6 +103,9 @@
     <string name="web_engine_media_playback_requires_user_gesture_title">Media Playback Requires User Gesture</string>
     <string name="web_engine_media_playback_requires_user_gesture_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
+    <string name="web_engine_ssl_error_mode_option_title">SSL Error Mode</string>
+    <string name="web_engine_ssl_error_mode_option_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+
     <!-- Web Lifecycle -->
     <string name="web_lifecycle_lock_on_launch_title">Lock on Launch</string>
     <string name="web_lifecycle_lock_on_launch_description">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
@@ -107,12 +116,18 @@
     <string name="web_lifecycle_reset_on_inactivity_seconds_title">Reset on Inactivity</string>
     <string name="web_lifecycle_reset_on_inactivity_seconds_description">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
 
+    <string name="web_lifecycle_refresh_on_loading_error_interval_seconds_title">Refresh on Loading Error Interval (seconds)</string>
+    <string name="web_lifecycle_refresh_on_loading_error_interval_seconds_description">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
+
     <!-- Appearance -->
     <string name="appearance_theme_title">Theme</string>
     <string name="appearance_theme_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
 
     <string name="appearance_address_bar_mode_title">Address Bar Mode</string>
     <string name="appearance_address_bar_mode_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
+
+    <string name="appearance_floating_toolbar_mode_title">Floating Toolbar Mode</string>
+    <string name="appearance_floating_toolbar_mode_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
 
     <string name="appearance_webview_inset_title">WebView Inset</string>
     <string name="appearance_webview_inset_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>

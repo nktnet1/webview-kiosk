@@ -14,7 +14,12 @@ fun AllowRefreshSetting() {
 
     BooleanSettingFieldItem(
         label = "Allow Refresh",
-        infoText = "Whether the user can pull down at the top 1/4 of a webpage to refresh.",
+        infoText = """
+            Set to true to allow the user to refresh the page, e.g. using the
+            - address bar actions
+            - kiosk control panel
+            - pull to refresh (can be configured separately)
+        """.trimIndent(),
         restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.ALLOW_REFRESH),
         initialValue = userSettings.allowRefresh,
         onSave = { userSettings.allowRefresh = it }

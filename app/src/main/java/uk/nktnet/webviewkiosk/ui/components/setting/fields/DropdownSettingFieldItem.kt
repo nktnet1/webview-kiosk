@@ -2,10 +2,12 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fields
 
 import uk.nktnet.webviewkiosk.ui.components.common.DropdownSelector
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.GenericSettingFieldDialog
 
 @Composable
@@ -16,12 +18,15 @@ fun <T> DropdownSettingFieldItem(
     initialValue: T,
     restricted: Boolean,
     extraContent: (@Composable ((setValue: (T) -> Unit) -> Unit))? = null,
+    validator: (value: T) -> Boolean = { true },
+    validationMessage: String? = null,
     onSave: (T) -> Unit,
     itemText: (T) -> String
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var value by remember { mutableStateOf(initialValue) }
     var draftValue by remember { mutableStateOf(initialValue) }
+    var draftError by remember { mutableStateOf(false) }
 
     GenericSettingFieldItem(
         label = label,
@@ -29,6 +34,7 @@ fun <T> DropdownSettingFieldItem(
         restricted = restricted,
         onClick = {
             draftValue = value
+            draftError = !validator(value)
             showDialog = true
         },
     ) {
@@ -47,16 +53,21 @@ fun <T> DropdownSettingFieldItem(
             onDismiss = { showDialog = false },
             restricted = restricted,
             onSave = {
-                value = draftValue
-                onSave(draftValue)
-                showDialog = false
+                if (!draftError) {
+                    value = draftValue
+                    onSave(draftValue)
+                    showDialog = false
+                }
             }
         ) {
             DropdownSelector(
                 options = options,
                 selected = draftValue,
                 enabled = !restricted,
-                onSelectedChange = { draftValue = it }
+                onSelectedChange = {
+                    draftValue = it
+                    draftError = !validator(it)
+                }
             ) { option ->
                 val isSelected = option == draftValue
                 Text(
@@ -69,6 +80,14 @@ fun <T> DropdownSettingFieldItem(
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     }
+                )
+            }
+            if (draftError) {
+                Text(
+                    text = validationMessage ?: "Invalid input",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                 )
             }
             extraContent?.invoke { draftValue = it }

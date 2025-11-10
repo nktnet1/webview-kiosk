@@ -19,7 +19,6 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -64,8 +63,13 @@ fun AddressBar(
     }
 
     LaunchedEffect(Unit) {
-        delay(100)
         allowFocus = true
+    }
+
+    LaunchedEffect(hasFocus) {
+        if (hasFocus) {
+            onUrlBarTextChange(urlBarText.copy(selection = TextRange(0, urlBarText.text.length)))
+        }
     }
 
     Row(
@@ -83,6 +87,7 @@ fun AddressBar(
             },
             singleLine = true,
             modifier = Modifier
+                .fillMaxWidth()
                 .weight(1f)
                 .onFocusChanged(onFocusChanged)
                 .focusProperties { canFocus = allowFocus },
@@ -250,11 +255,5 @@ fun AddressBar(
             onDismiss = { showLocalFilesDialog = false },
             customLoadUrl = customLoadUrl
         )
-    }
-
-    LaunchedEffect(hasFocus) {
-        if (hasFocus) {
-            onUrlBarTextChange(urlBarText.copy(selection = TextRange(0, urlBarText.text.length)))
-        }
     }
 }

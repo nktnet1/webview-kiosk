@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.ui.screens
 
 import android.webkit.CookieManager
 import android.webkit.HttpAuthHandler
+import android.webkit.URLUtil.isValidUrl
 import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
@@ -12,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.TextFieldValue
@@ -19,20 +21,24 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.AddressBarOption
-import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
-import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
+import uk.nktnet.webviewkiosk.config.option.AddressBarModeOption
+import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
+import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.InactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.KioskControlPanel
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
-import uk.nktnet.webviewkiosk.ui.components.webview.FloatingMenuButton
+import uk.nktnet.webviewkiosk.ui.components.webview.FloatingToolbar
 import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
 import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
+import uk.nktnet.webviewkiosk.ui.components.webview.AddressBarSearchSuggestions
 import uk.nktnet.webviewkiosk.ui.components.webview.LinkOptionsDialog
 import uk.nktnet.webviewkiosk.utils.SchemeType
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
@@ -44,6 +50,8 @@ import uk.nktnet.webviewkiosk.utils.isSupportedFileURLMimeType
 import uk.nktnet.webviewkiosk.utils.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
+import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
+import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.html.generateFileMissingPage
 import uk.nktnet.webviewkiosk.utils.webview.html.generateUnsupportedMimeTypePage
@@ -76,9 +84,15 @@ fun WebviewScreen(navController: NavController) {
     var progress by remember { mutableIntStateOf(0) }
 
     val showAddressBar = when (userSettings.addressBarMode) {
-        AddressBarOption.SHOWN -> true
-        AddressBarOption.HIDDEN -> false
-        AddressBarOption.HIDDEN_WHEN_LOCKED -> !isLocked
+        AddressBarModeOption.SHOWN -> true
+        AddressBarModeOption.HIDDEN -> false
+        AddressBarModeOption.HIDDEN_WHEN_LOCKED -> !isLocked
+    }
+
+    val showFloatingToolbar = when (userSettings.floatingToolbarMode) {
+        FloatingToolbarModeOption.SHOWN -> true
+        FloatingToolbarModeOption.HIDDEN -> false
+        FloatingToolbarModeOption.HIDDEN_WHEN_LOCKED -> !isLocked
     }
 
     var authHandler by remember { mutableStateOf<HttpAuthHandler?>(null) }
@@ -105,6 +119,34 @@ fun WebviewScreen(navController: NavController) {
             .mapNotNull { runCatching { Regex(it) }.getOrNull() }
     }
 
+    var lastErrorUrl by remember { mutableStateOf("") }
+
+    var suggestions by remember { mutableStateOf(listOf<String>()) }
+
+    if (userSettings.searchSuggestionEngine != SearchSuggestionEngineOption.NONE) {
+        LaunchedEffect(addressBarHasFocus, urlBarText.text) {
+            if (
+                addressBarHasFocus
+                && urlBarText.text.isNotBlank()
+                && !isValidUrl(urlBarText.text)
+            ) {
+                delay(300)
+                suggestions = try {
+                    withContext(Dispatchers.IO) {
+                        SearchSuggestionEngine.suggest(
+                            userSettings.searchSuggestionEngine,
+                            urlBarText.text
+                        )
+                    }
+                } catch (_: Exception) {
+                    emptyList()
+                }
+            } else {
+                suggestions = emptyList()
+            }
+        }
+    }
+
     DisposableEffect( activity, isLocked) {
         if (activity != null) {
             val shouldImmerse = shouldBeImmersed(activity, userSettings)
@@ -120,7 +162,9 @@ fun WebviewScreen(navController: NavController) {
     }
 
     fun updateAddressBarAndHistory(url: String, originalUrl: String?) {
-        urlBarText = urlBarText.copy(text = url)
+        if (!addressBarHasFocus) {
+            urlBarText = urlBarText.copy(text = url)
+        }
         WebViewNavigation.appendWebviewHistory(
             systemSettings,
             url,
@@ -137,6 +181,9 @@ fun WebviewScreen(navController: NavController) {
             blacklistRegexes = blacklistRegexes,
             whitelistRegexes = whitelistRegexes,
             showToast = showToast,
+            setLastErrorUrl = { errorUrl ->
+                lastErrorUrl = errorUrl
+            },
             onProgressChanged = { newProgress -> progress = newProgress },
             finishSwipeRefresh = {
                 isSwipeRefreshing = false
@@ -154,7 +201,6 @@ fun WebviewScreen(navController: NavController) {
     )
 
     fun customLoadUrl(newUrl: String) {
-        //println("[DEBUG] customLoadUrl $newUrl")
         systemSettings.urlBeingHandled = newUrl
         val (schemeType, blockCause) = getBlockInfo(
             url = newUrl,
@@ -171,8 +217,15 @@ fun WebviewScreen(navController: NavController) {
             )
             return
         }
-        if (schemeType == SchemeType.FILE) {
-            val uri = newUrl.toUri()
+        val uri = newUrl.toUri()
+
+        if (schemeType == SchemeType.WEBVIEW_KIOSK && uri.host == "block") {
+            val blockUrl = uri.getQueryParameter("url")
+            if (blockUrl != null) {
+                webView.loadUrl(blockUrl)
+                return
+            }
+        } else if (schemeType == SchemeType.FILE) {
             val mimeType = getMimeType(context, uri)
             val file = File(uri.path ?: "")
             val pageContent = when {
@@ -196,12 +249,6 @@ fun WebviewScreen(navController: NavController) {
         webView.loadUrl(newUrl)
     }
 
-    val cookieManager = CookieManager.getInstance()
-    cookieManager.setAcceptCookie(userSettings.acceptCookies)
-    cookieManager.setAcceptThirdPartyCookies(
-        webView, userSettings.acceptThirdPartyCookies
-    )
-
     val addressBarSearch: (String) -> Unit = { input ->
         val searchUrl = resolveUrlOrSearch(
             userSettings.searchProviderUrl, input.trim()
@@ -212,6 +259,26 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
+    if (
+        userSettings.refreshOnLoadingErrorIntervalSeconds
+        >= Constants.MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS
+    ) {
+        LaunchedEffect(lastErrorUrl) {
+            while (lastErrorUrl.isNotEmpty()) {
+                delay(userSettings.refreshOnLoadingErrorIntervalSeconds * 1000L)
+                WebViewNavigation.refresh(
+                    ::customLoadUrl, systemSettings, userSettings
+                )
+            }
+        }
+    }
+
+    val cookieManager = CookieManager.getInstance()
+    cookieManager.setAcceptCookie(userSettings.acceptCookies)
+    cookieManager.setAcceptThirdPartyCookies(
+        webView, userSettings.acceptThirdPartyCookies
+    )
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -219,13 +286,26 @@ fun WebviewScreen(navController: NavController) {
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (showAddressBar) {
-                AddressBar(
-                    urlBarText = urlBarText,
-                    onUrlBarTextChange = { urlBarText = it },
-                    hasFocus = addressBarHasFocus,
-                    onFocusChanged = { focusState -> addressBarHasFocus = focusState.isFocused },
-                    addressBarSearch = addressBarSearch,
-                    customLoadUrl = ::customLoadUrl,
+                /**
+                 * Wrap in AndroidView to avoid breaking autofill (e.g. Bitwarden/Proton Pass)
+                 * in the WebView further below. Unsure why this is necessary.
+                 */
+                AndroidView(
+                    factory = { ctx ->
+                        ComposeView(ctx).apply {
+                            setContent {
+                                AddressBar(
+                                    urlBarText = urlBarText,
+                                    onUrlBarTextChange = { urlBarText = it },
+                                    hasFocus = addressBarHasFocus,
+                                    onFocusChanged = { focusState -> addressBarHasFocus = focusState.isFocused },
+                                    addressBarSearch = addressBarSearch,
+                                    customLoadUrl = ::customLoadUrl,
+                                )
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
@@ -251,11 +331,15 @@ fun WebviewScreen(navController: NavController) {
                             customLoadUrl(initialUrl)
                         }
 
-                        if (userSettings.allowRefresh) {
+                        if (userSettings.allowRefresh && userSettings.allowPullToRefresh) {
                             WebviewAwareSwipeRefreshLayout(ctx, webView).apply {
                                 setOnRefreshListener {
                                     isSwipeRefreshing = true
-                                    WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
+                                    WebViewNavigation.refresh(
+                                        ::customLoadUrl,
+                                        systemSettings,
+                                        userSettings
+                                    )
                                 }
                                 addView(initWebviewApply(initialUrl))
                             }
@@ -279,14 +363,29 @@ fun WebviewScreen(navController: NavController) {
                             .align(Alignment.TopCenter)
                     )
                 }
+
+                if (
+                    addressBarHasFocus
+                    && suggestions.isNotEmpty()
+                    && userSettings.searchSuggestionEngine != SearchSuggestionEngineOption.NONE
+                ) {
+                    AddressBarSearchSuggestions(
+                        suggestions = suggestions,
+                        onSelect = { selected ->
+                            addressBarSearch(selected)
+                        },
+                        modifier = Modifier.align(Alignment.TopStart)
+                    )
+                }
             }
         }
 
-        if (!isLocked) {
+        if (showFloatingToolbar) {
             Box(modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Transparent)) {
-                FloatingMenuButton(
+                .background(Color.Transparent)
+            ) {
+                FloatingToolbar(
                     onHomeClick = {
                         focusManager.clearFocus()
                         WebViewNavigation.goHome(
@@ -296,6 +395,12 @@ fun WebviewScreen(navController: NavController) {
                     onLockClick = {
                         focusManager.clearFocus()
                         tryLockTask(activity, showToast)
+                    },
+                    onUnlockClick = {
+                        activity?.let {
+                            focusManager.clearFocus()
+                            unlockWithAuthIfRequired(activity, showToast)
+                        }
                     },
                     navController = navController
                 )
@@ -307,12 +412,7 @@ fun WebviewScreen(navController: NavController) {
         InactivityTimeoutHandler(systemSettings, userSettings, ::customLoadUrl)
     }
 
-    if (
-        userSettings.kioskControlPanelRegion != KioskControlPanelRegionOption.DISABLED
-        || userSettings.backButtonHoldAction == BackButtonHoldActionOption.OPEN_KIOSK_CONTROL_PANEL
-    ) {
-        KioskControlPanel(10, ::customLoadUrl)
-    }
+    KioskControlPanel(navController, 10, ::customLoadUrl)
 
     BackPressHandler(::customLoadUrl)
 

@@ -20,6 +20,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 
 @Composable
 fun GenericSettingFieldDialog(
@@ -46,12 +47,7 @@ fun GenericSettingFieldDialog(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
                 ) {
                     Text(
-                        infoText
-                            .replace("\t", "    ")
-                            .replace(
-                                Regex("(?m)(?<!\\n)\\n(?!\\n)(?!\\s*- )(?!\\s*\\d+\\. )(?!\\s)"),
-                                " "
-                            )
+                        normaliseInfoText(infoText)
                     )
                 }
             },

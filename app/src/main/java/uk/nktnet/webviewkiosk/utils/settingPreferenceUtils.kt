@@ -63,17 +63,24 @@ fun intPref(
     restrictions: Bundle? = null,
     prefs: SharedPreferences,
     key: String,
-    default: Int
+    default: Int,
+    min: Int = 0,
+    max: Int = Int.MAX_VALUE
 ) = object : ReadWriteProperty<Any?, Int> {
-    override fun getValue(thisRef: Any?, property: KProperty<*>) =
-        if (restrictions?.containsKey(key) == true) {
+    override fun getValue(thisRef: Any?, property: KProperty<*>): Int {
+        val raw = if (restrictions?.containsKey(key) == true) {
             restrictions.getInt(key)
         } else {
             prefs.getInt(key, default)
         }
+        return raw.coerceIn(min, max)
+    }
 
     override fun setValue(thisRef: Any?, property: KProperty<*>, value: Int) {
-        if (restrictions?.containsKey(key) != true) prefs.edit { putInt(key, value) }
+        if (restrictions?.containsKey(key) != true) {
+            val coerced = value.coerceIn(min, max)
+            prefs.edit { putInt(key, coerced) }
+        }
     }
 }
 

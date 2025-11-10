@@ -76,19 +76,18 @@ object BiometricPromptManager {
         val manager = BiometricManager.from(activity)
         val authenticators = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             BIOMETRIC_STRONG or DEVICE_CREDENTIAL
-        } else BIOMETRIC_STRONG
+        } else {
+            BIOMETRIC_STRONG
+        }
 
-        when (manager.canAuthenticate(authenticators)) {
-            BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> {
-                _resultState.value = BiometricResult.HardwareUnavailable
-                return
-            }
-            BiometricManager.BIOMETRIC_ERROR_NO_HARDWARE -> {
-                _resultState.value = BiometricResult.FeatureUnavailable
-                return
-            }
+        val canAuthenticate = manager.canAuthenticate(authenticators)
+        when (canAuthenticate) {
             BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
                 _resultState.value = BiometricResult.AuthenticationNotSet
+                return
+            }
+            BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> {
+                _resultState.value = BiometricResult.HardwareUnavailable
                 return
             }
             else -> Unit
@@ -97,10 +96,12 @@ object BiometricPromptManager {
         val promptInfoBuilder = PromptInfo.Builder()
             .setTitle(title)
             .setDescription(description)
-            .setAllowedAuthenticators(authenticators)
 
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            promptInfoBuilder.setNegativeButtonText("Cancel")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            promptInfoBuilder.setAllowedAuthenticators(authenticators)
+        } else {
+            @Suppress("DEPRECATION")
+            promptInfoBuilder.setDeviceCredentialAllowed(true)
         }
 
         val prompt = BiometricPrompt(
@@ -138,10 +139,10 @@ object BiometricPromptManager {
                 @Suppress("DEPRECATION")
                 activity.startActivityForResult(intent, Constants.REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL)
             } else {
-                _resultState.value = BiometricResult.FeatureUnavailable
+                _resultState.value = BiometricResult.AuthenticationError("Failed to create device credential intent")
             }
-        } catch (_: Exception) {
-            _resultState.value = BiometricResult.FeatureUnavailable
+        } catch (e: Exception) {
+            _resultState.value = BiometricResult.AuthenticationError(e.toString())
         }
     }
 
@@ -161,7 +162,6 @@ object BiometricPromptManager {
     sealed interface BiometricResult {
         data object Loading : BiometricResult
         data object HardwareUnavailable : BiometricResult
-        data object FeatureUnavailable : BiometricResult
         data class AuthenticationError(val error: String) : BiometricResult
         data object AuthenticationFailed : BiometricResult
         data object AuthenticationSuccess : BiometricResult

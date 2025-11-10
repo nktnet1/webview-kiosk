@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.blur
@@ -30,6 +31,7 @@ import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
+import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import kotlin.math.roundToInt
 
 data class Bounds(val minX: Float, val minY: Float, val maxX: Float, val maxY: Float)
@@ -67,9 +69,10 @@ fun MenuItem(text: String, iconRes: Int, tint: Color, onClick: () -> Unit) {
 }
 
 @Composable
-fun FloatingMenuButton(
+fun FloatingToolbar(
     onHomeClick: () -> Unit,
     onLockClick: () -> Unit,
+    onUnlockClick: () -> Unit,
     navController: NavController,
 ) {
     val context = LocalContext.current
@@ -78,7 +81,9 @@ fun FloatingMenuButton(
     val buttonSizeDp = 64.dp
     val buttonSizePx = with(density) { buttonSizeDp.toPx() }
 
-    var boxBounds by remember { mutableStateOf<Rect?>(null) }
+    var bounds by remember {
+        mutableStateOf(Bounds(0f, 0f, 0f, 0f))
+    }
     var offsetX by remember { mutableFloatStateOf(-1f) }
     var offsetY by remember { mutableFloatStateOf(-1f) }
     var menuExpanded by remember { mutableStateOf(false) }
@@ -88,6 +93,8 @@ fun FloatingMenuButton(
     val primaryColor = MaterialTheme.colorScheme.primary
     val tintColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.95f)
 
+    val isLocked by LockStateSingleton.isLocked
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -95,23 +102,23 @@ fun FloatingMenuButton(
             .windowInsetsPadding(WindowInsets.safeContent)
             .onGloballyPositioned { coordinates ->
                 val size = coordinates.size.toSize()
-                val bounds = Rect(0f, 0f, size.width, size.height)
-                boxBounds = bounds
-
+                val rect = Rect(0f, 0f, size.width, size.height)
+                bounds = calculateBounds(rect, buttonSizePx)
                 if (offsetX < 0f || offsetY < 0f) {
                     val marginPx = with(density) { 40.dp.toPx() }
-                    val b = calculateBounds(bounds, buttonSizePx)
                     val savedX = systemSettings.menuOffsetX
                     val savedY = systemSettings.menuOffsetY
-                    val (clampedX, clampedY) = clampOffset(
-                        savedX.takeIf { it in b.minX..b.maxX }
-                            ?: (b.maxX - marginPx).coerceAtLeast(b.minX),
-                        savedY.takeIf { it in b.minY..b.maxY }
-                            ?: (b.maxY - marginPx).coerceAtLeast(b.minY),
-                        b
+                    val (newX, newY) = clampOffset(
+                        savedX.takeIf {
+                            it in bounds.minX..bounds.maxX
+                        } ?: (bounds.maxX - marginPx).coerceAtLeast(bounds.minX),
+                        savedY.takeIf {
+                            it in bounds.minY..bounds.maxY
+                        } ?: (bounds.maxY - marginPx).coerceAtLeast(bounds.minY),
+                        bounds
                     )
-                    offsetX = clampedX
-                    offsetY = clampedY
+                    offsetX = newX
+                    offsetY = newY
                     visible = true
                 }
             }
@@ -121,13 +128,14 @@ fun FloatingMenuButton(
                 modifier = Modifier
                     .fillMaxSize()
                     .blur(16.dp)
-                    .background(MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.1f))
+                    .background(
+                        MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.1f)
+                    )
                     .zIndex(0f)
                     .border(2.dp, primaryColor)
             )
         }
 
-        val bounds = calculateBounds(boxBounds, buttonSizePx)
         Box(
             modifier = Modifier
                 .zIndex(1f)
@@ -198,21 +206,32 @@ fun FloatingMenuButton(
                     menuExpanded = false
                     onHomeClick()
                 }
-                MenuItem(
-                    "Lock",
-                    R.drawable.baseline_lock_24,
-                    tintColor
-                ) {
-                    menuExpanded = false
-                    onLockClick()
-                }
-                MenuItem(
-                    "Settings",
-                    R.drawable.baseline_settings_24,
-                    tintColor
-                ) {
-                    menuExpanded = false
-                    navController.navigate(Screen.Settings.route)
+                if (isLocked) {
+                    MenuItem(
+                        "Unlock",
+                        R.drawable.baseline_lock_open_24,
+                        tintColor
+                    ) {
+                        menuExpanded = false
+                        onUnlockClick()
+                    }
+                } else {
+                    MenuItem(
+                        "Lock",
+                        R.drawable.baseline_lock_24,
+                        tintColor
+                    ) {
+                        menuExpanded = false
+                        onLockClick()
+                    }
+                    MenuItem(
+                        "Settings",
+                        R.drawable.baseline_settings_24,
+                        tintColor
+                    ) {
+                        menuExpanded = false
+                        navController.navigate(Screen.Settings.route)
+                    }
                 }
             }
         }

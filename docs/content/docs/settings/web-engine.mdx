@@ -188,3 +188,15 @@ Sets whether the WebView requires a user gesture (e.g. tap) to play media.
 **Android API:** [WebSettings#setUseWideViewPort(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setMediaPlaybackRequiresUserGesture(boolean))
 
 **Default:** true
+
+## 14. SSL Error Mode
+
+Configure the action to take when an SSL Error is received.
+
+| Mode     | Description |
+|----------|------------|
+| Block    | Cancels all failed SSL requests. |
+| Prompt   | Opens a dialog for the user to decide. |
+| Proceed  | Always proceeds despite SSL errors (dangerous, NOT RECOMMENDED). |
+
+**Default:** Block

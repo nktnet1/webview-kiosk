@@ -11,12 +11,23 @@
         <item>LIGHT</item>
     </string-array>
 
-    <string-array name="entries_address_bar_option">
+    <string-array name="entries_address_bar_mode_option">
         <item>Hidden</item>
         <item>Hidden When Locked</item>
         <item>Shown</item>
     </string-array>
-    <string-array name="entry_values_address_bar_option">
+    <string-array name="entry_values_address_bar_mode_option">
+        <item>HIDDEN</item>
+        <item>HIDDEN_WHEN_LOCKED</item>
+        <item>SHOWN</item>
+    </string-array>
+
+    <string-array name="entries_floating_toolbar_mode_option">
+        <item>Hidden</item>
+        <item>Hidden When Locked</item>
+        <item>Shown</item>
+    </string-array>
+    <string-array name="entry_values_floating_toolbar_mode_option">
         <item>HIDDEN</item>
         <item>HIDDEN_WHEN_LOCKED</item>
         <item>SHOWN</item>
@@ -74,7 +85,7 @@
         <item>ROTATION_270</item>
     </string-array>
 
-    <string-array name="entries_kiosk_control_panel_option">
+    <string-array name="entries_kiosk_control_panel_region_option">
         <item>Top Left</item>
         <item>Top Right</item>
         <item>Bottom Left</item>
@@ -84,7 +95,7 @@
         <item>Full</item>
         <item>Disabled</item>
     </string-array>
-    <string-array name="entry_values_kiosk_control_panel_option">
+    <string-array name="entry_values_kiosk_control_panel_region_option">
         <item>TOP_LEFT</item>
         <item>TOP_RIGHT</item>
         <item>BOTTOM_LEFT</item>
@@ -136,5 +147,30 @@
         <item>DEFAULT</item>
         <item>OFF</item>
         <item>REQUIRE</item>
+    </string-array>
+
+    <string-array name="entries_ssl_error_mode_option">
+        <item>Block</item>
+        <item>Prompt</item>
+        <item>Proceed</item>
+    </string-array>
+    <string-array name="entry_values_ssl_error_mode_option">
+        <item>BLOCK</item>
+        <item>PROMPT</item>
+        <item>PROCEED</item>
+    </string-array>
+
+    <string-array name="entries_search_suggestion_engine_option">
+        <item>None</item>
+        <item>Google</item>
+        <item>DuckDuckGo</item>
+        <item>Yahoo</item>
+    </string-array>
+
+    <string-array name="entry_values_search_suggestion_engine_option">
+        <item>NONE</item>
+        <item>GOOGLE</item>
+        <item>DUCKDUCKGO</item>
+        <item>YAHOO</item>
     </string-array>
 </resources>

@@ -1,0 +1,6 @@
+## Changes
+
+- feat: web browsing -> search suggestion engine (autocomplete)
+- feat: support "data:" scheme in URL
+- fix: address bar regex match for http/https URLs
+- fix: kiosk control panel region app restriction key names

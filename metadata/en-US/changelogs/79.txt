@@ -1,0 +1,3 @@
+## Hot Fix
+
+- fix: focus of search suggestion no longer hijacking keyboard

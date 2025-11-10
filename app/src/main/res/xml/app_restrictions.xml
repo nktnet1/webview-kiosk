@@ -40,6 +40,12 @@
         android:description="@string/web_browsing_allow_refresh_description"
     />
     <restriction
+        android:key="web_browsing.allow_pull_to_refresh"
+        android:restrictionType="bool"
+        android:title="@string/web_browsing_allow_pull_to_refresh_title"
+        android:description="@string/web_browsing_allow_pull_to_refresh_description"
+    />
+    <restriction
         android:key="web_browsing.allow_backwards_navigation"
         android:restrictionType="bool"
         android:title="@string/web_browsing_allow_backwards_navigation_title"
@@ -94,18 +100,26 @@
         android:description="@string/web_browsing_allow_link_long_press_context_menu_description"
     />
     <restriction
-        android:key="web_browsing.allow_kiosk_control_panel"
+        android:key="web_browsing.kiosk_control_panel_region"
         android:restrictionType="choice"
-        android:entries="@array/entries_kiosk_control_panel_option"
-        android:entryValues="@array/entry_values_kiosk_control_panel_option"
-        android:title="@string/web_browsing_allow_kiosk_control_panel_title"
-        android:description="@string/web_browsing_allow_kiosk_control_panel_description"
+        android:entries="@array/entries_kiosk_control_panel_region_option"
+        android:entryValues="@array/entry_values_kiosk_control_panel_region_option"
+        android:title="@string/web_browsing_kiosk_control_panel_region_title"
+        android:description="@string/web_browsing_kiosk_control_panel_region_description"
     />
     <restriction
         android:key="web_browsing.search_provider_url"
         android:restrictionType="string"
         android:title="@string/web_browsing_search_provider_url_title"
         android:description="@string/web_browsing_search_provider_url_description"
+    />
+    <restriction
+        android:key="web_browsing.search_suggestion_engine"
+        android:restrictionType="choice"
+        android:entries="@array/entries_search_suggestion_engine_option"
+        android:entryValues="@array/entry_values_search_suggestion_engine_option"
+        android:title="@string/web_browsing_search_suggestion_engine_title"
+        android:description="@string/web_browsing_search_suggestion_engine_description"
     />
 
     <!-- Web Engine -->
@@ -197,6 +211,14 @@
         android:title="@string/web_engine_media_playback_requires_user_gesture_title"
         android:description="@string/web_engine_media_playback_requires_user_gesture_description"
     />
+    <restriction
+        android:key="web_engine.ssl_error_mode"
+        android:restrictionType="choice"
+        android:entries="@array/entries_ssl_error_mode_option"
+        android:entryValues="@array/entry_values_ssl_error_mode_option"
+        android:title="@string/web_engine_ssl_error_mode_option_title"
+        android:description="@string/web_engine_ssl_error_mode_option_description"
+    />
 
     <!-- Web Lifecycle -->
     <restriction
@@ -217,6 +239,12 @@
         android:title="@string/web_lifecycle_reset_on_inactivity_seconds_title"
         android:description="@string/web_lifecycle_reset_on_inactivity_seconds_description"
     />
+    <restriction
+        android:key="web_lifecycle.refresh_on_loading_error_interval_seconds"
+        android:restrictionType="integer"
+        android:title="@string/web_lifecycle_refresh_on_loading_error_interval_seconds_title"
+        android:description="@string/web_lifecycle_refresh_on_loading_error_interval_seconds_description"
+    />
 
     <!-- Appearance -->
     <restriction
@@ -230,11 +258,19 @@
     <restriction
         android:key="appearance.address_bar_mode"
         android:restrictionType="choice"
-        android:entries="@array/entries_address_bar_option"
-        android:entryValues="@array/entry_values_address_bar_option"
+        android:entries="@array/entries_address_bar_mode_option"
+        android:entryValues="@array/entry_values_address_bar_mode_option"
         android:title="@string/appearance_address_bar_mode_title"
         android:description="@string/appearance_address_bar_mode_description"
     />
+    <restriction
+        android:key="appearance.floating_toolbar_mode"
+        android:restrictionType="choice"
+        android:entries="@array/entries_floating_toolbar_mode_option"
+        android:entryValues="@array/entry_values_floating_toolbar_mode_option"
+        android:title="@string/appearance_floating_toolbar_mode_title"
+        android:description="@string/appearance_floating_toolbar_mode_description"
+        />
     <restriction
         android:key="appearance.webview_inset"
         android:restrictionType="choice"
