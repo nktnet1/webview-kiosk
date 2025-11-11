@@ -19,9 +19,8 @@ data class MqttStatusResponse(
     @OptIn(ExperimentalSerializationApi::class)
     @EncodeDefault
     override val type: String = "status",
-
-    val data: WebviewKioskStatus,
-
     override val identifier: String? = null,
     override val appInstanceId: String,
+
+    val data: WebviewKioskStatus,
 ) : MqttResponseMessage

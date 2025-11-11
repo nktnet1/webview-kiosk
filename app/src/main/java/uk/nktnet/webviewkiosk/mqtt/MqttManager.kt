@@ -268,7 +268,7 @@ object MqttManager {
             ?: mqttVariableReplacement(config.publishResponseTopic)
 
         val statusMessage = MqttStatusResponse(
-            identifier = UUID.randomUUID().toString(),
+            identifier = statusCommand.identifier,
             appInstanceId = config.appInstanceId,
             data = status,
         )
