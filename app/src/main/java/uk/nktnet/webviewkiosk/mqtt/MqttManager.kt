@@ -20,6 +20,15 @@ import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.MqttQosOption
 import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttCommandJsonParser
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttCommandMessage
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetStatusMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttLockEvent
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttMqttCommandError
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttStatusResponse
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttUnlockEvent
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttUrlVisitedEvent
+import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
 import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
 import uk.nktnet.webviewkiosk.utils.isValidMqttSubscribeTopic
 import java.util.Date
@@ -250,72 +259,57 @@ object MqttManager {
     }
 
     private fun publishEventTopic(event: String, payload: String) {
-        val c = client ?: return
-        if (!config.enabled || !c.state.isConnected) {
-            return
-        }
-        val topic = mqttVariableReplacement(
-            config.publishEventTopic,
-            mapOf(
-                "EVENT_NAME" to event,
-            )
-        )
-        if (!isValidMqttPublishTopic(topic)) {
-            addDebugLog("publish failed", "topic: $topic\nevent: $event\nerror: Invalid publish topic name.")
-            return
-        }
-
-        @SuppressLint("NewApi")
-        try {
-            c.publishWith()
-                .topic(topic)
-                .qos(config.publishEventQos.toMqttQos())
-                .retain(config.publishEventRetain)
-                .payloadFormatIndicator(Mqtt5PayloadFormatIndicator.UTF_8)
-                .contentType("application/json")
-                .payload(payload.toByteArray())
-                .send()
-                .whenComplete { _,  throwable ->
-                    if (throwable == null) {
-                        addDebugLog("publish success", "topic: $topic\npayload: $payload")
-                    } else {
-                        addDebugLog("publish error", "topic: $topic\nerror: $throwable")
-                    }
-                }
-        } catch (e: Exception) {
-            addDebugLog("publish failed", "topic: $topic\nevent: $event\nerror: $e")
-        }
+        val topic = mqttVariableReplacement(config.publishEventTopic, mapOf("EVENT_NAME" to event))
+        publishToMqtt(topic, payload, config.publishEventQos, config.publishEventRetain, eventName = event)
     }
 
-    fun publishGetStatus(statusCommand: MqttGetStatusMqttCommand, payload: String) {
+    fun publishGetStatus(statusCommand: MqttGetStatusMqttCommand, status: WebviewKioskStatus) {
+        val topic = statusCommand.responseTopic.takeIf { !it.isNullOrEmpty() }
+            ?: mqttVariableReplacement(config.publishResponseTopic)
+
+        val statusMessage = MqttStatusResponse(
+            identifier = UUID.randomUUID().toString(),
+            appInstanceId = config.appInstanceId,
+            data = status,
+        )
+        val payload = Json.encodeToString(statusMessage)
+        publishToMqtt(
+            topic,
+            payload,
+            config.publishResponseQos,
+            config.publishResponseRetain,
+            correlationData = statusCommand.correlationData?.toByteArray()
+        )
+    }
+
+    private fun publishToMqtt(
+        topic: String,
+        payload: String,
+        qos: MqttQosOption,
+        retain: Boolean,
+        correlationData: ByteArray? = null,
+        eventName: String? = null
+    ) {
         val c = client ?: return
-        if (!config.enabled || !c.state.isConnected) {
-            return
-        }
-        val commandTopic = statusCommand.responseTopic
-        val topic = if (commandTopic.isNullOrEmpty()) {
-            mqttVariableReplacement(
-                config.publishResponseTopic,
-            )
-        } else {
-            commandTopic
-        }
+        if (!config.enabled || !c.state.isConnected) return
         if (!isValidMqttPublishTopic(topic)) {
-            addDebugLog("publish failed", "topic: $topic\nerror: Invalid publish topic name.")
+            val eventInfo = eventName?.let { "\nevent: $it" }.orEmpty()
+            addDebugLog("publish failed", "topic: $topic$eventInfo\nerror: Invalid publish topic name.")
             return
         }
+
         try {
             @SuppressLint("NewApi")
             c.publishWith()
                 .topic(topic)
-                .correlationData(statusCommand.correlationData?.toByteArray())
-                .qos(config.publishResponseQos.toMqttQos())
-                .retain(config.publishResponseRetain)
+                .correlationData(correlationData)
+                .qos(qos.toMqttQos())
+                .retain(retain)
                 .payloadFormatIndicator(Mqtt5PayloadFormatIndicator.UTF_8)
                 .contentType("application/json")
                 .payload(payload.toByteArray())
                 .send()
-                .whenComplete { _,  throwable ->
+                .whenComplete { _, throwable ->
                     if (throwable == null) {
                         addDebugLog("publish success", "topic: $topic\npayload: $payload")
                     } else {
@@ -323,7 +317,8 @@ object MqttManager {
                     }
                 }
         } catch (e: Exception) {
-            addDebugLog("publish failed", "topic: $topic\nerror: $e")
+            val eventInfo = eventName?.let { "\nevent: $it" }.orEmpty()
+            addDebugLog("publish failed", "topic: $topic$eventInfo\nerror: $e")
         }
     }
 

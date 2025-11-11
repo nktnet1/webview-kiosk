@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.mqtt
+package uk.nktnet.webviewkiosk.mqtt.messages
 
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
