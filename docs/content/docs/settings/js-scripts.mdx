@@ -44,7 +44,7 @@ To disable, use the value `0`.
 
 When enabled, web pages can access device battery information through a JavaScript interface.
 
-Web content can call `window.getBatteryStatus()` to retrieve comprehensive battery data including:
+Web content can call `window.webviewkiosk.getBatteryStatus()` to retrieve comprehensive battery data including:
 
 - **Level and percentage** - Battery charge level as a decimal (0.0-1.0) and percentage (0-100)
 - **Charging status** - Whether the device is currently charging
@@ -56,7 +56,7 @@ Web content can call `window.getBatteryStatus()` to retrieve comprehensive batte
 ### Example Usage
 
 ```javascript
-const battery = window.getBatteryStatus();
+const battery = window.webviewkiosk.getBatteryStatus();
 if (battery) {
   console.log(`Battery level: ${battery.percentage}%`);
   console.log(`Charging: ${battery.charging}`);

@@ -5,7 +5,11 @@ import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 fun generateBatterySetupScript(): String {
     val innerScript = """
         if (typeof AndroidBattery !== 'undefined') {
-            window.getBatteryStatus = function() {
+            if (typeof window.webviewkiosk === 'undefined') {
+                window.webviewkiosk = {};
+            }
+
+            window.webviewkiosk.getBatteryStatus = function() {
                 try {
                     return JSON.parse(AndroidBattery.getBatteryStatus());
                 } catch (e) {
@@ -13,8 +17,6 @@ fun generateBatterySetupScript(): String {
                     return null;
                 }
             };
-
-            console.log('Battery API available: window.getBatteryStatus()');
         }
     """.trimIndent()
 
