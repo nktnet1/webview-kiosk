@@ -1,5 +1,13 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import MqttRestrictionsMaximumPacketSizeSetting
+import MqttRestrictionsReceiveMaximumSetting
+import MqttRestrictionsRequestProblemInformationSetting
+import MqttRestrictionsRequestResponseInformationSetting
+import MqttRestrictionsSendMaximumPacketSizeSetting
+import MqttRestrictionsSendMaximumSetting
+import MqttRestrictionsSendTopicAliasMaximumSetting
+import MqttRestrictionsTopicAliasMaximumSetting
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -8,39 +16,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.setting.MqttControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingListItem
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttEnabledSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsButton
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.windowInsetsPadding
 
 @Composable
-fun SettingsMqttScreen(navController: NavController) {
-    val settingsItems = listOf(
-        Triple(
-            "Connection",
-            "Specify how to connect to your broker server",
-            Screen.SettingsMqttConnection.route
-        ),
-        Triple(
-            "Topics",
-            "Publish and subscribe topic configurations",
-            Screen.SettingsMqttTopics.route
-        ),
-        Triple(
-            "Will (LWT)",
-            "Send message if the client disconnects unexpectedly",
-            Screen.SettingsMqttWill.route
-        ),
-        Triple(
-            "Restrictions",
-            "Broker and client restrictions",
-            Screen.SettingsMqttRestrictions.route
-        ),
-    )
-
+fun SettingsMqttRestrictionsScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -52,26 +36,25 @@ fun SettingsMqttScreen(navController: NavController) {
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
         ) {
-            SettingLabel(navController = navController, label = "MQTT")
-
+            SettingLabel(navController = navController, label = "MQTT Restrictions")
             SettingDivider()
 
             MqttControlButtons()
             HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
-            MqttEnabledSetting()
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            settingsItems.forEach { (title, description, route) ->
-                SettingListItem(title, description) { navController.navigate(route) }
-            }
+            MqttRestrictionsReceiveMaximumSetting()
+            MqttRestrictionsSendMaximumSetting()
+            MqttRestrictionsMaximumPacketSizeSetting()
+            MqttRestrictionsSendMaximumPacketSizeSetting()
+            MqttRestrictionsTopicAliasMaximumSetting()
+            MqttRestrictionsSendTopicAliasMaximumSetting()
+            MqttRestrictionsRequestProblemInformationSetting()
+            MqttRestrictionsRequestResponseInformationSetting()
 
             Spacer(modifier = Modifier.height(8.dp))
         }
 
         MqttDebugLogsButton(navController)
-
         Spacer(modifier = Modifier.height(16.dp))
     }
 }

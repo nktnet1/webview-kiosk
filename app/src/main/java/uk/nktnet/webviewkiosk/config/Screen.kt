@@ -21,6 +21,7 @@ sealed class Screen(val route: String) {
     object SettingsMqtt : Screen("settings/mqtt")
     object SettingsMqttConnection : Screen("settings/mqtt/connection")
     object SettingsMqttWill : Screen("settings/mqtt/will")
+    object SettingsMqttRestrictions : Screen("settings/mqtt/restrictions")
     object SettingsMqttDebug : Screen("settings/mqtt/debug")
     object SettingsMqttTopics : Screen("settings/mqtt/topics")
     object SettingsMqttTopicsPublishEvent : Screen("settings/mqtt/topics/subscribe/telemetry")
