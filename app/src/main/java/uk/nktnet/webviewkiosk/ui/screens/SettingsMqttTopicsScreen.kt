@@ -26,6 +26,11 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
             "Changes to device state",
             Screen.SettingsMqttTopicsPublishEvent.route
         ),
+        Triple(
+            "Response",
+            "Fallback response channel for commands",
+            Screen.SettingsMqttTopicsPublishResponse.route
+        ),
     )
 
     val subscribeTopics = listOf(

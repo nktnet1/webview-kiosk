@@ -82,6 +82,9 @@ fun SetupNavHost(
             authComposable(Screen.SettingsMqttTopicsPublishEvent.route) {
                 SettingsMqttTopicsPublishEventScreen(navController)
             }
+            authComposable(Screen.SettingsMqttTopicsPublishResponse.route) {
+                SettingsMqttTopicsPublishResponseScreen(navController)
+            }
             authComposable(Screen.SettingsMqttTopicsSubscribeCommand.route) {
                 SettingsMqttTopicsSubscribeCommandScreen(navController)
             }

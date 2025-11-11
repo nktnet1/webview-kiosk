@@ -19,10 +19,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import android.view.KeyEvent
 import androidx.activity.compose.LocalActivity
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import uk.nktnet.webviewkiosk.utils.getStatus
+import kotlinx.serialization.json.Json
 import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
 import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
@@ -32,6 +35,7 @@ import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonService
 import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.applyDeviceRotation
 import uk.nktnet.webviewkiosk.main.handleMainIntent
+import uk.nktnet.webviewkiosk.mqtt.MqttGetStatusMqttCommand
 import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
@@ -132,6 +136,7 @@ class MainActivity : AppCompatActivity() {
 
             val waitingForUnlock by WaitingForUnlockStateSingleton.waitingForUnlock.collectAsState()
             val biometricResult by BiometricPromptManager.promptResults.collectAsState()
+            val context = LocalContext.current
             val activity = LocalActivity.current
 
             LaunchedEffect(Unit) {
@@ -141,6 +146,18 @@ class MainActivity : AppCompatActivity() {
                         userSettings.importJson(payload)
                         updateUserSettings()
                         navigateToWebViewScreen(navController)
+                    }
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                MqttManager.commands.collect { command ->
+                    when (command) {
+                        is MqttGetStatusMqttCommand -> {
+                            val payload = Json.encodeToString(getStatus(context))
+                            MqttManager.publishGetStatus(command, payload)
+                        }
+                        else -> Unit
                     }
                 }
             }

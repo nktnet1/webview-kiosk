@@ -23,6 +23,10 @@ data class MqttConfig(
     val publishEventQos: MqttQosOption,
     val publishEventRetain: Boolean,
 
+    val publishResponseTopic: String,
+    val publishResponseQos: MqttQosOption,
+    val publishResponseRetain: Boolean,
+
     val subscribeCommandTopic: String,
     val subscribeCommandQos: MqttQosOption,
     val subscribeCommandRetainHandling: MqttRetainHandlingOption,

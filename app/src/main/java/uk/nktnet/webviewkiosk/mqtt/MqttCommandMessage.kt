@@ -56,6 +56,16 @@ data class MqttUnlockMqttCommand(override val identifier: String? = null) : Mqtt
 }
 
 @Serializable
+@SerialName("get_status")
+data class MqttGetStatusMqttCommand(
+    override val identifier: String? = null,
+    var responseTopic: String? = null,
+    var correlationData: String? = null,
+) : MqttCommandMessage {
+    override fun toString() = "Get Status"
+}
+
+@Serializable
 @SerialName("error")
 data class MqttMqttCommandError(
     val error: String = "unknown command",

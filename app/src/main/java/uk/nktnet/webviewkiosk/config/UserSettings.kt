@@ -452,6 +452,25 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN,
         false,
     )
+    var mqttPublishResponseTopic by stringPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Publish.Response.TOPIC,
+        "wk/response"
+    )
+    var mqttPublishResponseQos by intEnumPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Publish.Response.QOS,
+        MqttQosOption.AT_MOST_ONCE.code,
+        fromInt = MqttQosOption::fromCode
+    )
+    var mqttPublishResponseRetain by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Publish.Response.RETAIN,
+        false
+    )
     var mqttSubscribeCommandTopic by stringPref(
         restrictions,
         prefs,
@@ -687,6 +706,9 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
             put(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.code)
             put(UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN, mqttPublishEventRetain)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.Response.TOPIC, mqttPublishResponseTopic)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.Response.QOS, mqttPublishResponseQos.code)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.Response.RETAIN, mqttPublishResponseRetain)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC, mqttSubscribeCommandTopic)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS, mqttSubscribeCommandQos.code)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING, mqttSubscribeCommandRetainHandling.code)
@@ -816,6 +838,11 @@ class UserSettings(val context: Context) {
                 json.optInt(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.code)
             )
             mqttPublishEventRetain = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN, mqttPublishEventRetain)
+            mqttPublishResponseTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Response.TOPIC, mqttPublishResponseTopic)
+            mqttPublishResponseQos = MqttQosOption.fromCode(
+                json.optInt(UserSettingsKeys.Mqtt.Topics.Publish.Response.QOS, mqttPublishResponseQos.code)
+            )
+            mqttPublishResponseRetain = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Publish.Response.RETAIN, mqttPublishResponseRetain)
             mqttSubscribeCommandTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC, mqttSubscribeCommandTopic)
             mqttSubscribeCommandQos = MqttQosOption.fromCode(
                 json.optInt(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS, mqttSubscribeCommandQos.code)

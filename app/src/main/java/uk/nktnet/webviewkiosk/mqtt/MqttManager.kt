@@ -6,6 +6,7 @@ import com.hivemq.client.mqtt.MqttClientState
 import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PayloadFormatIndicator
+import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -85,6 +86,10 @@ object MqttManager {
             publishEventQos = userSettings.mqttPublishEventQos,
             publishEventRetain = userSettings.mqttPublishEventRetain,
 
+            publishResponseTopic = userSettings.mqttPublishResponseTopic,
+            publishResponseQos = userSettings.mqttPublishResponseQos,
+            publishResponseRetain = userSettings.mqttPublishResponseRetain,
+
             subscribeCommandTopic = userSettings.mqttSubscribeCommandTopic,
             subscribeCommandQos = userSettings.mqttSubscribeCommandQos,
             subscribeCommandRetainHandling = userSettings.mqttSubscribeCommandRetainHandling,
@@ -156,7 +161,6 @@ object MqttManager {
             .buildAsync()
     }
 
-    @SuppressLint("NewApi")
     fun connect(
         systemSettings: SystemSettings,
         userSettings: UserSettings,
@@ -177,6 +181,7 @@ object MqttManager {
             return
         }
         addDebugLog("connect pending", "Attempting to connect...")
+        @SuppressLint("NewApi")
         c.connectWith()
             .cleanStart(config.cleanStart)
             .keepAlive(config.keepAlive)
@@ -223,7 +228,7 @@ object MqttManager {
             appInstanceId = config.appInstanceId
         )
         val payload = Json.encodeToString(event)
-        publishEvent(event.event, payload)
+        publishEventTopic(event.event, payload)
     }
 
     fun publishLockEvent() {
@@ -232,7 +237,7 @@ object MqttManager {
             appInstanceId = config.appInstanceId
         )
         val payload = Json.encodeToString(event)
-        publishEvent(event.event, payload)
+        publishEventTopic(event.event, payload)
     }
 
     fun publishUnlockEvent() {
@@ -241,11 +246,10 @@ object MqttManager {
             appInstanceId = config.appInstanceId
         )
         val payload = Json.encodeToString(event)
-        publishEvent(event.event, payload)
+        publishEventTopic(event.event, payload)
     }
 
-    @SuppressLint("NewApi")
-    private fun publishEvent(event: String, payload: String) {
+    private fun publishEventTopic(event: String, payload: String) {
         val c = client ?: return
         if (!config.enabled || !c.state.isConnected) {
             return
@@ -260,6 +264,8 @@ object MqttManager {
             addDebugLog("publish failed", "topic: $topic\nevent: $event\nerror: Invalid publish topic name.")
             return
         }
+
+        @SuppressLint("NewApi")
         try {
             c.publishWith()
                 .topic(topic)
@@ -281,19 +287,73 @@ object MqttManager {
         }
     }
 
+    fun publishGetStatus(statusCommand: MqttGetStatusMqttCommand, payload: String) {
+        val c = client ?: return
+        if (!config.enabled || !c.state.isConnected) {
+            return
+        }
+        val commandTopic = statusCommand.responseTopic
+        val topic = if (commandTopic.isNullOrEmpty()) {
+            mqttVariableReplacement(
+                config.publishResponseTopic,
+            )
+        } else {
+            commandTopic
+        }
+        if (!isValidMqttPublishTopic(topic)) {
+            addDebugLog("publish failed", "topic: $topic\nerror: Invalid publish topic name.")
+            return
+        }
+        try {
+            @SuppressLint("NewApi")
+            c.publishWith()
+                .topic(topic)
+                .correlationData(statusCommand.correlationData?.toByteArray())
+                .qos(config.publishResponseQos.toMqttQos())
+                .retain(config.publishResponseRetain)
+                .payloadFormatIndicator(Mqtt5PayloadFormatIndicator.UTF_8)
+                .contentType("application/json")
+                .payload(payload.toByteArray())
+                .send()
+                .whenComplete { _,  throwable ->
+                    if (throwable == null) {
+                        addDebugLog("publish success", "topic: $topic\npayload: $payload")
+                    } else {
+                        addDebugLog("publish error", "topic: $topic\nerror: $throwable")
+                    }
+                }
+        } catch (e: Exception) {
+            addDebugLog("publish failed", "topic: $topic\nerror: $e")
+        }
+    }
+
     private fun subscribeToTopics() {
         subscribeTopic(
             topic = config.subscribeCommandTopic,
             qos = config.subscribeCommandQos,
             retainHandling = config.subscribeCommandRetainHandling,
             retainAsPublished = config.subscribeCommandRetainAsPublished,
-            onMessage = { publishTopic, payloadStr ->
+            onMessage = { publish, payloadStr ->
                 try {
                     val command = MqttCommandJsonParser.decodeFromString<MqttCommandMessage>(payloadStr)
+
+                    when (command) {
+                        is MqttGetStatusMqttCommand -> {
+                            @SuppressLint("NewApi")
+                            if (publish.responseTopic.isPresent) {
+                                command.responseTopic = publish.responseTopic.toString()
+                                if (publish.correlationData.isPresent) {
+                                    command.correlationData = publish.correlationData.toString()
+                                }
+                            }
+                        }
+                        else -> Unit
+                    }
                     scope.launch { _commands.emit(command) }
+
                     addDebugLog(
                         "command received",
-                        "topic: $publishTopic\ncommand: $command",
+                        "topic: ${publish.topic}\ncommand: $command",
                         command.identifier
                     )
                 } catch (e: Exception) {
@@ -309,10 +369,10 @@ object MqttManager {
             qos = config.subscribeSettingsQos,
             retainHandling = config.subscribeSettingsRetainHandling,
             retainAsPublished = config.subscribeSettingsRetainAsPublished,
-            onMessage = { publishTopic, payloadStr ->
+            onMessage = { publish, payloadStr ->
                 addDebugLog(
                     "settings received",
-                    "topic: $publishTopic\npayload: $payloadStr",
+                    "topic: ${publish.topic}\npayload: $payloadStr",
                     identifier = getIdentifier(payloadStr)
                 )
                 scope.launch { _settings.emit(payloadStr) }
@@ -327,13 +387,12 @@ object MqttManager {
         }.getOrNull()
     }
 
-    @SuppressLint("NewApi")
     private fun subscribeTopic(
         topic: String,
         qos: MqttQosOption,
         retainHandling: MqttRetainHandlingOption,
         retainAsPublished: Boolean,
-        onMessage: (publishTopic: String, payloadStr: String) -> Unit
+        onMessage: (publish: Mqtt5Publish, payloadStr: String) -> Unit
     ) {
         val c = client ?: return
         val subscribeTopic = mqttVariableReplacement(topic)
@@ -342,6 +401,7 @@ object MqttManager {
             return
         }
         try {
+            @SuppressLint("NewApi")
             c.subscribeWith()
                 .topicFilter(subscribeTopic)
                 .qos(qos.toMqttQos())
@@ -350,7 +410,7 @@ object MqttManager {
                 .noLocal(true)
                 .callback { publish ->
                     val payloadStr = publish.payloadAsBytes.toString(UTF_8)
-                    onMessage(publish.topic.toString(), payloadStr)
+                    onMessage(publish, payloadStr)
                 }
                 .send()
                 .whenComplete { _, throwable ->
@@ -379,7 +439,6 @@ object MqttManager {
         return true
     }
 
-    @SuppressLint("NewApi")
     fun disconnect(
         onDisconnected: (() -> Unit)? = null,
         onError: ((String?) -> Unit)? = null
@@ -390,6 +449,7 @@ object MqttManager {
             onDisconnected?.invoke()
             return
         }
+        @SuppressLint("NewApi")
         c.disconnect().whenComplete { _, throwable ->
             if (throwable == null) {
                 onDisconnected?.invoke()

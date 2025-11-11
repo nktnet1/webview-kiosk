@@ -456,6 +456,8 @@ fun WebviewScreen(navController: NavController) {
                 is MqttLockMqttCommand -> tryLockTask(activity)
                 is MqttUnlockMqttCommand -> tryUnlockTask(activity)
                 is MqttMqttCommandError -> showToast("Received invalid MQTT command. See debug logs in MQTT settings.")
+                // No need to handle other commands (consumed by MainActivity).
+                else -> Unit
             }
         }
     }
