@@ -195,8 +195,30 @@ object MqttManager {
             }
     }
 
-    fun publishUrlVisited(url: String) {
-        val event = MqttUrlVisitedEvent(identifier = UUID.randomUUID().toString(), url = url)
+    fun publishUrlVisitedEvent(url: String) {
+        val event = MqttUrlVisitedEvent(
+            identifier = UUID.randomUUID().toString(),
+            url = url,
+            appInstanceId = config.appInstanceId
+        )
+        val payload = Json.encodeToString(event)
+        publishEvent(event.event, payload)
+    }
+
+    fun publishLockEvent() {
+        val event = MqttLockEvent(
+            identifier = UUID.randomUUID().toString(),
+            appInstanceId = config.appInstanceId
+        )
+        val payload = Json.encodeToString(event)
+        publishEvent(event.event, payload)
+    }
+
+    fun publishUnlockEvent() {
+        val event = MqttUnlockEvent(
+            identifier = UUID.randomUUID().toString(),
+            appInstanceId = config.appInstanceId
+        )
         val payload = Json.encodeToString(event)
         publishEvent(event.event, payload)
     }
@@ -218,15 +240,16 @@ object MqttManager {
                 .contentType("application/json")
                 .payload(payload.toByteArray())
                 .send()
-            addDebugLog("publish success", "topic: $topic\nevent: $event")
+            addDebugLog("publish success", "topic: $topic\npayload: $payload")
         } catch (e: Exception) {
             addDebugLog("publish failed", "topic: $topic\nevent: $event\nerror: $e")
         }
     }
 
     private fun subscribeToTopics() {
+        val subscribeTopic = mqttVariableReplacement(config.subscribeSettingsTopic)
         subscribeTopic(
-            topic = config.subscribeCommandTopic,
+            topic = subscribeTopic,
             qos = config.subscribeCommandQos,
             retainHandling = config.subscribeCommandRetainHandling,
             retainAsPublished = config.subscribeCommandRetainAsPublished,

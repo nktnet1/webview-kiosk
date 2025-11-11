@@ -183,7 +183,7 @@ fun WebviewScreen(navController: NavController) {
             publishUrlVisitedJob?.cancel()
             publishUrlVisitedJob = scope.launch {
                 delay(1000)
-                MqttManager.publishUrlVisited(url)
+                MqttManager.publishUrlVisitedEvent(url)
             }
         }
         WebViewNavigation.appendWebviewHistory(
