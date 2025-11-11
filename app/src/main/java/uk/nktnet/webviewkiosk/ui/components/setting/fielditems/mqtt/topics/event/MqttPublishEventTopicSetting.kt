@@ -21,7 +21,7 @@ fun MqttPublishEventTopicSetting() {
         infoText = """
             The MQTT topic to publish event messages.
         """.trimIndent(),
-        placeholder = "e.g. wk/event",
+        placeholder = "e.g. wk/event/${'$'}{EVENT_NAME}",
         initialValue = userSettings.mqttPublishEventTopic,
         descriptionFormatter = {
             mqttVariableReplacement( it)

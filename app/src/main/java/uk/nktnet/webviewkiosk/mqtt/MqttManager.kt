@@ -19,6 +19,8 @@ import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.MqttQosOption
 import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption
+import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
+import uk.nktnet.webviewkiosk.utils.isValidMqttSubscribeTopic
 import java.util.Date
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -242,6 +244,7 @@ object MqttManager {
         publishEvent(event.event, payload)
     }
 
+    @SuppressLint("NewApi")
     private fun publishEvent(event: String, payload: String) {
         val c = client ?: return
         if (!config.enabled || !c.state.isConnected) {
@@ -253,6 +256,10 @@ object MqttManager {
                 "EVENT_NAME" to event,
             )
         )
+        if (!isValidMqttPublishTopic(topic)) {
+            addDebugLog("publish failed", "topic: $topic\nevent: $event\nerror: Invalid publish topic name.")
+            return
+        }
         try {
             c.publishWith()
                 .topic(topic)
@@ -262,16 +269,21 @@ object MqttManager {
                 .contentType("application/json")
                 .payload(payload.toByteArray())
                 .send()
-            addDebugLog("publish success", "topic: $topic\npayload: $payload")
+                .whenComplete { _,  throwable ->
+                    if (throwable == null) {
+                        addDebugLog("publish success", "topic: $topic\npayload: $payload")
+                    } else {
+                        addDebugLog("publish error", "topic: $topic\nerror: $throwable")
+                    }
+                }
         } catch (e: Exception) {
             addDebugLog("publish failed", "topic: $topic\nevent: $event\nerror: $e")
         }
     }
 
     private fun subscribeToTopics() {
-        val subscribeTopic = mqttVariableReplacement(config.subscribeCommandTopic)
         subscribeTopic(
-            topic = subscribeTopic,
+            topic = config.subscribeCommandTopic,
             qos = config.subscribeCommandQos,
             retainHandling = config.subscribeCommandRetainHandling,
             retainAsPublished = config.subscribeCommandRetainAsPublished,
@@ -324,9 +336,14 @@ object MqttManager {
         onMessage: (publishTopic: String, payloadStr: String) -> Unit
     ) {
         val c = client ?: return
+        val subscribeTopic = mqttVariableReplacement(topic)
+        if (!isValidMqttSubscribeTopic(subscribeTopic)) {
+            addDebugLog("subscribe failed", "topic: $subscribeTopic\nerror: Invalid topic name")
+            return
+        }
         try {
             c.subscribeWith()
-                .topicFilter(mqttVariableReplacement(topic))
+                .topicFilter(subscribeTopic)
                 .qos(qos.toMqttQos())
                 .retainHandling(retainHandling.toMqttRetainHandling())
                 .retainAsPublished(retainAsPublished)
@@ -338,13 +355,13 @@ object MqttManager {
                 .send()
                 .whenComplete { _, throwable ->
                     if (throwable == null) {
-                        addDebugLog("subscribe success", "topic: $topic")
+                        addDebugLog("subscribe success", "topic: $subscribeTopic")
                     } else {
-                        addDebugLog("subscribe error", "topic: $topic\nerror: $throwable")
+                        addDebugLog("subscribe error", "topic: $subscribeTopic\nerror: $throwable")
                     }
                 }
         } catch (e: Exception) {
-            addDebugLog("subscribe failed", e.message)
+            addDebugLog("subscribe failed", "topic: $subscribeTopic\nerror: $e")
             e.printStackTrace()
         }
     }
@@ -394,7 +411,8 @@ object MqttManager {
         additionalReplacementMap: Map<String, String> = emptyMap(),
     ): String {
         val variableReplacementMap = mapOf(
-            "APP_INSTANCE_ID" to config.appInstanceId
+            "APP_INSTANCE_ID" to config.appInstanceId,
+            "USERNAME" to config.username,
         ) + additionalReplacementMap
         val regex = "\\$\\{([^}]+)\\}".toRegex()
         return regex.replace(value) { matchResult ->
