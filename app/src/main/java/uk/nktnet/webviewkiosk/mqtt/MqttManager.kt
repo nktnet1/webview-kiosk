@@ -334,10 +334,10 @@ object MqttManager {
                 }
                 .send()
                 .whenComplete { _, throwable ->
-                    if (throwable != null) {
-                        addDebugLog("subscribe error", "topic: $topic\nerror: $throwable")
-                    } else {
+                    if (throwable == null) {
                         addDebugLog("subscribe success", "topic: $topic")
+                    } else {
+                        addDebugLog("subscribe error", "topic: $topic\nerror: $throwable")
                     }
                 }
         } catch (e: Exception) {
