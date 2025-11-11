@@ -40,6 +40,7 @@ import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
 import uk.nktnet.webviewkiosk.utils.getLocalUrl
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handlePreviewKeyUnlockEvent
+import uk.nktnet.webviewkiosk.utils.setWindowBrightness
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
@@ -90,6 +91,7 @@ class MainActivity : AppCompatActivity() {
         keepScreenOnState = mutableStateOf(userSettings.keepScreenOn)
         deviceRotationState = mutableStateOf(userSettings.deviceRotation)
 
+
         val systemSettings = SystemSettings(this)
         val webContentDir = getWebContentFilesDir(this)
 
@@ -103,6 +105,8 @@ class MainActivity : AppCompatActivity() {
 
         BiometricPromptManager.init(this)
         applyDeviceRotation(userSettings.deviceRotation)
+        setWindowBrightness(this, userSettings.brightness)
+
         systemSettings.isFreshLaunch = true
 
         val intentUrlResult = handleMainIntent(intent)

@@ -310,6 +310,12 @@
         android:description="@string/device_rotation_description"
     />
     <restriction
+        android:key="device.brightness"
+        android:restrictionType="integer"
+        android:title="@string/device_brightness_title"
+        android:description="@string/device_brightness_description"
+    />
+    <restriction
         android:key="device.allow_camera"
         android:restrictionType="bool"
         android:title="@string/device_allow_camera_title"

@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowCamer
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowLocationSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowMicrophoneSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.BackButtonHoldActionSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.BrightnessSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.CustomUnlockShortcutSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.DeviceRotationSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.KeepScreenOnSetting
@@ -38,6 +39,7 @@ fun SettingsDeviceScreen(
 
         KeepScreenOnSetting(keepScreenOnState)
         DeviceRotationSetting(deviceRotationState)
+        BrightnessSetting()
         AllowCameraSetting()
         AllowMicrophoneSetting()
         AllowLocationSetting()
