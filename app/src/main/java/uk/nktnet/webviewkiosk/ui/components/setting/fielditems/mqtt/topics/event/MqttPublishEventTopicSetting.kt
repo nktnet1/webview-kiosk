@@ -3,7 +3,6 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.even
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.mqtt.MqttManager.mqttVariableReplacement
@@ -14,7 +13,6 @@ import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
 fun MqttPublishEventTopicSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-    val systemSettings = remember { SystemSettings(context) }
 
     val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC)
 
@@ -26,7 +24,7 @@ fun MqttPublishEventTopicSetting() {
         placeholder = "e.g. wk/event",
         initialValue = userSettings.mqttPublishEventTopic,
         descriptionFormatter = {
-            mqttVariableReplacement(systemSettings, it)
+            mqttVariableReplacement( it)
         },
         validator = { isValidMqttPublishTopic(it) },
         restricted = restricted,

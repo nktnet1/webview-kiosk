@@ -64,8 +64,10 @@ object MqttManager {
 
     private fun updateConfig(systemSettings: SystemSettings, userSettings: UserSettings) {
         config = MqttConfig(
+            appInstanceId = systemSettings.appInstanceId,
+
             enabled = userSettings.mqttEnabled,
-            clientId = mqttVariableReplacement(systemSettings, userSettings.mqttClientId),
+            clientId = userSettings.mqttClientId,
             serverHost = userSettings.mqttServerHost,
             serverPort = userSettings.mqttServerPort,
             username = userSettings.mqttUsername,
@@ -81,12 +83,12 @@ object MqttManager {
             publishEventQos = userSettings.mqttPublishEventQos,
             publishEventRetain = userSettings.mqttPublishEventRetain,
 
-            subscribeCommandTopic = mqttVariableReplacement(systemSettings, userSettings.mqttSubscribeCommandTopic),
+            subscribeCommandTopic = userSettings.mqttSubscribeCommandTopic,
             subscribeCommandQos = userSettings.mqttSubscribeCommandQos,
             subscribeCommandRetainHandling = userSettings.mqttSubscribeCommandRetainHandling,
             subscribeCommandRetainAsPublished = userSettings.mqttSubscribeCommandRetainAsPublished,
 
-            subscribeSettingsTopic = mqttVariableReplacement(systemSettings, userSettings.mqttSubscribeSettingsTopic),
+            subscribeSettingsTopic = userSettings.mqttSubscribeSettingsTopic,
             subscribeSettingsQos = userSettings.mqttSubscribeSettingsQos,
             subscribeSettingsRetainHandling = userSettings.mqttSubscribeSettingsRetainHandling,
             subscribeSettingsRetainAsPublished = userSettings.mqttSubscribeSettingsRetainAsPublished,
@@ -108,7 +110,7 @@ object MqttManager {
             .serverPort(config.serverPort)
 
         if (config.clientId.isNotEmpty()) {
-            builder = builder.identifier(config.clientId)
+            builder = builder.identifier(mqttVariableReplacement(config.clientId))
         }
 
         if (config.useTls) {
@@ -193,25 +195,33 @@ object MqttManager {
             }
     }
 
-    fun publishUrlChange(url: String) {
-        val event = MqttUrlChangeEvent(identifier = UUID.randomUUID().toString(), url = url)
+    fun publishUrlVisited(url: String) {
+        val event = MqttUrlVisitedEvent(identifier = UUID.randomUUID().toString(), url = url)
         val payload = Json.encodeToString(event)
-        publishEvent(payload)
+        publishEvent(event.event, payload)
     }
 
-    private fun publishEvent(payload: String) {
+    private fun publishEvent(event: String, payload: String) {
         val c = client ?: return
         if (!config.enabled || !c.state.isConnected) {
             return
         }
-        c.publishWith()
-            .topic(config.publishEventTopic)
-            .qos(config.publishEventQos.toMqttQos())
-            .retain(config.publishEventRetain)
-            .payloadFormatIndicator(Mqtt5PayloadFormatIndicator.UTF_8)
-            .contentType("application/json")
-            .payload(payload.toByteArray())
-            .send()
+        val topic = mqttVariableReplacement(config.publishEventTopic, mapOf(
+            "EVENT_NAME" to event,
+        ))
+        try {
+            c.publishWith()
+                .topic(topic)
+                .qos(config.publishEventQos.toMqttQos())
+                .retain(config.publishEventRetain)
+                .payloadFormatIndicator(Mqtt5PayloadFormatIndicator.UTF_8)
+                .contentType("application/json")
+                .payload(payload.toByteArray())
+                .send()
+            addDebugLog("publish success", "topic: $topic\nevent: $event")
+        } catch (e: Exception) {
+            addDebugLog("publish failed", "topic: $topic\nevent: $event\nerror: $e")
+        }
     }
 
     private fun subscribeToTopics() {
@@ -270,7 +280,7 @@ object MqttManager {
         val c = client ?: return
         try {
             c.subscribeWith()
-                .topicFilter(topic)
+                .topicFilter(mqttVariableReplacement(topic))
                 .qos(qos.toMqttQos())
                 .retainHandling(retainHandling.toMqttRetainHandling())
                 .retainAsPublished(retainAsPublished)
@@ -326,14 +336,17 @@ object MqttManager {
         }
     }
 
-    fun mqttVariableReplacement(systemSettings: SystemSettings, input: String): String {
-        val variableMap = mapOf(
-            "APP_INSTANCE_ID" to systemSettings.appInstanceId,
-        )
+    fun mqttVariableReplacement(
+        value: String,
+        additionalReplacementMap: Map<String, String> = emptyMap(),
+    ): String {
+        val variableReplacementMap = mapOf(
+            "APP_INSTANCE_ID" to config.appInstanceId
+        ) + additionalReplacementMap
         val regex = "\\$\\{([^}]+)\\}".toRegex()
-        return regex.replace(input) { matchResult ->
+        return regex.replace(value) { matchResult ->
             val key = matchResult.groupValues[1]
-            variableMap[key] ?: matchResult.value
+            variableReplacementMap[key] ?: matchResult.value
         }.trim()
     }
 }

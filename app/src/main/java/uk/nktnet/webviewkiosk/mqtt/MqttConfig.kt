@@ -1,10 +1,11 @@
 package uk.nktnet.webviewkiosk.mqtt
 
-import kotlinx.serialization.json.Json
 import uk.nktnet.webviewkiosk.config.option.MqttQosOption
 import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption
 
 data class MqttConfig(
+    val appInstanceId: String,
+
     val enabled: Boolean,
     val clientId: String,
     val serverHost: String,

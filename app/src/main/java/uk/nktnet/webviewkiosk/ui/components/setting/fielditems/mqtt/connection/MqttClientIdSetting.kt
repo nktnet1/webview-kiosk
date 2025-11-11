@@ -8,7 +8,6 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.toClipEntry
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.mqtt.MqttManager
@@ -18,7 +17,6 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 fun MqttClientIdSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-    val systemSettings = remember { SystemSettings(context) }
 
     val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.CLIENT_ID)
 
@@ -38,7 +36,7 @@ fun MqttClientIdSetting() {
             if (it.trim().isEmpty()) {
                 "(blank)"
             } else {
-                MqttManager.mqttVariableReplacement(systemSettings, it)
+                MqttManager.mqttVariableReplacement(it)
             }
         },
         restricted = restricted,
@@ -47,7 +45,7 @@ fun MqttClientIdSetting() {
             scope.launch {
                 val clipData = ClipData.newPlainText(
                     "MQTT Client ID",
-                    MqttManager.mqttVariableReplacement(systemSettings, v)
+                    MqttManager.mqttVariableReplacement(v)
                 )
                 clipboard.setClipEntry(clipData.toClipEntry())
             }

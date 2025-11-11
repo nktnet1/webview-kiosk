@@ -3,7 +3,6 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.comm
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.mqtt.MqttManager.mqttVariableReplacement
@@ -14,7 +13,6 @@ import uk.nktnet.webviewkiosk.utils.isValidMqttSubscribeTopic
 fun MqttSubscribeCommandTopicSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-    val systemSettings = remember { SystemSettings(context) }
 
     val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC)
 
@@ -26,7 +24,7 @@ fun MqttSubscribeCommandTopicSetting() {
         restricted = restricted,
         validator = { isValidMqttSubscribeTopic(it) },
         descriptionFormatter = {
-            mqttVariableReplacement(systemSettings, it)
+            mqttVariableReplacement( it)
         },
         isMultiline = false,
         onSave = { userSettings.mqttSubscribeCommandTopic = it }
