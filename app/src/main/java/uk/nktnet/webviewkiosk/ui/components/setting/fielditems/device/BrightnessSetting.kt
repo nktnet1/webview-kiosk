@@ -22,7 +22,11 @@ fun BrightnessSetting() {
 
     NumberSettingFieldItem(
         label = "Brightness",
-        infoText = "Set the app window brightness from 0 (dark) to 100 (full).",
+        infoText = """
+            Set the app window brightness from 0 (very dim) to 100 (very dark).
+            
+            Use -1 to disable (i.e. the system default brightness will be used).
+        """.trimIndent(),
         initialValue = userSettings.brightness,
         restricted = userSettings.isRestricted(UserSettingsKeys.Device.BRIGHTNESS),
         min = -1,
