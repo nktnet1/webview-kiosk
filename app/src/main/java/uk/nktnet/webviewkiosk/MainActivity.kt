@@ -50,7 +50,6 @@ class MainActivity : AppCompatActivity() {
     private val navControllerState = mutableStateOf<NavHostController?>(null)
     private var uploadingFileUri: Uri? = null
     private var uploadProgress by mutableFloatStateOf(0f)
-    private lateinit var subscriber: MqttManager
     private lateinit var userSettings: UserSettings
     private lateinit var systemSettings: SystemSettings
     private lateinit var themeState: MutableState<ThemeOption>
@@ -269,7 +268,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         unregisterReceiver(restrictionsReceiver)
-        subscriber.disconnect()
+        MqttManager.disconnect()
         super.onDestroy()
     }
 

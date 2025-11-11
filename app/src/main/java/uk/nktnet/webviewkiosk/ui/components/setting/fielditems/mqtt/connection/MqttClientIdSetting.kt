@@ -27,10 +27,10 @@ fun MqttClientIdSetting() {
         placeholder = "e.g. wk-${'$'}{APP_INSTANCE_ID}",
         initialValue = userSettings.mqttClientId,
         descriptionFormatter = {
-            if (it.isNotEmpty()) {
-                MqttManager.mqttVariableReplacement(systemSettings, it)
-            } else {
+            if (it.trim().isEmpty()) {
                 "(blank)"
+            } else {
+                MqttManager.mqttVariableReplacement(systemSettings, it)
             }
         },
         restricted = restricted,
