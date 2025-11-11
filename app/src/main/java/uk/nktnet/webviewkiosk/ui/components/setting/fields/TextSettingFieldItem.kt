@@ -29,6 +29,7 @@ fun TextSettingFieldItem(
     isMultiline: Boolean,
     modifier: Modifier = Modifier,
     restricted: Boolean,
+    onLongClick: ((value: String) -> Unit)? = null,
     validator: (String) -> Boolean = { true },
     validationMessage: String? = null,
     onSave: (String) -> Unit,
@@ -52,7 +53,8 @@ fun TextSettingFieldItem(
             draftValue = value
             draftError = !validator(value)
             showDialog = true
-        }
+        },
+        onLongClick = onLongClick,
     ) { v ->
         val description = descriptionFormatter?.invoke(v) ?: run {
             if (isMultiline) {
