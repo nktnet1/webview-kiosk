@@ -89,7 +89,6 @@ fun createCustomWebview(
                 mediaPlaybackRequiresUserGesture = userSettings.mediaPlaybackRequiresUserGesture
             }
 
-            // Add JavaScript interface for battery status if enabled
             if (userSettings.enableBatteryApi) {
                 addJavascriptInterface(BatteryInterface(context), "AndroidBattery")
             }

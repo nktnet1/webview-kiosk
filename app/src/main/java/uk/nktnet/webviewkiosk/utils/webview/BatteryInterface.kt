@@ -7,30 +7,8 @@ import android.os.BatteryManager
 import android.webkit.JavascriptInterface
 import org.json.JSONObject
 
-/**
- * JavaScript interface that exposes battery information to web content.
- *
- * When enabled, this interface allows web pages to access device battery status
- * through the window.AndroidBattery.getBatteryStatus() method.
- *
- * @param context The Android context used to access battery information.
- */
 class BatteryInterface(private val context: Context) {
 
-    /**
-     * Returns the current battery status as a JSON string.
-     *
-     * The returned JSON object contains the following fields:
-     * - level: Battery level as a decimal between 0.0 and 1.0
-     * - percentage: Battery percentage between 0 and 100
-     * - charging: Boolean indicating if the device is currently charging
-     * - chargingType: String indicating the charging method ("none", "usb", "ac", "wireless")
-     * - voltage: Battery voltage in volts
-     * - temperature: Battery temperature in degrees Celsius
-     * - health: Battery health status ("unknown", "good", "overheat", "dead", "overvoltage", "cold")
-     *
-     * @return JSON string containing battery information
-     */
     @JavascriptInterface
     fun getBatteryStatus(): String {
         val batteryStatus = context.registerReceiver(
@@ -60,8 +38,8 @@ class BatteryInterface(private val context: Context) {
         val health = batteryStatus?.getIntExtra(BatteryManager.EXTRA_HEALTH, -1) ?: -1
 
         val json = JSONObject()
-        json.put("level", batteryPct / 100.0)  // 0.0 to 1.0
-        json.put("percentage", batteryPct)      // 0 to 100
+        json.put("level", batteryPct / 100.0)
+        json.put("percentage", batteryPct)
         json.put("charging", isCharging)
         json.put("chargingType", when {
             isUsbCharge -> "usb"
@@ -69,19 +47,13 @@ class BatteryInterface(private val context: Context) {
             isWirelessCharge -> "wireless"
             else -> "none"
         })
-        json.put("voltage", voltage / 1000.0)  // Convert to volts
-        json.put("temperature", temperature / 10.0)  // Convert to Celsius
+        json.put("voltage", voltage / 1000.0)
+        json.put("temperature", temperature / 10.0)
         json.put("health", getHealthString(health))
 
         return json.toString()
     }
 
-    /**
-     * Converts the battery health integer constant to a human-readable string.
-     *
-     * @param health The battery health constant from BatteryManager
-     * @return A string representation of the battery health
-     */
     private fun getHealthString(health: Int): String {
         return when (health) {
             BatteryManager.BATTERY_HEALTH_GOOD -> "good"

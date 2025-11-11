@@ -182,35 +182,3 @@ Configure the action to take when an SSL Error is received.
 | Proceed  | Always proceeds despite SSL errors (dangerous, NOT RECOMMENDED). |
 
 **Default:** Block
-
-## 15. Enable Battery API
-
-When enabled, web pages can access device battery information through a JavaScript interface.
-
-Web content can call `window.getBatteryStatus()` to retrieve comprehensive battery data including:
-
-- **Level and percentage** - Battery charge level as a decimal (0.0-1.0) and percentage (0-100)
-- **Charging status** - Whether the device is currently charging
-- **Charging type** - Method of charging: `none`, `usb`, `ac`, or `wireless`
-- **Voltage** - Battery voltage in volts
-- **Temperature** - Battery temperature in degrees Celsius
-- **Health** - Battery health status: `good`, `overheat`, `dead`, `overvoltage`, `cold`, or `unknown`
-
-### Example Usage
-
-```javascript
-const battery = window.getBatteryStatus();
-if (battery) {
-  console.log(`Battery level: ${battery.percentage}%`);
-  console.log(`Charging: ${battery.charging}`);
-  console.log(`Temperature: ${battery.temperature}°C`);
-}
-```
-
-### Security Considerations
-
-This feature exposes device information to web content. Only enable this setting
-if your web application requires battery status information and you trust the
-content being loaded.
-
-**Default:** false

@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.ApplyApp
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.ApplyDesktopViewportWidthSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.CustomScriptOnPageFinishSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.CustomScriptOnPageStartSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.EnableBatteryApiSetting
 
 @Composable
 fun SettingsJsScriptsScreen(
@@ -31,6 +32,7 @@ fun SettingsJsScriptsScreen(
 
         ApplyAppThemeSetting()
         ApplyDesktopViewportWidthSetting()
+        EnableBatteryApiSetting()
         CustomScriptOnPageStartSetting()
         CustomScriptOnPageFinishSetting()
     }
