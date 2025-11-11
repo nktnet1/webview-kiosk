@@ -17,7 +17,7 @@ fun DeviceRotationSetting(
     val userSettings = remember { UserSettings(context) }
 
     DropdownSettingFieldItem(
-        label = "Device Rotation",
+        label = "Rotation",
         infoText = """
             Choose a fixed device rotation or select 'Auto' to allow
             the system to rotate the screen automatically.

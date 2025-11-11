@@ -306,6 +306,14 @@ class UserSettings(val context: Context) {
         DeviceRotationOption.AUTO.name,
         fromString = DeviceRotationOption::fromString
     )
+    var brightness by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS,
+        -1,
+        min = -1,
+        max = 100,
+    )
     var allowCamera by booleanPref(restrictions, prefs, UserSettingsKeys.Device.ALLOW_CAMERA, false)
     var allowMicrophone by booleanPref(
         restrictions,
