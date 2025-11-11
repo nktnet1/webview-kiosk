@@ -263,7 +263,7 @@ object MqttManager {
         publishToMqtt(topic, payload, config.publishEventQos, config.publishEventRetain, eventName = event)
     }
 
-    fun publishGetStatus(statusCommand: MqttGetStatusMqttCommand, status: WebviewKioskStatus) {
+    fun publishStatusResponse(statusCommand: MqttGetStatusMqttCommand, status: WebviewKioskStatus) {
         val topic = statusCommand.responseTopic.takeIf { !it.isNullOrEmpty() }
             ?: mqttVariableReplacement(config.publishResponseTopic)
 

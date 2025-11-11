@@ -154,7 +154,7 @@ class MainActivity : AppCompatActivity() {
                 MqttManager.commands.collect { command ->
                     when (command) {
                         is MqttGetStatusMqttCommand -> {
-                            MqttManager.publishGetStatus(command, getStatus(context))
+                            MqttManager.publishStatusResponse(command, getStatus(context))
                         }
                         else -> Unit
                     }
