@@ -93,6 +93,7 @@ class MainActivity : AppCompatActivity() {
 
         userSettings = UserSettings(this)
         systemSettings = SystemSettings(this)
+        MqttManager.updateConfig(systemSettings, userSettings)
 
         themeState = mutableStateOf(userSettings.theme)
         keepScreenOnState = mutableStateOf(userSettings.keepScreenOn)

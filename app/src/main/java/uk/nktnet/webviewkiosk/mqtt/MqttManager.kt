@@ -74,7 +74,7 @@ object MqttManager {
     val debugLogHistory: List<MqttLogEntry>
         get() = synchronized(logHistory) { logHistory.toList() }
 
-    private fun updateConfig(systemSettings: SystemSettings, userSettings: UserSettings) {
+    fun updateConfig(systemSettings: SystemSettings, userSettings: UserSettings) {
         config = MqttConfig(
             appInstanceId = systemSettings.appInstanceId,
 
