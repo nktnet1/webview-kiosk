@@ -247,9 +247,12 @@ object MqttManager {
         if (!config.enabled || !c.state.isConnected) {
             return
         }
-        val topic = mqttVariableReplacement(config.publishEventTopic, mapOf(
-            "EVENT_NAME" to event,
-        ))
+        val topic = mqttVariableReplacement(
+            config.publishEventTopic,
+            mapOf(
+                "EVENT_NAME" to event,
+            )
+        )
         try {
             c.publishWith()
                 .topic(topic)
