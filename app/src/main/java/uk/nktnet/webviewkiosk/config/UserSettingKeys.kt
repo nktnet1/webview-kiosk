@@ -131,5 +131,16 @@ object UserSettingsKeys {
             const val MESSAGE_EXPIRY_INTERVAL = "mqtt.will.message_expiry_interval"
             const val DELAY_INTERVAL = "mqtt.will.delay_interval"
         }
+
+        object Restrictions {
+            const val RECEIVE_MAXIMUM = "mqtt.restrictions.receive_maximum"
+            const val SEND_MAXIMUM = "mqtt.restrictions.send_maximum"
+            const val MAXIMUM_PACKET_SIZE = "mqtt.restrictions.maximum_packet_size"
+            const val SEND_MAXIMUM_PACKET_SIZE = "mqtt.restrictions.send_maximum_packet_size"
+            const val TOPIC_ALIAS_MAXIMUM = "mqtt.restrictions.topic_alias_maximum"
+            const val SEND_TOPIC_ALIAS_MAXIMUM = "mqtt.restrictions.send_topic_alias_maximum"
+            const val REQUEST_PROBLEM_INFORMATION = "mqtt.restrictions.request_problem_information"
+            const val REQUEST_RESPONSE_INFORMATION = "mqtt.restrictions.request_response_information"
+        }
     }
 }

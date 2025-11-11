@@ -534,13 +534,77 @@ class UserSettings(val context: Context) {
         restrictions,
         prefs,
         UserSettingsKeys.Mqtt.Will.MESSAGE_EXPIRY_INTERVAL,
-        0
+        0,
+        min = 0,
+        max = Int.MAX_VALUE
     )
     var mqttWillDelayInterval by intPref(
         restrictions,
         prefs,
         UserSettingsKeys.Mqtt.Will.DELAY_INTERVAL,
-        0
+        0,
+        min = 0,
+        max = Int.MAX_VALUE
+    )
+    var mqttRestrictionsReceiveMaximum by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Restrictions.RECEIVE_MAXIMUM,
+        65_535,
+        min = 1,
+        max = 65_535,
+    )
+    var mqttRestrictionsSendMaximum by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Restrictions.SEND_MAXIMUM,
+        65_535,
+        min = 1,
+        max = 65_535,
+    )
+    var mqttRestrictionsMaximumPacketSize by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Restrictions.MAXIMUM_PACKET_SIZE,
+        268_435_460,
+        min = 1,
+        max = 268_435_460,
+    )
+    var mqttRestrictionsSendMaximumPacketSize by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Restrictions.SEND_MAXIMUM_PACKET_SIZE,
+        268_435_460,
+        min = 1,
+        max = 268_435_460,
+    )
+    var mqttRestrictionsTopicAliasMaximum by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Restrictions.TOPIC_ALIAS_MAXIMUM,
+        0,
+        min = 0,
+        max = 65_535,
+    )
+    var mqttRestrictionsSendTopicAliasMaximum by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Restrictions.SEND_TOPIC_ALIAS_MAXIMUM,
+        16,
+        min = 0,
+        max = 65_535,
+    )
+    var mqttRestrictionsRequestProblemInformation by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Restrictions.REQUEST_PROBLEM_INFORMATION,
+        true
+    )
+    var mqttRestrictionsRequestResponseInformation by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Restrictions.REQUEST_RESPONSE_INFORMATION,
+        false
     )
 
     fun exportJson(): String {
@@ -638,6 +702,14 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.Will.RETAIN, mqttWillRetain)
             put(UserSettingsKeys.Mqtt.Will.MESSAGE_EXPIRY_INTERVAL, mqttWillMessageExpiryInterval)
             put(UserSettingsKeys.Mqtt.Will.DELAY_INTERVAL, mqttWillDelayInterval)
+            put(UserSettingsKeys.Mqtt.Restrictions.RECEIVE_MAXIMUM, mqttRestrictionsReceiveMaximum)
+            put(UserSettingsKeys.Mqtt.Restrictions.SEND_MAXIMUM, mqttRestrictionsSendMaximum)
+            put(UserSettingsKeys.Mqtt.Restrictions.MAXIMUM_PACKET_SIZE, mqttRestrictionsMaximumPacketSize)
+            put(UserSettingsKeys.Mqtt.Restrictions.SEND_MAXIMUM_PACKET_SIZE, mqttRestrictionsSendMaximumPacketSize)
+            put(UserSettingsKeys.Mqtt.Restrictions.TOPIC_ALIAS_MAXIMUM, mqttRestrictionsTopicAliasMaximum)
+            put(UserSettingsKeys.Mqtt.Restrictions.SEND_TOPIC_ALIAS_MAXIMUM, mqttRestrictionsSendTopicAliasMaximum)
+            put(UserSettingsKeys.Mqtt.Restrictions.REQUEST_PROBLEM_INFORMATION, mqttRestrictionsRequestProblemInformation)
+            put(UserSettingsKeys.Mqtt.Restrictions.REQUEST_RESPONSE_INFORMATION, mqttRestrictionsRequestResponseInformation)
         }
         return json.toString()
     }
@@ -768,6 +840,14 @@ class UserSettings(val context: Context) {
             mqttWillRetain = json.optBoolean(UserSettingsKeys.Mqtt.Will.RETAIN, mqttWillRetain)
             mqttWillMessageExpiryInterval = json.optInt(UserSettingsKeys.Mqtt.Will.MESSAGE_EXPIRY_INTERVAL, mqttWillMessageExpiryInterval)
             mqttWillDelayInterval = json.optInt(UserSettingsKeys.Mqtt.Will.DELAY_INTERVAL, mqttWillDelayInterval)
+            mqttRestrictionsReceiveMaximum = json.optInt(UserSettingsKeys.Mqtt.Restrictions.RECEIVE_MAXIMUM, mqttRestrictionsReceiveMaximum)
+            mqttRestrictionsSendMaximum = json.optInt(UserSettingsKeys.Mqtt.Restrictions.SEND_MAXIMUM, mqttRestrictionsSendMaximum)
+            mqttRestrictionsMaximumPacketSize = json.optInt(UserSettingsKeys.Mqtt.Restrictions.MAXIMUM_PACKET_SIZE, mqttRestrictionsMaximumPacketSize)
+            mqttRestrictionsSendMaximumPacketSize = json.optInt(UserSettingsKeys.Mqtt.Restrictions.SEND_MAXIMUM_PACKET_SIZE, mqttRestrictionsSendMaximumPacketSize)
+            mqttRestrictionsTopicAliasMaximum = json.optInt(UserSettingsKeys.Mqtt.Restrictions.TOPIC_ALIAS_MAXIMUM, mqttRestrictionsTopicAliasMaximum)
+            mqttRestrictionsSendTopicAliasMaximum = json.optInt(UserSettingsKeys.Mqtt.Restrictions.SEND_TOPIC_ALIAS_MAXIMUM, mqttRestrictionsSendTopicAliasMaximum)
+            mqttRestrictionsRequestProblemInformation = json.optBoolean(UserSettingsKeys.Mqtt.Restrictions.REQUEST_PROBLEM_INFORMATION, mqttRestrictionsRequestProblemInformation)
+            mqttRestrictionsRequestResponseInformation = json.optBoolean(UserSettingsKeys.Mqtt.Restrictions.REQUEST_RESPONSE_INFORMATION, mqttRestrictionsRequestResponseInformation)
             true
         } catch (e: Exception) {
             e.printStackTrace()
