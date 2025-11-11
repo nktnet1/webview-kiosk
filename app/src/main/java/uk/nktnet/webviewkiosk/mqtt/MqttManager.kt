@@ -247,7 +247,7 @@ object MqttManager {
     }
 
     private fun subscribeToTopics() {
-        val subscribeTopic = mqttVariableReplacement(config.subscribeSettingsTopic)
+        val subscribeTopic = mqttVariableReplacement(config.subscribeCommandTopic)
         subscribeTopic(
             topic = subscribeTopic,
             qos = config.subscribeCommandQos,
@@ -293,6 +293,7 @@ object MqttManager {
         }.getOrNull()
     }
 
+    @SuppressLint("NewApi")
     private fun subscribeTopic(
         topic: String,
         qos: MqttQosOption,
@@ -313,8 +314,15 @@ object MqttManager {
                     onMessage(publish.topic.toString(), payloadStr)
                 }
                 .send()
+                .whenComplete { _, throwable ->
+                    if (throwable != null) {
+                        addDebugLog("subscribe error", "topic: $topic\nerror: $throwable")
+                    } else {
+                        addDebugLog("subscribe success", "topic: $topic")
+                    }
+                }
         } catch (e: Exception) {
-            addDebugLog("subscribe ($topic) failed", e.message)
+            addDebugLog("subscribe failed", e.message)
             e.printStackTrace()
         }
     }

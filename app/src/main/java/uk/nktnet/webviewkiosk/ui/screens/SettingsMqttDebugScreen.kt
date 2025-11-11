@@ -50,8 +50,8 @@ fun SettingsMqttDebugScreen(navController: NavController) {
             logs
                 .filter {
                     it.tag.contains(searchQuery.text, ignoreCase = true)
-                            || (it.message?.contains(searchQuery.text, ignoreCase = true) == true)
-                            || (it.identifier?.contains(searchQuery.text, ignoreCase = true) == true)
+                    || (it.message?.contains(searchQuery.text, ignoreCase = true) == true)
+                    || (it.identifier?.contains(searchQuery.text, ignoreCase = true) == true)
                 }
                 .sortedBy { it.timestamp }
                 .let { if (ascending) it else it.reversed() }
@@ -100,7 +100,7 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                         ) {
                             if (searchQuery.text.isEmpty()) {
                                 Text(
-                                    text = "Search the last 100 logs",
+                                    text = "Search the last ${logs.size} logs",
                                     style = LocalTextStyle.current.copy(
                                         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
                                         fontSize = MaterialTheme.typography.bodySmall.fontSize,
