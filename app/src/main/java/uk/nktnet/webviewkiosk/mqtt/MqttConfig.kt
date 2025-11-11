@@ -38,5 +38,14 @@ data class MqttConfig(
     val willQos: MqttQosOption,
     val willRetain: Boolean,
     val willMessageExpiryInterval: Int,
-    val willDelayInterval: Int
+    val willDelayInterval: Int,
+
+    val restrictionsReceiveMaximum: Int,
+    val restrictionsSendMaximum: Int,
+    val restrictionsMaximumPacketSize: Int,
+    val restrictionsSendMaximumPacketSize: Int,
+    val restrictionsTopicAliasMaximum: Int,
+    val restrictionsSendTopicAliasMaximum: Int,
+    val restrictionsRequestProblemInformation: Boolean,
+    val restrictionsRequestResponseInformation: Boolean,
 )

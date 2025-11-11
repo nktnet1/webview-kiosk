@@ -98,7 +98,16 @@ object MqttManager {
             willQos = userSettings.mqttWillQos,
             willRetain = userSettings.mqttWillRetain,
             willMessageExpiryInterval = userSettings.mqttWillMessageExpiryInterval,
-            willDelayInterval = userSettings.mqttWillDelayInterval
+            willDelayInterval = userSettings.mqttWillDelayInterval,
+
+            restrictionsReceiveMaximum = userSettings.mqttRestrictionsReceiveMaximum,
+            restrictionsSendMaximum = userSettings.mqttRestrictionsSendMaximum,
+            restrictionsMaximumPacketSize = userSettings.mqttRestrictionsMaximumPacketSize,
+            restrictionsSendMaximumPacketSize = userSettings.mqttRestrictionsSendMaximumPacketSize,
+            restrictionsTopicAliasMaximum = userSettings.mqttRestrictionsTopicAliasMaximum,
+            restrictionsSendTopicAliasMaximum = userSettings.mqttRestrictionsSendTopicAliasMaximum,
+            restrictionsRequestProblemInformation = userSettings.mqttRestrictionsRequestProblemInformation,
+            restrictionsRequestResponseInformation = userSettings.mqttRestrictionsRequestResponseInformation
         )
         client = buildClient()
     }
@@ -170,9 +179,9 @@ object MqttManager {
             .cleanStart(config.cleanStart)
             .keepAlive(config.keepAlive)
             .simpleAuth()
-            .username(config.username)
-            .password(UTF_8.encode(config.password))
-            .applySimpleAuth()
+                .username(config.username)
+                .password(UTF_8.encode(config.password))
+                .applySimpleAuth()
             .willPublish()
                 .topic(config.willTopic)
                 .qos(config.willQos.toMqttQos())
@@ -183,6 +192,16 @@ object MqttManager {
                 .contentType("text/plain")
                 .payload(config.willPayload.toByteArray())
                 .applyWillPublish()
+            .restrictions()
+                .receiveMaximum(config.restrictionsReceiveMaximum)
+                .sendMaximum(config.restrictionsSendMaximum)
+                .maximumPacketSize(config.restrictionsMaximumPacketSize)
+                .sendMaximumPacketSize(config.restrictionsSendMaximumPacketSize)
+                .topicAliasMaximum(config.restrictionsTopicAliasMaximum)
+                .sendTopicAliasMaximum(config.restrictionsSendTopicAliasMaximum)
+                .requestProblemInformation(config.restrictionsRequestProblemInformation)
+                .requestResponseInformation(config.restrictionsRequestResponseInformation)
+                .applyRestrictions()
             .send()
             .whenComplete { _, throwable ->
                 if (throwable == null) {
