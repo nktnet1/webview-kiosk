@@ -140,7 +140,7 @@ fun MqttControlButtons() {
                     onClick = {
                         val res = MqttManager.cancelConnect()
                         if (res) {
-                            showToast("Requested cancellation...")
+                            showToast("Cancelling... (max ${userSettings.mqttSocketConnectTimeout} seconds)")
                         } else {
                             showToast("Cancellation is already requested.")
                         }
