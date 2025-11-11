@@ -44,7 +44,6 @@ object UserSettingsKeys {
         const val ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS = "web_engine.allow_universal_access_from_file_urls"
         const val MEDIA_PLAYBACK_REQUIRES_USER_GESTURE = "web_engine.media_playback_requires_user_gesture"
         const val SSL_ERROR_MODE = "web_engine.ssl_error_mode"
-        const val ENABLE_BATTERY_API = "web_engine.enable_battery_api"
     }
 
     object WebLifecycle {
@@ -79,5 +78,6 @@ object UserSettingsKeys {
         const val APPLY_DESKTOP_VIEWPORT_WIDTH = "js_scripts.apply_desktop_viewport_width"
         const val CUSTOM_SCRIPT_ON_PAGE_START = "js_scripts.custom_script_on_page_start"
         const val CUSTOM_SCRIPT_ON_PAGE_FINISH = "js_scripts.custom_script_on_page_finish"
+        const val ENABLE_BATTERY_API = "js_scripts.enable_battery_api"
     }
 }

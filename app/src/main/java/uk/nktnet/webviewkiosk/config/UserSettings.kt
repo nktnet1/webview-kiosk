@@ -222,12 +222,6 @@ class UserSettings(val context: Context) {
         SslErrorModeOption.BLOCK.name,
         fromString = SslErrorModeOption::fromString
     )
-    var enableBatteryApi by booleanPref(
-        restrictions,
-        prefs,
-        UserSettingsKeys.WebEngine.ENABLE_BATTERY_API,
-        false
-    )
 
     // Web Lifecycle
     var lockOnLaunch by booleanPref(
@@ -368,6 +362,12 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH
     )
+    var enableBatteryApi by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.JsScripts.ENABLE_BATTERY_API,
+        false
+    )
 
     fun exportToBase64(): String {
         val json = JSONObject().apply {
@@ -433,6 +433,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
+            put(UserSettingsKeys.JsScripts.ENABLE_BATTERY_API, enableBatteryApi)
         }
         return Base64.encodeToString(json.toString().toByteArray(), Base64.NO_WRAP)
     }
@@ -517,6 +518,7 @@ class UserSettings(val context: Context) {
             applyDesktopViewportWidth = json.optInt(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
             customScriptOnPageStart = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             customScriptOnPageFinish = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
+            enableBatteryApi = json.optBoolean(UserSettingsKeys.JsScripts.ENABLE_BATTERY_API, enableBatteryApi)
             true
         } catch (e: Exception) {
             e.printStackTrace()

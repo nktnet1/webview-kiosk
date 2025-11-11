@@ -19,7 +19,7 @@ fun EnableBatteryApiSetting() {
             temperature, and other battery information.
         """.trimIndent(),
         initialValue = userSettings.enableBatteryApi,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.ENABLE_BATTERY_API),
+        restricted = userSettings.isRestricted(UserSettingsKeys.JsScripts.ENABLE_BATTERY_API),
         onSave = { userSettings.enableBatteryApi = it }
     )
 }
