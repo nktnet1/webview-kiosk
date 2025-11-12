@@ -43,7 +43,8 @@ fun SitePermissionsList(
                 .padding(16.dp),
         ) {
             Text(
-                text = "No site permissions set.",
+                text = "No site permissions have been granted.",
+                style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
                 modifier = modifier.fillMaxWidth()

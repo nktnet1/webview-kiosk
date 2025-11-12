@@ -1,0 +1,4 @@
+## Changes
+
+- fix: allow search suggestions to be scrolled vertically
+- feat: device owner deactivation + support transfer from other apps

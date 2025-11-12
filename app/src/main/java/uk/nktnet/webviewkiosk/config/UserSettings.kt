@@ -57,6 +57,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebBrowsing.ALLOW_REFRESH,
         true
     )
+    var allowPullToRefresh by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebBrowsing.ALLOW_PULL_TO_REFRESH,
+        true
+    )
     var allowBackwardsNavigation by booleanPref(
         restrictions,
         prefs,
@@ -118,12 +124,18 @@ class UserSettings(val context: Context) {
         KioskControlPanelRegionOption.TOP_LEFT.name,
         fromString = KioskControlPanelRegionOption::fromString
     )
-
     var searchProviderUrl by stringPref(
         restrictions,
         prefs,
         UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL,
         Constants.DEFAULT_SEARCH_PROVIDER_URL
+    )
+    var searchSuggestionEngine by stringEnumPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebBrowsing.SEARCH_SUGGESTION_ENGINE,
+        SearchSuggestionEngineOption.NONE.name,
+        fromString = SearchSuggestionEngineOption::fromString
     )
 
     // Web Engine
@@ -165,7 +177,6 @@ class UserSettings(val context: Context) {
         LayoutAlgorithmOption.NORMAL.name,
         fromString = LayoutAlgorithmOption::fromString
     )
-
     var userAgent by stringPrefOptional(restrictions, prefs, UserSettingsKeys.WebEngine.USER_AGENT)
     var useWideViewPort by booleanPref(
         restrictions,
@@ -204,6 +215,13 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE,
         true
     )
+    var sslErrorMode by stringEnumPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.SSL_ERROR_MODE,
+        SslErrorModeOption.BLOCK.name,
+        fromString = SslErrorModeOption::fromString
+    )
 
     // Web Lifecycle
     var lockOnLaunch by booleanPref(
@@ -224,6 +242,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS,
         0
     )
+    var refreshOnLoadingErrorIntervalSeconds by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS,
+        0
+    )
 
     // Appearance
     var theme by stringEnumPref(
@@ -237,8 +261,15 @@ class UserSettings(val context: Context) {
         restrictions,
         prefs,
         UserSettingsKeys.Appearance.ADDRESS_BAR_MODE,
-        AddressBarOption.HIDDEN_WHEN_LOCKED.name,
-        fromString = AddressBarOption::fromString
+        AddressBarModeOption.HIDDEN_WHEN_LOCKED.name,
+        fromString = AddressBarModeOption::fromString
+    )
+    var floatingToolbarMode by stringEnumPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Appearance.FLOATING_TOOLBAR_MODE,
+        FloatingToolbarModeOption.HIDDEN_WHEN_LOCKED.name,
+        fromString = FloatingToolbarModeOption::fromString
     )
     var webViewInset by stringEnumPref(
         restrictions,
@@ -268,12 +299,20 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Device.KEEP_SCREEN_ON,
         false
     )
-    var deviceRotation by stringEnumPref(
+    var rotation by stringEnumPref(
         restrictions,
         prefs,
         UserSettingsKeys.Device.DEVICE_ROTATION,
         DeviceRotationOption.AUTO.name,
         fromString = DeviceRotationOption::fromString
+    )
+    var brightness by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Device.BRIGHTNESS,
+        -1,
+        min = -1,
+        max = 100,
     )
     var allowCamera by booleanPref(restrictions, prefs, UserSettingsKeys.Device.ALLOW_CAMERA, false)
     var allowMicrophone by booleanPref(
@@ -321,6 +360,18 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH,
         0
     )
+    var enableBatteryApi by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.JsScripts.ENABLE_BATTERY_API,
+        false
+    )
+    var enableBrightnessApi by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API,
+        false
+    )
     var customScriptOnPageStart by stringPrefOptional(
         restrictions,
         prefs,
@@ -341,6 +392,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebContent.ALLOW_LOCAL_FILES, allowLocalFiles)
 
             put(UserSettingsKeys.WebBrowsing.ALLOW_REFRESH, allowRefresh)
+            put(UserSettingsKeys.WebBrowsing.ALLOW_PULL_TO_REFRESH, allowPullToRefresh)
             put(UserSettingsKeys.WebBrowsing.ALLOW_BACKWARDS_NAVIGATION, allowBackwardsNavigation)
             put(UserSettingsKeys.WebBrowsing.ALLOW_GO_HOME, allowGoHome)
             put(UserSettingsKeys.WebBrowsing.CLEAR_HISTORY_ON_HOME, clearHistoryOnHome)
@@ -352,6 +404,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, allowLinkLongPressContextMenu)
             put(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION, kioskControlPanelRegion.name)
             put(UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL, searchProviderUrl)
+            put(UserSettingsKeys.WebBrowsing.SEARCH_SUGGESTION_ENGINE, searchSuggestionEngine.name)
 
             put(UserSettingsKeys.WebEngine.ENABLE_JAVASCRIPT, enableJavaScript)
             put(UserSettingsKeys.WebEngine.ENABLE_DOM_STORAGE, enableDomStorage)
@@ -367,19 +420,22 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS, allowFileAccessFromFileURLs)
             put(UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, allowUniversalAccessFromFileURLs)
             put(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
+            put(UserSettingsKeys.WebEngine.SSL_ERROR_MODE, sslErrorMode.name)
 
             put(UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, lockOnLaunch)
             put(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, resetOnLaunch)
             put(UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
+            put(UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS, refreshOnLoadingErrorIntervalSeconds)
 
             put(UserSettingsKeys.Appearance.THEME, theme.name)
             put(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name)
+            put(UserSettingsKeys.Appearance.FLOATING_TOOLBAR_MODE, floatingToolbarMode.name)
             put(UserSettingsKeys.Appearance.WEBVIEW_INSET, webViewInset.name)
             put(UserSettingsKeys.Appearance.IMMERSIVE_MODE, immersiveMode.name)
             put(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
 
             put(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)
-            put(UserSettingsKeys.Device.DEVICE_ROTATION, deviceRotation.degrees)
+            put(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.degrees)
             put(UserSettingsKeys.Device.ALLOW_CAMERA, allowCamera)
             put(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             put(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
@@ -389,6 +445,8 @@ class UserSettings(val context: Context) {
 
             put(UserSettingsKeys.JsScripts.APPLY_APP_THEME, applyAppTheme)
             put(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
+            put(UserSettingsKeys.JsScripts.ENABLE_BATTERY_API, enableBatteryApi)
+            put(UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API, enableBrightnessApi)
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
         }
@@ -406,6 +464,7 @@ class UserSettings(val context: Context) {
             allowLocalFiles = json.optBoolean(UserSettingsKeys.WebContent.ALLOW_LOCAL_FILES, allowLocalFiles)
 
             allowRefresh = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_REFRESH, allowRefresh)
+            allowPullToRefresh = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_PULL_TO_REFRESH, allowPullToRefresh)
             allowBackwardsNavigation = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_BACKWARDS_NAVIGATION, allowBackwardsNavigation)
             allowGoHome = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_GO_HOME, allowGoHome)
             clearHistoryOnHome = json.optBoolean(UserSettingsKeys.WebBrowsing.CLEAR_HISTORY_ON_HOME, clearHistoryOnHome)
@@ -419,6 +478,9 @@ class UserSettings(val context: Context) {
                 json.optString(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION, kioskControlPanelRegion.name)
             )
             searchProviderUrl = json.optString(UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL, searchProviderUrl)
+            searchSuggestionEngine = SearchSuggestionEngineOption.fromString(
+                json.optString(UserSettingsKeys.WebBrowsing.SEARCH_SUGGESTION_ENGINE, searchSuggestionEngine.name)
+            )
 
             enableJavaScript = json.optBoolean(UserSettingsKeys.WebEngine.ENABLE_JAVASCRIPT, enableJavaScript)
             enableDomStorage = json.optBoolean(UserSettingsKeys.WebEngine.ENABLE_DOM_STORAGE, enableDomStorage)
@@ -436,13 +498,18 @@ class UserSettings(val context: Context) {
             allowFileAccessFromFileURLs = json.optBoolean(UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS, allowFileAccessFromFileURLs)
             allowUniversalAccessFromFileURLs = json.optBoolean(UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, allowUniversalAccessFromFileURLs)
             mediaPlaybackRequiresUserGesture = json.optBoolean(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
+            sslErrorMode = SslErrorModeOption.fromString(
+                json.optString(UserSettingsKeys.WebEngine.SSL_ERROR_MODE, sslErrorMode.name)
+            )
 
             lockOnLaunch = json.optBoolean(UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, lockOnLaunch)
             resetOnLaunch = json.optBoolean(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, resetOnLaunch)
             resetOnInactivitySeconds = json.optInt(UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
+            refreshOnLoadingErrorIntervalSeconds = json.optInt(UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS, refreshOnLoadingErrorIntervalSeconds)
 
             theme = ThemeOption.fromString(json.optString(UserSettingsKeys.Appearance.THEME, theme.name))
-            addressBarMode = AddressBarOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name))
+            addressBarMode = AddressBarModeOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name))
+            floatingToolbarMode = FloatingToolbarModeOption.fromString(json.optString(UserSettingsKeys.Appearance.FLOATING_TOOLBAR_MODE, floatingToolbarMode.name))
             webViewInset = WebViewInset.fromString(json.optString(UserSettingsKeys.Appearance.WEBVIEW_INSET, webViewInset.name))
             immersiveMode = ImmersiveModeOption.fromString(
                 json.optString(UserSettingsKeys.Appearance.IMMERSIVE_MODE, immersiveMode.name)
@@ -450,7 +517,7 @@ class UserSettings(val context: Context) {
             blockedMessage = json.optString(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
 
             keepScreenOn = json.optBoolean(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)
-            deviceRotation = DeviceRotationOption.fromString(json.optString(UserSettingsKeys.Device.DEVICE_ROTATION, deviceRotation.degrees))
+            rotation = DeviceRotationOption.fromString(json.optString(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.degrees))
             allowCamera = json.optBoolean(UserSettingsKeys.Device.ALLOW_CAMERA, allowCamera)
             allowMicrophone = json.optBoolean(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             allowLocation = json.optBoolean(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
@@ -464,6 +531,8 @@ class UserSettings(val context: Context) {
 
             applyAppTheme = json.optBoolean(UserSettingsKeys.JsScripts.APPLY_APP_THEME, applyAppTheme)
             applyDesktopViewportWidth = json.optInt(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
+            enableBatteryApi = json.optBoolean(UserSettingsKeys.JsScripts.ENABLE_BATTERY_API, enableBatteryApi)
+            enableBrightnessApi = json.optBoolean(UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API, enableBrightnessApi)
             customScriptOnPageStart = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             customScriptOnPageFinish = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
             true

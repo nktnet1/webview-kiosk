@@ -6,13 +6,15 @@ import androidx.core.net.toUri
 
 fun handleExternalScheme(context: Context, url: String) {
     try {
-        if (url.startsWith("intent:")) {
-            val intent = Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
-            context.startActivity(intent)
+        val intent = if (url.startsWith("intent:")) {
+            Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
         } else {
-            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-            context.startActivity(intent)
+            Intent(Intent.ACTION_VIEW, url.toUri())
         }
+
+        val chooser = Intent.createChooser(intent, "Open with")
+        context.startActivity(chooser)
+
     } catch (e: Exception) {
         e.printStackTrace()
     }

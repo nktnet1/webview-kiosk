@@ -1,0 +1,17 @@
+## Changes
+
+- feat: added history and bookmark to kiosk control panel
+    - also moved back and forward button side-by-side
+- feat: allow pull to refresh as a separate setting
+- feat: more setting actions, notably
+    - clear cookies
+    - clear cache
+    - clear form data
+    - clear history
+    - clear SSL preferences
+    - clear web storage
+- feat: ssl handle mode configurable (BLOCK/PROMPT/PROCEED)
+    - defaults to BLOCK - set to PROCEED with caution (dangerous)
+- fix: allow kiosk control panel to be scrollable
+- fix: avoid webview reload on ssl cert error cancellation
+- fix: address bar unfocusable on launch (avoid auto-focus on Android 5.0)

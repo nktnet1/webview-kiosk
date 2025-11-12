@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusState
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -39,12 +40,12 @@ fun AddressBar(
 
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
-    var urlTextState by remember { mutableStateOf(urlBarText.text) }
 
     var menuExpanded by remember { mutableStateOf(false) }
     var showHistoryDialog by remember { mutableStateOf(false) }
     var showBookmarksDialog by remember { mutableStateOf(false) }
     var showLocalFilesDialog by remember { mutableStateOf(false) }
+    var allowFocus by remember { mutableStateOf(false) }
 
     val isLocked by LockStateSingleton.isLocked
 
@@ -61,6 +62,16 @@ fun AddressBar(
         }
     }
 
+    LaunchedEffect(Unit) {
+        allowFocus = true
+    }
+
+    LaunchedEffect(hasFocus) {
+        if (hasFocus) {
+            onUrlBarTextChange(urlBarText.copy(selection = TextRange(0, urlBarText.text.length)))
+        }
+    }
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -73,12 +84,13 @@ fun AddressBar(
             value = urlBarText,
             onValueChange = {
                 onUrlBarTextChange(it)
-                urlTextState = it.text
             },
             singleLine = true,
             modifier = Modifier
+                .fillMaxWidth()
                 .weight(1f)
-                .onFocusChanged(onFocusChanged),
+                .onFocusChanged(onFocusChanged)
+                .focusProperties { canFocus = allowFocus },
             shape = RoundedCornerShape(percent = 50),
             colors = OutlinedTextFieldDefaults.colors(
                 unfocusedContainerColor = MaterialTheme.colorScheme.surface,
@@ -93,7 +105,7 @@ fun AddressBar(
                 }
             }),
             trailingIcon = {
-                IconButton(onClick = { addressBarSearch(urlTextState) }) {
+                IconButton(onClick = { addressBarSearch(urlBarText.text) }) {
                     Icon(
                         painter = painterResource(R.drawable.baseline_search_24),
                         contentDescription = "Go"
@@ -243,11 +255,5 @@ fun AddressBar(
             onDismiss = { showLocalFilesDialog = false },
             customLoadUrl = customLoadUrl
         )
-    }
-
-    LaunchedEffect(hasFocus) {
-        if (hasFocus) {
-            onUrlBarTextChange(urlBarText.copy(selection = TextRange(0, urlBarText.text.length)))
-        }
     }
 }

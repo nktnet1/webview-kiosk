@@ -10,6 +10,7 @@ import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.LockOnLaunchSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.RefreshOnLoadingErrorIntervalSecondsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.ResetOnInactivitySecondsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.ResetOnLaunchSetting
 
@@ -29,5 +30,6 @@ fun SettingsWebLifecycleScreen(navController: NavController) {
         LockOnLaunchSetting()
         ResetOnLaunchSetting()
         ResetOnInactivitySecondsSetting()
+        RefreshOnLoadingErrorIntervalSecondsSetting()
     }
 }

@@ -10,12 +10,10 @@ import android.widget.TextView
 import android.webkit.SslErrorHandler
 import androidx.appcompat.app.AlertDialog
 import android.view.ViewGroup.LayoutParams
-import android.webkit.WebView
 
 @SuppressLint("SetTextI18n")
-fun handleSslErrorRequest(
+fun handleSslErrorPromptRequest(
     context: Context,
-    webView: WebView?,
     handler: SslErrorHandler?,
     error: SslError?,
 ) {
@@ -64,11 +62,9 @@ fun handleSslErrorRequest(
         .setView(layout)
         .setNegativeButton("Cancel") { _, _ ->
             handler?.cancel()
-            webView?.reload()
         }
         .setOnCancelListener {
             handler?.cancel()
-            webView?.reload()
         }
         .show()
 

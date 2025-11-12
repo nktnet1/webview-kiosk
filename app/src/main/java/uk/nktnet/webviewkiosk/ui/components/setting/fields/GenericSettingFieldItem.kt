@@ -1,15 +1,20 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.fields
 
-import androidx.compose.foundation.clickable
+import android.content.ClipData
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 
 @Composable
@@ -17,13 +22,28 @@ fun <T> GenericSettingFieldItem(
     label: String,
     value: T,
     onClick: () -> Unit,
+    onLongClick: ((value: T) -> Unit)? = null,
     restricted: Boolean,
     description: @Composable (T) -> Unit
 ) {
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() }
+            .combinedClickable(
+                onClick = { onClick() },
+                onLongClick = {
+                    if (onLongClick != null) {
+                        onLongClick.invoke(value)
+                    } else {
+                        scope.launch {
+                            val clipData = ClipData.newPlainText(label, value.toString())
+                            clipboard.setClipEntry(clipData.toClipEntry())
+                        }
+                    }
+                }
+            )
             .padding(top = 8.dp, start = 2.dp, end = 2.dp)
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {

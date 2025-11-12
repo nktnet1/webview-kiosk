@@ -12,15 +12,13 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.Addres
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.BlockedMessageSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.ThemeSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.WebViewInsetSetting
-import androidx.compose.runtime.MutableState
-import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.FloatingToolbarModeSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.ImmersiveModeSetting
 
 @Composable
 fun SettingsAppearanceScreen(
     navController: NavController,
-    themeState: MutableState<ThemeOption>,
 ) {
     Column(
         modifier = Modifier
@@ -33,8 +31,9 @@ fun SettingsAppearanceScreen(
 
         SettingDivider()
 
-        ThemeSetting(themeState)
+        ThemeSetting()
         AddressBarModeSetting()
+        FloatingToolbarModeSetting()
         WebViewInsetSetting()
         ImmersiveModeSetting()
         BlockedMessageSetting()

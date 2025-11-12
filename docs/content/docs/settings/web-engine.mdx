@@ -163,28 +163,22 @@ credentials used on arbitrary web sites.
 
 **Default:** false
 
-## 12. Kiosk Control Panel Region
-
-Controls which part of the screen can be multi-tapped 10 times in quick
-succession to show the Kiosk Control Panel.
-
-| Option | Description |
-|--------|-------------|
-| `TOP_LEFT` | Upper-left quadrant of the screen. |
-| `TOP_RIGHT` | Upper-right quadrant of the screen. |
-| `BOTTOM_LEFT` | Lower-left quadrant of the screen. |
-| `BOTTOM_RIGHT` | Lower-right quadrant of the screen. |
-| `TOP` | Entire top half of the screen. |
-| `BOTTOM` | Entire bottom half of the screen. |
-| `FULL` | Entire screen. |
-| `DISABLED` | Touch regions are inactive - cannot open Kiosk Control Panel. |
-
-**default:** `TOP_LEFT`
-
-## 13. Media Playback Requires User Gesture
+## 12. Media Playback Requires User Gesture
 
 Sets whether the WebView requires a user gesture (e.g. tap) to play media.
 
 **Android API:** [WebSettings#setUseWideViewPort(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setMediaPlaybackRequiresUserGesture(boolean))
 
 **Default:** true
+
+## 13. SSL Error Mode
+
+Configure the action to take when an SSL Error is received.
+
+| Mode     | Description |
+|----------|------------|
+| Block    | Cancels all failed SSL requests. |
+| Prompt   | Opens a dialog for the user to decide. |
+| Proceed  | Always proceeds despite SSL errors (dangerous, NOT RECOMMENDED). |
+
+**Default:** Block

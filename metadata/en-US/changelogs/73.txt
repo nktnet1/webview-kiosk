@@ -1,0 +1,8 @@
+## Changes
+
+- fix: improve state management - less blacklist/whitelist computations
+- fix: limit pull-to-refresh to top 1/4 of the screen
+- fix: use chooser for intent instead of auto-opening other URL schemes (if enabled)
+- fix: silently block other url schemes (i.e. soft-block, avoid block page disruptions)
+- fix: multiple refresh loops when on blocked page
+- chore: improve monochrome svg

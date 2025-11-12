@@ -7,11 +7,26 @@ import { EllipsisVertical, Wrench, Pin, PinOff } from 'lucide-react';
 
 ## 1. Allow Refresh
 
-Set to true to allow the user to refresh the page.
+Set to true to allow the user to refresh the page, e.g. using the
+- address bar actions
+- kiosk control panel
+- pull to refresh (can be configured separately)
 
 **Default:** true
 
-## 2. Allow Backwards Navigation
+## 2. Allow Pull to Refresh
+
+Set to true to allow the user to refresh the page by pulling down
+from the top 1/4 of the screen.
+
+Note that this requires:
+- the `Allow Refresh` setting to also be true
+- the page to have been scrolled fully to the top prior to the gesture
+- a single finger (touch) is used
+
+**Default:** true
+
+## 3. Allow Backwards Navigation
 
 Set to true to allow the user to go back one page in history.
 
@@ -19,7 +34,7 @@ This also enables forward navigation.
 
 **Default:** true
 
-## 3. Allow Go Home
+## 4. Allow Go Home
 
 Set to true to allow the user to go home using one of:
 
@@ -30,14 +45,14 @@ Set to true to allow the user to go home using one of:
 
 **Default:** true
 
-## 4. Clear History on Home
+## 5. Clear History on Home
 
 Set to true if you want to clear the backwards/forward navigation history
 whenever a `Go Home` action is triggered.
 
 **Default:** false
 
-## 5. Replace History URL on Redirect
+## 6. Replace History URL on Redirect
 
 Set to true to replace the current history entry with the final URL if
 any page redirections occurs, rather than adding multiple entries to the
@@ -45,7 +60,7 @@ history navigation stack.
 
 **Default:** true
 
-## 6. Allow History Access
+## 7. Allow History Access
 
 Set to true to allow viewing and navigating back in history, by
 clicking the <span className="inline-flex">(<EllipsisVertical />)</span> icon
@@ -53,7 +68,7 @@ on the right of the address bar (top-right corner of screen) and selecting `Hist
 
 **Default:** true
 
-## 7. Allow Bookmark Access
+## 8. Allow Bookmark Access
 
 Set to true to allow viewing and navigating to bookmarks configured in settings, by
 clicking the <span className="inline-flex">(<EllipsisVertical />)</span> icon
@@ -61,7 +76,7 @@ on the right of the address bar (top-right corner of screen) and selecting `Book
 
 **Default:** true
 
-## 8. Allow Other URL Schemes
+## 9. Allow Other URL Schemes
 
 This option only works when the application is not in locked (pinned) mode.
 
@@ -71,7 +86,7 @@ appropriate application to handle.
 
 **Default:** false
 
-## 9. Allow Default Long Press
+## 10. Allow Default Long Press
 
 When enabled, long-pressing areas in the WebView will trigger the native
 WebView behaviour, e.g. text selection.
@@ -81,7 +96,7 @@ by the `Allow Link Long Press Context Menu` setting.
 
 **Default:** true
 
-## 10. Allow Link Long Press Context Menu
+## 11. Allow Link Long Press Context Menu
 
 When enabled, long-pressing links in the WebView will trigger a custom
 link options dialog.
@@ -97,23 +112,81 @@ This actions available in the dialog are:
 
 **Default:** true
 
-## 11. Kiosk Control Panel Region
+## 12. Kiosk Control Panel Region
 
 Controls which part of the screen can be multi-tapped 10 times in quick
 succession to show the Kiosk Control Panel dialog.
+
+Available regions are:
+
+<table>
+  <thead>
+    <tr>
+      <th>Region</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Top Left</td>
+      <td>Upper-left quadrant of the screen.</td>
+    </tr>
+    <tr>
+      <td>Top Right</td>
+      <td>Upper-right quadrant of the screen.</td>
+    </tr>
+    <tr>
+      <td>Bottom Left</td>
+      <td>Lower-left quadrant of the screen.</td>
+    </tr>
+    <tr>
+      <td>Bottom Right</td>
+      <td>Lower-right quadrant of the screen.</td>
+    </tr>
+    <tr>
+      <td>Top</td>
+      <td>Upper half of the screen.</td>
+    </tr>
+    <tr>
+      <td>Bottom</td>
+      <td>Lower half of the screen.</td>
+    </tr>
+    <tr>
+      <td>Full</td>
+      <td>Entire screen.</td>
+    </tr>
+    <tr>
+      <td>Disabled</td>
+      <td>
+        Do nothing on multi-tap. Please note that if both of the following
+        are true:
+        <ol>
+          <li>
+              <b>Web Browsing -> Kiosk Control Panel Region</b> is <i>disabled</i>
+          </li>
+          <li>
+              <b>Device -> Back Button Hold Action</b> is not set to <i>Open Kiosk Control Panel</i>
+          </li>
+        </ol>
+        Then this option cannot be disabled, and will default to Top Left.
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 The actions available in the dialog are:
 
 | Action | Description |
 |--------|-------------|
 | Back | Navigates one page backwards in history. |
-| Forward | Naviagtes one page forward in history. |
+| Forward | Navigates one page forward in history. |
 | Home | Navigates to the home page. |
 | Refresh | Perform a reload on the current webpage. |
+| Settings | Open the app settings screen (only visible if `Appearance -> Floating Toolbar Mode` is set to `Hidden`). |
 | Lock | Trigger either screen pinning or lock task mode depending on your device. |
 | Unlock | Trigger screen unpinning or unlock task. Will require biometrics or device credentials to succeed. |
 
-At the top-right corner of the dialog, there is an icon button that toggles the stickyness
+At the top-right corner of the dialog, there is an icon button that toggles the stickiness
 Kiosk Control Panel's stickiness behaviour. By default, sticky mode is disabled
 <span className="inline-flex">(<PinOff />)</span>.
 When enabled <span className="inline-flex">(<Pin />)</span>, clicking on the
@@ -124,56 +197,43 @@ You can also disable this setting and instead configure
 
 **Default:** Top left
 
-## 12. Search Provider URL
+## 13. Search Provider URL
 
-The URL used for search queries in the address bar. This URL must include the search string query parameter.
+The URL used for search queries in the address bar. This URL must include the
+search string query parameter.
+
+For example,
+
+| Provider      | Search URL |
+|---------------|-----------------------------------|
+| Google        | `https://google.com/search?q=` |
+| DuckDuckGo    | `https://duckduckgo.com/?q=` |
+| Bing          | `https://bing.com/search?q=` |
+| Yahoo         | `https://search.yahoo.com/search?p=` |
+| Startpage     | `https://startpage.com/do/search?q=` |
+| Ecosia        | `https://ecosia.org/search?q=` |
+| Unduck        | `https://unduck.link?q=` |
+| Unduckified   | `https://s.dunkirk.sh?q=` |
 
 **Default:** https://google.com/search?q=
 
-### 12.1. Google
+## 13. Search Suggestion Engine
 
-```
-https://google.com/search?q=
-```
+Configure the search engine for text suggestions (autocomplete/hints)
+when typing in the address bar.
 
-### 12.2. DuckDuckGo
+For example, when searching for "new", you may get suggested
+- news
+- new recipes
+- new york times
 
-```
-https://duckduckgo.com/?q=
-```
+Supported options are:
 
-### 12.3. Bing
+| Engine     | Endpoint |
+|------------|----------|
+| None       | No search suggestions/autocomplete will be shown |
+| Google     | `https://suggestqueries.google.com/complete/search?client=firefox&q=` |
+| DuckDuckGo | `https://duckduckgo.com/ac?q=` |
+| Yahoo      | `https://api.search.yahoo.com/sugg/gossip/gossip-in-ura?output=sd1&command=` |
 
-```
-https://bing.com/search?q=
-```
-
-### 12.4. Yahoo
-
-```
-https://search.yahoo.com/search?p=
-```
-
-### 12.5. Startpage
-
-```
-https://startpage.com/do/search?q=
-```
-
-### 12.6. Ecosia
-
-```
-https://ecosia.org/search?q=
-```
-
-### 12.7. Unduck
-
-```
-https://unduck.link?q=
-```
-
-### 12.8. Unduckified
-
-```
-https://s.dunkirk.sh?q=
-```
+**Default:** NONE

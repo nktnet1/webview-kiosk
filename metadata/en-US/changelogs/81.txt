@@ -1,0 +1,4 @@
+## Changes
+
+- fix: infinite loop when blocking "data:" URLs with blacklist
+- feat: local file access for kiosk control panel
