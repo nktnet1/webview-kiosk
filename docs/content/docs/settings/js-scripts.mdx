@@ -53,7 +53,7 @@ Web content can call `window.WebviewKioskBatteryInterface.getBatteryStatus()` to
 - **Temperature** - Battery temperature in degrees Celsius
 - **Health** - Battery health status: `good`, `overheat`, `dead`, `overvoltage`, `cold`, or `unknown`
 
-### Example Usage
+Example web usage:
 
 ```javascript
 try {
@@ -71,12 +71,6 @@ try {
     console.error("Failed to retrieve battery information:", error);
 }
 ```
-
-### Security Considerations
-
-This feature exposes device information to web content. Only enable this setting
-if your web application requires battery status information and you trust the
-content being loaded.
 
 **Default:** false
 
