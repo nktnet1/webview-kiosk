@@ -20,10 +20,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.KeepScreen
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.UnlockAuthRequirementSetting
 
 @Composable
-fun SettingsDeviceScreen(
-    navController: NavController,
-    keepScreenOnState: MutableState<Boolean>,
-) {
+fun SettingsDeviceScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -35,7 +32,7 @@ fun SettingsDeviceScreen(
 
         SettingDivider()
 
-        KeepScreenOnSetting(keepScreenOnState)
+        KeepScreenOnSetting()
         DeviceRotationSetting()
         BrightnessSetting()
         AllowCameraSetting()

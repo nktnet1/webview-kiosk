@@ -1,7 +1,6 @@
 package uk.nktnet.webviewkiosk.main
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,7 +12,6 @@ import uk.nktnet.webviewkiosk.utils.authComposable
 @Composable
 fun SetupNavHost(
     navController: NavHostController,
-    keepScreenOnState: MutableState<Boolean>,
 ) {
     NavHost(navController, startDestination = Screen.WebView.route) {
         composable(Screen.WebView.route) {
@@ -52,7 +50,7 @@ fun SetupNavHost(
                 SettingsAppearanceScreen(navController)
             }
             authComposable(Screen.SettingsDevice.route) {
-                SettingsDeviceScreen(navController, keepScreenOnState)
+                SettingsDeviceScreen(navController)
             }
             authComposable(Screen.SettingsJsScript.route) {
                 SettingsJsScriptsScreen(navController)

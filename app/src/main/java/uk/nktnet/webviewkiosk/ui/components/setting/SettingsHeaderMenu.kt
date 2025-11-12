@@ -23,6 +23,7 @@ import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ExportSettingsDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ImportSettingsDialog
+import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
 
 @Composable
 fun SettingsHeaderMenu(
@@ -60,7 +61,7 @@ fun SettingsHeaderMenu(
         onImportConfirm = {
             val success = userSettings.importFromBase64(importText)
             if (success) {
-                ThemeStateSingleton.setTheme(userSettings.theme)
+                updateDeviceSettings(context)
                 showToast("Settings imported successfully")
                 showImportDialog = false
             } else {

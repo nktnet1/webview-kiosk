@@ -5,7 +5,10 @@ import android.content.Context
 import android.content.pm.ActivityInfo
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
+import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
+import uk.nktnet.webviewkiosk.states.KeepScreenOnStateSingleton
+import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
 
 fun setWindowBrightness(context: Context, value: Int) {
     val activity = context as? Activity ?: return
@@ -28,4 +31,12 @@ fun setDeviceRotation(context: Context, rotation: DeviceRotationOption) {
         DeviceRotationOption.ROTATION_180 -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
         DeviceRotationOption.ROTATION_270 -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
     }
+}
+
+fun updateDeviceSettings(context: Context) {
+    val userSettings = UserSettings(context)
+    KeepScreenOnStateSingleton.setKeepScreenOn(userSettings.keepScreenOn)
+    ThemeStateSingleton.setTheme(userSettings.theme)
+    setDeviceRotation(context, userSettings.rotation)
+    setWindowBrightness(context, userSettings.brightness)
 }

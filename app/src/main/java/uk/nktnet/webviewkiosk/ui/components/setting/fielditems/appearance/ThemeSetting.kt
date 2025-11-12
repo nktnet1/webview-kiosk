@@ -24,16 +24,16 @@ fun ThemeSetting() {
         options = ThemeOption.entries,
         initialValue = userSettings.theme,
         restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.THEME),
-        onSave = {
-            userSettings.theme = it
-            ThemeStateSingleton.setTheme(it)
-        },
         itemText = {
             when (it) {
                 ThemeOption.SYSTEM -> "System"
                 ThemeOption.DARK -> "Dark"
                 ThemeOption.LIGHT -> "Light"
             }
-        }
+        },
+        onSave = {
+            userSettings.theme = it
+            ThemeStateSingleton.setTheme(it)
+        },
     )
 }
