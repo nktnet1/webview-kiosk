@@ -32,5 +32,3 @@ Webview Kiosk — это бесплатное приложение с откры
 
 По всем другим вопросам пишите мне на электропочту — <a href="mailto:support@webviewkiosk.nktnet.uk">support@webviewkiosk.nktnet.uk</a>.
 
-С уважением,
-Khiet Tam Nguyen aka nktnet1
