@@ -7,15 +7,12 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import uk.nktnet.webviewkiosk.config.Screen
-import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
-import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.ui.screens.*
 import uk.nktnet.webviewkiosk.utils.authComposable
 
 @Composable
 fun SetupNavHost(
     navController: NavHostController,
-    themeState: MutableState<ThemeOption>,
     keepScreenOnState: MutableState<Boolean>,
 ) {
     NavHost(navController, startDestination = Screen.WebView.route) {
@@ -28,7 +25,7 @@ fun SetupNavHost(
 
         navigation(startDestination = Screen.Settings.route, route = "settings_list") {
             authComposable(Screen.Settings.route) {
-                SettingsListScreen(navController, themeState = themeState)
+                SettingsListScreen(navController)
             }
             authComposable(Screen.SettingsMoreActions.route) {
                 MoreActionsScreen(navController)
@@ -52,7 +49,7 @@ fun SetupNavHost(
                 SettingsWebLifecycleScreen(navController)
             }
             authComposable(Screen.SettingsAppearance.route) {
-                SettingsAppearanceScreen(navController, themeState = themeState)
+                SettingsAppearanceScreen(navController)
             }
             authComposable(Screen.SettingsDevice.route) {
                 SettingsDeviceScreen(navController, keepScreenOnState)

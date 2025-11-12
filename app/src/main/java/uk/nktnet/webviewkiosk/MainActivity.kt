@@ -31,6 +31,7 @@ import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.handleMainIntent
 import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
+import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
@@ -49,7 +50,6 @@ class MainActivity : AppCompatActivity() {
     private var uploadingFileUri: Uri? = null
     private var uploadProgress by mutableFloatStateOf(0f)
     private lateinit var userSettings: UserSettings
-    private lateinit var themeState: MutableState<ThemeOption>
     private lateinit var keepScreenOnState: MutableState<Boolean>
     private lateinit var backButtonService: BackButtonService
 
@@ -85,7 +85,6 @@ class MainActivity : AppCompatActivity() {
         )
 
         userSettings = UserSettings(this)
-        themeState = mutableStateOf(userSettings.theme)
         keepScreenOnState = mutableStateOf(userSettings.keepScreenOn)
 
         val systemSettings = SystemSettings(this)
@@ -100,6 +99,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         BiometricPromptManager.init(this)
+        ThemeStateSingleton.setTheme(userSettings.theme)
         setWindowBrightness(this, userSettings.brightness)
         setDeviceRotation(this, userSettings.rotation)
 
@@ -144,7 +144,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            val isDarkTheme = resolveTheme(themeState.value)
+            val isDarkTheme = resolveTheme(ThemeStateSingleton.currentTheme.value)
             val window = (this as? AppCompatActivity)?.window
             val insetsController = remember(window) {
                 window?.let { WindowInsetsControllerCompat(it, it.decorView) }
@@ -185,7 +185,7 @@ class MainActivity : AppCompatActivity() {
                         )
                     } ?: run {
                         SetupNavHost(
-                            navController, themeState, keepScreenOnState
+                            navController, keepScreenOnState
                         )
                     }
                 }
@@ -194,8 +194,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     @Composable
-    private fun resolveTheme(themeOption: ThemeOption): Boolean {
-        return when (themeOption) {
+    private fun resolveTheme(theme: ThemeOption): Boolean {
+        return when (theme) {
             ThemeOption.SYSTEM -> isSystemInDarkTheme()
             ThemeOption.DARK -> true
             ThemeOption.LIGHT -> false
@@ -204,8 +204,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateUserSettings(context: Context = this) {
         userSettings = UserSettings(context)
-        themeState.value = userSettings.theme
         keepScreenOnState.value = userSettings.keepScreenOn
+        ThemeStateSingleton.setTheme(userSettings.theme)
         setDeviceRotation(context, userSettings.rotation)
         setWindowBrightness(context, userSettings.brightness)
     }
