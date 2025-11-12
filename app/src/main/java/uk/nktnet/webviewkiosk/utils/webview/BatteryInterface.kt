@@ -8,7 +8,7 @@ import android.webkit.JavascriptInterface
 import org.json.JSONObject
 
 class BatteryInterface(private val context: Context) {
-
+    @Suppress("unused")
     @JavascriptInterface
     fun getBatteryStatus(): String {
         val batteryStatus = context.registerReceiver(

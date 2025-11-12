@@ -90,7 +90,7 @@ fun createCustomWebview(
             }
 
             if (userSettings.enableBatteryApi) {
-                addJavascriptInterface(BatteryInterface(context), "AndroidBattery")
+                addJavascriptInterface(BatteryInterface(context), "WebviewKioskBatteryInterface")
             }
 
             webViewClient = object : WebViewClient() {

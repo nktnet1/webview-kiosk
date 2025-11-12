@@ -367,6 +367,21 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.JsScripts.ENABLE_BATTERY_API,
         false
+    var enableBatteryApi by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.JsScripts.ENABLE_BATTERY_API,
+        false
+    )
+    var customScriptOnPageStart by stringPrefOptional(
+        restrictions,
+        prefs,
+        UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START
+    )
+    var customScriptOnPageFinish by stringPrefOptional(
+        restrictions,
+        prefs,
+        UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH
     )
 
     fun exportToBase64(): String {
@@ -431,9 +446,9 @@ class UserSettings(val context: Context) {
 
             put(UserSettingsKeys.JsScripts.APPLY_APP_THEME, applyAppTheme)
             put(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
+            put(UserSettingsKeys.JsScripts.ENABLE_BATTERY_API, enableBatteryApi)
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
-            put(UserSettingsKeys.JsScripts.ENABLE_BATTERY_API, enableBatteryApi)
         }
         return Base64.encodeToString(json.toString().toByteArray(), Base64.NO_WRAP)
     }
@@ -516,9 +531,9 @@ class UserSettings(val context: Context) {
 
             applyAppTheme = json.optBoolean(UserSettingsKeys.JsScripts.APPLY_APP_THEME, applyAppTheme)
             applyDesktopViewportWidth = json.optInt(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
+            enableBatteryApi = json.optBoolean(UserSettingsKeys.JsScripts.ENABLE_BATTERY_API, enableBatteryApi)
             customScriptOnPageStart = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             customScriptOnPageFinish = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
-            enableBatteryApi = json.optBoolean(UserSettingsKeys.JsScripts.ENABLE_BATTERY_API, enableBatteryApi)
             true
         } catch (e: Exception) {
             e.printStackTrace()
