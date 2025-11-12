@@ -14,13 +14,17 @@ fun EnableBrightnessApiSetting() {
     BooleanSettingFieldItem(
         label = "Enable Brightness API",
         infoText = """
-            Allow web pages to get or set screen brightness through a JavaScript
-            interface. Web content can use:
+            Allow web pages to use:
 
-            window.WebviewKioskBrightnessInterface.getBrightness()
-            window.WebviewKioskBrightnessInterface.setBrightness(value)
+            1. window.WebviewKioskBrightnessInterface.getBrightness(): number
+            2. window.WebviewKioskBrightnessInterface.setBrightness(value: number)
 
             to read or change the current screen brightness percentage.
+
+            Values are integers between 0-100, with
+               -1: use system brightness
+                0: very dim
+              100: very bright
         """.trimIndent(),
         initialValue = userSettings.enableBrightnessApi,
         restricted = userSettings.isRestricted(UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API),
