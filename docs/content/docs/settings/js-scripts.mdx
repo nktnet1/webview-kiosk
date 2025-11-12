@@ -42,9 +42,8 @@ To disable, use the value `0`.
 
 ## 3. Enable Battery API
 
-When enabled, web pages can access device battery information through a JavaScript interface.
-
-Web content can call `window.WebviewKioskBatteryInterface.getBatteryStatus()` to retrieve comprehensive battery data including:
+When enabled, web pages can call `window.WebviewKioskBatteryInterface.getBatteryStatus()`
+to retrieve the battery data below:
 
 - **Level and percentage** - Battery charge level as a decimal (0.0-1.0) and percentage (0-100)
 - **Charging status** - Whether the device is currently charging
@@ -74,7 +73,36 @@ try {
 
 **Default:** false
 
-## 4. Custom Scripts
+## 4. Enable Brightness API
+
+When enabled, web pages can call
+- `window.WebviewKioskBrightnessInterface.getBrightness(): number`  
+- `window.WebviewKioskBrightnessInterface.setBrightness(value: number)`
+
+Values are integers between -1 and 100, with
+
+-  `-1`: use system brightness
+-   `0`: very dim
+- `100`: very bright
+
+Example web usage:
+
+```javascript
+try {
+    const brightness = parseInt(window.WebviewKioskBrightnessInterface.getBrightness());
+    console.log(`Current brightness: ${brightness}`);
+
+    const newBrightness = 10;
+    window.WebviewKioskBrightnessInterface.setBrightness(newBrightness);
+    console.log(`Brightness set to ${newBrightness}%`);
+} catch (error) {
+    console.error("Brightness Control Error:", error);
+}
+```
+
+**Default:** false
+
+## 5. Custom Scripts
 
 Your code content will be wrapped as follows to prevent polluting the global
 scope and avoid conflicts with other scripts:
@@ -91,7 +119,7 @@ scope and avoid conflicts with other scripts:
 document.body.style.backgroundColor = 'green';
 ```
 
-### 4.1. On Page Start
+### 5.1. On Page Start
 
 JavaScript to run immediately when the page starts loading.
 
@@ -99,7 +127,7 @@ Useful for early DOM manipulation or overriding functions.
 
 **Default:** *(blank)*
 
-### 4.2. On Page Finish
+### 5.2. On Page Finish
 
 JavaScript to run after the page has fully loaded.  
 

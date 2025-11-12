@@ -51,7 +51,7 @@ fun BrightnessSetting() {
                         setValue(newValue.roundToInt().toString())
                     },
                     valueRange = -1f..100f,
-                    steps = 95,
+                    steps = 101,
                     modifier = Modifier.fillMaxWidth()
                 )
 

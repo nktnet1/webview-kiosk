@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils.webview
+package uk.nktnet.webviewkiosk.utils.webview.interfaces
 
 import android.content.Context
 import android.content.Intent
@@ -8,6 +8,8 @@ import android.webkit.JavascriptInterface
 import org.json.JSONObject
 
 class BatteryInterface(private val context: Context) {
+    val name = "WebviewKioskBatteryInterface"
+
     @Suppress("unused")
     @JavascriptInterface
     fun getBatteryStatus(): String {

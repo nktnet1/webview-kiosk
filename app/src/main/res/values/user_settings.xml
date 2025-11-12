@@ -176,6 +176,9 @@
     <string name="js_scripts_enable_battery_api_title">Enable Battery API</string>
     <string name="js_scripts_enable_battery_api_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
+    <string name="js_scripts_enable_brightness_api_title">Enable Brightness API</string>
+    <string name="js_scripts_enable_brightness_api_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
+
     <string name="js_scripts_custom_script_on_page_start_title">Custom Script on Page Start</string>
     <string name="js_scripts_custom_script_on_page_start_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
