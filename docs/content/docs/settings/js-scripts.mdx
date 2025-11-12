@@ -56,11 +56,19 @@ Web content can call `window.WebviewKioskBatteryInterface.getBatteryStatus()` to
 ### Example Usage
 
 ```javascript
-const battery = window.webviewkiosk.getBatteryStatus();
-if (battery) {
-  console.log(`Battery level: ${battery.percentage}%`);
-  console.log(`Charging: ${battery.charging}`);
-  console.log(`Temperature: ${battery.temperature}°C`);
+try {
+    const dataString = window.WebviewKioskBatteryInterface.getBatteryStatus();
+    const battery = JSON.parse(dataString);
+
+    console.log(`Level: ${battery.level}`);
+    console.log(`Percentage: ${battery.percentage}%`);
+    console.log(`Charging: ${battery.charging}`);
+    console.log(`Charging Type: ${battery.chargingType}`);
+    console.log(`Voltage: ${battery.voltage} V`);
+    console.log(`Temperature: ${battery.temperature} °C`);
+    console.log(`Health: ${battery.health}`);
+} catch (error) {
+    console.error("Failed to retrieve battery information:", error);
 }
 ```
 
