@@ -370,6 +370,12 @@
         android:description="@string/js_scripts_apply_desktop_viewport_width_description"
     />
     <restriction
+        android:key="js_scripts.enable_battery_api"
+        android:restrictionType="bool"
+        android:title="@string/js_scripts_enable_battery_api_title"
+        android:description="@string/js_scripts_enable_battery_api_description"
+    />
+    <restriction
         android:key="js_scripts.custom_script_on_page_start"
         android:restrictionType="string"
         android:title="@string/js_scripts_custom_script_on_page_start_title"

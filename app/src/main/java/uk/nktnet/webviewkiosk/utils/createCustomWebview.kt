@@ -36,6 +36,7 @@ import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorPromptRequest
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
+import uk.nktnet.webviewkiosk.utils.webview.BatteryInterface
 import java.net.URLEncoder
 
 data class WebViewConfig(
@@ -85,6 +86,10 @@ fun createCustomWebview(
                 @Suppress("DEPRECATION")
                 allowUniversalAccessFromFileURLs = userSettings.allowUniversalAccessFromFileURLs
                 mediaPlaybackRequiresUserGesture = userSettings.mediaPlaybackRequiresUserGesture
+            }
+
+            if (userSettings.enableBatteryApi) {
+                addJavascriptInterface(BatteryInterface(context), "WebviewKioskBatteryInterface")
             }
 
             webViewClient = object : WebViewClient() {
