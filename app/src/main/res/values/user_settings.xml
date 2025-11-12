@@ -142,8 +142,11 @@
     <string name="device_keep_screen_on_title">Keep Screen On</string>
     <string name="device_keep_screen_on_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
-    <string name="device_rotation_title">Device Rotation</string>
+    <string name="device_rotation_title">Rotation</string>
     <string name="device_rotation_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+
+    <string name="device_brightness_title">Brightness</string>
+    <string name="device_brightness_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <string name="device_allow_camera_title">Allow Camera</string>
     <string name="device_allow_camera_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>

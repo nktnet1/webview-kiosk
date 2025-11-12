@@ -1,33 +1,31 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import uk.nktnet.webviewkiosk.utils.setDeviceRotation
 
 @Composable
-fun DeviceRotationSetting(
-    deviceRotationState: MutableState<DeviceRotationOption>
-) {
+fun DeviceRotationSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
 
     DropdownSettingFieldItem(
-        label = "Device Rotation",
+        label = "Rotation",
         infoText = """
             Choose a fixed device rotation or select 'Auto' to allow
             the system to rotate the screen automatically.
         """.trimIndent(),
         options = DeviceRotationOption.entries,
-        initialValue = deviceRotationState.value,
+        initialValue = userSettings.rotation,
         restricted = userSettings.isRestricted(UserSettingsKeys.Device.DEVICE_ROTATION),
         onSave = {
-            deviceRotationState.value = it
-            userSettings.deviceRotation = it
+            userSettings.rotation = it
+            setDeviceRotation(context, it)
         },
         itemText = {
             when (it) {

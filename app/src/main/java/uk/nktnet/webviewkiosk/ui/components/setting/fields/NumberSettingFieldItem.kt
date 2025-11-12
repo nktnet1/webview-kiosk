@@ -22,7 +22,9 @@ fun NumberSettingFieldItem(
     min: Int? = null,
     max: Int? = null,
     validationMessage: String? = null,
-    onSave: (Int) -> Unit
+    descriptionFormatter: ((String) -> String)? = null,
+    onSave: (Int) -> Unit,
+    extraContent: (@Composable ((draftValue: String, setValue: (newValue: String) -> Unit) -> Unit))? = null
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var value by remember { mutableIntStateOf(initialValue) }
@@ -45,7 +47,13 @@ fun NumberSettingFieldItem(
         },
     ) { v ->
         Text(
-            text = if (v == "0") "0 (disabled)" else v,
+            text = if (descriptionFormatter != null) {
+                descriptionFormatter(v)
+            } else if (v == "0") {
+                "0 (disabled)"
+            } else {
+                v
+            },
             style = MaterialTheme.typography.bodyMedium.copy(
                 fontStyle = if (v == "0") FontStyle.Italic else FontStyle.Normal
             ),
@@ -110,6 +118,10 @@ fun NumberSettingFieldItem(
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
                     )
+                }
+                extraContent?.invoke(draftValue) { newValue ->
+                    draftValue = newValue
+                    draftError = !validateNumber(newValue)
                 }
             }
         }

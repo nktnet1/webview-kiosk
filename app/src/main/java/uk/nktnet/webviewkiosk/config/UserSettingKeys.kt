@@ -65,6 +65,7 @@ object UserSettingsKeys {
     object Device {
         const val KEEP_SCREEN_ON = "device.keep_screen_on"
         const val DEVICE_ROTATION = "device.rotation"
+        const val BRIGHTNESS = "device.brightness"
         const val ALLOW_CAMERA = "device.allow_camera"
         const val ALLOW_MICROPHONE = "device.allow_microphone"
         const val ALLOW_LOCATION = "device.allow_location"

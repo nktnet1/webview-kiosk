@@ -27,16 +27,15 @@ import androidx.navigation.compose.rememberNavController
 import uk.nktnet.webviewkiosk.utils.getStatus
 import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
 import uk.nktnet.webviewkiosk.config.*
-import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.mqtt.MqttManager
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonService
 import uk.nktnet.webviewkiosk.main.SetupNavHost
-import uk.nktnet.webviewkiosk.main.applyDeviceRotation
 import uk.nktnet.webviewkiosk.main.handleMainIntent
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetStatusMqttCommand
 import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
+import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
@@ -48,6 +47,7 @@ import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
+import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
 
 class MainActivity : AppCompatActivity() {
     private val navControllerState = mutableStateOf<NavHostController?>(null)
@@ -55,9 +55,6 @@ class MainActivity : AppCompatActivity() {
     private var uploadProgress by mutableFloatStateOf(0f)
     private lateinit var userSettings: UserSettings
     private lateinit var systemSettings: SystemSettings
-    private lateinit var themeState: MutableState<ThemeOption>
-    private lateinit var keepScreenOnState: MutableState<Boolean>
-    private lateinit var deviceRotationState: MutableState<DeviceRotationOption>
     private lateinit var backButtonService: BackButtonService
 
     val restrictionsReceiver = object : BroadcastReceiver() {
@@ -67,7 +64,7 @@ class MainActivity : AppCompatActivity() {
                 if (currentRoute != Screen.AdminRestrictionsChanged.route) {
                     navControllerState.value?.navigate(Screen.AdminRestrictionsChanged.route)
                 }
-                updateUserSettings()
+                updateDeviceSettings(context)
             }
         }
     }
@@ -94,10 +91,7 @@ class MainActivity : AppCompatActivity() {
         userSettings = UserSettings(this)
         systemSettings = SystemSettings(this)
         MqttManager.updateConfig(systemSettings, userSettings)
-
-        themeState = mutableStateOf(userSettings.theme)
-        keepScreenOnState = mutableStateOf(userSettings.keepScreenOn)
-        deviceRotationState = mutableStateOf(userSettings.deviceRotation)
+        updateDeviceSettings(this)
 
         val systemSettings = SystemSettings(this)
         val webContentDir = getWebContentFilesDir(this)
@@ -111,7 +105,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         BiometricPromptManager.init(this)
-        applyDeviceRotation(userSettings.deviceRotation)
+
         systemSettings.isFreshLaunch = true
 
         val intentUrlResult = handleMainIntent(intent)
@@ -129,10 +123,7 @@ class MainActivity : AppCompatActivity() {
             val navController = rememberNavController()
             navControllerState.value = navController
 
-            KeepScreenOnOption(keepOn = keepScreenOnState.value)
-            LaunchedEffect(deviceRotationState.value) {
-                applyDeviceRotation(deviceRotationState.value)
-            }
+            KeepScreenOnOption()
 
             val waitingForUnlock by WaitingForUnlockStateSingleton.waitingForUnlock.collectAsState()
             val biometricResult by BiometricPromptManager.promptResults.collectAsState()
@@ -144,7 +135,7 @@ class MainActivity : AppCompatActivity() {
                     if (userSettings.mqttEnabled) {
                         showToast("MQTT: updating settings.")
                         userSettings.importJson(payload)
-                        updateUserSettings()
+                        updateDeviceSettings(context)
                         navigateToWebViewScreen(navController)
                     }
                 }
@@ -179,7 +170,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            val isDarkTheme = resolveTheme(themeState.value)
+            val isDarkTheme = resolveTheme(ThemeStateSingleton.currentTheme.value)
             val window = (this as? AppCompatActivity)?.window
             val insetsController = remember(window) {
                 window?.let { WindowInsetsControllerCompat(it, it.decorView) }
@@ -219,9 +210,7 @@ class MainActivity : AppCompatActivity() {
                             }
                         )
                     } ?: run {
-                        SetupNavHost(
-                            navController, themeState, keepScreenOnState, deviceRotationState
-                        )
+                        SetupNavHost(navController)
                     }
                 }
             }
@@ -229,19 +218,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     @Composable
-    private fun resolveTheme(themeOption: ThemeOption): Boolean {
-        return when (themeOption) {
+    private fun resolveTheme(theme: ThemeOption): Boolean {
+        return when (theme) {
             ThemeOption.SYSTEM -> isSystemInDarkTheme()
             ThemeOption.DARK -> true
             ThemeOption.LIGHT -> false
         }
-    }
-
-    private fun updateUserSettings(context: Context = this) {
-        userSettings = UserSettings(context)
-        themeState.value = userSettings.theme
-        keepScreenOnState.value = userSettings.keepScreenOn
-        deviceRotationState.value = userSettings.deviceRotation
     }
 
     override fun onStart() {
@@ -257,7 +239,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        updateUserSettings()
+        updateDeviceSettings(this)
         backButtonService.onBackPressedCallback.isEnabled = true
     }
 

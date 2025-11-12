@@ -299,12 +299,20 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Device.KEEP_SCREEN_ON,
         false
     )
-    var deviceRotation by stringEnumPref(
+    var rotation by stringEnumPref(
         restrictions,
         prefs,
         UserSettingsKeys.Device.DEVICE_ROTATION,
         DeviceRotationOption.AUTO.name,
         fromString = DeviceRotationOption::fromString
+    )
+    var brightness by intPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Device.BRIGHTNESS,
+        -1,
+        min = -1,
+        max = 100,
     )
     var allowCamera by booleanPref(restrictions, prefs, UserSettingsKeys.Device.ALLOW_CAMERA, false)
     var allowMicrophone by booleanPref(
@@ -678,7 +686,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
 
             put(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)
-            put(UserSettingsKeys.Device.DEVICE_ROTATION, deviceRotation.degrees)
+            put(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.degrees)
             put(UserSettingsKeys.Device.ALLOW_CAMERA, allowCamera)
             put(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             put(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
@@ -804,7 +812,7 @@ class UserSettings(val context: Context) {
             blockedMessage = json.optString(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
 
             keepScreenOn = json.optBoolean(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)
-            deviceRotation = DeviceRotationOption.fromString(json.optString(UserSettingsKeys.Device.DEVICE_ROTATION, deviceRotation.degrees))
+            rotation = DeviceRotationOption.fromString(json.optString(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.degrees))
             allowCamera = json.optBoolean(UserSettingsKeys.Device.ALLOW_CAMERA, allowCamera)
             allowMicrophone = json.optBoolean(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             allowLocation = json.optBoolean(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
