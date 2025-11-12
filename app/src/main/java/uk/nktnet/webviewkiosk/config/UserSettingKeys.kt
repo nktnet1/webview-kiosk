@@ -77,6 +77,7 @@ object UserSettingsKeys {
     object JsScripts {
         const val APPLY_APP_THEME = "js_scripts.apply_app_theme"
         const val APPLY_DESKTOP_VIEWPORT_WIDTH = "js_scripts.apply_desktop_viewport_width"
+        const val ENABLE_BATTERY_API = "js_scripts.enable_battery_api"
         const val CUSTOM_SCRIPT_ON_PAGE_START = "js_scripts.custom_script_on_page_start"
         const val CUSTOM_SCRIPT_ON_PAGE_FINISH = "js_scripts.custom_script_on_page_finish"
     }

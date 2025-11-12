@@ -40,7 +40,41 @@ To disable, use the value `0`.
 
 **Default:** 0
 
-## 3. Custom Scripts
+## 3. Enable Battery API
+
+When enabled, web pages can access device battery information through a JavaScript interface.
+
+Web content can call `window.WebviewKioskBatteryInterface.getBatteryStatus()` to retrieve comprehensive battery data including:
+
+- **Level and percentage** - Battery charge level as a decimal (0.0-1.0) and percentage (0-100)
+- **Charging status** - Whether the device is currently charging
+- **Charging type** - Method of charging: `none`, `usb`, `ac`, or `wireless`
+- **Voltage** - Battery voltage in volts
+- **Temperature** - Battery temperature in degrees Celsius
+- **Health** - Battery health status: `good`, `overheat`, `dead`, `overvoltage`, `cold`, or `unknown`
+
+Example web usage:
+
+```javascript
+try {
+    const dataString = window.WebviewKioskBatteryInterface.getBatteryStatus();
+    const battery = JSON.parse(dataString);
+
+    console.log(`Level: ${battery.level}`);
+    console.log(`Percentage: ${battery.percentage}%`);
+    console.log(`Charging: ${battery.charging}`);
+    console.log(`Charging Type: ${battery.chargingType}`);
+    console.log(`Voltage: ${battery.voltage} V`);
+    console.log(`Temperature: ${battery.temperature} °C`);
+    console.log(`Health: ${battery.health}`);
+} catch (error) {
+    console.error("Failed to retrieve battery information:", error);
+}
+```
+
+**Default:** false
+
+## 4. Custom Scripts
 
 Your code content will be wrapped as follows to prevent polluting the global
 scope and avoid conflicts with other scripts:
@@ -57,7 +91,7 @@ scope and avoid conflicts with other scripts:
 document.body.style.backgroundColor = 'green';
 ```
 
-### 3.1. On Page Start
+### 4.1. On Page Start
 
 JavaScript to run immediately when the page starts loading.
 
@@ -65,7 +99,7 @@ Useful for early DOM manipulation or overriding functions.
 
 **Default:** *(blank)*
 
-### 3.2. On Page Finish
+### 4.2. On Page Finish
 
 JavaScript to run after the page has fully loaded.  
 
