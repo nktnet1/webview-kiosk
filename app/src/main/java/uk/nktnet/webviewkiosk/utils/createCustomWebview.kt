@@ -131,9 +131,6 @@ fun createCustomWebview(
                                     null
                                 )
                             }
-                            if (userSettings.enableBatteryApi) {
-                                view?.evaluateJavascript(generateBatterySetupScript(), null)
-                            }
                             systemSettings.urlBeforeNavigation = ""
                         }
                     }
