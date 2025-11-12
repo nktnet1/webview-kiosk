@@ -9,7 +9,6 @@ enum class DeviceRotationOption(val degrees: String) {
 
     companion object {
         fun fromString(value: String?): DeviceRotationOption {
-            println("[DEBUG] rotation fromString value: $value")
             return entries.find { it.name.equals(value, ignoreCase = true) } ?: AUTO
         }
     }
