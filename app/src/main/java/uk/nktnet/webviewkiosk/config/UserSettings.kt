@@ -352,21 +352,6 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH,
         0
     )
-    var customScriptOnPageStart by stringPrefOptional(
-        restrictions,
-        prefs,
-        UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START
-    )
-    var customScriptOnPageFinish by stringPrefOptional(
-        restrictions,
-        prefs,
-        UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH
-    )
-    var enableBatteryApi by booleanPref(
-        restrictions,
-        prefs,
-        UserSettingsKeys.JsScripts.ENABLE_BATTERY_API,
-        false
     var enableBatteryApi by booleanPref(
         restrictions,
         prefs,
