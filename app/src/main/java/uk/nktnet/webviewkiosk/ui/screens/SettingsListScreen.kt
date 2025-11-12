@@ -80,6 +80,6 @@ fun SettingsListScreen(
             SettingListItem(title, description) { navController.navigate(route) }
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }

@@ -360,6 +360,18 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH,
         0
     )
+    var enableBatteryApi by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.JsScripts.ENABLE_BATTERY_API,
+        false
+    )
+    var enableBrightnessApi by booleanPref(
+        restrictions,
+        prefs,
+        UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API,
+        false
+    )
     var customScriptOnPageStart by stringPrefOptional(
         restrictions,
         prefs,
@@ -696,6 +708,8 @@ class UserSettings(val context: Context) {
 
             put(UserSettingsKeys.JsScripts.APPLY_APP_THEME, applyAppTheme)
             put(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
+            put(UserSettingsKeys.JsScripts.ENABLE_BATTERY_API, enableBatteryApi)
+            put(UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API, enableBrightnessApi)
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
 
@@ -826,6 +840,8 @@ class UserSettings(val context: Context) {
 
             applyAppTheme = json.optBoolean(UserSettingsKeys.JsScripts.APPLY_APP_THEME, applyAppTheme)
             applyDesktopViewportWidth = json.optInt(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
+            enableBatteryApi = json.optBoolean(UserSettingsKeys.JsScripts.ENABLE_BATTERY_API, enableBatteryApi)
+            enableBrightnessApi = json.optBoolean(UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API, enableBrightnessApi)
             customScriptOnPageStart = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             customScriptOnPageFinish = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
 
