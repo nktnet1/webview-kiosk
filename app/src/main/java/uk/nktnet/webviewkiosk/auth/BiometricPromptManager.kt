@@ -81,16 +81,9 @@ object BiometricPromptManager {
         }
 
         val canAuthenticate = manager.canAuthenticate(authenticators)
-        when (canAuthenticate) {
-            BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED -> {
-                _resultState.value = BiometricResult.AuthenticationNotSet
-                return
-            }
-            BiometricManager.BIOMETRIC_ERROR_HW_UNAVAILABLE -> {
-                _resultState.value = BiometricResult.HardwareUnavailable
-                return
-            }
-            else -> Unit
+        if (canAuthenticate == BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED) {
+            _resultState.value = BiometricResult.AuthenticationNotSet
+            return
         }
 
         val promptInfoBuilder = PromptInfo.Builder()
@@ -161,7 +154,6 @@ object BiometricPromptManager {
 
     sealed interface BiometricResult {
         data object Loading : BiometricResult
-        data object HardwareUnavailable : BiometricResult
         data class AuthenticationError(val error: String) : BiometricResult
         data object AuthenticationFailed : BiometricResult
         data object AuthenticationSuccess : BiometricResult
