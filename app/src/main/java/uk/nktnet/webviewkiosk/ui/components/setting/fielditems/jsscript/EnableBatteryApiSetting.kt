@@ -15,11 +15,9 @@ fun EnableBatteryApiSetting() {
         label = "Enable Battery API",
         infoText = """
             Allow web pages to access device battery status through a JavaScript
-            interface. Web content can use
+            interface. Web content can use:
 
-              const data = JSON.parse(
-                window.WebviewKioskBatteryInterface.getBatteryStatus()
-              )
+            JSON.parse(window.WebviewKioskBatteryInterface.getBatteryStatus())
             
             to retrieve battery level, charging status, temperature and other
             battery information.
