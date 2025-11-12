@@ -1,0 +1,11 @@
+## Features
+
+- feat: brightness control (app-specific, will not affect system)
+- feat: add battery status API interface for use in JavaScript (web pages)
+- feat: add brightness API interface for use in JavaScript (web pages)
+- feat: long press (hold) to copy setting item
+
+## Bug Fixes
+
+- fix: remove check for unavailable biometrics hardware
+- fix: reset auth when successfully locking (enter kiosk mode)
