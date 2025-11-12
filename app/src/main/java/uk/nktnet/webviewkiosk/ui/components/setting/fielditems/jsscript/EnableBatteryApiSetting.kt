@@ -18,7 +18,7 @@ fun EnableBatteryApiSetting() {
             interface. Web content can use:
 
             JSON.parse(window.WebviewKioskBatteryInterface.getBatteryStatus())
-            
+
             to retrieve battery level, charging status, temperature and other
             battery information.
         """.trimIndent(),
