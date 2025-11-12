@@ -24,7 +24,7 @@ fun BrightnessSetting() {
         label = "Brightness",
         infoText = """
             Set the app window brightness from 0 (very dim) to 100 (very dark).
-            
+
             Use -1 to disable (i.e. the system default brightness will be used).
         """.trimIndent(),
         initialValue = userSettings.brightness,

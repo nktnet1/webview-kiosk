@@ -7,7 +7,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowCameraSetting
@@ -24,7 +23,6 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.UnlockAuth
 fun SettingsDeviceScreen(
     navController: NavController,
     keepScreenOnState: MutableState<Boolean>,
-    deviceRotationState: MutableState<DeviceRotationOption>
 ) {
     Column(
         modifier = Modifier
@@ -38,7 +36,7 @@ fun SettingsDeviceScreen(
         SettingDivider()
 
         KeepScreenOnSetting(keepScreenOnState)
-        DeviceRotationSetting(deviceRotationState)
+        DeviceRotationSetting()
         BrightnessSetting()
         AllowCameraSetting()
         AllowMicrophoneSetting()

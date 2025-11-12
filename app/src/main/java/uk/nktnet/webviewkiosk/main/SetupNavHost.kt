@@ -17,7 +17,6 @@ fun SetupNavHost(
     navController: NavHostController,
     themeState: MutableState<ThemeOption>,
     keepScreenOnState: MutableState<Boolean>,
-    deviceRotationState: MutableState<DeviceRotationOption>
 ) {
     NavHost(navController, startDestination = Screen.WebView.route) {
         composable(Screen.WebView.route) {
@@ -56,7 +55,7 @@ fun SetupNavHost(
                 SettingsAppearanceScreen(navController, themeState = themeState)
             }
             authComposable(Screen.SettingsDevice.route) {
-                SettingsDeviceScreen(navController, keepScreenOnState, deviceRotationState)
+                SettingsDeviceScreen(navController, keepScreenOnState)
             }
             authComposable(Screen.SettingsJsScript.route) {
                 SettingsJsScriptsScreen(navController)

@@ -25,11 +25,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
 import uk.nktnet.webviewkiosk.config.*
-import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonService
 import uk.nktnet.webviewkiosk.main.SetupNavHost
-import uk.nktnet.webviewkiosk.main.applyDeviceRotation
 import uk.nktnet.webviewkiosk.main.handleMainIntent
 import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
@@ -40,6 +38,7 @@ import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
 import uk.nktnet.webviewkiosk.utils.getLocalUrl
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handlePreviewKeyUnlockEvent
+import uk.nktnet.webviewkiosk.utils.setDeviceRotation
 import uk.nktnet.webviewkiosk.utils.setWindowBrightness
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
@@ -52,7 +51,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var userSettings: UserSettings
     private lateinit var themeState: MutableState<ThemeOption>
     private lateinit var keepScreenOnState: MutableState<Boolean>
-    private lateinit var deviceRotationState: MutableState<DeviceRotationOption>
     private lateinit var backButtonService: BackButtonService
 
     val restrictionsReceiver = object : BroadcastReceiver() {
@@ -89,8 +87,6 @@ class MainActivity : AppCompatActivity() {
         userSettings = UserSettings(this)
         themeState = mutableStateOf(userSettings.theme)
         keepScreenOnState = mutableStateOf(userSettings.keepScreenOn)
-        deviceRotationState = mutableStateOf(userSettings.deviceRotation)
-
 
         val systemSettings = SystemSettings(this)
         val webContentDir = getWebContentFilesDir(this)
@@ -104,8 +100,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         BiometricPromptManager.init(this)
-        applyDeviceRotation(userSettings.deviceRotation)
         setWindowBrightness(this, userSettings.brightness)
+        setDeviceRotation(this, userSettings.rotation)
 
         systemSettings.isFreshLaunch = true
 
@@ -125,9 +121,6 @@ class MainActivity : AppCompatActivity() {
             navControllerState.value = navController
 
             KeepScreenOnOption(keepOn = keepScreenOnState.value)
-            LaunchedEffect(deviceRotationState.value) {
-                applyDeviceRotation(deviceRotationState.value)
-            }
 
             val waitingForUnlock by WaitingForUnlockStateSingleton.waitingForUnlock.collectAsState()
             val biometricResult by BiometricPromptManager.promptResults.collectAsState()
@@ -192,7 +185,7 @@ class MainActivity : AppCompatActivity() {
                         )
                     } ?: run {
                         SetupNavHost(
-                            navController, themeState, keepScreenOnState, deviceRotationState
+                            navController, themeState, keepScreenOnState
                         )
                     }
                 }
@@ -213,7 +206,8 @@ class MainActivity : AppCompatActivity() {
         userSettings = UserSettings(context)
         themeState.value = userSettings.theme
         keepScreenOnState.value = userSettings.keepScreenOn
-        deviceRotationState.value = userSettings.deviceRotation
+        setDeviceRotation(context, userSettings.rotation)
+        setWindowBrightness(context, userSettings.brightness)
     }
 
     override fun onStart() {
