@@ -23,6 +23,7 @@ fun MqttPasswordSetting() {
         initialValue = userSettings.mqttPassword,
         restricted = restricted,
         isMultiline = false,
+        isPassword = true,
         descriptionFormatter = { v -> if (v.isNotBlank()) "*".repeat(20) else "(blank)" },
         onSave = { userSettings.mqttPassword = it }
     )
