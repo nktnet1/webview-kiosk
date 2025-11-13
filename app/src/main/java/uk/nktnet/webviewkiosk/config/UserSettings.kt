@@ -7,7 +7,6 @@ import android.util.Base64
 import org.json.JSONObject
 import uk.nktnet.webviewkiosk.config.option.*
 import uk.nktnet.webviewkiosk.utils.booleanPref
-import uk.nktnet.webviewkiosk.utils.intEnumPref
 import uk.nktnet.webviewkiosk.utils.stringEnumPref
 import uk.nktnet.webviewkiosk.utils.intPref
 import uk.nktnet.webviewkiosk.utils.stringPref
@@ -163,12 +162,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebEngine.ACCEPT_THIRD_PARTY_COOKIES,
         false
     )
-    var cacheMode by intEnumPref(
+    var cacheMode by stringEnumPref(
         restrictions,
         prefs,
         UserSettingsKeys.WebEngine.CACHE_MODE,
-        CacheModeOption.DEFAULT.mode,
-        fromInt = CacheModeOption::fromInt
+        CacheModeOption.DEFAULT.name,
+        fromString = CacheModeOption::fromString
     )
     var layoutAlgorithm by stringEnumPref(
         restrictions,
@@ -459,12 +458,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC,
         "wk/event/${'$'}{EVENT_NAME}"
     )
-    var mqttPublishEventQos by intEnumPref(
+    var mqttPublishEventQos by stringEnumPref(
         restrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS,
-        MqttQosOption.AT_MOST_ONCE.code,
-        fromInt = MqttQosOption::fromCode
+        MqttQosOption.AT_MOST_ONCE.name,
+        fromString = MqttQosOption::fromString
     )
     var mqttPublishEventRetain by booleanPref(
         restrictions,
@@ -478,12 +477,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Mqtt.Topics.Publish.Response.TOPIC,
         "wk/response/${'$'}{RESPONSE_TYPE}"
     )
-    var mqttPublishResponseQos by intEnumPref(
+    var mqttPublishResponseQos by stringEnumPref(
         restrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Publish.Response.QOS,
-        MqttQosOption.AT_MOST_ONCE.code,
-        fromInt = MqttQosOption::fromCode
+        MqttQosOption.AT_MOST_ONCE.name,
+        fromString = MqttQosOption::fromString
     )
     var mqttPublishResponseRetain by booleanPref(
         restrictions,
@@ -497,19 +496,19 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC,
         "wk/command"
     )
-    var mqttSubscribeCommandQos by intEnumPref(
+    var mqttSubscribeCommandQos by stringEnumPref(
         restrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS,
-        MqttQosOption.AT_MOST_ONCE.code,
-        fromInt = MqttQosOption::fromCode
+        MqttQosOption.AT_MOST_ONCE.name,
+        fromString = MqttQosOption::fromString
     )
-    var mqttSubscribeCommandRetainHandling by intEnumPref(
+    var mqttSubscribeCommandRetainHandling by stringEnumPref(
         restrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING,
-        MqttRetainHandlingOption.DO_NOT_SEND.code,
-        fromInt = MqttRetainHandlingOption::fromCode
+        MqttRetainHandlingOption.DO_NOT_SEND.name,
+        fromString = MqttRetainHandlingOption::fromString
     )
     var mqttSubscribeCommandRetainAsPublished by booleanPref(
         restrictions,
@@ -523,19 +522,19 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.TOPIC,
         "wk/settings"
     )
-    var mqttSubscribeSettingsQos by intEnumPref(
+    var mqttSubscribeSettingsQos by stringEnumPref(
         restrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.QOS,
-        MqttQosOption.AT_MOST_ONCE.code,
-        fromInt = MqttQosOption::fromCode
+        MqttQosOption.AT_MOST_ONCE.name,
+        fromString = MqttQosOption::fromString
     )
-    var mqttSubscribeSettingsRetainHandling by intEnumPref(
+    var mqttSubscribeSettingsRetainHandling by stringEnumPref(
         restrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING,
-        MqttRetainHandlingOption.DO_NOT_SEND.code,
-        fromInt = MqttRetainHandlingOption::fromCode
+        MqttRetainHandlingOption.DO_NOT_SEND.name,
+        fromString = MqttRetainHandlingOption::fromString
     )
     var mqttSubscribeSettingsRetainAsPublished by booleanPref(
         restrictions,
@@ -550,12 +549,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Mqtt.Will.TOPIC,
         "wk/will"
     )
-    var mqttWillQos by intEnumPref(
+    var mqttWillQos by stringEnumPref(
         restrictions,
         prefs,
         UserSettingsKeys.Mqtt.Will.QOS,
-        MqttQosOption.AT_MOST_ONCE.code,
-        fromInt = MqttQosOption::fromCode
+        MqttQosOption.AT_MOST_ONCE.name,
+        fromString = MqttQosOption::fromString
     )
     var mqttWillPayload by stringPref(
         restrictions,
@@ -673,7 +672,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebEngine.ENABLE_DOM_STORAGE, enableDomStorage)
             put(UserSettingsKeys.WebEngine.ACCEPT_COOKIES, acceptCookies)
             put(UserSettingsKeys.WebEngine.ACCEPT_THIRD_PARTY_COOKIES, acceptThirdPartyCookies)
-            put(UserSettingsKeys.WebEngine.CACHE_MODE, cacheMode.mode)
+            put(UserSettingsKeys.WebEngine.CACHE_MODE, cacheMode.name)
             put(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM, layoutAlgorithm.algorithm.name)
             put(UserSettingsKeys.WebEngine.USER_AGENT, userAgent)
             put(UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT, useWideViewPort)
@@ -795,7 +794,9 @@ class UserSettings(val context: Context) {
             enableDomStorage = json.optBoolean(UserSettingsKeys.WebEngine.ENABLE_DOM_STORAGE, enableDomStorage)
             acceptCookies = json.optBoolean(UserSettingsKeys.WebEngine.ACCEPT_COOKIES, acceptCookies)
             acceptThirdPartyCookies = json.optBoolean(UserSettingsKeys.WebEngine.ACCEPT_THIRD_PARTY_COOKIES, acceptThirdPartyCookies)
-            cacheMode = CacheModeOption.fromInt(json.optInt(UserSettingsKeys.WebEngine.CACHE_MODE, cacheMode.mode))
+            cacheMode = CacheModeOption.fromString(
+                json.optString(UserSettingsKeys.WebEngine.CACHE_MODE,  cacheMode.name)
+            )
             layoutAlgorithm = LayoutAlgorithmOption.fromString(
                 json.optString(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM, layoutAlgorithm.algorithm.name)
             )
@@ -858,34 +859,34 @@ class UserSettings(val context: Context) {
             mqttSocketConnectTimeout = json.optInt(UserSettingsKeys.Mqtt.Connection.SOCKET_CONNECT_TIMEOUT, mqttSocketConnectTimeout)
             mqttAutomaticReconnect = json.optBoolean(UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT, mqttAutomaticReconnect)
             mqttPublishEventTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
-            mqttPublishEventQos = MqttQosOption.fromCode(
-                json.optInt(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.code)
+            mqttPublishEventQos = MqttQosOption.fromString(
+                json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.name)
             )
             mqttPublishEventRetain = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN, mqttPublishEventRetain)
             mqttPublishResponseTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Response.TOPIC, mqttPublishResponseTopic)
-            mqttPublishResponseQos = MqttQosOption.fromCode(
-                json.optInt(UserSettingsKeys.Mqtt.Topics.Publish.Response.QOS, mqttPublishResponseQos.code)
+            mqttPublishResponseQos = MqttQosOption.fromString(
+                json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Response.QOS, mqttPublishResponseQos.name)
             )
             mqttPublishResponseRetain = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Publish.Response.RETAIN, mqttPublishResponseRetain)
             mqttSubscribeCommandTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC, mqttSubscribeCommandTopic)
-            mqttSubscribeCommandQos = MqttQosOption.fromCode(
-                json.optInt(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS, mqttSubscribeCommandQos.code)
+            mqttSubscribeCommandQos = MqttQosOption.fromString(
+                json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS, mqttSubscribeCommandQos.name)
             )
-            mqttSubscribeCommandRetainHandling = MqttRetainHandlingOption.fromCode(
-                json.optInt(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING, mqttSubscribeCommandRetainHandling.code)
+            mqttSubscribeCommandRetainHandling = MqttRetainHandlingOption.fromString(
+                json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING, mqttSubscribeCommandRetainHandling.name)
             )
             mqttSubscribeCommandRetainAsPublished = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_AS_PUBLISHED, mqttSubscribeCommandRetainAsPublished)
             mqttSubscribeSettingsTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.TOPIC, mqttSubscribeSettingsTopic)
-            mqttSubscribeSettingsQos = MqttQosOption.fromCode(
-                json.optInt(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.QOS, mqttSubscribeSettingsQos.code)
+            mqttSubscribeSettingsQos = MqttQosOption.fromString(
+                json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.QOS, mqttSubscribeSettingsQos.name)
             )
-            mqttSubscribeSettingsRetainHandling = MqttRetainHandlingOption.fromCode(
-                json.optInt(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_HANDLING, mqttSubscribeSettingsRetainHandling.code)
+            mqttSubscribeSettingsRetainHandling = MqttRetainHandlingOption.fromString(
+                json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_HANDLING, mqttSubscribeSettingsRetainHandling.name)
             )
             mqttSubscribeSettingsRetainAsPublished = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_AS_PUBLISHED, mqttSubscribeSettingsRetainAsPublished)
             mqttWillTopic = json.optString(UserSettingsKeys.Mqtt.Will.TOPIC, mqttWillTopic)
-            mqttWillQos = MqttQosOption.fromCode(
-                json.optInt(UserSettingsKeys.Mqtt.Will.QOS, mqttWillQos.code)
+            mqttWillQos = MqttQosOption.fromString(
+                json.optString(UserSettingsKeys.Mqtt.Will.QOS, mqttWillQos.name)
             )
             mqttWillPayload = json.optString(UserSettingsKeys.Mqtt.Will.PAYLOAD, mqttWillPayload)
             mqttWillRetain = json.optBoolean(UserSettingsKeys.Mqtt.Will.RETAIN, mqttWillRetain)
