@@ -338,6 +338,11 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT
     )
+    var customAuthPassword by stringPrefOptional(
+        restrictions,
+        prefs,
+        UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD
+    )
     var unlockAuthRequirement by stringEnumPref(
         restrictions,
         prefs,
@@ -703,6 +708,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
             put(UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION, backButtonHoldAction.name)
             put(UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
+            put(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD, customAuthPassword)
             put(UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT, unlockAuthRequirement.name)
 
             put(UserSettingsKeys.JsScripts.APPLY_APP_THEME, applyAppTheme)
@@ -835,6 +841,7 @@ class UserSettings(val context: Context) {
                 json.optString(UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION, backButtonHoldAction.name)
             )
             customUnlockShortcut = json.optString(UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
+            customAuthPassword = json.optString(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD, customAuthPassword)
             unlockAuthRequirement = UnlockAuthRequirementOption.fromString(
                 json.optString(UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT, unlockAuthRequirement.name)
             )

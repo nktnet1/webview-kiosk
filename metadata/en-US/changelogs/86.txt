@@ -1,0 +1,6 @@
+## Changes
+
+- feat: added [device -> custom auth password]
+    - use a custom password to access the settings page or to unlock the device
+    - note: for user-owned devices, this only works for in-app unpin methods
+- fix: changed [web engine -> cache mode option] to string enum
