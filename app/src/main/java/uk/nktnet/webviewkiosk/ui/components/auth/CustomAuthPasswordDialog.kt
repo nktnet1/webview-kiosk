@@ -13,8 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.auth.AuthenticationManager
 import uk.nktnet.webviewkiosk.config.UserSettings
 
@@ -66,7 +67,6 @@ fun CustomAuthPasswordDialog() {
     fun handleFailure() {
         scope.launch {
             waiting = true
-            password = ""
             delay(500)
             isError = true
             showToast("Incorrect password")
@@ -79,7 +79,7 @@ fun CustomAuthPasswordDialog() {
     ) {
         Box(
             modifier = Modifier
-                .background(Color.Black.copy(alpha = 0.8f))
+                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.95f))
                 .verticalScroll(rememberScrollState()),
             contentAlignment = Alignment.TopCenter
         ) {
@@ -96,8 +96,10 @@ fun CustomAuthPasswordDialog() {
                 OutlinedTextField(
                     value = password,
                     onValueChange = {
-                        password = it
-                        isError = false
+                        if (!waiting) {
+                            password = it
+                            isError = false
+                        }
                     },
                     isError = isError,
                     label = { Text("Password") },
@@ -121,7 +123,20 @@ fun CustomAuthPasswordDialog() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focusRequester),
-                    enabled = !waiting
+                    singleLine = true,
+                    trailingIcon = {
+                        IconButton(
+                            onClick = {
+                                password = ""
+                            },
+                            enabled = password.isNotEmpty() && !waiting
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_clear_24),
+                                contentDescription = "Clear"
+                            )
+                        }
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -137,8 +152,8 @@ fun CustomAuthPasswordDialog() {
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.error
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondary,
                         ),
                         enabled = !waiting
                     ) {
