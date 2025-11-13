@@ -23,7 +23,7 @@ fun MqttSubscribeSettingsTopicSetting() {
         """.trimIndent(),
         placeholder = "e.g. devices/+/settings",
         initialValue = userSettings.mqttSubscribeSettingsTopic,
-        validator = { isValidMqttSubscribeTopic(it) },
+        validator = { it.isEmpty() || isValidMqttSubscribeTopic(it) },
         descriptionFormatter = {
             mqttVariableReplacement( it)
         },

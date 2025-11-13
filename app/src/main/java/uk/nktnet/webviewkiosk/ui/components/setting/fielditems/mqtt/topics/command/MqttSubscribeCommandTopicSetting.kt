@@ -22,7 +22,7 @@ fun MqttSubscribeCommandTopicSetting() {
         placeholder = "e.g. devices/+/command",
         initialValue = userSettings.mqttSubscribeCommandTopic,
         restricted = restricted,
-        validator = { isValidMqttSubscribeTopic(it) },
+        validator = { it.isEmpty() || isValidMqttSubscribeTopic(it) },
         descriptionFormatter = {
             mqttVariableReplacement( it)
         },

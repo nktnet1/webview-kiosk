@@ -22,7 +22,7 @@ fun MqttWillTopicSetting() {
         placeholder = "e.g. wk/will",
         initialValue = userSettings.mqttWillTopic,
         restricted = restricted,
-        validator = { isValidMqttPublishTopic(it) },
+        validator = { it.isEmpty() || isValidMqttPublishTopic(it) },
         descriptionFormatter = {
             mqttVariableReplacement( it)
         },

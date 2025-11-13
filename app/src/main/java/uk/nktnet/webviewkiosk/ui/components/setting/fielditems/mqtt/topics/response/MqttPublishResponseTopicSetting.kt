@@ -24,7 +24,7 @@ fun MqttPublishResponseTopicSetting() {
         placeholder = "e.g. wk/response",
         initialValue = userSettings.mqttPublishResponseTopic,
         descriptionFormatter = { mqttVariableReplacement(it) },
-        validator = { isValidMqttPublishTopic(it) },
+        validator = { it.isEmpty() || isValidMqttPublishTopic(it) },
         restricted = restricted,
         isMultiline = false,
         onSave = { userSettings.mqttPublishResponseTopic = it }

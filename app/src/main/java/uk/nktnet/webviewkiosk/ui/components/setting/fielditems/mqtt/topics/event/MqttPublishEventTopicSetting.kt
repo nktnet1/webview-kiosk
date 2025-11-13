@@ -26,7 +26,7 @@ fun MqttPublishEventTopicSetting() {
         descriptionFormatter = {
             mqttVariableReplacement( it)
         },
-        validator = { isValidMqttPublishTopic(it) },
+        validator = { it.isEmpty() || isValidMqttPublishTopic(it) },
         restricted = restricted,
         isMultiline = false,
         onSave = { userSettings.mqttPublishEventTopic = it }
