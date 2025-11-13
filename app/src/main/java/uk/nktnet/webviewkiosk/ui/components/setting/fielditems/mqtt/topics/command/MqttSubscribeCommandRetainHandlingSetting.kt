@@ -20,12 +20,6 @@ fun MqttSubscribeCommandRetainHandlingSetting() {
         initialValue = userSettings.mqttSubscribeCommandRetainHandling,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING),
         onSave = { userSettings.mqttSubscribeCommandRetainHandling = it },
-        itemText = {
-            when (it) {
-                MqttRetainHandlingOption.SEND -> "Send"
-                MqttRetainHandlingOption.SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST -> "Send if not existing"
-                MqttRetainHandlingOption.DO_NOT_SEND -> "Do not send"
-            }
-        }
+        itemText = { it.label },
     )
 }

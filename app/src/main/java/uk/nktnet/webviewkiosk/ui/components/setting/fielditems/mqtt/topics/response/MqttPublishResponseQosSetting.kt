@@ -23,12 +23,6 @@ fun MqttPublishResponseQosSetting() {
         initialValue = userSettings.mqttPublishResponseQos,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Publish.Response.QOS),
         onSave = { userSettings.mqttPublishResponseQos = it },
-        itemText = {
-            when (it) {
-                MqttQosOption.AT_MOST_ONCE -> "At most once"
-                MqttQosOption.AT_LEAST_ONCE -> "At least once"
-                MqttQosOption.EXACTLY_ONCE -> "Exactly once"
-            }
-        }
+        itemText = { it.label },
     )
 }

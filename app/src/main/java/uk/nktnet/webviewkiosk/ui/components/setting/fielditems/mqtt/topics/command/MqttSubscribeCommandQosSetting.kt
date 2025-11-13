@@ -23,12 +23,6 @@ fun MqttSubscribeCommandQosSetting() {
         initialValue = userSettings.mqttSubscribeCommandQos,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS),
         onSave = { userSettings.mqttSubscribeCommandQos = it },
-        itemText = {
-            when (it) {
-                MqttQosOption.AT_MOST_ONCE -> "At most once"
-                MqttQosOption.AT_LEAST_ONCE -> "At least once"
-                MqttQosOption.EXACTLY_ONCE -> "Exactly once"
-            }
-        }
+        itemText = { it.label },
     )
 }
