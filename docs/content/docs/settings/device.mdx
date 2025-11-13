@@ -106,7 +106,23 @@ confirmation dialog from multitap).
 
 **Default:** *(blank)*
 
-## 9. Unlock Auth Requirement
+## 9. Custom Auth Password
+
+Specify a custom password to protect your settings or when unlocking from
+the kiosk state.
+
+For user-owned devices that utilises screen pinning, this will only work
+if you are using an unlock method provided by the app.
+
+Device-level unpin methods (e.g. gestures/holding overview + back button
+simultaneously) will bypass this setting. To enhance security, please
+refer to the [security](/docs/security) documentation.
+
+Leave this setting blank to use your device's biometrics or credentials.
+
+**Default:** *(blank)*
+
+## 10. Unlock Auth Requirement
 
 This setting only applies to in-app unlock methods, e.g. when unlocking
 using `Kiosk Control Panel` or `Custom Unlock Shortcut`.
