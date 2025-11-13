@@ -476,7 +476,7 @@ class UserSettings(val context: Context) {
         restrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Publish.Response.TOPIC,
-        "wk/response"
+        "wk/response/${'$'}{RESPONSE_TYPE}"
     )
     var mqttPublishResponseQos by intEnumPref(
         restrictions,

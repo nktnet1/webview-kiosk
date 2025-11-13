@@ -1,9 +1,9 @@
 package uk.nktnet.webviewkiosk.mqtt.messages
 
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import uk.nktnet.webviewkiosk.utils.BaseJson
 
 @Serializable
 sealed interface MqttCommandMessage {
@@ -74,12 +74,6 @@ data class MqttMqttCommandError(
     override fun toString() = "Command Error: $error"
 }
 
-@OptIn(ExperimentalSerializationApi::class)
-val MqttCommandJsonParser = Json {
-    ignoreUnknownKeys = true
-    coerceInputValues = true
-    isLenient = true
-    allowTrailingComma = true
-    allowComments = true
+val MqttCommandJsonParser = Json(BaseJson) {
     classDiscriminator = "command"
 }

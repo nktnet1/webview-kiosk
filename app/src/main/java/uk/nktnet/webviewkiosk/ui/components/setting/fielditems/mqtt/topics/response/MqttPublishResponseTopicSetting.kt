@@ -21,7 +21,7 @@ fun MqttPublishResponseTopicSetting() {
         infoText = """
             The MQTT topic to publish response messages.
         """.trimIndent(),
-        placeholder = "e.g. wk/response",
+        placeholder = "e.g. wk/response/${'$'}{RESPONSE_TYPE}",
         initialValue = userSettings.mqttPublishResponseTopic,
         descriptionFormatter = { mqttVariableReplacement(it) },
         validator = { it.isEmpty() || isValidMqttPublishTopic(it) },

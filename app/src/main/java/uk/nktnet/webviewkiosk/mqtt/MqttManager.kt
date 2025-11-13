@@ -273,14 +273,19 @@ object MqttManager {
     }
 
     fun publishStatusResponse(statusCommand: MqttGetStatusMqttCommand, status: WebviewKioskStatus) {
-        val topic = statusCommand.responseTopic.takeIf { !it.isNullOrEmpty() }
-            ?: mqttVariableReplacement(config.publishResponseTopic)
-
         val statusMessage = MqttStatusResponse(
             identifier = statusCommand.identifier,
             appInstanceId = config.appInstanceId,
             data = status,
         )
+        val topic = statusCommand.responseTopic.takeIf {
+            !it.isNullOrEmpty()
+        } ?: mqttVariableReplacement(
+            config.publishResponseTopic,
+            mapOf("RESPONSE_TYPE" to statusMessage.type),
+        )
+
+
         val payload = Json.encodeToString(statusMessage)
         publishToMqtt(
             topic,
