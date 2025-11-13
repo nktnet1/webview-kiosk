@@ -27,6 +27,6 @@ fun DeviceRotationSetting() {
             userSettings.rotation = it
             setDeviceRotation(context, it)
         },
-        itemText = { it.degrees },
+        itemText = { it.label },
     )
 }
