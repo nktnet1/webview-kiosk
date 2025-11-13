@@ -1,6 +1,6 @@
 package uk.nktnet.webviewkiosk.config.option
 
-enum class DeviceRotationOption(val degrees: String) {
+enum class DeviceRotationOption(val label: String) {
     AUTO("Auto"),
     ROTATION_0("0"),
     ROTATION_90("90"),
@@ -11,7 +11,7 @@ enum class DeviceRotationOption(val degrees: String) {
         fun fromString(value: String?): DeviceRotationOption {
             return entries.find {
                 it.name.equals(value, ignoreCase = true)
-                || it.degrees.equals(value, ignoreCase = true)
+                || it.label.equals(value, ignoreCase = true)
             } ?: AUTO
         }
     }
