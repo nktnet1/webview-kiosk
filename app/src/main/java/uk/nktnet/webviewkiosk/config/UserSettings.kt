@@ -7,7 +7,6 @@ import android.util.Base64
 import org.json.JSONObject
 import uk.nktnet.webviewkiosk.config.option.*
 import uk.nktnet.webviewkiosk.utils.booleanPref
-import uk.nktnet.webviewkiosk.utils.intEnumPref
 import uk.nktnet.webviewkiosk.utils.stringEnumPref
 import uk.nktnet.webviewkiosk.utils.intPref
 import uk.nktnet.webviewkiosk.utils.stringPref
@@ -163,12 +162,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebEngine.ACCEPT_THIRD_PARTY_COOKIES,
         false
     )
-    var cacheMode by intEnumPref(
+    var cacheMode by stringEnumPref(
         restrictions,
         prefs,
         UserSettingsKeys.WebEngine.CACHE_MODE,
-        CacheModeOption.DEFAULT.mode,
-        fromInt = CacheModeOption::fromInt
+        CacheModeOption.DEFAULT.name,
+        fromString = CacheModeOption::fromString
     )
     var layoutAlgorithm by stringEnumPref(
         restrictions,
@@ -410,7 +409,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebEngine.ENABLE_DOM_STORAGE, enableDomStorage)
             put(UserSettingsKeys.WebEngine.ACCEPT_COOKIES, acceptCookies)
             put(UserSettingsKeys.WebEngine.ACCEPT_THIRD_PARTY_COOKIES, acceptThirdPartyCookies)
-            put(UserSettingsKeys.WebEngine.CACHE_MODE, cacheMode.mode)
+            put(UserSettingsKeys.WebEngine.CACHE_MODE, cacheMode.name)
             put(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM, layoutAlgorithm.algorithm.name)
             put(UserSettingsKeys.WebEngine.USER_AGENT, userAgent)
             put(UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT, useWideViewPort)
@@ -486,7 +485,9 @@ class UserSettings(val context: Context) {
             enableDomStorage = json.optBoolean(UserSettingsKeys.WebEngine.ENABLE_DOM_STORAGE, enableDomStorage)
             acceptCookies = json.optBoolean(UserSettingsKeys.WebEngine.ACCEPT_COOKIES, acceptCookies)
             acceptThirdPartyCookies = json.optBoolean(UserSettingsKeys.WebEngine.ACCEPT_THIRD_PARTY_COOKIES, acceptThirdPartyCookies)
-            cacheMode = CacheModeOption.fromInt(json.optInt(UserSettingsKeys.WebEngine.CACHE_MODE, cacheMode.mode))
+            cacheMode = CacheModeOption.fromString(
+                json.optString(UserSettingsKeys.WebEngine.CACHE_MODE,  cacheMode.name)
+            )
             layoutAlgorithm = LayoutAlgorithmOption.fromString(
                 json.optString(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM, layoutAlgorithm.algorithm.name)
             )
