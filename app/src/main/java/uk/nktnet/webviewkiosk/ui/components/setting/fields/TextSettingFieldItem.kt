@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
@@ -29,10 +31,13 @@ fun TextSettingFieldItem(
     isMultiline: Boolean,
     modifier: Modifier = Modifier,
     restricted: Boolean,
+    onLongClick: ((value: String) -> Unit)? = null,
     validator: (String) -> Boolean = { true },
     validationMessage: String? = null,
     onSave: (String) -> Unit,
     readOnly: Boolean = false,
+    isPassword: Boolean = false,
+    descriptionFormatter: ((String) -> String)? = null,
     extraContent: (@Composable ((setValue: (String) -> Unit) -> Unit))? = null,
 ) {
     val clipboard = LocalClipboard.current
@@ -42,20 +47,34 @@ fun TextSettingFieldItem(
     var value by remember { mutableStateOf(initialValue) }
     var draftValue by remember { mutableStateOf(initialValue) }
     var draftError by remember { mutableStateOf(false) }
+    val visualTransformation = if (isPassword) {
+        PasswordVisualTransformation()
+    } else {
+        VisualTransformation.None
+    }
 
     GenericSettingFieldItem(
         label = label,
         value = value,
         restricted = restricted,
+        onLongClick = onLongClick ?: if (isPassword || value.isEmpty()) {
+            { /* Do nothing */ }
+        } else {
+            null
+        },
         onClick = {
             draftValue = value
             draftError = !validator(value)
             showDialog = true
         }
     ) { v ->
-        val description = if (isMultiline) {
-            v.split("\n").joinToString(" | ").ifBlank { "(blank)" }
-        } else v.ifBlank { "(blank)" }
+        val description = descriptionFormatter?.invoke(v) ?: run {
+            if (isMultiline) {
+                v.split("\n").joinToString(" | ").ifBlank { "(blank)" }
+            } else {
+                v.ifBlank { "(blank)" }
+            }
+        }
 
         Text(
             text = description,
@@ -89,6 +108,7 @@ fun TextSettingFieldItem(
                     value = draftValue,
                     enabled = !restricted,
                     readOnly = readOnly,
+                    visualTransformation = visualTransformation,
                     onValueChange = {
                         draftValue = it
                         draftError = !validator(it)
@@ -175,7 +195,9 @@ fun TextSettingFieldItem(
                         text = validationMessage ?: "Invalid input",
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
                     )
                 }
                 extraContent?.invoke { draftValue = it; draftError = !validator(it) }

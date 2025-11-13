@@ -23,7 +23,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
+import uk.nktnet.webviewkiosk.auth.AuthenticationManager
 import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonService
@@ -33,6 +33,7 @@ import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
+import uk.nktnet.webviewkiosk.ui.components.auth.CustomAuthPasswordDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
@@ -96,7 +97,7 @@ class MainActivity : AppCompatActivity() {
             ).apply { show() }
         }
 
-        BiometricPromptManager.init(this)
+        AuthenticationManager.init(this)
 
         systemSettings.isFreshLaunch = true
 
@@ -118,19 +119,19 @@ class MainActivity : AppCompatActivity() {
             KeepScreenOnOption()
 
             val waitingForUnlock by WaitingForUnlockStateSingleton.waitingForUnlock.collectAsState()
-            val biometricResult by BiometricPromptManager.promptResults.collectAsState()
+            val biometricResult by AuthenticationManager.promptResults.collectAsState()
             val activity = LocalActivity.current
 
             LaunchedEffect(waitingForUnlock, biometricResult) {
                 if (
                     waitingForUnlock
                 ) {
-                    if (biometricResult == BiometricPromptManager.BiometricResult.Loading) {
+                    if (biometricResult == AuthenticationManager.AuthenticationResult.Loading) {
                         return@LaunchedEffect
                     }
                     if (
-                        biometricResult == BiometricPromptManager.BiometricResult.AuthenticationSuccess
-                        || biometricResult == BiometricPromptManager.BiometricResult.AuthenticationNotSet
+                        biometricResult == AuthenticationManager.AuthenticationResult.AuthenticationSuccess
+                        || biometricResult == AuthenticationManager.AuthenticationResult.AuthenticationNotSet
                     ) {
                         tryUnlockTask(activity, showToast)
                         WaitingForUnlockStateSingleton.emitUnlockSuccess()
@@ -179,6 +180,7 @@ class MainActivity : AppCompatActivity() {
                             }
                         )
                     } ?: run {
+                        CustomAuthPasswordDialog()
                         SetupNavHost(navController)
                     }
                 }
@@ -197,7 +199,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        BiometricPromptManager.init(this)
+        AuthenticationManager.init(this)
     }
 
     override fun onResume() {
@@ -214,7 +216,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         if (!isChangingConfigurations) {
-            BiometricPromptManager.resetAuthentication()
+            AuthenticationManager.resetAuthentication()
         }
     }
 
@@ -235,7 +237,7 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            BiometricPromptManager.handleLollipopDeviceCredentialResult(requestCode, resultCode)
+            AuthenticationManager.handleLollipopDeviceCredentialResult(requestCode, resultCode)
         }
     }
 
