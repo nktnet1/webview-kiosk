@@ -10,6 +10,15 @@ import kotlinx.serialization.Serializable
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
 
+@Serializable
+data class WebviewKioskStatus(
+    val isInteractive: Boolean,
+    val lastInteractionTime: Long,
+    val isLocked: Boolean,
+    val batteryPercentage: Int,
+    val currentUrl: String,
+)
+
 fun getStatus(context: Context): WebviewKioskStatus {
     val systemSettings = SystemSettings(context)
     val pm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -32,16 +41,8 @@ fun getStatus(context: Context): WebviewKioskStatus {
         isLocked = getIsLocked(activityManager),
         lastInteractionTime = InactivityStateSingleton.lastInteractionState.value,
         isInteractive = pm.isInteractive,
-        batteryLevel = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY).coerceIn(0, 100),
+        batteryPercentage = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY).coerceIn(0, 100),
         currentUrl = systemSettings.currentUrl
     )
 }
 
-@Serializable
-data class WebviewKioskStatus(
-    val isInteractive: Boolean,
-    val lastInteractionTime: Long,
-    val isLocked: Boolean,
-    val batteryLevel: Int,
-    val currentUrl: String,
-)
