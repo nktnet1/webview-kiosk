@@ -74,6 +74,14 @@ fun CustomAuthPasswordDialog() {
         }
     }
 
+    fun handleUnlock() {
+        if (password == userSettings.customAuthPassword) {
+            handleSuccess()
+        } else {
+            handleFailure()
+        }
+    }
+
     Dialog(
         onDismissRequest = { AuthenticationManager.customAuthCancel() }
     ) {
@@ -113,13 +121,9 @@ fun CustomAuthPasswordDialog() {
                     } else {
                         KeyboardOptions.Default.copy(imeAction = ImeAction.Done)
                     },
-                    keyboardActions = KeyboardActions(onDone = {
-                        if (password == userSettings.customAuthPassword) {
-                            handleSuccess()
-                        } else {
-                            handleFailure()
-                        }
-                    }),
+                    keyboardActions = KeyboardActions(
+                        onDone = { handleUnlock() },
+                    ),
                     modifier = Modifier
                         .fillMaxWidth()
                         .focusRequester(focusRequester),
@@ -161,13 +165,7 @@ fun CustomAuthPasswordDialog() {
                     }
 
                     Button(
-                        onClick = {
-                            if (password == userSettings.customAuthPassword) {
-                                handleSuccess()
-                            } else {
-                                handleFailure()
-                            }
-                        },
+                        onClick = { handleUnlock() },
                         modifier = Modifier.weight(1f),
                         enabled = !waiting
                     ) {
