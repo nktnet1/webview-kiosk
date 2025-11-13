@@ -445,7 +445,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
             put(UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION, backButtonHoldAction.name)
             put(UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
-            put(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD, customAuthPassword)
+            // put(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD, customAuthPassword)
             put(UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT, unlockAuthRequirement.name)
 
             put(UserSettingsKeys.JsScripts.APPLY_APP_THEME, applyAppTheme)
