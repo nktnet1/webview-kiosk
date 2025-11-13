@@ -348,6 +348,12 @@
         android:description="@string/device_custom_unlock_shortcut_description"
     />
     <restriction
+        android:key="device.custom_auth_password"
+        android:restrictionType="string"
+        android:title="@string/device_custom_auth_password_title"
+        android:description="@string/device_custom_auth_password_description"
+    />
+    <restriction
         android:key="device.unlock_auth_requirement"
         android:restrictionType="choice"
         android:entries="@array/entries_unlock_auth_requirement_option"

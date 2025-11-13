@@ -10,7 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
-import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
+import uk.nktnet.webviewkiosk.auth.AuthenticationManager
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
@@ -47,7 +47,7 @@ fun tryLockTask(activity: Activity?, showToast: (String) -> Unit = {}): Boolean 
         activity,
         Activity::startLockTask,
         onSuccess = {
-            BiometricPromptManager.resetAuthentication()
+            AuthenticationManager.resetAuthentication()
         },
         onFailed = { showToast("Failed to lock: $it") }
     )
@@ -105,7 +105,7 @@ fun unlockWithAuthIfRequired(
 
     if (requireAuthForUnlock(activity, userSettings)) {
         WaitingForUnlockStateSingleton.startWaiting()
-        BiometricPromptManager.showBiometricPrompt(
+        AuthenticationManager.showAuthenticationPrompt(
             title = "Authentication Required",
             description = "Please authenticate to unlock Webview Kiosk"
         )

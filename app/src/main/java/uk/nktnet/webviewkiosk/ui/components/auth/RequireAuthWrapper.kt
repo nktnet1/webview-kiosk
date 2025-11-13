@@ -4,11 +4,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
+import uk.nktnet.webviewkiosk.auth.AuthenticationManager
 import uk.nktnet.webviewkiosk.ui.components.common.LoadingIndicator
 
 private fun showAuthPrompt() {
-    BiometricPromptManager.showBiometricPrompt(
+    AuthenticationManager.showAuthenticationPrompt(
         title = "Authentication Required",
         description = "Please authenticate to access settings"
     )
@@ -31,20 +31,20 @@ fun RequireAuthWrapper(
 @Composable
 private fun RequireAuthentication(
     onAuthenticated: @Composable () -> Unit,
-    onFailed: @Composable (BiometricPromptManager.BiometricResult?) -> Unit
+    onFailed: @Composable (AuthenticationManager.AuthenticationResult?) -> Unit
 ) {
-    val biometricResult by BiometricPromptManager.promptResults.collectAsState(initial = BiometricPromptManager.BiometricResult.Loading)
+    val authenticationResult by AuthenticationManager.promptResults.collectAsState(initial = AuthenticationManager.AuthenticationResult.Loading)
 
     LaunchedEffect(Unit) {
-        if (!BiometricPromptManager.checkAuthAndRefreshSession()) {
+        if (!AuthenticationManager.checkAuthAndRefreshSession()) {
             showAuthPrompt()
         }
     }
 
-    when (biometricResult) {
-        is BiometricPromptManager.BiometricResult.Loading -> LoadingIndicator("Waiting for authentication...")
-        is BiometricPromptManager.BiometricResult.AuthenticationSuccess,
-        is BiometricPromptManager.BiometricResult.AuthenticationNotSet -> onAuthenticated()
-        else -> onFailed(biometricResult)
+    when (authenticationResult) {
+        is AuthenticationManager.AuthenticationResult.Loading -> LoadingIndicator("Waiting for authentication...")
+        is AuthenticationManager.AuthenticationResult.AuthenticationSuccess,
+        is AuthenticationManager.AuthenticationResult.AuthenticationNotSet -> onAuthenticated()
+        else -> onFailed(authenticationResult)
     }
 }
