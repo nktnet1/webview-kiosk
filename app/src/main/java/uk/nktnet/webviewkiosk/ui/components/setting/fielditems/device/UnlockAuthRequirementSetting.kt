@@ -36,12 +36,6 @@ fun UnlockAuthRequirementSetting() {
         initialValue = userSettings.unlockAuthRequirement,
         restricted = userSettings.isRestricted(UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT),
         onSave = { userSettings.unlockAuthRequirement = it },
-        itemText = {
-            when (it) {
-                UnlockAuthRequirementOption.DEFAULT -> "Default"
-                UnlockAuthRequirementOption.OFF -> "Off"
-                UnlockAuthRequirementOption.REQUIRE -> "Require"
-            }
-        }
+        itemText = { it.label },
     )
 }

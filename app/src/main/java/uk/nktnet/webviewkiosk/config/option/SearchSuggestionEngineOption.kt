@@ -1,14 +1,17 @@
 package uk.nktnet.webviewkiosk.config.option
 
-enum class SearchSuggestionEngineOption {
-    NONE,
-    GOOGLE,
-    DUCKDUCKGO,
-    YAHOO;
+enum class SearchSuggestionEngineOption(val label: String) {
+    NONE("None"),
+    GOOGLE("Google"),
+    DUCKDUCKGO("DuckDuckGo"),
+    YAHOO("Yahoo");
 
     companion object {
         fun fromString(value: String?): SearchSuggestionEngineOption {
-            return entries.find { it.name.equals(value, ignoreCase = true) } ?: NONE
+            return entries.find {
+                it.name.equals(value, ignoreCase = true)
+                || it.label.equals(value, ignoreCase = true)
+            } ?: NONE
         }
     }
 }

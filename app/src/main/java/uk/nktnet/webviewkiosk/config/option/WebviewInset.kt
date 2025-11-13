@@ -34,6 +34,9 @@ enum class WebViewInset(val label: String) {
 
     companion object {
         fun fromString(value: String?): WebViewInset =
-            entries.find { it.name.equals(value, ignoreCase = true) } ?: SystemBars
+            entries.find {
+                it.name.equals(value, ignoreCase = true)
+                || it.label.equals(value, ignoreCase = true)
+            } ?: SystemBars
     }
 }

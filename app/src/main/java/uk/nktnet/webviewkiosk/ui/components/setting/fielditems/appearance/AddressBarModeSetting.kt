@@ -20,12 +20,6 @@ fun AddressBarModeSetting() {
         restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE),
         initialValue = userSettings.addressBarMode,
         onSave = { userSettings.addressBarMode = it },
-        itemText = {
-            when (it) {
-                AddressBarModeOption.HIDDEN -> "Hidden"
-                AddressBarModeOption.HIDDEN_WHEN_LOCKED -> "Hidden when locked"
-                AddressBarModeOption.SHOWN -> "Shown"
-            }
-        }
+        itemText = { it.label },
     )
 }
