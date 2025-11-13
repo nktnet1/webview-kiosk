@@ -36,7 +36,7 @@ fun SettingsMqttRestrictionsScreen(navController: NavController) {
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
         ) {
-            SettingLabel(navController = navController, label = "MQTT Restrictions")
+            SettingLabel(navController = navController, label = "Restrictions")
             SettingDivider()
 
             MqttControlButtons()
