@@ -13,6 +13,7 @@ enum class CacheModeOption(val mode: Int, val label: String) {
             return entries.find {
                 it.name.equals(value, ignoreCase = true)
                 || it.label.equals(value, ignoreCase = true)
+                || it.mode.toString() == value
             } ?: DEFAULT
         }
     }
