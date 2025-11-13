@@ -17,6 +17,7 @@ import com.hivemq.client.mqtt.MqttClientState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.SystemSettings
+import kotlin.math.max
 
 @Composable
 fun MqttControlButtons() {
@@ -139,10 +140,16 @@ fun MqttControlButtons() {
                 Button(
                     onClick = {
                         val res = MqttManager.cancelConnect()
+                        val maxWait = max(
+                            userSettings.mqttSocketConnectTimeout,
+                            userSettings.mqttConnectTimeout
+                        )
                         if (res) {
-                            showToast("Cancelling... (max ${userSettings.mqttSocketConnectTimeout} seconds)")
+                            showToast("Cancelling... (max $maxWait seconds)")
                         } else {
-                            showToast("Cancellation is already requested.")
+                            showToast(
+                                "Already cancelling - please wait up to $maxWait seconds."
+                            )
                         }
                     },
                     colors = ButtonDefaults.buttonColors(

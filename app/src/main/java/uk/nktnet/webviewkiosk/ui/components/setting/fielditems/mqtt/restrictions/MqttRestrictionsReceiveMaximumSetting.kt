@@ -1,3 +1,5 @@
+package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.restrictions
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -18,7 +20,7 @@ fun MqttRestrictionsReceiveMaximumSetting() {
         placeholder = "e.g. 16",
         initialValue = userSettings.mqttRestrictionsReceiveMaximum,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Restrictions.RECEIVE_MAXIMUM),
-        min = 1,
+        min = 0,
         max = 65535,
         onSave = { userSettings.mqttRestrictionsReceiveMaximum = it }
     )

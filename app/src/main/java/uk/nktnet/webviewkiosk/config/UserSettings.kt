@@ -589,7 +589,7 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.Mqtt.Restrictions.RECEIVE_MAXIMUM,
         65_535,
-        min = 1,
+        min = 0,
         max = 65_535,
     )
     var mqttRestrictionsSendMaximum by intPref(
@@ -597,7 +597,7 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.Mqtt.Restrictions.SEND_MAXIMUM,
         65_535,
-        min = 1,
+        min = 0,
         max = 65_535,
     )
     var mqttRestrictionsMaximumPacketSize by intPref(
@@ -605,7 +605,7 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.Mqtt.Restrictions.MAXIMUM_PACKET_SIZE,
         268_435_460,
-        min = 1,
+        min = 0,
         max = 268_435_460,
     )
     var mqttRestrictionsSendMaximumPacketSize by intPref(
@@ -613,7 +613,7 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.Mqtt.Restrictions.SEND_MAXIMUM_PACKET_SIZE,
         268_435_460,
-        min = 1,
+        min = 0,
         max = 268_435_460,
     )
     var mqttRestrictionsTopicAliasMaximum by intPref(

@@ -191,8 +191,8 @@ object MqttManager {
             return
         }
         addDebugLog("connect pending", "Attempting to connect...")
-        @SuppressLint("NewApi")
-        c.connectWith()
+
+        var connection = c.connectWith()
             .cleanStart(config.cleanStart)
             .keepAlive(config.keepAlive)
             .simpleAuth()
@@ -209,16 +209,34 @@ object MqttManager {
                 .contentType("text/plain")
                 .payload(config.willPayload.toByteArray())
                 .applyWillPublish()
-            .restrictions()
-                .receiveMaximum(config.restrictionsReceiveMaximum)
-                .sendMaximum(config.restrictionsSendMaximum)
-                .maximumPacketSize(config.restrictionsMaximumPacketSize)
-                .sendMaximumPacketSize(config.restrictionsSendMaximumPacketSize)
-                .topicAliasMaximum(config.restrictionsTopicAliasMaximum)
-                .sendTopicAliasMaximum(config.restrictionsSendTopicAliasMaximum)
-                .requestProblemInformation(config.restrictionsRequestProblemInformation)
-                .requestResponseInformation(config.restrictionsRequestResponseInformation)
-                .applyRestrictions()
+
+        var rb = connection.restrictions()
+            .requestProblemInformation(config.restrictionsRequestProblemInformation)
+            .requestResponseInformation(config.restrictionsRequestResponseInformation)
+
+        if (config.restrictionsReceiveMaximum > 0) {
+            rb = rb.receiveMaximum(config.restrictionsReceiveMaximum)
+        }
+        if (config.restrictionsSendMaximum > 0) {
+            rb = rb.sendMaximum(config.restrictionsSendMaximum)
+        }
+        if (config.restrictionsMaximumPacketSize > 0) {
+            rb = rb.maximumPacketSize(config.restrictionsMaximumPacketSize)
+        }
+        if (config.restrictionsSendMaximumPacketSize > 0) {
+            rb = rb.sendMaximumPacketSize(config.restrictionsSendMaximumPacketSize)
+        }
+        if (config.restrictionsTopicAliasMaximum > 0) {
+            rb = rb.topicAliasMaximum(config.restrictionsTopicAliasMaximum)
+        }
+        if (config.restrictionsSendTopicAliasMaximum > 0) {
+            rb = rb.sendTopicAliasMaximum(config.restrictionsSendTopicAliasMaximum)
+        }
+
+        connection = rb.applyRestrictions()
+
+        @SuppressLint("NewApi")
+        connection
             .send()
             .whenComplete { _, throwable ->
                 if (throwable == null) {

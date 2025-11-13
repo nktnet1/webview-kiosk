@@ -1,3 +1,5 @@
+package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.restrictions
+
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -18,7 +20,7 @@ fun MqttRestrictionsSendMaximumPacketSizeSetting() {
         placeholder = "e.g. 1024",
         initialValue = userSettings.mqttRestrictionsSendMaximumPacketSize,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Restrictions.SEND_MAXIMUM_PACKET_SIZE),
-        min = 1,
+        min = 0,
         max = 268_435_460,
         onSave = { userSettings.mqttRestrictionsSendMaximumPacketSize = it }
     )
