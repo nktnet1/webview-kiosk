@@ -133,10 +133,18 @@ class MainActivity : AppCompatActivity() {
             LaunchedEffect(Unit) {
                 MqttManager.settings.collect { payload ->
                     if (userSettings.mqttEnabled) {
-                        showToast("MQTT: updating settings.")
                         userSettings.importJson(payload)
                         updateDeviceSettings(context)
-                        navigateToWebViewScreen(navController)
+                        showToast("MQTT: settings updated.")
+
+
+                        // Counterintuitive, but this acts as a "Refresh" of the webview screen,
+                        // which will recreate + apply settings.
+                        // If we're on another screen though (e.g. settings), then let the user
+                        // decide when to navigate back.
+                        if (navController.currentDestination?.route == Screen.WebView.route) {
+                            navigateToWebViewScreen(navController)
+                        }
                     }
                 }
             }
