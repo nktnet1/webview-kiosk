@@ -28,12 +28,6 @@ fun ImmersiveModeSetting() {
         restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.IMMERSIVE_MODE),
         initialValue = userSettings.immersiveMode,
         onSave = { userSettings.immersiveMode = it },
-        itemText = {
-            when (it) {
-                ImmersiveModeOption.ALWAYS_ON -> "Always on"
-                ImmersiveModeOption.ALWAYS_OFF -> "Always off"
-                ImmersiveModeOption.ONLY_WHEN_LOCKED -> "Only when locked"
-            }
-        }
+        itemText = { it.label },
     )
 }

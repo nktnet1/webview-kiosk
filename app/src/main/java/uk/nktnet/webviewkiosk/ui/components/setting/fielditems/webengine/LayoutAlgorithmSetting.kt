@@ -28,13 +28,6 @@ fun LayoutAlgorithmSetting() {
         initialValue = userSettings.layoutAlgorithm,
         restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM),
         onSave = { userSettings.layoutAlgorithm = it },
-        itemText = {
-            when (it) {
-                LayoutAlgorithmOption.NORMAL -> "Normal"
-                LayoutAlgorithmOption.SINGLE_COLUMN -> "Single Column"
-                LayoutAlgorithmOption.NARROW_COLUMNS -> "Narrow Columns"
-                LayoutAlgorithmOption.TEXT_AUTOSIZING -> "Text Autosizing"
-            }
-        }
+        itemText = { it.label }
     )
 }

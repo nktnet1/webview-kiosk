@@ -27,14 +27,6 @@ fun DeviceRotationSetting() {
             userSettings.rotation = it
             setDeviceRotation(context, it)
         },
-        itemText = {
-            when (it) {
-                DeviceRotationOption.AUTO -> "Auto"
-                DeviceRotationOption.ROTATION_0 -> "0°"
-                DeviceRotationOption.ROTATION_90 -> "90°"
-                DeviceRotationOption.ROTATION_180 -> "180°"
-                DeviceRotationOption.ROTATION_270 -> "270°"
-            }
-        }
+        itemText = { it.degrees },
     )
 }

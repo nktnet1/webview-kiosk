@@ -25,12 +25,6 @@ fun FloatingToolbarModeSetting() {
         restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.FLOATING_TOOLBAR_MODE),
         initialValue = userSettings.floatingToolbarMode,
         onSave = { userSettings.floatingToolbarMode = it },
-        itemText = {
-            when (it) {
-                FloatingToolbarModeOption.HIDDEN -> "Hidden"
-                FloatingToolbarModeOption.HIDDEN_WHEN_LOCKED -> "Hidden when locked"
-                FloatingToolbarModeOption.SHOWN -> "Shown"
-            }
-        }
+        itemText = { it.label },
     )
 }

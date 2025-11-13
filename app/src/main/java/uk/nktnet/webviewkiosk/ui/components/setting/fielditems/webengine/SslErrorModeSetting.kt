@@ -28,12 +28,6 @@ fun SslErrorModeSetting() {
         initialValue = userSettings.sslErrorMode,
         restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.SSL_ERROR_MODE),
         onSave = { userSettings.sslErrorMode = it },
-        itemText = {
-            when (it) {
-                SslErrorModeOption.BLOCK -> "Block"
-                SslErrorModeOption.PROMPT -> "Prompt"
-                SslErrorModeOption.PROCEED -> "Proceed (NOT RECOMMENDED)"
-            }
-        }
+        itemText = { it.label },
     )
 }

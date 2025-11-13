@@ -2,14 +2,18 @@ package uk.nktnet.webviewkiosk.config.option
 
 import android.webkit.WebSettings
 
-enum class LayoutAlgorithmOption(val algorithm: WebSettings.LayoutAlgorithm) {
-    NORMAL(WebSettings.LayoutAlgorithm.NORMAL),
-    SINGLE_COLUMN(WebSettings.LayoutAlgorithm.SINGLE_COLUMN),
-    NARROW_COLUMNS(WebSettings.LayoutAlgorithm.NARROW_COLUMNS),
-    TEXT_AUTOSIZING(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING);
+enum class LayoutAlgorithmOption(val algorithm: WebSettings.LayoutAlgorithm, val label: String) {
+    NORMAL(WebSettings.LayoutAlgorithm.NORMAL, "Normal"),
+    SINGLE_COLUMN(WebSettings.LayoutAlgorithm.SINGLE_COLUMN, "Single Column"),
+    NARROW_COLUMNS(WebSettings.LayoutAlgorithm.NARROW_COLUMNS, "Narrow Columns"),
+    TEXT_AUTOSIZING(WebSettings.LayoutAlgorithm.TEXT_AUTOSIZING, "Text Autosizing");
 
     companion object {
-        fun fromString(value: String?): LayoutAlgorithmOption =
-            entries.find { it.name == value } ?: NORMAL
+        fun fromString(value: String?): LayoutAlgorithmOption {
+            return entries.find {
+                it.name.equals(value, ignoreCase = true)
+                || it.label.equals(value, ignoreCase = true)
+            } ?: NORMAL
+        }
     }
 }

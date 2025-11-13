@@ -41,19 +41,13 @@ fun KioskControlPanelRegionSetting() {
               2. [Device -> Back Button Hold Action] is not set to "Open Kiosk Control Panel"
             """.trimIndent(),
         itemText = {
-            when (it) {
-                KioskControlPanelRegionOption.TOP_LEFT -> "Top Left"
-                KioskControlPanelRegionOption.TOP_RIGHT -> "Top Right"
-                KioskControlPanelRegionOption.BOTTOM_LEFT -> "Bottom Left"
-                KioskControlPanelRegionOption.BOTTOM_RIGHT -> "Bottom Right"
-                KioskControlPanelRegionOption.TOP -> "Top"
-                KioskControlPanelRegionOption.BOTTOM -> "Bottom"
-                KioskControlPanelRegionOption.FULL -> "Full Screen"
-                KioskControlPanelRegionOption.DISABLED -> if (canDisableKioskControlPanelRegion(userSettings)) {
-                    "Disabled"
-                } else {
-                    "Top Left (cannot disable)"
-                }
+            if (
+                it == KioskControlPanelRegionOption.DISABLED
+                && !canDisableKioskControlPanelRegion(userSettings)
+            ) {
+                "Top Left (cannot disable)"
+            } else {
+                it.label
             }
         }
     )
