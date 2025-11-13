@@ -20,13 +20,6 @@ fun CacheModeSetting() {
         initialValue = userSettings.cacheMode,
         restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.CACHE_MODE),
         onSave = { userSettings.cacheMode = it },
-        itemText = {
-            when (it) {
-                CacheModeOption.DEFAULT -> "Default"
-                CacheModeOption.CACHE_ELSE_NETWORK -> "Cache else network"
-                CacheModeOption.NO_CACHE -> "No cache"
-                CacheModeOption.CACHE_ONLY -> "Cache only"
-            }
-        }
+        itemText = { it.label },
     )
 }
