@@ -7,7 +7,6 @@ import android.os.RemoteException
 import com.rosan.dhizuku.api.Dhizuku
 import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
 
-
 object DhizukuManager {
     private var isInit = false
 

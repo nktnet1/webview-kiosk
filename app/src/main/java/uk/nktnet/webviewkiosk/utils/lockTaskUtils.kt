@@ -6,6 +6,7 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.os.Build
+import com.rosan.dhizuku.shared.DhizukuVariables
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -70,6 +71,17 @@ fun setupLockTaskPackage(context: Context): Boolean {
         }
         val adminComponent = ComponentName(context.packageName, WebviewKioskAdminReceiver::class.java.name)
         dpm.setLockTaskPackages(adminComponent, arrayOf(context.packageName))
+        return true
+    } catch (e: Exception) {
+        e.printStackTrace()
+        return false
+    }
+}
+
+fun setupLockTaskPackageDhizuku(context: Context): Boolean {
+    try {
+        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        dpm.setLockTaskPackages(DhizukuVariables.COMPONENT_NAME, arrayOf(context.packageName))
         return true
     } catch (e: Exception) {
         e.printStackTrace()
