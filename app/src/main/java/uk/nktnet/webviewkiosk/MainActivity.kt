@@ -61,6 +61,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 updateDeviceSettings(context)
                 AuthenticationManager.resetAuthentication()
+                AuthenticationManager.hideCustomAuthPrompt()
             }
         }
     }
