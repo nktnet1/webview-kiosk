@@ -105,7 +105,7 @@ fun TextSettingFieldItem(
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
-                    value = if (restricted && isPassword) {
+                    value = if (restricted && isPassword && draftValue.isNotEmpty()) {
                         "*".repeat(20)
                     } else {
                         draftValue
