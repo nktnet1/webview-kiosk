@@ -33,6 +33,7 @@ fun SettingsWebEngineScreen(navController: NavController) {
         LayoutAlgorithmSetting()
         UseWideViewPortSetting()
         LoadWithOverviewModeSetting()
+        SupportZoomSetting()
         BuiltInZoomControlsSetting()
         DisplayZoomControlsSetting()
         AllowFileAccessFromFileURLsSetting()

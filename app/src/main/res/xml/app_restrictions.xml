@@ -182,6 +182,12 @@
         android:description="@string/web_engine_load_with_overview_mode_description"
     />
     <restriction
+        android:key="web_engine.support_zoom"
+        android:restrictionType="bool"
+        android:title="@string/web_engine_support_zoom_title"
+        android:description="@string/web_engine_support_zoom_description"
+    />
+    <restriction
         android:key="web_engine.built_in_zoom_controls"
         android:restrictionType="bool"
         android:title="@string/web_engine_built_in_zoom_controls_title"

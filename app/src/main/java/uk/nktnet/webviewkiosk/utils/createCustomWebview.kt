@@ -79,8 +79,11 @@ fun createCustomWebview(
                 layoutAlgorithm = userSettings.layoutAlgorithm.algorithm
                 useWideViewPort = userSettings.useWideViewPort
                 loadWithOverviewMode = userSettings.loadWithOverviewMode
+
+                setSupportZoom(userSettings.supportZoom)
                 builtInZoomControls = userSettings.builtInZoomControls
                 displayZoomControls = userSettings.displayZoomControls
+
                 allowFileAccess = userSettings.allowLocalFiles
                 @Suppress("DEPRECATION")
                 allowFileAccessFromFileURLs = userSettings.allowFileAccessFromFileURLs
