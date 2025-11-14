@@ -60,6 +60,7 @@ class MainActivity : AppCompatActivity() {
                     navControllerState.value?.navigate(Screen.AdminRestrictionsChanged.route)
                 }
                 updateDeviceSettings(context)
+                AuthenticationManager.resetAuthentication()
             }
         }
     }
