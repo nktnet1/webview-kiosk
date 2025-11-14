@@ -28,13 +28,6 @@ fun SearchSuggestionEngineSetting() {
         initialValue = userSettings.searchSuggestionEngine,
         restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.SEARCH_SUGGESTION_ENGINE),
         onSave = { userSettings.searchSuggestionEngine = it },
-        itemText = {
-            when (it) {
-                SearchSuggestionEngineOption.NONE -> "None"
-                SearchSuggestionEngineOption.GOOGLE -> "Google"
-                SearchSuggestionEngineOption.DUCKDUCKGO -> "DuckDuckGo"
-                SearchSuggestionEngineOption.YAHOO -> "Yahoo"
-            }
-        }
+        itemText = { it.label }
     )
 }

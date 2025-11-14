@@ -23,18 +23,18 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
+import uk.nktnet.webviewkiosk.auth.AuthenticationManager
 import uk.nktnet.webviewkiosk.config.*
-import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonService
 import uk.nktnet.webviewkiosk.main.DhizukuManager
 import uk.nktnet.webviewkiosk.main.SetupNavHost
-import uk.nktnet.webviewkiosk.main.applyDeviceRotation
 import uk.nktnet.webviewkiosk.main.handleMainIntent
 import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
+import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
+import uk.nktnet.webviewkiosk.ui.components.auth.CustomAuthPasswordDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
@@ -44,15 +44,13 @@ import uk.nktnet.webviewkiosk.utils.handlePreviewKeyUnlockEvent
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
+import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
 
 class MainActivity : AppCompatActivity() {
     private val navControllerState = mutableStateOf<NavHostController?>(null)
     private var uploadingFileUri: Uri? = null
     private var uploadProgress by mutableFloatStateOf(0f)
     private lateinit var userSettings: UserSettings
-    private lateinit var themeState: MutableState<ThemeOption>
-    private lateinit var keepScreenOnState: MutableState<Boolean>
-    private lateinit var deviceRotationState: MutableState<DeviceRotationOption>
     private lateinit var backButtonService: BackButtonService
 
     val restrictionsReceiver = object : BroadcastReceiver() {
@@ -62,7 +60,9 @@ class MainActivity : AppCompatActivity() {
                 if (currentRoute != Screen.AdminRestrictionsChanged.route) {
                     navControllerState.value?.navigate(Screen.AdminRestrictionsChanged.route)
                 }
-                updateUserSettings()
+                updateDeviceSettings(context)
+                AuthenticationManager.resetAuthentication()
+                AuthenticationManager.hideCustomAuthPrompt()
             }
         }
     }
@@ -96,9 +96,7 @@ class MainActivity : AppCompatActivity() {
         )
 
         userSettings = UserSettings(this)
-        themeState = mutableStateOf(userSettings.theme)
-        keepScreenOnState = mutableStateOf(userSettings.keepScreenOn)
-        deviceRotationState = mutableStateOf(userSettings.deviceRotation)
+        updateDeviceSettings(this)
 
         val systemSettings = SystemSettings(this)
         val webContentDir = getWebContentFilesDir(this)
@@ -111,8 +109,8 @@ class MainActivity : AppCompatActivity() {
             ).apply { show() }
         }
 
-        BiometricPromptManager.init(this)
-        applyDeviceRotation(userSettings.deviceRotation)
+        AuthenticationManager.init(this)
+
         systemSettings.isFreshLaunch = true
 
         val intentUrlResult = handleMainIntent(intent)
@@ -130,25 +128,22 @@ class MainActivity : AppCompatActivity() {
             val navController = rememberNavController()
             navControllerState.value = navController
 
-            KeepScreenOnOption(keepOn = keepScreenOnState.value)
-            LaunchedEffect(deviceRotationState.value) {
-                applyDeviceRotation(deviceRotationState.value)
-            }
+            KeepScreenOnOption()
 
             val waitingForUnlock by WaitingForUnlockStateSingleton.waitingForUnlock.collectAsState()
-            val biometricResult by BiometricPromptManager.promptResults.collectAsState()
+            val biometricResult by AuthenticationManager.promptResults.collectAsState()
             val activity = LocalActivity.current
 
             LaunchedEffect(waitingForUnlock, biometricResult) {
                 if (
                     waitingForUnlock
                 ) {
-                    if (biometricResult == BiometricPromptManager.BiometricResult.Loading) {
+                    if (biometricResult == AuthenticationManager.AuthenticationResult.Loading) {
                         return@LaunchedEffect
                     }
                     if (
-                        biometricResult == BiometricPromptManager.BiometricResult.AuthenticationSuccess
-                        || biometricResult == BiometricPromptManager.BiometricResult.AuthenticationNotSet
+                        biometricResult == AuthenticationManager.AuthenticationResult.AuthenticationSuccess
+                        || biometricResult == AuthenticationManager.AuthenticationResult.AuthenticationNotSet
                     ) {
                         tryUnlockTask(activity, showToast)
                         WaitingForUnlockStateSingleton.emitUnlockSuccess()
@@ -157,7 +152,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            val isDarkTheme = resolveTheme(themeState.value)
+            val isDarkTheme = resolveTheme(ThemeStateSingleton.currentTheme.value)
             val window = (this as? AppCompatActivity)?.window
             val insetsController = remember(window) {
                 window?.let { WindowInsetsControllerCompat(it, it.decorView) }
@@ -197,9 +192,8 @@ class MainActivity : AppCompatActivity() {
                             }
                         )
                     } ?: run {
-                        SetupNavHost(
-                            navController, themeState, keepScreenOnState, deviceRotationState
-                        )
+                        CustomAuthPasswordDialog()
+                        SetupNavHost(navController)
                     }
                 }
             }
@@ -207,29 +201,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     @Composable
-    private fun resolveTheme(themeOption: ThemeOption): Boolean {
-        return when (themeOption) {
+    private fun resolveTheme(theme: ThemeOption): Boolean {
+        return when (theme) {
             ThemeOption.SYSTEM -> isSystemInDarkTheme()
             ThemeOption.DARK -> true
             ThemeOption.LIGHT -> false
         }
     }
 
-    private fun updateUserSettings(context: Context = this) {
-        userSettings = UserSettings(context)
-        themeState.value = userSettings.theme
-        keepScreenOnState.value = userSettings.keepScreenOn
-        deviceRotationState.value = userSettings.deviceRotation
-    }
-
     override fun onStart() {
         super.onStart()
-        BiometricPromptManager.init(this)
+        AuthenticationManager.init(this)
     }
 
     override fun onResume() {
         super.onResume()
-        updateUserSettings()
+        updateDeviceSettings(this)
         backButtonService.onBackPressedCallback.isEnabled = true
     }
 
@@ -241,7 +228,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         if (!isChangingConfigurations) {
-            BiometricPromptManager.resetAuthentication()
+            AuthenticationManager.resetAuthentication()
         }
     }
 
@@ -262,7 +249,7 @@ class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            BiometricPromptManager.handleLollipopDeviceCredentialResult(requestCode, resultCode)
+            AuthenticationManager.handleLollipopDeviceCredentialResult(requestCode, resultCode)
         }
     }
 

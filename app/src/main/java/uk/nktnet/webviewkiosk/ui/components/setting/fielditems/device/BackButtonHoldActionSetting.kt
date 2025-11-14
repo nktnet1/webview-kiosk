@@ -22,12 +22,6 @@ fun BackButtonHoldActionSetting() {
         restricted = userSettings.isRestricted(UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION),
         initialValue = userSettings.backButtonHoldAction,
         onSave = { userSettings.backButtonHoldAction = it },
-        itemText = {
-            when (it) {
-                BackButtonHoldActionOption.OPEN_KIOSK_CONTROL_PANEL -> "Open Kiosk Control Panel"
-                BackButtonHoldActionOption.GO_HOME -> "Go Home"
-                BackButtonHoldActionOption.DISABLED -> "Disabled"
-            }
-        }
+        itemText = { it.label },
     )
 }

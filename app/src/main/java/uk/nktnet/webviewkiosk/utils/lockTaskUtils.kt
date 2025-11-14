@@ -10,7 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
-import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
+import uk.nktnet.webviewkiosk.auth.AuthenticationManager
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
@@ -18,36 +18,48 @@ import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 private fun tryLockAction(
     activity: Activity?,
     action: Activity.() -> Unit,
-    showToast: (String) -> Unit = {},
-    defaultMsg: String
+    onSuccess: () -> Unit = {},
+    onFailed: (String) -> Unit
 ): Boolean {
     if (activity == null) {
-        showToast("Activity is not initialised.")
+        onFailed("Activity is not initialised.")
         return false
     }
 
-    try {
+    return try {
         activity.action()
+        onSuccess()
+        true
     } catch (e: SecurityException) {
-        showToast("[SecurityException] $defaultMsg: ${e.message}")
-        return false
+        onFailed("[SecurityException] ${e.message}")
+        false
     } catch (e: IllegalArgumentException) {
-        showToast("[IllegalArgumentException] $defaultMsg: ${e.message}")
-        return false
+        onFailed("[IllegalArgumentException] ${e.message}")
+        false
     } catch (e: Exception) {
-        showToast("[UnknownException] $defaultMsg: ${e.message}")
-        return false
+        onFailed("[UnknownException] ${e.message}")
+        false
     }
-    return true
 }
 
 fun tryLockTask(activity: Activity?, showToast: (String) -> Unit = {}): Boolean {
-    BiometricPromptManager.resetAuthentication()
-    return tryLockAction(activity, Activity::startLockTask, showToast, "Failed to lock app")
+    return tryLockAction(
+        activity,
+        Activity::startLockTask,
+        onSuccess = {
+            AuthenticationManager.resetAuthentication()
+        },
+        onFailed = { showToast("Failed to lock: $it") }
+    )
 }
 
 fun tryUnlockTask(activity: Activity?, showToast: (String) -> Unit = {}): Boolean {
-    return tryLockAction(activity, Activity::stopLockTask, showToast, "Failed to unlock app")
+    return tryLockAction(
+        activity,
+        Activity::stopLockTask,
+        onSuccess = {},
+        onFailed = { showToast("Failed to unlock: $it") }
+    )
 }
 
 fun setupLockTaskPackage(context: Context): Boolean {
@@ -93,7 +105,7 @@ fun unlockWithAuthIfRequired(
 
     if (requireAuthForUnlock(activity, userSettings)) {
         WaitingForUnlockStateSingleton.startWaiting()
-        BiometricPromptManager.showBiometricPrompt(
+        AuthenticationManager.showAuthenticationPrompt(
             title = "Authentication Required",
             description = "Please authenticate to unlock Webview Kiosk"
         )

@@ -65,17 +65,21 @@ object UserSettingsKeys {
     object Device {
         const val KEEP_SCREEN_ON = "device.keep_screen_on"
         const val DEVICE_ROTATION = "device.rotation"
+        const val BRIGHTNESS = "device.brightness"
         const val ALLOW_CAMERA = "device.allow_camera"
         const val ALLOW_MICROPHONE = "device.allow_microphone"
         const val ALLOW_LOCATION = "device.allow_location"
         const val BACK_BUTTON_HOLD_ACTION = "device.back_button_hold_action"
         const val CUSTOM_UNLOCK_SHORTCUT = "device.custom_unlock_shortcut"
+        const val CUSTOM_AUTH_PASSWORD = "device.custom_auth_password"
         const val UNLOCK_AUTH_REQUIREMENT = "device.unlock_auth_requirement"
     }
 
     object JsScripts {
         const val APPLY_APP_THEME = "js_scripts.apply_app_theme"
         const val APPLY_DESKTOP_VIEWPORT_WIDTH = "js_scripts.apply_desktop_viewport_width"
+        const val ENABLE_BATTERY_API = "js_scripts.enable_battery_api"
+        const val ENABLE_BRIGHTNESS_API = "js_scripts.enable_brightness_api"
         const val CUSTOM_SCRIPT_ON_PAGE_START = "js_scripts.custom_script_on_page_start"
         const val CUSTOM_SCRIPT_ON_PAGE_FINISH = "js_scripts.custom_script_on_page_finish"
     }

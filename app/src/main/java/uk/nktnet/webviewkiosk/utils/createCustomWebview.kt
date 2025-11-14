@@ -36,6 +36,8 @@ import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorPromptRequest
 import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
+import uk.nktnet.webviewkiosk.utils.webview.interfaces.BatteryInterface
+import uk.nktnet.webviewkiosk.utils.webview.interfaces.BrightnessInterface
 import java.net.URLEncoder
 
 data class WebViewConfig(
@@ -85,6 +87,15 @@ fun createCustomWebview(
                 @Suppress("DEPRECATION")
                 allowUniversalAccessFromFileURLs = userSettings.allowUniversalAccessFromFileURLs
                 mediaPlaybackRequiresUserGesture = userSettings.mediaPlaybackRequiresUserGesture
+            }
+
+            if (userSettings.enableBatteryApi) {
+                val batteryInterface = BatteryInterface(context)
+                addJavascriptInterface(batteryInterface, batteryInterface.name)
+            }
+            if (userSettings.enableBrightnessApi) {
+                val brightnessInterface = BrightnessInterface(context)
+                addJavascriptInterface(brightnessInterface, brightnessInterface.name)
             }
 
             webViewClient = object : WebViewClient() {

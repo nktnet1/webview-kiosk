@@ -20,6 +20,6 @@ fun WebViewInsetSetting() {
         initialValue = userSettings.webViewInset,
         restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.WEBVIEW_INSET),
         onSave = { userSettings.webViewInset = it },
-        itemText = { it.label }
+        itemText = { it.label },
     )
 }

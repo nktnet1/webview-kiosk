@@ -310,6 +310,12 @@
         android:description="@string/device_rotation_description"
     />
     <restriction
+        android:key="device.brightness"
+        android:restrictionType="integer"
+        android:title="@string/device_brightness_title"
+        android:description="@string/device_brightness_description"
+    />
+    <restriction
         android:key="device.allow_camera"
         android:restrictionType="bool"
         android:title="@string/device_allow_camera_title"
@@ -342,6 +348,12 @@
         android:description="@string/device_custom_unlock_shortcut_description"
     />
     <restriction
+        android:key="device.custom_auth_password"
+        android:restrictionType="string"
+        android:title="@string/device_custom_auth_password_title"
+        android:description="@string/device_custom_auth_password_description"
+    />
+    <restriction
         android:key="device.unlock_auth_requirement"
         android:restrictionType="choice"
         android:entries="@array/entries_unlock_auth_requirement_option"
@@ -362,6 +374,18 @@
         android:restrictionType="bool"
         android:title="@string/js_scripts_apply_desktop_viewport_width_title"
         android:description="@string/js_scripts_apply_desktop_viewport_width_description"
+    />
+    <restriction
+        android:key="js_scripts.enable_battery_api"
+        android:restrictionType="bool"
+        android:title="@string/js_scripts_enable_battery_api_title"
+        android:description="@string/js_scripts_enable_battery_api_description"
+    />
+    <restriction
+        android:key="js_scripts.enable_brightness_api"
+        android:restrictionType="bool"
+        android:title="@string/js_scripts_enable_brightness_api_title"
+        android:description="@string/js_scripts_enable_brightness_api_description"
     />
     <restriction
         android:key="js_scripts.custom_script_on_page_start"

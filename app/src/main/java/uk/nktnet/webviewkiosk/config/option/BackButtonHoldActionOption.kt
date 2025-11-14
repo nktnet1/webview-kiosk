@@ -1,12 +1,16 @@
 package uk.nktnet.webviewkiosk.config.option
 
-enum class BackButtonHoldActionOption {
-    OPEN_KIOSK_CONTROL_PANEL,
-    GO_HOME,
-    DISABLED;
+enum class BackButtonHoldActionOption(val label: String) {
+    OPEN_KIOSK_CONTROL_PANEL("Open Kiosk Control Panel"),
+    GO_HOME("Go Home"),
+    DISABLED("Disabled");
+
     companion object {
         fun fromString(value: String?): BackButtonHoldActionOption {
-            return entries.find { it.name == value } ?: OPEN_KIOSK_CONTROL_PANEL
+            return entries.find {
+                it.name.equals(value, ignoreCase = true)
+                || it.label.equals(value, ignoreCase = true)
+            } ?: OPEN_KIOSK_CONTROL_PANEL
         }
     }
 }

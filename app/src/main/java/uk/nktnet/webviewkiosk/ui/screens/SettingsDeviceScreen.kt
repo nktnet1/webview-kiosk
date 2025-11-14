@@ -7,24 +7,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowCameraSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowLocationSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowMicrophoneSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.BackButtonHoldActionSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.BrightnessSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.CustomAuthPasswordSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.CustomUnlockShortcutSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.DeviceRotationSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.KeepScreenOnSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.UnlockAuthRequirementSetting
 
 @Composable
-fun SettingsDeviceScreen(
-    navController: NavController,
-    keepScreenOnState: MutableState<Boolean>,
-    deviceRotationState: MutableState<DeviceRotationOption>
-) {
+fun SettingsDeviceScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -36,13 +33,15 @@ fun SettingsDeviceScreen(
 
         SettingDivider()
 
-        KeepScreenOnSetting(keepScreenOnState)
-        DeviceRotationSetting(deviceRotationState)
+        KeepScreenOnSetting()
+        DeviceRotationSetting()
+        BrightnessSetting()
         AllowCameraSetting()
         AllowMicrophoneSetting()
         AllowLocationSetting()
         BackButtonHoldActionSetting()
         CustomUnlockShortcutSetting()
+        CustomAuthPasswordSetting()
         UnlockAuthRequirementSetting()
     }
 }

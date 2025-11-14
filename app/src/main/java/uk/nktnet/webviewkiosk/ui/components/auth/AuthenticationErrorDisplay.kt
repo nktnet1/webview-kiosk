@@ -7,11 +7,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import uk.nktnet.webviewkiosk.auth.BiometricPromptManager
+import uk.nktnet.webviewkiosk.auth.AuthenticationManager
 
 @Composable
 fun AuthenticationErrorDisplay(
-    errorResult: BiometricPromptManager.BiometricResult?,
+    errorResult: AuthenticationManager.AuthenticationResult?,
     onRetry: () -> Unit
 ) {
     val dispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
@@ -25,13 +25,11 @@ fun AuthenticationErrorDisplay(
     ) {
         Text(
             text = when (errorResult) {
-                is BiometricPromptManager.BiometricResult.AuthenticationError ->
+                is AuthenticationManager.AuthenticationResult.AuthenticationError ->
                     "Error: ${errorResult.error}"
-                BiometricPromptManager.BiometricResult.HardwareUnavailable ->
-                    "Biometric hardware unavailable"
-                BiometricPromptManager.BiometricResult.AuthenticationNotSet ->
+                AuthenticationManager.AuthenticationResult.AuthenticationNotSet ->
                     "No biometric or credentials enrolled"
-                BiometricPromptManager.BiometricResult.AuthenticationFailed ->
+                AuthenticationManager.AuthenticationResult.AuthenticationFailed ->
                     "Authentication failed"
                 else -> errorResult.toString()
             },

@@ -7,21 +7,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.config.Screen
-import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingsHeaderMenu
 
 @Composable
 fun SettingsListScreen(
     navController: NavController,
-    themeState: MutableState<ThemeOption>,
 ) {
     val settingsItems = listOf(
         Triple(
@@ -74,7 +71,7 @@ fun SettingsListScreen(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.Top
     ) {
-        SettingsHeaderMenu(navController, themeState)
+        SettingsHeaderMenu(navController)
 
         SettingDivider()
 
@@ -101,6 +98,6 @@ fun SettingsListScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }

@@ -13,7 +13,7 @@ Useful if you have a kiosk application that should always remain active.
 
 **Default:** false
 
-## 2. Device Rotation
+## 2. Rotation
 
 Select one of:
 
@@ -29,7 +29,15 @@ For more details, refer to Android's official documentation for [R.attr.screenOr
 
 **Default:** Auto
 
-## 3. Allow Camera
+## 3. Brightness
+
+Set the app window brightness from 0 (very dim) to 100 (very dark).
+
+Use -1 to disable (i.e. the system default brightness will be used).
+
+**Default:** -1
+
+## 4. Allow Camera
 
 Set to true to give WebView access to your device's camera.
 
@@ -40,7 +48,7 @@ feature.
 
 **Default:** false
 
-## 4. Allow Microphone
+## 5. Allow Microphone
 
 Set to true to give WebView access to your device's microphone.
 
@@ -52,7 +60,7 @@ feature.
 
 **Default:** false
 
-## 5. Allow Location
+## 6. Allow Location
 
 When enabled, websites can request the device's location.
 
@@ -70,7 +78,7 @@ required for the WebView's
 
 **Default:** false
 
-## 6. Back Button Hold Action
+## 7. Back Button Hold Action
 
 Customise the behaviour when the back button is held down (long pressed).
 
@@ -82,7 +90,7 @@ Customise the behaviour when the back button is held down (long pressed).
 
 **Default:** Open Kiosk Control Panel
 
-## 7. Custom Unlock Shortcut
+## 8. Custom Unlock Shortcut
 
 Provide a custom keyboard shortcut using a modifier key (CTRL/SHIFT/ALT/META)
 in combination with another standard key to unlock/unpin the application.
@@ -98,7 +106,23 @@ confirmation dialog from multitap).
 
 **Default:** *(blank)*
 
-## 8. Unlock Auth Requirement
+## 9. Custom Auth Password
+
+Specify a custom password to protect your settings or when unlocking from
+the kiosk state.
+
+For user-owned devices that utilises screen pinning, this will only work
+if you are using an unlock method provided by the app.
+
+Device-level unpin methods (e.g. gestures/holding overview + back button
+simultaneously) will bypass this setting. To enhance security, please
+refer to the [security](/docs/security) documentation.
+
+Leave this setting blank to use your device's biometrics or credentials.
+
+**Default:** *(blank)*
+
+## 10. Unlock Auth Requirement
 
 This setting only applies to in-app unlock methods, e.g. when unlocking
 using `Kiosk Control Panel` or `Custom Unlock Shortcut`.

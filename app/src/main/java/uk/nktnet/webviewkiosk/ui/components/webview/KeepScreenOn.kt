@@ -7,11 +7,13 @@ import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import uk.nktnet.webviewkiosk.states.KeepScreenOnStateSingleton
 
 @Composable
-fun KeepScreenOnOption(keepOn: Boolean) {
+fun KeepScreenOnOption() {
     val view = LocalView.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val keepOn = KeepScreenOnStateSingleton.isKeepScreenOn.value
 
     DisposableEffect(keepOn, lifecycleOwner) {
         val window = (view.context as? ComponentActivity)?.window
