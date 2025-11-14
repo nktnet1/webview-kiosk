@@ -46,6 +46,7 @@ object UserSettingsKeys {
         const val ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS = "web_engine.allow_universal_access_from_file_urls"
         const val MEDIA_PLAYBACK_REQUIRES_USER_GESTURE = "web_engine.media_playback_requires_user_gesture"
         const val SSL_ERROR_MODE = "web_engine.ssl_error_mode"
+        const val MIXED_CONTENT_MODE = "web_engine.mixed_content_mode"
     }
 
     object WebLifecycle {
