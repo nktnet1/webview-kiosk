@@ -252,6 +252,13 @@ class UserSettings(val context: Context) {
         MixedContentModeOption.NEVER_ALLOW.name,
         fromString = MixedContentModeOption::fromString
     )
+    var overScrollMode by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.OVER_SCROLL_MODE,
+        OverScrollModeOption.IF_CONTENT_SCROLLS.name,
+        fromString = OverScrollModeOption::fromString
+    )
 
     // Web Lifecycle
     var lockOnLaunch by booleanPref(
@@ -462,6 +469,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
             put(UserSettingsKeys.WebEngine.SSL_ERROR_MODE, sslErrorMode.name)
             put(UserSettingsKeys.WebEngine.MIXED_CONTENT_MODE, mixedContentMode.name)
+            put(UserSettingsKeys.WebEngine.OVER_SCROLL_MODE, overScrollMode.name)
 
             put(UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, lockOnLaunch)
             put(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, resetOnLaunch)
@@ -549,6 +557,9 @@ class UserSettings(val context: Context) {
             )
             mixedContentMode = MixedContentModeOption.fromString(
                 json.optString(UserSettingsKeys.WebEngine.MIXED_CONTENT_MODE, mixedContentMode.name)
+            )
+            overScrollMode = OverScrollModeOption.fromString(
+                json.optString(UserSettingsKeys.WebEngine.OVER_SCROLL_MODE, overScrollMode.name)
             )
 
             lockOnLaunch = json.optBoolean(UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, lockOnLaunch)

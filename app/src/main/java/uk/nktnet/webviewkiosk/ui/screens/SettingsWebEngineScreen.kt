@@ -42,5 +42,6 @@ fun SettingsWebEngineScreen(navController: NavController) {
         MediaPlaybackRequiresUserGestureSetting()
         SslErrorModeSetting()
         MixedContentModeSetting()
+        OverScrollModeSetting()
     }
 }
