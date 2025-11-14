@@ -80,7 +80,9 @@ fun createCustomWebview(
                 useWideViewPort = userSettings.useWideViewPort
                 loadWithOverviewMode = userSettings.loadWithOverviewMode
 
+                setGeolocationEnabled(userSettings.allowLocation)
                 setSupportZoom(userSettings.supportZoom)
+
                 builtInZoomControls = userSettings.builtInZoomControls
                 displayZoomControls = userSettings.displayZoomControls
 
