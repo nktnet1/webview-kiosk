@@ -93,17 +93,22 @@ When enabled, the WebView will use a viewport wide enough to fit the content as 
 
 ## 9. Load With Overview Mode
 
-When enabled, the WebView scales the page so that the content fits on screen initially.  
+When enabled, the WebView scales the page so that the content fits on screen
+initially.  
 
 **Android API:** [WebSettings#setLoadWithOverviewMode(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setLoadWithOverviewMode(boolean))
 
 **Default:** true
 
-## 10. Zoom Controls
+## 10. Zoom
 
-### 10.1. Enable Zoom
+### 10.1. Built In Zoom Controls
 
-Allows pinch-to-zoom gestures.  
+Sets whether the WebView should use its built-in zoom mechanisms.
+
+The built-in zoom mechanisms comprise on-screen zoom controls, which are
+displayed over the WebView's content, and the use of a pinch gesture to control
+zooming.
 
 **Android API:** [WebSettings#setBuiltInZoomControls(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setBuiltInZoomControls(boolean))
 
@@ -111,7 +116,8 @@ Allows pinch-to-zoom gestures.
 
 ### 10.2. Display Zoom Controls
 
-Shows on-screen zoom buttons.  
+Sets whether the WebView should display on-screen zoom controls when using the
+built-in zoom mechanisms.
 
 **Android API:** [WebSettings#setDisplayZoomControls(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setDisplayZoomControls(boolean))
 

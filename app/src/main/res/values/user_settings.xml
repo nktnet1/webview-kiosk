@@ -88,8 +88,8 @@
     <string name="web_engine_load_with_overview_mode_title">Load With Overview Mode</string>
     <string name="web_engine_load_with_overview_mode_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
-    <string name="web_engine_enable_zoom_title">Enable Zoom</string>
-    <string name="web_engine_enable_zoom_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_built_in_zoom_controls_title">Built In Zoom Control</string>
+    <string name="web_engine_built_in_zoom_controls_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_display_zoom_controls_title">Display Zoom Controls</string>
     <string name="web_engine_display_zoom_controls_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
