@@ -59,26 +59,23 @@ fun CustomAuthPasswordDialog() {
         focusRequester.requestFocus()
     }
 
-    fun handleSuccess() {
-        password = ""
-        AuthenticationManager.customAuthSuccess()
-    }
-
-    fun handleFailure() {
+    fun handleUnlock() {
         scope.launch {
             waiting = true
-            delay(500)
-            isError = true
-            showToast("Incorrect password")
+            val start = System.currentTimeMillis()
+            if (password == userSettings.customAuthPassword) {
+                password = ""
+                AuthenticationManager.customAuthSuccess()
+            } else {
+                val elapsed = System.currentTimeMillis() - start
+                val remaining = 1000L - elapsed
+                if (remaining > 0) {
+                    delay(remaining)
+                }
+                isError = true
+                showToast("Incorrect password")
+            }
             waiting = false
-        }
-    }
-
-    fun handleUnlock() {
-        if (password == userSettings.customAuthPassword) {
-            handleSuccess()
-        } else {
-            handleFailure()
         }
     }
 
