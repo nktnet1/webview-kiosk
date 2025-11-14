@@ -45,4 +45,3 @@ fun getStatus(context: Context): WebviewKioskStatus {
         currentUrl = systemSettings.currentUrl
     )
 }
-

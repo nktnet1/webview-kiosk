@@ -141,7 +141,6 @@ class MainActivity : AppCompatActivity() {
                         updateDeviceSettings(context)
                         showToast("MQTT: settings updated.")
 
-
                         // Counterintuitive, but this acts as a "Refresh" of the webview screen,
                         // which will recreate + apply settings.
                         // If we're on another screen though (e.g. settings), then let the user

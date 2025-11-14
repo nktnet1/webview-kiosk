@@ -303,7 +303,6 @@ object MqttManager {
             mapOf("RESPONSE_TYPE" to statusMessage.type),
         )
 
-
         val payload = Json.encodeToString(statusMessage)
         publishToMqtt(
             topic,
