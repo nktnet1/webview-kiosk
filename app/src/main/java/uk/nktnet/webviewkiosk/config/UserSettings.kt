@@ -395,192 +395,192 @@ class UserSettings(val context: Context) {
 
     // MQTT
     var mqttEnabled by booleanPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.ENABLED,
         false
     )
     var mqttServerHost by stringPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.SERVER_HOST,
         "127.0.0.1"
     )
     var mqttServerPort by intPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.SERVER_PORT,
         1883
     )
     var mqttClientId by stringPrefOptional(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.CLIENT_ID,
     )
     var mqttUsername by stringPrefOptional(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.USERNAME
     )
     var mqttPassword by stringPrefOptional(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.PASSWORD
     )
     var mqttUseTls by booleanPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.USE_TLS,
         false
     )
     var mqttCleanStart by booleanPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.CLEAN_START,
         true
     )
     var mqttKeepAlive by intPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.KEEP_ALIVE,
         60
     )
     var mqttConnectTimeout by intPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT,
         30
     )
     var mqttSocketConnectTimeout by intPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.SOCKET_CONNECT_TIMEOUT,
         5
     )
     var mqttAutomaticReconnect by booleanPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.CLEAN_START,
         true
     )
     var mqttPublishEventTopic by stringPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC,
         "wk/event/${'$'}{EVENT_NAME}"
     )
     var mqttPublishEventQos by stringEnumPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS,
         MqttQosOption.AT_MOST_ONCE.name,
         fromString = MqttQosOption::fromString
     )
     var mqttPublishEventRetain by booleanPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN,
         false,
     )
     var mqttPublishResponseTopic by stringPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Publish.Response.TOPIC,
         "wk/response/${'$'}{RESPONSE_TYPE}"
     )
     var mqttPublishResponseQos by stringEnumPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Publish.Response.QOS,
         MqttQosOption.AT_MOST_ONCE.name,
         fromString = MqttQosOption::fromString
     )
     var mqttPublishResponseRetain by booleanPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Publish.Response.RETAIN,
         false
     )
     var mqttSubscribeCommandTopic by stringPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC,
         "wk/command"
     )
     var mqttSubscribeCommandQos by stringEnumPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS,
         MqttQosOption.AT_MOST_ONCE.name,
         fromString = MqttQosOption::fromString
     )
     var mqttSubscribeCommandRetainHandling by stringEnumPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING,
         MqttRetainHandlingOption.DO_NOT_SEND.name,
         fromString = MqttRetainHandlingOption::fromString
     )
     var mqttSubscribeCommandRetainAsPublished by booleanPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_AS_PUBLISHED,
         false,
     )
     var mqttSubscribeSettingsTopic by stringPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.TOPIC,
         "wk/settings"
     )
     var mqttSubscribeSettingsQos by stringEnumPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.QOS,
         MqttQosOption.AT_MOST_ONCE.name,
         fromString = MqttQosOption::fromString
     )
     var mqttSubscribeSettingsRetainHandling by stringEnumPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING,
         MqttRetainHandlingOption.DO_NOT_SEND.name,
         fromString = MqttRetainHandlingOption::fromString
     )
     var mqttSubscribeSettingsRetainAsPublished by booleanPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_AS_PUBLISHED,
         false,
     )
 
     var mqttWillTopic by stringPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Will.TOPIC,
         "wk/will"
     )
     var mqttWillQos by stringEnumPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Will.QOS,
         MqttQosOption.AT_MOST_ONCE.name,
         fromString = MqttQosOption::fromString
     )
     var mqttWillPayload by stringPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Will.PAYLOAD,
         "${Constants.APP_NAME} has disconnected."
     )
     var mqttWillRetain by booleanPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Will.RETAIN,
         false
     )
     var mqttWillMessageExpiryInterval by intPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Will.MESSAGE_EXPIRY_INTERVAL,
         0,
@@ -588,7 +588,7 @@ class UserSettings(val context: Context) {
         max = Int.MAX_VALUE
     )
     var mqttWillDelayInterval by intPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Will.DELAY_INTERVAL,
         0,
@@ -596,7 +596,7 @@ class UserSettings(val context: Context) {
         max = Int.MAX_VALUE
     )
     var mqttRestrictionsReceiveMaximum by intPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Restrictions.RECEIVE_MAXIMUM,
         65_535,
@@ -604,7 +604,7 @@ class UserSettings(val context: Context) {
         max = 65_535,
     )
     var mqttRestrictionsSendMaximum by intPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Restrictions.SEND_MAXIMUM,
         65_535,
@@ -612,7 +612,7 @@ class UserSettings(val context: Context) {
         max = 65_535,
     )
     var mqttRestrictionsMaximumPacketSize by intPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Restrictions.MAXIMUM_PACKET_SIZE,
         268_435_460,
@@ -620,7 +620,7 @@ class UserSettings(val context: Context) {
         max = 268_435_460,
     )
     var mqttRestrictionsSendMaximumPacketSize by intPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Restrictions.SEND_MAXIMUM_PACKET_SIZE,
         268_435_460,
@@ -628,7 +628,7 @@ class UserSettings(val context: Context) {
         max = 268_435_460,
     )
     var mqttRestrictionsTopicAliasMaximum by intPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Restrictions.TOPIC_ALIAS_MAXIMUM,
         0,
@@ -636,7 +636,7 @@ class UserSettings(val context: Context) {
         max = 65_535,
     )
     var mqttRestrictionsSendTopicAliasMaximum by intPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Restrictions.SEND_TOPIC_ALIAS_MAXIMUM,
         16,
@@ -644,13 +644,13 @@ class UserSettings(val context: Context) {
         max = 65_535,
     )
     var mqttRestrictionsRequestProblemInformation by booleanPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Restrictions.REQUEST_PROBLEM_INFORMATION,
         true
     )
     var mqttRestrictionsRequestResponseInformation by booleanPref(
-        restrictions,
+        getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Restrictions.REQUEST_RESPONSE_INFORMATION,
         false
