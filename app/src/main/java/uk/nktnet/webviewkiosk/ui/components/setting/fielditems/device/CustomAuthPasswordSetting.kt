@@ -14,6 +14,8 @@ fun CustomAuthPasswordSetting() {
     val userSettings = remember { UserSettings(context) }
     val restricted = userSettings.isRestricted(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD)
 
+    val maxCharacters = 128
+
     TextSettingFieldItem(
         label = "Custom Auth Password",
         infoText = """
@@ -34,6 +36,8 @@ fun CustomAuthPasswordSetting() {
         restricted = restricted,
         isMultiline = false,
         isPassword = true,
+        validator = { it.length <= maxCharacters },
+        validationMessage = "Please enter fewer than $maxCharacters characters.",
         descriptionFormatter = { v -> if (v.isNotBlank()) "*".repeat(20) else "(blank)" },
         onSave = { userSettings.customAuthPassword = it }
     )

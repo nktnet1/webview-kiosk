@@ -31,4 +31,3 @@ Webview Kiosk — это бесплатное приложение с откры
 Сообщайте об ошибках и проблемах, создавая задачи на GitHub в <a href="https://github.com/nktnet1/webview-kiosk/issues">разделе Issues</a> с подробным описанием и шагами для воспроизведения. Пожалуйста, указывайте версию приложения, модель устройства и версию Android.
 
 По всем другим вопросам пишите мне на электропочту — <a href="mailto:support@webviewkiosk.nktnet.uk">support@webviewkiosk.nktnet.uk</a>.
-

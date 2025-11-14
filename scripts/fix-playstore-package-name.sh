@@ -9,5 +9,3 @@ fi
 
 find . -type f \( -name "*.kt" -o -name "*.java" -o -name "*.xml" -o -name "*.gradle" -o -name "*.kts" \) \
   -exec sed -i 's/uk\.nktnet\.webviewkiosk/com.nktnet.webview_kiosk/g' {} +
-
-git status
