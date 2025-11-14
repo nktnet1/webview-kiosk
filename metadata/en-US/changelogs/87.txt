@@ -1,0 +1,8 @@
+## Changes
+
+fix: custom auth password, improve "handleUnlock" and limit to 128 char
+fix: reset auth and hide custom auth prompt when new app restrictions arrive
+fix: mask restricted password length for managed configurations (app restrictions)
+fix: avoid exporting custom auth password (import is allowed)
+feat: add Russian metadata translation
+deps: bump package versions
