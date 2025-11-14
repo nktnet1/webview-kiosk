@@ -167,16 +167,20 @@ object AuthenticationManager {
         showCustomAuth.value = true
     }
 
+    fun hideCustomAuthPrompt() {
+        showCustomAuth.value = false
+    }
+
     fun customAuthSuccess() {
         _resultState.value = AuthenticationResult.AuthenticationSuccess
         lastAuthTime = System.currentTimeMillis()
-        showCustomAuth.value = false
+        hideCustomAuthPrompt()
     }
 
     fun customAuthCancel() {
         _resultState.value = AuthenticationResult.AuthenticationError("Authentication cancelled.")
         resetAuthentication()
-        showCustomAuth.value = false
+        hideCustomAuthPrompt()
     }
 
     sealed interface AuthenticationResult {
