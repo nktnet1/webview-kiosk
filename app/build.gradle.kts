@@ -33,7 +33,7 @@ android {
         minSdk = 21
         targetSdk = 36
         versionCode = 87
-        versionName = "0.25.0.1-mqtt-beta"
+        versionName = "0.25.0.2-mqtt-beta"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         setProperty("archivesBaseName", "${applicationId}-v${versionCode}-${versionName}")
 
