@@ -219,3 +219,18 @@ Configure the action to take when an SSL Error is received.
 | Proceed  | Always proceeds despite SSL errors (dangerous, NOT RECOMMENDED). |
 
 **Default:** Block
+
+## 14. Mixed Content Mode
+
+Configures the WebView's behavior when a secure origin attempts to load
+a resource from an insecure origin.
+
+| Mode               | Description |
+|--------------------|-------------|
+| Never Allow        | Blocks any mixed content from insecure origins. This is the safest and recommended mode. |
+| Compatibility Mode | Allows mixed content in a backward-compatible way, depending on Android version. Use with caution. |
+| Always Allow       | Loads mixed content from insecure origins without restriction. Strongly discouraged for security reasons. |
+
+**Android API:** [WebSettings#setMixedContentMode(int)](https://developer.android.com/reference/android/webkit/WebSettings#setMixedContentMode(int))
+
+**Default:** Never Allow

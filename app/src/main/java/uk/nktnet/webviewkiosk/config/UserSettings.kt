@@ -245,6 +245,13 @@ class UserSettings(val context: Context) {
         SslErrorModeOption.BLOCK.name,
         fromString = SslErrorModeOption::fromString
     )
+    var mixedContentMode by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.MIXED_CONTENT_MODE,
+        MixedContentModeOption.NEVER_ALLOW.name,
+        fromString = MixedContentModeOption::fromString
+    )
 
     // Web Lifecycle
     var lockOnLaunch by booleanPref(
@@ -454,6 +461,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, allowUniversalAccessFromFileURLs)
             put(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
             put(UserSettingsKeys.WebEngine.SSL_ERROR_MODE, sslErrorMode.name)
+            put(UserSettingsKeys.WebEngine.MIXED_CONTENT_MODE, mixedContentMode.name)
 
             put(UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, lockOnLaunch)
             put(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, resetOnLaunch)
@@ -538,6 +546,9 @@ class UserSettings(val context: Context) {
             mediaPlaybackRequiresUserGesture = json.optBoolean(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
             sslErrorMode = SslErrorModeOption.fromString(
                 json.optString(UserSettingsKeys.WebEngine.SSL_ERROR_MODE, sslErrorMode.name)
+            )
+            mixedContentMode = MixedContentModeOption.fromString(
+                json.optString(UserSettingsKeys.WebEngine.MIXED_CONTENT_MODE, mixedContentMode.name)
             )
 
             lockOnLaunch = json.optBoolean(UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, lockOnLaunch)

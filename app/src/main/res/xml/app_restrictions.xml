@@ -231,6 +231,14 @@
         android:title="@string/web_engine_ssl_error_mode_option_title"
         android:description="@string/web_engine_ssl_error_mode_option_description"
     />
+    <restriction
+        android:key="web_engine.mixed_content_mode"
+        android:restrictionType="choice"
+        android:entries="@array/entries_mixed_content_mode_option"
+        android:entryValues="@array/entry_values_mixed_content_mode_option"
+        android:title="@string/web_engine_mixed_content_mode_title"
+        android:description="@string/web_engine_mixed_content_mode_description"
+    />
 
     <!-- Web Lifecycle -->
     <restriction
