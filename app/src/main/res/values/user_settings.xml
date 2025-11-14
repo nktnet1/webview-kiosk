@@ -97,6 +97,9 @@
     <string name="web_engine_display_zoom_controls_title">Display Zoom Controls</string>
     <string name="web_engine_display_zoom_controls_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
+    <string name="web_engine_initial_scale_title">Initial Scale</string>
+    <string name="web_engine_initial_scale_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+
     <string name="web_engine_allow_file_access_from_file_urls_title">Allow File Access From File URLs</string>
     <string name="web_engine_allow_file_access_from_file_urls_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 

@@ -213,6 +213,13 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebEngine.DISPLAY_ZOOM_CONTROLS,
         false
     )
+    var initialScale by intPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.INITIAL_SCALE,
+        0,
+        min = 0,
+    )
     var allowFileAccessFromFileURLs by booleanPref(
         getRestrictions,
         prefs,
@@ -256,13 +263,15 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS,
-        0
+        0,
+        min = 0,
     )
     var refreshOnLoadingErrorIntervalSeconds by intPref(
         getRestrictions,
         prefs,
         UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS,
-        0
+        0,
+        min = 0,
     )
 
     // Appearance
@@ -379,7 +388,8 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH,
-        0
+        0,
+        min = Constants.MIN_DESKTOP_WIDTH,
     )
     var enableBatteryApi by booleanPref(
         getRestrictions,
@@ -436,8 +446,10 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebEngine.USER_AGENT, userAgent)
             put(UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT, useWideViewPort)
             put(UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE, loadWithOverviewMode)
+            put(UserSettingsKeys.WebEngine.SUPPORT_ZOOM, supportZoom)
             put(UserSettingsKeys.WebEngine.BUILT_IN_ZOOM_CONTROLS, builtInZoomControls)
             put(UserSettingsKeys.WebEngine.DISPLAY_ZOOM_CONTROLS, displayZoomControls)
+            put(UserSettingsKeys.WebEngine.INITIAL_SCALE, initialScale)
             put(UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS, allowFileAccessFromFileURLs)
             put(UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, allowUniversalAccessFromFileURLs)
             put(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
@@ -517,8 +529,10 @@ class UserSettings(val context: Context) {
             userAgent = json.optString(UserSettingsKeys.WebEngine.USER_AGENT, userAgent)
             useWideViewPort = json.optBoolean(UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT, useWideViewPort)
             loadWithOverviewMode = json.optBoolean(UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE, loadWithOverviewMode)
+            supportZoom = json.optBoolean(UserSettingsKeys.WebEngine.SUPPORT_ZOOM, supportZoom)
             builtInZoomControls = json.optBoolean(UserSettingsKeys.WebEngine.BUILT_IN_ZOOM_CONTROLS, builtInZoomControls)
             displayZoomControls = json.optBoolean(UserSettingsKeys.WebEngine.DISPLAY_ZOOM_CONTROLS, displayZoomControls)
+            initialScale = json.optInt(UserSettingsKeys.WebEngine.INITIAL_SCALE, initialScale)
             allowFileAccessFromFileURLs = json.optBoolean(UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS, allowFileAccessFromFileURLs)
             allowUniversalAccessFromFileURLs = json.optBoolean(UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, allowUniversalAccessFromFileURLs)
             mediaPlaybackRequiresUserGesture = json.optBoolean(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)

@@ -36,6 +36,7 @@ fun SettingsWebEngineScreen(navController: NavController) {
         SupportZoomSetting()
         BuiltInZoomControlsSetting()
         DisplayZoomControlsSetting()
+        InitialScaleSetting()
         AllowFileAccessFromFileURLsSetting()
         AllowUniversalAccessFromFileURLsSetting()
         MediaPlaybackRequiresUserGestureSetting()

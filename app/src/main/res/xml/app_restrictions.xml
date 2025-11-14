@@ -200,6 +200,12 @@
         android:description="@string/web_engine_display_zoom_controls_description"
     />
     <restriction
+        android:key="web_engine.initial_scale"
+        android:restrictionType="integer"
+        android:title="@string/web_engine_initial_scale_title"
+        android:description="@string/web_engine_initial_scale_description"
+    />
+    <restriction
         android:key="web_engine.allow_file_access_from_file_urls"
         android:restrictionType="bool"
         android:title="@string/web_engine_allow_file_access_from_file_urls_title"
