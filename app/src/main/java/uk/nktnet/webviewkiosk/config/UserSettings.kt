@@ -396,7 +396,7 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH,
         0,
-        min = Constants.MIN_DESKTOP_WIDTH,
+        min = 0,
     )
     var enableBatteryApi by booleanPref(
         getRestrictions,
