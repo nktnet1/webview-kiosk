@@ -195,7 +195,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE,
         true
     )
-    var enableZoom by booleanPref(getRestrictions, prefs, UserSettingsKeys.WebEngine.ENABLE_ZOOM, true)
+    var builtInZoomControls by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.BUILT_IN_ZOOM_CONTROLS,
+        true
+    )
     var displayZoomControls by booleanPref(
         getRestrictions,
         prefs,
@@ -425,7 +430,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebEngine.USER_AGENT, userAgent)
             put(UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT, useWideViewPort)
             put(UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE, loadWithOverviewMode)
-            put(UserSettingsKeys.WebEngine.ENABLE_ZOOM, enableZoom)
+            put(UserSettingsKeys.WebEngine.BUILT_IN_ZOOM_CONTROLS, builtInZoomControls)
             put(UserSettingsKeys.WebEngine.DISPLAY_ZOOM_CONTROLS, displayZoomControls)
             put(UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS, allowFileAccessFromFileURLs)
             put(UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, allowUniversalAccessFromFileURLs)
@@ -506,7 +511,7 @@ class UserSettings(val context: Context) {
             userAgent = json.optString(UserSettingsKeys.WebEngine.USER_AGENT, userAgent)
             useWideViewPort = json.optBoolean(UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT, useWideViewPort)
             loadWithOverviewMode = json.optBoolean(UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE, loadWithOverviewMode)
-            enableZoom = json.optBoolean(UserSettingsKeys.WebEngine.ENABLE_ZOOM, enableZoom)
+            builtInZoomControls = json.optBoolean(UserSettingsKeys.WebEngine.BUILT_IN_ZOOM_CONTROLS, builtInZoomControls)
             displayZoomControls = json.optBoolean(UserSettingsKeys.WebEngine.DISPLAY_ZOOM_CONTROLS, displayZoomControls)
             allowFileAccessFromFileURLs = json.optBoolean(UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS, allowFileAccessFromFileURLs)
             allowUniversalAccessFromFileURLs = json.optBoolean(UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, allowUniversalAccessFromFileURLs)

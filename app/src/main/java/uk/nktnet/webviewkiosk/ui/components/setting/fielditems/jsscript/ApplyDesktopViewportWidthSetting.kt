@@ -33,7 +33,6 @@ fun ApplyDesktopViewportWidthSetting() {
               - User Agent: Desktop
               - Use Wide Viewport: True
               - Load with Overview Mode: True
-              - Enable Zoom: True
 
             The minimum possible value is ${Constants.MIN_DESKTOP_WIDTH}.
 
