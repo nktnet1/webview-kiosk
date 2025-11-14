@@ -38,6 +38,7 @@ object UserSettingsKeys {
         const val USER_AGENT = "web_engine.user_agent"
         const val USE_WIDE_VIEWPORT = "web_engine.use_wide_viewport"
         const val LOAD_WITH_OVERVIEW_MODE = "web_engine.load_with_overview_mode"
+        const val SUPPORT_ZOOM = "web_engine.support_zoom"
         const val BUILT_IN_ZOOM_CONTROLS = "web_engine.built_in_zoom_controls"
         const val DISPLAY_ZOOM_CONTROLS = "web_engine.display_zoom_controls"
         const val ALLOW_FILE_ACCESS_FROM_FILE_URLS = "web_engine.allow_file_access_from_file_urls"

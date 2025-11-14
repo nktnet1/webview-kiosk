@@ -195,6 +195,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE,
         true
     )
+    var supportZoom by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.SUPPORT_ZOOM,
+        true
+    )
     var builtInZoomControls by booleanPref(
         getRestrictions,
         prefs,

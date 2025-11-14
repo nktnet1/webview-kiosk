@@ -102,19 +102,28 @@ initially.
 
 ## 10. Zoom
 
-### 10.1. Built In Zoom Controls
+### 10.1. Support Zoom
+
+Sets whether the WebView should support zooming using its on-screen zoom
+controls and gestures.
+
+**Android API:** [WebSettings#setSupportZoom(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setSupportZoom(boolean))
+
+**Default:** true
+
+### 10.2. Built In Zoom Controls
 
 Sets whether the WebView should use its built-in zoom mechanisms.
 
 The built-in zoom mechanisms comprise on-screen zoom controls, which are
-displayed over the WebView's content, and the use of a pinch gesture to control
-zooming.
+displayed over the WebView's content, and the use of a pinch gesture to
+control zooming.
 
 **Android API:** [WebSettings#setBuiltInZoomControls(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setBuiltInZoomControls(boolean))
 
 **Default:** true
 
-### 10.2. Display Zoom Controls
+### 10.3. Display Zoom Controls
 
 Sets whether the WebView should display on-screen zoom controls when using the
 built-in zoom mechanisms.
