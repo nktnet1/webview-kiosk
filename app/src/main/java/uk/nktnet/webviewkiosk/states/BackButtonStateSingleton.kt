@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.states
+package com.nktnet.webview_kiosk.states
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow

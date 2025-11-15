@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.screens
+package com.nktnet.webview_kiosk.ui.screens
 
 import android.net.Uri
 import android.widget.Toast
@@ -19,13 +19,13 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.ui.components.setting.files.LocalFileList
-import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
-import uk.nktnet.webviewkiosk.utils.listLocalFiles
-import uk.nktnet.webviewkiosk.utils.supportedMimeTypesArray
-import uk.nktnet.webviewkiosk.utils.uploadFile
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
+import com.nktnet.webview_kiosk.ui.components.setting.files.LocalFileList
+import com.nktnet.webview_kiosk.utils.getWebContentFilesDir
+import com.nktnet.webview_kiosk.utils.listLocalFiles
+import com.nktnet.webview_kiosk.utils.supportedMimeTypesArray
+import com.nktnet.webview_kiosk.utils.uploadFile
 import java.util.concurrent.CancellationException
 
 @Composable

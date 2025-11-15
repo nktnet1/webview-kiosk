@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.handlers
+package com.nktnet.webview_kiosk.handlers
 
 import android.widget.Toast
 import androidx.activity.compose.LocalActivity
@@ -47,26 +47,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.UserSettings
 import kotlin.math.max
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.Screen
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
-import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
-import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
-import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
-import uk.nktnet.webviewkiosk.states.LockStateSingleton
-import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
-import uk.nktnet.webviewkiosk.ui.components.webview.BookmarksDialog
-import uk.nktnet.webviewkiosk.ui.components.webview.HistoryDialog
-import uk.nktnet.webviewkiosk.ui.components.webview.LocalFilesDialog
-import uk.nktnet.webviewkiosk.utils.canDisableKioskControlPanelRegion
-import uk.nktnet.webviewkiosk.utils.tryLockTask
-import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
-import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.config.Screen
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.config.option.BackButtonHoldActionOption
+import com.nktnet.webview_kiosk.config.option.FloatingToolbarModeOption
+import com.nktnet.webview_kiosk.config.option.KioskControlPanelRegionOption
+import com.nktnet.webview_kiosk.states.BackButtonStateSingleton
+import com.nktnet.webview_kiosk.states.LockStateSingleton
+import com.nktnet.webview_kiosk.states.WaitingForUnlockStateSingleton
+import com.nktnet.webview_kiosk.ui.components.webview.BookmarksDialog
+import com.nktnet.webview_kiosk.ui.components.webview.HistoryDialog
+import com.nktnet.webview_kiosk.ui.components.webview.LocalFilesDialog
+import com.nktnet.webview_kiosk.utils.canDisableKioskControlPanelRegion
+import com.nktnet.webview_kiosk.utils.tryLockTask
+import com.nktnet.webview_kiosk.utils.unlockWithAuthIfRequired
+import com.nktnet.webview_kiosk.utils.webview.WebViewNavigation
 
 @Composable
 fun KioskControlPanel(

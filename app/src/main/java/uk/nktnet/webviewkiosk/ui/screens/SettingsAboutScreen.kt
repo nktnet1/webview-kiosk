@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.screens
+package com.nktnet.webview_kiosk.ui.screens
 
 import android.app.admin.DevicePolicyManager
 import android.content.ClipData
@@ -25,11 +25,11 @@ import androidx.core.content.pm.PackageInfoCompat
 import androidx.navigation.NavController
 import androidx.webkit.WebViewCompat
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.BuildConfig
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
+import com.nktnet.webview_kiosk.BuildConfig
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
+import com.nktnet.webview_kiosk.utils.openAppDetailsSettings
 
 @Composable
 fun InfoItem(label: String, value: String) {

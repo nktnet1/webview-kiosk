@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config
+package com.nktnet.webview_kiosk.config
 
 object Constants {
     const val APP_NAME = "Webview Kiosk"

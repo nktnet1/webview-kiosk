@@ -1,10 +1,10 @@
-package uk.nktnet.webviewkiosk.utils.webview
+package com.nktnet.webview_kiosk.utils.webview
 
 import org.json.JSONArray
 import java.io.BufferedReader
 import java.net.HttpURLConnection
 import java.net.URL
-import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
+import com.nktnet.webview_kiosk.config.option.SearchSuggestionEngineOption
 
 data class SearchEngineInterface(
     val baseUrl: String,

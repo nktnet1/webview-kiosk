@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.screens
+package com.nktnet.webview_kiosk.ui.screens
 
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
@@ -17,14 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.Screen
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.utils.normaliseInfoText
-import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
-import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+import com.nktnet.webview_kiosk.WebviewKioskAdminReceiver
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.Screen
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
+import com.nktnet.webview_kiosk.utils.normaliseInfoText
+import com.nktnet.webview_kiosk.utils.openAppDetailsSettings
+import com.nktnet.webview_kiosk.utils.webview.WebViewNavigation
 
 @Composable
 fun MoreActionsScreen(navController: NavController) {

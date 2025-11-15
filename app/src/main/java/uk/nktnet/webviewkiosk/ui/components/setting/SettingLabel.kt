@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting
+package com.nktnet.webview_kiosk.ui.components.setting
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Icon
@@ -11,8 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.utils.navigateToWebViewScreen
 
 const val ICON_OFFSET = 8
 

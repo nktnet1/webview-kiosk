@@ -1,13 +1,13 @@
-package uk.nktnet.webviewkiosk.main
+package com.nktnet.webview_kiosk.main
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
-import uk.nktnet.webviewkiosk.config.Screen
-import uk.nktnet.webviewkiosk.ui.screens.*
-import uk.nktnet.webviewkiosk.utils.authComposable
+import com.nktnet.webview_kiosk.config.Screen
+import com.nktnet.webview_kiosk.ui.screens.*
+import com.nktnet.webview_kiosk.utils.authComposable
 
 @Composable
 fun SetupNavHost(

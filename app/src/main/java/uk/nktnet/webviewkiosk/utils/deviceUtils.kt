@@ -1,14 +1,14 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import android.app.Activity
 import android.content.Context
 import android.content.pm.ActivityInfo
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
-import uk.nktnet.webviewkiosk.states.KeepScreenOnStateSingleton
-import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.option.DeviceRotationOption
+import com.nktnet.webview_kiosk.states.KeepScreenOnStateSingleton
+import com.nktnet.webview_kiosk.states.ThemeStateSingleton
 
 fun setWindowBrightness(context: Context, value: Int) {
     val activity = context as? Activity ?: return
