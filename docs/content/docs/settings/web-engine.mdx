@@ -234,3 +234,17 @@ a resource from an insecure origin.
 **Android API:** [WebSettings#setMixedContentMode(int)](https://developer.android.com/reference/android/webkit/WebSettings#setMixedContentMode(int))
 
 **Default:** Never Allow
+
+## 15. Over Scroll Mode
+
+Configures the WebView's behavior when the user scrolls beyond the content boundaries.
+
+| Mode               | Description |
+|--------------------|-------------|
+| Always             | Allows over-scroll effect regardless of content size. |
+| If Content Scrolls | Allow over-scrolling only if the view content is larger than the container. |
+| Never              | Prevents any over-scroll effect. |
+
+**Android API:** [WebView#setOverScrollMode(int)](https://developer.android.com/reference/android/webkit/WebView#setOverScrollMode(int))
+
+**Default:** If Content Scrolls
