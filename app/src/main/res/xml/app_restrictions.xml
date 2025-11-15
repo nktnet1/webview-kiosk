@@ -239,6 +239,14 @@
         android:title="@string/web_engine_mixed_content_mode_title"
         android:description="@string/web_engine_mixed_content_mode_description"
     />
+    <restriction
+        android:key="web_engine.over_scroll_mode"
+        android:restrictionType="choice"
+        android:entries="@array/entries_over_scroll_mode_option"
+        android:entryValues="@array/entry_values_over_scroll_mode_option"
+        android:title="@string/web_engine_over_scroll_mode_title"
+        android:description="@string/web_engine_over_scroll_mode_description"
+    />
 
     <!-- Web Lifecycle -->
     <restriction

@@ -93,6 +93,9 @@ fun createCustomWebview(
                 @Suppress("DEPRECATION")
                 allowUniversalAccessFromFileURLs = userSettings.allowUniversalAccessFromFileURLs
                 mediaPlaybackRequiresUserGesture = userSettings.mediaPlaybackRequiresUserGesture
+
+                mixedContentMode = userSettings.mixedContentMode.mode
+                overScrollMode = userSettings.overScrollMode.mode
             }
 
             if (userSettings.enableBatteryApi) {

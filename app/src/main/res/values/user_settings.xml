@@ -115,6 +115,9 @@
     <string name="web_engine_mixed_content_mode_title">Mixed Content Mode</string>
     <string name="web_engine_mixed_content_mode_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
+    <string name="web_engine_over_scroll_mode_title">Over Scroll Mode</string>
+    <string name="web_engine_over_scroll_mode_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+
     <!-- Web Lifecycle -->
     <string name="web_lifecycle_lock_on_launch_title">Lock on Launch</string>
     <string name="web_lifecycle_lock_on_launch_description">https://webviewkiosk.nktnet.uk/docs/settings/web-lifecycle/</string>
