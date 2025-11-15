@@ -182,16 +182,28 @@
         android:description="@string/web_engine_load_with_overview_mode_description"
     />
     <restriction
-        android:key="web_engine.enable_zoom"
+        android:key="web_engine.support_zoom"
         android:restrictionType="bool"
-        android:title="@string/web_engine_enable_zoom_title"
-        android:description="@string/web_engine_enable_zoom_description"
+        android:title="@string/web_engine_support_zoom_title"
+        android:description="@string/web_engine_support_zoom_description"
+    />
+    <restriction
+        android:key="web_engine.built_in_zoom_controls"
+        android:restrictionType="bool"
+        android:title="@string/web_engine_built_in_zoom_controls_title"
+        android:description="@string/web_engine_built_in_zoom_controls_description"
     />
     <restriction
         android:key="web_engine.display_zoom_controls"
         android:restrictionType="bool"
         android:title="@string/web_engine_display_zoom_controls_title"
         android:description="@string/web_engine_display_zoom_controls_description"
+    />
+    <restriction
+        android:key="web_engine.initial_scale"
+        android:restrictionType="integer"
+        android:title="@string/web_engine_initial_scale_title"
+        android:description="@string/web_engine_initial_scale_description"
     />
     <restriction
         android:key="web_engine.allow_file_access_from_file_urls"
@@ -218,6 +230,22 @@
         android:entryValues="@array/entry_values_ssl_error_mode_option"
         android:title="@string/web_engine_ssl_error_mode_option_title"
         android:description="@string/web_engine_ssl_error_mode_option_description"
+    />
+    <restriction
+        android:key="web_engine.mixed_content_mode"
+        android:restrictionType="choice"
+        android:entries="@array/entries_mixed_content_mode_option"
+        android:entryValues="@array/entry_values_mixed_content_mode_option"
+        android:title="@string/web_engine_mixed_content_mode_title"
+        android:description="@string/web_engine_mixed_content_mode_description"
+    />
+    <restriction
+        android:key="web_engine.over_scroll_mode"
+        android:restrictionType="choice"
+        android:entries="@array/entries_over_scroll_mode_option"
+        android:entryValues="@array/entry_values_over_scroll_mode_option"
+        android:title="@string/web_engine_over_scroll_mode_title"
+        android:description="@string/web_engine_over_scroll_mode_description"
     />
 
     <!-- Web Lifecycle -->

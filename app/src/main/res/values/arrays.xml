@@ -173,4 +173,27 @@
         <item>DUCKDUCKGO</item>
         <item>YAHOO</item>
     </string-array>
+
+    <string-array name="entries_mixed_content_mode_option">
+        <item>Never Allow</item>
+        <item>Compatibility Mode</item>
+        <item>Always Allow</item>
+    </string-array>
+    <string-array name="entry_values_mixed_content_mode_option">
+        <item>NEVER_ALLOW</item>
+        <item>COMPATIBILITY_MODE</item>
+        <item>ALWAYS_ALLOW</item>
+    </string-array>
+
+    <string-array name="entries_over_scroll_mode_option">
+        <item>Never</item>
+        <item>Always</item>
+        <item>If Content Scrolls</item>
+    </string-array>
+    <string-array name="entry_values_over_scroll_mode_option">
+        <item>NEVER</item>
+        <item>ALWAYS</item>
+        <item>IF_CONTENT_SCROLLS</item>
+    </string-array>
+
 </resources>

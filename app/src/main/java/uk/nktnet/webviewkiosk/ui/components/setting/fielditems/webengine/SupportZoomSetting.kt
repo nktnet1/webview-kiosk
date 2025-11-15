@@ -7,15 +7,18 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
-fun EnableZoomSetting() {
+fun SupportZoomSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
 
     BooleanSettingFieldItem(
-        label = "Enable Zoom",
-        infoText = "Allow pinch-to-zoom and zoom controls in the WebView.",
-        initialValue = userSettings.enableZoom,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.ENABLE_ZOOM),
-        onSave = { userSettings.enableZoom = it }
+        label = "Support Zoom",
+        infoText = """
+            Sets whether the WebView should support zooming using its on-screen
+            zoom controls and gestures.
+        """.trimIndent(),
+        initialValue = userSettings.supportZoom,
+        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.SUPPORT_ZOOM),
+        onSave = { userSettings.supportZoom = it }
     )
 }

@@ -1,0 +1,8 @@
+## Changes
+
+- feat: over scroll mode (web engine setting)
+- feat: mixed content mode (web engine setting)
+- web engine -> enable zoom has been removed in favour of:
+    - support zoom
+    - built in zoom control
+    - initial scale

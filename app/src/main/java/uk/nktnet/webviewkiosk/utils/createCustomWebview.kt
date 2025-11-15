@@ -79,14 +79,23 @@ fun createCustomWebview(
                 layoutAlgorithm = userSettings.layoutAlgorithm.algorithm
                 useWideViewPort = userSettings.useWideViewPort
                 loadWithOverviewMode = userSettings.loadWithOverviewMode
-                builtInZoomControls = userSettings.enableZoom
+
+                setGeolocationEnabled(userSettings.allowLocation)
+                setInitialScale(userSettings.initialScale)
+                setSupportZoom(userSettings.supportZoom)
+
+                builtInZoomControls = userSettings.builtInZoomControls
                 displayZoomControls = userSettings.displayZoomControls
+
                 allowFileAccess = userSettings.allowLocalFiles
                 @Suppress("DEPRECATION")
                 allowFileAccessFromFileURLs = userSettings.allowFileAccessFromFileURLs
                 @Suppress("DEPRECATION")
                 allowUniversalAccessFromFileURLs = userSettings.allowUniversalAccessFromFileURLs
                 mediaPlaybackRequiresUserGesture = userSettings.mediaPlaybackRequiresUserGesture
+
+                mixedContentMode = userSettings.mixedContentMode.mode
+                overScrollMode = userSettings.overScrollMode.mode
             }
 
             if (userSettings.enableBatteryApi) {

@@ -38,12 +38,16 @@ object UserSettingsKeys {
         const val USER_AGENT = "web_engine.user_agent"
         const val USE_WIDE_VIEWPORT = "web_engine.use_wide_viewport"
         const val LOAD_WITH_OVERVIEW_MODE = "web_engine.load_with_overview_mode"
-        const val ENABLE_ZOOM = "web_engine.enable_zoom"
+        const val SUPPORT_ZOOM = "web_engine.support_zoom"
+        const val BUILT_IN_ZOOM_CONTROLS = "web_engine.built_in_zoom_controls"
         const val DISPLAY_ZOOM_CONTROLS = "web_engine.display_zoom_controls"
+        const val INITIAL_SCALE = "web_engine.initial_scale"
         const val ALLOW_FILE_ACCESS_FROM_FILE_URLS = "web_engine.allow_file_access_from_file_urls"
         const val ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS = "web_engine.allow_universal_access_from_file_urls"
         const val MEDIA_PLAYBACK_REQUIRES_USER_GESTURE = "web_engine.media_playback_requires_user_gesture"
         const val SSL_ERROR_MODE = "web_engine.ssl_error_mode"
+        const val MIXED_CONTENT_MODE = "web_engine.mixed_content_mode"
+        const val OVER_SCROLL_MODE = "web_engine.over_scroll_mode"
     }
 
     object WebLifecycle {
