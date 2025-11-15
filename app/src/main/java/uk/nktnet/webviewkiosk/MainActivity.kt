@@ -19,16 +19,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import android.view.KeyEvent
 import androidx.activity.compose.LocalActivity
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import uk.nktnet.webviewkiosk.utils.getStatus
 import uk.nktnet.webviewkiosk.auth.AuthenticationManager
 import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
+import uk.nktnet.webviewkiosk.mqtt.MqttManager
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonService
 import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.handleMainIntent
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetSettingsCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetStatusCommand
 import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
@@ -40,6 +45,7 @@ import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
 import uk.nktnet.webviewkiosk.utils.getLocalUrl
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handlePreviewKeyUnlockEvent
+import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
@@ -50,6 +56,7 @@ class MainActivity : AppCompatActivity() {
     private var uploadingFileUri: Uri? = null
     private var uploadProgress by mutableFloatStateOf(0f)
     private lateinit var userSettings: UserSettings
+    private lateinit var systemSettings: SystemSettings
     private lateinit var backButtonService: BackButtonService
 
     val restrictionsReceiver = object : BroadcastReceiver() {
@@ -86,6 +93,8 @@ class MainActivity : AppCompatActivity() {
         )
 
         userSettings = UserSettings(this)
+        systemSettings = SystemSettings(this)
+        MqttManager.updateConfig(systemSettings, userSettings)
         updateDeviceSettings(this)
 
         val systemSettings = SystemSettings(this)
@@ -122,7 +131,42 @@ class MainActivity : AppCompatActivity() {
 
             val waitingForUnlock by WaitingForUnlockStateSingleton.waitingForUnlock.collectAsState()
             val biometricResult by AuthenticationManager.promptResults.collectAsState()
+            val context = LocalContext.current
+
             val activity = LocalActivity.current
+
+            LaunchedEffect(Unit) {
+                MqttManager.settings.collect { payload ->
+                    if (userSettings.mqttEnabled) {
+                        userSettings.importJson(payload)
+                        updateDeviceSettings(context)
+                        showToast("MQTT: settings updated.")
+
+                        // Counterintuitive, but this acts as a "Refresh" of the webview screen,
+                        // which will recreate + apply settings.
+                        // If we're on another screen though (e.g. settings), then let the user
+                        // decide when to navigate back.
+                        if (navController.currentDestination?.route == Screen.WebView.route) {
+                            navigateToWebViewScreen(navController)
+                        }
+                    }
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                MqttManager.commands.collect { command ->
+                    when (command) {
+                        is MqttGetStatusCommand -> {
+                            MqttManager.publishStatusResponse(command, getStatus(context))
+                        }
+                        is MqttGetSettingsCommand -> {
+                            val settings = userSettings.exportJson()
+                            MqttManager.publishSettingsResponse(command, settings)
+                        }
+                        else -> Unit
+                    }
+                }
+            }
 
             LaunchedEffect(waitingForUnlock, biometricResult) {
                 if (
@@ -201,6 +245,12 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        if (userSettings.mqttEnabled && !MqttManager.isConnectedOrReconnect()) {
+            MqttManager.connect(
+                systemSettings,
+                userSettings,
+            )
+        }
         AuthenticationManager.init(this)
     }
 
@@ -219,6 +269,7 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         if (!isChangingConfigurations) {
             AuthenticationManager.resetAuthentication()
+            MqttManager.disconnect {}
         }
     }
 
@@ -232,6 +283,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         unregisterReceiver(restrictionsReceiver)
+        MqttManager.disconnect()
         super.onDestroy()
     }
 

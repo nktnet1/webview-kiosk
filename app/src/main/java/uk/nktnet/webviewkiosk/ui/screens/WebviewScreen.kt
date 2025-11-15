@@ -22,7 +22,9 @@ import androidx.core.net.toUri
 import androidx.navigation.NavController
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -33,6 +35,15 @@ import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.InactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.KioskControlPanel
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttMqttCommandError
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttGoBackMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttGoForwardMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttLockMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttGoHomeMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttGoToUrlMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.MqttManager
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttRefreshMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttUnlockMqttCommand
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
 import uk.nktnet.webviewkiosk.ui.components.webview.FloatingToolbar
@@ -50,6 +61,7 @@ import uk.nktnet.webviewkiosk.utils.isSupportedFileURLMimeType
 import uk.nktnet.webviewkiosk.utils.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
+import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
 import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
@@ -67,6 +79,8 @@ fun WebviewScreen(navController: NavController) {
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
     val isLocked by LockStateSingleton.isLocked
+    val scope = rememberCoroutineScope()
+    var publishUrlVisitedJob: Job? = null
 
     val lastVisitedUrl = systemSettings.currentUrl.takeIf { it.isNotEmpty() } ?: userSettings.homeUrl
     var urlBarText by remember {
@@ -164,6 +178,13 @@ fun WebviewScreen(navController: NavController) {
     fun updateAddressBarAndHistory(url: String, originalUrl: String?) {
         if (!addressBarHasFocus) {
             urlBarText = urlBarText.copy(text = url)
+        }
+        if (userSettings.mqttEnabled && url.trimEnd('/') != systemSettings.currentUrl) {
+            publishUrlVisitedJob?.cancel()
+            publishUrlVisitedJob = scope.launch {
+                delay(1000)
+                MqttManager.publishUrlVisitedEvent(url)
+            }
         }
         WebViewNavigation.appendWebviewHistory(
             systemSettings,
@@ -423,4 +444,21 @@ fun WebviewScreen(navController: NavController) {
         onDismiss = { linkToOpen = null },
         onOpenLink = { url -> customLoadUrl(url) },
     )
+
+    LaunchedEffect(Unit) {
+        MqttManager.commands.collect { commandMessage ->
+            when (commandMessage) {
+                is MqttGoBackMqttCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)
+                is MqttGoForwardMqttCommand -> WebViewNavigation.goForward(::customLoadUrl, systemSettings)
+                is MqttGoHomeMqttCommand -> WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings)
+                is MqttRefreshMqttCommand -> WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
+                is MqttGoToUrlMqttCommand -> customLoadUrl(commandMessage.url)
+                is MqttLockMqttCommand -> tryLockTask(activity)
+                is MqttUnlockMqttCommand -> tryUnlockTask(activity)
+                is MqttMqttCommandError -> showToast("Received invalid MQTT command. See debug logs in MQTT settings.")
+                // No need to handle other commands (consumed by MainActivity).
+                else -> Unit
+            }
+        }
+    }
 }

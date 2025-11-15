@@ -9,7 +9,6 @@ object Constants {
     const val MIN_INACTIVITY_TIMEOUT_SECONDS = 30
     const val INACTIVITY_COUNTDOWN_SECONDS = 5
     const val MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS = 5
-
     const val MIN_DESKTOP_WIDTH = 640
 
     const val WEB_CONTENT_FILES_DIR = "web-content-files"

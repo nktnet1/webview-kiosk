@@ -59,7 +59,7 @@ fun SettingsHeaderMenu(
         },
         importError = importError,
         onImportConfirm = {
-            val success = userSettings.importFromBase64(importText)
+            val success = userSettings.importBase64(importText)
             if (success) {
                 updateDeviceSettings(context)
                 showToast("Settings imported successfully")
@@ -126,7 +126,7 @@ fun SettingsHeaderMenu(
                             text = { Text("Export", color = tintColor) },
                             onClick = {
                                 showMenu = false
-                                exportText = userSettings.exportToBase64()
+                                exportText = userSettings.exportBase64()
                                 showExportDialog = true
                             },
                             leadingIcon = {
