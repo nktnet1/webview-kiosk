@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.mqtt.MqttManager.mqttVariableReplacement
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 
 @Composable
@@ -21,6 +22,9 @@ fun MqttWillPayloadSetting() {
         initialValue = userSettings.mqttWillPayload,
         restricted = restricted,
         isMultiline = true,
+        descriptionFormatter = {
+            mqttVariableReplacement( it)
+        },
         onSave = { userSettings.mqttWillPayload = it },
     )
 }

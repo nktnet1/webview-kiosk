@@ -36,8 +36,8 @@ import uk.nktnet.webviewkiosk.mqtt.messages.MqttSettingsResponse
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttStatusResponse
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttUnlockEvent
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttUrlVisitedEvent
-import uk.nktnet.webviewkiosk.mqtt.messages.toFilteredJsonObject
 import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
+import uk.nktnet.webviewkiosk.utils.filterSettingsJson
 import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
 import uk.nktnet.webviewkiosk.utils.isValidMqttSubscribeTopic
 import java.util.Date
@@ -208,14 +208,14 @@ object MqttManager {
                 .password(UTF_8.encode(config.password))
                 .applySimpleAuth()
             .willPublish()
-                .topic(config.willTopic)
+                .topic(mqttVariableReplacement(config.willTopic))
                 .qos(config.willQos.toMqttQos())
                 .retain(config.willRetain)
                 .messageExpiryInterval(config.willMessageExpiryInterval.toLong())
                 .delayInterval(config.willDelayInterval.toLong())
                 .payloadFormatIndicator(Mqtt5PayloadFormatIndicator.UTF_8)
                 .contentType("text/plain")
-                .payload(config.willPayload.toByteArray())
+                .payload(mqttVariableReplacement(config.willPayload).toByteArray())
                 .applyWillPublish()
 
         var rb = connection.restrictions()
@@ -313,7 +313,7 @@ object MqttManager {
         val settingsMessage = MqttSettingsResponse(
             identifier = settingsCommand.identifier,
             appInstanceId = config.appInstanceId,
-            data = settings.toFilteredJsonObject(settingsCommand.settingKeys)
+            data = filterSettingsJson(settings, settingsCommand.settings)
         )
         publishResponseMessage(
             settingsMessage,

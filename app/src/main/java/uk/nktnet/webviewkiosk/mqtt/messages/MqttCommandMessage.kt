@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.mqtt.messages
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import uk.nktnet.webviewkiosk.utils.BaseJson
 
 @Serializable
@@ -85,17 +86,17 @@ data class MqttGetStatusCommand(
 @SerialName("get_settings")
 data class MqttGetSettingsCommand(
     override val identifier: String? = null,
-    val settingKeys: Array<String> = emptyArray()
+    val settings: Array<JsonElement> = emptyArray()
 ) : MqttGetBaseCommand() {
     override fun toString() = "Get Settings"
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
         other as MqttGetSettingsCommand
-        return settingKeys.contentEquals(other.settingKeys)
+        return settings.contentEquals(other.settings)
     }
     override fun hashCode(): Int {
-        return settingKeys.contentHashCode()
+        return settings.contentHashCode()
     }
 }
 
