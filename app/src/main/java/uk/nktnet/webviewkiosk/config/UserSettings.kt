@@ -747,7 +747,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
 
             put(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)
-            put(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.label)
+            put(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.name)
             put(UserSettingsKeys.Device.ALLOW_CAMERA, allowCamera)
             put(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             put(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
@@ -886,7 +886,7 @@ class UserSettings(val context: Context) {
             blockedMessage = json.optString(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
 
             keepScreenOn = json.optBoolean(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)
-            rotation = DeviceRotationOption.fromString(json.optString(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.label))
+            rotation = DeviceRotationOption.fromString(json.optString(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.name))
             allowCamera = json.optBoolean(UserSettingsKeys.Device.ALLOW_CAMERA, allowCamera)
             allowMicrophone = json.optBoolean(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             allowLocation = json.optBoolean(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
