@@ -691,7 +691,7 @@ class UserSettings(val context: Context) {
         false
     )
 
-    fun exportJson(): String {
+    fun exportJson(): JSONObject {
         val json = JSONObject().apply {
             put(UserSettingsKeys.WebContent.HOME_URL, homeUrl)
             put(UserSettingsKeys.WebContent.WEBSITE_BLACKLIST, websiteBlacklist)
@@ -805,11 +805,11 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.Restrictions.REQUEST_PROBLEM_INFORMATION, mqttRestrictionsRequestProblemInformation)
             put(UserSettingsKeys.Mqtt.Restrictions.REQUEST_RESPONSE_INFORMATION, mqttRestrictionsRequestResponseInformation)
         }
-        return json.toString()
+        return json
     }
 
     fun exportBase64(): String {
-        return Base64.encodeToString(exportJson().toByteArray(), Base64.NO_WRAP)
+        return Base64.encodeToString(exportJson().toString().toByteArray(), Base64.NO_WRAP)
     }
 
     fun importJson(jsonStr: String): Boolean {

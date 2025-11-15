@@ -32,7 +32,8 @@ import uk.nktnet.webviewkiosk.mqtt.MqttManager
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonService
 import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.handleMainIntent
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetStatusMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetSettingsCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetStatusCommand
 import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
@@ -155,8 +156,12 @@ class MainActivity : AppCompatActivity() {
             LaunchedEffect(Unit) {
                 MqttManager.commands.collect { command ->
                     when (command) {
-                        is MqttGetStatusMqttCommand -> {
+                        is MqttGetStatusCommand -> {
                             MqttManager.publishStatusResponse(command, getStatus(context))
+                        }
+                        is MqttGetSettingsCommand -> {
+                            val settings = userSettings.exportJson()
+                            MqttManager.publishSettingsResponse(command, settings)
                         }
                         else -> Unit
                     }

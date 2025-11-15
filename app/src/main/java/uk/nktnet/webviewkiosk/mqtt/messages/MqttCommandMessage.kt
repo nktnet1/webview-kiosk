@@ -11,65 +11,73 @@ sealed interface MqttCommandMessage {
 }
 
 @Serializable
+sealed class MqttGetBaseCommand(
+    @SerialName("responseTopic") open var responseTopic: String? = null,
+    @SerialName("correlationData") open var correlationData: String? = null
+) : MqttCommandMessage
+
+@Serializable
 @SerialName("go_back")
-data class MqttGoBackMqttCommand(override val identifier: String? = null) : MqttCommandMessage {
+class MqttGoBackMqttCommand() : MqttCommandMessage {
     override fun toString() = "Go Back"
 }
 
 @Serializable
 @SerialName("go_forward")
-data class MqttGoForwardMqttCommand(override val identifier: String? = null) : MqttCommandMessage {
+class MqttGoForwardMqttCommand() : MqttCommandMessage {
     override fun toString() = "Go Forward"
 }
 
 @Serializable
 @SerialName("go_home")
-data class MqttGoHomeMqttCommand(override val identifier: String? = null) : MqttCommandMessage {
+class MqttGoHomeMqttCommand() : MqttCommandMessage {
     override fun toString() = "Go Home"
 }
 
 @Serializable
 @SerialName("refresh")
-data class MqttRefreshMqttCommand(override val identifier: String? = null) : MqttCommandMessage {
+class MqttRefreshMqttCommand() : MqttCommandMessage {
     override fun toString() = "Refresh"
 }
 
 @Serializable
 @SerialName("go_to_url")
-data class MqttGoToUrlMqttCommand(
+class MqttGoToUrlMqttCommand(
     val url: String,
-    override val identifier: String? = null
 ) : MqttCommandMessage {
     override fun toString() = "Go to URL: $url"
 }
 
 @Serializable
 @SerialName("lock")
-data class MqttLockMqttCommand(override val identifier: String? = null) : MqttCommandMessage {
+class MqttLockMqttCommand() : MqttCommandMessage {
     override fun toString() = "Lock"
 }
 
 @Serializable
 @SerialName("unlock")
-data class MqttUnlockMqttCommand(override val identifier: String? = null) : MqttCommandMessage {
+class MqttUnlockMqttCommand() : MqttCommandMessage {
     override fun toString() = "Unlock"
 }
 
 @Serializable
 @SerialName("get_status")
-data class MqttGetStatusMqttCommand(
-    override val identifier: String? = null,
-    var responseTopic: String? = null,
-    var correlationData: String? = null,
-) : MqttCommandMessage {
+class MqttGetStatusCommand : MqttGetBaseCommand() {
     override fun toString() = "Get Status"
 }
 
 @Serializable
+@SerialName("get_settings")
+class MqttGetSettingsCommand(
+    val settingKeys: Array<String> = emptyArray()
+) : MqttGetBaseCommand() {
+    override fun toString() = "Get Settings"
+}
+
+@Serializable
 @SerialName("error")
-data class MqttMqttCommandError(
+class MqttMqttCommandError(
     val error: String = "unknown command",
-    override val identifier: String? = null
 ) : MqttCommandMessage {
     override fun toString() = "Command Error: $error"
 }
