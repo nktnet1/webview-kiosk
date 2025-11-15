@@ -23,6 +23,6 @@ fun MqttPublishEventQosSetting() {
         initialValue = userSettings.mqttPublishEventQos,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS),
         onSave = { userSettings.mqttPublishEventQos = it },
-        itemText = { it.label },
+        itemText = { it.getSettingLabel() },
     )
 }

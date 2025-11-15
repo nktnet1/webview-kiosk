@@ -20,6 +20,6 @@ fun MqttSubscribeCommandRetainHandlingSetting() {
         initialValue = userSettings.mqttSubscribeCommandRetainHandling,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING),
         onSave = { userSettings.mqttSubscribeCommandRetainHandling = it },
-        itemText = { it.label },
+        itemText = { it.getSettingLabel() },
     )
 }

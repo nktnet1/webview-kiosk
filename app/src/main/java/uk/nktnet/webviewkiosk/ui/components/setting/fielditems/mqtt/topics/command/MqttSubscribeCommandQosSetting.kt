@@ -23,6 +23,6 @@ fun MqttSubscribeCommandQosSetting() {
         initialValue = userSettings.mqttSubscribeCommandQos,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS),
         onSave = { userSettings.mqttSubscribeCommandQos = it },
-        itemText = { it.label },
+        itemText = { it.getSettingLabel() },
     )
 }

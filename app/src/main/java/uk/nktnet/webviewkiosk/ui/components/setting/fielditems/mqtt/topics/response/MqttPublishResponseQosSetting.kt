@@ -23,6 +23,6 @@ fun MqttPublishResponseQosSetting() {
         initialValue = userSettings.mqttPublishResponseQos,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Publish.Response.QOS),
         onSave = { userSettings.mqttPublishResponseQos = it },
-        itemText = { it.label },
+        itemText = { it.getSettingLabel() },
     )
 }

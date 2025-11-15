@@ -23,6 +23,6 @@ fun MqttWillQosSetting() {
         initialValue = userSettings.mqttWillQos,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Will.QOS),
         onSave = { userSettings.mqttWillQos = it },
-        itemText = { it.label },
+        itemText = { it.getSettingLabel() },
     )
 }
