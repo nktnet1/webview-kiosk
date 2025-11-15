@@ -23,12 +23,14 @@ import uk.nktnet.webviewkiosk.config.option.MqttQosOption
 import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttCommandJsonParser
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttCommandMessage
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttEventJsonParser
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttEventMessage
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetBaseCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetSettingsCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetStatusCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttLockEvent
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttMqttCommandError
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttResponseJsonParser
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttResponseMessage
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttSettingsResponse
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttStatusResponse
@@ -281,10 +283,10 @@ object MqttManager {
     }
 
     private fun publishEventTopic(event: MqttEventMessage) {
-        val payload = Json.encodeToString(event)
+        val payload = MqttEventJsonParser.encodeToString(event)
         val topic = mqttVariableReplacement(
             config.publishEventTopic,
-            mapOf("EVENT_NAME" to event.event)
+            mapOf("EVENT_NAME" to event.getName())
         )
         publishToMqtt(
             topic,
@@ -326,10 +328,10 @@ object MqttManager {
         val topic = requestCommand.responseTopic.takeIf { !it.isNullOrEmpty() }
             ?: mqttVariableReplacement(
                 config.publishResponseTopic,
-                mapOf("RESPONSE_TYPE" to responseMessage.responseType)
+                mapOf("RESPONSE_TYPE" to responseMessage.getType())
             )
 
-        val payload = Json.encodeToString(responseMessage)
+        val payload = MqttResponseJsonParser.encodeToString(responseMessage)
         publishToMqtt(
             topic,
             payload,

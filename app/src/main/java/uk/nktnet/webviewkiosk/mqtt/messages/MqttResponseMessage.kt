@@ -1,40 +1,41 @@
 package uk.nktnet.webviewkiosk.mqtt.messages
 
-import kotlinx.serialization.EncodeDefault
-import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import org.json.JSONObject
+import uk.nktnet.webviewkiosk.utils.BaseJson
 import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
 
 @Serializable
 sealed interface MqttResponseMessage {
-    val responseType: String
     val identifier: String? get() = null
     val appInstanceId: String
+    fun getType(): String
 }
 
 @Serializable
+@SerialName("status")
 data class MqttStatusResponse(
-    @OptIn(ExperimentalSerializationApi::class)
-    @EncodeDefault
-    override val responseType: String = "status",
     override val identifier: String? = null,
     override val appInstanceId: String,
     val data: WebviewKioskStatus,
-) : MqttResponseMessage
+) : MqttResponseMessage {
+    override fun getType(): String = "status"
+}
 
 @Serializable
+@SerialName("settings")
 data class MqttSettingsResponse(
-    @OptIn(ExperimentalSerializationApi::class)
-    @EncodeDefault
-    override val responseType: String = "settings",
     override val identifier: String? = null,
     override val appInstanceId: String,
     val data: JsonObject,
-) : MqttResponseMessage
+) : MqttResponseMessage {
+    override fun getType(): String = "settings"
+}
 
 fun JSONObject.toFilteredJsonObject(filterKeys: Array<String> = emptyArray()): JsonObject {
     val filtered = if (filterKeys.isEmpty()) {
@@ -60,4 +61,8 @@ fun JSONObject.toFilteredJsonObject(filterKeys: Array<String> = emptyArray()): J
             }
         }
     }
+}
+
+val MqttResponseJsonParser = Json(BaseJson) {
+    classDiscriminator = "responseType"
 }
