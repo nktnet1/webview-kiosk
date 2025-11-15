@@ -410,10 +410,13 @@ object MqttManager {
                         is MqttGetStatusCommand -> {
                             @SuppressLint("NewApi")
                             if (publish.responseTopic.isPresent) {
-                                command.responseTopic = publish.responseTopic.toString()
-                                if (publish.correlationData.isPresent) {
-                                    command.correlationData = publish.correlationData.toString()
-                                }
+                                command.responseTopic = publish.responseTopic.get().toString()
+                            }
+                            @SuppressLint("NewApi")
+                            if (publish.correlationData.isPresent) {
+                                val buf = publish.correlationData.get()
+                                val bytes = ByteArray(buf.remaining()).also { buf.get(it) }
+                                command.correlationData = String(bytes, UTF_8)
                             }
                         }
                         else -> Unit
