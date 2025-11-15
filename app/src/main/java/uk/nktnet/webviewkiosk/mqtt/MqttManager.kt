@@ -24,10 +24,12 @@ import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttCommandJsonParser
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttCommandMessage
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttEventMessage
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetBaseCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetSettingsCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetStatusCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttLockEvent
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttMqttCommandError
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttResponseMessage
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttSettingsResponse
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttStatusResponse
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttUnlockEvent
@@ -284,8 +286,6 @@ object MqttManager {
             config.publishEventTopic,
             mapOf("EVENT_NAME" to event.event)
         )
-        println("[DEBUG] event=$event | payload: $payload")
-
         publishToMqtt(
             topic,
             payload,
@@ -299,51 +299,44 @@ object MqttManager {
         val statusMessage = MqttStatusResponse(
             identifier = statusCommand.identifier,
             appInstanceId = config.appInstanceId,
-            data = status,
+            data = status
         )
-        val topic = statusCommand.responseTopic.takeIf {
-            !it.isNullOrEmpty()
-        } ?: mqttVariableReplacement(
-            config.publishResponseTopic,
-            mapOf("RESPONSE_TYPE" to statusMessage.type),
-        )
-
-        val payload = Json.encodeToString(statusMessage)
-        publishToMqtt(
-            topic,
-            payload,
-            config.publishResponseQos,
-            config.publishResponseRetain,
-            correlationData = statusCommand.correlationData?.toByteArray(),
-            identifier = statusCommand.identifier
+        publishResponseMessage(
+            statusMessage,
+            statusCommand,
         )
     }
 
-    fun publishSettingsResponse(
-        settingsCommand: MqttGetSettingsCommand,
-        settings: JSONObject,
-    ) {
+    fun publishSettingsResponse(settingsCommand: MqttGetSettingsCommand, settings: JSONObject) {
         val settingsMessage = MqttSettingsResponse(
             identifier = settingsCommand.identifier,
             appInstanceId = config.appInstanceId,
-            data = settings.toFilteredJsonObject(settingsCommand.settingKeys),
+            data = settings.toFilteredJsonObject(settingsCommand.settingKeys)
         )
-
-        val topic = settingsCommand.responseTopic.takeIf {
-            !it.isNullOrEmpty()
-        } ?: mqttVariableReplacement(
-            config.publishResponseTopic,
-            mapOf("RESPONSE_TYPE" to settingsMessage.type),
+        publishResponseMessage(
+            settingsMessage,
+            settingsCommand
         )
+    }
 
-        val payload = Json.encodeToString(settingsMessage)
+    private fun publishResponseMessage(
+        responseMessage: MqttResponseMessage,
+        requestCommand: MqttGetBaseCommand,
+    ) {
+        val topic = requestCommand.responseTopic.takeIf { !it.isNullOrEmpty() }
+            ?: mqttVariableReplacement(
+                config.publishResponseTopic,
+                mapOf("RESPONSE_TYPE" to responseMessage.responseType)
+            )
+
+        val payload = Json.encodeToString(responseMessage)
         publishToMqtt(
             topic,
             payload,
             config.publishResponseQos,
             config.publishResponseRetain,
-            correlationData = settingsCommand.correlationData?.toByteArray(),
-            identifier = settingsCommand.identifier
+            correlationData = requestCommand.correlationData?.toByteArray(),
+            identifier = responseMessage.identifier
         )
     }
 
