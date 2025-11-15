@@ -23,12 +23,12 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
     val publishTopics = listOf(
         Triple(
             "Event",
-            "Changes to device state",
+            "Send device state changes",
             Screen.SettingsMqttTopicsPublishEvent.route
         ),
         Triple(
             "Response",
-            "Fallback response channel for commands",
+            "Send information when requested using commands",
             Screen.SettingsMqttTopicsPublishResponse.route
         ),
     )
