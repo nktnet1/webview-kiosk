@@ -1,11 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
-import android.app.admin.DevicePolicyManager
 import android.content.ClipData
-import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
-import android.os.UserManager
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,18 +12,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.content.pm.PackageInfoCompat
 import androidx.navigation.NavController
-import androidx.webkit.WebViewCompat
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.BuildConfig
-import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.utils.getSystemInfo
 import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
 
 @Composable
@@ -65,106 +56,8 @@ fun InfoItem(label: String, value: String) {
 @Composable
 fun SettingsAboutScreen(navController: NavController) {
     val context = LocalContext.current
-    val systemSettings = remember { SystemSettings(context) }
 
-    val resources = LocalResources.current
-    val packageManager = context.packageManager
-    val packageName = context.packageName
-
-    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-    val um = context.getSystemService(Context.USER_SERVICE) as UserManager
-
-    val appName = remember {
-        context.applicationInfo.loadLabel(packageManager).toString()
-    }
-
-    val versionName = remember {
-        try {
-            packageManager.getPackageInfo(packageName, 0).versionName ?: "N/A"
-        } catch (_: PackageManager.NameNotFoundException) {
-            "N/A"
-        }
-    }
-
-    val versionCode = remember {
-        try {
-            val info = packageManager.getPackageInfo(packageName, 0)
-            PackageInfoCompat.getLongVersionCode(info).toString()
-        } catch (_: PackageManager.NameNotFoundException) {
-            "N/A"
-        }
-    }
-
-    val targetSdkVersion = remember {
-        try {
-            packageManager.getPackageInfo(packageName, 0).applicationInfo?.targetSdkVersion.toString()
-        } catch (_: PackageManager.NameNotFoundException) {
-            "N/A"
-        }
-    }
-
-    val debugFlag = remember {
-        try {
-            val info = packageManager.getApplicationInfo(packageName, 0)
-            if ((info.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0) "Yes" else "No"
-        } catch (_: PackageManager.NameNotFoundException) {
-            "N/A"
-        }
-    }
-
-    val supportedABIs = remember {
-        Build.SUPPORTED_ABIS.joinToString(", ")
-    }
-
-    val installerPackage = remember {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                packageManager.getInstallSourceInfo(packageName).installingPackageName
-            } else {
-                @Suppress("DEPRECATION")
-                packageManager.getInstallerPackageName(packageName)
-            } ?: "Unknown"
-        } catch (_: Exception) {
-            "N/A"
-        }
-    }
-
-    val webViewVersion = remember {
-        try {
-            WebViewCompat.getCurrentWebViewPackage(context)?.versionName ?: "Unknown"
-        } catch (_: Exception) {
-            "N/A"
-        }
-    }
-
-    val screenInfo = remember {
-        val metrics = resources.displayMetrics
-        "${metrics.widthPixels} x ${metrics.heightPixels} px, density: ${metrics.density}"
-    }
-
-    val deviceOwnerDisplay = remember {
-        if (dpm.isDeviceOwnerApp(context.packageName)) {
-            "Yes"
-        } else {
-            "No"
-        }
-    }
-
-    val lockTaskPermittedDisplay = remember {
-        if (dpm.isLockTaskPermitted(packageName)) {
-            "Yes"
-        } else {
-            "No"
-        }
-    }
-
-    val managedProfileDisplay = remember {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            if (um.isManagedProfile) "Yes" else "No"
-        } else {
-            "Unknown"
-        }
-    }
+    val systemInfo = remember { getSystemInfo(context) }
 
     Column(
         modifier = Modifier
@@ -183,9 +76,7 @@ fun SettingsAboutScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 8.dp),
-            onClick = {
-                openAppDetailsSettings(context)
-            }
+            onClick = { openAppDetailsSettings(context) }
         ) {
             Text(
                 text = "Open App Info",
@@ -202,17 +93,26 @@ fun SettingsAboutScreen(navController: NavController) {
         )
         HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
-        InfoItem(label = "Name", value = appName)
-        InfoItem(label = "Package", value = packageName)
-        InfoItem(label = "Version", value = "$versionCode ($versionName)")
-        InfoItem(label = "Min SDK", value = BuildConfig.MIN_SDK_VERSION.toString())
-        InfoItem(label = "Target SDK", value = targetSdkVersion)
-        InfoItem(label = "Debug Build", value = debugFlag)
-        InfoItem(label = "Supported ABIs", value = supportedABIs)
-        InfoItem(label = "Installer", value = installerPackage)
-        InfoItem(label = "Device Owner", value = deviceOwnerDisplay)
-        InfoItem(label = "Lock Task Permitted", value = lockTaskPermittedDisplay)
-        InfoItem(label = "Instance ID", value = systemSettings.appInstanceId)
+        InfoItem(label = "Name", value = systemInfo.app.name)
+        InfoItem(label = "Package", value = systemInfo.app.packageName)
+        InfoItem(
+            label = "Version",
+            value = "${systemInfo.app.versionCode} (${systemInfo.app.versionName})"
+        )
+        InfoItem(label = "Min SDK", value = systemInfo.app.minSdk.toString())
+        InfoItem(label = "Target SDK", value = systemInfo.app.targetSdk.toString())
+        InfoItem(label = "Debug Build", value = systemInfo.app.isDebug.toString())
+        InfoItem(
+            label = "Supported ABIs",
+            value = systemInfo.app.supportedAbis.joinToString(", ")
+        )
+        InfoItem(label = "Installer", value = systemInfo.app.installer ?: "N/A")
+        InfoItem(label = "Device Owner", value = systemInfo.app.isDeviceOwner.toString())
+        InfoItem(
+            label = "Lock Task Permitted",
+            value = systemInfo.app.isLockTaskPermitted.toString()
+        )
+        InfoItem(label = "Instance ID", value = systemInfo.app.instanceId)
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -224,11 +124,23 @@ fun SettingsAboutScreen(navController: NavController) {
         )
         HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
-        InfoItem(label = "Android Version", value = "${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})")
-        InfoItem(label = "WebView Version", value = webViewVersion)
-        InfoItem(label = "Screen / Display", value = screenInfo)
-        InfoItem(label = "Managed Profile", value = managedProfileDisplay)
-        InfoItem(label = "Build Fingerprint", value = Build.FINGERPRINT)
+        InfoItem(
+            label = "Android Version",
+            value = "${systemInfo.device.androidRelease} (SDK ${systemInfo.device.androidSdk})"
+        )
+        InfoItem(
+            label = "WebView Version",
+            value = systemInfo.device.webViewVersion ?: "N/A"
+        )
+        InfoItem(
+            label = "Screen / Display",
+            value = "${systemInfo.device.screenWidth} x ${systemInfo.device.screenHeight} px, density: ${systemInfo.device.screenDensity}"
+        )
+        InfoItem(
+            label = "Managed Profile",
+            value = systemInfo.device.isManagedProfile?.toString() ?: "N/A"
+        )
+        InfoItem(label = "Build Fingerprint", value = systemInfo.device.buildFingerprint)
 
         Spacer(modifier = Modifier.padding(bottom = 8.dp))
     }
