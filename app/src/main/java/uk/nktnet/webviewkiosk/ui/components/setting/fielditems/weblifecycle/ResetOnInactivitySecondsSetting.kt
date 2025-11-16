@@ -17,9 +17,15 @@ fun ResetOnInactivitySecondsSetting() {
         label = "Reset on Inactivity (seconds)",
         infoText = """
             Number of seconds of inactivity before the app resets to the home URL.
-            Minimum: ${Constants.MIN_INACTIVITY_TIMEOUT_SECONDS}
+
+            When there is 5 seconds left, a warning countdown will be shown on
+            the screen.
+
+            User interactions the screen will reset the timer.
 
             The navigation history will be cleared when resetting.
+
+            Minimum: ${Constants.MIN_INACTIVITY_TIMEOUT_SECONDS}
 
             To disable, use the value 0. 
         """.trimIndent(),
