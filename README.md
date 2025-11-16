@@ -6,7 +6,8 @@
 >
 > For more information, please refer to the following sources:
 >
-> - F-Droid: https://f-droid.org/2025/09/29/google-developer-registration-decree.html
+> - F-Droid: https://f-droid.org/en/2025/10/28/sideloading.html
+> - Keep Android Open: https://keepandroidopen.org
 > - Video context: https://www.youtube.com/watch?v=wRvqdLsnsKY
 
 # Webview Kiosk
