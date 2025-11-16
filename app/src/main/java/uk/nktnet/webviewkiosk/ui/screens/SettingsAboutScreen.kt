@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.utils.getSystemInfo
+import uk.nktnet.webviewkiosk.utils.humanReadableSize
 import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
 
 @Composable
@@ -102,10 +103,6 @@ fun SettingsAboutScreen(navController: NavController) {
         InfoItem(label = "Min SDK", value = systemInfo.app.minSdk.toString())
         InfoItem(label = "Target SDK", value = systemInfo.app.targetSdk.toString())
         InfoItem(label = "Debug Build", value = systemInfo.app.isDebug.toString())
-        InfoItem(
-            label = "Supported ABIs",
-            value = systemInfo.app.supportedAbis.joinToString(", ")
-        )
         InfoItem(label = "Installer", value = systemInfo.app.installer ?: "N/A")
         InfoItem(label = "Device Owner", value = systemInfo.app.isDeviceOwner.toString())
         InfoItem(
@@ -126,7 +123,7 @@ fun SettingsAboutScreen(navController: NavController) {
 
         InfoItem(
             label = "Android Version",
-            value = "${systemInfo.device.androidRelease} (SDK ${systemInfo.device.androidSdk})"
+            value = "${systemInfo.device.releaseVersion} (SDK ${systemInfo.device.sdkVersion})"
         )
         InfoItem(
             label = "WebView Version",
@@ -139,6 +136,34 @@ fun SettingsAboutScreen(navController: NavController) {
         InfoItem(
             label = "Managed Profile",
             value = systemInfo.device.isManagedProfile?.toString() ?: "N/A"
+        )
+        InfoItem(label = "Time Zone", value = systemInfo.device.timeZone)
+        InfoItem(label = "Locale", value = systemInfo.device.locale)
+        InfoItem(label = "Total RAM", value = humanReadableSize(context, systemInfo.device.totalMemory))
+        InfoItem(label = "Total Storage", value = humanReadableSize(context, systemInfo.device.totalStorage))
+        InfoItem(label = "Model", value = systemInfo.device.model)
+        InfoItem(label = "Manufacturer", value = systemInfo.device.manufacturer)
+        InfoItem(label = "Brand", value = systemInfo.device.brand)
+        InfoItem(label = "Device", value = systemInfo.device.device)
+        InfoItem(label = "Product", value = systemInfo.device.product)
+        InfoItem(label = "Hardware", value = systemInfo.device.hardware)
+        InfoItem(label = "Board", value = systemInfo.device.board)
+        InfoItem(label = "Bootloader", value = systemInfo.device.bootloader)
+        InfoItem(label = "Security Patch", value = systemInfo.device.securityPatch ?: "N/A")
+        InfoItem(
+            label = "Supported ABIs",
+            value = systemInfo.app.supportedAbis.joinToString(", ")
+                .ifEmpty { "N/A" }
+        )
+        InfoItem(
+            label = "Supported 32-bit ABIs",
+            value = systemInfo.device.supported32BitAbis.joinToString(", ")
+                .ifEmpty { "N/A" }
+        )
+        InfoItem(
+            label = "Supported 64-bit ABIs",
+            value = systemInfo.device.supported64BitAbis.joinToString(", ")
+                .ifEmpty { "N/A" }
         )
         InfoItem(label = "Build Fingerprint", value = systemInfo.device.buildFingerprint)
 

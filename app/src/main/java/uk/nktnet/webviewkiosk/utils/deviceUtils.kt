@@ -1,16 +1,19 @@
 package uk.nktnet.webviewkiosk.utils
 
 import android.app.Activity
+import android.app.ActivityManager
 import android.content.Context
 import android.content.pm.ActivityInfo
+import android.os.Build
+import android.os.Environment
+import android.os.StatFs
+import android.os.UserManager
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
-import android.app.admin.DevicePolicyManager
-import android.content.pm.PackageManager
-import android.os.Build
-import android.os.UserManager
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.webkit.WebViewCompat
+import android.app.admin.DevicePolicyManager
+import android.content.pm.PackageManager
 import kotlinx.serialization.Serializable
 import uk.nktnet.webviewkiosk.BuildConfig
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -18,22 +21,25 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.states.KeepScreenOnStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
+import java.util.TimeZone
 
 fun setWindowBrightness(context: Context, value: Int) {
     val activity = context as? Activity ?: return
     val window = activity.window
     val layoutParams: WindowManager.LayoutParams = window.attributes
-    if (value < 0) {
-        layoutParams.screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
-    } else {
-        layoutParams.screenBrightness = (value / 100f).coerceIn(0f, 1f)
-    }
+    layoutParams.screenBrightness =
+        if (value < 0) {
+            WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
+        }
+        else {
+            (value / 100f).coerceIn(0f, 1f)
+        }
     window.attributes = layoutParams
 }
 
 fun setDeviceRotation(context: Context, rotation: DeviceRotationOption) {
     val activity = context as? AppCompatActivity ?: return
-    activity.requestedOrientation = when (rotation) {
+    activity.requestedOrientation = when(rotation) {
         DeviceRotationOption.AUTO -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         DeviceRotationOption.ROTATION_0 -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         DeviceRotationOption.ROTATION_90 -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
@@ -68,13 +74,29 @@ data class AppInfo(
 
 @Serializable
 data class DeviceInfo(
-    val androidRelease: String,
-    val androidSdk: Int,
+    val releaseVersion: String,
+    val sdkVersion: Int,
+    val incrementalVersion: String,
     val webViewVersion: String?,
     val screenWidth: Int,
     val screenHeight: Int,
     val screenDensity: Float,
     val isManagedProfile: Boolean?,
+    val timeZone: String,
+    val locale: String,
+    val totalMemory: Long,
+    val totalStorage: Long,
+    val manufacturer: String,
+    val model: String,
+    val brand: String,
+    val device: String,
+    val product: String,
+    val hardware: String,
+    val board: String,
+    val bootloader: String,
+    val securityPatch: String?,
+    val supported32BitAbis: List<String>,
+    val supported64BitAbis: List<String>,
     val buildFingerprint: String
 )
 
@@ -89,8 +111,6 @@ fun getAppInfo(context: Context): AppInfo {
     val packageName = context.packageName
     val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
     val systemSettings = SystemSettings(context)
-
-    val appName = context.applicationInfo.loadLabel(pm).toString()
 
     val versionName = try {
         pm.getPackageInfo(packageName, 0).versionName ?: "N/A"
@@ -118,8 +138,6 @@ fun getAppInfo(context: Context): AppInfo {
         false
     }
 
-    val supportedAbis = Build.SUPPORTED_ABIS.toList()
-
     val installer = try {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             pm.getInstallSourceInfo(packageName).installingPackageName
@@ -131,27 +149,41 @@ fun getAppInfo(context: Context): AppInfo {
         null
     }
 
-    val isDeviceOwner = dpm.isDeviceOwnerApp(packageName)
-    val isLockTaskPermitted = dpm.isLockTaskPermitted(packageName)
-
     return AppInfo(
-        name = appName,
+        name = context.applicationInfo.loadLabel(pm).toString(),
         packageName = packageName,
         versionName = versionName,
         versionCode = versionCode,
         minSdk = BuildConfig.MIN_SDK_VERSION,
         targetSdk = targetSdk,
         isDebug = isDebug,
-        supportedAbis = supportedAbis,
+        supportedAbis = Build.SUPPORTED_ABIS.toList(),
         installer = installer,
-        isDeviceOwner = isDeviceOwner,
-        isLockTaskPermitted = isLockTaskPermitted,
+        isDeviceOwner = dpm.isDeviceOwnerApp(packageName),
+        isLockTaskPermitted = dpm.isLockTaskPermitted(packageName),
         instanceId = systemSettings.appInstanceId
     )
 }
 
 fun getDeviceInfo(context: Context): DeviceInfo {
+    val memInfo = ActivityManager.MemoryInfo()
+    val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+    am.getMemoryInfo(memInfo)
+
+    val stat = StatFs(Environment.getDataDirectory().path)
+
     val um = context.getSystemService(Context.USER_SERVICE) as UserManager
+    val isManagedProfile = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+        um.isManagedProfile
+    } else {
+        null
+    }
+
+    val securityPatch = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        Build.VERSION.SECURITY_PATCH
+    } else {
+        null
+    }
 
     val webViewVersion = try {
         WebViewCompat.getCurrentWebViewPackage(context)?.versionName
@@ -159,25 +191,37 @@ fun getDeviceInfo(context: Context): DeviceInfo {
         null
     }
 
-    val metrics = context.resources.displayMetrics
-    val screenWidth = metrics.widthPixels
-    val screenHeight = metrics.heightPixels
-    val screenDensity = metrics.density
-
-    val isManagedProfile: Boolean? = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        um.isManagedProfile
+    val locale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        context.resources.configuration.locales[0].toString()
     } else {
-        null
+        @Suppress("DEPRECATION")
+        context.resources.configuration.locale.toString()
     }
 
     return DeviceInfo(
-        androidRelease = Build.VERSION.RELEASE,
-        androidSdk = Build.VERSION.SDK_INT,
+        releaseVersion = Build.VERSION.RELEASE,
+        sdkVersion = Build.VERSION.SDK_INT,
+        incrementalVersion = Build.VERSION.INCREMENTAL,
         webViewVersion = webViewVersion,
-        screenWidth = screenWidth,
-        screenHeight = screenHeight,
-        screenDensity = screenDensity,
+        screenWidth = context.resources.displayMetrics.widthPixels,
+        screenHeight = context.resources.displayMetrics.heightPixels,
+        screenDensity = context.resources.displayMetrics.density,
         isManagedProfile = isManagedProfile,
+        timeZone = TimeZone.getDefault().id,
+        locale = locale,
+        totalMemory = memInfo.totalMem,
+        totalStorage = stat.blockSizeLong * stat.blockCountLong,
+        manufacturer = Build.MANUFACTURER,
+        model = Build.MODEL,
+        brand = Build.BRAND,
+        device = Build.DEVICE,
+        product = Build.PRODUCT,
+        hardware = Build.HARDWARE,
+        board = Build.BOARD,
+        bootloader = Build.BOOTLOADER,
+        securityPatch = securityPatch,
+        supported32BitAbis = Build.SUPPORTED_32_BIT_ABIS.toList(),
+        supported64BitAbis = Build.SUPPORTED_64_BIT_ABIS.toList(),
         buildFingerprint = Build.FINGERPRINT
     )
 }
