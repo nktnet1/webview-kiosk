@@ -65,7 +65,6 @@ data class AppInfo(
     val minSdk: Int,
     val targetSdk: Int,
     val isDebug: Boolean,
-    val supportedAbis: List<String>,
     val installer: String?,
     val isDeviceOwner: Boolean,
     val isLockTaskPermitted: Boolean,
@@ -95,6 +94,7 @@ data class DeviceInfo(
     val board: String,
     val bootloader: String,
     val securityPatch: String?,
+    val supportedAbis: List<String>,
     val supported32BitAbis: List<String>,
     val supported64BitAbis: List<String>,
     val buildFingerprint: String
@@ -157,7 +157,6 @@ fun getAppInfo(context: Context): AppInfo {
         minSdk = BuildConfig.MIN_SDK_VERSION,
         targetSdk = targetSdk,
         isDebug = isDebug,
-        supportedAbis = Build.SUPPORTED_ABIS.toList(),
         installer = installer,
         isDeviceOwner = dpm.isDeviceOwnerApp(packageName),
         isLockTaskPermitted = dpm.isLockTaskPermitted(packageName),
@@ -220,6 +219,7 @@ fun getDeviceInfo(context: Context): DeviceInfo {
         board = Build.BOARD,
         bootloader = Build.BOOTLOADER,
         securityPatch = securityPatch,
+        supportedAbis = Build.SUPPORTED_ABIS.toList(),
         supported32BitAbis = Build.SUPPORTED_32_BIT_ABIS.toList(),
         supported64BitAbis = Build.SUPPORTED_64_BIT_ABIS.toList(),
         buildFingerprint = Build.FINGERPRINT
