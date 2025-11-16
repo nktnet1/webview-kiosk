@@ -101,6 +101,14 @@ data class MqttGetSettingsCommand(
 }
 
 @Serializable
+@SerialName("get_system_info")
+data class MqttGetSystemInfoCommand(
+    override val identifier: String? = null,
+) : MqttGetBaseCommand() {
+    override fun toString() = "Get System Info"
+}
+
+@Serializable
 @SerialName("error")
 data class MqttMqttCommandError(
     val error: String = "unknown command",

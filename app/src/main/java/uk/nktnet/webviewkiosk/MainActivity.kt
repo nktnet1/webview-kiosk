@@ -34,6 +34,7 @@ import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.handleMainIntent
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetSettingsCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetStatusCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetSystemInfoCommand
 import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
@@ -43,6 +44,7 @@ import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
 import uk.nktnet.webviewkiosk.utils.getLocalUrl
+import uk.nktnet.webviewkiosk.utils.getSystemInfo
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handlePreviewKeyUnlockEvent
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
@@ -157,11 +159,18 @@ class MainActivity : AppCompatActivity() {
                 MqttManager.commands.collect { command ->
                     when (command) {
                         is MqttGetStatusCommand -> {
-                            MqttManager.publishStatusResponse(command, getStatus(context))
+                            MqttManager.publishStatusResponse(
+                                command, getStatus(context)
+                            )
                         }
                         is MqttGetSettingsCommand -> {
                             val settings = userSettings.exportJson()
                             MqttManager.publishSettingsResponse(command, settings)
+                        }
+                        is MqttGetSystemInfoCommand -> {
+                            MqttManager.publishSystemInfoResponse(
+                                command, getSystemInfo(context)
+                            )
                         }
                         else -> Unit
                     }

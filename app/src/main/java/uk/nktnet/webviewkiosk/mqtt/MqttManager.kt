@@ -28,14 +28,17 @@ import uk.nktnet.webviewkiosk.mqtt.messages.MqttEventMessage
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetBaseCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetSettingsCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetStatusCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetSystemInfoCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttLockEvent
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttMqttCommandError
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttResponseJsonParser
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttResponseMessage
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttSettingsResponse
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttStatusResponse
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttSystemInfoResponse
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttUnlockEvent
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttUrlVisitedEvent
+import uk.nktnet.webviewkiosk.utils.SystemInfo
 import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
 import uk.nktnet.webviewkiosk.utils.filterSettingsJson
 import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
@@ -318,6 +321,21 @@ object MqttManager {
         publishResponseMessage(
             settingsMessage,
             settingsCommand
+        )
+    }
+
+    fun publishSystemInfoResponse(
+        systemInfoCommand: MqttGetSystemInfoCommand,
+        systemInfo: SystemInfo
+    ) {
+        val statusMessage = MqttSystemInfoResponse(
+            identifier = systemInfoCommand.identifier,
+            appInstanceId = config.appInstanceId,
+            data = systemInfo
+        )
+        publishResponseMessage(
+            statusMessage,
+            systemInfoCommand,
         )
     }
 
