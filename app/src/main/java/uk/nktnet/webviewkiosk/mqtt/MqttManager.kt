@@ -425,7 +425,7 @@ object MqttManager {
                     val command = MqttCommandJsonParser.decodeFromString<MqttCommandMessage>(payloadStr)
 
                     when (command) {
-                        is MqttGetStatusCommand -> {
+                        is MqttGetBaseCommand -> {
                             @SuppressLint("NewApi")
                             if (publish.responseTopic.isPresent) {
                                 command.responseTopic = publish.responseTopic.get().toString()
