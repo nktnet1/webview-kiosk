@@ -152,7 +152,7 @@ fun SettingsAboutScreen(navController: NavController) {
         InfoItem(label = "Security Patch", value = systemInfo.device.securityPatch ?: "N/A")
         InfoItem(
             label = "Supported ABIs",
-            value = systemInfo.app.supportedAbis.joinToString(", ")
+            value = systemInfo.device.supportedAbis.joinToString(", ")
                 .ifEmpty { "N/A" }
         )
         InfoItem(
