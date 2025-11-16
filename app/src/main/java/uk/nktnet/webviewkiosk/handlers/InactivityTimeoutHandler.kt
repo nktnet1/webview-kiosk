@@ -25,10 +25,14 @@ fun InactivityTimeoutHandler(
     userSettings: UserSettings,
     customLoadUrl: (newUrl: String) -> Unit
 ) {
-    val timeoutDuration = max(userSettings.resetOnInactivitySeconds, Constants.MIN_INACTIVITY_TIMEOUT_SECONDS) * 1000L
-    val countdownStartDuration = timeoutDuration - Constants.INACTIVITY_COUNTDOWN_SECONDS * 1000L
+    val timeoutDuration = max(
+        userSettings.resetOnInactivitySeconds,
+        Constants.MIN_INACTIVITY_TIMEOUT_SECONDS
+    ) * 1000L
 
+    val countdownStartDuration = timeoutDuration - Constants.INACTIVITY_COUNTDOWN_SECONDS * 1000L
     var countdown by remember { mutableIntStateOf(RESET_TIMEOUT_INT) }
+
     val lastInteraction by InactivityStateSingleton.lastInteractionState
 
     val handleTimeoutReached = {
