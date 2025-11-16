@@ -1,0 +1,6 @@
+## Changes
+
+- feat: dim screen on inactivity timeout
+- feat: additional system info -> device
+- fix: prevent settings back button to land user in empty screen
+- fix: use rotation.name instead of rotation.label when exporting (e.g. Auto -> AUTO)

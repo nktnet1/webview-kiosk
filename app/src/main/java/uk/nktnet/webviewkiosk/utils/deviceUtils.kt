@@ -23,6 +23,16 @@ import uk.nktnet.webviewkiosk.states.KeepScreenOnStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
 import java.util.TimeZone
 
+fun getWindowBrightness(context: Context): Int {
+    val activity = context as? Activity ?: return -1
+    val brightness = activity.window.attributes.screenBrightness
+    return if (brightness < 0) {
+        -1
+    } else {
+        (brightness * 100).toInt().coerceIn(0, 100)
+    }
+}
+
 fun setWindowBrightness(context: Context, value: Int) {
     val activity = context as? Activity ?: return
     val window = activity.window
@@ -30,8 +40,7 @@ fun setWindowBrightness(context: Context, value: Int) {
     layoutParams.screenBrightness =
         if (value < 0) {
             WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
-        }
-        else {
+        } else {
             (value / 100f).coerceIn(0f, 1f)
         }
     window.attributes = layoutParams

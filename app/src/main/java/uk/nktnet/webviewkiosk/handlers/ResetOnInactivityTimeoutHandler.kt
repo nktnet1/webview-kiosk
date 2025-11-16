@@ -7,6 +7,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -20,15 +21,21 @@ import kotlin.math.max
 const val RESET_TIMEOUT_INT = -1
 
 @Composable
-fun InactivityTimeoutHandler(
-    systemSettings: SystemSettings,
-    userSettings: UserSettings,
+fun ResetOnInactivityTimeoutHandler(
     customLoadUrl: (newUrl: String) -> Unit
 ) {
-    val timeoutDuration = max(userSettings.resetOnInactivitySeconds, Constants.MIN_INACTIVITY_TIMEOUT_SECONDS) * 1000L
-    val countdownStartDuration = timeoutDuration - Constants.INACTIVITY_COUNTDOWN_SECONDS * 1000L
+    val context = LocalContext.current
+    val userSettings = remember { UserSettings(context) }
+    val systemSettings = remember { SystemSettings(context) }
 
+    val timeoutDuration = max(
+        userSettings.resetOnInactivitySeconds,
+        Constants.MIN_INACTIVITY_TIMEOUT_SECONDS
+    ) * 1000L
+
+    val countdownStartDuration = timeoutDuration - Constants.INACTIVITY_COUNTDOWN_SECONDS * 1000L
     var countdown by remember { mutableIntStateOf(RESET_TIMEOUT_INT) }
+
     val lastInteraction by InactivityStateSingleton.lastInteractionState
 
     val handleTimeoutReached = {
@@ -40,7 +47,7 @@ fun InactivityTimeoutHandler(
     LaunchedEffect(lastInteraction) {
         countdown = RESET_TIMEOUT_INT
         while (true) {
-            delay(200L)
+            delay(500L)
             val elapsed = System.currentTimeMillis() - lastInteraction
             if (elapsed >= countdownStartDuration) {
                 countdown = Constants.INACTIVITY_COUNTDOWN_SECONDS
@@ -49,6 +56,7 @@ fun InactivityTimeoutHandler(
                     countdown--
                 }
                 handleTimeoutReached()
+                break
             }
         }
     }

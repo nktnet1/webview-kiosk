@@ -25,15 +25,29 @@ The navigation history will also be cleared.
 
 Number of seconds of inactivity before the app resets to the home URL.
 
+When there is 5 seconds left, a warning countdown will be shown on
+the screen.
+
 The navigation history will be cleared when resetting.
 
 To disable, use the value `0`. 
 
-**Minimum:** 30
+**Minimum:** 10
 
 **Default:** 0
 
-## 4. Refresh on Loading Error Interval (seconds)
+## 4. Dim Screen On Inactivity (seconds)
+
+Number of seconds of inactivity before the screen is dimmed (brightness = 0).
+
+This will set the app brightness to 0, and will restore the brightness to
+your `device -> brightness` setting upon new user interactions.
+
+**Minimum:** 10
+
+**Default:** 0
+
+## 5. Refresh on Loading Error Interval (seconds)
 
 Interval in seconds between automatic refresh attempts when a page fails
 to load. This usually indicate the inability to connect to the server,
