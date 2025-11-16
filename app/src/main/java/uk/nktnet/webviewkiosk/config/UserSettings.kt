@@ -280,6 +280,13 @@ class UserSettings(val context: Context) {
         0,
         min = 0,
     )
+    var dimScreenOnInactivitySeconds by intPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.WebLifecycle.DIM_SCREEN_ON_INACTIVITY_SECONDS,
+        0,
+        min = 0,
+    )
     var refreshOnLoadingErrorIntervalSeconds by intPref(
         getRestrictions,
         prefs,
@@ -474,6 +481,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, lockOnLaunch)
             put(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, resetOnLaunch)
             put(UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
+            put(UserSettingsKeys.WebLifecycle.DIM_SCREEN_ON_INACTIVITY_SECONDS, dimScreenOnInactivitySeconds)
             put(UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS, refreshOnLoadingErrorIntervalSeconds)
 
             put(UserSettingsKeys.Appearance.THEME, theme.name)
@@ -565,6 +573,7 @@ class UserSettings(val context: Context) {
             lockOnLaunch = json.optBoolean(UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, lockOnLaunch)
             resetOnLaunch = json.optBoolean(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, resetOnLaunch)
             resetOnInactivitySeconds = json.optInt(UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
+            dimScreenOnInactivitySeconds = json.optInt(UserSettingsKeys.WebLifecycle.DIM_SCREEN_ON_INACTIVITY_SECONDS, dimScreenOnInactivitySeconds)
             refreshOnLoadingErrorIntervalSeconds = json.optInt(UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS, refreshOnLoadingErrorIntervalSeconds)
 
             theme = ThemeOption.fromString(json.optString(UserSettingsKeys.Appearance.THEME, theme.name))
