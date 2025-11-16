@@ -20,7 +20,7 @@ import kotlin.math.max
 const val RESET_TIMEOUT_INT = -1
 
 @Composable
-fun InactivityTimeoutHandler(
+fun ResetOnInactivityTimeoutHandler(
     systemSettings: SystemSettings,
     userSettings: UserSettings,
     customLoadUrl: (newUrl: String) -> Unit
