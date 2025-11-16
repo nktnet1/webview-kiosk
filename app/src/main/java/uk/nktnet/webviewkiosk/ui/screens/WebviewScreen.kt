@@ -30,8 +30,9 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.AddressBarModeOption
 import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
 import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
+import uk.nktnet.webviewkiosk.handlers.DimScreenOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackPressHandler
-import uk.nktnet.webviewkiosk.handlers.InactivityTimeoutHandler
+import uk.nktnet.webviewkiosk.handlers.ResetOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.KioskControlPanel
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
@@ -409,7 +410,11 @@ fun WebviewScreen(navController: NavController) {
     }
 
     if (userSettings.resetOnInactivitySeconds >= Constants.MIN_INACTIVITY_TIMEOUT_SECONDS) {
-        InactivityTimeoutHandler(systemSettings, userSettings, ::customLoadUrl)
+        ResetOnInactivityTimeoutHandler(::customLoadUrl)
+    }
+
+    if (userSettings.dimScreenOnInactivitySeconds >= Constants.MIN_INACTIVITY_TIMEOUT_SECONDS) {
+        DimScreenOnInactivityTimeoutHandler()
     }
 
     KioskControlPanel(navController, 10, ::customLoadUrl)
