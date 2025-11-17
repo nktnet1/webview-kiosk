@@ -32,6 +32,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
+import uk.nktnet.webviewkiosk.states.UserInteractionModifier
 import kotlin.math.roundToInt
 
 data class Bounds(val minX: Float, val minY: Float, val maxX: Float, val maxY: Float)
@@ -196,7 +197,8 @@ fun FloatingToolbar(
 
             DropdownMenu(
                 expanded = menuExpanded,
-                onDismissRequest = { menuExpanded = false }
+                onDismissRequest = { menuExpanded = false },
+                modifier = UserInteractionModifier
             ) {
                 MenuItem(
                     "Home",
