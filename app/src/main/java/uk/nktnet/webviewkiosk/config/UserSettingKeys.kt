@@ -129,10 +129,18 @@ object UserSettingsKeys {
                 }
 
                 object Settings {
-                    const val TOPIC = "mqtt.subscribe.settings"
+                    const val TOPIC = "mqtt.subscribe.settings.topic"
                     const val QOS = "mqtt.subscribe.settings.qos"
                     const val RETAIN_HANDLING = "mqtt.subscribe.settings.retain_handling"
                     const val RETAIN_AS_PUBLISHED = "mqtt.subscribe.settings.retain_as_published"
+                }
+
+
+                object Request {
+                    const val TOPIC = "mqtt.subscribe.request.topic"
+                    const val QOS = "mqtt.subscribe.request.qos"
+                    const val RETAIN_HANDLING = "mqtt.subscribe.request.retain_handling"
+                    const val RETAIN_AS_PUBLISHED = "mqtt.subscribe.request.retain_as_published"
                 }
             }
         }

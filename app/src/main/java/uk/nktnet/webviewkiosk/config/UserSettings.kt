@@ -589,12 +589,40 @@ class UserSettings(val context: Context) {
         MqttRetainHandlingOption.DO_NOT_SEND.name,
         fromString = MqttRetainHandlingOption::fromString
     )
+
     var mqttSubscribeSettingsRetainAsPublished by booleanPref(
         getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_AS_PUBLISHED,
         false,
     )
+    var mqttSubscribeRequestTopic by stringPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Request.TOPIC,
+        "wk/request"
+    )
+    var mqttSubscribeRequestQos by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Request.QOS,
+        MqttQosOption.AT_MOST_ONCE.name,
+        fromString = MqttQosOption::fromString
+    )
+    var mqttSubscribeRequestRetainHandling by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_HANDLING,
+        MqttRetainHandlingOption.DO_NOT_SEND.name,
+        fromString = MqttRetainHandlingOption::fromString
+    )
+    var mqttSubscribeRequestRetainAsPublished by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_AS_PUBLISHED,
+        false,
+    )
+
 
     var mqttWillTopic by stringPref(
         getRestrictions,
@@ -793,11 +821,14 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS, mqttSubscribeCommandQos.code)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING, mqttSubscribeCommandRetainHandling.code)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_AS_PUBLISHED, mqttSubscribeCommandRetainAsPublished)
-            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_AS_PUBLISHED, mqttSubscribeCommandRetainAsPublished)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.TOPIC, mqttSubscribeSettingsTopic)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.QOS, mqttSubscribeSettingsQos.code)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_HANDLING, mqttSubscribeSettingsRetainHandling.code)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_AS_PUBLISHED, mqttSubscribeSettingsRetainAsPublished)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.TOPIC, mqttSubscribeRequestTopic)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.QOS, mqttSubscribeRequestQos.code)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_HANDLING, mqttSubscribeRequestRetainHandling.code)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_AS_PUBLISHED, mqttSubscribeRequestRetainAsPublished)
             put(UserSettingsKeys.Mqtt.Will.TOPIC, mqttWillTopic)
             put(UserSettingsKeys.Mqtt.Will.QOS, mqttWillQos.code)
             put(UserSettingsKeys.Mqtt.Will.PAYLOAD, mqttWillPayload)
@@ -953,6 +984,14 @@ class UserSettings(val context: Context) {
                 json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_HANDLING, mqttSubscribeSettingsRetainHandling.name)
             )
             mqttSubscribeSettingsRetainAsPublished = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_AS_PUBLISHED, mqttSubscribeSettingsRetainAsPublished)
+            mqttSubscribeRequestTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.TOPIC, mqttSubscribeRequestTopic)
+            mqttSubscribeRequestQos = MqttQosOption.fromString(
+                json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.QOS, mqttSubscribeRequestQos.name)
+            )
+            mqttSubscribeRequestRetainHandling = MqttRetainHandlingOption.fromString(
+                json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_HANDLING, mqttSubscribeRequestRetainHandling.name)
+            )
+            mqttSubscribeRequestRetainAsPublished = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_AS_PUBLISHED, mqttSubscribeRequestRetainAsPublished)
             mqttWillTopic = json.optString(UserSettingsKeys.Mqtt.Will.TOPIC, mqttWillTopic)
             mqttWillQos = MqttQosOption.fromString(
                 json.optString(UserSettingsKeys.Mqtt.Will.QOS, mqttWillQos.name)
