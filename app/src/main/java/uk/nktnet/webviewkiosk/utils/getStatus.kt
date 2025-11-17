@@ -8,7 +8,7 @@ import android.os.Build
 import android.os.PowerManager
 import kotlinx.serialization.Serializable
 import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
+import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 
 @Serializable
 data class WebviewKioskStatus(
@@ -39,7 +39,7 @@ fun getStatus(context: Context): WebviewKioskStatus {
 
     return WebviewKioskStatus(
         isLocked = getIsLocked(activityManager),
-        lastInteractionTime = InactivityStateSingleton.lastInteractionState.value,
+        lastInteractionTime = UserInteractionStateSingleton.lastInteractionState.value,
         isInteractive = pm.isInteractive,
         batteryPercentage = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY).coerceIn(0, 100),
         currentUrl = systemSettings.currentUrl

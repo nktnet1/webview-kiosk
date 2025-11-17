@@ -24,6 +24,7 @@ import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.WebViewInset
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
+import uk.nktnet.webviewkiosk.states.UserInteractionModifier
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
@@ -114,13 +115,14 @@ fun AddressBar(
             }
         )
 
-        val showMenu =
+        val showMenu = (
             userSettings.allowBackwardsNavigation
-                || userSettings.allowRefresh
-                || userSettings.allowGoHome
-                || userSettings.allowHistoryAccess
-                || userSettings.allowBookmarkAccess
-                || userSettings.allowLocalFiles
+            || userSettings.allowRefresh
+            || userSettings.allowGoHome
+            || userSettings.allowHistoryAccess
+            || userSettings.allowBookmarkAccess
+            || userSettings.allowLocalFiles
+        )
 
         if (showMenu) {
             Box(
@@ -146,6 +148,7 @@ fun AddressBar(
                 DropdownMenu(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
+                    modifier = UserInteractionModifier
                 ) {
                     if (userSettings.allowBackwardsNavigation) {
                         DropdownMenuItem(

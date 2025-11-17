@@ -15,7 +15,7 @@ import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
+import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import kotlin.math.max
 
 const val RESET_TIMEOUT_INT = -1
@@ -36,12 +36,12 @@ fun ResetOnInactivityTimeoutHandler(
     val countdownStartDuration = timeoutDuration - Constants.INACTIVITY_COUNTDOWN_SECONDS * 1000L
     var countdown by remember { mutableIntStateOf(RESET_TIMEOUT_INT) }
 
-    val lastInteraction by InactivityStateSingleton.lastInteractionState
+    val lastInteraction by UserInteractionStateSingleton.lastInteractionState
 
     val handleTimeoutReached = {
         systemSettings.clearHistory()
         customLoadUrl(userSettings.homeUrl)
-        InactivityStateSingleton.onUserInteraction()
+        UserInteractionStateSingleton.onUserInteraction()
     }
 
     LaunchedEffect(lastInteraction) {
