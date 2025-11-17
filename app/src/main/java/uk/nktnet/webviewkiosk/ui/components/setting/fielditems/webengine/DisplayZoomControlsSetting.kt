@@ -13,7 +13,10 @@ fun DisplayZoomControlsSetting() {
 
     BooleanSettingFieldItem(
         label = "Display Zoom Controls",
-        infoText = "Show zoom in/out buttons on the WebView when zoom is enabled.",
+        infoText = """
+            Sets whether the WebView should display on-screen zoom controls
+            when using the built-in zoom mechanisms.
+        """.trimIndent(),
         initialValue = userSettings.displayZoomControls,
         restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.DISPLAY_ZOOM_CONTROLS),
         onSave = { userSettings.displayZoomControls = it }

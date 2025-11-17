@@ -9,30 +9,26 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldItem
 
 @Composable
-fun ResetOnInactivitySecondsSetting() {
+fun DimScreenOnInactivitySecondsSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
 
     NumberSettingFieldItem(
-        label = "Reset on Inactivity (seconds)",
+        label = "Dim Screen on Inactivity (seconds)",
         infoText = """
-            Number of seconds of inactivity before the app resets to the home URL.
+            Number of seconds of inactivity before the screen is dimmed.
 
-            When there is 5 seconds left, a warning countdown will be shown on
-            the screen.
-
-            User interactions the screen will reset the timer.
-
-            The navigation history will be cleared when resetting.
+            This will set the brightness to 0, and will restore the brightness to
+            your device -> brightness setting upon new user interactions.
 
             Minimum: ${Constants.MIN_INACTIVITY_TIMEOUT_SECONDS}
 
-            To disable, use the value 0. 
+            To disable, use the value 0.
         """.trimIndent(),
-        placeholder = "e.g. 3600 (for 1 hour)",
-        initialValue = userSettings.resetOnInactivitySeconds,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS),
+        placeholder = "e.g. 120",
+        initialValue = userSettings.dimScreenOnInactivitySeconds,
+        restricted = userSettings.isRestricted(UserSettingsKeys.WebLifecycle.DIM_SCREEN_ON_INACTIVITY_SECONDS),
         min = Constants.MIN_INACTIVITY_TIMEOUT_SECONDS,
-        onSave = { userSettings.resetOnInactivitySeconds = it }
+        onSave = { userSettings.dimScreenOnInactivitySeconds = it }
     )
 }

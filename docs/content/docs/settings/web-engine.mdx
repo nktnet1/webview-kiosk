@@ -93,29 +93,66 @@ When enabled, the WebView will use a viewport wide enough to fit the content as 
 
 ## 9. Load With Overview Mode
 
-When enabled, the WebView scales the page so that the content fits on screen initially.  
+When enabled, the WebView scales the page so that the content fits on screen
+initially.
 
 **Android API:** [WebSettings#setLoadWithOverviewMode(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setLoadWithOverviewMode(boolean))
 
 **Default:** true
 
-## 10. Zoom Controls
+## 10. Zoom
 
-### 10.1. Enable Zoom
+### 10.1. Support Zoom
 
-Allows pinch-to-zoom gestures.  
+Sets whether the WebView should support zooming using its on-screen zoom
+controls and gestures.
+
+**Android API:** [WebSettings#setSupportZoom(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setSupportZoom(boolean))
+
+**Default:** true
+
+### 10.2. Built In Zoom Controls
+
+Sets whether the WebView should use its built-in zoom mechanisms.
+
+The built-in zoom mechanisms comprise on-screen zoom controls, which are
+displayed over the WebView's content, and the use of a pinch gesture to
+control zooming.
 
 **Android API:** [WebSettings#setBuiltInZoomControls(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setBuiltInZoomControls(boolean))
 
 **Default:** true
 
-### 10.2. Display Zoom Controls
+### 10.3. Display Zoom Controls
 
-Shows on-screen zoom buttons.  
+Sets whether the WebView should display on-screen zoom controls when using the
+built-in zoom mechanisms.
 
 **Android API:** [WebSettings#setDisplayZoomControls(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setDisplayZoomControls(boolean))
 
 **Default:** false
+
+### 10.4. Initial Scale
+
+Sets the initial scale for this WebView as a percentage. 0 means default.
+
+The behavior for the default scale depends on the state of
+- useWideViewPort
+- loadWithOverviewMode
+
+If the content fits into the WebView control by width, the zoom is set to 100%.
+
+For wide content, the behaviour depends on the state of loadWithOverviewMode.
+If its value is true, the content will be zoomed out to be fit by width into
+the WebView control, otherwise not.
+
+If initial scale is greater than 0, WebView starts with this value as initial
+scale. Please note that unlike the scale properties in the viewport meta tag,
+this method doesn't take the screen density into account.
+
+**Android API:** [WebView#setInitialScale(int)](https://developer.android.com/reference/android/webkit/WebView#setInitialScale(int))
+
+**Default:** 0
 
 ## 11. File Access
 
@@ -182,3 +219,32 @@ Configure the action to take when an SSL Error is received.
 | Proceed  | Always proceeds despite SSL errors (dangerous, NOT RECOMMENDED). |
 
 **Default:** Block
+
+## 14. Mixed Content Mode
+
+Configures the WebView's behavior when a secure origin attempts to load
+a resource from an insecure origin.
+
+| Mode               | Description |
+|--------------------|-------------|
+| Never Allow        | Blocks any mixed content from insecure origins. This is the safest and recommended mode. |
+| Compatibility Mode | Allows mixed content in a backward-compatible way, depending on Android version. Use with caution. |
+| Always Allow       | Loads mixed content from insecure origins without restriction. Strongly discouraged for security reasons. |
+
+**Android API:** [WebSettings#setMixedContentMode(int)](https://developer.android.com/reference/android/webkit/WebSettings#setMixedContentMode(int))
+
+**Default:** Never Allow
+
+## 15. Over Scroll Mode
+
+Configures the WebView's behavior when the user scrolls beyond the content boundaries.
+
+| Mode               | Description |
+|--------------------|-------------|
+| Always             | Allows over-scroll effect regardless of content size. |
+| If Content Scrolls | Allow over-scrolling only if the view content is larger than the container. |
+| Never              | Prevents any over-scroll effect. |
+
+**Android API:** [WebView#setOverScrollMode(int)](https://developer.android.com/reference/android/webkit/WebView#setOverScrollMode(int))
+
+**Default:** If Content Scrolls

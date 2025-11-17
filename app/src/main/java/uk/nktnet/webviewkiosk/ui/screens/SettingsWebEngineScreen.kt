@@ -33,11 +33,15 @@ fun SettingsWebEngineScreen(navController: NavController) {
         LayoutAlgorithmSetting()
         UseWideViewPortSetting()
         LoadWithOverviewModeSetting()
-        EnableZoomSetting()
+        SupportZoomSetting()
+        BuiltInZoomControlsSetting()
         DisplayZoomControlsSetting()
+        InitialScaleSetting()
         AllowFileAccessFromFileURLsSetting()
         AllowUniversalAccessFromFileURLsSetting()
         MediaPlaybackRequiresUserGestureSetting()
         SslErrorModeSetting()
+        MixedContentModeSetting()
+        OverScrollModeSetting()
     }
 }

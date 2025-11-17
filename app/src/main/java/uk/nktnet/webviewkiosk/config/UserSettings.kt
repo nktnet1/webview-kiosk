@@ -195,12 +195,30 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE,
         true
     )
-    var enableZoom by booleanPref(getRestrictions, prefs, UserSettingsKeys.WebEngine.ENABLE_ZOOM, true)
+    var supportZoom by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.SUPPORT_ZOOM,
+        true
+    )
+    var builtInZoomControls by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.BUILT_IN_ZOOM_CONTROLS,
+        true
+    )
     var displayZoomControls by booleanPref(
         getRestrictions,
         prefs,
         UserSettingsKeys.WebEngine.DISPLAY_ZOOM_CONTROLS,
         false
+    )
+    var initialScale by intPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.INITIAL_SCALE,
+        0,
+        min = 0,
     )
     var allowFileAccessFromFileURLs by booleanPref(
         getRestrictions,
@@ -227,6 +245,20 @@ class UserSettings(val context: Context) {
         SslErrorModeOption.BLOCK.name,
         fromString = SslErrorModeOption::fromString
     )
+    var mixedContentMode by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.MIXED_CONTENT_MODE,
+        MixedContentModeOption.NEVER_ALLOW.name,
+        fromString = MixedContentModeOption::fromString
+    )
+    var overScrollMode by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.OVER_SCROLL_MODE,
+        OverScrollModeOption.IF_CONTENT_SCROLLS.name,
+        fromString = OverScrollModeOption::fromString
+    )
 
     // Web Lifecycle
     var lockOnLaunch by booleanPref(
@@ -245,13 +277,22 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS,
-        0
+        0,
+        min = 0,
+    )
+    var dimScreenOnInactivitySeconds by intPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.WebLifecycle.DIM_SCREEN_ON_INACTIVITY_SECONDS,
+        0,
+        min = 0,
     )
     var refreshOnLoadingErrorIntervalSeconds by intPref(
         getRestrictions,
         prefs,
         UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS,
-        0
+        0,
+        min = 0,
     )
 
     // Appearance
@@ -368,7 +409,8 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH,
-        0
+        0,
+        min = 0,
     )
     var enableBatteryApi by booleanPref(
         getRestrictions,
@@ -425,16 +467,21 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebEngine.USER_AGENT, userAgent)
             put(UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT, useWideViewPort)
             put(UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE, loadWithOverviewMode)
-            put(UserSettingsKeys.WebEngine.ENABLE_ZOOM, enableZoom)
+            put(UserSettingsKeys.WebEngine.SUPPORT_ZOOM, supportZoom)
+            put(UserSettingsKeys.WebEngine.BUILT_IN_ZOOM_CONTROLS, builtInZoomControls)
             put(UserSettingsKeys.WebEngine.DISPLAY_ZOOM_CONTROLS, displayZoomControls)
+            put(UserSettingsKeys.WebEngine.INITIAL_SCALE, initialScale)
             put(UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS, allowFileAccessFromFileURLs)
             put(UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, allowUniversalAccessFromFileURLs)
             put(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
             put(UserSettingsKeys.WebEngine.SSL_ERROR_MODE, sslErrorMode.name)
+            put(UserSettingsKeys.WebEngine.MIXED_CONTENT_MODE, mixedContentMode.name)
+            put(UserSettingsKeys.WebEngine.OVER_SCROLL_MODE, overScrollMode.name)
 
             put(UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, lockOnLaunch)
             put(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, resetOnLaunch)
             put(UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
+            put(UserSettingsKeys.WebLifecycle.DIM_SCREEN_ON_INACTIVITY_SECONDS, dimScreenOnInactivitySeconds)
             put(UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS, refreshOnLoadingErrorIntervalSeconds)
 
             put(UserSettingsKeys.Appearance.THEME, theme.name)
@@ -445,7 +492,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
 
             put(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)
-            put(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.label)
+            put(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.name)
             put(UserSettingsKeys.Device.ALLOW_CAMERA, allowCamera)
             put(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             put(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
@@ -506,18 +553,27 @@ class UserSettings(val context: Context) {
             userAgent = json.optString(UserSettingsKeys.WebEngine.USER_AGENT, userAgent)
             useWideViewPort = json.optBoolean(UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT, useWideViewPort)
             loadWithOverviewMode = json.optBoolean(UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE, loadWithOverviewMode)
-            enableZoom = json.optBoolean(UserSettingsKeys.WebEngine.ENABLE_ZOOM, enableZoom)
+            supportZoom = json.optBoolean(UserSettingsKeys.WebEngine.SUPPORT_ZOOM, supportZoom)
+            builtInZoomControls = json.optBoolean(UserSettingsKeys.WebEngine.BUILT_IN_ZOOM_CONTROLS, builtInZoomControls)
             displayZoomControls = json.optBoolean(UserSettingsKeys.WebEngine.DISPLAY_ZOOM_CONTROLS, displayZoomControls)
+            initialScale = json.optInt(UserSettingsKeys.WebEngine.INITIAL_SCALE, initialScale)
             allowFileAccessFromFileURLs = json.optBoolean(UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS, allowFileAccessFromFileURLs)
             allowUniversalAccessFromFileURLs = json.optBoolean(UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, allowUniversalAccessFromFileURLs)
             mediaPlaybackRequiresUserGesture = json.optBoolean(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
             sslErrorMode = SslErrorModeOption.fromString(
                 json.optString(UserSettingsKeys.WebEngine.SSL_ERROR_MODE, sslErrorMode.name)
             )
+            mixedContentMode = MixedContentModeOption.fromString(
+                json.optString(UserSettingsKeys.WebEngine.MIXED_CONTENT_MODE, mixedContentMode.name)
+            )
+            overScrollMode = OverScrollModeOption.fromString(
+                json.optString(UserSettingsKeys.WebEngine.OVER_SCROLL_MODE, overScrollMode.name)
+            )
 
             lockOnLaunch = json.optBoolean(UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, lockOnLaunch)
             resetOnLaunch = json.optBoolean(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, resetOnLaunch)
             resetOnInactivitySeconds = json.optInt(UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
+            dimScreenOnInactivitySeconds = json.optInt(UserSettingsKeys.WebLifecycle.DIM_SCREEN_ON_INACTIVITY_SECONDS, dimScreenOnInactivitySeconds)
             refreshOnLoadingErrorIntervalSeconds = json.optInt(UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS, refreshOnLoadingErrorIntervalSeconds)
 
             theme = ThemeOption.fromString(json.optString(UserSettingsKeys.Appearance.THEME, theme.name))
@@ -530,7 +586,7 @@ class UserSettings(val context: Context) {
             blockedMessage = json.optString(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
 
             keepScreenOn = json.optBoolean(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)
-            rotation = DeviceRotationOption.fromString(json.optString(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.label))
+            rotation = DeviceRotationOption.fromString(json.optString(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.name))
             allowCamera = json.optBoolean(UserSettingsKeys.Device.ALLOW_CAMERA, allowCamera)
             allowMicrophone = json.optBoolean(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             allowLocation = json.optBoolean(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)

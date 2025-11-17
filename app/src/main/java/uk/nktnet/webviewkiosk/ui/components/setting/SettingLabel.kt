@@ -43,7 +43,11 @@ fun SettingLabel(
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (showBackIcon) {
                 IconButton(
-                    onClick = { navController.popBackStack() },
+                    onClick = {
+                        if (!navController.popBackStack()) {
+                            navigateToWebViewScreen(navController)
+                        }
+                    },
                     modifier = Modifier
                         .padding(end = 1.dp)
                         .offset(-ICON_OFFSET.dp)
