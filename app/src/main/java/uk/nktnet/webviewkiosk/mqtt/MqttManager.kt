@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.mqtt
 
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttSettingsMessage
 import android.annotation.SuppressLint
 import com.hivemq.client.mqtt.MqttClient
 import com.hivemq.client.mqtt.MqttClientState
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -66,8 +68,8 @@ object MqttManager {
     private val _commands = MutableSharedFlow<MqttCommandMessage>(extraBufferCapacity = 100)
     val commands: SharedFlow<MqttCommandMessage> get() = _commands
 
-    private val _settings = MutableSharedFlow<String>(extraBufferCapacity = 100)
-    val settings: SharedFlow<String> get() = _settings
+    private val _settings = MutableSharedFlow<MqttSettingsMessage>(extraBufferCapacity = 100)
+    val settings: SharedFlow<MqttSettingsMessage> get() = _settings
 
     private val _requests = MutableSharedFlow<MqttRequestMessage>(extraBufferCapacity = 100)
     val requests: SharedFlow<MqttRequestMessage> get() = _requests
@@ -454,12 +456,25 @@ object MqttManager {
             retainHandling = config.subscribeSettingsRetainHandling,
             retainAsPublished = config.subscribeSettingsRetainAsPublished,
             onMessage = { publish, payloadStr ->
+                val json = Json.parseToJsonElement(payloadStr).jsonObject
+                val identifier = getValueFromPrimitiveJson(payloadStr, "identifier")
+
+                val applyNow = json["applyNow"]?.jsonPrimitive?.booleanOrNull ?: true
+                val showToast = json["showToast"]?.jsonPrimitive?.booleanOrNull ?: true
+                val settingsStr = json["settings"]?.toString() ?: "{}"
+
+                val settingsMessage = MqttSettingsMessage(
+                    identifier = identifier,
+                    applyNow = applyNow,
+                    showToast = showToast,
+                    settings = settingsStr
+                )
                 addDebugLog(
                     "settings received",
-                    "topic: ${publish.topic}\npayload: $payloadStr",
-                    identifier = getValueFromPrimitiveJson(payloadStr, "identifier")
+                    "topic: ${publish.topic}\nsettings: $settingsStr",
+                    identifier = identifier,
                 )
-                scope.launch { _settings.emit(payloadStr) }
+                scope.launch { _settings.emit(settingsMessage) }
             }
         )
 

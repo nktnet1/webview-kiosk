@@ -138,11 +138,21 @@ class MainActivity : AppCompatActivity() {
             val activity = LocalActivity.current
 
             LaunchedEffect(Unit) {
-                MqttManager.settings.collect { payload ->
+                MqttManager.settings.collect { settingsMessage ->
                     if (userSettings.mqttEnabled) {
-                        userSettings.importJson(payload)
-                        updateDeviceSettings(context)
-                        showToast("MQTT: settings updated.")
+                        userSettings.importJson(settingsMessage.settings)
+
+                        if (settingsMessage.applyNow) {
+                            updateDeviceSettings(context)
+                        }
+
+                        if (settingsMessage.showToast) {
+                            if (settingsMessage.applyNow) {
+                                showToast("MQTT: settings applied.")
+                            } else {
+                                showToast("MQTT: settings received - not yet applied.")
+                            }
+                        }
 
                         // Counterintuitive, but this acts as a "Refresh" of the webview screen,
                         // which will recreate + apply settings.
