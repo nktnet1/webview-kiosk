@@ -8,7 +8,7 @@ import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
+import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.utils.setWindowBrightness
 import kotlin.math.max
 
@@ -22,7 +22,7 @@ fun DimScreenOnInactivityTimeoutHandler() {
         Constants.MIN_INACTIVITY_TIMEOUT_SECONDS
     ) * 1000L
 
-    val lastInteraction by InactivityStateSingleton.lastInteractionState
+    val lastInteraction by UserInteractionStateSingleton.lastInteractionState
 
     LaunchedEffect(lastInteraction) {
         setWindowBrightness(context, userSettings.brightness)

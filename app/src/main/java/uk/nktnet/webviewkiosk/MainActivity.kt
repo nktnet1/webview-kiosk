@@ -29,7 +29,7 @@ import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonService
 import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.handleMainIntent
-import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
+import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
@@ -212,7 +212,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onUserInteraction() {
         super.onUserInteraction()
-        InactivityStateSingleton.onUserInteraction()
+        UserInteractionStateSingleton.onUserInteraction()
     }
 
     override fun onStop() {

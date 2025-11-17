@@ -18,6 +18,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.states.UserInteractionModifier
 
 @Composable
 fun BookmarksDialog(
@@ -31,11 +32,11 @@ fun BookmarksDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            modifier = Modifier
+            modifier = UserInteractionModifier
                 .fillMaxSize()
                 .padding(vertical = 16.dp),
             color = MaterialTheme.colorScheme.background,
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
         ) {
             Column(
                 modifier = Modifier
