@@ -58,6 +58,22 @@ fun filterSettingsJson(
     settings: JSONObject,
     filterKeys: Array<JsonElement> = emptyArray()
 ): JsonObject {
+    fun getJsonValue(value: Any?): JsonElement = when (value) {
+        is Boolean -> JsonPrimitive(value)
+        is Number -> JsonPrimitive(value)
+        is String -> JsonPrimitive(value)
+        else -> JsonPrimitive(value.toString())
+    }
+
+    if (filterKeys.isEmpty()) {
+        return buildJsonObject {
+            for (key in settings.keys()) {
+                val value = settings.get(key)
+                put(key, getJsonValue(value))
+            }
+        }
+    }
+
     return buildJsonObject {
         for (keyElem in filterKeys) {
             val keyStr = when (keyElem) {
@@ -98,12 +114,7 @@ fun filterSettingsJson(
                     .map { JsonPrimitive(it) }
                 put(keyStr, JsonArray(array))
             } else {
-                when (value) {
-                    is Boolean -> put(keyStr, JsonPrimitive(value))
-                    is Number -> put(keyStr, JsonPrimitive(value))
-                    is String -> put(keyStr, JsonPrimitive(value))
-                    else -> put(keyStr, JsonPrimitive(value.toString()))
-                }
+                put(keyStr, getJsonValue(value))
             }
         }
     }

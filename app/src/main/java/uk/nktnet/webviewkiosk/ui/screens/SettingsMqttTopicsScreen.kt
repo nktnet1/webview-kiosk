@@ -44,6 +44,11 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
             "React to setting changes from broker",
             Screen.SettingsMqttTopicsSubscribeSettings.route
         ),
+        Triple(
+            "Request",
+            "React to requests from broker",
+            Screen.SettingsMqttTopicsSubscribeRequest.route
+        ),
     )
 
     Column(

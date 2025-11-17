@@ -25,12 +25,14 @@ import uk.nktnet.webviewkiosk.mqtt.messages.MqttCommandJsonParser
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttCommandMessage
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttEventJsonParser
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttEventMessage
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetBaseCommand
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetSettingsCommand
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetStatusCommand
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetSystemInfoCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttSettingsRequest
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttStatusRequest
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttSystemInfoRequest
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttLockEvent
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttMqttCommandError
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttRequestError
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttRequestJsonParser
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttRequestMessage
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttResponseJsonParser
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttResponseMessage
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttSettingsResponse
@@ -66,6 +68,9 @@ object MqttManager {
 
     private val _settings = MutableSharedFlow<String>(extraBufferCapacity = 100)
     val settings: SharedFlow<String> get() = _settings
+
+    private val _requests = MutableSharedFlow<MqttRequestMessage>(extraBufferCapacity = 100)
+    val requests: SharedFlow<MqttRequestMessage> get() = _requests
 
     private val logHistory = ArrayDeque<MqttLogEntry>(100)
     private val _debugLog = MutableSharedFlow<MqttLogEntry>(extraBufferCapacity = 100)
@@ -120,6 +125,11 @@ object MqttManager {
             subscribeSettingsQos = userSettings.mqttSubscribeSettingsQos,
             subscribeSettingsRetainHandling = userSettings.mqttSubscribeSettingsRetainHandling,
             subscribeSettingsRetainAsPublished = userSettings.mqttSubscribeSettingsRetainAsPublished,
+
+            subscribeRequestTopic = userSettings.mqttSubscribeRequestTopic,
+            subscribeRequestQos = userSettings.mqttSubscribeRequestQos,
+            subscribeRequestRetainHandling = userSettings.mqttSubscribeRequestRetainHandling,
+            subscribeRequestRetainAsPublished = userSettings.mqttSubscribeRequestRetainAsPublished,
 
             willTopic = userSettings.mqttWillTopic,
             willPayload = userSettings.mqttWillPayload,
@@ -300,50 +310,50 @@ object MqttManager {
         )
     }
 
-    fun publishStatusResponse(statusCommand: MqttGetStatusCommand, status: WebviewKioskStatus) {
+    fun publishStatusResponse(statusRequest: MqttStatusRequest, status: WebviewKioskStatus) {
         val statusMessage = MqttStatusResponse(
-            identifier = statusCommand.identifier,
+            identifier = statusRequest.identifier,
             appInstanceId = config.appInstanceId,
             data = status
         )
         publishResponseMessage(
             statusMessage,
-            statusCommand,
+            statusRequest,
         )
     }
 
-    fun publishSettingsResponse(settingsCommand: MqttGetSettingsCommand, settings: JSONObject) {
+    fun publishSettingsResponse(settingsRequest: MqttSettingsRequest, settings: JSONObject) {
         val settingsMessage = MqttSettingsResponse(
-            identifier = settingsCommand.identifier,
+            identifier = settingsRequest.identifier,
             appInstanceId = config.appInstanceId,
-            data = filterSettingsJson(settings, settingsCommand.settings)
+            data = filterSettingsJson(settings, settingsRequest.settings)
         )
         publishResponseMessage(
             settingsMessage,
-            settingsCommand
+            settingsRequest
         )
     }
 
     fun publishSystemInfoResponse(
-        systemInfoCommand: MqttGetSystemInfoCommand,
+        systemInfoRequest: MqttSystemInfoRequest,
         systemInfo: SystemInfo
     ) {
         val statusMessage = MqttSystemInfoResponse(
-            identifier = systemInfoCommand.identifier,
+            identifier = systemInfoRequest.identifier,
             appInstanceId = config.appInstanceId,
             data = systemInfo
         )
         publishResponseMessage(
             statusMessage,
-            systemInfoCommand,
+            systemInfoRequest,
         )
     }
 
     private fun publishResponseMessage(
         responseMessage: MqttResponseMessage,
-        requestCommand: MqttGetBaseCommand,
+        requestMessage: MqttRequestMessage,
     ) {
-        val topic = requestCommand.responseTopic.takeIf { !it.isNullOrEmpty() }
+        val topic = requestMessage.responseTopic.takeIf { !it.isNullOrEmpty() }
             ?: mqttVariableReplacement(
                 config.publishResponseTopic,
                 mapOf("RESPONSE_TYPE" to responseMessage.getType())
@@ -355,7 +365,7 @@ object MqttManager {
             payload,
             config.publishResponseQos,
             config.publishResponseRetain,
-            correlationData = requestCommand.correlationData?.toByteArray(),
+            correlationData = requestMessage.correlationData?.toByteArray(),
             identifier = responseMessage.identifier
         )
     }
@@ -423,22 +433,6 @@ object MqttManager {
             onMessage = { publish, payloadStr ->
                 try {
                     val command = MqttCommandJsonParser.decodeFromString<MqttCommandMessage>(payloadStr)
-
-                    when (command) {
-                        is MqttGetBaseCommand -> {
-                            @SuppressLint("NewApi")
-                            if (publish.responseTopic.isPresent) {
-                                command.responseTopic = publish.responseTopic.get().toString()
-                            }
-                            @SuppressLint("NewApi")
-                            if (publish.correlationData.isPresent) {
-                                val buf = publish.correlationData.get()
-                                val bytes = ByteArray(buf.remaining()).also { buf.get(it) }
-                                command.correlationData = String(bytes, UTF_8)
-                            }
-                        }
-                        else -> Unit
-                    }
                     scope.launch { _commands.emit(command) }
 
                     addDebugLog(
@@ -448,7 +442,7 @@ object MqttManager {
                     )
                 } catch (e: Exception) {
                     scope.launch { _commands.emit(MqttMqttCommandError(e.message ?: e.toString())) }
-                    val identifier = getIdentifier(payloadStr)
+                    val identifier = getValueFromPrimitiveJson(payloadStr, "identifier")
                     addDebugLog("command error", e.message, identifier)
                 }
             }
@@ -463,17 +457,61 @@ object MqttManager {
                 addDebugLog(
                     "settings received",
                     "topic: ${publish.topic}\npayload: $payloadStr",
-                    identifier = getIdentifier(payloadStr)
+                    identifier = getValueFromPrimitiveJson(payloadStr, "identifier")
                 )
                 scope.launch { _settings.emit(payloadStr) }
             }
         )
+
+        subscribeTopic(
+            topic = config.subscribeRequestTopic,
+            qos = config.subscribeRequestQos,
+            retainHandling = config.subscribeRequestRetainHandling,
+            retainAsPublished = config.subscribeRequestRetainAsPublished,
+            onMessage = { publish, payloadStr ->
+                try {
+                    val request = MqttRequestJsonParser.decodeFromString<MqttRequestMessage>(payloadStr)
+
+                    @SuppressLint("NewApi")
+                    if (publish.responseTopic.isPresent) {
+                        request.responseTopic = publish.responseTopic.get().toString()
+                    }
+                    @SuppressLint("NewApi")
+                    if (publish.correlationData.isPresent) {
+                        val buf = publish.correlationData.get()
+                        val bytes = ByteArray(buf.remaining()).also { buf.get(it) }
+                        request.correlationData = String(bytes, UTF_8)
+                    }
+
+                    scope.launch { _requests.emit(request) }
+
+                    addDebugLog(
+                        "request received",
+                        "topic: ${publish.topic}\nrequest: $request",
+                        request.identifier
+                    )
+                } catch (e: Exception) {
+                    val identifier = getValueFromPrimitiveJson(payloadStr, "identifier")
+                    scope.launch {
+                        _requests.emit(
+                            MqttRequestError(
+                                identifier = identifier,
+                                responseTopic = getValueFromPrimitiveJson(payloadStr, "responseTopic"),
+                                correlationData = getValueFromPrimitiveJson(payloadStr, "correlationData"),
+                                error = e.message ?: e.toString()
+                            )
+                        )
+                    }
+                    addDebugLog("request error", e.message, identifier)
+                }
+            }
+        )
     }
 
-    private fun getIdentifier(payloadStr: String): String? {
+    private fun getValueFromPrimitiveJson(payloadStr: String, key: String): String? {
         return runCatching {
             Json.parseToJsonElement(payloadStr)
-                .jsonObject["identifier"]?.jsonPrimitive?.contentOrNull
+                .jsonObject[key]?.jsonPrimitive?.contentOrNull
         }.getOrNull()
     }
 

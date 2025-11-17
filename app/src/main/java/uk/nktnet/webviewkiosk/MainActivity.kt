@@ -32,9 +32,9 @@ import uk.nktnet.webviewkiosk.mqtt.MqttManager
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonService
 import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.handleMainIntent
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetSettingsCommand
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetStatusCommand
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttGetSystemInfoCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttSettingsRequest
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttStatusRequest
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttSystemInfoRequest
 import uk.nktnet.webviewkiosk.states.InactivityStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
@@ -156,20 +156,20 @@ class MainActivity : AppCompatActivity() {
             }
 
             LaunchedEffect(Unit) {
-                MqttManager.commands.collect { command ->
-                    when (command) {
-                        is MqttGetStatusCommand -> {
+                MqttManager.requests.collect { request ->
+                    when (request) {
+                        is MqttStatusRequest -> {
                             MqttManager.publishStatusResponse(
-                                command, getStatus(context)
+                                request, getStatus(context)
                             )
                         }
-                        is MqttGetSettingsCommand -> {
+                        is MqttSettingsRequest -> {
                             val settings = userSettings.exportJson()
-                            MqttManager.publishSettingsResponse(command, settings)
+                            MqttManager.publishSettingsResponse(request, settings)
                         }
-                        is MqttGetSystemInfoCommand -> {
+                        is MqttSystemInfoRequest -> {
                             MqttManager.publishSystemInfoResponse(
-                                command, getSystemInfo(context)
+                                request, getSystemInfo(context)
                             )
                         }
                         else -> Unit

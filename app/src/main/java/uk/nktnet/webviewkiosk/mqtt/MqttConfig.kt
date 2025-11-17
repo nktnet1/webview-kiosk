@@ -37,6 +37,11 @@ data class MqttConfig(
     val subscribeSettingsRetainHandling: MqttRetainHandlingOption,
     val subscribeSettingsRetainAsPublished: Boolean,
 
+    val subscribeRequestTopic: String,
+    val subscribeRequestQos: MqttQosOption,
+    val subscribeRequestRetainHandling: MqttRetainHandlingOption,
+    val subscribeRequestRetainAsPublished: Boolean,
+
     val willTopic: String,
     val willPayload: String,
     val willQos: MqttQosOption,
