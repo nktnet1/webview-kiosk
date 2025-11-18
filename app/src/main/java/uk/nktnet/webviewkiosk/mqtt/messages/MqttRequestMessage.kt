@@ -14,7 +14,7 @@ sealed interface MqttRequestMessage {
 }
 
 @Serializable
-@SerialName("status")
+@SerialName("get_status")
 data class MqttStatusRequest(
     override val identifier: String? = null,
     override var responseTopic: String? = null,
@@ -24,7 +24,7 @@ data class MqttStatusRequest(
 }
 
 @Serializable
-@SerialName("settings")
+@SerialName("get_settings")
 data class MqttSettingsRequest(
     override val identifier: String? = null,
     val settings: Array<JsonElement> = emptyArray(),
@@ -44,7 +44,7 @@ data class MqttSettingsRequest(
 }
 
 @Serializable
-@SerialName("system_info")
+@SerialName("get_system_info")
 data class MqttSystemInfoRequest(
     override val identifier: String? = null,
     override var responseTopic: String? = null,
@@ -55,13 +55,12 @@ data class MqttSystemInfoRequest(
 
 @Serializable
 @SerialName("error")
-data class MqttRequestError(
+data class MqttErrorRequest(
     override val identifier: String? = null,
     override var responseTopic: String? = null,
     override var correlationData: String? = null,
-    val error: String = "unknown command",
-
-    ) : MqttRequestMessage {
+    val error: String = "unknown request",
+) : MqttRequestMessage {
     override fun toString() = "Request Error: $error"
 }
 

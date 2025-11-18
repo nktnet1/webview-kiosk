@@ -36,7 +36,7 @@ import uk.nktnet.webviewkiosk.handlers.DimScreenOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.ResetOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.KioskControlPanel
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttMqttCommandError
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttErrorCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttGoBackMqttCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttGoForwardMqttCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttLockMqttCommand
@@ -460,9 +460,7 @@ fun WebviewScreen(navController: NavController) {
                 is MqttGoToUrlMqttCommand -> customLoadUrl(commandMessage.url)
                 is MqttLockMqttCommand -> tryLockTask(activity)
                 is MqttUnlockMqttCommand -> tryUnlockTask(activity)
-                is MqttMqttCommandError -> showToast("Received invalid MQTT command. See debug logs in MQTT settings.")
-                // No need to handle other commands (consumed by MainActivity).
-                else -> Unit
+                is MqttErrorCommand -> showToast("Received invalid MQTT command. See debug logs in MQTT settings.")
             }
         }
     }

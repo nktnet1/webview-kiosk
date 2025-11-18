@@ -25,14 +25,15 @@ import uk.nktnet.webviewkiosk.config.option.MqttQosOption
 import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttCommandJsonParser
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttCommandMessage
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttErrorResponse
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttEventJsonParser
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttEventMessage
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttSettingsRequest
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttStatusRequest
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttSystemInfoRequest
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttLockEvent
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttMqttCommandError
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttRequestError
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttErrorCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttErrorRequest
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttRequestJsonParser
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttRequestMessage
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttResponseJsonParser
@@ -351,6 +352,20 @@ object MqttManager {
         )
     }
 
+    fun publishErrorResponse(
+        errorRequest: MqttErrorRequest,
+    ) {
+        val errorMessage = MqttErrorResponse(
+            identifier = errorRequest.identifier,
+            appInstanceId = config.appInstanceId,
+            errorMessage = errorRequest.error
+        )
+        publishResponseMessage(
+            errorMessage,
+            errorRequest,
+        )
+    }
+
     private fun publishResponseMessage(
         responseMessage: MqttResponseMessage,
         requestMessage: MqttRequestMessage,
@@ -443,7 +458,7 @@ object MqttManager {
                         command.identifier
                     )
                 } catch (e: Exception) {
-                    scope.launch { _commands.emit(MqttMqttCommandError(e.message ?: e.toString())) }
+                    scope.launch { _commands.emit(MqttErrorCommand(e.message ?: e.toString())) }
                     val identifier = getValueFromPrimitiveJson(payloadStr, "identifier")
                     addDebugLog("command error", e.message, identifier)
                 }
@@ -509,7 +524,7 @@ object MqttManager {
                     val identifier = getValueFromPrimitiveJson(payloadStr, "identifier")
                     scope.launch {
                         _requests.emit(
-                            MqttRequestError(
+                            MqttErrorRequest(
                                 identifier = identifier,
                                 responseTopic = getValueFromPrimitiveJson(payloadStr, "responseTopic"),
                                 correlationData = getValueFromPrimitiveJson(payloadStr, "correlationData"),

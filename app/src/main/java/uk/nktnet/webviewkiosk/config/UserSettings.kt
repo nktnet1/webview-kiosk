@@ -623,7 +623,6 @@ class UserSettings(val context: Context) {
         false,
     )
 
-
     var mqttWillTopic by stringPref(
         getRestrictions,
         prefs,
@@ -641,7 +640,12 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Will.PAYLOAD,
-        "${Constants.APP_NAME} has disconnected."
+        """
+            {
+              "message": "Client has disconnected.",
+              "appInstanceId": "${'$'}{APP_INSTANCE_ID}"
+            }
+        """.trimIndent(),
     )
     var mqttWillRetain by booleanPref(
         getRestrictions,

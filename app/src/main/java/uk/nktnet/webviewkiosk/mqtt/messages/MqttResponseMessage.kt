@@ -16,7 +16,7 @@ sealed interface MqttResponseMessage {
 }
 
 @Serializable
-@SerialName("status")
+@SerialName("get_status")
 data class MqttStatusResponse(
     override val identifier: String? = null,
     override val appInstanceId: String,
@@ -26,7 +26,7 @@ data class MqttStatusResponse(
 }
 
 @Serializable
-@SerialName("settings")
+@SerialName("get_settings")
 data class MqttSettingsResponse(
     override val identifier: String? = null,
     override val appInstanceId: String,
@@ -36,13 +36,23 @@ data class MqttSettingsResponse(
 }
 
 @Serializable
-@SerialName("system_info")
+@SerialName("get_system_info")
 data class MqttSystemInfoResponse(
     override val identifier: String? = null,
     override val appInstanceId: String,
     val data: SystemInfo,
 ) : MqttResponseMessage {
     override fun getType(): String = "system_info"
+}
+
+@Serializable
+@SerialName("error")
+data class MqttErrorResponse(
+    override val identifier: String? = null,
+    override val appInstanceId: String,
+    val errorMessage: String,
+) : MqttResponseMessage {
+    override fun getType(): String = "error"
 }
 
 val MqttResponseJsonParser = Json(BaseJson) {

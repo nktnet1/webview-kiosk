@@ -32,6 +32,7 @@ import uk.nktnet.webviewkiosk.mqtt.MqttManager
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonService
 import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.handleMainIntent
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttErrorRequest
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttSettingsRequest
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttStatusRequest
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttSystemInfoRequest
@@ -182,7 +183,10 @@ class MainActivity : AppCompatActivity() {
                                 request, getSystemInfo(context)
                             )
                         }
-                        else -> Unit
+                        is MqttErrorRequest -> {
+                            showToast("MQTT: invalid request. See debug logs.")
+                            MqttManager.publishErrorResponse(request)
+                        }
                     }
                 }
             }

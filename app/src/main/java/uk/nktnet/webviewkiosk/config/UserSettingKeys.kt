@@ -135,7 +135,6 @@ object UserSettingsKeys {
                     const val RETAIN_AS_PUBLISHED = "mqtt.subscribe.settings.retain_as_published"
                 }
 
-
                 object Request {
                     const val TOPIC = "mqtt.subscribe.request.topic"
                     const val QOS = "mqtt.subscribe.request.qos"

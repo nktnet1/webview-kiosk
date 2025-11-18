@@ -69,7 +69,7 @@ data class MqttUnlockMqttCommand(
 
 @Serializable
 @SerialName("error")
-data class MqttMqttCommandError(
+data class MqttErrorCommand(
     val error: String = "unknown command",
     override val identifier: String? = null,
 ) : MqttCommandMessage {
