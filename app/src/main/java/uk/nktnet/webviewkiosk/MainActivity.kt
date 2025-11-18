@@ -269,10 +269,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         if (userSettings.mqttEnabled && !MqttManager.isConnectedOrReconnect()) {
-            MqttManager.connect(
-                systemSettings,
-                userSettings,
-            )
+            MqttManager.connect(this)
         }
         AuthenticationManager.init(this)
     }

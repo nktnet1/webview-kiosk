@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.mqtt
 
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttSettingsMessage
 import android.annotation.SuppressLint
+import android.content.Context
 import com.hivemq.client.mqtt.MqttClient
 import com.hivemq.client.mqtt.MqttClientState
 import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource
@@ -25,6 +26,7 @@ import uk.nktnet.webviewkiosk.config.option.MqttQosOption
 import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttCommandJsonParser
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttCommandMessage
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttConnectedEvent
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttErrorResponse
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttEventJsonParser
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttEventMessage
@@ -46,6 +48,7 @@ import uk.nktnet.webviewkiosk.mqtt.messages.MqttUrlVisitedEvent
 import uk.nktnet.webviewkiosk.utils.SystemInfo
 import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
 import uk.nktnet.webviewkiosk.utils.filterSettingsJson
+import uk.nktnet.webviewkiosk.utils.getStatus
 import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
 import uk.nktnet.webviewkiosk.utils.isValidMqttSubscribeTopic
 import java.util.Date
@@ -196,11 +199,12 @@ object MqttManager {
     }
 
     fun connect(
-        systemSettings: SystemSettings,
-        userSettings: UserSettings,
+        context: Context,
         onConnected: (() -> Unit)? = null,
         onError: ((String?) -> Unit)? = null
     ) {
+        val userSettings = UserSettings(context)
+        val systemSettings = SystemSettings(context)
         updateConfig(systemSettings, userSettings)
 
         if (!config.enabled) {
@@ -265,6 +269,13 @@ object MqttManager {
             .whenComplete { _, throwable ->
                 if (throwable == null) {
                     onConnected?.invoke()
+                    publishEventTopic(
+                        MqttConnectedEvent(
+                            identifier = UUID.randomUUID().toString(),
+                            appInstanceId = config.appInstanceId,
+                            data = getStatus(context)
+                        )
+                    )
                 } else {
                     addDebugLog("connect failed", "${throwable.message}.")
                     throwable.printStackTrace()

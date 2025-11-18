@@ -108,8 +108,7 @@ fun MqttControlButtons() {
                                 onDisconnected = {
                                     mqttClientState = MqttManager.getState()
                                     MqttManager.connect(
-                                        systemSettings,
-                                        userSettings,
+                                        context,
                                         onConnected = {
                                             mqttClientState = MqttManager.getState()
                                             showToast("Restart successfully.")
@@ -163,8 +162,7 @@ fun MqttControlButtons() {
                     onClick = {
                         mqttClientState = MqttClientState.CONNECTING
                         MqttManager.connect(
-                            systemSettings,
-                            userSettings,
+                            context,
                             onConnected = {
                                 mqttClientState = MqttManager.getState()
                                 showToast("MQTT connected successfully.")
