@@ -42,7 +42,6 @@ import uk.nktnet.webviewkiosk.utils.getLocalUrl
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handlePreviewKeyUnlockEvent
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
-import uk.nktnet.webviewkiosk.utils.setupLockTaskPackageDhizuku
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
@@ -75,14 +74,12 @@ class MainActivity : AppCompatActivity() {
 
         val deviceOwnerSuccess = setupLockTaskPackage(this)
         if (!deviceOwnerSuccess) {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                DhizukuManager.init(this)
-                DhizukuManager.requestPermission(
-                    onGranted = {
-                        setupLockTaskPackageDhizuku(this)
-                    }
-                )
-            }
+            DhizukuManager.init(this)
+            DhizukuManager.requestPermission(
+                onGranted = {
+                    DhizukuManager.setupLockTaskPackage(this)
+                },
+            )
         }
 
         backButtonService = BackButtonService(

@@ -77,18 +77,6 @@ fun setupLockTaskPackage(context: Context): Boolean {
         return false
     }
 }
-
-fun setupLockTaskPackageDhizuku(context: Context): Boolean {
-    try {
-        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        dpm.setLockTaskPackages(DhizukuVariables.COMPONENT_NAME, arrayOf(context.packageName))
-        return true
-    } catch (e: Exception) {
-        e.printStackTrace()
-        return false
-    }
-}
-
 fun getIsLocked(activityManager: ActivityManager): Boolean {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         return activityManager.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
