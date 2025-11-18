@@ -8,6 +8,7 @@ import androidx.annotation.Keep;
 
 @Keep
 public interface IDevicePolicyManager extends IInterface {
+    @SuppressWarnings("unused")
     @Keep
     abstract class Stub extends Binder implements IDevicePolicyManager {
         public static IDevicePolicyManager asInterface(IBinder obj) {
