@@ -55,7 +55,11 @@ fun NumberSettingFieldItem(
                 v
             },
             style = MaterialTheme.typography.bodyMedium.copy(
-                fontStyle = if (v == "0") FontStyle.Italic else FontStyle.Normal
+                fontStyle = if (v == "0" && descriptionFormatter == null) {
+                    FontStyle.Italic
+                } else {
+                    FontStyle.Normal
+                }
             ),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1
