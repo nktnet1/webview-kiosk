@@ -9,6 +9,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -106,9 +108,19 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 """.trimIndent(),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(top = 6.dp, bottom = 8.dp)
+                modifier = Modifier.padding(top = 6.dp)
             )
         }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        Text(
+            text = "Lock Task Features",
+            style = MaterialTheme.typography.titleLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
         LockTaskFeatureHomeSetting()
         LockTaskFeatureOverviewSetting()
