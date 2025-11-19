@@ -22,6 +22,7 @@ import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureBlockActivityStartInTaskSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureGlobalActionsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureHomeSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureKeyguardSetting
@@ -99,10 +100,13 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
 
         if (!isDeviceOwner) {
             Text(
-                text = "${Constants.APP_NAME} is not set as the device owner.",
+                text = """
+                    ${Constants.APP_NAME} is not set as the device owner.
+                    The settings below will not take effect.
+                """.trimIndent(),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(vertical = 4.dp)
+                modifier = Modifier.padding(top = 6.dp, bottom = 8.dp)
             )
         }
 
@@ -112,6 +116,9 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
         LockTaskFeatureNotificationsSetting()
         LockTaskFeatureSystemInfoSetting()
         LockTaskFeatureKeyguardSetting()
+        LockTaskFeatureBlockActivityStartInTaskSetting()
+
+        Spacer(modifier = Modifier.height(8.dp))
 
         Button(
             enabled = isDeviceOwner,

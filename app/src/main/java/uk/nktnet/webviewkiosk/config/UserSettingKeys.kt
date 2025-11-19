@@ -87,6 +87,7 @@ object UserSettingsKeys {
                 const val NOTIFICATIONS = "device.owner.lock_task_feature.notifications"
                 const val SYSTEM_INFO = "device.owner.lock_task_feature.system_info"
                 const val KEYGUARD = "device.owner.lock_task_feature.keyguard"
+                const val BLOCK_ACTIVITY_START_IN_TASK = "device.owner.lock_task_feature.block_activity_start_in_task"
             }
         }
     }

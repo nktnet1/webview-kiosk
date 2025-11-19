@@ -63,6 +63,7 @@ fun updateDeviceSettings(context: Context) {
     ThemeStateSingleton.setTheme(userSettings.theme)
     setDeviceRotation(context, userSettings.rotation)
     setWindowBrightness(context, userSettings.brightness)
+    applyLockTaskFeatures(context)
 }
 
 @Serializable

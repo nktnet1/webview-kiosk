@@ -433,6 +433,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Device.Owner.LockTaskFeature.KEYGUARD,
         false
     )
+    var lockTaskFeatureBlockActivityStartInTask by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.BLOCK_ACTIVITY_START_IN_TASK,
+        true
+    )
 
     // JS Scripts
     var applyAppTheme by booleanPref(
