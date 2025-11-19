@@ -67,37 +67,43 @@ fun SettingsListScreen(
         modifier = Modifier
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.safeContent)
-            .padding(horizontal = 16.dp)
-            .verticalScroll(rememberScrollState()),
+            .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.Top
     ) {
         SettingsHeaderMenu(navController)
 
         SettingDivider()
 
-        settingsItems.forEach { (title, description, route) ->
-            ListItem(
-                headlineContent = { Text(text = title) },
-                supportingContent = {
-                    Text(
-                        text = description,
-                        style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                },
-                modifier = Modifier
-                    .clickable { navController.navigate(route) }
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp)
-                    .border(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.outline,
-                        shape = MaterialTheme.shapes.medium
-                    )
-            )
-        }
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.Top
+        ) {
+            settingsItems.forEach { (title, description, route) ->
+                ListItem(
+                    headlineContent = { Text(text = title) },
+                    supportingContent = {
+                        Text(
+                            text = description,
+                            style = MaterialTheme.typography.bodySmall.copy(fontStyle = FontStyle.Italic),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    },
+                    modifier = Modifier
+                        .clickable { navController.navigate(route) }
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                        .border(
+                            width = 1.dp,
+                            color = MaterialTheme.colorScheme.outline,
+                            shape = MaterialTheme.shapes.medium
+                        )
+                )
+            }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 }
