@@ -5,11 +5,12 @@ import android.app.ActivityManager
 import android.content.Context
 import android.content.Context.ACTIVITY_SERVICE
 import androidx.compose.foundation.focusable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.key.isAltPressed
-import androidx.compose.ui.input.key.isCtrlPressed
-import androidx.compose.ui.input.key.isMetaPressed
-import androidx.compose.ui.input.key.isShiftPressed
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -22,13 +23,28 @@ fun Modifier.handleUserTouchEvent(): Modifier {
     }
 }
 
-fun Modifier.handleUserKeyEvent(context: Context): Modifier {
+@Composable
+fun Modifier.handleUserKeyEvent(context: Context, isVisible: Boolean): Modifier {
     val activity = context as? Activity ?: return this
     val activityManager = activity.getSystemService(ACTIVITY_SERVICE) as ActivityManager
     val userSettings = UserSettings(activity)
+    val focusRequester = remember { FocusRequester() }
 
-    return this.focusable().onPreviewKeyEvent { event ->
-        println("[DEBUG]: alt=${event.isAltPressed}, ctrl=${event.isCtrlPressed}, shift=${event.isShiftPressed}, meta=${event.isMetaPressed}")
-        handlePreviewKeyUnlockEvent(activity, activityManager, userSettings, event.nativeKeyEvent)
+    LaunchedEffect(isVisible) {
+        if (isVisible) {
+            focusRequester.requestFocus()
+        }
     }
+
+    return this
+        .focusRequester(focusRequester)
+        .focusable()
+        .onPreviewKeyEvent { event ->
+            handlePreviewKeyUnlockEvent(
+                activity,
+                activityManager,
+                userSettings,
+                event.nativeKeyEvent
+            )
+        }
 }

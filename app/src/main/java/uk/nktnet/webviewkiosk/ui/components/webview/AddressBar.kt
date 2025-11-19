@@ -151,7 +151,7 @@ fun AddressBar(
                     onDismissRequest = { menuExpanded = false },
                     modifier = Modifier
                         .handleUserTouchEvent()
-                        .handleUserKeyEvent(context)
+                        .handleUserKeyEvent(context, menuExpanded)
                 ) {
                     if (userSettings.allowBackwardsNavigation) {
                         DropdownMenuItem(
@@ -248,18 +248,21 @@ fun AddressBar(
         }
     }
 
-    if (showHistoryDialog) {
-        HistoryDialog(customLoadUrl, onDismiss = { showHistoryDialog = false })
-    }
+    HistoryDialog(
+        showHistoryDialog,
+        { showHistoryDialog = false },
+        customLoadUrl
+    )
 
-    if (showBookmarksDialog) {
-        BookmarksDialog(customLoadUrl, onDismiss = { showBookmarksDialog = false })
-    }
+    BookmarksDialog(
+        showBookmarksDialog,
+        { showBookmarksDialog = false },
+        customLoadUrl
+    )
 
-    if (showLocalFilesDialog) {
-        LocalFilesDialog(
-            onDismiss = { showLocalFilesDialog = false },
-            customLoadUrl = customLoadUrl
-        )
-    }
+    LocalFilesDialog(
+        showLocalFilesDialog,
+        { showLocalFilesDialog = false },
+        customLoadUrl
+    )
 }

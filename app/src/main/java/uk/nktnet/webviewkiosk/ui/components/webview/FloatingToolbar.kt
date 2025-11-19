@@ -201,7 +201,7 @@ fun FloatingToolbar(
                 onDismissRequest = { menuExpanded = false },
                 modifier = Modifier
                     .handleUserTouchEvent()
-                    .handleUserKeyEvent(context)
+                    .handleUserKeyEvent(context, menuExpanded)
             ) {
                 MenuItem(
                     "Home",

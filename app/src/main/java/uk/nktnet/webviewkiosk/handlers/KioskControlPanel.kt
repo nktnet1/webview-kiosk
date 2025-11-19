@@ -149,20 +149,23 @@ fun KioskControlPanel(
         }
     }
 
-    if (showHistoryDialog) {
-        HistoryDialog(customLoadUrl, onDismiss = { showHistoryDialog = false })
-    }
+    HistoryDialog(
+        showHistoryDialog,
+        { showHistoryDialog = false },
+        customLoadUrl
+    )
 
-    if (showBookmarksDialog) {
-        BookmarksDialog(customLoadUrl, onDismiss = { showBookmarksDialog = false })
-    }
+    BookmarksDialog(
+        showBookmarksDialog,
+        { showBookmarksDialog = false },
+        customLoadUrl
+    )
 
-    if (showLocalFilesDialog) {
-        LocalFilesDialog(
-            onDismiss = { showLocalFilesDialog = false },
-            customLoadUrl = customLoadUrl
-        )
-    }
+    LocalFilesDialog(
+        showLocalFilesDialog,
+        { showLocalFilesDialog = false },
+        customLoadUrl
+    )
 
     if (kioskControlPanelRegion != KioskControlPanelRegionOption.DISABLED) {
         Box(
@@ -248,7 +251,7 @@ fun KioskControlPanel(
                 tonalElevation = 8.dp,
                 modifier = Modifier
                     .handleUserTouchEvent()
-                    .handleUserKeyEvent(context)
+                    .handleUserKeyEvent(context, showDialog)
                     .padding(16.dp)
             ) {
                 val scrollState = rememberScrollState()
