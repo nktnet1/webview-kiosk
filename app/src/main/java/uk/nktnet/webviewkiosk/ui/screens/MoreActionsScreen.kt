@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
+import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
@@ -35,65 +36,68 @@ fun MoreActionsScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
-            .verticalScroll(rememberScrollState())
             .windowInsetsPadding(WindowInsets.safeContent)
+            .padding(horizontal = 16.dp)
     ) {
         SettingLabel(navController = navController, label = "More Actions")
-        Spacer(modifier = Modifier.height(8.dp))
+        SettingDivider()
 
-        ActionButton("Open App Info") { openAppDetailsSettings(context) }
+        Column(
+            modifier = Modifier
+                .verticalScroll(rememberScrollState())
+                .fillMaxSize()
+        ) {
+            ActionButton("Open App Info") { openAppDetailsSettings(context) }
 
-        SectionHeader("Manage")
-        ActionButton("Local Files") {
-            navController.navigate(Screen.SettingsWebContentFiles.route)
-        }
-        ActionButton("Site Permissions") {
-            navController.navigate(Screen.SettingsWebBrowsingSitePermissions.route)
-        }
-        ActionButton("Device Owner") {
-            navController.navigate(Screen.SettingsDeviceOwner.route)
-        }
+            SectionHeader("Manage")
+            ActionButton("Local Files") {
+                navController.navigate(Screen.SettingsWebContentFiles.route)
+            }
+            ActionButton("Site Permissions") {
+                navController.navigate(Screen.SettingsWebBrowsingSitePermissions.route)
+            }
+            ActionButton("Device Owner") {
+                navController.navigate(Screen.SettingsDeviceOwner.route)
+            }
 
-        SectionHeader("Clear")
-        ActionButton("Clear Cookies") {
-            CookieManager.getInstance().removeAllCookies(null)
-            CookieManager.getInstance().flush()
-            showToast("Cookies cleared.")
-        }
-        ActionButton("Clear Cache") {
-            val webView = WebView(context)
-            webView.clearCache(true)
-            webView.destroy()
-            showToast("Cache cleared.")
-        }
-        ActionButton("Clear Form Data") {
-            val webView = WebView(context)
-            webView.clearFormData()
-            webView.destroy()
-            showToast("Form data cleared.")
-        }
-        ActionButton("Clear History") {
-            val webView = WebView(context)
-            webView.clearHistory()
-            WebViewNavigation.clearHistory(systemSettings)
-            webView.destroy()
-            showToast("History cleared.")
-        }
-        ActionButton("Clear SSL Preferences") {
-            val webView = WebView(context)
-            webView.clearSslPreferences()
-            webView.destroy()
-            showToast("SSL preferences cleared.")
-        }
-        ActionButton("Clear Web Storage") {
-            WebStorage.getInstance().deleteAllData()
-            showToast("Web storage cleared.")
-        }
+            SectionHeader("Clear")
+            ActionButton("Clear Cookies") {
+                CookieManager.getInstance().removeAllCookies(null)
+                CookieManager.getInstance().flush()
+                showToast("Cookies cleared.")
+            }
+            ActionButton("Clear Cache") {
+                val webView = WebView(context)
+                webView.clearCache(true)
+                webView.destroy()
+                showToast("Cache cleared.")
+            }
+            ActionButton("Clear Form Data") {
+                val webView = WebView(context)
+                webView.clearFormData()
+                webView.destroy()
+                showToast("Form data cleared.")
+            }
+            ActionButton("Clear History") {
+                val webView = WebView(context)
+                webView.clearHistory()
+                WebViewNavigation.clearHistory(systemSettings)
+                webView.destroy()
+                showToast("History cleared.")
+            }
+            ActionButton("Clear SSL Preferences") {
+                val webView = WebView(context)
+                webView.clearSslPreferences()
+                webView.destroy()
+                showToast("SSL preferences cleared.")
+            }
+            ActionButton("Clear Web Storage") {
+                WebStorage.getInstance().deleteAllData()
+                showToast("Web storage cleared.")
+            }
 
-        SectionHeader("Device Owner")
-
-        Spacer(modifier = Modifier.padding(bottom = 10.dp))
+            Spacer(modifier = Modifier.padding(bottom = 10.dp))
+        }
     }
 }
 
