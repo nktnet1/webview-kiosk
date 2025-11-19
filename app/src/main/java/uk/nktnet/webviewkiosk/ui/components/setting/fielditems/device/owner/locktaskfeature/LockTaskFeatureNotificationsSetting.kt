@@ -17,9 +17,9 @@ fun LockTaskFeatureNotificationsSetting() {
             Enables notifications for all apps.
 
             This shows notification icons in the status bar, heads-up notifications, and
-            the expandable notification shade. 
+            the expandable notification shade.
 
-            If you enable this button, you must also enable the Home button. 
+            If you enable this button, you must also enable the Home button.
 
             Tapping notification actions and buttons that open new panels doesn't
             work in lock task mode.

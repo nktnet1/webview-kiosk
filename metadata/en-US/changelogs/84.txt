@@ -4,9 +4,9 @@
 
 Control the visibility and behaviour of the floating toolbar menu button:
 
-1. Hidden  
-2. Hidden when locked  
-3. Shown  
+1. Hidden
+2. Hidden when locked
+3. Shown
 
 When set to **Hidden**, the "Settings" button will be available from the Kiosk Control Panel.
 

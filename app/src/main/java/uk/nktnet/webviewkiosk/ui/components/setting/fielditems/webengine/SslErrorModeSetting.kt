@@ -18,7 +18,7 @@ fun SslErrorModeSetting() {
         infoText = """
             Controls how the WebView handles SSL errors when loading pages.
 
-            - BLOCK: cancels all failed SSL requests (default).  
+            - BLOCK: cancels all failed SSL requests (default).
             - PROMPT: opens a dialog for the user to decide.
             - PROCEED: always proceeds despite SSL errors (dangerous, NOT RECOMMENDED).
 
