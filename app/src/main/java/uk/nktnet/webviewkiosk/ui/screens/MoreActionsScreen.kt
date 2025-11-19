@@ -1,9 +1,5 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
-import android.app.admin.DevicePolicyManager
-import android.content.ComponentName
-import android.content.Context
-import android.os.Build
 import android.webkit.CookieManager
 import android.webkit.WebStorage
 import android.webkit.WebView
@@ -17,12 +13,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
-import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
@@ -30,64 +23,13 @@ import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 fun MoreActionsScreen(navController: NavController) {
     val context = LocalContext.current
     val systemSettings = SystemSettings(context)
-    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-    val adminComponent = ComponentName(
-        context.packageName,
-        WebviewKioskAdminReceiver::class.java.name
-    )
+
     var toastRef: Toast? by remember { mutableStateOf(null) }
     val showToast: (String) -> Unit = { msg ->
         toastRef?.cancel()
         toastRef = Toast.makeText(
             context, msg, Toast.LENGTH_SHORT
         ).apply { show() }
-    }
-    var isDeviceOwner by remember {
-        mutableStateOf(dpm.isDeviceOwnerApp(context.packageName))
-    }
-    var showDeviceOwnerRemovalDialog by remember { mutableStateOf(false) }
-
-    if (showDeviceOwnerRemovalDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeviceOwnerRemovalDialog = false },
-            title = { Text("Deactivate Device Owner") },
-            text = {
-                Text(
-                    normaliseInfoText("""
-                        Are you sure you want to unset ${Constants.APP_NAME} as the
-                        device owner?
-
-                        This means Lock Task Mode will no longer be available, and
-                        the kiosk lock feature will default to Screen Pinning.
-                    """.trimIndent())
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeviceOwnerRemovalDialog = false
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                            try {
-                                @Suppress("DEPRECATION")
-                                dpm.clearProfileOwner(adminComponent)
-                            } catch (e: Throwable) {
-                                e.printStackTrace()
-                            }
-                        }
-                        try {
-                            @Suppress("DEPRECATION")
-                            dpm.clearDeviceOwnerApp(context.packageName)
-                        } catch (e: Throwable) {
-                            e.printStackTrace()
-                        }
-                        isDeviceOwner = dpm.isDeviceOwnerApp(context.packageName)
-                    }
-                ) { Text("Yes") }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDeviceOwnerRemovalDialog = false }) { Text("No") }
-            }
-        )
     }
 
     Column(
@@ -108,6 +50,9 @@ fun MoreActionsScreen(navController: NavController) {
         }
         ActionButton("Site Permissions") {
             navController.navigate(Screen.SettingsWebBrowsingSitePermissions.route)
+        }
+        ActionButton("Device Owner") {
+            navController.navigate(Screen.SettingsDeviceOwner.route)
         }
 
         SectionHeader("Clear")
@@ -147,20 +92,6 @@ fun MoreActionsScreen(navController: NavController) {
         }
 
         SectionHeader("Device Owner")
-        if (!isDeviceOwner) {
-            Text(
-                text = "${Constants.APP_NAME} is not set as the device owner.",
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(vertical = 4.dp)
-            )
-        }
-        ActionButton(
-            label = "Deactivate Device Owner",
-            enabled = isDeviceOwner
-        ) {
-            showDeviceOwnerRemovalDialog = true
-        }
 
         Spacer(modifier = Modifier.padding(bottom = 10.dp))
     }
