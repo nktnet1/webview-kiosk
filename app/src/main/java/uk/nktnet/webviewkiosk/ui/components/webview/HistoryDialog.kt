@@ -24,7 +24,8 @@ import androidx.compose.ui.window.Dialog
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.states.UserInteractionModifier
+import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
+import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import java.util.Date
 import java.util.concurrent.TimeUnit
@@ -74,7 +75,9 @@ fun HistoryDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            modifier = UserInteractionModifier
+            modifier = Modifier
+                .handleUserTouchEvent()
+                .handleUserKeyEvent(context)
                 .fillMaxSize()
                 .padding(vertical = 16.dp),
             color = MaterialTheme.colorScheme.background,
