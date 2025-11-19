@@ -14,7 +14,7 @@ fun LockTaskFeatureSystemInfoSetting() {
     BooleanSettingFieldItem(
         label = "Show System Info",
         infoText = """
-            Enables the status bar’s system info area that contains indicators
+            Enables the status bar's system info area that contains indicators
             such as connectivity, battery, and sound/vibrate options.
 
             This requires Android 11 (API Level 30).

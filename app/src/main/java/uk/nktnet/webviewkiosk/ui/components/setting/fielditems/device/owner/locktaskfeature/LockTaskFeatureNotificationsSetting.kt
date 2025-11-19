@@ -21,7 +21,7 @@ fun LockTaskFeatureNotificationsSetting() {
 
             If you enable this button, you must also enable the Home button. 
 
-            Tapping notification actions and buttons that open new panels doesn’t
+            Tapping notification actions and buttons that open new panels doesn't
             work in lock task mode.
         """.trimIndent(),
         initialValue = userSettings.lockTaskFeatureNotifications,
