@@ -16,6 +16,8 @@ fun LockTaskFeatureBlockActivityStartInTaskSetting() {
         infoText = """
             Enable blocking of non-allowlisted activities from being started
             into a locked task.
+
+            This requires Android 11 (API Level 30).
         """.trimIndent(),
         initialValue = userSettings.lockTaskFeatureBlockActivityStartInTask,
         restricted = userSettings.isRestricted(UserSettingsKeys.Device.Owner.LockTaskFeature.BLOCK_ACTIVITY_START_IN_TASK),

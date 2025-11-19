@@ -14,7 +14,7 @@ fun LockTaskFeatureKeyguardSetting() {
     BooleanSettingFieldItem(
         label = "Enable Keyguard",
         infoText = """
-            Enables any lock screen that might be set on the device. 
+            Enables any lock screen that might be set on the device.
             Typically not suitable for devices with public users such as kiosks or digital signage.
         """.trimIndent(),
         initialValue = userSettings.lockTaskFeatureKeyguard,

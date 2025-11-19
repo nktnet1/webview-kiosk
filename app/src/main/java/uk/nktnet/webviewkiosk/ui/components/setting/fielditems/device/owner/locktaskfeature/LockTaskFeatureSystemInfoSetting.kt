@@ -16,8 +16,6 @@ fun LockTaskFeatureSystemInfoSetting() {
         infoText = """
             Enables the status bar's system info area that contains indicators
             such as connectivity, battery, and sound/vibrate options.
-
-            This requires Android 11 (API Level 30).
         """.trimIndent(),
         initialValue = userSettings.lockTaskFeatureSystemInfo,
         restricted = userSettings.isRestricted(UserSettingsKeys.Device.Owner.LockTaskFeature.SYSTEM_INFO),
