@@ -24,6 +24,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.mqtt.MqttManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.mqtt.MqttLogEntry
+import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -66,6 +67,7 @@ fun SettingsMqttDebugScreen(navController: NavController) {
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             SettingLabel(navController = navController, label = "Debug Log")
+            SettingDivider()
 
             Row(
                 modifier = Modifier

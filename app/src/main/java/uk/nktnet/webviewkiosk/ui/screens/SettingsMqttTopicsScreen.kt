@@ -57,14 +57,14 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
             .padding(horizontal = 16.dp)
             .windowInsetsPadding(WindowInsets.safeContent)
     ) {
+        SettingLabel(navController = navController, label = "Topics")
+        SettingDivider()
+
         Column(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
         ) {
-            SettingLabel(navController = navController, label = "Topics")
-            SettingDivider()
-
             MqttControlButtons()
 
             Text(

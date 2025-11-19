@@ -47,15 +47,14 @@ fun SettingsMqttScreen(navController: NavController) {
             .padding(horizontal = 16.dp)
             .windowInsetsPadding(WindowInsets.safeContent)
     ) {
+        SettingLabel(navController = navController, label = "MQTT")
+        SettingDivider()
+
         Column(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
         ) {
-            SettingLabel(navController = navController, label = "MQTT")
-
-            SettingDivider()
-
             MqttControlButtons()
             HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 

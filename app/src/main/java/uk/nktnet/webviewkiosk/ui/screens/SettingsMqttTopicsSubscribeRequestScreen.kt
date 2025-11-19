@@ -25,14 +25,14 @@ fun SettingsMqttTopicsSubscribeRequestScreen(navController: NavController) {
             .padding(horizontal = 16.dp)
             .windowInsetsPadding(WindowInsets.safeContent)
     ) {
+        SettingLabel(navController = navController, label = "Request")
+        SettingDivider()
+
         Column(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
         ) {
-            SettingLabel(navController = navController, label = "Request")
-            SettingDivider()
-
             MqttControlButtons()
             HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
