@@ -10,6 +10,7 @@ import android.widget.TextView
 import android.webkit.SslErrorHandler
 import androidx.appcompat.app.AlertDialog
 import android.view.ViewGroup.LayoutParams
+import uk.nktnet.webviewkiosk.utils.handleCustomUnlockShortcut
 
 @SuppressLint("SetTextI18n")
 fun handleSslErrorPromptRequest(
@@ -88,5 +89,10 @@ fun handleSslErrorPromptRequest(
             layout.removeView(confirmTextView)
             layout.removeView(proceedButton)
         }
+    }
+
+    dialog.setOnKeyListener { _, _, event ->
+        handleCustomUnlockShortcut(context, event)
+        false
     }
 }
