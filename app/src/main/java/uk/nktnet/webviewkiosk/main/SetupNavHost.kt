@@ -26,7 +26,7 @@ fun SetupNavHost(
                 SettingsListScreen(navController)
             }
             authComposable(Screen.SettingsMoreActions.route) {
-                MoreActionsScreen(navController)
+                SettingsMoreActionsScreen(navController)
             }
             authComposable(Screen.SettingsWebContent.route) {
                 SettingsWebContentScreen(navController)

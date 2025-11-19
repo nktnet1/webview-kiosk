@@ -20,18 +20,22 @@ fun SettingsWebLifecycleScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
             .windowInsetsPadding(WindowInsets.safeContent)
-            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp)
     ) {
         SettingLabel(navController = navController, label = "Web Lifecycle")
-
         SettingDivider()
 
-        LockOnLaunchSetting()
-        ResetOnLaunchSetting()
-        ResetOnInactivitySecondsSetting()
-        DimScreenOnInactivitySecondsSetting()
-        RefreshOnLoadingErrorIntervalSecondsSetting()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
+            LockOnLaunchSetting()
+            ResetOnLaunchSetting()
+            ResetOnInactivitySecondsSetting()
+            DimScreenOnInactivitySecondsSetting()
+            RefreshOnLoadingErrorIntervalSecondsSetting()
+        }
     }
 }

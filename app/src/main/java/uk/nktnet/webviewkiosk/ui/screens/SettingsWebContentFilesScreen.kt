@@ -20,6 +20,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.files.LocalFileList
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
@@ -87,12 +88,7 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
             .windowInsetsPadding(WindowInsets.safeContent)
     ) {
         SettingLabel(navController = navController, label = "Files")
-
-        HorizontalDivider(
-            modifier = Modifier.padding(vertical = 8.dp),
-            thickness = DividerDefaults.Thickness,
-            color = DividerDefaults.color
-        )
+        SettingDivider()
 
         Box(
             modifier = Modifier

@@ -23,19 +23,23 @@ fun SettingsAppearanceScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
             .windowInsetsPadding(WindowInsets.safeContent)
-            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp)
     ) {
         SettingLabel(navController = navController, label = "Appearance")
-
         SettingDivider()
 
-        ThemeSetting()
-        AddressBarModeSetting()
-        FloatingToolbarModeSetting()
-        WebViewInsetSetting()
-        ImmersiveModeSetting()
-        BlockedMessageSetting()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
+            ThemeSetting()
+            AddressBarModeSetting()
+            FloatingToolbarModeSetting()
+            WebViewInsetSetting()
+            ImmersiveModeSetting()
+            BlockedMessageSetting()
+        }
     }
 }

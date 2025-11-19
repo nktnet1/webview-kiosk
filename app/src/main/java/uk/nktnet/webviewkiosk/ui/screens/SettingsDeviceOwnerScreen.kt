@@ -92,56 +92,58 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
             .windowInsetsPadding(WindowInsets.safeContent)
-            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp)
     ) {
         SettingLabel(navController = navController, label = "Device Owner")
-
         SettingDivider()
 
-        if (!isDeviceOwner) {
-            Text(
-                text = """
-                    ${Constants.APP_NAME} is not set as the device owner.
-                    The settings below will not take effect.
-                """.trimIndent(),
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(top = 6.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        Text(
-            text = "Lock Task Features",
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
-
-        LockTaskFeatureHomeSetting()
-        LockTaskFeatureOverviewSetting()
-        LockTaskFeatureGlobalActionsSetting()
-        LockTaskFeatureNotificationsSetting()
-        LockTaskFeatureSystemInfoSetting()
-        LockTaskFeatureKeyguardSetting()
-        LockTaskFeatureBlockActivityStartInTaskSetting()
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Button(
-            enabled = isDeviceOwner,
-            onClick = {
-                showDeviceOwnerRemovalDialog = true
-            },
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 2.dp)
-        ) { Text("Deactivate Device Owner") }
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
+            if (!isDeviceOwner) {
+                Text(
+                    text = """
+                        ${Constants.APP_NAME} is not set as the device owner.
+                        The settings below will not take effect.
+                    """.trimIndent(),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Text(
+                text = "Lock Task Features",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+
+            LockTaskFeatureHomeSetting()
+            LockTaskFeatureOverviewSetting()
+            LockTaskFeatureGlobalActionsSetting()
+            LockTaskFeatureNotificationsSetting()
+            LockTaskFeatureSystemInfoSetting()
+            LockTaskFeatureKeyguardSetting()
+            LockTaskFeatureBlockActivityStartInTaskSetting()
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Button(
+                enabled = isDeviceOwner,
+                onClick = { showDeviceOwnerRemovalDialog = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 2.dp)
+            ) { Text("Deactivate Device Owner") }
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 }
