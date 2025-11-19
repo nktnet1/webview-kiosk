@@ -21,7 +21,7 @@ import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
-fun MoreActionsScreen(navController: NavController) {
+fun SettingsMoreActionsScreen(navController: NavController) {
     val context = LocalContext.current
     val systemSettings = SystemSettings(context)
 
