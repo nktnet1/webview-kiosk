@@ -15,7 +15,7 @@ fun LockTaskFeatureGlobalActionsSetting() {
         label = "Enable Global Actions",
         infoText = """
             Enables the global actions dialog that shows when long-pressing the power button.
-            
+
             This is the only feature that’s enabled when setLockTaskFeatures() hasn't been called. 
             A user typically can’t power off the device if you disable this dialog.
         """.trimIndent(),

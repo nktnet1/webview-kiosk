@@ -15,7 +15,7 @@ fun LockTaskFeatureOverviewSetting() {
         label = "Show Overview Button",
         infoText = """
             Shows the Overview button (tapping this button opens the Recents screen).
-            
+
             If you enable this button, you must also enable the Home button.
         """.trimIndent(),
         initialValue = userSettings.lockTaskFeatureOverview,

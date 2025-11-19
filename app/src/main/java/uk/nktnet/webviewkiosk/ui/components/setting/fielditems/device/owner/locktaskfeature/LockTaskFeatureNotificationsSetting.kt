@@ -15,7 +15,7 @@ fun LockTaskFeatureNotificationsSetting() {
         label = "Enable Notifications",
         infoText = """
             Enables notifications for all apps.
-            
+
             This shows notification icons in the status bar, heads-up notifications, and
             the expandable notification shade. 
 

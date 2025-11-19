@@ -15,7 +15,7 @@ fun LockTaskFeatureHomeSetting() {
         label = "Show Home Button",
         infoText = """
             Shows the Home button.
-            
+
             Enable for custom launchers - tapping an enabled Home button has no
             action unless you allowlist the default Android launcher.
         """.trimIndent(),
