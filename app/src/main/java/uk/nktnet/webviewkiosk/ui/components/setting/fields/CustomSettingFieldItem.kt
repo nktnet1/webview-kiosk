@@ -6,6 +6,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.GenericSettingFieldDialog
 
@@ -29,7 +30,11 @@ fun CustomSettingFieldItem(
     ) { displayValue ->
         Text(
             text = displayValue,
-            style = MaterialTheme.typography.bodyMedium,
+            style = if (value.isEmpty()) {
+                MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic)
+            } else {
+                MaterialTheme.typography.bodyMedium
+            },
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
