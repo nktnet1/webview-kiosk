@@ -71,7 +71,6 @@ fun SettingsListScreen(
         verticalArrangement = Arrangement.Top
     ) {
         SettingsHeaderMenu(navController)
-
         SettingDivider()
 
         Column(
