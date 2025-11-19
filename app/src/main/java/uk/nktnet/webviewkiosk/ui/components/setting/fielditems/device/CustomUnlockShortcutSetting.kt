@@ -88,10 +88,6 @@ fun CustomUnlockShortcutSetting() {
 
             This is useful for devices with no navigation buttons on screen and instead
             has a physical keyboard connected.
-
-            Please note that the short-cut will only trigger when there is no app-specific
-            dropdown/alerts opened (e.g. from floating toolbar, address bar, or the kiosk
-            control panel).
         """.trimIndent(),
         value = currentValue,
         restricted = restricted,
