@@ -4,6 +4,7 @@ description: Refresh, navigation, history, bookmark, search provider
 ---
 
 import { EllipsisVertical, Wrench, Pin, PinOff } from 'lucide-react';
+import { APP_NAME } from '@/config/app'
 
 ## 1. Allow Refresh
 
@@ -42,6 +43,8 @@ Set to true to allow the user to go home using one of:
 1. Holding the back button (long-pressed). For more details, see `Settings -> Device`
 1. Clicking the <span className="inline-flex">(<EllipsisVertical />)</span> icon on the right of the address bar (top-right corner of screen) and selecting `Home`
 1. Clicking the floating toolbar <span className="inline-flex">(<Wrench className="-rotate-90"/>)</span> icon and selecting `Home`
+1. Clicking your device's home button
+    - This requires {APP_NAME} to be set as the **default launcher (home) app**
 
 **Default:** true
 
