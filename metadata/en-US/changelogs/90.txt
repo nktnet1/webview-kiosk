@@ -1,0 +1,7 @@
+## Changes
+
+- feat: sticky headers in setting screens
+- feat: device owner settings (set lock task features)
+- feat: detect user interaction in dialogs and dropdowns
+- feat: as default launcher, pressing the home button will return to the Home URL
+- fix: android manifest, singleTask in activity
