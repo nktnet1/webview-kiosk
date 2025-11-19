@@ -24,7 +24,8 @@ import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.WebViewInset
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
-import uk.nktnet.webviewkiosk.states.UserInteractionModifier
+import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
+import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
@@ -148,7 +149,9 @@ fun AddressBar(
                 DropdownMenu(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
-                    modifier = UserInteractionModifier
+                    modifier = Modifier
+                        .handleUserTouchEvent()
+                        .handleUserKeyEvent(context, menuExpanded)
                 ) {
                     if (userSettings.allowBackwardsNavigation) {
                         DropdownMenuItem(
@@ -245,18 +248,21 @@ fun AddressBar(
         }
     }
 
-    if (showHistoryDialog) {
-        HistoryDialog(customLoadUrl, onDismiss = { showHistoryDialog = false })
-    }
+    HistoryDialog(
+        showHistoryDialog,
+        { showHistoryDialog = false },
+        customLoadUrl
+    )
 
-    if (showBookmarksDialog) {
-        BookmarksDialog(customLoadUrl, onDismiss = { showBookmarksDialog = false })
-    }
+    BookmarksDialog(
+        showBookmarksDialog,
+        { showBookmarksDialog = false },
+        customLoadUrl
+    )
 
-    if (showLocalFilesDialog) {
-        LocalFilesDialog(
-            onDismiss = { showLocalFilesDialog = false },
-            customLoadUrl = customLoadUrl
-        )
-    }
+    LocalFilesDialog(
+        showLocalFilesDialog,
+        { showLocalFilesDialog = false },
+        customLoadUrl
+    )
 }

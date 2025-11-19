@@ -59,12 +59,13 @@ import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
 import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
-import uk.nktnet.webviewkiosk.states.UserInteractionModifier
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.webview.BookmarksDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.HistoryDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.LocalFilesDialog
 import uk.nktnet.webviewkiosk.utils.canDisableKioskControlPanelRegion
+import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
+import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
@@ -148,20 +149,23 @@ fun KioskControlPanel(
         }
     }
 
-    if (showHistoryDialog) {
-        HistoryDialog(customLoadUrl, onDismiss = { showHistoryDialog = false })
-    }
+    HistoryDialog(
+        showHistoryDialog,
+        { showHistoryDialog = false },
+        customLoadUrl
+    )
 
-    if (showBookmarksDialog) {
-        BookmarksDialog(customLoadUrl, onDismiss = { showBookmarksDialog = false })
-    }
+    BookmarksDialog(
+        showBookmarksDialog,
+        { showBookmarksDialog = false },
+        customLoadUrl
+    )
 
-    if (showLocalFilesDialog) {
-        LocalFilesDialog(
-            onDismiss = { showLocalFilesDialog = false },
-            customLoadUrl = customLoadUrl
-        )
-    }
+    LocalFilesDialog(
+        showLocalFilesDialog,
+        { showLocalFilesDialog = false },
+        customLoadUrl
+    )
 
     if (kioskControlPanelRegion != KioskControlPanelRegionOption.DISABLED) {
         Box(
@@ -245,7 +249,10 @@ fun KioskControlPanel(
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 8.dp,
-                modifier = UserInteractionModifier.padding(16.dp)
+                modifier = Modifier
+                    .handleUserTouchEvent()
+                    .handleUserKeyEvent(context, showDialog)
+                    .padding(16.dp)
             ) {
                 val scrollState = rememberScrollState()
                 Column(
