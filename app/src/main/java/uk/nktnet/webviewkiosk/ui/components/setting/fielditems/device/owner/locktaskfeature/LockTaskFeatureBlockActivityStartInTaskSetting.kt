@@ -14,7 +14,7 @@ fun LockTaskFeatureBlockActivityStartInTaskSetting() {
     BooleanSettingFieldItem(
         label = "Block Activity Start In Task",
         infoText = """
-            Enable blocking of non-allowlisted activities from being started 
+            Enable blocking of non-allowlisted activities from being started
             into a locked task.
         """.trimIndent(),
         initialValue = userSettings.lockTaskFeatureBlockActivityStartInTask,
