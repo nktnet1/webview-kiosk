@@ -9,6 +9,7 @@ import androidx.appcompat.app.AlertDialog
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.utils.handleCustomUnlockShortcut
 import uk.nktnet.webviewkiosk.utils.hasPermissionForResource
 
@@ -102,12 +103,23 @@ fun handlePermissionRequest(
     val builder = AlertDialog.Builder(context)
         .setTitle(title)
         .setMessage(message.trimMargin())
-        .setOnCancelListener { request.deny() }
+        .setOnCancelListener {
+            request.deny()
+        }
+        .setOnDismissListener {
+            UserInteractionStateSingleton.onUserInteraction()
+        }
 
     if (isBlockedDialog) {
-        builder.setPositiveButton("Close") { _, _ -> request.deny() }
+        builder.setPositiveButton("Close") { _, _ ->
+            request.deny()
+        }
     } else {
         val checkBox = CheckBox(context).apply { text = "Remember my choice" }
+        checkBox.setOnClickListener {
+            UserInteractionStateSingleton.onUserInteraction()
+        }
+
         val layout = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(80, 20, 40, 0)

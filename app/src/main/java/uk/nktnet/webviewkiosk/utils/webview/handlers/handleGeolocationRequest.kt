@@ -9,6 +9,7 @@ import androidx.appcompat.app.AlertDialog
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.utils.handleCustomUnlockShortcut
 import uk.nktnet.webviewkiosk.utils.hasPermissionForResource
 
@@ -48,6 +49,10 @@ fun handleGeolocationRequest(
     }
 
     val checkBox = CheckBox(context).apply { text = "Remember my choice" }
+    checkBox.setOnClickListener {
+        UserInteractionStateSingleton.onUserInteraction()
+    }
+
     val layout = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         setPadding(80, 20, 40, 0)
@@ -67,7 +72,12 @@ fun handleGeolocationRequest(
         .setNegativeButton("Deny") { _, _ ->
             callback?.invoke(origin, false, false)
         }
-        .setOnCancelListener { callback?.invoke(origin, false, false) }
+        .setOnCancelListener {
+            callback?.invoke(origin, false, false)
+        }
+        .setOnDismissListener {
+            UserInteractionStateSingleton.onUserInteraction()
+        }
         .show()
 
     dialog.setOnKeyListener { _, _, event ->
