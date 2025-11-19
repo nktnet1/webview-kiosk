@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -98,6 +99,16 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 modifier = Modifier.padding(vertical = 4.dp)
             )
         }
+
+        Button(
+            enabled = isDeviceOwner,
+            onClick = {
+                showDeviceOwnerRemovalDialog = true
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 2.dp)
+        ) { Text("Deactivate Device Owner") }
 
         Spacer(modifier = Modifier.height(16.dp))
     }
