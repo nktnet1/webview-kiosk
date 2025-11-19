@@ -397,6 +397,42 @@ class UserSettings(val context: Context) {
         UnlockAuthRequirementOption.DEFAULT.name,
         fromString = UnlockAuthRequirementOption::fromString
     )
+    var lockTaskFeatureHome by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.HOME,
+        false
+    )
+    var lockTaskFeatureOverview by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.OVERVIEW,
+        false
+    )
+    var lockTaskFeatureGlobalActions by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.GLOBAL_ACTIONS,
+        false
+    )
+    var lockTaskFeatureNotifications by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.NOTIFICATIONS,
+        false
+    )
+    var lockTaskFeatureSystemInfo by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.SYSTEM_INFO,
+        false
+    )
+    var lockTaskFeatureKeyguard by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.KEYGUARD,
+        false
+    )
 
     // JS Scripts
     var applyAppTheme by booleanPref(

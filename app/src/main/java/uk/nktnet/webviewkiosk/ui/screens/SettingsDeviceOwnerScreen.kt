@@ -22,6 +22,12 @@ import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureGlobalActionsSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureHomeSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureKeyguardSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureNotificationsSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureOverviewSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureSystemInfoSetting
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 
 @Composable
@@ -99,6 +105,13 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 modifier = Modifier.padding(vertical = 4.dp)
             )
         }
+
+        LockTaskFeatureHomeSetting()
+        LockTaskFeatureOverviewSetting()
+        LockTaskFeatureGlobalActionsSetting()
+        LockTaskFeatureNotificationsSetting()
+        LockTaskFeatureSystemInfoSetting()
+        LockTaskFeatureKeyguardSetting()
 
         Button(
             enabled = isDeviceOwner,

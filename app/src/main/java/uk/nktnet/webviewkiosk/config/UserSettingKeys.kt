@@ -78,6 +78,17 @@ object UserSettingsKeys {
         const val CUSTOM_UNLOCK_SHORTCUT = "device.custom_unlock_shortcut"
         const val CUSTOM_AUTH_PASSWORD = "device.custom_auth_password"
         const val UNLOCK_AUTH_REQUIREMENT = "device.unlock_auth_requirement"
+
+        object Owner {
+            object LockTaskFeature {
+                const val HOME = "device.owner.lock_task_feature.home"
+                const val OVERVIEW = "device.owner.lock_task_feature.overview"
+                const val GLOBAL_ACTIONS = "device.owner.lock_task_feature.global_actions"
+                const val NOTIFICATIONS = "device.owner.lock_task_feature.notifications"
+                const val SYSTEM_INFO = "device.owner.lock_task_feature.system_info"
+                const val KEYGUARD = "device.owner.lock_task_feature.keyguard"
+            }
+        }
     }
 
     object JsScripts {
