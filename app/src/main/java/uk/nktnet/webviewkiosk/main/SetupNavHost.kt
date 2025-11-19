@@ -52,6 +52,9 @@ fun SetupNavHost(
             authComposable(Screen.SettingsDevice.route) {
                 SettingsDeviceScreen(navController)
             }
+            authComposable(Screen.SettingsDeviceOwner.route) {
+                SettingsDeviceOwnerScreen(navController)
+            }
             authComposable(Screen.SettingsJsScript.route) {
                 SettingsJsScriptsScreen(navController)
             }
