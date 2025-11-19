@@ -23,29 +23,33 @@ fun SettingsWebContentScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
             .windowInsetsPadding(WindowInsets.safeContent)
-            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp)
     ) {
         SettingLabel(navController = navController, label = "Web Content")
-
         SettingDivider()
 
-        HomeUrlSetting()
-        BlacklistSetting()
-        WhitelistSetting()
-        BookmarksSetting()
-        AllowLocalFilesSetting()
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = { navController.navigate(Screen.SettingsWebContentFiles.route) },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
         ) {
-            Text("Manage Local Files")
-        }
+            HomeUrlSetting()
+            BlacklistSetting()
+            WhitelistSetting()
+            BookmarksSetting()
+            AllowLocalFilesSetting()
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { navController.navigate(Screen.SettingsWebContentFiles.route) },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+            ) {
+                Text("Manage Local Files")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 }

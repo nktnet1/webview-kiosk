@@ -1,4 +1,4 @@
-## New Feature: Immersive Mode 
+## New Feature: Immersive Mode
 
 > settings -> appearance -> immersive mode
 

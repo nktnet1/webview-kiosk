@@ -68,18 +68,23 @@ fun SettingsListScreen(
         modifier = Modifier
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.safeContent)
-            .padding(horizontal = 16.dp)
-            .verticalScroll(rememberScrollState()),
+            .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.Top
     ) {
         SettingsHeaderMenu(navController)
-
         SettingDivider()
 
-        settingsItems.forEach { (title, description, route) ->
-            SettingListItem(title, description) { navController.navigate(route) }
-        }
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.Top
+        ) {
+            settingsItems.forEach { (title, description, route) ->
+                SettingListItem(title, description) { navController.navigate(route) }
+            }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 }

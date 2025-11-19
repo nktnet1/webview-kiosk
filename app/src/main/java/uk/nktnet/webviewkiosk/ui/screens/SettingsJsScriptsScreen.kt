@@ -23,19 +23,23 @@ fun SettingsJsScriptsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
             .windowInsetsPadding(WindowInsets.safeContent)
-            .verticalScroll(rememberScrollState()),
+            .padding(horizontal = 16.dp)
     ) {
         SettingLabel(navController = navController, label = "JS Scripts")
-
         SettingDivider()
 
-        ApplyAppThemeSetting()
-        ApplyDesktopViewportWidthSetting()
-        EnableBatteryApiSetting()
-        EnableBrightnessApiSetting()
-        CustomScriptOnPageStartSetting()
-        CustomScriptOnPageFinishSetting()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
+            ApplyAppThemeSetting()
+            ApplyDesktopViewportWidthSetting()
+            EnableBatteryApiSetting()
+            EnableBrightnessApiSetting()
+            CustomScriptOnPageStartSetting()
+            CustomScriptOnPageFinishSetting()
+        }
     }
 }

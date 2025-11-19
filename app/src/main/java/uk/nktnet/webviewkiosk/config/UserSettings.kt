@@ -397,6 +397,48 @@ class UserSettings(val context: Context) {
         UnlockAuthRequirementOption.DEFAULT.name,
         fromString = UnlockAuthRequirementOption::fromString
     )
+    var lockTaskFeatureHome by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.HOME,
+        false
+    )
+    var lockTaskFeatureOverview by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.OVERVIEW,
+        false
+    )
+    var lockTaskFeatureGlobalActions by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.GLOBAL_ACTIONS,
+        false
+    )
+    var lockTaskFeatureNotifications by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.NOTIFICATIONS,
+        false
+    )
+    var lockTaskFeatureSystemInfo by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.SYSTEM_INFO,
+        false
+    )
+    var lockTaskFeatureKeyguard by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.KEYGUARD,
+        false
+    )
+    var lockTaskFeatureBlockActivityStartInTask by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.BLOCK_ACTIVITY_START_IN_TASK,
+        true
+    )
 
     // JS Scripts
     var applyAppTheme by booleanPref(
@@ -795,6 +837,13 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
             // put(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD, customAuthPassword)
             put(UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT, unlockAuthRequirement.name)
+            put(UserSettingsKeys.Device.Owner.LockTaskFeature.HOME, lockTaskFeatureHome)
+            put(UserSettingsKeys.Device.Owner.LockTaskFeature.OVERVIEW, lockTaskFeatureOverview)
+            put(UserSettingsKeys.Device.Owner.LockTaskFeature.GLOBAL_ACTIONS, lockTaskFeatureGlobalActions)
+            put(UserSettingsKeys.Device.Owner.LockTaskFeature.NOTIFICATIONS, lockTaskFeatureNotifications)
+            put(UserSettingsKeys.Device.Owner.LockTaskFeature.SYSTEM_INFO, lockTaskFeatureSystemInfo)
+            put(UserSettingsKeys.Device.Owner.LockTaskFeature.KEYGUARD, lockTaskFeatureKeyguard)
+            put(UserSettingsKeys.Device.Owner.LockTaskFeature.BLOCK_ACTIVITY_START_IN_TASK, lockTaskFeatureBlockActivityStartInTask)
 
             put(UserSettingsKeys.JsScripts.APPLY_APP_THEME, applyAppTheme)
             put(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
@@ -942,6 +991,13 @@ class UserSettings(val context: Context) {
             unlockAuthRequirement = UnlockAuthRequirementOption.fromString(
                 json.optString(UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT, unlockAuthRequirement.name)
             )
+            lockTaskFeatureHome = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.HOME, lockTaskFeatureHome)
+            lockTaskFeatureOverview = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.OVERVIEW, lockTaskFeatureOverview)
+            lockTaskFeatureGlobalActions = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.GLOBAL_ACTIONS, lockTaskFeatureGlobalActions)
+            lockTaskFeatureNotifications = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.NOTIFICATIONS, lockTaskFeatureNotifications)
+            lockTaskFeatureSystemInfo = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.SYSTEM_INFO, lockTaskFeatureSystemInfo)
+            lockTaskFeatureKeyguard = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.KEYGUARD, lockTaskFeatureKeyguard)
+            lockTaskFeatureBlockActivityStartInTask = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.BLOCK_ACTIVITY_START_IN_TASK, lockTaskFeatureBlockActivityStartInTask)
 
             applyAppTheme = json.optBoolean(UserSettingsKeys.JsScripts.APPLY_APP_THEME, applyAppTheme)
             applyDesktopViewportWidth = json.optInt(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)

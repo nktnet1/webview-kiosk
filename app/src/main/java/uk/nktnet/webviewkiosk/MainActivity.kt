@@ -100,7 +100,7 @@ class MainActivity : AppCompatActivity() {
         MqttManager.updateConfig(systemSettings, userSettings)
         updateDeviceSettings(this)
 
-        val systemSettings = SystemSettings(this)
+        systemSettings = SystemSettings(this)
         val webContentDir = getWebContentFilesDir(this)
 
         var toastRef: Toast? = null
@@ -290,6 +290,20 @@ class MainActivity : AppCompatActivity() {
         if (!isChangingConfigurations) {
             AuthenticationManager.resetAuthentication()
             MqttManager.disconnect {}
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (
+            intent.action == Intent.ACTION_MAIN
+            && intent.hasCategory(Intent.CATEGORY_HOME)
+            && userSettings.allowGoHome
+        ) {
+            navControllerState.value?.let {
+                systemSettings.intentUrl = userSettings.homeUrl
+                navigateToWebViewScreen(it)
+            }
         }
     }
 

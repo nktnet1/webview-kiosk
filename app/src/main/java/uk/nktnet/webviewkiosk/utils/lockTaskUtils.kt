@@ -42,7 +42,58 @@ private fun tryLockAction(
     }
 }
 
+fun applyLockTaskFeatures(context: Context) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+        return
+    }
+
+    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+    if (!dpm.isDeviceOwnerApp(context.packageName)) {
+        return
+    }
+
+    val userSettings = UserSettings(context)
+    var features = DevicePolicyManager.LOCK_TASK_FEATURE_NONE
+
+    if (userSettings.lockTaskFeatureHome) {
+        features = features or DevicePolicyManager.LOCK_TASK_FEATURE_HOME
+    }
+    if (userSettings.lockTaskFeatureOverview) {
+        features = features or DevicePolicyManager.LOCK_TASK_FEATURE_OVERVIEW
+    }
+    if (userSettings.lockTaskFeatureGlobalActions) {
+        features = features or DevicePolicyManager.LOCK_TASK_FEATURE_GLOBAL_ACTIONS
+    }
+    if (userSettings.lockTaskFeatureNotifications) {
+        features = features or DevicePolicyManager.LOCK_TASK_FEATURE_NOTIFICATIONS
+    }
+    if (userSettings.lockTaskFeatureSystemInfo) {
+        features = features or DevicePolicyManager.LOCK_TASK_FEATURE_SYSTEM_INFO
+    }
+    if (userSettings.lockTaskFeatureKeyguard) {
+        features = features or DevicePolicyManager.LOCK_TASK_FEATURE_KEYGUARD
+    }
+    if (
+        userSettings.lockTaskFeatureBlockActivityStartInTask
+        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+    ) {
+        features = features or DevicePolicyManager.LOCK_TASK_FEATURE_BLOCK_ACTIVITY_START_IN_TASK
+    }
+    val adminComponent = ComponentName(
+        context.packageName,
+        WebviewKioskAdminReceiver::class.java.name
+    )
+    try {
+        dpm.setLockTaskFeatures(adminComponent, features)
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+}
+
 fun tryLockTask(activity: Activity?, showToast: (String) -> Unit = {}): Boolean {
+    activity?.let {
+        applyLockTaskFeatures(activity)
+    }
     return tryLockAction(
         activity,
         Activity::startLockTask,

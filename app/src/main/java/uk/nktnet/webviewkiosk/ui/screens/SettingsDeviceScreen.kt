@@ -3,10 +3,13 @@ package uk.nktnet.webviewkiosk.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowCameraSetting
@@ -25,23 +28,38 @@ fun SettingsDeviceScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
             .windowInsetsPadding(WindowInsets.safeContent)
-            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp)
     ) {
         SettingLabel(navController = navController, label = "Device")
-
         SettingDivider()
 
-        KeepScreenOnSetting()
-        DeviceRotationSetting()
-        BrightnessSetting()
-        AllowCameraSetting()
-        AllowMicrophoneSetting()
-        AllowLocationSetting()
-        BackButtonHoldActionSetting()
-        CustomUnlockShortcutSetting()
-        CustomAuthPasswordSetting()
-        UnlockAuthRequirementSetting()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
+            KeepScreenOnSetting()
+            DeviceRotationSetting()
+            BrightnessSetting()
+            AllowCameraSetting()
+            AllowMicrophoneSetting()
+            AllowLocationSetting()
+            BackButtonHoldActionSetting()
+            CustomUnlockShortcutSetting()
+            CustomAuthPasswordSetting()
+            UnlockAuthRequirementSetting()
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { navController.navigate(Screen.SettingsDeviceOwner.route) },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+            ) {
+                Text("Manage Device Owner")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 }

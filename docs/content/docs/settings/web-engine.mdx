@@ -7,8 +7,8 @@ import { EllipsisVertical, Wrench } from 'lucide-react';
 
 ## 1. Enable JavaScript
 
-When enabled, the WebView can execute JavaScript code on web pages.  
-This is required for most modern websites to function properly.  
+When enabled, the WebView can execute JavaScript code on web pages.
+This is required for most modern websites to function properly.
 
 **Android API:** [WebSettings#setJavaScriptEnabled(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setJavaScriptEnabled(boolean))
 
@@ -16,7 +16,7 @@ This is required for most modern websites to function properly.
 
 ## 2. Enable DOM Storage
 
-When enabled, websites can use DOM storage APIs such as `localStorage` and `sessionStorage`.  
+When enabled, websites can use DOM storage APIs such as `localStorage` and `sessionStorage`.
 Useful for saving data client-side in the browser context.
 
 **Android API:** [WebSettings#setDomStorageEnabled(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setDomStorageEnabled(boolean))
@@ -25,7 +25,7 @@ Useful for saving data client-side in the browser context.
 
 ## 3. Accept Cookies
 
-When enabled, the WebView allows websites to store and read cookies.  
+When enabled, the WebView allows websites to store and read cookies.
 This includes first-party cookies that persist session or preference data.
 
 **Android API:** [CookieManager#setAcceptCookie(boolean)](https://developer.android.com/reference/android/webkit/CookieManager#setAcceptCookie(boolean))
@@ -34,7 +34,7 @@ This includes first-party cookies that persist session or preference data.
 
 ## 4. Accept Third-party Cookies
 
-When enabled, third-party websites (embedded in iframes or resources) are allowed to set cookies.  
+When enabled, third-party websites (embedded in iframes or resources) are allowed to set cookies.
 This is important for services like embedded analytics or login widgets.
 
 **Android API:** [CookieManager#setAcceptThirdPartyCookies(android.webkit.WebView, boolean)](https://developer.android.com/reference/android/webkit/CookieManager#setAcceptThirdPartyCookies(android.webkit.WebView,%20boolean))
@@ -45,10 +45,10 @@ This is important for services like embedded analytics or login widgets.
 
 Controls how the WebView uses its cache when loading pages. Options:
 
-- **Default (`LOAD_DEFAULT`)** - Normal caching behavior; the WebView decides when to use cached content.  
-- **Cache else network (`LOAD_CACHE_ELSE_NETWORK`)** - Uses cached content if available; otherwise fetches from network.  
-- **No cache (`LOAD_NO_CACHE`)** - Always fetches from the network; ignores cached content.  
-- **Cache only (`LOAD_CACHE_ONLY`)** - Only loads content from cache; network requests are skipped.  
+- **Default (`LOAD_DEFAULT`)** - Normal caching behavior; the WebView decides when to use cached content.
+- **Cache else network (`LOAD_CACHE_ELSE_NETWORK`)** - Uses cached content if available; otherwise fetches from network.
+- **No cache (`LOAD_NO_CACHE`)** - Always fetches from the network; ignores cached content.
+- **Cache only (`LOAD_CACHE_ONLY`)** - Only loads content from cache; network requests are skipped.
 
 **Android API:** [WebSettings#LOAD_CACHE_ELSE_NETWORK](https://developer.android.com/reference/android/webkit/WebSettings#LOAD_CACHE_ELSE_NETWORK)
 
@@ -70,14 +70,14 @@ Leave blank to use the system default User Agent.
 Controls how the WebView arranges and scales content. Options:
 
 - **Normal** - No rendering changes. Recommended for maximum compatibility
-  across different platforms and Android versions.  
+  across different platforms and Android versions.
 - **Single Column** - Moves all content into one column that is the width of
-  the view. **Deprecated in API 29**  
+  the view. **Deprecated in API 29**
 - **Narrow Columns** - Makes all columns no wider than the screen if possible.
-  Only use for API levels prior to KitKat. **Deprecated in API 29**  
+  Only use for API levels prior to KitKat. **Deprecated in API 29**
 - **Text Autosizing** - Boosts font size of paragraphs based on heuristics to
   make text readable in wide-viewport layouts. Recommended to enable zoom
-  support. Supported from API level KitKat.  
+  support. Supported from API level KitKat.
 
 **Android API:** [WebSettings.LayoutAlgorithm](https://developer.android.com/reference/android/webkit/WebSettings.LayoutAlgorithm)
 
@@ -85,7 +85,7 @@ Controls how the WebView arranges and scales content. Options:
 
 ## 8. Use Wide ViewPort
 
-When enabled, the WebView will use a viewport wide enough to fit the content as if viewed on a desktop browser.  
+When enabled, the WebView will use a viewport wide enough to fit the content as if viewed on a desktop browser.
 
 **Android API:** [WebSettings#setUseWideViewPort(boolean)](https://developer.android.com/reference/android/webkit/WebSettings#setUseWideViewPort(boolean))
 
@@ -164,7 +164,7 @@ accordingly.
 
 ### 11.1. Allow File Access from File URLs
 
-This method was deprecated in API level 30.  
+This method was deprecated in API level 30.
 
 Sets whether cross-origin requests in the context of a file scheme URL should
 be allowed to access content from other file scheme URLs. Note that some
@@ -182,7 +182,7 @@ app private data.
 
 ### 11.2. Allow Universal Access from File URLs
 
-This method was deprecated in API level 30.  
+This method was deprecated in API level 30.
 
 Sets whether cross-origin requests in the context of a file scheme URL should
 be allowed to access content from any origin. This includes access to content
