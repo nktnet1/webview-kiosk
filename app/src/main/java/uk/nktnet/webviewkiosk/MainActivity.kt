@@ -229,6 +229,7 @@ class MainActivity : AppCompatActivity() {
         if (
             intent.action == Intent.ACTION_MAIN
             && intent.hasCategory(Intent.CATEGORY_HOME)
+            && userSettings.allowGoHome
         ) {
             navControllerState.value?.let {
                 systemSettings.intentUrl = userSettings.homeUrl
