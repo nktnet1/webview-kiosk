@@ -40,6 +40,7 @@ import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
 import uk.nktnet.webviewkiosk.utils.getLocalUrl
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handlePreviewKeyUnlockEvent
+import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
@@ -50,6 +51,7 @@ class MainActivity : AppCompatActivity() {
     private var uploadingFileUri: Uri? = null
     private var uploadProgress by mutableFloatStateOf(0f)
     private lateinit var userSettings: UserSettings
+    private lateinit var systemSettings: SystemSettings
     private lateinit var backButtonService: BackButtonService
 
     val restrictionsReceiver = object : BroadcastReceiver() {
@@ -88,7 +90,7 @@ class MainActivity : AppCompatActivity() {
         userSettings = UserSettings(this)
         updateDeviceSettings(this)
 
-        val systemSettings = SystemSettings(this)
+        systemSettings = SystemSettings(this)
         val webContentDir = getWebContentFilesDir(this)
 
         var toastRef: Toast? = null
@@ -219,6 +221,19 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         if (!isChangingConfigurations) {
             AuthenticationManager.resetAuthentication()
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (
+            intent.action == Intent.ACTION_MAIN
+            && intent.hasCategory(Intent.CATEGORY_HOME)
+        ) {
+            navControllerState.value?.let {
+                systemSettings.intentUrl = userSettings.homeUrl
+                navigateToWebViewScreen(it)
+            }
         }
     }
 
