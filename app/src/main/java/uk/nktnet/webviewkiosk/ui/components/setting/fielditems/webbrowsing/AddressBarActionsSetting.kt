@@ -15,7 +15,11 @@ fun AddressBarActionsSetting() {
 
     EnumListSettingFieldItem(
         label = "Address Bar Actions",
-        infoText = "Reorder and manage visible actions in the address bar.",
+        infoText = """
+            Manage visible actions in the address bar.
+
+            Use the drag handle at the end to reorder the items.
+        """.trimIndent(),
         entries = AddressBarActionOption.entries,
         getLabel = { it.label },
         getDefault = { AddressBarActionOption.getDefault() },

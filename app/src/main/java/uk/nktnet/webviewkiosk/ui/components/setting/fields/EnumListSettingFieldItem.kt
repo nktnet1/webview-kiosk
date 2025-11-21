@@ -50,7 +50,7 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
                 LazyColumn(
                     state = lazyListState,
                     contentPadding = PaddingValues(bottom = 56.dp, top = 4.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     items(items, key = { it.name }) { item ->
@@ -63,7 +63,7 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .heightIn(min = 48.dp)
+                                    .heightIn(min = 32.dp)
                                     .padding(vertical = 2.dp)
                             ) {
                                 if (!restricted) {
