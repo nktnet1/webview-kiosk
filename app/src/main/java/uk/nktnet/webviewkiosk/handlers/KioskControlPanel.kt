@@ -406,7 +406,6 @@ fun KioskControlPanel(
         )
     }
 
-
     if (showDialog) {
         Dialog(
             onDismissRequest = { showDialog = false },
