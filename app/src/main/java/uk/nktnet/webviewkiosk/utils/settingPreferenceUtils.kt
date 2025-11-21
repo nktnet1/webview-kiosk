@@ -165,19 +165,23 @@ fun <T : Enum<T>> enumListPref(
     prefs: SharedPreferences,
     key: String,
     default: List<T>,
-    fromString: (String?) -> T
+    itemFromString: (String?) -> T?
 ) = object : ReadWriteProperty<Any?, List<T>> {
     override fun getValue(thisRef: Any?, property: KProperty<*>): List<T> {
         return try {
-            val raw = if (getRestrictions()?.containsKey(key) == true) {
+            val jsonArray = if (getRestrictions()?.containsKey(key) == true) {
                 JSONArray(getRestrictions()?.getStringArray(key))
             } else {
-                JSONArray(prefs.getString(key, null) ?: emptyList<String>())
+                val stringValue = prefs.getString(key, null)
+                if (stringValue == null) {
+                    return default
+                }
+                JSONArray(stringValue)
             }
-
-            LinkedHashSet(List(raw.length()) { idx ->
-                fromString(raw.getString(idx))
-            }).toList()
+            LinkedHashSet(
+                List(jsonArray.length()) { idx -> jsonArray.getString(idx) }
+                    .mapNotNull { itemFromString(it) }
+            ).toList()
         } catch (e: Exception) {
             e.printStackTrace()
             val uniqueDefault = LinkedHashSet(default).toList()

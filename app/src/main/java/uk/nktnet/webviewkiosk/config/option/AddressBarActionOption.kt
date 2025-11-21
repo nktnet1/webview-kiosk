@@ -12,7 +12,7 @@ enum class AddressBarActionOption(val label: String) {
     FILES("Files");
 
     companion object {
-        fun fromString(value: String?): AddressBarActionOption? {
+        fun itemFromString(value: String?): AddressBarActionOption? {
             return AddressBarActionOption.entries.find {
                 it.name.equals(value, ignoreCase = true)
                 || it.label.equals(value, ignoreCase = true)
@@ -28,12 +28,12 @@ enum class AddressBarActionOption(val label: String) {
             FILES
         )
 
-        fun parseAddressBarActions(jsonArray: JSONArray?): List<AddressBarActionOption> {
+        fun parseFromJsonArray(jsonArray: JSONArray?): List<AddressBarActionOption> {
             if (jsonArray == null) {
                 return AddressBarActionOption.getDefault()
             }
             return List(jsonArray.length()) { idx ->
-                AddressBarActionOption.fromString(jsonArray.optString(idx))
+                AddressBarActionOption.itemFromString(jsonArray.optString(idx))
             }.filterNotNull()
         }
     }

@@ -45,6 +45,7 @@ fun SettingsWebBrowsingScreen(
             AllowLinkLongPressContextMenuSetting()
             AddressBarActionsSetting()
             KioskControlPanelRegionSetting()
+            KioskControlPanelActionsSetting()
             SearchProviderUrlSetting()
             SearchSuggestionEngineSetting()
 

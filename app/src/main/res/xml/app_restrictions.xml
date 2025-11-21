@@ -116,6 +116,14 @@
         android:description="@string/web_browsing_kiosk_control_panel_region_description"
     />
     <restriction
+        android:key="web_browsing.kiosk_control_panel_actions"
+        android:restrictionType="multi-select"
+        android:entries="@array/entries_kiosk_control_panel_action_option"
+        android:entryValues="@array/entry_values_kiosk_control_panel_action_option"
+        android:title="@string/web_browsing_kiosk_control_panel_actions_title"
+        android:description="@string/web_browsing_kiosk_control_panel_actions_description"
+    />
+    <restriction
         android:key="web_browsing.search_provider_url"
         android:restrictionType="string"
         android:title="@string/web_browsing_search_provider_url_title"
