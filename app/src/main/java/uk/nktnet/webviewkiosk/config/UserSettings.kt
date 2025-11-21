@@ -127,8 +127,8 @@ class UserSettings(val context: Context) {
     var addressBarActions by enumListPref(
         prefs = prefs,
         key = UserSettingsKeys.WebBrowsing.ADDRESS_BAR_ACTIONS,
-        default = AddressBarAction.getDefault(),
-        fromString = { AddressBarAction.fromString(it) ?: AddressBarAction.BACK }
+        default = AddressBarActionOption.getDefault(),
+        fromString = { AddressBarActionOption.fromString(it) ?: AddressBarActionOption.BACK }
     )
     var kioskControlPanelRegion by stringEnumPref(
         getRestrictions,
@@ -591,7 +591,7 @@ class UserSettings(val context: Context) {
             allowDefaultLongPress = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_DEFAULT_LONG_PRESS, allowDefaultLongPress)
             allowLinkLongPressContextMenu = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, allowLinkLongPressContextMenu)
             json.optJSONArray(UserSettingsKeys.WebBrowsing.ADDRESS_BAR_ACTIONS)?.let { arr ->
-                addressBarActions = AddressBarAction.parseAddressBarActions(arr)
+                addressBarActions = AddressBarActionOption.parseAddressBarActions(arr)
             }
             kioskControlPanelRegion = KioskControlPanelRegionOption.fromString(
                 json.optString(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION, kioskControlPanelRegion.name)

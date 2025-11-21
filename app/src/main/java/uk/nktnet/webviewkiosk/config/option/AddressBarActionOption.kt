@@ -2,7 +2,7 @@ package uk.nktnet.webviewkiosk.config.option
 
 import org.json.JSONArray
 
-enum class AddressBarAction(val label: String) {
+enum class AddressBarActionOption(val label: String) {
     BACK("Back"),
     FORWARD("Forward"),
     REFRESH("Refresh"),
@@ -12,13 +12,13 @@ enum class AddressBarAction(val label: String) {
     FILES("Files");
 
     companion object {
-        fun fromString(value: String?): AddressBarAction? {
-            return AddressBarAction.entries.find {
+        fun fromString(value: String?): AddressBarActionOption? {
+            return AddressBarActionOption.entries.find {
                 it.name.equals(value, ignoreCase = true)
                 || it.label.equals(value, ignoreCase = true)
             }
         }
-        fun getDefault(): List<AddressBarAction> = listOf(
+        fun getDefault(): List<AddressBarActionOption> = listOf(
             BACK,
             FORWARD,
             REFRESH,
@@ -28,12 +28,12 @@ enum class AddressBarAction(val label: String) {
             FILES
         )
 
-        fun parseAddressBarActions(jsonArray: JSONArray?): List<AddressBarAction> {
+        fun parseAddressBarActions(jsonArray: JSONArray?): List<AddressBarActionOption> {
             if (jsonArray == null) {
-                return AddressBarAction.getDefault()
+                return AddressBarActionOption.getDefault()
             }
             return List(jsonArray.length()) { idx ->
-                AddressBarAction.fromString(jsonArray.optString(idx))
+                AddressBarActionOption.fromString(jsonArray.optString(idx))
             }.filterNotNull()
         }
     }

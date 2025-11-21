@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.AddressBarAction
+import uk.nktnet.webviewkiosk.config.option.AddressBarActionOption
 import uk.nktnet.webviewkiosk.config.option.WebViewInset
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
@@ -31,7 +31,7 @@ import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
 fun AddressBarMenuItem(
-    action: AddressBarAction,
+    action: AddressBarActionOption,
     enabled: Boolean = true,
     onClick: () -> Unit,
     iconRes: Int,
@@ -95,10 +95,10 @@ fun AddressBar(
         }
     }
 
-    val menuItems: Map<AddressBarAction, @Composable () -> Unit> = mapOf(
-        AddressBarAction.BACK to {
+    val menuItems: Map<AddressBarActionOption, @Composable () -> Unit> = mapOf(
+        AddressBarActionOption.BACK to {
             AddressBarMenuItem(
-                action = AddressBarAction.BACK,
+                action = AddressBarActionOption.BACK,
                 enabled = systemSettings.historyIndex > 0,
                 onClick = {
                     WebViewNavigation.goBack(customLoadUrl, systemSettings)
@@ -107,9 +107,9 @@ fun AddressBar(
                 iconRes = R.drawable.baseline_arrow_back_24,
             )
         },
-        AddressBarAction.FORWARD to {
+        AddressBarActionOption.FORWARD to {
             AddressBarMenuItem(
-                action = AddressBarAction.FORWARD,
+                action = AddressBarActionOption.FORWARD,
                 enabled = systemSettings.historyIndex < (systemSettings.historyStack.size - 1),
                 onClick = {
                     WebViewNavigation.goForward(customLoadUrl, systemSettings)
@@ -118,9 +118,9 @@ fun AddressBar(
                 iconRes = R.drawable.baseline_arrow_forward_24,
             )
         },
-        AddressBarAction.REFRESH to {
+        AddressBarActionOption.REFRESH to {
             AddressBarMenuItem(
-                action = AddressBarAction.REFRESH,
+                action = AddressBarActionOption.REFRESH,
                 onClick = {
                     WebViewNavigation.refresh(customLoadUrl, systemSettings, userSettings)
                     menuExpanded = false
@@ -128,9 +128,9 @@ fun AddressBar(
                 iconRes = R.drawable.baseline_refresh_24,
             )
         },
-        AddressBarAction.HOME to {
+        AddressBarActionOption.HOME to {
             AddressBarMenuItem(
-                action = AddressBarAction.HOME,
+                action = AddressBarActionOption.HOME,
                 onClick = {
                     WebViewNavigation.goHome(customLoadUrl, systemSettings, userSettings)
                     menuExpanded = false
@@ -138,23 +138,23 @@ fun AddressBar(
                 iconRes = R.drawable.baseline_home_24,
             )
         },
-        AddressBarAction.HISTORY to {
+        AddressBarActionOption.HISTORY to {
             AddressBarMenuItem(
-                action = AddressBarAction.HISTORY,
+                action = AddressBarActionOption.HISTORY,
                 onClick = { showHistoryDialog = true; menuExpanded = false },
                 iconRes = R.drawable.outline_history_24,
             )
         },
-        AddressBarAction.BOOKMARK to {
+        AddressBarActionOption.BOOKMARK to {
             AddressBarMenuItem(
-                action = AddressBarAction.BOOKMARK,
+                action = AddressBarActionOption.BOOKMARK,
                 onClick = { showBookmarksDialog = true; menuExpanded = false },
                 iconRes = R.drawable.outline_bookmark_24,
             )
         },
-        AddressBarAction.FILES to {
+        AddressBarActionOption.FILES to {
             AddressBarMenuItem(
-                action = AddressBarAction.FILES,
+                action = AddressBarActionOption.FILES,
                 onClick = { showLocalFilesDialog = true; menuExpanded = false },
                 iconRes = R.drawable.outline_folder_24,
             )
@@ -205,13 +205,13 @@ fun AddressBar(
 
         val enabledActions = userSettings.addressBarActions.filter { action ->
             when (action) {
-                AddressBarAction.BACK -> userSettings.allowBackwardsNavigation
-                AddressBarAction.FORWARD -> userSettings.allowBackwardsNavigation
-                AddressBarAction.REFRESH -> userSettings.allowRefresh
-                AddressBarAction.HOME -> userSettings.allowGoHome
-                AddressBarAction.HISTORY -> userSettings.allowHistoryAccess
-                AddressBarAction.BOOKMARK -> userSettings.allowBookmarkAccess
-                AddressBarAction.FILES -> userSettings.allowLocalFiles
+                AddressBarActionOption.BACK -> userSettings.allowBackwardsNavigation
+                AddressBarActionOption.FORWARD -> userSettings.allowBackwardsNavigation
+                AddressBarActionOption.REFRESH -> userSettings.allowRefresh
+                AddressBarActionOption.HOME -> userSettings.allowGoHome
+                AddressBarActionOption.HISTORY -> userSettings.allowHistoryAccess
+                AddressBarActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
+                AddressBarActionOption.FILES -> userSettings.allowLocalFiles
             }
         }
 

@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import sh.calvin.reorderable.*
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.AddressBarAction
+import uk.nktnet.webviewkiosk.config.option.AddressBarActionOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.CustomSettingFieldItem
 
 @Composable
@@ -31,7 +31,7 @@ fun AddressBarActionsSetting() {
         }
     }
 
-    val availableToAdd = AddressBarAction.entries.filter { it !in actions }
+    val availableToAdd = AddressBarActionOption.entries.filter { it !in actions }
 
     CustomSettingFieldItem(
         label = "Address Bar Actions",
@@ -103,7 +103,7 @@ fun AddressBarActionsSetting() {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Button(
-                        onClick = { actions = AddressBarAction.getDefault() },
+                        onClick = { actions = AddressBarActionOption.getDefault() },
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                     ) {
                         Text("Reset")
