@@ -94,7 +94,6 @@
         <item>Bookmark</item>
         <item>Files</item>
     </string-array>
-
     <string-array name="entry_values_address_bar_action_option">
         <item>BACK</item>
         <item>FORWARD</item>
@@ -124,6 +123,29 @@
         <item>BOTTOM</item>
         <item>FULL</item>
         <item>DISABLED</item>
+    </string-array>
+
+    <string-array name="entries_kiosk_control_panel_action_option">
+        <item>Navigation</item>
+        <item>Refresh</item>
+        <item>Home</item>
+        <item>History</item>
+        <item>Bookmark</item>
+        <item>Files</item>
+        <item>Lock</item>
+        <item>Unlock</item>
+        <item>Settings</item>
+    </string-array>
+    <string-array name="entry_values_kiosk_control_panel_action_option">
+        <item>NAVIGATION</item>
+        <item>REFRESH</item>
+        <item>HOME</item>
+        <item>HISTORY</item>
+        <item>BOOKMARK</item>
+        <item>FILES</item>
+        <item>LOCK</item>
+        <item>UNLOCK</item>
+        <item>SETTINGS</item>
     </string-array>
 
     <string-array name="entries_webview_inset_option">

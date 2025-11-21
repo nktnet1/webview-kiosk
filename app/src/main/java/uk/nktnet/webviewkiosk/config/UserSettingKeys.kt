@@ -25,6 +25,7 @@ object UserSettingsKeys {
         const val ALLOW_LINK_LONG_PRESS_CONTEXT_MENU = "web_browsing.allow_link_long_press_context_menu"
         const val ADDRESS_BAR_ACTIONS = "web_browsing.address_bar_actions"
         const val KIOSK_CONTROL_PANEL_REGION = "web_browsing.kiosk_control_panel_region"
+        const val KIOSK_CONTROL_PANEL_ACTIONS = "web_browsing.kiosk_control_panel_actions"
         const val SEARCH_PROVIDER_URL = "web_browsing.search_provider_url"
         const val SEARCH_SUGGESTION_ENGINE = "web_browsing.search_suggestion_engine"
     }

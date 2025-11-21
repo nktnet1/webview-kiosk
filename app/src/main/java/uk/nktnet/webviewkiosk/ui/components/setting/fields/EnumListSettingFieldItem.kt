@@ -2,6 +2,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fields
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -46,7 +48,9 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
                     onSettle = { from, to ->
                         items = items.toMutableList().apply { add(to, removeAt(from)) }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
                 ) { index, item, _ ->
                     key(item.name) {
                         ReorderableItem {
