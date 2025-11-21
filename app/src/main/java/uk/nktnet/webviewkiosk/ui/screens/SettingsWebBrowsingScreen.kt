@@ -43,6 +43,7 @@ fun SettingsWebBrowsingScreen(
             AllowOtherUrlSchemesSetting()
             AllowDefaultLongPressSetting()
             AllowLinkLongPressContextMenuSetting()
+            AddressBarActionsSetting()
             KioskControlPanelRegionSetting()
             SearchProviderUrlSetting()
             SearchSuggestionEngineSetting()
