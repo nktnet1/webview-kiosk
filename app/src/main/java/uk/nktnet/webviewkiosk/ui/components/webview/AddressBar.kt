@@ -22,11 +22,32 @@ import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.option.AddressBarAction
 import uk.nktnet.webviewkiosk.config.option.WebViewInset
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+
+@Composable
+fun AddressBarMenuItem(
+    action: AddressBarAction,
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+    iconRes: Int,
+) {
+    DropdownMenuItem(
+        text = { Text(action.label) },
+        enabled = enabled,
+        onClick = onClick,
+        leadingIcon = {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = action.label
+            )
+        }
+    )
+}
 
 @Composable
 fun AddressBar(
@@ -74,6 +95,72 @@ fun AddressBar(
         }
     }
 
+    val menuItems: Map<AddressBarAction, @Composable () -> Unit> = mapOf(
+        AddressBarAction.BACK to {
+            AddressBarMenuItem(
+                action = AddressBarAction.BACK,
+                enabled = systemSettings.historyIndex > 0,
+                onClick = {
+                    WebViewNavigation.goBack(customLoadUrl, systemSettings)
+                    menuExpanded = false
+                },
+                iconRes = R.drawable.baseline_arrow_back_24,
+            )
+        },
+        AddressBarAction.FORWARD to {
+            AddressBarMenuItem(
+                action = AddressBarAction.FORWARD,
+                enabled = systemSettings.historyIndex < (systemSettings.historyStack.size - 1),
+                onClick = {
+                    WebViewNavigation.goForward(customLoadUrl, systemSettings)
+                    menuExpanded = false
+                },
+                iconRes = R.drawable.baseline_arrow_forward_24,
+            )
+        },
+        AddressBarAction.REFRESH to {
+            AddressBarMenuItem(
+                action = AddressBarAction.REFRESH,
+                onClick = {
+                    WebViewNavigation.refresh(customLoadUrl, systemSettings, userSettings)
+                    menuExpanded = false
+                },
+                iconRes = R.drawable.baseline_refresh_24,
+            )
+        },
+        AddressBarAction.HOME to {
+            AddressBarMenuItem(
+                action = AddressBarAction.HOME,
+                onClick = {
+                    WebViewNavigation.goHome(customLoadUrl, systemSettings, userSettings)
+                    menuExpanded = false
+                },
+                iconRes = R.drawable.baseline_home_24,
+            )
+        },
+        AddressBarAction.HISTORY to {
+            AddressBarMenuItem(
+                action = AddressBarAction.HISTORY,
+                onClick = { showHistoryDialog = true; menuExpanded = false },
+                iconRes = R.drawable.outline_history_24,
+            )
+        },
+        AddressBarAction.BOOKMARK to {
+            AddressBarMenuItem(
+                action = AddressBarAction.BOOKMARK,
+                onClick = { showBookmarksDialog = true; menuExpanded = false },
+                iconRes = R.drawable.outline_bookmark_24,
+            )
+        },
+        AddressBarAction.FILES to {
+            AddressBarMenuItem(
+                action = AddressBarAction.FILES,
+                onClick = { showLocalFilesDialog = true; menuExpanded = false },
+                iconRes = R.drawable.outline_folder_24,
+            )
+        }
+    )
+
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
@@ -84,9 +171,7 @@ fun AddressBar(
     ) {
         OutlinedTextField(
             value = urlBarText,
-            onValueChange = {
-                onUrlBarTextChange(it)
-            },
+            onValueChange = { onUrlBarTextChange(it) },
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
@@ -107,7 +192,9 @@ fun AddressBar(
                 }
             }),
             trailingIcon = {
-                IconButton(onClick = { addressBarSearch(urlBarText.text) }) {
+                IconButton(
+                    onClick = { addressBarSearch(urlBarText.text) }
+                ) {
                     Icon(
                         painter = painterResource(R.drawable.baseline_search_24),
                         contentDescription = "Go"
@@ -146,6 +233,7 @@ fun AddressBar(
                         modifier = Modifier.size(32.dp)
                     )
                 }
+
                 DropdownMenu(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
@@ -153,95 +241,16 @@ fun AddressBar(
                         .handleUserTouchEvent()
                         .handleUserKeyEvent(context, menuExpanded)
                 ) {
-                    if (userSettings.allowBackwardsNavigation) {
-                        DropdownMenuItem(
-                            text = { Text("Back") },
-                            enabled = systemSettings.historyIndex > 0,
-                            onClick = {
-                                WebViewNavigation.goBack(customLoadUrl, systemSettings)
-                                menuExpanded = false
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.baseline_arrow_back_24),
-                                    contentDescription = "Back"
-                                )
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text("Forward") },
-                            enabled = systemSettings.historyIndex < (systemSettings.historyStack.size - 1),
-                            onClick = {
-                                WebViewNavigation.goForward(customLoadUrl, systemSettings)
-                                menuExpanded = false
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.baseline_arrow_forward_24),
-                                    contentDescription = "Forward"
-                                )
-                            }
-                        )
-                    }
-                    if (userSettings.allowRefresh) {
-                        DropdownMenuItem(
-                            text = { Text("Refresh") },
-                            onClick = {
-                                WebViewNavigation.refresh(customLoadUrl, systemSettings, userSettings)
-                                menuExpanded = false
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.baseline_refresh_24),
-                                    contentDescription = "Refresh"
-                                )
-                            }
-                        )
-                    }
-                    if (userSettings.allowGoHome) {
-                        DropdownMenuItem(
-                            text = { Text("Home") },
-                            onClick = {
-                                WebViewNavigation.goHome(customLoadUrl, systemSettings, userSettings)
-                                menuExpanded = false
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.baseline_home_24),
-                                    contentDescription = "Home"
-                                )
-                            }
-                        )
-                    }
-                    if (userSettings.allowHistoryAccess) {
-                        DropdownMenuItem(
-                            text = { Text("History") },
-                            onClick = {
-                                menuExpanded = false
-                                showHistoryDialog = true
-                            },
-                            leadingIcon = { Icon(painter = painterResource(R.drawable.outline_history_24), contentDescription = "History") }
-                        )
-                    }
-                    if (userSettings.allowBookmarkAccess) {
-                        DropdownMenuItem(
-                            text = { Text("Bookmark") },
-                            onClick = {
-                                menuExpanded = false
-                                showBookmarksDialog = true
-                            },
-                            leadingIcon = { Icon(painter = painterResource(R.drawable.outline_bookmark_24), contentDescription = "Bookmarks") }
-                        )
-                    }
-                    if (userSettings.allowLocalFiles) {
-                        DropdownMenuItem(
-                            text = { Text("Files") },
-                            onClick = {
-                                menuExpanded = false
-                                showLocalFilesDialog = true
-                            },
-                            leadingIcon = { Icon(painter = painterResource(R.drawable.outline_folder_24), contentDescription = "Local Files") }
-                        )
+                    userSettings.addressBarActions.forEach { key ->
+                        when (key) {
+                            AddressBarAction.BACK -> if (userSettings.allowBackwardsNavigation) menuItems[key]?.invoke()
+                            AddressBarAction.FORWARD -> if (userSettings.allowBackwardsNavigation) menuItems[key]?.invoke()
+                            AddressBarAction.REFRESH -> if (userSettings.allowRefresh) menuItems[key]?.invoke()
+                            AddressBarAction.HOME -> if (userSettings.allowGoHome) menuItems[key]?.invoke()
+                            AddressBarAction.HISTORY -> if (userSettings.allowHistoryAccess) menuItems[key]?.invoke()
+                            AddressBarAction.BOOKMARK -> if (userSettings.allowBookmarkAccess) menuItems[key]?.invoke()
+                            AddressBarAction.FILES -> if (userSettings.allowLocalFiles) menuItems[key]?.invoke()
+                        }
                     }
                 }
             }

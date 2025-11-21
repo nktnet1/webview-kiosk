@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.utils
 import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.core.content.edit
+import org.json.JSONArray
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -155,6 +156,42 @@ fun <T : Enum<T>> stringEnumPref(
     override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
         if (getRestrictions()?.containsKey(key) != true) {
             prefs.edit { putString(key, value.name) }
+        }
+    }
+}
+
+fun <T : Enum<T>> enumListPref(
+    getRestrictions: () -> Bundle? = { null },
+    prefs: SharedPreferences,
+    key: String,
+    default: List<T>,
+    fromString: (String?) -> T
+) = object : ReadWriteProperty<Any?, List<T>> {
+    override fun getValue(thisRef: Any?, property: KProperty<*>): List<T> {
+        val raw = if (getRestrictions()?.containsKey(key) == true) {
+            getRestrictions()?.getString(key)
+        } else {
+            prefs.getString(key, null)
+        } ?: JSONArray(default.map { it.name }).toString()
+
+        return try {
+            val arr = JSONArray(raw)
+            List(arr.length()) { idx ->
+                fromString(arr.getString(idx))
+            }
+        } catch (_: Exception) {
+            prefs.edit {
+                putString(key, JSONArray(default.map { it.name }).toString())
+            }
+            default
+        }
+    }
+
+    override fun setValue(thisRef: Any?, property: KProperty<*>, value: List<T>) {
+        if (getRestrictions()?.containsKey(key) != true) {
+            prefs.edit {
+                putString(key, JSONArray(value.map { it.name }).toString())
+            }
         }
     }
 }

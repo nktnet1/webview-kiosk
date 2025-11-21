@@ -7,6 +7,7 @@ import android.util.Base64
 import org.json.JSONObject
 import uk.nktnet.webviewkiosk.config.option.*
 import uk.nktnet.webviewkiosk.utils.booleanPref
+import uk.nktnet.webviewkiosk.utils.enumListPref
 import uk.nktnet.webviewkiosk.utils.stringEnumPref
 import uk.nktnet.webviewkiosk.utils.intPref
 import uk.nktnet.webviewkiosk.utils.stringPref
@@ -128,6 +129,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION,
         KioskControlPanelRegionOption.TOP_LEFT.name,
         fromString = KioskControlPanelRegionOption::fromString
+    )
+    var addressBarActions by enumListPref(
+        prefs = prefs,
+        key = UserSettingsKeys.WebBrowsing.ADDRESS_BAR_ACTIONS,
+        default = AddressBarAction.getDefault(),
+        fromString = { AddressBarAction.fromString(it) ?: AddressBarAction.BACK }
     )
     var searchProviderUrl by stringPref(
         getRestrictions,
