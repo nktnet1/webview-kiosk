@@ -203,16 +203,19 @@ fun AddressBar(
             }
         )
 
-        val showMenu = (
-            userSettings.allowBackwardsNavigation
-            || userSettings.allowRefresh
-            || userSettings.allowGoHome
-            || userSettings.allowHistoryAccess
-            || userSettings.allowBookmarkAccess
-            || userSettings.allowLocalFiles
-        )
+        val enabledActions = userSettings.addressBarActions.filter { action ->
+            when (action) {
+                AddressBarAction.BACK -> userSettings.allowBackwardsNavigation
+                AddressBarAction.FORWARD -> userSettings.allowBackwardsNavigation
+                AddressBarAction.REFRESH -> userSettings.allowRefresh
+                AddressBarAction.HOME -> userSettings.allowGoHome
+                AddressBarAction.HISTORY -> userSettings.allowHistoryAccess
+                AddressBarAction.BOOKMARK -> userSettings.allowBookmarkAccess
+                AddressBarAction.FILES -> userSettings.allowLocalFiles
+            }
+        }
 
-        if (showMenu) {
+        if (enabledActions.isNotEmpty()) {
             Box(
                 modifier = Modifier
                     .padding(start = 4.dp)
@@ -241,16 +244,8 @@ fun AddressBar(
                         .handleUserTouchEvent()
                         .handleUserKeyEvent(context, menuExpanded)
                 ) {
-                    userSettings.addressBarActions.forEach { key ->
-                        when (key) {
-                            AddressBarAction.BACK -> if (userSettings.allowBackwardsNavigation) menuItems[key]?.invoke()
-                            AddressBarAction.FORWARD -> if (userSettings.allowBackwardsNavigation) menuItems[key]?.invoke()
-                            AddressBarAction.REFRESH -> if (userSettings.allowRefresh) menuItems[key]?.invoke()
-                            AddressBarAction.HOME -> if (userSettings.allowGoHome) menuItems[key]?.invoke()
-                            AddressBarAction.HISTORY -> if (userSettings.allowHistoryAccess) menuItems[key]?.invoke()
-                            AddressBarAction.BOOKMARK -> if (userSettings.allowBookmarkAccess) menuItems[key]?.invoke()
-                            AddressBarAction.FILES -> if (userSettings.allowLocalFiles) menuItems[key]?.invoke()
-                        }
+                    enabledActions.forEach { key ->
+                        menuItems[key]?.invoke()
                     }
                 }
             }

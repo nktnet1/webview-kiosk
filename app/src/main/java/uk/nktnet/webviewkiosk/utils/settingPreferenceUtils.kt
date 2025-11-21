@@ -176,21 +176,23 @@ fun <T : Enum<T>> enumListPref(
 
         return try {
             val arr = JSONArray(raw)
-            List(arr.length()) { idx ->
+            LinkedHashSet(List(arr.length()) { idx ->
                 fromString(arr.getString(idx))
-            }
+            }).toList()
         } catch (_: Exception) {
+            val uniqueDefault = LinkedHashSet(default).toList()
             prefs.edit {
-                putString(key, JSONArray(default.map { it.name }).toString())
+                putString(key, JSONArray(uniqueDefault.map { it.name }).toString())
             }
-            default
+            uniqueDefault
         }
     }
 
     override fun setValue(thisRef: Any?, property: KProperty<*>, value: List<T>) {
         if (getRestrictions()?.containsKey(key) != true) {
+            val uniqueValue = LinkedHashSet(value).toList()
             prefs.edit {
-                putString(key, JSONArray(value.map { it.name }).toString())
+                putString(key, JSONArray(uniqueValue.map { it.name }).toString())
             }
         }
     }
