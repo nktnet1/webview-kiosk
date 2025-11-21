@@ -51,6 +51,9 @@
     <string name="web_browsing_allow_link_long_press_context_menu_title">Allow Link Long Press Context Menu</string>
     <string name="web_browsing_allow_link_long_press_context_menu_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
+    <string name="web_browsing_address_bar_actions_title">Address Bar Actions</string>
+    <string name="web_browsing_address_bar_actions_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
+
     <string name="web_browsing_kiosk_control_panel_region_title">Allow Kiosk Control Panel</string>
     <string name="web_browsing_kiosk_control_panel_region_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 

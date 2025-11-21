@@ -100,6 +100,14 @@
         android:description="@string/web_browsing_allow_link_long_press_context_menu_description"
     />
     <restriction
+        android:key="web_browsing.address_bar_actions"
+        android:restrictionType="multi-select"
+        android:entries="@array/entries_address_bar_action_option"
+        android:entryValues="@array/entry_values_address_bar_action_option"
+        android:title="@string/web_browsing_address_bar_actions_title"
+        android:description="@string/web_browsing_address_bar_actions_description"
+    />
+    <restriction
         android:key="web_browsing.kiosk_control_panel_region"
         android:restrictionType="choice"
         android:entries="@array/entries_kiosk_control_panel_region_option"
