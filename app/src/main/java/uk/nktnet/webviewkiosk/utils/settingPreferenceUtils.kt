@@ -174,7 +174,6 @@ fun <T : Enum<T>> enumListPref(
             JSONArray(prefs.getString(key, null))
         }
 
-        println("[DEBUG] [restricted=${getRestrictions()?.containsKey(key) ?: false}] raw=$raw")
         return try {
             LinkedHashSet(List(raw.length()) { idx ->
                 fromString(raw.getString(idx))

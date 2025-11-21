@@ -125,6 +125,7 @@ class UserSettings(val context: Context) {
         true
     )
     var addressBarActions by enumListPref(
+        getRestrictions,
         prefs = prefs,
         key = UserSettingsKeys.WebBrowsing.ADDRESS_BAR_ACTIONS,
         default = AddressBarActionOption.getDefault(),
