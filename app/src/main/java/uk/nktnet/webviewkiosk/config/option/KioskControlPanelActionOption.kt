@@ -9,9 +9,9 @@ enum class KioskControlPanelActionOption(val label: String) {
     HISTORY("History"),
     BOOKMARK("Bookmark"),
     FILES("Files"),
+    SETTINGS("Settings"),
     LOCK("Lock"),
-    UNLOCK("Unlock"),
-    SETTINGS("Settings");
+    UNLOCK("Unlock");
 
     companion object {
         fun itemFromString(value: String?): KioskControlPanelActionOption? {
@@ -30,7 +30,6 @@ enum class KioskControlPanelActionOption(val label: String) {
             FILES,
             LOCK,
             UNLOCK,
-            SETTINGS,
         )
 
         fun parseFromJsonArray(jsonArray: JSONArray?): List<KioskControlPanelActionOption> {

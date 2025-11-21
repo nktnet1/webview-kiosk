@@ -56,6 +56,7 @@ import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
 import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
+import uk.nktnet.webviewkiosk.config.option.KioskControlPanelActionOption
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
 import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
@@ -69,6 +70,31 @@ import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+
+@Composable
+private fun ActionButton(
+    text: String,
+    enabled: Boolean,
+    onClick: () -> Unit,
+    iconRes: Int,
+    modifier: Modifier = Modifier,
+) {
+    Button(
+        enabled = enabled,
+        onClick = onClick,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Icon(
+            painter = painterResource(iconRes),
+            contentDescription = text,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text,
+        )
+    }
+}
 
 @Composable
 fun KioskControlPanel(
@@ -237,6 +263,150 @@ fun KioskControlPanel(
         }
     }
 
+    val menuItems: Map<KioskControlPanelActionOption, @Composable () -> Unit> = remember(
+        isSticky,
+        isLocked,
+    ) {
+        mapOf(
+            KioskControlPanelActionOption.NAVIGATION to {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Button(
+                        onClick = {
+                            WebViewNavigation.goBack(customLoadUrl, systemSettings)
+                            showDialog = isSticky
+                        },
+                        enabled = enableInteraction,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_arrow_back_24),
+                            contentDescription = "Back",
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "Back",
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+
+                    Button(
+                        onClick = {
+                            WebViewNavigation.goForward(customLoadUrl, systemSettings)
+                            showDialog = isSticky
+                        },
+                        enabled = enableInteraction,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_arrow_forward_24),
+                            contentDescription = "Forward",
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            "Forward",
+                            style = MaterialTheme.typography.labelSmall
+                        )
+                    }
+                }
+            },
+            KioskControlPanelActionOption.HOME to {
+                ActionButton(
+                    text = "Home",
+                    enabled = enableInteraction,
+                    onClick = {
+                        WebViewNavigation.goHome(customLoadUrl, systemSettings, userSettings)
+                        showDialog = isSticky
+                    },
+                    iconRes = R.drawable.baseline_home_24
+                )
+            },
+            KioskControlPanelActionOption.REFRESH to {
+                ActionButton(
+                    text = "Refresh",
+                    enabled = enableInteraction,
+                    onClick = {
+                        WebViewNavigation.refresh(customLoadUrl, systemSettings, userSettings)
+                        showDialog = isSticky
+                    },
+                    iconRes = R.drawable.baseline_refresh_24
+                )
+            },
+            KioskControlPanelActionOption.HISTORY to {
+                ActionButton(
+                    text = "History",
+                    enabled = enableInteraction,
+                    onClick = {
+                        showDialog = isSticky
+                        showHistoryDialog = true
+                    },
+                    iconRes = R.drawable.outline_history_24
+                )
+            },
+            KioskControlPanelActionOption.BOOKMARK to {
+                ActionButton(
+                    text = "Bookmark",
+                    enabled = enableInteraction,
+                    onClick = {
+                        showDialog = isSticky
+                        showBookmarksDialog = true
+                    },
+                    iconRes = R.drawable.outline_bookmark_24
+                )
+            },
+            KioskControlPanelActionOption.FILES to {
+                ActionButton(
+                    text = "Files",
+                    enabled = enableInteraction,
+                    onClick = {
+                        showDialog = isSticky
+                        showLocalFilesDialog = true
+                    },
+                    iconRes = R.drawable.outline_folder_24
+                )
+            },
+            KioskControlPanelActionOption.LOCK to {
+                ActionButton(
+                    text = "Lock",
+                    enabled = enableInteraction,
+                    onClick = {
+                        tryLockTask(activity, ::showToast)
+                        showDialog = isSticky
+                    },
+                    iconRes = R.drawable.baseline_lock_24
+                )
+            },
+            KioskControlPanelActionOption.UNLOCK to {
+                ActionButton(
+                    text = "Unlock",
+                    enabled = enableInteraction,
+                    onClick = {
+                        activity?.let {
+                            unlockWithAuthIfRequired(activity, ::showToast)
+                        }
+                    },
+                    iconRes = R.drawable.baseline_lock_open_24
+                )
+            },
+            KioskControlPanelActionOption.SETTINGS to {
+                ActionButton(
+                    text = "Settings",
+                    enabled = enableInteraction,
+                    onClick = {
+                        showDialog = false
+                        navController.navigate(Screen.Settings.route)
+                    },
+                    iconRes = R.drawable.baseline_settings_24
+                )
+            }
+        )
+    }
+
+
     if (showDialog) {
         Dialog(
             onDismissRequest = { showDialog = false },
@@ -276,9 +446,10 @@ fun KioskControlPanel(
                             enabled = enableInteraction,
                             modifier = Modifier.offset(y = (-2).dp),
                             onClick = {
-                                systemSettings.isKioskControlPanelSticky = !isSticky
-                                isSticky = !isSticky
-                                showToast("Sticky mode ${if (isSticky) "enabled." else "disabled."}")
+                                val newSticky = !isSticky
+                                showToast("Sticky mode ${if (newSticky) "enabled." else "disabled."}")
+                                isSticky = newSticky
+                                systemSettings.isKioskControlPanelSticky = newSticky
                             },
                         ) {
                             Icon(
@@ -290,209 +461,49 @@ fun KioskControlPanel(
                     }
                     Spacer(modifier = Modifier.height(10.dp))
 
-                    if (userSettings.allowBackwardsNavigation) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Button(
-                                enabled = enableInteraction,
-                                onClick = {
-                                    WebViewNavigation.goBack(customLoadUrl, systemSettings)
-                                    showDialog = isSticky
-                                },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.baseline_arrow_back_24),
-                                    contentDescription = "Back",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "Back",
-                                    style = MaterialTheme.typography.labelSmall
-                                )
+                    val enabledActions = remember(userSettings, isLocked) {
+                        val result = mutableListOf<KioskControlPanelActionOption>()
+                        var hasSettings = false
+                        var hasUnlock = false
+
+                        userSettings.kioskControlPanelActions.forEach { action ->
+                            val include = when (action) {
+                                KioskControlPanelActionOption.NAVIGATION -> userSettings.allowBackwardsNavigation
+                                KioskControlPanelActionOption.HOME -> userSettings.allowGoHome
+                                KioskControlPanelActionOption.REFRESH -> userSettings.allowRefresh
+                                KioskControlPanelActionOption.HISTORY -> userSettings.allowHistoryAccess
+                                KioskControlPanelActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
+                                KioskControlPanelActionOption.FILES -> userSettings.allowLocalFiles
+                                KioskControlPanelActionOption.SETTINGS -> !isLocked
+                                KioskControlPanelActionOption.LOCK -> !isLocked
+                                KioskControlPanelActionOption.UNLOCK -> isLocked
                             }
 
-                            Button(
-                                enabled = enableInteraction,
-                                onClick = {
-                                    WebViewNavigation.goForward(customLoadUrl, systemSettings)
-                                    showDialog = isSticky
-                                },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.baseline_arrow_forward_24),
-                                    contentDescription = "Forward",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "Forward",
-                                    style = MaterialTheme.typography.labelSmall
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(3.dp))
-                    }
-
-                    if (userSettings.allowGoHome) {
-                        Button(
-                            enabled = enableInteraction,
-                            onClick = {
-                                WebViewNavigation.goHome(customLoadUrl, systemSettings, userSettings)
-                                showDialog = isSticky
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_home_24),
-                                contentDescription = "Home",
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Home")
-                        }
-                        Spacer(modifier = Modifier.height(3.dp))
-                    }
-
-                    if (userSettings.allowRefresh) {
-                        Button(
-                            enabled = enableInteraction,
-                            onClick = {
-                                WebViewNavigation.refresh(customLoadUrl, systemSettings, userSettings)
-                                showDialog = isSticky
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_refresh_24),
-                                contentDescription = "Refresh",
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Refresh")
-                        }
-                        Spacer(modifier = Modifier.height(3.dp))
-                    }
-
-                    if (userSettings.allowHistoryAccess) {
-                        Button(
-                            enabled = enableInteraction,
-                            onClick = {
-                                showDialog = isSticky
-                                showHistoryDialog = true
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.outline_history_24),
-                                contentDescription = "History",
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("History")
-                        }
-                        Spacer(modifier = Modifier.height(3.dp))
-                    }
-
-                    if (userSettings.allowBookmarkAccess) {
-                        Button(
-                            enabled = enableInteraction,
-                            onClick = {
-                                showDialog = isSticky
-                                showBookmarksDialog = true
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.outline_bookmark_24),
-                                contentDescription = "Bookmark",
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Bookmark")
-                        }
-                        Spacer(modifier = Modifier.height(3.dp))
-                    }
-
-                    if (userSettings.allowLocalFiles) {
-                        Button(
-                            enabled = enableInteraction,
-                            onClick = {
-                                showDialog = isSticky
-                                showLocalFilesDialog = true
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.outline_folder_24),
-                                contentDescription = "Files",
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Files")
-                        }
-                        Spacer(modifier = Modifier.height(3.dp))
-                    }
-
-                    if (isLocked) {
-                        Button(
-                            enabled = enableInteraction,
-                            onClick = {
-                                activity?.let {
-                                    unlockWithAuthIfRequired(activity, ::showToast)
+                            if (include) {
+                                result.add(action)
+                                if (action == KioskControlPanelActionOption.SETTINGS) {
+                                    hasSettings = true
                                 }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_lock_open_24),
-                                contentDescription = "Unlock",
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Unlock")
-                        }
-                        Spacer(modifier = Modifier.height(3.dp))
-                    } else {
-                        if (userSettings.floatingToolbarMode == FloatingToolbarModeOption.HIDDEN) {
-                            Button(
-                                enabled = enableInteraction,
-                                onClick = {
-                                    showDialog = false
-                                    navController.navigate(Screen.Settings.route)
-                                },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.baseline_settings_24),
-                                    contentDescription = "Settings",
-                                    modifier = Modifier.size(24.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Settings")
+                                if (action == KioskControlPanelActionOption.UNLOCK) {
+                                    hasUnlock = true
+                                }
                             }
-                            Spacer(modifier = Modifier.height(3.dp))
                         }
-                        Button(
-                            enabled = enableInteraction,
-                            onClick = {
-                                tryLockTask(activity, ::showToast)
-                                showDialog = isSticky
-                            },
-                            modifier = Modifier.fillMaxWidth()
+                        if (
+                            !isLocked
+                            && !hasSettings
+                            && userSettings.floatingToolbarMode == FloatingToolbarModeOption.HIDDEN
                         ) {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_lock_24),
-                                contentDescription = "Lock",
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Lock")
+                            result.add(KioskControlPanelActionOption.SETTINGS)
                         }
+                        if (isLocked && !hasUnlock) {
+                            result.add(KioskControlPanelActionOption.UNLOCK)
+                        }
+                        result
+                    }
+
+                    enabledActions.forEach { action ->
+                        menuItems[action]?.invoke()
                         Spacer(modifier = Modifier.height(3.dp))
                     }
 
