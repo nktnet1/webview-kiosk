@@ -38,7 +38,7 @@ fun AddressBarActionsSetting() {
         infoText = "Reorder and manage visible actins in the address bar.",
         value = savedActions
             .joinToString(", ") { it.label }
-            .ifEmpty { "No actions will be shown" },
+            .ifEmpty { "(blank)" },
         restricted = false,
         onDismissCallback = {},
         onSave = {

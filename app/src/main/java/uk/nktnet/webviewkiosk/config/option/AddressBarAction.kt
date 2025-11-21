@@ -1,5 +1,7 @@
 package uk.nktnet.webviewkiosk.config.option
 
+import org.json.JSONArray
+
 enum class AddressBarAction(val label: String) {
     BACK("Back"),
     FORWARD("Forward"),
@@ -25,5 +27,14 @@ enum class AddressBarAction(val label: String) {
             BOOKMARK,
             FILES
         )
+
+        fun parseAddressBarActions(jsonArray: JSONArray?): List<AddressBarAction> {
+            if (jsonArray == null) {
+                return AddressBarAction.getDefault()
+            }
+            return List(jsonArray.length()) { idx ->
+                AddressBarAction.fromString(jsonArray.optString(idx))
+            }.filterNotNull()
+        }
     }
 }

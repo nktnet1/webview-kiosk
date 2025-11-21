@@ -169,20 +169,22 @@ fun <T : Enum<T>> enumListPref(
 ) = object : ReadWriteProperty<Any?, List<T>> {
     override fun getValue(thisRef: Any?, property: KProperty<*>): List<T> {
         val raw = if (getRestrictions()?.containsKey(key) == true) {
-            getRestrictions()?.getString(key)
+            JSONArray(getRestrictions()?.getStringArray(key))
         } else {
-            prefs.getString(key, null)
-        } ?: JSONArray(default.map { it.name }).toString()
+            JSONArray(prefs.getString(key, null))
+        }
 
         return try {
-            val arr = JSONArray(raw)
-            LinkedHashSet(List(arr.length()) { idx ->
-                fromString(arr.getString(idx))
+            LinkedHashSet(List(raw.length()) { idx ->
+                fromString(raw.getString(idx))
             }).toList()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            e.printStackTrace()
             val uniqueDefault = LinkedHashSet(default).toList()
             prefs.edit {
-                putString(key, JSONArray(uniqueDefault.map { it.name }).toString())
+                putString(key, JSONArray(
+                    uniqueDefault.map { it.name }).toString()
+                )
             }
             uniqueDefault
         }
@@ -191,8 +193,9 @@ fun <T : Enum<T>> enumListPref(
     override fun setValue(thisRef: Any?, property: KProperty<*>, value: List<T>) {
         if (getRestrictions()?.containsKey(key) != true) {
             val uniqueValue = LinkedHashSet(value).toList()
+            val savedValue = JSONArray(uniqueValue.map { it.name }).toString()
             prefs.edit {
-                putString(key, JSONArray(uniqueValue.map { it.name }).toString())
+                putString(key, savedValue)
             }
         }
     }

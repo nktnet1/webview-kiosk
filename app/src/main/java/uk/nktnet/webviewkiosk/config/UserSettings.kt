@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.RestrictionsManager
 import android.content.SharedPreferences
 import android.util.Base64
+import org.json.JSONArray
 import org.json.JSONObject
 import uk.nktnet.webviewkiosk.config.option.*
 import uk.nktnet.webviewkiosk.utils.booleanPref
@@ -123,18 +124,18 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU,
         true
     )
+    var addressBarActions by enumListPref(
+        prefs = prefs,
+        key = UserSettingsKeys.WebBrowsing.ADDRESS_BAR_ACTIONS,
+        default = AddressBarAction.getDefault(),
+        fromString = { AddressBarAction.fromString(it) ?: AddressBarAction.BACK }
+    )
     var kioskControlPanelRegion by stringEnumPref(
         getRestrictions,
         prefs,
         UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION,
         KioskControlPanelRegionOption.TOP_LEFT.name,
         fromString = KioskControlPanelRegionOption::fromString
-    )
-    var addressBarActions by enumListPref(
-        prefs = prefs,
-        key = UserSettingsKeys.WebBrowsing.ADDRESS_BAR_ACTIONS,
-        default = AddressBarAction.getDefault(),
-        fromString = { AddressBarAction.fromString(it) ?: AddressBarAction.BACK }
     )
     var searchProviderUrl by stringPref(
         getRestrictions,
@@ -503,6 +504,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebBrowsing.ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
             put(UserSettingsKeys.WebBrowsing.ALLOW_DEFAULT_LONG_PRESS, allowDefaultLongPress)
             put(UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, allowLinkLongPressContextMenu)
+            put(UserSettingsKeys.WebBrowsing.ADDRESS_BAR_ACTIONS, JSONArray(addressBarActions.map { it.name }))
             put(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION, kioskControlPanelRegion.name)
             put(UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL, searchProviderUrl)
             put(UserSettingsKeys.WebBrowsing.SEARCH_SUGGESTION_ENGINE, searchSuggestionEngine.name)
@@ -588,6 +590,9 @@ class UserSettings(val context: Context) {
             allowOtherUrlSchemes = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
             allowDefaultLongPress = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_DEFAULT_LONG_PRESS, allowDefaultLongPress)
             allowLinkLongPressContextMenu = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, allowLinkLongPressContextMenu)
+            json.optJSONArray(UserSettingsKeys.WebBrowsing.ADDRESS_BAR_ACTIONS)?.let { arr ->
+                addressBarActions = AddressBarAction.parseAddressBarActions(arr)
+            }
             kioskControlPanelRegion = KioskControlPanelRegionOption.fromString(
                 json.optString(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION, kioskControlPanelRegion.name)
             )
