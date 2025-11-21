@@ -19,6 +19,13 @@ fun KioskControlPanelActionsSetting() {
             Manage visible actions in the kiosk control panel.
 
             Use the drag handle at the end to reorder the items.
+            
+            When in locked mode, the "UNLOCK" action will be appended to the
+            end if not configured.
+            
+            When in unlocked mode, if "Appearance -> Floating Toolbar Mode" is
+            set to Hidden, the "SETTINGS" action will be appended to the end
+            if not configured.
         """.trimIndent(),
         entries = KioskControlPanelActionOption.entries,
         getLabel = { it.label },
