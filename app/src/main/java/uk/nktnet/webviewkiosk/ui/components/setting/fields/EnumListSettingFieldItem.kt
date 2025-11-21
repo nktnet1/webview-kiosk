@@ -63,7 +63,7 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
                                 if (!restricted) {
                                     IconButton(
                                         onClick = { items = items.toMutableList().apply { remove(item) } },
-                                        modifier = Modifier.offset((-5).dp)
+                                        modifier = Modifier.offset((-10).dp)
                                     ) {
                                         Icon(
                                             painter = painterResource(R.drawable.baseline_clear_24),

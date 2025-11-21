@@ -30,7 +30,7 @@ import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
-fun AddressBarMenuItem(
+private fun AddressBarMenuItem(
     action: AddressBarActionOption,
     enabled: Boolean = true,
     onClick: () -> Unit,
