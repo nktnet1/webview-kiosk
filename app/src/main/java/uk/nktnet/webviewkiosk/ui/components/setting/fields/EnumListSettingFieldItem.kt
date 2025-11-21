@@ -8,6 +8,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import org.json.JSONArray
 import sh.calvin.reorderable.ReorderableColumn
 import uk.nktnet.webviewkiosk.R
 
@@ -31,7 +32,7 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
     CustomSettingFieldItem(
         label = label,
         infoText = infoText,
-        value = savedItems.joinToString(", ") { getLabel(it) }.ifEmpty { "[]" },
+        value = JSONArray(savedItems.map { it.name }).toString(),
         restricted = restricted,
         onDismissCallback = {},
         onSave = {
