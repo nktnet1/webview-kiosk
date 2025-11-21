@@ -30,94 +30,95 @@ fun LocalFilesDialog(
     onDismiss: () -> Unit,
     customLoadUrl: (url: String) -> Unit,
 ) {
+    if (!showLocalFileDialog) {
+        return
+    }
     val context = LocalContext.current
     val filesDir = getWebContentFilesDir(context)
 
     var filesList by remember { mutableStateOf(listLocalFiles(filesDir)) }
     val listState = rememberLazyListState()
 
-    if (showLocalFileDialog) {
-        Dialog(onDismissRequest = onDismiss) {
-            Surface(
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier
+                .handleUserTouchEvent()
+                .handleUserKeyEvent(context, showLocalFileDialog)
+                .fillMaxSize()
+                .padding(vertical = 16.dp),
+            color = MaterialTheme.colorScheme.background,
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Column(
                 modifier = Modifier
-                    .handleUserTouchEvent()
-                    .handleUserKeyEvent(context, showLocalFileDialog)
                     .fillMaxSize()
-                    .padding(vertical = 16.dp),
-                color = MaterialTheme.colorScheme.background,
-                shape = MaterialTheme.shapes.medium
+                    .padding(16.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                ) {
-                    Text("Files", style = MaterialTheme.typography.headlineMedium)
-                    Spacer(Modifier.height(16.dp))
+                Text("Files", style = MaterialTheme.typography.headlineMedium)
+                Spacer(Modifier.height(16.dp))
 
-                    if (filesList.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No local files available.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.weight(1f),
-                            state = listState
-                        ) {
-                            itemsIndexed(filesList) { index, file ->
-                                val displayName = file.getDisplayName()
+                if (filesList.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No local files available.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        state = listState
+                    ) {
+                        itemsIndexed(filesList) { index, file ->
+                            val displayName = file.getDisplayName()
 
-                                Card(
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                                    .clickable {
+                                        customLoadUrl(file.getLocalUrl())
+                                        onDismiss()
+                                    }
+                            ) {
+                                Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
-                                        .clickable {
-                                            customLoadUrl(file.getLocalUrl())
-                                            onDismiss()
-                                        }
+                                        .padding(16.dp)
                                 ) {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp)
-                                    ) {
-                                        Text(
-                                            text = buildAnnotatedString {
-                                                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                                    append("[$index] ")
-                                                }
-                                                append(
-                                                    displayName.toCharArray().joinToString("\u200B")
-                                                )
-                                            },
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis,
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                    }
+                                    Text(
+                                        text = buildAnnotatedString {
+                                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                                append("[$index] ")
+                                            }
+                                            append(
+                                                displayName.toCharArray().joinToString("\u200B")
+                                            )
+                                        },
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
                                 }
                             }
                         }
                     }
+                }
 
-                    Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(16.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        TextButton(onClick = onDismiss) {
-                            Text("Close")
-                        }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Close")
                     }
                 }
             }

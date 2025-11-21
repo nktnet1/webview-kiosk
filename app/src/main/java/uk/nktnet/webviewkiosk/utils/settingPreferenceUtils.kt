@@ -168,13 +168,13 @@ fun <T : Enum<T>> enumListPref(
     fromString: (String?) -> T
 ) = object : ReadWriteProperty<Any?, List<T>> {
     override fun getValue(thisRef: Any?, property: KProperty<*>): List<T> {
-        val raw = if (getRestrictions()?.containsKey(key) == true) {
-            JSONArray(getRestrictions()?.getStringArray(key))
-        } else {
-            JSONArray(prefs.getString(key, null))
-        }
-
         return try {
+            val raw = if (getRestrictions()?.containsKey(key) == true) {
+                JSONArray(getRestrictions()?.getStringArray(key))
+            } else {
+                JSONArray(prefs.getString(key, null) ?: emptyList<String>())
+            }
+
             LinkedHashSet(List(raw.length()) { idx ->
                 fromString(raw.getString(idx))
             }).toList()

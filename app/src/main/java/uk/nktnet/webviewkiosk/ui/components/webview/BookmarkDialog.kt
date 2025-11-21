@@ -27,88 +27,90 @@ fun BookmarksDialog(
     onDismiss: () -> Unit,
     customLoadUrl: (newUrl: String) -> Unit,
 ) {
+    if (!showBookmarkDialog) {
+        return
+    }
+
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
     val bookmarks = remember { userSettings.websiteBookmarks.lines().filter { it.isNotBlank() } }
     val listState = rememberLazyListState()
 
-    if (showBookmarkDialog) {
-        Dialog(onDismissRequest = onDismiss) {
-            Surface(
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier
+                .handleUserTouchEvent()
+                .handleUserKeyEvent(context, showBookmarkDialog)
+                .fillMaxSize()
+                .padding(vertical = 16.dp),
+            color = MaterialTheme.colorScheme.background,
+            shape = MaterialTheme.shapes.medium,
+        ) {
+            Column(
                 modifier = Modifier
-                    .handleUserTouchEvent()
-                    .handleUserKeyEvent(context, showBookmarkDialog)
                     .fillMaxSize()
-                    .padding(vertical = 16.dp),
-                color = MaterialTheme.colorScheme.background,
-                shape = MaterialTheme.shapes.medium,
+                    .padding(16.dp)
             ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp)
-                ) {
-                    Text("Bookmarks", style = MaterialTheme.typography.headlineMedium)
-                    Spacer(Modifier.height(16.dp))
+                Text("Bookmarks", style = MaterialTheme.typography.headlineMedium)
+                Spacer(Modifier.height(16.dp))
 
-                    if (bookmarks.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No bookmarks saved.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    } else {
-                        LazyColumn(
-                            modifier = Modifier.weight(1f),
-                            state = listState
-                        ) {
-                            itemsIndexed(bookmarks) { index, url ->
-                                Card(
+                if (bookmarks.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No bookmarks saved.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.weight(1f),
+                        state = listState
+                    ) {
+                        itemsIndexed(bookmarks) { index, url ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
+                                    .clickable {
+                                        customLoadUrl(url)
+                                        onDismiss()
+                                    }
+                            ) {
+                                Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 4.dp)
-                                        .clickable {
-                                            customLoadUrl(url)
-                                            onDismiss()
-                                        }
+                                        .padding(16.dp)
                                 ) {
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(16.dp)
-                                    ) {
-                                        Text(
-                                            text = buildAnnotatedString {
-                                                withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                                    append("[$index] ")
-                                                }
-                                                append(url.toCharArray().joinToString("\u200B"))
-                                            },
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis,
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                    }
+                                    Text(
+                                        text = buildAnnotatedString {
+                                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                                append("[$index] ")
+                                            }
+                                            append(url.toCharArray().joinToString("\u200B"))
+                                        },
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis,
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
                                 }
                             }
                         }
                     }
+                }
 
-                    Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(16.dp))
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.End
-                    ) {
-                        TextButton(onClick = onDismiss) { Text("Close") }
-                    }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) { Text("Close") }
                 }
             }
         }
