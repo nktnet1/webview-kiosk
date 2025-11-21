@@ -217,18 +217,16 @@ fun AddressBar(
             }
         )
 
-        val enabledActions by remember {
-            derivedStateOf {
-                userSettings.addressBarActions.filter { action ->
-                    when (action) {
-                        AddressBarActionOption.BACK -> userSettings.allowBackwardsNavigation
-                        AddressBarActionOption.FORWARD -> userSettings.allowBackwardsNavigation
-                        AddressBarActionOption.REFRESH -> userSettings.allowRefresh
-                        AddressBarActionOption.HOME -> userSettings.allowGoHome
-                        AddressBarActionOption.HISTORY -> userSettings.allowHistoryAccess
-                        AddressBarActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
-                        AddressBarActionOption.FILES -> userSettings.allowLocalFiles
-                    }
+        val enabledActions = remember {
+            userSettings.addressBarActions.filter { action ->
+                when (action) {
+                    AddressBarActionOption.BACK -> userSettings.allowBackwardsNavigation
+                    AddressBarActionOption.FORWARD -> userSettings.allowBackwardsNavigation
+                    AddressBarActionOption.REFRESH -> userSettings.allowRefresh
+                    AddressBarActionOption.HOME -> userSettings.allowGoHome
+                    AddressBarActionOption.HISTORY -> userSettings.allowHistoryAccess
+                    AddressBarActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
+                    AddressBarActionOption.FILES -> userSettings.allowLocalFiles
                 }
             }
         }
