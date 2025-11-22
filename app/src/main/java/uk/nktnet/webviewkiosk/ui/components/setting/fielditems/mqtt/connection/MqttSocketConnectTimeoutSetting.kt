@@ -1,0 +1,28 @@
+package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldItem
+
+@Composable
+fun MqttSocketConnectTimeoutSetting() {
+    val context = LocalContext.current
+    val userSettings = remember { UserSettings(context) }
+
+    NumberSettingFieldItem(
+        label = "Socket Connect Timeout (seconds)",
+        infoText = """
+            Maximum time in seconds the MQTT client will wait for the underlying
+            TCP socket connection to be established before timing out.
+        """.trimIndent(),
+        placeholder = "e.g. 10",
+        initialValue = userSettings.mqttSocketConnectTimeout,
+        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.SOCKET_CONNECT_TIMEOUT),
+        min = 0,
+        max = 120,
+        onSave = { userSettings.mqttSocketConnectTimeout = it }
+    )
+}
