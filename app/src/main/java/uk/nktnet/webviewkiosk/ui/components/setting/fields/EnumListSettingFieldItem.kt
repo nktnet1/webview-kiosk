@@ -28,7 +28,6 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
     var items by remember { mutableStateOf(initialValue) }
     var savedItems by remember { mutableStateOf(initialValue) }
     var addExpanded by remember { mutableStateOf(false) }
-
     val availableToAdd = entries.filter { it !in items }
 
     CustomSettingFieldItem(
@@ -42,15 +41,17 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
             savedItems = items
         },
         bodyContent = {
-            Box(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
                 ReorderableColumn(
                     list = items,
                     onSettle = { from, to ->
                         items = items.toMutableList().apply { add(to, removeAt(from)) }
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
+                    modifier = Modifier.fillMaxWidth()
                 ) { index, item, _ ->
                     key(item.name) {
                         ReorderableItem {
@@ -72,9 +73,7 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
                                         )
                                     }
                                 }
-
                                 Text(getLabel(item), modifier = Modifier.weight(1f))
-
                                 if (!restricted) {
                                     Icon(
                                         painter = painterResource(R.drawable.drag_indicator_24),
@@ -86,46 +85,46 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
                         }
                     }
                 }
-            }
 
-            if (!restricted) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
-                ) {
-                    Button(
-                        onClick = { items = getDefault() },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                if (!restricted) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
                     ) {
-                        Text("Reset")
-                    }
-
-                    Box {
                         Button(
-                            onClick = { addExpanded = true },
-                            enabled = availableToAdd.isNotEmpty()
+                            onClick = { items = getDefault() },
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                         ) {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_add_24),
-                                contentDescription = "Add"
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Add")
+                            Text("Reset")
                         }
-                        DropdownMenu(
-                            expanded = addExpanded,
-                            onDismissRequest = { addExpanded = false }
-                        ) {
-                            availableToAdd.forEach { entry ->
-                                DropdownMenuItem(
-                                    text = { Text(getLabel(entry)) },
-                                    onClick = {
-                                        items = items.toMutableList().apply { add(entry) }
-                                        addExpanded = false
-                                    }
+
+                        Box {
+                            Button(
+                                onClick = { addExpanded = true },
+                                enabled = availableToAdd.isNotEmpty()
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_add_24),
+                                    contentDescription = "Add"
                                 )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Add")
+                            }
+                            DropdownMenu(
+                                expanded = addExpanded,
+                                onDismissRequest = { addExpanded = false }
+                            ) {
+                                availableToAdd.forEach { entry ->
+                                    DropdownMenuItem(
+                                        text = { Text(getLabel(entry)) },
+                                        onClick = {
+                                            items = items.toMutableList().apply { add(entry) }
+                                            addExpanded = false
+                                        }
+                                    )
+                                }
                             }
                         }
                     }

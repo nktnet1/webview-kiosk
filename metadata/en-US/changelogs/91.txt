@@ -1,0 +1,14 @@
+## Changes
+
+The action buttons in the
+- Address Bar
+- Kiosk Control Panel
+
+Can now be configured (i.e. remove or rearrange).
+
+This is only for the UI - their respective access settings will still
+need to be enabled for the action buttons to be visible.
+
+Additionally, the custom unlock shortcut and user interactions
+(e.g. touching the screen) will now be detected even when dialogs
+and dropdowns are opened.
