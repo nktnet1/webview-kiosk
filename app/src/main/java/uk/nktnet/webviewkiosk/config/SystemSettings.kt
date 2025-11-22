@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config
+package com.nktnet.webview_kiosk.config
 
 import android.content.Context
 import android.content.SharedPreferences
@@ -9,10 +9,10 @@ import androidx.core.content.edit
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.*
-import uk.nktnet.webviewkiosk.utils.booleanPref
-import uk.nktnet.webviewkiosk.utils.floatPref
-import uk.nktnet.webviewkiosk.utils.intPref
-import uk.nktnet.webviewkiosk.utils.stringPrefOptional
+import com.nktnet.webview_kiosk.utils.booleanPref
+import com.nktnet.webview_kiosk.utils.floatPref
+import com.nktnet.webview_kiosk.utils.intPref
+import com.nktnet.webview_kiosk.utils.stringPrefOptional
 
 @Serializable
 data class HistoryEntry(

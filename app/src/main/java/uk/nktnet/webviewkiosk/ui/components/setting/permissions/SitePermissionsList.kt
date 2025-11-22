@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.permissions
+package com.nktnet.webview_kiosk.ui.components.setting.permissions
 
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
@@ -13,9 +13,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.utils.getPermissionDisplay
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.utils.getPermissionDisplay
 
 @Composable
 fun SitePermissionsList(

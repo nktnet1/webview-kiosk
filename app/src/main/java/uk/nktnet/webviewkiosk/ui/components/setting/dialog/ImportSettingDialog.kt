@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.dialog
+package com.nktnet.webview_kiosk.ui.components.setting.dialog
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,7 +23,7 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.R
+import com.nktnet.webview_kiosk.R
 
 @Composable
 fun ImportSettingsDialog(

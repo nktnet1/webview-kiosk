@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config.option
+package com.nktnet.webview_kiosk.config.option
 
 enum class BackButtonHoldActionOption(val label: String) {
     OPEN_KIOSK_CONTROL_PANEL("Open Kiosk Control Panel"),

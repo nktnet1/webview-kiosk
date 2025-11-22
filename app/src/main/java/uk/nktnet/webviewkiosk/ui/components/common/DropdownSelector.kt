@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.common
+package com.nktnet.webview_kiosk.ui.components.common
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,7 +21,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import uk.nktnet.webviewkiosk.R
+import com.nktnet.webview_kiosk.R
 
 @Composable
 fun <T> DropdownSelector(

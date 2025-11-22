@@ -1,8 +1,8 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
-import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.option.BackButtonHoldActionOption
+import com.nktnet.webview_kiosk.config.option.FloatingToolbarModeOption
 
 fun canDisableKioskControlPanelRegion(userSettings: UserSettings): Boolean {
     return !(

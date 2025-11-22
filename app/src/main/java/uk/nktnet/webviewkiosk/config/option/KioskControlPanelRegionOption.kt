@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config.option
+package com.nktnet.webview_kiosk.config.option
 
 enum class KioskControlPanelRegionOption(val label: String) {
     TOP_LEFT("Top Left"),

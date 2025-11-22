@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import android.app.Activity
 import android.app.ActivityManager
@@ -15,12 +15,12 @@ import androidx.webkit.WebViewCompat
 import android.app.admin.DevicePolicyManager
 import android.content.pm.PackageManager
 import kotlinx.serialization.Serializable
-import uk.nktnet.webviewkiosk.BuildConfig
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
-import uk.nktnet.webviewkiosk.states.KeepScreenOnStateSingleton
-import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
+import com.nktnet.webview_kiosk.BuildConfig
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.option.DeviceRotationOption
+import com.nktnet.webview_kiosk.states.KeepScreenOnStateSingleton
+import com.nktnet.webview_kiosk.states.ThemeStateSingleton
 import java.util.TimeZone
 
 fun getWindowBrightness(context: Context): Int {

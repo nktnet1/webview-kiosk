@@ -1,12 +1,12 @@
-package uk.nktnet.webviewkiosk.utils.webview.html
+package com.nktnet.webview_kiosk.utils.webview.html
 
 import android.content.Context
 import android.text.Html
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.utils.getDisplayName
-import uk.nktnet.webviewkiosk.utils.getUUID
-import uk.nktnet.webviewkiosk.utils.humanReadableSize
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.option.ThemeOption
+import com.nktnet.webview_kiosk.utils.getDisplayName
+import com.nktnet.webview_kiosk.utils.getUUID
+import com.nktnet.webview_kiosk.utils.humanReadableSize
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale

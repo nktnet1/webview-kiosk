@@ -1,11 +1,11 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine
+package com.nktnet.webview_kiosk.ui.components.setting.fielditems.webengine
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldItem
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.UserSettingsKeys
+import com.nktnet.webview_kiosk.ui.components.setting.fields.NumberSettingFieldItem
 
 @Composable
 fun InitialScaleSetting() {

@@ -1,9 +1,9 @@
-package uk.nktnet.webviewkiosk
+package com.nktnet.webview_kiosk
 
 import android.app.admin.DeviceAdminReceiver
 import android.content.Context
 import android.content.Intent
-import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
+import com.nktnet.webview_kiosk.utils.setupLockTaskPackage
 
 class WebviewKioskAdminReceiver : DeviceAdminReceiver() {
     override fun onEnabled(context: Context, intent: Intent) {

@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.webview
+package com.nktnet.webview_kiosk.ui.components.webview
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,15 +19,15 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.AddressBarActionOption
-import uk.nktnet.webviewkiosk.config.option.WebViewInset
-import uk.nktnet.webviewkiosk.states.LockStateSingleton
-import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
-import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
-import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.option.AddressBarActionOption
+import com.nktnet.webview_kiosk.config.option.WebViewInset
+import com.nktnet.webview_kiosk.states.LockStateSingleton
+import com.nktnet.webview_kiosk.utils.handleUserKeyEvent
+import com.nktnet.webview_kiosk.utils.handleUserTouchEvent
+import com.nktnet.webview_kiosk.utils.webview.WebViewNavigation
 
 @Composable
 private fun AddressBarMenuItem(
