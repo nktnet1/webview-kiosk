@@ -24,7 +24,8 @@ import androidx.compose.ui.window.Dialog
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.states.UserInteractionModifier
+import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
+import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import java.util.Date
 import java.util.concurrent.TimeUnit
@@ -48,9 +49,14 @@ private fun formatDatetime(context: Context, timestamp: Long): String {
 
 @Composable
 fun HistoryDialog(
-    customLoadUrl: (newUrl: String) -> Unit,
-    onDismiss: () -> Unit
+    showHistoryDialog: Boolean,
+    onDismiss: () -> Unit,
+    customLoadUrl: (newUrl: String) -> Unit
 ) {
+    if (!showHistoryDialog) {
+        return
+    }
+
     val context = LocalContext.current
     val systemSettings = remember { SystemSettings(context) }
     var history by remember { mutableStateOf(systemSettings.historyStack) }
@@ -68,13 +74,17 @@ fun HistoryDialog(
     }
 
     LaunchedEffect(Unit) {
-        val currentIndex = systemSettings.historyIndex.coerceIn(0, history.lastIndex)
-        listState.scrollToItem(currentIndex)
+        if (history.isNotEmpty()) {
+            val currentIndex = systemSettings.historyIndex.coerceIn(0, history.lastIndex)
+            listState.scrollToItem(currentIndex)
+        }
     }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            modifier = UserInteractionModifier
+            modifier = Modifier
+                .handleUserTouchEvent()
+                .handleUserKeyEvent(context, showHistoryDialog)
                 .fillMaxSize()
                 .padding(vertical = 16.dp),
             color = MaterialTheme.colorScheme.background,
@@ -103,7 +113,11 @@ fun HistoryDialog(
                                         enabled = !isUpdating && !isCurrent,
                                         onClick = {
                                             isUpdating = true
-                                            WebViewNavigation.navigateToIndex(customLoadUrl, systemSettings, index)
+                                            WebViewNavigation.navigateToIndex(
+                                                customLoadUrl,
+                                                systemSettings,
+                                                index
+                                            )
                                             isUpdating = false
                                             onDismiss()
                                         }
@@ -118,7 +132,10 @@ fun HistoryDialog(
                                             withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                                                 append("[$index] ")
                                             }
-                                            append(displayUrl(item.url).toCharArray().joinToString("\u200B"))
+                                            append(
+                                                displayUrl(item.url).toCharArray()
+                                                    .joinToString("\u200B")
+                                            )
                                         },
                                         maxLines = 3,
                                         overflow = TextOverflow.Ellipsis,
@@ -141,7 +158,10 @@ fun HistoryDialog(
                                     enabled = !isUpdating && !isCurrent,
                                     onClick = {
                                         isUpdating = true
-                                        WebViewNavigation.removeHistoryAtIndex(systemSettings, index)
+                                        WebViewNavigation.removeHistoryAtIndex(
+                                            systemSettings,
+                                            index
+                                        )
                                         history = systemSettings.historyStack
                                         isUpdating = false
                                     }
@@ -167,7 +187,11 @@ fun HistoryDialog(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     TextButton(
-                        enabled = !isUpdating && history.any { it != history.getOrNull(systemSettings.historyIndex) },
+                        enabled = !isUpdating && history.any {
+                            it != history.getOrNull(
+                                systemSettings.historyIndex
+                            )
+                        },
                         onClick = {
                             isUpdating = true
                             WebViewNavigation.clearHistory(systemSettings)

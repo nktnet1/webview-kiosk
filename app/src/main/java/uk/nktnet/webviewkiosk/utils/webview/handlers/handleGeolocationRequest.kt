@@ -9,6 +9,8 @@ import androidx.appcompat.app.AlertDialog
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
+import uk.nktnet.webviewkiosk.utils.handleCustomUnlockShortcut
 import uk.nktnet.webviewkiosk.utils.hasPermissionForResource
 
 @SuppressLint("SetTextI18n")
@@ -19,8 +21,11 @@ fun handleGeolocationRequest(
     systemSettings: SystemSettings,
     userSettings: UserSettings
 ) {
-    val isALlowed = userSettings.allowLocation && hasPermissionForResource(context, Constants.GEOLOCATION_RESOURCE)
-    if (!isALlowed) {
+    val isAllowed = (
+        userSettings.allowLocation
+        && hasPermissionForResource(context, Constants.GEOLOCATION_RESOURCE)
+    )
+    if (!isAllowed) {
         AlertDialog.Builder(context)
             .setTitle("Permission blocked")
             .setMessage(
@@ -44,23 +49,39 @@ fun handleGeolocationRequest(
     }
 
     val checkBox = CheckBox(context).apply { text = "Remember my choice" }
+    checkBox.setOnClickListener {
+        UserInteractionStateSingleton.onUserInteraction()
+    }
+
     val layout = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         setPadding(80, 20, 40, 0)
         addView(checkBox)
     }
 
-    AlertDialog.Builder(context)
+    val dialog = AlertDialog.Builder(context)
         .setTitle("Permission request")
         .setMessage("$origin is requesting access to your location")
         .setView(layout)
         .setPositiveButton("Allow") { _, _ ->
             callback?.invoke(origin, true, false)
-            if (checkBox.isChecked) systemSettings.saveSitePermissions(origin, Constants.GEOLOCATION_RESOURCE)
+            if (checkBox.isChecked) {
+                systemSettings.saveSitePermissions(origin, Constants.GEOLOCATION_RESOURCE)
+            }
         }
         .setNegativeButton("Deny") { _, _ ->
             callback?.invoke(origin, false, false)
         }
-        .setOnCancelListener { callback?.invoke(origin, false, false) }
+        .setOnCancelListener {
+            callback?.invoke(origin, false, false)
+        }
+        .setOnDismissListener {
+            UserInteractionStateSingleton.onUserInteraction()
+        }
         .show()
+
+    dialog.setOnKeyListener { _, _, event ->
+        handleCustomUnlockShortcut(context, event)
+        false
+    }
 }

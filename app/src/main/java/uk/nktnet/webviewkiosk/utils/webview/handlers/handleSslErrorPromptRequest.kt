@@ -10,6 +10,8 @@ import android.widget.TextView
 import android.webkit.SslErrorHandler
 import androidx.appcompat.app.AlertDialog
 import android.view.ViewGroup.LayoutParams
+import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
+import uk.nktnet.webviewkiosk.utils.handleCustomUnlockShortcut
 
 @SuppressLint("SetTextI18n")
 fun handleSslErrorPromptRequest(
@@ -51,12 +53,10 @@ fun handleSslErrorPromptRequest(
     val buttonsLayout = LinearLayout(context).apply {
         orientation = LinearLayout.HORIZONTAL
         gravity = Gravity.END
-        layoutParams = LinearLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT)
+        layoutParams = LinearLayout.LayoutParams(
+            LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT
+        )
     }
-
-    val advancedButton = Button(context).apply { text = "Advanced" }
-    buttonsLayout.addView(advancedButton)
-    layout.addView(buttonsLayout)
 
     val dialog = AlertDialog.Builder(context)
         .setView(layout)
@@ -66,20 +66,28 @@ fun handleSslErrorPromptRequest(
         .setOnCancelListener {
             handler?.cancel()
         }
+        .setOnDismissListener {
+            UserInteractionStateSingleton.onUserInteraction()
+        }
         .show()
 
-    var advancedVisible = false
-    val confirmTextView = TextView(context).apply {
-        text = "WARNING: Proceeding may compromise your security!"
-        setPadding(0, 20, 0, 20)
-    }
     val proceedButton = Button(context).apply { text = "Proceed" }
     proceedButton.setOnClickListener {
         handler?.proceed()
         dialog.dismiss()
     }
 
+    val advancedButton = Button(context).apply { text = "Advanced" }
+    buttonsLayout.addView(advancedButton)
+    layout.addView(buttonsLayout)
+
+    var advancedVisible = false
+    val confirmTextView = TextView(context).apply {
+        text = "WARNING: Proceeding may compromise your security!"
+        setPadding(0, 20, 0, 20)
+    }
     advancedButton.setOnClickListener {
+        UserInteractionStateSingleton.onUserInteraction()
         advancedVisible = !advancedVisible
         if (advancedVisible) {
             layout.addView(confirmTextView)
@@ -88,5 +96,10 @@ fun handleSslErrorPromptRequest(
             layout.removeView(confirmTextView)
             layout.removeView(proceedButton)
         }
+    }
+
+    dialog.setOnKeyListener { _, _, event ->
+        handleCustomUnlockShortcut(context, event)
+        false
     }
 }

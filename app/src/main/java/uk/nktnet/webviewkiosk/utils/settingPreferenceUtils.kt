@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.utils
 import android.content.SharedPreferences
 import android.os.Bundle
 import androidx.core.content.edit
+import org.json.JSONArray
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -155,6 +156,51 @@ fun <T : Enum<T>> stringEnumPref(
     override fun setValue(thisRef: Any?, property: KProperty<*>, value: T) {
         if (getRestrictions()?.containsKey(key) != true) {
             prefs.edit { putString(key, value.name) }
+        }
+    }
+}
+
+fun <T : Enum<T>> enumListPref(
+    getRestrictions: () -> Bundle? = { null },
+    prefs: SharedPreferences,
+    key: String,
+    default: List<T>,
+    itemFromString: (String?) -> T?
+) = object : ReadWriteProperty<Any?, List<T>> {
+    override fun getValue(thisRef: Any?, property: KProperty<*>): List<T> {
+        return try {
+            val jsonArray = if (getRestrictions()?.containsKey(key) == true) {
+                JSONArray(getRestrictions()?.getStringArray(key))
+            } else {
+                val stringValue = prefs.getString(key, null)
+                if (stringValue == null) {
+                    return default
+                }
+                JSONArray(stringValue)
+            }
+            LinkedHashSet(
+                List(jsonArray.length()) { idx -> jsonArray.getString(idx) }
+                    .mapNotNull { itemFromString(it) }
+            ).toList()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            val uniqueDefault = LinkedHashSet(default).toList()
+            prefs.edit {
+                putString(key, JSONArray(
+                    uniqueDefault.map { it.name }).toString()
+                )
+            }
+            uniqueDefault
+        }
+    }
+
+    override fun setValue(thisRef: Any?, property: KProperty<*>, value: List<T>) {
+        if (getRestrictions()?.containsKey(key) != true) {
+            val uniqueValue = LinkedHashSet(value).toList()
+            val savedValue = JSONArray(uniqueValue.map { it.name }).toString()
+            prefs.edit {
+                putString(key, savedValue)
+            }
         }
     }
 }

@@ -115,6 +115,7 @@ dependencies {
     implementation(libs.hivemq.mqtt.client)
     retrofix(libs.android.retrostreams)
     retrofix(libs.android.retrofuture)
+    implementation(libs.reorderable)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
