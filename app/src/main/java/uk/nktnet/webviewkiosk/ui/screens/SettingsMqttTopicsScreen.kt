@@ -71,7 +71,7 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
                 text = "Publish",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = 16.dp, bottom = 4.dp)
+                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
             )
             HorizontalDivider(
                 Modifier.padding(bottom = 4.dp),
@@ -86,7 +86,7 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
                 text = "Subscribe",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = 24.dp, bottom = 4.dp)
+                modifier = Modifier.padding(top = 18.dp, bottom = 4.dp)
             )
             HorizontalDivider(
                 Modifier.padding(bottom = 4.dp),
@@ -97,8 +97,10 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
                 SettingListItem(title, description) { navController.navigate(route) }
             }
         }
+        Spacer(modifier = Modifier.height(12.dp))
 
         MqttDebugLogsButton(navController)
+
         Spacer(modifier = Modifier.height(16.dp))
     }
 }
