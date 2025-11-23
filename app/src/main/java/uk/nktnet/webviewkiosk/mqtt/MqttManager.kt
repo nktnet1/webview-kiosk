@@ -97,7 +97,11 @@ object MqttManager {
     val debugLogHistory: List<MqttLogEntry>
         get() = synchronized(logHistory) { logHistory.toList() }
 
-    fun updateConfig(systemSettings: SystemSettings, userSettings: UserSettings) {
+    fun updateConfig(
+        systemSettings: SystemSettings,
+        userSettings: UserSettings,
+        rebuildClient: Boolean = true
+    ) {
         config = MqttConfig(
             appInstanceId = systemSettings.appInstanceId,
 
@@ -153,7 +157,9 @@ object MqttManager {
             restrictionsRequestProblemInformation = userSettings.mqttRestrictionsRequestProblemInformation,
             restrictionsRequestResponseInformation = userSettings.mqttRestrictionsRequestResponseInformation
         )
-        client = buildClient()
+        if (rebuildClient) {
+            client = buildClient()
+        }
     }
 
     private fun buildClient(): Mqtt5AsyncClient {
@@ -181,7 +187,7 @@ object MqttManager {
                     pendingCancelConnect.set(false)
                     return@addDisconnectedListener
                 }
-                if (config.automaticReconnect) {
+                if (config.enabled && config.automaticReconnect) {
                     context.reconnector
                         .reconnect(context.source != MqttDisconnectSource.USER)
                         .delay(3, TimeUnit.SECONDS)

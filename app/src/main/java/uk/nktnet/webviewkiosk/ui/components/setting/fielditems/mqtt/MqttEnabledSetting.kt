@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.mqtt.MqttManager
@@ -12,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun MqttEnabledSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val systemSettings = remember { SystemSettings(context) }
 
     BooleanSettingFieldItem(
         label = "Enabled",
@@ -29,6 +31,7 @@ fun MqttEnabledSetting() {
                 userSettings.mqttEnabled = isEnabled
                 if (!isEnabled && MqttManager.isConnectedOrReconnect()) {
                     MqttManager.disconnect()
+                    MqttManager.updateConfig(systemSettings, userSettings, false)
                 }
             }
         }
