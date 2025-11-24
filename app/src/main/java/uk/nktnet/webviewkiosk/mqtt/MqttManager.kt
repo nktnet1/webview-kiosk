@@ -25,6 +25,7 @@ import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.MqttQosOption
 import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption
+import uk.nktnet.webviewkiosk.config.option.MqttVariableNameOption
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttCommandJsonParser
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttCommandMessage
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttConnectedEvent
@@ -323,7 +324,9 @@ object MqttManager {
         val payload = MqttEventJsonParser.encodeToString(event)
         val topic = mqttVariableReplacement(
             config.publishEventTopic,
-            mapOf("EVENT_NAME" to event.getName())
+            mapOf(
+                MqttVariableNameOption.EVENT_NAME.name to event.getName()
+            )
         )
         publishToMqtt(
             topic,
@@ -394,7 +397,9 @@ object MqttManager {
         val topic = requestMessage.responseTopic.takeIf { !it.isNullOrEmpty() }
             ?: mqttVariableReplacement(
                 config.publishResponseTopic,
-                mapOf("RESPONSE_TYPE" to responseMessage.getType())
+                mapOf(
+                    MqttVariableNameOption.RESPONSE_TYPE.name to responseMessage.getType()
+                )
             )
 
         val payload = MqttResponseJsonParser.encodeToString(responseMessage)
@@ -650,8 +655,8 @@ object MqttManager {
         additionalReplacementMap: Map<String, String> = emptyMap(),
     ): String {
         val variableReplacementMap = mapOf(
-            "APP_INSTANCE_ID" to config.appInstanceId,
-            "USERNAME" to config.username,
+            MqttVariableNameOption.APP_INSTANCE_ID.name to config.appInstanceId,
+            MqttVariableNameOption.USERNAME.name to config.username,
         ) + additionalReplacementMap
         val regex = "\\$\\{([^}]+)\\}".toRegex()
         return regex.replace(value) { matchResult ->

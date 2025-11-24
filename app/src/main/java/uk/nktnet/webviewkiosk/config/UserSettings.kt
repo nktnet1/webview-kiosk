@@ -573,7 +573,7 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC,
-        "wk/event/${'$'}{EVENT_NAME}"
+        "wk/event/${'$'}{${MqttVariableNameOption.EVENT_NAME.name}}"
     )
     var mqttPublishEventQos by stringEnumPref(
         getRestrictions,
@@ -592,7 +592,7 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Publish.Response.TOPIC,
-        "wk/response/${'$'}{RESPONSE_TYPE}"
+        "wk/response/${'$'}{${MqttVariableNameOption.RESPONSE_TYPE.name}}"
     )
     var mqttPublishResponseQos by stringEnumPref(
         getRestrictions,
