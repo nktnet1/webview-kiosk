@@ -1,7 +1,8 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
 import android.content.ClipData
-import androidx.compose.foundation.clickable
+import android.widget.Toast
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -23,7 +24,7 @@ import uk.nktnet.webviewkiosk.utils.humanReadableSize
 import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
 
 @Composable
-fun InfoItem(label: String, value: String) {
+fun InfoItem(label: String, value: String, showToast: (msg: String) -> Unit) {
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
 
@@ -31,13 +32,18 @@ fun InfoItem(label: String, value: String) {
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 12.dp)
-            .clickable {
-                scope.launch {
-                    clipboard.setClipEntry(
-                        ClipData.newPlainText(label, value).toClipEntry()
-                    )
+            .combinedClickable(
+                onClick = {
+                    showToast("Click and hold to copy value.")
+                },
+                onLongClick = {
+                    scope.launch {
+                        clipboard.setClipEntry(
+                            ClipData.newPlainText(label, value).toClipEntry()
+                        )
+                    }
                 }
-            }
+            )
     ) {
         Text(
             text = label,
@@ -56,6 +62,13 @@ fun InfoItem(label: String, value: String) {
 @Composable
 fun SettingsAboutScreen(navController: NavController) {
     val context = LocalContext.current
+    var toastRef: Toast? = null
+    val showToast: (String) -> Unit = { msg ->
+        toastRef?.cancel()
+        toastRef = Toast.makeText(
+            context, msg, Toast.LENGTH_SHORT
+        ).apply { show() }
+    }
 
     val systemInfo = remember { getSystemInfo(context) }
 
@@ -95,22 +108,24 @@ fun SettingsAboutScreen(navController: NavController) {
             )
             HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
-            InfoItem(label = "Name", value = systemInfo.app.name)
-            InfoItem(label = "Package", value = systemInfo.app.packageName)
+            InfoItem(label = "Name", value = systemInfo.app.name, showToast)
+            InfoItem(label = "Package", value = systemInfo.app.packageName, showToast)
             InfoItem(
                 label = "Version",
-                value = "${systemInfo.app.versionCode} (${systemInfo.app.versionName})"
+                value = "${systemInfo.app.versionCode} (${systemInfo.app.versionName})",
+                showToast,
             )
-            InfoItem(label = "Min SDK", value = systemInfo.app.minSdk.toString())
-            InfoItem(label = "Target SDK", value = systemInfo.app.targetSdk.toString())
-            InfoItem(label = "Debug Build", value = systemInfo.app.isDebug.toString())
-            InfoItem(label = "Installer", value = systemInfo.app.installer ?: "N/A")
-            InfoItem(label = "Device Owner", value = systemInfo.app.isDeviceOwner.toString())
+            InfoItem(label = "Min SDK", value = systemInfo.app.minSdk.toString(), showToast)
+            InfoItem(label = "Target SDK", value = systemInfo.app.targetSdk.toString(), showToast)
+            InfoItem(label = "Debug Build", value = systemInfo.app.isDebug.toString(), showToast)
+            InfoItem(label = "Installer", value = systemInfo.app.installer ?: "N/A", showToast)
+            InfoItem(label = "Device Owner", value = systemInfo.app.isDeviceOwner.toString(), showToast)
             InfoItem(
                 label = "Lock Task Permitted",
-                value = systemInfo.app.isLockTaskPermitted.toString()
+                value = systemInfo.app.isLockTaskPermitted.toString(),
+                showToast,
             )
-            InfoItem(label = "Instance ID", value = systemInfo.app.instanceId)
+            InfoItem(label = "Instance ID", value = systemInfo.app.instanceId, showToast)
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -124,49 +139,56 @@ fun SettingsAboutScreen(navController: NavController) {
 
             InfoItem(
                 label = "Android Version",
-                value = "${systemInfo.device.releaseVersion} (SDK ${systemInfo.device.sdkVersion})"
+                value = "${systemInfo.device.releaseVersion} (SDK ${systemInfo.device.sdkVersion})",
+                showToast,
             )
             InfoItem(
                 label = "WebView Version",
-                value = systemInfo.device.webViewVersion ?: "N/A"
+                value = systemInfo.device.webViewVersion ?: "N/A",
+                showToast,
             )
             InfoItem(
                 label = "Screen / Display",
-                value = "${systemInfo.device.screenWidth} x ${systemInfo.device.screenHeight} px, density: ${systemInfo.device.screenDensity}"
+                value = "${systemInfo.device.screenWidth} x ${systemInfo.device.screenHeight} px, density: ${systemInfo.device.screenDensity}",
+                showToast,
             )
             InfoItem(
                 label = "Managed Profile",
-                value = systemInfo.device.isManagedProfile?.toString() ?: "N/A"
+                value = systemInfo.device.isManagedProfile?.toString() ?: "N/A",
+                showToast
             )
-            InfoItem(label = "Time Zone", value = systemInfo.device.timeZone)
-            InfoItem(label = "Locale", value = systemInfo.device.locale)
-            InfoItem(label = "Total RAM", value = humanReadableSize(context, systemInfo.device.totalMemory))
-            InfoItem(label = "Total Storage", value = humanReadableSize(context, systemInfo.device.totalStorage))
-            InfoItem(label = "Model", value = systemInfo.device.model)
-            InfoItem(label = "Manufacturer", value = systemInfo.device.manufacturer)
-            InfoItem(label = "Brand", value = systemInfo.device.brand)
-            InfoItem(label = "Device", value = systemInfo.device.device)
-            InfoItem(label = "Product", value = systemInfo.device.product)
-            InfoItem(label = "Hardware", value = systemInfo.device.hardware)
-            InfoItem(label = "Board", value = systemInfo.device.board)
-            InfoItem(label = "Bootloader", value = systemInfo.device.bootloader)
-            InfoItem(label = "Security Patch", value = systemInfo.device.securityPatch ?: "N/A")
+            InfoItem(label = "Time Zone", value = systemInfo.device.timeZone, showToast)
+            InfoItem(label = "Locale", value = systemInfo.device.locale, showToast)
+            InfoItem(label = "Total RAM", value = humanReadableSize(context, systemInfo.device.totalMemory), showToast)
+            InfoItem(label = "Total Storage", value = humanReadableSize(context, systemInfo.device.totalStorage), showToast)
+            InfoItem(label = "Model", value = systemInfo.device.model, showToast)
+            InfoItem(label = "Manufacturer", value = systemInfo.device.manufacturer, showToast)
+            InfoItem(label = "Brand", value = systemInfo.device.brand, showToast)
+            InfoItem(label = "Device", value = systemInfo.device.device, showToast)
+            InfoItem(label = "Product", value = systemInfo.device.product, showToast)
+            InfoItem(label = "Hardware", value = systemInfo.device.hardware, showToast)
+            InfoItem(label = "Board", value = systemInfo.device.board, showToast)
+            InfoItem(label = "Bootloader", value = systemInfo.device.bootloader, showToast)
+            InfoItem(label = "Security Patch", value = systemInfo.device.securityPatch ?: "N/A", showToast)
             InfoItem(
                 label = "Supported ABIs",
                 value = systemInfo.device.supportedAbis.joinToString(", ")
-                    .ifEmpty { "N/A" }
+                    .ifEmpty { "N/A" },
+                showToast,
             )
             InfoItem(
                 label = "Supported 32-bit ABIs",
                 value = systemInfo.device.supported32BitAbis.joinToString(", ")
-                    .ifEmpty { "N/A" }
+                    .ifEmpty { "N/A" },
+                showToast,
             )
             InfoItem(
                 label = "Supported 64-bit ABIs",
                 value = systemInfo.device.supported64BitAbis.joinToString(", ")
-                    .ifEmpty { "N/A" }
+                    .ifEmpty { "N/A" },
+                showToast,
             )
-            InfoItem(label = "Build Fingerprint", value = systemInfo.device.buildFingerprint)
+            InfoItem(label = "Build Fingerprint", value = systemInfo.device.buildFingerprint, showToast)
 
             Spacer(modifier = Modifier.padding(bottom = 8.dp))
         }
