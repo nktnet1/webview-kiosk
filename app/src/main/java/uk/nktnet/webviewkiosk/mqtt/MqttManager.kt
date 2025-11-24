@@ -409,7 +409,9 @@ object MqttManager {
             config.publishResponseQos,
             config.publishResponseRetain,
             correlationData = requestMessage.correlationData?.toByteArray(),
-            identifier = responseMessage.identifier
+            identifier = responseMessage.identifier?.let {
+                "response-$it"
+            } ?: UUID.randomUUID().toString(),
         )
     }
 
