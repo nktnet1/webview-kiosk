@@ -20,6 +20,7 @@ import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONObject
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.MqttQosOption
@@ -190,7 +191,10 @@ object MqttManager {
                 if (config.enabled && config.automaticReconnect) {
                     context.reconnector
                         .reconnect(context.source != MqttDisconnectSource.USER)
-                        .delay(3, TimeUnit.SECONDS)
+                        .delay(
+                            Constants.MQTT_AUTO_RECONNECT_INTERVAL_SECONDS.toLong(),
+                            TimeUnit.SECONDS
+                        )
                 }
                 addDebugLog(
                     "disconnected",

@@ -15,8 +15,11 @@ fun MqttServerPortSetting() {
     NumberSettingFieldItem(
         label = "Server Port",
         infoText = """
-            The port of the MQTT broker the app should connect to.
-            Typically 1883 for unencrypted connections or 8883 for TLS.
+            The TCP port of the MQTT broker the app should connect to.
+
+            Typically,
+            - 1883 (TCP Port)
+            - 8883 (TLS TCP Port)
         """.trimIndent(),
         initialValue = userSettings.mqttServerPort,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.SERVER_PORT),

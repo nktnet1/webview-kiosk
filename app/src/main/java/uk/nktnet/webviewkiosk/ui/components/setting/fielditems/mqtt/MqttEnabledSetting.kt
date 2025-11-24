@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -18,10 +19,12 @@ fun MqttEnabledSetting() {
     BooleanSettingFieldItem(
         label = "Enabled",
         infoText = """
-            Enable or disable MQTT connectivity for this device.
-
-            When enabled, the app will connect to the configured
+            When enabled, ${Constants.APP_NAME} will connect to your configured
             MQTT broker and subscribe/publish to the defined topics.
+
+            Please note that you will need to manually click the "Connect" button
+            after enabling this option. This will also take effect for new app
+            launches, so you could also simply restart the application.
         """.trimIndent(),
         initialValue = userSettings.mqttEnabled,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.ENABLED),

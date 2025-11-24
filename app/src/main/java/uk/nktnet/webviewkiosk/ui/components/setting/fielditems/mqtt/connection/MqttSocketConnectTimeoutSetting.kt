@@ -15,8 +15,9 @@ fun MqttSocketConnectTimeoutSetting() {
     NumberSettingFieldItem(
         label = "Socket Connect Timeout (seconds)",
         infoText = """
-            Maximum time in seconds the MQTT client will wait for the underlying
-            TCP socket connection to be established before timing out.
+            The timeout for connecting the socket to the server.
+
+            Use 0 to disable the timeout.
         """.trimIndent(),
         placeholder = "e.g. 10",
         initialValue = userSettings.mqttSocketConnectTimeout,

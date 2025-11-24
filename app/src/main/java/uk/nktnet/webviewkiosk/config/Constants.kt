@@ -15,5 +15,6 @@ object Constants {
 
     const val GEOLOCATION_RESOURCE = "webviewkiosk.custom-permission.geolocation"
 
+    const val MQTT_AUTO_RECONNECT_INTERVAL_SECONDS = 3
     const val REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL = 9999
 }

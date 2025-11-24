@@ -18,6 +18,11 @@ fun MqttServerHostSetting() {
         label = "Server Host",
         infoText = """
             The hostname or IP address of the MQTT broker the app should connect to.
+
+            For example,
+            - 192.168.1.190
+            - broker.hivemq.com
+            - broker.emqx.io
         """.trimIndent(),
         placeholder = "e.g. broker.example.com",
         initialValue = userSettings.mqttServerHost,

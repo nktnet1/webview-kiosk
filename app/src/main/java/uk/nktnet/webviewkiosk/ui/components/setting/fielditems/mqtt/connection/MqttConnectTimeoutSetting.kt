@@ -15,8 +15,9 @@ fun MqttConnectTimeoutSetting() {
     NumberSettingFieldItem(
         label = "Connect Timeout (seconds)",
         infoText = """
-            Maximum time in seconds the MQTT client will wait when attempting
-            to connect to the broker before timing out.
+            The timeout between sending the Connect and receiving the ConnAck message.
+
+            Use 0 to disable the timeout.
         """.trimIndent(),
         placeholder = "e.g. 30",
         initialValue = userSettings.mqttConnectTimeout,

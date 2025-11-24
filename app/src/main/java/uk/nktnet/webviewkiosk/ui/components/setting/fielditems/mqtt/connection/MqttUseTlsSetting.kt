@@ -15,8 +15,6 @@ fun MqttUseTlsSetting() {
     BooleanSettingFieldItem(
         label = "Use TLS",
         infoText = """
-            Enable or disable TLS/SSL encryption for the MQTT connection.
-
             When enabled, the client will connect securely to the broker
             using TLS. Ensure the broker supports TLS on the configured port.
         """.trimIndent(),

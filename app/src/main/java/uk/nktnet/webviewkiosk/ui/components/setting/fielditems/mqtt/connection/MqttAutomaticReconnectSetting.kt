@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -15,8 +16,11 @@ fun MqttAutomaticReconnectSetting() {
     BooleanSettingFieldItem(
         label = "Automatic Reconnect",
         infoText = """
-            Automatically reconnect to the MQTT broker after an unexpected disconnect.
-            Uses exponential backoff delays when enabled.
+            When enabled, attempt to automatically reconnect to the MQTT broker
+            after an unexpected disconnect.
+
+            In ${Constants.APP_NAME}, this is implemented linearly at a fixed
+            ${Constants.MQTT_AUTO_RECONNECT_INTERVAL_SECONDS}-second interval.
         """.trimIndent(),
         initialValue = userSettings.mqttAutomaticReconnect,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT),

@@ -15,11 +15,10 @@ fun MqttKeepAliveSetting() {
     NumberSettingFieldItem(
         label = "Keep Alive (seconds)",
         infoText = """
-            Maximum interval in seconds allowed between messages sent or
-            received by the MQTT client.
+            The time interval (in seconds) in which the client sends a ping to the broker
+            if no other MQTT packets are sent during this period of time.
 
-            If no message is sent within this interval, the client sends a PING to
-            keep the connection alive.
+            It is used to determine if the connection is still up.
         """.trimIndent(),
         placeholder = "e.g. 60",
         initialValue = userSettings.mqttKeepAlive,
