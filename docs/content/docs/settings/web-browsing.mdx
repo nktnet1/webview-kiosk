@@ -4,6 +4,7 @@ description: Refresh, navigation, history, bookmark, search provider
 ---
 
 import { EllipsisVertical, Wrench, Pin, PinOff } from 'lucide-react';
+import { APP_NAME } from '@/config/app'
 
 ## 1. Allow Refresh
 
@@ -42,6 +43,8 @@ Set to true to allow the user to go home using one of:
 1. Holding the back button (long-pressed). For more details, see `Settings -> Device`
 1. Clicking the <span className="inline-flex">(<EllipsisVertical />)</span> icon on the right of the address bar (top-right corner of screen) and selecting `Home`
 1. Clicking the floating toolbar <span className="inline-flex">(<Wrench className="-rotate-90"/>)</span> icon and selecting `Home`
+1. Clicking your device's home button
+    - This requires {APP_NAME} to be set as the **default launcher (home) app**
 
 **Default:** true
 
@@ -112,7 +115,25 @@ This actions available in the dialog are:
 
 **Default:** true
 
-## 12. Kiosk Control Panel Region
+## 12. Address Bar Actions
+
+This setting is only controlling the UI aspect of the Address Bar.
+
+Access will still need to be enabled using the dependent settings.
+
+The following actions are available to be configured (remove or rearrange):
+
+| Action   | Description |
+|----------|-------------|
+| Back     | Navigates one page backwards in history.<br />Requires: `Web Browsing -> Allow Backwards Navigation` |
+| Forward  | Navigates one page forward in history.<br />Requires: `Web Browsing -> Allow Backwards Navigation` |
+| Refresh  | Perform a reload on the current webpage.<br />Requires: `Web Browsing -> Allow Refresh` |
+| Home     | Navigates to the home page.<br />Requires: `Web Browsing -> Allow Go Home` |
+| History  | Opens the history dialog.<br />Requires: `Web Browsing -> Allow History Access` |
+| Bookmark | Opens the bookmark dialog.<br />Requires: `Web Browsing -> Allow Bookmark Access` |
+| Files    | Opens the local files dialog.<br />Requires: `Web Content -> Allow Local Files` |
+
+## 13. Kiosk Control Panel Region
 
 Controls which part of the screen can be multi-tapped 10 times in quick
 succession to show the Kiosk Control Panel dialog.
@@ -174,18 +195,6 @@ Available regions are:
   </tbody>
 </table>
 
-The actions available in the dialog are:
-
-| Action | Description |
-|--------|-------------|
-| Back | Navigates one page backwards in history. |
-| Forward | Navigates one page forward in history. |
-| Home | Navigates to the home page. |
-| Refresh | Perform a reload on the current webpage. |
-| Settings | Open the app settings screen (only visible if `Appearance -> Floating Toolbar Mode` is set to `Hidden`). |
-| Lock | Trigger either screen pinning or lock task mode depending on your device. |
-| Unlock | Trigger screen unpinning or unlock task. Will require biometrics or device credentials to succeed. |
-
 At the top-right corner of the dialog, there is an icon button that toggles the stickiness
 Kiosk Control Panel's stickiness behaviour. By default, sticky mode is disabled
 <span className="inline-flex">(<PinOff />)</span>.
@@ -197,7 +206,117 @@ You can also disable this setting and instead configure
 
 **Default:** Top left
 
-## 13. Search Provider URL
+## 14. Kiosk Control Panel Actions
+
+This setting is only controlling the UI aspect of the Kiosk Control Panel.
+Access will still need to be enabled using the dependent settings.
+
+The following actions are available to be configured (remove or rearrange):
+
+<table>
+  <thead>
+    <tr>
+      <th>Action</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        Navigation
+      </td>
+      <td>
+        Navigates one page backwards or forward in history (there will be 2 buttons side-by-side).
+
+        Requires <code>Web Browsing -> Allow Backwards Navigation</code>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Home
+      </td>
+      <td>
+        Navigates to the home page.
+
+        Requires <code>Web Browsing -> Allow Go Home</code>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Refresh
+      </td>
+      <td>
+        Perform a reload on the current webpage.
+
+        Requires <code>Web Browsing -> Allow Refresh</code>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        History
+      </td>
+      <td>
+        Opens the history dialog.
+
+        Requires <code>Web Browsing -> Allow History Access</code>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Bookmark
+      </td>
+      <td>
+        Opens the bookmark dialog.
+
+        Requires <code>Web Browsing -> Allow Bookmark Access</code>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Files
+      </td>
+      <td>
+        Opens the local files dialog.
+
+        Requires <code>Web Content -> Allow Local Files</code>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Settings
+      </td>
+      <td>
+        Open the app settings screen. By default, this action is not configured.
+
+        This will always be visible if <code>Appearance -> Floating Toolbar
+        Mode</code> is set to Hidden, and will be appended to the end if not
+        configured.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Lock
+      </td>
+      <td>
+        Trigger either screen pinning or lock task mode.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Unlock
+      </td>
+      <td>
+        Trigger screen unpinning or unlock task. Will require biometrics or
+        device credentials to succeed.
+
+        This action will always be visible when the device is in locked mode,
+        and will be appended to the end if not configured.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+## 15. Search Provider URL
 
 The URL used for search queries in the address bar. This URL must include the
 search string query parameter.
@@ -217,7 +336,7 @@ For example,
 
 **Default:** https://google.com/search?q=
 
-## 13. Search Suggestion Engine
+## 16. Search Suggestion Engine
 
 Configure the search engine for text suggestions (autocomplete/hints)
 when typing in the address bar.

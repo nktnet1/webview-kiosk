@@ -17,17 +17,22 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import uk.nktnet.webviewkiosk.states.UserInteractionModifier
 import uk.nktnet.webviewkiosk.utils.getDisplayName
 import uk.nktnet.webviewkiosk.utils.getLocalUrl
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
+import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
+import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.listLocalFiles
 
 @Composable
 fun LocalFilesDialog(
+    showLocalFileDialog: Boolean,
+    onDismiss: () -> Unit,
     customLoadUrl: (url: String) -> Unit,
-    onDismiss: () -> Unit
 ) {
+    if (!showLocalFileDialog) {
+        return
+    }
     val context = LocalContext.current
     val filesDir = getWebContentFilesDir(context)
 
@@ -36,7 +41,9 @@ fun LocalFilesDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            modifier = UserInteractionModifier
+            modifier = Modifier
+                .handleUserTouchEvent()
+                .handleUserKeyEvent(context, showLocalFileDialog)
                 .fillMaxSize()
                 .padding(vertical = 16.dp),
             color = MaterialTheme.colorScheme.background,
@@ -90,7 +97,9 @@ fun LocalFilesDialog(
                                             withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                                                 append("[$index] ")
                                             }
-                                            append(displayName.toCharArray().joinToString("\u200B"))
+                                            append(
+                                                displayName.toCharArray().joinToString("\u200B")
+                                            )
                                         },
                                         maxLines = 2,
                                         overflow = TextOverflow.Ellipsis,

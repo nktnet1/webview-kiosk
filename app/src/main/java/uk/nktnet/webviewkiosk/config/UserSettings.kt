@@ -4,9 +4,11 @@ import android.content.Context
 import android.content.RestrictionsManager
 import android.content.SharedPreferences
 import android.util.Base64
+import org.json.JSONArray
 import org.json.JSONObject
 import uk.nktnet.webviewkiosk.config.option.*
 import uk.nktnet.webviewkiosk.utils.booleanPref
+import uk.nktnet.webviewkiosk.utils.enumListPref
 import uk.nktnet.webviewkiosk.utils.stringEnumPref
 import uk.nktnet.webviewkiosk.utils.intPref
 import uk.nktnet.webviewkiosk.utils.stringPref
@@ -122,12 +124,32 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU,
         true
     )
+    var addressBarActions by enumListPref(
+        getRestrictions,
+        prefs = prefs,
+        key = UserSettingsKeys.WebBrowsing.ADDRESS_BAR_ACTIONS,
+        default = AddressBarActionOption.getDefault(),
+        itemFromString = {
+            AddressBarActionOption.itemFromString(it)
+                ?: AddressBarActionOption.BACK
+        }
+    )
     var kioskControlPanelRegion by stringEnumPref(
         getRestrictions,
         prefs,
         UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION,
         KioskControlPanelRegionOption.TOP_LEFT.name,
         fromString = KioskControlPanelRegionOption::fromString
+    )
+    var kioskControlPanelActions by enumListPref(
+        getRestrictions,
+        prefs = prefs,
+        key = UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_ACTIONS,
+        default = KioskControlPanelActionOption.getDefault(),
+        itemFromString = {
+            KioskControlPanelActionOption.itemFromString(it)
+                ?: KioskControlPanelActionOption.HISTORY
+        }
     )
     var searchProviderUrl by stringPref(
         getRestrictions,
@@ -397,6 +419,48 @@ class UserSettings(val context: Context) {
         UnlockAuthRequirementOption.DEFAULT.name,
         fromString = UnlockAuthRequirementOption::fromString
     )
+    var lockTaskFeatureHome by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.HOME,
+        false
+    )
+    var lockTaskFeatureOverview by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.OVERVIEW,
+        false
+    )
+    var lockTaskFeatureGlobalActions by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.GLOBAL_ACTIONS,
+        false
+    )
+    var lockTaskFeatureNotifications by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.NOTIFICATIONS,
+        false
+    )
+    var lockTaskFeatureSystemInfo by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.SYSTEM_INFO,
+        false
+    )
+    var lockTaskFeatureKeyguard by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.KEYGUARD,
+        false
+    )
+    var lockTaskFeatureBlockActivityStartInTask by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.BLOCK_ACTIVITY_START_IN_TASK,
+        true
+    )
 
     // JS Scripts
     var applyAppTheme by booleanPref(
@@ -454,7 +518,9 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebBrowsing.ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
             put(UserSettingsKeys.WebBrowsing.ALLOW_DEFAULT_LONG_PRESS, allowDefaultLongPress)
             put(UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, allowLinkLongPressContextMenu)
+            put(UserSettingsKeys.WebBrowsing.ADDRESS_BAR_ACTIONS, JSONArray(addressBarActions.map { it.name }))
             put(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION, kioskControlPanelRegion.name)
+            put(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_ACTIONS, JSONArray(kioskControlPanelActions.map { it.name }))
             put(UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL, searchProviderUrl)
             put(UserSettingsKeys.WebBrowsing.SEARCH_SUGGESTION_ENGINE, searchSuggestionEngine.name)
 
@@ -500,6 +566,13 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
             // put(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD, customAuthPassword)
             put(UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT, unlockAuthRequirement.name)
+            put(UserSettingsKeys.Device.Owner.LockTaskFeature.HOME, lockTaskFeatureHome)
+            put(UserSettingsKeys.Device.Owner.LockTaskFeature.OVERVIEW, lockTaskFeatureOverview)
+            put(UserSettingsKeys.Device.Owner.LockTaskFeature.GLOBAL_ACTIONS, lockTaskFeatureGlobalActions)
+            put(UserSettingsKeys.Device.Owner.LockTaskFeature.NOTIFICATIONS, lockTaskFeatureNotifications)
+            put(UserSettingsKeys.Device.Owner.LockTaskFeature.SYSTEM_INFO, lockTaskFeatureSystemInfo)
+            put(UserSettingsKeys.Device.Owner.LockTaskFeature.KEYGUARD, lockTaskFeatureKeyguard)
+            put(UserSettingsKeys.Device.Owner.LockTaskFeature.BLOCK_ACTIVITY_START_IN_TASK, lockTaskFeatureBlockActivityStartInTask)
 
             put(UserSettingsKeys.JsScripts.APPLY_APP_THEME, applyAppTheme)
             put(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
@@ -532,9 +605,15 @@ class UserSettings(val context: Context) {
             allowOtherUrlSchemes = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
             allowDefaultLongPress = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_DEFAULT_LONG_PRESS, allowDefaultLongPress)
             allowLinkLongPressContextMenu = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, allowLinkLongPressContextMenu)
+            json.optJSONArray(UserSettingsKeys.WebBrowsing.ADDRESS_BAR_ACTIONS)?.let { arr ->
+                addressBarActions = AddressBarActionOption.parseFromJsonArray(arr)
+            }
             kioskControlPanelRegion = KioskControlPanelRegionOption.fromString(
                 json.optString(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION, kioskControlPanelRegion.name)
             )
+            json.optJSONArray(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_ACTIONS)?.let { arr ->
+                kioskControlPanelActions = KioskControlPanelActionOption.parseFromJsonArray(arr)
+            }
             searchProviderUrl = json.optString(UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL, searchProviderUrl)
             searchSuggestionEngine = SearchSuggestionEngineOption.fromString(
                 json.optString(UserSettingsKeys.WebBrowsing.SEARCH_SUGGESTION_ENGINE, searchSuggestionEngine.name)
@@ -598,6 +677,13 @@ class UserSettings(val context: Context) {
             unlockAuthRequirement = UnlockAuthRequirementOption.fromString(
                 json.optString(UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT, unlockAuthRequirement.name)
             )
+            lockTaskFeatureHome = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.HOME, lockTaskFeatureHome)
+            lockTaskFeatureOverview = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.OVERVIEW, lockTaskFeatureOverview)
+            lockTaskFeatureGlobalActions = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.GLOBAL_ACTIONS, lockTaskFeatureGlobalActions)
+            lockTaskFeatureNotifications = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.NOTIFICATIONS, lockTaskFeatureNotifications)
+            lockTaskFeatureSystemInfo = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.SYSTEM_INFO, lockTaskFeatureSystemInfo)
+            lockTaskFeatureKeyguard = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.KEYGUARD, lockTaskFeatureKeyguard)
+            lockTaskFeatureBlockActivityStartInTask = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.BLOCK_ACTIVITY_START_IN_TASK, lockTaskFeatureBlockActivityStartInTask)
 
             applyAppTheme = json.optBoolean(UserSettingsKeys.JsScripts.APPLY_APP_THEME, applyAppTheme)
             applyDesktopViewportWidth = json.optInt(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)

@@ -18,13 +18,19 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.states.UserInteractionModifier
+import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
+import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 
 @Composable
 fun BookmarksDialog(
-    customLoadUrl: (newUrl: String) -> Unit,
+    showBookmarkDialog: Boolean,
     onDismiss: () -> Unit,
+    customLoadUrl: (newUrl: String) -> Unit,
 ) {
+    if (!showBookmarkDialog) {
+        return
+    }
+
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
     val bookmarks = remember { userSettings.websiteBookmarks.lines().filter { it.isNotBlank() } }
@@ -32,7 +38,9 @@ fun BookmarksDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            modifier = UserInteractionModifier
+            modifier = Modifier
+                .handleUserTouchEvent()
+                .handleUserKeyEvent(context, showBookmarkDialog)
                 .fillMaxSize()
                 .padding(vertical = 16.dp),
             color = MaterialTheme.colorScheme.background,

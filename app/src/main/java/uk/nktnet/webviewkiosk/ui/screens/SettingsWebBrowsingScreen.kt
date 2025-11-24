@@ -5,7 +5,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -21,38 +21,44 @@ fun SettingsWebBrowsingScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
             .windowInsetsPadding(WindowInsets.safeContent)
-            .verticalScroll(rememberScrollState()),
+            .padding(horizontal = 16.dp)
     ) {
         SettingLabel(navController = navController, label = "Web Browsing")
-
         SettingDivider()
 
-        AllowRefreshSetting()
-        AllowPullToRefreshSetting()
-        AllowBackwardsNavigationSetting()
-        AllowGoHomeSetting()
-        ClearHistoryOnHomeSetting()
-        ReplaceHistoryUrlOnRedirectSetting()
-        AllowHistoryAccessSetting()
-        AllowBookmarkAccessSetting()
-        AllowOtherUrlSchemesSetting()
-        AllowDefaultLongPressSetting()
-        AllowLinkLongPressContextMenuSetting()
-        KioskControlPanelRegionSetting()
-        SearchProviderUrlSetting()
-        SearchSuggestionEngineSetting()
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = { navController.navigate(Screen.SettingsWebBrowsingSitePermissions.route) },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
         ) {
-            Text("Manage Site Permissions")
-        }
+            AllowRefreshSetting()
+            AllowPullToRefreshSetting()
+            AllowBackwardsNavigationSetting()
+            AllowGoHomeSetting()
+            ClearHistoryOnHomeSetting()
+            ReplaceHistoryUrlOnRedirectSetting()
+            AllowHistoryAccessSetting()
+            AllowBookmarkAccessSetting()
+            AllowOtherUrlSchemesSetting()
+            AllowDefaultLongPressSetting()
+            AllowLinkLongPressContextMenuSetting()
+            AddressBarActionsSetting()
+            KioskControlPanelRegionSetting()
+            KioskControlPanelActionsSetting()
+            SearchProviderUrlSetting()
+            SearchSuggestionEngineSetting()
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = { navController.navigate(Screen.SettingsWebBrowsingSitePermissions.route) },
+                modifier = Modifier.fillMaxWidth().height(50.dp),
+            ) {
+                Text("Manage Site Permissions")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 }

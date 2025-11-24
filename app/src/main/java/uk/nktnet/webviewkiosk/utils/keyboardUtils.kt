@@ -2,6 +2,8 @@ package uk.nktnet.webviewkiosk.utils
 
 import android.app.Activity
 import android.app.ActivityManager
+import android.content.Context
+import android.content.Context.ACTIVITY_SERVICE
 import android.view.KeyEvent
 import uk.nktnet.webviewkiosk.config.UserSettings
 
@@ -48,18 +50,20 @@ fun isShortcutPressed(event: KeyEvent, storedShortcut: String): Boolean {
     return shortcut.equals(storedShortcut, ignoreCase = true)
 }
 
-fun handlePreviewKeyUnlockEvent(
-    activity: Activity,
-    activityManager: ActivityManager,
-    userSettings: UserSettings,
+fun handleCustomUnlockShortcut(
+    context: Context,
     event: KeyEvent,
 ): Boolean {
+    val activity = context as? Activity ?: return false
+    val activityManager = activity.getSystemService(ACTIVITY_SERVICE) as ActivityManager
+    val userSettings = UserSettings(activity)
+
     val shouldUnlock = getIsLocked(activityManager)
         && userSettings.customUnlockShortcut.isNotEmpty()
         && isShortcutPressed(event, userSettings.customUnlockShortcut)
 
     if (shouldUnlock) {
-        unlockWithAuthIfRequired(activity, {})
+        unlockWithAuthIfRequired(activity) {}
     }
     return shouldUnlock
 }

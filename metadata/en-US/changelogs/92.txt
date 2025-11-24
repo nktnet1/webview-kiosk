@@ -1,0 +1,3 @@
+## Hot Fix
+
+- fix: regression bug with sharing or opening files through intent

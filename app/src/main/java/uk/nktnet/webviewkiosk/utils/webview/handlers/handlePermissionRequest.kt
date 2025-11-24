@@ -9,6 +9,8 @@ import androidx.appcompat.app.AlertDialog
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
+import uk.nktnet.webviewkiosk.utils.handleCustomUnlockShortcut
 import uk.nktnet.webviewkiosk.utils.hasPermissionForResource
 
 data class WebPermission(
@@ -45,8 +47,8 @@ fun handlePermissionRequest(
     val allowedPermissions = permissions.filter { it.allowed }
     val blockedPermissions = permissions.filter { !it.allowed }
     val unhandledPermissions = request.resources.filter { res ->
-        res != PermissionRequest.RESOURCE_VIDEO_CAPTURE &&
-            res != PermissionRequest.RESOURCE_AUDIO_CAPTURE
+        res != PermissionRequest.RESOURCE_VIDEO_CAPTURE
+        && res != PermissionRequest.RESOURCE_AUDIO_CAPTURE
     }
 
     if (allowedPermissions.isEmpty() && blockedPermissions.isEmpty()) {
@@ -101,13 +103,23 @@ fun handlePermissionRequest(
     val builder = AlertDialog.Builder(context)
         .setTitle(title)
         .setMessage(message.trimMargin())
-        .setOnCancelListener { request.deny() }
+        .setOnCancelListener {
+            request.deny()
+        }
+        .setOnDismissListener {
+            UserInteractionStateSingleton.onUserInteraction()
+        }
 
     if (isBlockedDialog) {
-        builder.setPositiveButton("Close") { _, _ -> request.deny() }
-        builder.show()
+        builder.setPositiveButton("Close") { _, _ ->
+            request.deny()
+        }
     } else {
         val checkBox = CheckBox(context).apply { text = "Remember my choice" }
+        checkBox.setOnClickListener {
+            UserInteractionStateSingleton.onUserInteraction()
+        }
+
         val layout = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(80, 20, 40, 0)
@@ -125,6 +137,12 @@ fun handlePermissionRequest(
             .setNegativeButton("Deny") { _, _ ->
                 request.deny()
             }
-            .show()
+    }
+
+    val dialog = builder.show()
+
+    dialog.setOnKeyListener { _, _, event ->
+        handleCustomUnlockShortcut(context, event)
+        false
     }
 }

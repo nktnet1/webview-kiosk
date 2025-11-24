@@ -16,32 +16,36 @@ fun SettingsWebEngineScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
             .windowInsetsPadding(WindowInsets.safeContent)
-            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp)
     ) {
         SettingLabel(navController = navController, label = "Web Engine")
-
         SettingDivider()
 
-        EnableJavaScriptSetting()
-        EnableDomStorageSetting()
-        AcceptCookiesSetting()
-        AcceptThirdPartyCookiesSetting()
-        CacheModeSetting()
-        UserAgentSetting()
-        LayoutAlgorithmSetting()
-        UseWideViewPortSetting()
-        LoadWithOverviewModeSetting()
-        SupportZoomSetting()
-        BuiltInZoomControlsSetting()
-        DisplayZoomControlsSetting()
-        InitialScaleSetting()
-        AllowFileAccessFromFileURLsSetting()
-        AllowUniversalAccessFromFileURLsSetting()
-        MediaPlaybackRequiresUserGestureSetting()
-        SslErrorModeSetting()
-        MixedContentModeSetting()
-        OverScrollModeSetting()
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+        ) {
+            EnableJavaScriptSetting()
+            EnableDomStorageSetting()
+            AcceptCookiesSetting()
+            AcceptThirdPartyCookiesSetting()
+            CacheModeSetting()
+            UserAgentSetting()
+            LayoutAlgorithmSetting()
+            UseWideViewPortSetting()
+            LoadWithOverviewModeSetting()
+            SupportZoomSetting()
+            BuiltInZoomControlsSetting()
+            DisplayZoomControlsSetting()
+            InitialScaleSetting()
+            AllowFileAccessFromFileURLsSetting()
+            AllowUniversalAccessFromFileURLsSetting()
+            MediaPlaybackRequiresUserGestureSetting()
+            SslErrorModeSetting()
+            MixedContentModeSetting()
+            OverScrollModeSetting()
+        }
     }
 }

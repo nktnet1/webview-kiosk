@@ -23,7 +23,9 @@ object UserSettingsKeys {
         const val ALLOW_OTHER_URL_SCHEMES = "web_browsing.allow_other_url_schemes"
         const val ALLOW_DEFAULT_LONG_PRESS = "web_browsing.allow_default_long_press"
         const val ALLOW_LINK_LONG_PRESS_CONTEXT_MENU = "web_browsing.allow_link_long_press_context_menu"
+        const val ADDRESS_BAR_ACTIONS = "web_browsing.address_bar_actions"
         const val KIOSK_CONTROL_PANEL_REGION = "web_browsing.kiosk_control_panel_region"
+        const val KIOSK_CONTROL_PANEL_ACTIONS = "web_browsing.kiosk_control_panel_actions"
         const val SEARCH_PROVIDER_URL = "web_browsing.search_provider_url"
         const val SEARCH_SUGGESTION_ENGINE = "web_browsing.search_suggestion_engine"
     }
@@ -78,6 +80,18 @@ object UserSettingsKeys {
         const val CUSTOM_UNLOCK_SHORTCUT = "device.custom_unlock_shortcut"
         const val CUSTOM_AUTH_PASSWORD = "device.custom_auth_password"
         const val UNLOCK_AUTH_REQUIREMENT = "device.unlock_auth_requirement"
+
+        object Owner {
+            object LockTaskFeature {
+                const val HOME = "device.owner.lock_task_feature.home"
+                const val OVERVIEW = "device.owner.lock_task_feature.overview"
+                const val GLOBAL_ACTIONS = "device.owner.lock_task_feature.global_actions"
+                const val NOTIFICATIONS = "device.owner.lock_task_feature.notifications"
+                const val SYSTEM_INFO = "device.owner.lock_task_feature.system_info"
+                const val KEYGUARD = "device.owner.lock_task_feature.keyguard"
+                const val BLOCK_ACTIVITY_START_IN_TASK = "device.owner.lock_task_feature.block_activity_start_in_task"
+            }
+        }
     }
 
     object JsScripts {

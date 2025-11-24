@@ -26,7 +26,7 @@ fun SetupNavHost(
                 SettingsListScreen(navController)
             }
             authComposable(Screen.SettingsMoreActions.route) {
-                MoreActionsScreen(navController)
+                SettingsMoreActionsScreen(navController)
             }
             authComposable(Screen.SettingsWebContent.route) {
                 SettingsWebContentScreen(navController)
@@ -51,6 +51,9 @@ fun SetupNavHost(
             }
             authComposable(Screen.SettingsDevice.route) {
                 SettingsDeviceScreen(navController)
+            }
+            authComposable(Screen.SettingsDeviceOwner.route) {
+                SettingsDeviceOwnerScreen(navController)
             }
             authComposable(Screen.SettingsJsScript.route) {
                 SettingsJsScriptsScreen(navController)

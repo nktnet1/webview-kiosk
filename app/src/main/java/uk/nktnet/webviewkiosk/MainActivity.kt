@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk
 
-import android.app.ActivityManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -40,25 +39,27 @@ import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
 import uk.nktnet.webviewkiosk.utils.getLocalUrl
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
-import uk.nktnet.webviewkiosk.utils.handlePreviewKeyUnlockEvent
+import uk.nktnet.webviewkiosk.utils.handleCustomUnlockShortcut
+import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
 
 class MainActivity : AppCompatActivity() {
-    private val navControllerState = mutableStateOf<NavHostController?>(null)
-    private var uploadingFileUri: Uri? = null
+    private lateinit var navController: NavHostController
+    private var uploadingFileUri by mutableStateOf<Uri?>(null)
     private var uploadProgress by mutableFloatStateOf(0f)
     private lateinit var userSettings: UserSettings
+    private lateinit var systemSettings: SystemSettings
     private lateinit var backButtonService: BackButtonService
 
     val restrictionsReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED) {
-                val currentRoute = navControllerState.value?.currentBackStackEntry?.destination?.route
+                val currentRoute = navController.currentBackStackEntry?.destination?.route
                 if (currentRoute != Screen.AdminRestrictionsChanged.route) {
-                    navControllerState.value?.navigate(Screen.AdminRestrictionsChanged.route)
+                    navController.navigate(Screen.AdminRestrictionsChanged.route)
                 }
                 updateDeviceSettings(context)
                 AuthenticationManager.resetAuthentication()
@@ -98,8 +99,12 @@ class MainActivity : AppCompatActivity() {
         userSettings = UserSettings(this)
         updateDeviceSettings(this)
 
-        val systemSettings = SystemSettings(this)
+        systemSettings = SystemSettings(this)
         val webContentDir = getWebContentFilesDir(this)
+
+        AuthenticationManager.init(this)
+
+        systemSettings.isFreshLaunch = true
 
         var toastRef: Toast? = null
         val showToast: (String) -> Unit = { msg ->
@@ -109,24 +114,16 @@ class MainActivity : AppCompatActivity() {
             ).apply { show() }
         }
 
-        AuthenticationManager.init(this)
-
-        systemSettings.isFreshLaunch = true
-
-        val intentUrlResult = handleMainIntent(intent)
-        if (!intentUrlResult.url.isNullOrEmpty()) {
-            systemSettings.intentUrl = intentUrlResult.url
-        } else {
-            uploadingFileUri = intentUrlResult.uploadUri
-        }
-
         if (userSettings.lockOnLaunch) {
             tryLockTask(this, showToast)
         }
 
+        if (intent != null) {
+            saveIntentUrl(intent)
+        }
+
         setContent {
-            val navController = rememberNavController()
-            navControllerState.value = navController
+            navController = rememberNavController()
 
             KeepScreenOnOption()
 
@@ -177,18 +174,7 @@ class MainActivity : AppCompatActivity() {
                             onProgress = { progress -> uploadProgress = progress },
                             onComplete = { file ->
                                 systemSettings.intentUrl = file.getLocalUrl()
-                                startActivity(
-                                    Intent(
-                                        this@MainActivity,
-                                        MainActivity::class.java
-                                    ).apply {
-                                        flags = (
-                                            Intent.FLAG_ACTIVITY_NEW_TASK
-                                            or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                                        )
-                                    }
-                                )
-                                finish()
+                                uploadingFileUri = null
                             }
                         )
                     } ?: run {
@@ -207,6 +193,18 @@ class MainActivity : AppCompatActivity() {
             ThemeOption.DARK -> true
             ThemeOption.LIGHT -> false
         }
+    }
+
+    private fun saveIntentUrl(intent: Intent): Boolean {
+        val intentUrlResult = handleMainIntent(intent)
+        if (!intentUrlResult.url.isNullOrEmpty()) {
+            systemSettings.intentUrl = intentUrlResult.url
+            return true
+        } else if (intentUrlResult.uploadUri != null) {
+            uploadingFileUri = intentUrlResult.uploadUri
+            return true
+        }
+        return false
     }
 
     override fun onStart() {
@@ -232,9 +230,28 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (!this::navController.isInitialized) {
+            return
+        }
+        if (
+            intent.action == Intent.ACTION_MAIN
+            && intent.hasCategory(Intent.CATEGORY_HOME)
+            && userSettings.allowGoHome
+        ) {
+            systemSettings.intentUrl = userSettings.homeUrl
+            navigateToWebViewScreen(navController)
+            return
+        }
+        val hasIntentUrl = saveIntentUrl(intent)
+        if (hasIntentUrl) {
+            navigateToWebViewScreen(navController)
+        }
+    }
+
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        val activityManager = getSystemService(ACTIVITY_SERVICE) as ActivityManager
-        if (handlePreviewKeyUnlockEvent(this, activityManager, userSettings, event)) {
+        if (handleCustomUnlockShortcut(this, event)) {
             return true
         }
         return super.dispatchKeyEvent(event)

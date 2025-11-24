@@ -43,15 +43,16 @@ For more on Android App Pinning, visit the following resources:
 1. [Google Official Documentation](https://support.google.com/android/answer/9455138)
 1. [Samsung Guide for Unpin Lock](https://www.samsung.com/sg/support/mobile-devices/pin-an-app-to-your-phone-screen-so-that-it-cant-be-closed)
 
-### 3.2. Device Owner
+### 3.2. Device Policy Controller
 
-When set as the device owner, {APP_NAME} automatically adds itself to the
-[allowlist for lock task packages](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode).
+If you have access to your Device Policy Controller (DPC), or your MDM/EMM
+has provided an interface to do so, it is recommended that you add {APP_NAME}
+to the allowlist of apps for lock task packages.
 
 This has the benefits of:
 
 1. removing warnings and instructions when you "lock" the app (as it is no
-   longer "screen pinning" like in user-owned devices) 
+   longer "screen pinning" like in user-owned devices)
 1. stopping users from triggering the "unpin" action using gestures or holding
    the back and overview button, thus removing the side-effect of the device
    getting locked when users attempt to "unpin"
@@ -60,11 +61,41 @@ In this mode, the only way to unlock {APP_NAME} would be using a methods
 provided in-app, which are always configurable and can be disabled. The
 supported methods are currently:
 
-1. Opening the Kiosk Control Panel by tapping the screen 10 times in
-   quick-succession (the default region is the top-left quadrant of
-   your screen), then clicking `Unlock`
+1. Opening the Kiosk Control Panel by either
+   - holding the back button
+   - tapping the screen 10 times in quick succession at your configured region
+     (e.g. Top Left quadrant)
 1. Adding a custom unlock shortcut (requires a physical keyboard or
    a method of that sending key combinations, e.g. `CTRL+1`)
+
+When using Google's [Android Test DPC](https://github.com/googlesamples/android-testdpc),
+You can go to `Lock Task -> Manage lock task list` and enable {APP_NAME}.
+
+When using [OwnDroid](https://github.com/BinTianqi/OwnDroid), go to
+`System -> Lock Task Mode -> Applications` and add Webview Kiosk's package name,
+which you can find in the [About Settings](/docs/settings/about).
+
+Finally, if you are writing your own DPC, the kotlin code to achieve this would be:
+
+```kt
+val APP_PACKAGES = arrayOf(
+  // Choose one depending on your installation method:
+  "uk.nktnet.webviewkiosk",   // GitHub, F-Droid, IzzyOnDroid, etc
+  "com.nktnet.webview_kiosk", // Aurora Store, Google Play Store
+)
+
+val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+val adminName = getComponentName(context)
+dpm.setLockTaskPackages(adminName, APP_PACKAGES)
+```
+
+For more information, see
+[Android's official documentation](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode#allowlist_apps).
+
+### 3.3. Device Owner
+
+When set as the device owner, {APP_NAME} automatically adds itself to the
+[allowlist for lock task packages](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode).
 
 You can set or remove {APP_NAME} as the device owner using Android Debug Bridge (ADB) on a PC.
 
@@ -84,39 +115,10 @@ Refer to
 [GitHub Discussion #33](https://github.com/nktnet1/webview-kiosk/discussions/33#discussioncomment-14672999)
 for a video demonstration.
 
-### 3.3. Device Policy Controller
-
-If you have control over your Device Policy Controller (DPC), or your MDM/EMM
-has provided an interface to do so, you can simply add {APP_NAME} to the
-allowlist of apps for lock task packages.
-
-For example, using Google's sample Test DPC application available on the
-[Play Store](https://play.google.com/store/apps/details?id=com.afwsamples.testdpc&hl=en_AU),
-[GitHub](https://github.com/googlesamples/android-testdpc) and
-[IzzyOnDroid](https://apt.izzysoft.de/fdroid/index/apk/com.afwsamples.testdpc).
-Simply go to `Lock Task -> Manage lock task list` and enable {APP_NAME}.
-
-Alternatively, if you are writing your own DPC, the kotlin code to achieve this would be:
-
-```kt
-val APP_PACKAGES = arrayOf(
-  // Choose one depending on your installation method:
-  "uk.nktnet.webviewkiosk",   // GitHub, F-Droid, IzzyOnDroid, etc
-  "com.nktnet.webview_kiosk", // Aurora Store, Google Play Store
-)
-
-val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-val adminName = getComponentName(context)
-dpm.setLockTaskPackages(adminName, APP_PACKAGES)
-```
-
-For more information, see
-[Android's official documentation](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode#allowlist_apps).
-
 ## 4. Managed App Configurations
 
-For fully managed (company-owned) devices, you can use 
-[managed configurations](https://developer.android.com/work/managed-configurations) 
+For fully managed (company-owned) devices, you can use
+[managed configurations](https://developer.android.com/work/managed-configurations)
 to restrict and remotely modify {APP_NAME} settings through your MDM/EMM.
 
 It is also possible to set app restrictions using the
@@ -135,5 +137,5 @@ Below are instructions for a few popular MDM/EMM providers:
 - [Scale Fusion](https://help.scalefusion.com/v1/docs/application-configurations-for-android-applications)
 - [Hexnode](https://www.hexnode.com/mobile-device-management/help/set-up-permissions-and-configurations-for-an-app-using-hexnode-mdm)
 
-Managed configuration APIs can only be used by certified EMM providers. 
+Managed configuration APIs can only be used by certified EMM providers.
 For example, [Headwind MDM does not support this feature](https://github.com/h-mdm/hmdm-server/issues/49#issuecomment-1151156032).

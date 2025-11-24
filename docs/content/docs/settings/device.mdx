@@ -100,10 +100,6 @@ For example, `CTRL+1`.
 This is useful for devices with no navigation buttons on screen and instead
 has a physical keyboard connected.
 
-Please note that the shortcut will only trigger when there is no app-specific
-dropdown/alerts opened (e.g. from floating toolbar, address bar or "go home"
-confirmation dialog from multitap).
-
 **Default:** *(blank)*
 
 ## 9. Custom Auth Password
@@ -137,3 +133,125 @@ For user-owned devices without lock task mode, the device will auto-lock when
 unpinning, which is outside the control of {APP_NAME}.
 
 **Default:** Default
+
+## 11. Device Owner
+
+For more information about `Device Owner`, see the [Security](/docs/security) documentation.
+
+### 11.1. Lock Task Features
+
+{APP_NAME} The settings below are extracted from the official documentations:
+- [Lock Task Mode -> Customise UI](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode#customize-ui)
+- [DevicePolicyManager#LOCK_TASK_FEATURE_BLOCK_ACTIVITY_START_IN_TASK](https://developer.android.com/reference/android/app/admin/DevicePolicyManager#LOCK_TASK_FEATURE_BLOCK_ACTIVITY_START_IN_TASK)
+
+<table>
+  <thead>
+    <tr>
+      <th>Feature</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>
+        Show Home Button
+      </td>
+      <td>
+        Shows the Home button. Enable for custom launchers—tapping an enabled
+        Home button has no action unless you allowlist the default Android
+        launcher.
+
+        <a href="https://developer.android.com/reference/android/app/admin/DevicePolicyManager#LOCK_TASK_FEATURE_HOME">
+          LOCK_TASK_FEATURE_HOME
+        </a>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Show Overview Button
+      </td>
+      <td>
+        Shows the Overview button (tapping this button opens the Recents
+        screen). If you enable this button, you must also enable the Home
+        button.
+
+        <a href="https://developer.android.com/reference/android/app/admin/DevicePolicyManager#LOCK_TASK_FEATURE_OVERVIEW">
+          LOCK_TASK_FEATURE_OVERVIEW
+        </a>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Enable Global Actions
+      </td>
+      <td>
+        Enables the global actions dialog that shows when long-pressing the
+        power button. The only feature that's enabled when
+        setLockTaskFeatures() hasn't been called. A user typically can't power
+        off the device if you disable this dialog.
+
+        <a href="https://developer.android.com/reference/android/app/admin/DevicePolicyManager#LOCK_TASK_FEATURE_GLOBAL_ACTIONS">
+          LOCK_TASK_FEATURE_GLOBAL_ACTIONS
+        </a>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Enable Notifications
+      </td>
+      <td>
+        Enables notifications for all apps. This shows notification icons in
+        the status bar, heads-up notifications, and the expandable notification
+        shade. If you enable this button, you must also enable the Home button.
+        Tapping notification actions and buttons that open new panels doesn't
+        work in lock task mode.
+
+        <a href="https://developer.android.com/reference/android/app/admin/DevicePolicyManager#LOCK_TASK_FEATURE_NOTIFICATIONS">
+          LOCK_TASK_FEATURE_NOTIFICATIONS
+        </a>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Show System Info
+      </td>
+      <td>
+        Enables the status bar's system info area that contains indicators such
+        as connectivity, battery, and sound and vibrate options.
+
+        <a href="https://developer.android.com/reference/android/app/admin/DevicePolicyManager#LOCK_TASK_FEATURE_SYSTEM_INFO">
+          LOCK_TASK_FEATURE_SYSTEM_INFO
+        </a>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Enable Keyguard
+      </td>
+      <td>
+        Enables any lock screen that might be set on the device. Typically not
+        suitable for devices with public users such as information kiosks or
+        digital signage.
+
+        <a href="https://developer.android.com/reference/android/app/admin/DevicePolicyManager#LOCK_TASK_FEATURE_KEYGUARD">
+          LOCK_TASK_FEATURE_KEYGUARD
+        </a>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Block Activity Start in Task
+      </td>
+      <td>
+        Enable blocking of non-allowlisted activities from being started into a
+        locked task.
+
+        This requires Android 11 (API level 30).
+
+        <a href="https://developer.android.com/reference/android/app/admin/DevicePolicyManager#LOCK_TASK_FEATURE_BLOCK_ACTIVITY_START_IN_TASK">
+          LOCK_TASK_FEATURE_BLOCK_ACTIVITY_START_IN_TASK
+        </a>
+      </td>
+    </tr>
+  </tbody>
+</table>

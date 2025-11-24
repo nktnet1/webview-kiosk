@@ -27,7 +27,7 @@ fun ResetOnInactivitySecondsSetting() {
 
             Minimum: ${Constants.MIN_INACTIVITY_TIMEOUT_SECONDS}
 
-            To disable, use the value 0. 
+            To disable, use the value 0.
         """.trimIndent(),
         placeholder = "e.g. 3600 (for 1 hour)",
         initialValue = userSettings.resetOnInactivitySeconds,
