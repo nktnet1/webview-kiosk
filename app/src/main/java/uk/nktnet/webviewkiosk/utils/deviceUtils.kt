@@ -19,6 +19,8 @@ import uk.nktnet.webviewkiosk.BuildConfig
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
+import uk.nktnet.webviewkiosk.main.DeviceOwnerManager
+import uk.nktnet.webviewkiosk.main.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.states.KeepScreenOnStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
 import java.util.TimeZone
@@ -78,6 +80,7 @@ data class AppInfo(
     val installer: String?,
     val isDeviceOwner: Boolean,
     val isLockTaskPermitted: Boolean,
+    val dhizukuPermissionGranted: Boolean,
     val instanceId: String
 )
 
@@ -120,6 +123,10 @@ fun getAppInfo(context: Context): AppInfo {
     val pm = context.packageManager
     val packageName = context.packageName
     val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+    val isDhizukuOwner = (
+        DeviceOwnerManager.status.value.mode == DeviceOwnerMode.Dhizuku
+        && DeviceOwnerManager.hasOwnerPermission(context)
+    )
     val systemSettings = SystemSettings(context)
 
     val versionName = try {
@@ -170,6 +177,7 @@ fun getAppInfo(context: Context): AppInfo {
         installer = installer,
         isDeviceOwner = dpm.isDeviceOwnerApp(packageName),
         isLockTaskPermitted = dpm.isLockTaskPermitted(packageName),
+        dhizukuPermissionGranted = isDhizukuOwner,
         instanceId = systemSettings.appInstanceId
     )
 }

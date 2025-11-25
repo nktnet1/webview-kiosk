@@ -74,6 +74,25 @@ object DeviceOwnerManager {
         }
     }
 
+    fun hasOwnerPermission(context: Context): Boolean {
+        return try {
+            when (status.value.mode) {
+                DeviceOwnerMode.DeviceOwner -> {
+                    DPM.isDeviceOwnerApp(context.packageName)
+                }
+                DeviceOwnerMode.Dhizuku -> {
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && Dhizuku.isPermissionGranted()
+                }
+                else -> {
+                    false
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
     private fun updateStatus(mode: DeviceOwnerMode) {
         status.value = Status(mode)
     }

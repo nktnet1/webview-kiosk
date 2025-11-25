@@ -72,10 +72,13 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        userSettings = UserSettings(this)
+        systemSettings = SystemSettings(this)
+
         LockStateSingleton.startMonitoring(application)
 
         DeviceOwnerManager.init(this)
-
         if (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.DeviceOwner) {
             setupLockTaskPackage(this)
         } else if (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.Dhizuku) {
@@ -99,10 +102,6 @@ class MainActivity : AppCompatActivity() {
             IntentFilter(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED)
         )
 
-        userSettings = UserSettings(this)
-        updateDeviceSettings(this)
-
-        systemSettings = SystemSettings(this)
         val webContentDir = getWebContentFilesDir(this)
 
         AuthenticationManager.init(this)

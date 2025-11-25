@@ -48,8 +48,7 @@ fun applyLockTaskFeatures(context: Context) {
         return
     }
 
-    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-    if (!dpm.isDeviceOwnerApp(context.packageName)) {
+    if (!DeviceOwnerManager.hasOwnerPermission(context)) {
         return
     }
 
@@ -85,7 +84,7 @@ fun applyLockTaskFeatures(context: Context) {
         WebviewKioskAdminReceiver::class.java.name
     )
     try {
-        dpm.setLockTaskFeatures(adminComponent, features)
+        DeviceOwnerManager.DPM.setLockTaskFeatures(adminComponent, features)
     } catch (e: Exception) {
         e.printStackTrace()
     }
@@ -116,10 +115,14 @@ fun tryUnlockTask(activity: Activity?, showToast: (String) -> Unit = {}): Boolea
 
 fun setupLockTaskPackage(context: Context): Boolean {
     try {
+        if (!DeviceOwnerManager.hasOwnerPermission(context)){
+            return false
+        }
         DeviceOwnerManager.DPM.setLockTaskPackages(
             DeviceOwnerManager.DAR,
             arrayOf(context.packageName)
         )
+        updateDeviceSettings(context)
         return true
     } catch (e: Exception) {
         e.printStackTrace()
