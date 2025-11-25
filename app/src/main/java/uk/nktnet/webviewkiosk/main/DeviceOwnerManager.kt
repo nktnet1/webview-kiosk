@@ -93,10 +93,6 @@ object DeviceOwnerManager {
         }
     }
 
-    private fun updateStatus(mode: DeviceOwnerMode) {
-        status.value = Status(mode)
-    }
-
     fun requestDhizukuPermission(onGranted: () -> Unit = {}, onDenied: () -> Unit = {}) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
             onDenied()
@@ -128,6 +124,10 @@ object DeviceOwnerManager {
             e.printStackTrace()
             onDenied()
         }
+    }
+
+    private fun updateStatus(mode: DeviceOwnerMode) {
+        status.value = Status(mode)
     }
 
     @SuppressLint("PrivateApi")
