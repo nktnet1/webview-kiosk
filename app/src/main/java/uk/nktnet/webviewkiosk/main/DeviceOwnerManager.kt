@@ -34,16 +34,14 @@ object DeviceOwnerManager {
     val status = MutableStateFlow(Status())
 
     fun init(context: Context) {
-        val dpm = context.getSystemService(
+        DPM = context.getSystemService(
             Context.DEVICE_POLICY_SERVICE
         ) as DevicePolicyManager
-
-        if (dpm.isDeviceOwnerApp(context.packageName)) {
-            DPM = dpm
-            DAR = ComponentName(
-                context.packageName,
-                WebviewKioskAdminReceiver::class.java.name
-            )
+        DAR = ComponentName(
+            context.packageName,
+            WebviewKioskAdminReceiver::class.java.name
+        )
+        if (DPM.isDeviceOwnerApp(context.packageName)) {
             updateStatus(DeviceOwnerMode.DeviceOwner)
             return
         }
@@ -70,7 +68,6 @@ object DeviceOwnerManager {
             updateStatus(DeviceOwnerMode.Dhizuku)
         } catch (e: Throwable) {
             e.printStackTrace()
-
         }
     }
 
