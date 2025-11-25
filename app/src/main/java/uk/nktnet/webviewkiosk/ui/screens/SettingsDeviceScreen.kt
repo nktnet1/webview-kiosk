@@ -50,7 +50,7 @@ fun SettingsDeviceScreen(navController: NavController) {
             CustomAuthPasswordSetting()
             UnlockAuthRequirementSetting()
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Button(
                 onClick = { navController.navigate(Screen.SettingsDeviceOwner.route) },

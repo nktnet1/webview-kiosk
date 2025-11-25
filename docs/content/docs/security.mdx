@@ -107,13 +107,15 @@ adb shell dpm set-device-owner uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver
 adb shell dpm remove-active-admin uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver
 ```
 
-Alternatively, you can use [shizuku](https://github.com/RikkaApps/Shizuku) and
-[termux](https://github.com/termux/termux-app) to obtain direct ADB access on
-your android device (thus skipping the PC requirement).
-
-Refer to
+Alternatively, you can use [Shizuku](https://github.com/RikkaApps/Shizuku) and
+[Termux](https://github.com/termux/termux-app) to obtain direct ADB access on
+your android device (thus skipping the PC requirement). Refer to
 [GitHub Discussion #33](https://github.com/nktnet1/webview-kiosk/discussions/33#discussioncomment-14672999)
 for a video demonstration.
+
+{APP_NAME} also supports [Dhizuku](https://github.com/iamr0s/Dhizuku), a tool
+that can share device owner permissions. If Dhizuku is installed, you will be
+prompted to grant permission when the app launches.
 
 ## 4. Managed App Configurations
 

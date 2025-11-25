@@ -378,7 +378,7 @@ fun createCustomWebview(
 
             setDownloadListener { _, _, _, _, _ ->
                 config.showToast(
-                    "Downloading files is not yet supported in ${Constants.APP_NAME}."
+                    "Downloading files is not supported in ${Constants.APP_NAME}."
                 )
             }
         }

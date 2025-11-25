@@ -33,7 +33,7 @@ and standalone Kiosk solution.
 ## Key Features
 
 - **Lock Task Mode (Pin):** prevent access to your device's home screen, apps and status bar
-- **Protected Settings:** all configurations are secured with biometrics or device credentials
+- **Secure Settings:** configurations are protected by biometrics, device credentials or custom password
 - **URL Filtering:** use regular expression to control web access through blacklisting and whitelisting
 - **Export/Import:** allows for the backup and restore of user settings and configurations
 - **Local files:** display an image, audio, video, or HTML file in kiosk mode from your device
