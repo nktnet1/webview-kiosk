@@ -351,6 +351,7 @@ fun WebviewScreen(navController: NavController) {
 
                         fun initWebviewApply(initialUrl: String) = webView.apply {
                             customLoadUrl(initialUrl)
+                            webView.requestFocus()
                         }
 
                         if (userSettings.allowRefresh && userSettings.allowPullToRefresh) {

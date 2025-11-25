@@ -4,11 +4,13 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.os.Build
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -20,8 +22,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.rosan.dhizuku.shared.DhizukuVariables
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.Constants
+import uk.nktnet.webviewkiosk.main.DeviceOwnerManager
+import uk.nktnet.webviewkiosk.main.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureBlockActivityStartInTaskSetting
@@ -32,6 +37,22 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.lock
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureOverviewSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureSystemInfoSetting
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
+import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
+
+fun openPackage(context: Context, packageName: String, showToast: (msg: String) -> Unit) {
+    try {
+        val pm = context.packageManager
+        val intent = pm.getLaunchIntentForPackage(packageName)
+        if (intent != null) {
+            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        } else {
+            showToast("App not installed")
+        }
+    } catch (e: Exception) {
+        showToast("Error: $e")
+    }
+}
 
 @Composable
 fun SettingsDeviceOwnerScreen(navController: NavController) {
@@ -42,9 +63,27 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
         WebviewKioskAdminReceiver::class.java.name
     )
 
-    var isDeviceOwner = dpm.isDeviceOwnerApp(context.packageName)
+    var isDeviceOwner by remember {
+        mutableStateOf(dpm.isDeviceOwnerApp(context.packageName))
+    }
+    var hasOwnerPermission by remember {
+        mutableStateOf(DeviceOwnerManager.hasOwnerPermission(context))
+    }
+    var isLockedTaskPermitted by remember {
+        mutableStateOf(dpm.isLockTaskPermitted(context.packageName))
+    }
+
+    val deviceOwnerStatus by DeviceOwnerManager.status.collectAsState()
 
     var showDeviceOwnerRemovalDialog by remember { mutableStateOf(false) }
+
+    var toastRef: Toast? = null
+    val showToast: (String) -> Unit = { msg ->
+        toastRef?.cancel()
+        toastRef = Toast.makeText(
+            context, msg, Toast.LENGTH_SHORT
+        ).apply { show() }
+    }
 
     if (showDeviceOwnerRemovalDialog) {
         AlertDialog(
@@ -84,7 +123,11 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 ) { Text("Yes") }
             },
             dismissButton = {
-                TextButton(onClick = { showDeviceOwnerRemovalDialog = false }) { Text("No") }
+                TextButton(
+                    onClick = { showDeviceOwnerRemovalDialog = false }
+                ) {
+                    Text("No")
+                }
             }
         )
     }
@@ -103,7 +146,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
         ) {
-            if (!isDeviceOwner) {
+            if (!hasOwnerPermission) {
                 Text(
                     text = """
                         ${Constants.APP_NAME} is not set as the device owner.
@@ -135,13 +178,74 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Button(
-                enabled = isDeviceOwner,
-                onClick = { showDeviceOwnerRemovalDialog = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 2.dp)
-            ) { Text("Deactivate Device Owner") }
+            if (!isLockedTaskPermitted) {
+                Button(
+                    enabled = hasOwnerPermission,
+                    onClick = {
+                        setupLockTaskPackage(context)
+                        isLockedTaskPermitted = dpm.isLockTaskPermitted(context.packageName)
+                        showToast("Lock task packages set.")
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 2.dp),
+                ) {
+                    Text("Set Lock Task Permitted")
+                }
+            }
+
+            if (deviceOwnerStatus.mode == DeviceOwnerMode.Dhizuku) {
+                if (!hasOwnerPermission) {
+                    Button(
+                        onClick = {
+                            DeviceOwnerManager.requestDhizukuPermission(
+                                onGranted = {
+                                    setupLockTaskPackage(context)
+                                    hasOwnerPermission = DeviceOwnerManager.hasOwnerPermission(context)
+                                }
+                            )
+                        },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 2.dp),
+                    ) {
+                        Text("Request Dhizuku Permission")
+                    }
+                }
+
+                Button(
+                    onClick = {
+                        openPackage(
+                            context,
+                            DhizukuVariables.OFFICIAL_PACKAGE_NAME,
+                            showToast,
+                        )
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 2.dp),
+                ) {
+                    Text("Open Dhizuku")
+                }
+            } else {
+                Button(
+                    enabled = isDeviceOwner,
+                    onClick = { showDeviceOwnerRemovalDialog = true },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 2.dp),
+                ) {
+                    Text("Deactivate Device Owner")
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
         }

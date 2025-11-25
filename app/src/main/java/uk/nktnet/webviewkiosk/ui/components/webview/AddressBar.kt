@@ -19,6 +19,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -89,6 +90,7 @@ fun AddressBar(
     }
 
     LaunchedEffect(Unit) {
+        delay(200)
         allowFocus = true
     }
 
@@ -180,6 +182,7 @@ fun AddressBar(
         modifier = Modifier
             .windowInsetsPadding(addressBarInset)
             .fillMaxWidth()
+            .focusProperties { canFocus = allowFocus }
             .height(70.dp)
             .padding(horizontal = 8.dp)
     ) {

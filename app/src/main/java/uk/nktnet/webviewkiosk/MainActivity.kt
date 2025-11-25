@@ -29,6 +29,8 @@ import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.mqtt.MqttManager
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonService
+import uk.nktnet.webviewkiosk.main.DeviceOwnerManager
+import uk.nktnet.webviewkiosk.main.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.handleMainIntent
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttErrorRequest
@@ -78,8 +80,22 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        userSettings = UserSettings(this)
+        systemSettings = SystemSettings(this)
+
         LockStateSingleton.startMonitoring(application)
-        setupLockTaskPackage(this)
+
+        DeviceOwnerManager.init(this)
+        if (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.DeviceOwner) {
+            setupLockTaskPackage(this)
+        } else if (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.Dhizuku) {
+            DeviceOwnerManager.requestDhizukuPermission(
+                onGranted = {
+                    setupLockTaskPackage(this)
+                }
+            )
+        }
 
         backButtonService = BackButtonService(
             lifecycleScope = lifecycleScope,
@@ -94,12 +110,8 @@ class MainActivity : AppCompatActivity() {
             IntentFilter(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED)
         )
 
-        userSettings = UserSettings(this)
-        systemSettings = SystemSettings(this)
         MqttManager.updateConfig(systemSettings, userSettings)
-        updateDeviceSettings(this)
 
-        systemSettings = SystemSettings(this)
         val webContentDir = getWebContentFilesDir(this)
 
         AuthenticationManager.init(this)
@@ -272,6 +284,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        DeviceOwnerManager.init(this)
         updateDeviceSettings(this)
         backButtonService.onBackPressedCallback.isEnabled = true
     }

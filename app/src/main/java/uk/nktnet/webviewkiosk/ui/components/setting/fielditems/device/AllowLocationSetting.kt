@@ -23,8 +23,12 @@ fun AllowLocationSetting() {
 
     var requestFine by remember { mutableStateOf(false) }
 
-    val (fineState, requestFinePermission) = rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
-    val (coarseState, requestCoarsePermission) = rememberPermissionState(Manifest.permission.ACCESS_COARSE_LOCATION)
+    val (fineState, requestFinePermission) = rememberPermissionState(
+        Manifest.permission.ACCESS_FINE_LOCATION
+    )
+    val (coarseState, requestCoarsePermission) = rememberPermissionState(
+        Manifest.permission.ACCESS_COARSE_LOCATION
+    )
 
     val permissionState = if (requestFine) fineState else coarseState
     val requestPermission = if (requestFine) requestFinePermission else requestCoarsePermission

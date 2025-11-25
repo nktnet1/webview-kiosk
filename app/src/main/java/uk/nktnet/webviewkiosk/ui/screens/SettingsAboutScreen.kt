@@ -125,6 +125,11 @@ fun SettingsAboutScreen(navController: NavController) {
                 value = systemInfo.app.isLockTaskPermitted.toString(),
                 showToast,
             )
+            InfoItem(
+                label = "Dhizuku Permission Granted",
+                value = systemInfo.app.dhizukuPermissionGranted.toString(),
+                showToast
+            )
             InfoItem(label = "Instance ID", value = systemInfo.app.instanceId, showToast)
 
             Spacer(modifier = Modifier.height(16.dp))
