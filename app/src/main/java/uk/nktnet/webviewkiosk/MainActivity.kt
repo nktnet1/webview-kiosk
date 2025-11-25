@@ -72,13 +72,10 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-
         userSettings = UserSettings(this)
         systemSettings = SystemSettings(this)
-
-        LockStateSingleton.startMonitoring(application)
-
         DeviceOwnerManager.init(this)
+
         if (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.DeviceOwner) {
             setupLockTaskPackage(this)
         } else if (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.Dhizuku) {
@@ -88,6 +85,8 @@ class MainActivity : AppCompatActivity() {
                 }
             )
         }
+
+        LockStateSingleton.startMonitoring(application)
 
         backButtonService = BackButtonService(
             lifecycleScope = lifecycleScope,
