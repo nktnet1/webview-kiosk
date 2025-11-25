@@ -3,16 +3,15 @@ package uk.nktnet.webviewkiosk.utils
 import android.app.Activity
 import android.app.ActivityManager
 import android.app.admin.DevicePolicyManager
-import android.content.ComponentName
 import android.content.Context
 import android.os.Build
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.auth.AuthenticationManager
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
+import uk.nktnet.webviewkiosk.main.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 
 private fun tryLockAction(
@@ -47,8 +46,7 @@ fun applyLockTaskFeatures(context: Context) {
         return
     }
 
-    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-    if (!dpm.isDeviceOwnerApp(context.packageName)) {
+    if (!DeviceOwnerManager.hasOwnerPermission(context)) {
         return
     }
 
@@ -79,12 +77,9 @@ fun applyLockTaskFeatures(context: Context) {
     ) {
         features = features or DevicePolicyManager.LOCK_TASK_FEATURE_BLOCK_ACTIVITY_START_IN_TASK
     }
-    val adminComponent = ComponentName(
-        context.packageName,
-        WebviewKioskAdminReceiver::class.java.name
-    )
+
     try {
-        dpm.setLockTaskFeatures(adminComponent, features)
+        DeviceOwnerManager.DPM.setLockTaskFeatures(DeviceOwnerManager.DAR, features)
     } catch (e: Exception) {
         e.printStackTrace()
     }
@@ -115,19 +110,22 @@ fun tryUnlockTask(activity: Activity?, showToast: (String) -> Unit = {}): Boolea
 
 fun setupLockTaskPackage(context: Context): Boolean {
     try {
-        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        if (!dpm.isDeviceOwnerApp(context.packageName)) {
+        if (!DeviceOwnerManager.hasOwnerPermission(context)){
             return false
         }
-        val adminComponent = ComponentName(context.packageName, WebviewKioskAdminReceiver::class.java.name)
-        dpm.setLockTaskPackages(adminComponent, arrayOf(context.packageName))
+        DeviceOwnerManager.DPM.setLockTaskPackages(
+            DeviceOwnerManager.DAR,
+            arrayOf(
+                context.packageName
+            )
+        )
+        updateDeviceSettings(context)
         return true
     } catch (e: Exception) {
         e.printStackTrace()
         return false
     }
 }
-
 fun getIsLocked(activityManager: ActivityManager): Boolean {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         return activityManager.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
@@ -144,8 +142,7 @@ fun requireAuthForUnlock(context: Context, userSettings: UserSettings): Boolean 
     if (userSettings.unlockAuthRequirement == UnlockAuthRequirementOption.REQUIRE) {
         return true
     }
-    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-    return dpm.isLockTaskPermitted(context.packageName)
+    return DeviceOwnerManager.DPM.isLockTaskPermitted(context.packageName)
 }
 
 fun unlockWithAuthIfRequired(

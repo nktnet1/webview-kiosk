@@ -25,5 +25,9 @@ fun hasPermissionForResource(context: Context, resource: String): Boolean {
     )
 
     val permissions = resourceToPermissions[resource] ?: return false
-    return permissions.any { ContextCompat.checkSelfPermission(context, it) == PackageManager.PERMISSION_GRANTED }
+    return permissions.any {
+        ContextCompat.checkSelfPermission(
+            context, it
+        ) == PackageManager.PERMISSION_GRANTED
+    }
 }
