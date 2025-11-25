@@ -113,12 +113,22 @@ fun setupLockTaskPackage(context: Context): Boolean {
         if (!DeviceOwnerManager.hasOwnerPermission(context)){
             return false
         }
+
+        val packages =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val current = DeviceOwnerManager.DPM.getLockTaskPackages(
+                    DeviceOwnerManager.DAR
+                ).toMutableSet()
+                current.add(context.packageName)
+                current.toTypedArray()
+            } else {
+                arrayOf(context.packageName)
+            }
         DeviceOwnerManager.DPM.setLockTaskPackages(
             DeviceOwnerManager.DAR,
-            arrayOf(
-                context.packageName
-            )
+            packages
         )
+
         updateDeviceSettings(context)
         return true
     } catch (e: Exception) {
