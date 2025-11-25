@@ -1,0 +1,6 @@
+## Changes
+
+- feat: support for Dhizuku API (device-owner sharing)
+- fix: device owner, preserve existing lock task packages
+- fix: avoid autofocus on textfield when activity start
+- fix: settings -> about, copy value only on long click
