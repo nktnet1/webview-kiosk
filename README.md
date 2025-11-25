@@ -38,7 +38,7 @@ and standalone Kiosk solution.
 - **Export/Import:** allows for the backup and restore of user settings and configurations
 - **Local files:** display an image, audio, video, or HTML file in kiosk mode from your device
 - **Managed Configurations:** for fully-managed (company-owned) devices, settings can be set
-  and restricted remotely through a certified MDM/EMM provider
+  and restricted remotely through an MDM/EMM provider
 
 ## Additional Permissions
 
