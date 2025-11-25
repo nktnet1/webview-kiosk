@@ -178,17 +178,16 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (!isLockedTaskPermitted) {
+            if (hasOwnerPermission && !isLockedTaskPermitted) {
                 Button(
-                    enabled = hasOwnerPermission,
                     onClick = {
                         setupLockTaskPackage(context)
                         isLockedTaskPermitted = dpm.isLockTaskPermitted(context.packageName)
-                        showToast("Lock task packages set.")
+                        showToast("Added ${Constants.APP_NAME} to lock task packages.")
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 2.dp),
+                        .padding(vertical = 1.dp),
                 ) {
                     Text("Set Lock Task Permitted")
                 }
@@ -211,7 +210,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 2.dp),
+                            .padding(vertical = 1.dp),
                     ) {
                         Text("Request Dhizuku Permission")
                     }
@@ -227,7 +226,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 2.dp),
+                        .padding(vertical = 1.dp),
                 ) {
                     Text("Open Dhizuku")
                 }
@@ -241,7 +240,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 2.dp),
+                        .padding(vertical = 1.dp),
                 ) {
                     Text("Deactivate Device Owner")
                 }
