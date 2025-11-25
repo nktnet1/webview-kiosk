@@ -90,7 +90,6 @@ fun AddressBar(
     }
 
     LaunchedEffect(Unit) {
-        focusManager.clearFocus()
         delay(200)
         allowFocus = true
     }
