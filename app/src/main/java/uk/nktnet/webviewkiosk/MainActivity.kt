@@ -26,7 +26,8 @@ import uk.nktnet.webviewkiosk.auth.AuthenticationManager
 import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonService
-import uk.nktnet.webviewkiosk.main.DhizukuManager
+import uk.nktnet.webviewkiosk.main.DeviceOwnerManager
+import uk.nktnet.webviewkiosk.main.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.handleMainIntent
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
@@ -73,13 +74,15 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         LockStateSingleton.startMonitoring(application)
 
-        val deviceOwnerSuccess = setupLockTaskPackage(this)
-        if (!deviceOwnerSuccess) {
-            DhizukuManager.init(this)
-            DhizukuManager.requestPermission(
+        DeviceOwnerManager.init(this)
+
+        if (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.DeviceOwner) {
+            setupLockTaskPackage(this)
+        } else if (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.Dhizuku) {
+            DeviceOwnerManager.requestDhizukuPermission(
                 onGranted = {
-                    DhizukuManager.setupLockTaskPackage(this)
-                },
+                    setupLockTaskPackage(this)
+                }
             )
         }
 

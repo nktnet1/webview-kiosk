@@ -6,7 +6,6 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.os.Build
-import com.rosan.dhizuku.shared.DhizukuVariables
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -14,6 +13,7 @@ import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.auth.AuthenticationManager
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
+import uk.nktnet.webviewkiosk.main.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 
 private fun tryLockAction(
@@ -116,12 +116,10 @@ fun tryUnlockTask(activity: Activity?, showToast: (String) -> Unit = {}): Boolea
 
 fun setupLockTaskPackage(context: Context): Boolean {
     try {
-        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-        if (!dpm.isDeviceOwnerApp(context.packageName)) {
-            return false
-        }
-        val adminComponent = ComponentName(context.packageName, WebviewKioskAdminReceiver::class.java.name)
-        dpm.setLockTaskPackages(adminComponent, arrayOf(context.packageName))
+        DeviceOwnerManager.DPM.setLockTaskPackages(
+            DeviceOwnerManager.DAR,
+            arrayOf(context.packageName)
+        )
         return true
     } catch (e: Exception) {
         e.printStackTrace()
