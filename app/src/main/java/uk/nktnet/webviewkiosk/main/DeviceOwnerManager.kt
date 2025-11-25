@@ -140,7 +140,9 @@ object DeviceOwnerManager {
                 Dhizuku.getOwnerComponent().packageName,
                 Context.CONTEXT_IGNORE_SECURITY
             )
-            val manager = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+            val manager = context.getSystemService(
+                Context.DEVICE_POLICY_SERVICE
+            ) as DevicePolicyManager
             val field = manager.javaClass.getDeclaredField("mService")
             field.isAccessible = true
             val oldInterface = field[manager] as IDevicePolicyManager

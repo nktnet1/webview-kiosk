@@ -216,6 +216,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        DeviceOwnerManager.init(this)
         updateDeviceSettings(this)
         backButtonService.onBackPressedCallback.isEnabled = true
     }

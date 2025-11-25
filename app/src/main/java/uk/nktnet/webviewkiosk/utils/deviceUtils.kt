@@ -123,7 +123,7 @@ fun getAppInfo(context: Context): AppInfo {
     val pm = context.packageManager
     val packageName = context.packageName
     val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-    val isDhizukuOwner = (
+    val dhizukuPermissionGranted = (
         DeviceOwnerManager.status.value.mode == DeviceOwnerMode.Dhizuku
         && DeviceOwnerManager.hasOwnerPermission(context)
     )
@@ -177,7 +177,7 @@ fun getAppInfo(context: Context): AppInfo {
         installer = installer,
         isDeviceOwner = dpm.isDeviceOwnerApp(packageName),
         isLockTaskPermitted = dpm.isLockTaskPermitted(packageName),
-        dhizukuPermissionGranted = isDhizukuOwner,
+        dhizukuPermissionGranted = dhizukuPermissionGranted,
         instanceId = systemSettings.appInstanceId
     )
 }

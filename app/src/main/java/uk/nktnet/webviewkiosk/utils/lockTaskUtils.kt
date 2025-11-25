@@ -3,13 +3,11 @@ package uk.nktnet.webviewkiosk.utils
 import android.app.Activity
 import android.app.ActivityManager
 import android.app.admin.DevicePolicyManager
-import android.content.ComponentName
 import android.content.Context
 import android.os.Build
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.auth.AuthenticationManager
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
@@ -79,12 +77,9 @@ fun applyLockTaskFeatures(context: Context) {
     ) {
         features = features or DevicePolicyManager.LOCK_TASK_FEATURE_BLOCK_ACTIVITY_START_IN_TASK
     }
-    val adminComponent = ComponentName(
-        context.packageName,
-        WebviewKioskAdminReceiver::class.java.name
-    )
+
     try {
-        DeviceOwnerManager.DPM.setLockTaskFeatures(adminComponent, features)
+        DeviceOwnerManager.DPM.setLockTaskFeatures(DeviceOwnerManager.DAR, features)
     } catch (e: Exception) {
         e.printStackTrace()
     }
@@ -120,7 +115,9 @@ fun setupLockTaskPackage(context: Context): Boolean {
         }
         DeviceOwnerManager.DPM.setLockTaskPackages(
             DeviceOwnerManager.DAR,
-            arrayOf(context.packageName)
+            arrayOf(
+                context.packageName
+            )
         )
         updateDeviceSettings(context)
         return true
@@ -145,8 +142,7 @@ fun requireAuthForUnlock(context: Context, userSettings: UserSettings): Boolean 
     if (userSettings.unlockAuthRequirement == UnlockAuthRequirementOption.REQUIRE) {
         return true
     }
-    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-    return dpm.isLockTaskPermitted(context.packageName)
+    return DeviceOwnerManager.DPM.isLockTaskPermitted(context.packageName)
 }
 
 fun unlockWithAuthIfRequired(
