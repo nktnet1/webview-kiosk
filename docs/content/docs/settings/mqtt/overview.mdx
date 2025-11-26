@@ -5,6 +5,8 @@ description: Remote management and monitoring of your kiosk device
 
 import { APP_NAME } from '@/config/app';
 
+### Introduction
+
 Message Queueing Telemetry Transport ([MQTT](https://mqtt.org)) is a lightweight messaging protocol
 for devices with limited resources. MQTT is built on top of TCP/IP and is ideal
 for machine-to-machine communication and the Internet of Things (IoT).
@@ -35,3 +37,29 @@ There are also public brokers you can use for testing purposes, such as
 - HiveMQ: https://www.mqtt-dashboard.com
 - Mosquitto: https://test.mosquitto.org
 - EMQX: https://www.emqx.com/en/mqtt/public-mqtt5-broker
+
+### Global Variables
+
+The following variables will be string-interpolated for supported settings,
+such as topic names and will payload:
+
+| Variable Name   | Description                             |
+| --------------- | --------------------------------------- |
+| APP_INSTANCE_ID | Unique identifier for the app instance. |
+| USERNAME        | MQTT username used for authentication.  |
+
+To use variables in your settings, use the syntax `${YOUR_VARIABLE}`, e.g.
+
+```js
+wk/${USERNAME}/${APP_INSTANCE_ID}/command
+```
+
+which may evaluate to a string such as
+
+```txt
+// [!code word:kiosk_user_01]
+// [!code word:b8378168-ca69-11f0-af20-5a93ec0e6f90]
+wk/kiosk_user_01/b8378168-ca69-11f0-af20-5a93ec0e6f90/command
+```
+
+Some settings will support additional variables.
