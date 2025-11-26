@@ -169,12 +169,12 @@ class MainActivity : AppCompatActivity() {
                 MqttManager.settings.collect { settingsMessage ->
                     userSettings.importJson(settingsMessage.settings)
 
-                    if (settingsMessage.applyNow) {
+                    if (settingsMessage.refresh) {
                         updateDeviceSettings(context)
                     }
 
                     if (settingsMessage.showToast) {
-                        if (settingsMessage.applyNow) {
+                        if (settingsMessage.refresh) {
                             showToast("MQTT: settings applied.")
                         } else {
                             showToast("MQTT: settings received - not yet applied.")

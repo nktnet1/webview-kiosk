@@ -522,7 +522,7 @@ object MqttManager {
 
                 val settingsMessage = MqttSettingsMessage(
                     identifier = identifier,
-                    applyNow = applyNow,
+                    refresh = applyNow,
                     showToast = showToast,
                     settings = settingsStr
                 )
