@@ -31,12 +31,12 @@ fun SettingsMqttScreen(navController: NavController) {
         ),
         Triple(
             "Will (LWT)",
-            "Send message if the client disconnects unexpectedly",
+            "Customise message for unexpected disconnect",
             Screen.SettingsMqttWill.route
         ),
         Triple(
             "Restrictions",
-            "Broker and client restrictions",
+            "Broker and client restrictions and limitations",
             Screen.SettingsMqttRestrictions.route
         ),
     )
