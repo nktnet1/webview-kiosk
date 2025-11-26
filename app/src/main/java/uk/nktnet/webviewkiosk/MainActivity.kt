@@ -34,6 +34,7 @@ import uk.nktnet.webviewkiosk.main.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.handleMainIntent
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttErrorRequest
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttReconnectMqttCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttSettingsRequest
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttStatusRequest
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttSystemInfoRequest
@@ -145,29 +146,42 @@ class MainActivity : AppCompatActivity() {
             val activity = LocalActivity.current
 
             LaunchedEffect(Unit) {
+                MqttManager.commands.collect { commandMessage ->
+                    when (commandMessage) {
+                        is MqttReconnectMqttCommand -> {
+                            MqttManager.disconnect (
+                                onDisconnected = {
+                                    MqttManager.connect(context)
+                                }
+                            )
+                        }
+                        else -> Unit
+                    }
+                }
+            }
+
+            LaunchedEffect(Unit) {
                 MqttManager.settings.collect { settingsMessage ->
-                    if (userSettings.mqttEnabled) {
-                        userSettings.importJson(settingsMessage.settings)
+                    userSettings.importJson(settingsMessage.settings)
 
+                    if (settingsMessage.applyNow) {
+                        updateDeviceSettings(context)
+                    }
+
+                    if (settingsMessage.showToast) {
                         if (settingsMessage.applyNow) {
-                            updateDeviceSettings(context)
+                            showToast("MQTT: settings applied.")
+                        } else {
+                            showToast("MQTT: settings received - not yet applied.")
                         }
+                    }
 
-                        if (settingsMessage.showToast) {
-                            if (settingsMessage.applyNow) {
-                                showToast("MQTT: settings applied.")
-                            } else {
-                                showToast("MQTT: settings received - not yet applied.")
-                            }
-                        }
-
-                        // Counterintuitive, but this acts as a "Refresh" of the webview screen,
-                        // which will recreate + apply settings.
-                        // If we're on another screen though (e.g. settings), then let the user
-                        // decide when to navigate back.
-                        if (navController.currentDestination?.route == Screen.WebView.route) {
-                            navigateToWebViewScreen(navController)
-                        }
+                    // Counterintuitive, but this acts as a "Refresh" of the webview screen,
+                    // which will recreate + apply settings.
+                    // If we're on another screen though (e.g. settings), then let the user
+                    // decide when to navigate back.
+                    if (navController.currentDestination?.route == Screen.WebView.route) {
+                        navigateToWebViewScreen(navController)
                     }
                 }
             }

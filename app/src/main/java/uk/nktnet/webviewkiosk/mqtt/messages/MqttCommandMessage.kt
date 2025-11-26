@@ -68,6 +68,14 @@ data class MqttUnlockMqttCommand(
 }
 
 @Serializable
+@SerialName("reconnect")
+data class MqttReconnectMqttCommand(
+    override val identifier: String? = null,
+) : MqttCommandMessage {
+    override fun toString() = "Reconnect"
+}
+
+@Serializable
 @SerialName("error")
 data class MqttErrorCommand(
     val error: String = "unknown command",

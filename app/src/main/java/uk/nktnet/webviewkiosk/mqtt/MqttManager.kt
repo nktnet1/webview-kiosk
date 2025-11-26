@@ -478,13 +478,12 @@ object MqttManager {
             onMessage = { publish, payloadStr ->
                 try {
                     val command = MqttCommandJsonParser.decodeFromString<MqttCommandMessage>(payloadStr)
-                    scope.launch { _commands.emit(command) }
-
                     addDebugLog(
                         "command received",
                         "topic: ${publish.topic}\ncommand: $command",
                         command.identifier
                     )
+                    scope.launch { _commands.emit(command) }
                 } catch (e: Exception) {
                     scope.launch { _commands.emit(MqttErrorCommand(e.message ?: e.toString())) }
                     val identifier = getValueFromPrimitiveJson(payloadStr, "identifier")
@@ -540,14 +539,12 @@ object MqttManager {
                         val bytes = ByteArray(buf.remaining()).also { buf.get(it) }
                         request.correlationData = String(bytes, UTF_8)
                     }
-
-                    scope.launch { _requests.emit(request) }
-
                     addDebugLog(
                         "request received",
                         "topic: ${publish.topic}\nrequest: $request",
                         request.identifier
                     )
+                    scope.launch { _requests.emit(request) }
                 } catch (e: Exception) {
                     val identifier = getValueFromPrimitiveJson(payloadStr, "identifier")
                     scope.launch {
