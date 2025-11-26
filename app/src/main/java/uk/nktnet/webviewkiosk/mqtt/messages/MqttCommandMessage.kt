@@ -57,6 +57,14 @@ data class MqttGoToUrlMqttCommand(
 }
 
 @Serializable
+@SerialName("clear_history")
+data class MqttClearHistoryMqttCommand(
+    override val identifier: String? = null,
+) : MqttCommandMessage {
+    override fun toString() = "Clear History"
+}
+
+@Serializable
 @SerialName("lock")
 data class MqttLockMqttCommand(
     override val identifier: String? = null,

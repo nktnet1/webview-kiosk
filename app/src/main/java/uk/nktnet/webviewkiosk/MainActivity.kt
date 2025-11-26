@@ -33,6 +33,7 @@ import uk.nktnet.webviewkiosk.main.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.main.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.handleMainIntent
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttClearHistoryMqttCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttErrorRequest
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttReconnectMqttCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttSettingsRequest
@@ -55,6 +56,7 @@ import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
+import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavHostController
@@ -154,6 +156,9 @@ class MainActivity : AppCompatActivity() {
                                     MqttManager.connect(context)
                                 }
                             )
+                        }
+                        is MqttClearHistoryMqttCommand -> {
+                            WebViewNavigation.clearHistory(systemSettings)
                         }
                         else -> Unit
                     }

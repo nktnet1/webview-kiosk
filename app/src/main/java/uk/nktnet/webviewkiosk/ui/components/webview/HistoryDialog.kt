@@ -21,9 +21,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
+import uk.nktnet.webviewkiosk.mqtt.MqttManager
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttClearHistoryMqttCommand
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
@@ -77,6 +80,19 @@ fun HistoryDialog(
         if (history.isNotEmpty()) {
             val currentIndex = systemSettings.historyIndex.coerceIn(0, history.lastIndex)
             listState.scrollToItem(currentIndex)
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        MqttManager.commands.collect { commandMessage ->
+            when (commandMessage) {
+                is MqttClearHistoryMqttCommand -> {
+                    // The actual history is cleared in main activity
+                    delay(100)
+                    history = systemSettings.historyStack
+                }
+                else -> Unit
+            }
         }
     }
 
