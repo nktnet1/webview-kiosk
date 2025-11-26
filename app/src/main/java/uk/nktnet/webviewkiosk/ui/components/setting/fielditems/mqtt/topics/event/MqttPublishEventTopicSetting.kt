@@ -23,14 +23,14 @@ fun MqttPublishEventTopicSetting() {
             The MQTT topic to publish event messages.
 
             Supported variables:
-            - ${MqttVariableNameOption.EVENT_NAME.name}
+            - ${MqttVariableNameOption.EVENT_TYPE.name}
             - ${MqttVariableNameOption.APP_INSTANCE_ID.name}
             - ${MqttVariableNameOption.USERNAME.name}
 
             Example:
-            - wk/event/${'$'}{${MqttVariableNameOption.EVENT_NAME.name}}
+            - wk/event/${'$'}{${MqttVariableNameOption.EVENT_TYPE.name}}
         """.trimIndent(),
-        placeholder = "e.g. wk/event/${'$'}{${MqttVariableNameOption.EVENT_NAME.name}}",
+        placeholder = "e.g. wk/event/${'$'}{${MqttVariableNameOption.EVENT_TYPE.name}}",
         initialValue = userSettings.mqttPublishEventTopic,
         descriptionFormatter = {
             mqttVariableReplacement( it)

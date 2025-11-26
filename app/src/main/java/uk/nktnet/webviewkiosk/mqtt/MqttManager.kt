@@ -312,8 +312,8 @@ object MqttManager {
     fun publishUrlVisitedEvent(url: String) {
         val event = MqttUrlVisitedEvent(
             identifier = UUID.randomUUID().toString(),
-            url = url,
-            appInstanceId = config.appInstanceId
+            appInstanceId = config.appInstanceId,
+            data = MqttUrlVisitedEvent.UrlData(url),
         )
         publishEventTopic(event)
     }
@@ -339,7 +339,7 @@ object MqttManager {
         val topic = mqttVariableReplacement(
             config.publishEventTopic,
             mapOf(
-                MqttVariableNameOption.EVENT_NAME.name to event.getName()
+                MqttVariableNameOption.EVENT_TYPE.name to event.getEventType()
             )
         )
         publishToMqtt(

@@ -10,7 +10,7 @@ import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
 sealed interface MqttEventMessage {
     val identifier: String? get() = null
     val appInstanceId: String
-    fun getName(): String
+    fun getEventType(): String
 }
 
 @Serializable
@@ -20,7 +20,7 @@ data class MqttConnectedEvent(
     override val appInstanceId: String,
     val data: WebviewKioskStatus,
 ) : MqttEventMessage {
-    override fun getName(): String = "connected"
+    override fun getEventType(): String = "connected"
 }
 
 @Serializable
@@ -28,9 +28,14 @@ data class MqttConnectedEvent(
 data class MqttUrlVisitedEvent(
     override val identifier: String? = null,
     override val appInstanceId: String,
-    val url: String,
+    val data: UrlData
 ) : MqttEventMessage {
-    override fun getName(): String = "url_visited"
+    override fun getEventType(): String = "url_visited"
+
+    @Serializable
+    data class UrlData(
+        val url: String
+    )
 }
 
 @Serializable
@@ -39,7 +44,7 @@ data class MqttLockEvent(
     override val identifier: String? = null,
     override val appInstanceId: String,
 ) : MqttEventMessage {
-    override fun getName(): String = "lock"
+    override fun getEventType(): String = "lock"
 }
 
 @Serializable
@@ -48,9 +53,9 @@ data class MqttUnlockEvent(
     override val identifier: String? = null,
     override val appInstanceId: String,
 ) : MqttEventMessage {
-    override fun getName(): String = "unlock"
+    override fun getEventType(): String = "unlock"
 }
 
 val MqttEventJsonParser = Json(BaseJson) {
-    classDiscriminator = "event"
+    classDiscriminator = "eventType"
 }
