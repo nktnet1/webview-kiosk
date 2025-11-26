@@ -1,0 +1,108 @@
+---
+title: Connection
+description: Specify how to connect to the broker server
+---
+
+import { APP_NAME } from '@/config/app';
+
+The settings below are modeled after HiveMQ client library's documentation for
+[client configurations](https://hivemq.github.io/hivemq-mqtt-client/docs/client-configuration)
+and
+[mqtt-operations -> connect](https://hivemq.github.io/hivemq-mqtt-client/docs/mqtt-operations/connect/#connect).
+
+### 1. Server Host
+
+The hostname or IP address of the MQTT broker the app should connect to.
+
+For example,
+- 192.168.1.190
+- broker.hivemq.com
+- broker.emqx.io
+
+**Default:** 127.0.0.1
+
+### 2. Server Port
+
+The TCP port of the MQTT broker the app should connect to.
+
+Typically,
+- 1883 (TCP Port)
+- 8883 (TLS TCP Port)
+
+**Default:** 1883
+
+### 3. Username
+
+The username used to authenticate with the MQTT broker.
+
+**Default:** (blank)
+
+### 4. Password
+
+The password used to authenticate with the MQTT broker.
+
+**Default:** (blank)
+
+### 5. Use TLS
+
+When enabled, the client will connect securely to the broker
+using TLS. Ensure the broker supports TLS on the configured port.
+
+**Default:** false
+
+### 6. Client ID
+
+A unique identifier for this client when connecting to the MQTT broker.
+Supports the variable APP_INSTANCE_ID, which you can use like:
+
+```
+wk-${APP_INSTANCE_ID}
+```
+
+If left blank, the server will create an identifier for the client.
+
+**Default:** (blank)
+
+### 7. Clean Start
+
+When enabled, the MQTT client will start a new session on connect,
+discarding any previous session state stored by the broker.
+
+When disabled, the client will resume the previous session
+(subscriptions, in-flight messages, etc.) if it exists.
+
+**Default:** true
+
+### 8. Keep Alive
+
+The time interval (in seconds) in which the client sends a ping to the broker
+if no other MQTT packets are sent during this period of time.
+
+It is used to determine if the connection is still up.
+
+**Default:** 60
+
+### 9. Connect Timeout (seconds)
+
+The timeout between sending the Connect and receiving the ConnAck message.
+
+Use 0 to disable the timeout.
+
+**Default:** 30
+
+### 10. Socket Connect Timeout (seconds)
+
+The timeout for connecting the socket to the server.
+
+Use 0 to disable the timeout.
+
+**Default:** 5
+
+### 11. Automatic Reconnect
+
+When enabled, attempt to automatically reconnect to the MQTT broker
+after an unexpected disconnect.
+
+In {APP_NAME}, this is implemented linearly at a fixed 3-second interval.
+
+**Default:** true

@@ -19,7 +19,7 @@ fun MqttSocketConnectTimeoutSetting() {
 
             Use 0 to disable the timeout.
         """.trimIndent(),
-        placeholder = "e.g. 10",
+        placeholder = "e.g. 5",
         initialValue = userSettings.mqttSocketConnectTimeout,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.SOCKET_CONNECT_TIMEOUT),
         min = 0,
