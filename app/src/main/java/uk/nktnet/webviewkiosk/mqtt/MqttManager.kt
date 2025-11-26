@@ -302,7 +302,7 @@ object MqttManager {
                         )
                     )
                 } else {
-                    addDebugLog("connect failed", "${throwable.message}.")
+                    addDebugLog("connect failed", throwable.message)
                     throwable.printStackTrace()
                     onError?.invoke(throwable.message)
                 }
