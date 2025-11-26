@@ -54,7 +54,7 @@ fun SettingsListScreen(
         ),
         Triple(
             "MQTT",
-            "Automation, change settings remotely",
+            "Remote management and monitoring of your kiosk device",
             Screen.SettingsMqtt.route
         ),
         Triple(

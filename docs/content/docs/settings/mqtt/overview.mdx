@@ -1,0 +1,37 @@
+---
+title: Overview
+description: Remote management and monitoring of your kiosk device
+---
+
+import { APP_NAME } from '@/config/app';
+
+Message Queueing Telemetry Transport ([MQTT](https://mqtt.org)) is a lightweight messaging protocol
+for devices with limited resources. MQTT is built on top of TCP/IP and is ideal
+for machine-to-machine communication and the Internet of Things (IoT).
+
+{APP_NAME} utilises the MQTT protocol to enable you to remotely
+
+- receive events
+- update app settings
+- perform actions via commands
+- request information
+
+### MQTT Broker
+
+To communicate with {APP_NAME}, you will need an
+[MQTT Broker](https://www.emqx.com/en/blog/the-ultimate-guide-to-mqtt-broker-comparison).
+The broker acts as an intermediary entity (central hub) that routes messages
+between devices and applications.
+
+Our recommendation for open source, self-hostable brokers (server) and clients
+(to send messages to {APP_NAME}) are:
+
+1. [EMQX](https://github.com/emqx/emqx) and [MQTTX](https://github.com/emqx/MQTTX) - specifically [MQTTX Web](https://github.com/emqx/MQTTX/tree/main/web)
+1. [Eclipse Mosquitto](https://github.com/eclipse-mosquitto/mosquitto) and
+   [Home Assistant](https://github.com/home-assistant) - see the
+   [Integration Guide](https://www.home-assistant.io/integrations/mqtt)
+
+There are also public brokers you can use for testing purposes, such as
+- HiveMQ: https://www.mqtt-dashboard.com
+- Mosquitto: https://test.mosquitto.org
+- EMQX: https://www.emqx.com/en/mqtt/public-mqtt5-broker
