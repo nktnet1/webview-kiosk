@@ -457,7 +457,7 @@ fun WebviewScreen(navController: NavController) {
                 is MqttGoForwardMqttCommand -> WebViewNavigation.goForward(::customLoadUrl, systemSettings)
                 is MqttGoHomeMqttCommand -> WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings)
                 is MqttRefreshMqttCommand -> WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
-                is MqttGoToUrlMqttCommand -> customLoadUrl(commandMessage.url)
+                is MqttGoToUrlMqttCommand -> customLoadUrl(commandMessage.data.url)
                 is MqttLockMqttCommand -> tryLockTask(activity)
                 is MqttUnlockMqttCommand -> tryUnlockTask(activity)
                 is MqttErrorCommand -> showToast("Received invalid MQTT command. See debug logs in MQTT settings.")

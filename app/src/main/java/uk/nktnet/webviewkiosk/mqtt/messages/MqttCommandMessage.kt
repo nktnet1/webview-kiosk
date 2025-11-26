@@ -45,10 +45,15 @@ data class MqttRefreshMqttCommand(
 @Serializable
 @SerialName("go_to_url")
 data class MqttGoToUrlMqttCommand(
-    val url: String,
     override val identifier: String? = null,
+    val data: UrlData,
 ) : MqttCommandMessage {
-    override fun toString() = "Go to URL: $url"
+    @Serializable
+    data class UrlData(
+        val url: String
+    )
+
+    override fun toString() = "Go to URL"
 }
 
 @Serializable
