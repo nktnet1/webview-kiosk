@@ -5,7 +5,7 @@ description: Remote management and monitoring of your kiosk device
 
 import { APP_NAME } from '@/config/app';
 
-### Introduction
+### 1. Introduction
 
 Message Queueing Telemetry Transport ([MQTT](https://mqtt.org)) is a lightweight messaging protocol
 for devices with limited resources. MQTT is built on top of TCP/IP and is ideal
@@ -18,7 +18,7 @@ for machine-to-machine communication and the Internet of Things (IoT).
 - perform actions via commands
 - request information
 
-### MQTT Broker
+### 2. MQTT Broker
 
 To communicate with {APP_NAME}, you will need an
 [MQTT Broker](https://www.emqx.com/en/blog/the-ultimate-guide-to-mqtt-broker-comparison).
@@ -38,7 +38,7 @@ There are also public brokers you can use for testing purposes, such as
 - Mosquitto: https://test.mosquitto.org
 - EMQX: https://www.emqx.com/en/mqtt/public-mqtt5-broker
 
-### Global Variables
+### 3. Global Variables
 
 The following variables will be string-interpolated for supported settings,
 such as topic names and will payload:
@@ -64,7 +64,7 @@ wk/kiosk_user_01/b8378168-ca69-11f0-af20-5a93ec0e6f90/command
 
 Some settings will support additional variables.
 
-### Enabling MQTT
+### 4. Enabling MQTT
 
 On the MQTT settings page, change the value of the `Enabled` property
 to `true`. This will take effect for new app launches.
@@ -78,7 +78,7 @@ connected. Instead, you will need to reconnect by:
 - manually restarting the application
 - send a `Reconnect` command
 
-### Debug Logs
+### 5. Debug Logs
 
 MQTT operations are recorded in the debug logs, which can be accessed from any
 MQTT settings screens. This includes:
