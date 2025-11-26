@@ -53,15 +53,14 @@ using TLS. Ensure the broker supports TLS on the configured port.
 ### 6. Client ID
 
 A unique identifier for this client when connecting to the MQTT broker.
-Supports the variable APP_INSTANCE_ID, which you can use like:
+
+Global variables are supported.
+
+**Default:**
 
 ```
 wk-${APP_INSTANCE_ID}
 ```
-
-If left blank, the server will create an identifier for the client.
-
-**Default:** (blank)
 
 ### 7. Clean Start
 

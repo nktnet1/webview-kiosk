@@ -518,10 +518,11 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Mqtt.Connection.SERVER_PORT,
         1883
     )
-    var mqttClientId by stringPrefOptional(
+    var mqttClientId by stringPref(
         getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.CLIENT_ID,
+        "wk-${'$'}{${MqttVariableNameOption.APP_INSTANCE_ID.name}}"
     )
     var mqttUsername by stringPrefOptional(
         getRestrictions,
