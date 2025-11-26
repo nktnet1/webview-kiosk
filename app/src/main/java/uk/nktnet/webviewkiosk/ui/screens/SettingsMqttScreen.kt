@@ -31,7 +31,7 @@ fun SettingsMqttScreen(navController: NavController) {
         ),
         Triple(
             "Will (LWT)",
-            "Customise message for unexpected disconnect",
+            "Custom message for unexpected disconnections",
             Screen.SettingsMqttWill.route
         ),
         Triple(

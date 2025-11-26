@@ -1,5 +1,5 @@
 {
   "title": "MQTT",
   "defaultOpen": true,
-  "pages": ["overview", "connection"]
+  "pages": ["index", "connection", "will", "restrictions"]
 }

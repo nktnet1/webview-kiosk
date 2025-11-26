@@ -63,3 +63,30 @@ wk/kiosk_user_01/b8378168-ca69-11f0-af20-5a93ec0e6f90/command
 ```
 
 Some settings will support additional variables.
+
+### Enabling MQTT
+
+On the MQTT settings page, change the value of the `Enabled` property
+to `true`. This will take effect for new app launches.
+
+If you are currently in a disconnected state, you will need to manually click
+the `Connect` button after enabling this option (or simply restart the app).
+
+Updated MQTT settings do not get applied immediately if you are already
+connected. Instead, you will need to reconnect by:
+- clicking the restart button in MQTT settings
+- manually restarting the application
+- send a `Reconnect` command
+
+### Debug Logs
+
+MQTT operations are recorded in the debug logs, which can be accessed from any
+MQTT settings screens. This includes:
+
+- connecting/connected/disconnect
+- subscribes
+- messages received or published
+- errors
+
+A maximum of 100 messages will be stored for the duration of the app activity
+lifecycle. The logs will not persist between app restarts.

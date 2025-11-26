@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.config.option.MqttVariableNameOption
 import uk.nktnet.webviewkiosk.mqtt.MqttManager.mqttVariableReplacement
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 
@@ -17,11 +18,20 @@ fun MqttWillPayloadSetting() {
 
     TextSettingFieldItem(
         label = "Payload",
-        infoText = "The MQTT payload to send for the last will message if the client disconnects unexpectedly.",
+        infoText = """
+            The MQTT payload to send for the last will message if the client
+            disconnects unexpectedly.
+
+            For example,
+              {
+                "message": "Client has disconnected.",
+                "appInstanceId": "${'$'}{${MqttVariableNameOption.APP_INSTANCE_ID.name}}"
+              }
+        """.trimIndent(),
         placeholder = """
             {
               "message": "Client has disconnected.",
-              "appInstanceId": "${'$'}{APP_INSTANCE_ID}"
+              "appInstanceId": "${'$'}{${MqttVariableNameOption.APP_INSTANCE_ID.name}}"
             }
         """.trimIndent(),
         initialValue = userSettings.mqttWillPayload,

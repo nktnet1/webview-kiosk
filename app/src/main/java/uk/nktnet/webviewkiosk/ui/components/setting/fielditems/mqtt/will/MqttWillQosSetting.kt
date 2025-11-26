@@ -14,7 +14,7 @@ fun MqttWillQosSetting() {
     val userSettings = remember { UserSettings(context) }
 
     DropdownSettingFieldItem(
-        label = "Will QoS",
+        label = "QoS",
         infoText = """
             Quality of Service (QoS) for the MQTT last will message.
             Determines the guarantee of message delivery in case of client disconnect.

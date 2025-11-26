@@ -1,0 +1,65 @@
+---
+title: Will (LWT)
+description: Custom message for unexpected disconnections
+---
+
+The settings below are modeled after HiveMQ client library's documentation for
+[connect#will](https://hivemq.github.io/hivemq-mqtt-client/docs/mqtt-operations/connect/#will).
+
+For more information about the Last Will and Testament, refer to:
+- https://www.emqx.com/en/blog/use-of-mqtt-will-message
+- https://www.hivemq.com/blog/mqtt-essentials-part-9-last-will-and-testament/
+
+### 1. Topic
+
+The MQTT topic to publish the last will message if the client
+disconnects unexpectedly.
+
+All global variables are supported, e.g. you can use
+
+```js
+wk/${USERNAME}/${APP_INSTANCE_ID}/will
+```
+
+**Default:** wk/will
+
+### 2. Will QoS
+
+Quality of Service (QoS) for the MQTT last will message.
+Determines the guarantee of message delivery in case of client disconnect.
+
+**Default:** At Most Once (0)
+
+### 3. Payload
+
+The MQTT payload to send for the last will message if the client
+disconnects unexpectedly.
+
+**Default:**
+
+```json
+{
+  "message": "Client has disconnected.",
+  "appInstanceId": "${APP_INSTANCE_ID}"
+}
+```
+
+### 4. Retain
+
+Set to true to retain the last will message on the broker after it is sent.
+
+**Default:** false
+
+### 5. Message Expiry Interval (seconds)
+
+The lifetime in seconds of the last will message on the broker
+after it is sent. A value of 0 means the message does not expire.
+
+**Default:** 0
+
+### 6. Will Delay Interval (seconds)
+
+Time in seconds the broker will wait before sending the last will message
+after the client disconnects unexpectedly. A value of 0 means immediate delivery.
+
+**Default:** 0

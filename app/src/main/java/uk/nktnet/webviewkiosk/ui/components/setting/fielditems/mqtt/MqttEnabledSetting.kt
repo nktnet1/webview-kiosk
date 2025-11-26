@@ -22,9 +22,10 @@ fun MqttEnabledSetting() {
             When enabled, ${Constants.APP_NAME} will connect to your configured
             MQTT broker and subscribe/publish to the defined topics.
 
-            Please note that you will need to manually click the "Connect" button
-            after enabling this option. This will also take effect for new app
-            launches, so you could also simply restart the application.
+            This will take effect for new app launches.
+
+            If you are currently in a disconnected state, you will need to manually click
+            the "Connect" button after enabling this option (or simply restarts the app).
         """.trimIndent(),
         initialValue = userSettings.mqttEnabled,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.ENABLED),

@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.config.option.MqttVariableNameOption
 import uk.nktnet.webviewkiosk.mqtt.MqttManager.mqttVariableReplacement
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
@@ -18,7 +19,13 @@ fun MqttWillTopicSetting() {
 
     TextSettingFieldItem(
         label = "Topic",
-        infoText = "The MQTT topic to publish the last will message if the client disconnects unexpectedly.",
+        infoText = """
+            The MQTT topic to publish the last will message if the client
+            disconnects unexpectedly.
+
+            All global variables are supported, e.g. you can use
+            - wk/${'$'}{${MqttVariableNameOption.USERNAME.name}}/${'$'}{${MqttVariableNameOption.APP_INSTANCE_ID.name}}/will
+        """.trimIndent(),
         placeholder = "e.g. wk/will",
         initialValue = userSettings.mqttWillTopic,
         restricted = restricted,
