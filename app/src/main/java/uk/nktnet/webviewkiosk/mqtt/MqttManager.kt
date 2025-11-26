@@ -416,6 +416,9 @@ object MqttManager {
                 )
             )
 
+        responseMessage.identifier = responseMessage.identifier?.let {
+            "res:$it"
+        } ?: UUID.randomUUID().toString()
         val payload = MqttResponseJsonParser.encodeToString(responseMessage)
         publishToMqtt(
             topic,
@@ -423,9 +426,7 @@ object MqttManager {
             config.publishResponseQos,
             config.publishResponseRetain,
             correlationData = requestMessage.correlationData?.toByteArray(),
-            identifier = responseMessage.identifier?.let {
-                "response-$it"
-            } ?: UUID.randomUUID().toString(),
+            identifier = responseMessage.identifier
         )
     }
 
