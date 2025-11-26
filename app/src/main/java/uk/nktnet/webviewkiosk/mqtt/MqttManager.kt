@@ -178,6 +178,34 @@ object MqttManager {
             builder = builder.sslWithDefaultConfig()
         }
 
+        builder = if (config.username.isNotEmpty() && config.password.isNotEmpty()) {
+            builder.simpleAuth()
+                .username(config.username)
+                .password(UTF_8.encode(config.password))
+                .applySimpleAuth()
+        } else if (config.username.isNotEmpty()) {
+            builder.simpleAuth()
+                .username(config.username)
+                .applySimpleAuth()
+        } else if (config.password.isNotEmpty()) {
+            builder.simpleAuth()
+                .password(UTF_8.encode(config.password))
+                .applySimpleAuth()
+        } else {
+            builder
+        }
+
+        builder = builder.willPublish()
+            .topic(mqttVariableReplacement(config.willTopic))
+            .qos(config.willQos.toMqttQos())
+            .retain(config.willRetain)
+            .messageExpiryInterval(config.willMessageExpiryInterval.toLong())
+            .delayInterval(config.willDelayInterval.toLong())
+            .payloadFormatIndicator(Mqtt5PayloadFormatIndicator.UTF_8)
+            .contentType("text/plain")
+            .payload(mqttVariableReplacement(config.willPayload).toByteArray())
+            .applyWillPublish()
+
         return builder
             .addConnectedListener {
                 addDebugLog("connect success")
@@ -234,34 +262,6 @@ object MqttManager {
         var connection = c.connectWith()
             .cleanStart(config.cleanStart)
             .keepAlive(config.keepAlive)
-
-        connection = if (config.username.isNotEmpty() && config.password.isNotEmpty()) {
-            connection.simpleAuth()
-                .username(config.username)
-                .password(UTF_8.encode(config.password))
-                .applySimpleAuth()
-        } else if (config.username.isNotEmpty()) {
-            connection.simpleAuth()
-                .username(config.username)
-                .applySimpleAuth()
-        } else if (config.password.isNotEmpty()) {
-            connection.simpleAuth()
-                .password(UTF_8.encode(config.password))
-                .applySimpleAuth()
-        } else {
-            connection
-        }
-
-        connection = connection.willPublish()
-                .topic(mqttVariableReplacement(config.willTopic))
-                .qos(config.willQos.toMqttQos())
-                .retain(config.willRetain)
-                .messageExpiryInterval(config.willMessageExpiryInterval.toLong())
-                .delayInterval(config.willDelayInterval.toLong())
-                .payloadFormatIndicator(Mqtt5PayloadFormatIndicator.UTF_8)
-                .contentType("text/plain")
-                .payload(mqttVariableReplacement(config.willPayload).toByteArray())
-                .applyWillPublish()
 
         var rb = connection.restrictions()
             .requestProblemInformation(config.restrictionsRequestProblemInformation)
