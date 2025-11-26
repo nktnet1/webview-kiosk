@@ -21,7 +21,7 @@ fun SettingsMqttScreen(navController: NavController) {
     val settingsItems = listOf(
         Triple(
             "Connection",
-            "Specify how to connect to your broker server",
+            "Specify how to connect to the broker server",
             Screen.SettingsMqttConnection.route
         ),
         Triple(

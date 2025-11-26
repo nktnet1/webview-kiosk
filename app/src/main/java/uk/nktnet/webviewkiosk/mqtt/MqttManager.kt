@@ -234,11 +234,25 @@ object MqttManager {
         var connection = c.connectWith()
             .cleanStart(config.cleanStart)
             .keepAlive(config.keepAlive)
-            .simpleAuth()
+
+        connection = if (config.username.isNotEmpty() && config.password.isNotEmpty()) {
+            connection.simpleAuth()
                 .username(config.username)
                 .password(UTF_8.encode(config.password))
                 .applySimpleAuth()
-            .willPublish()
+        } else if (config.username.isNotEmpty()) {
+            connection.simpleAuth()
+                .username(config.username)
+                .applySimpleAuth()
+        } else if (config.password.isNotEmpty()) {
+            connection.simpleAuth()
+                .password(UTF_8.encode(config.password))
+                .applySimpleAuth()
+        } else {
+            connection
+        }
+
+        connection = connection.willPublish()
                 .topic(mqttVariableReplacement(config.willTopic))
                 .qos(config.willQos.toMqttQos())
                 .retain(config.willRetain)
