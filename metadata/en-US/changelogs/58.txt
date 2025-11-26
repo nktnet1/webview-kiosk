@@ -1,6 +1,6 @@
 ## New Features
 
-- feat: support managed configurations (app restrictions) - for use with certified MDM/EMMs
+- feat: support managed configurations (app restrictions) - for use with MDM/EMMs
 - feat: about screen display info about Device Owner, Locked Task Permitted and Managed Profile
 
 ## Breaking Change
