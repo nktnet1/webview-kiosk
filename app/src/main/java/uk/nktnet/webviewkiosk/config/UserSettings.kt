@@ -464,7 +464,7 @@ class UserSettings(val context: Context) {
     var dhizukuRequestPermissionOnLaunch by booleanPref(
         getRestrictions,
         prefs,
-        UserSettingsKeys.Device.Owner.LockTaskFeature.BLOCK_ACTIVITY_START_IN_TASK,
+        UserSettingsKeys.Device.Owner.Dhizuku.REQUEST_PERMISSION_ON_LAUNCH,
         true
     )
 
