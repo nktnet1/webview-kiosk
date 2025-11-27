@@ -1,0 +1,41 @@
+package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
+import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
+import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
+
+@Composable
+fun OverrideUrlLoadingBlockActionSetting() {
+    val context = LocalContext.current
+    val userSettings = remember { UserSettings(context) }
+
+    DropdownSettingFieldItem(
+        label = "Override Url Loading Block Action",
+        infoText = """
+            Action to take when a URL navigation (via shouldOverrideUrlLoading)
+            matches the blacklist regex.
+
+            Typically, this is from clicking links (<a> tags) on a webpage's HTML.
+
+            Actions are:
+            - Show Block Page (display a HTML block page)
+            - Prevent Navigation (does nothing when links are clicked)
+            - Show Toast (prevents navigation and shows your custom block message)
+
+            This option will NOT take effect for:
+            - JavaScript navigation
+            - Custom URL loading, e.g. from the Address Bar, Bookmarks, History, etc
+
+            In those other cases, the block page will simply be shown.
+        """.trimIndent(),
+        options = OverrideUrlLoadingBlockActionOption.entries,
+        restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.OVERRIDE_URL_LOADING_BLOCK_ACTION),
+        initialValue = userSettings.overrideUrlLoadingBlockAction,
+        onSave = { userSettings.overrideUrlLoadingBlockAction = it },
+        itemText = { it.label },
+    )
+}
