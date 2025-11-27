@@ -224,9 +224,9 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
 
             DhizukuRequestPermissionOnLaunchSetting()
 
-            Spacer(modifier = Modifier.height(8.dp))
-
             if (deviceOwnerStatus.mode == DeviceOwnerMode.Dhizuku) {
+                Spacer(modifier = Modifier.height(8.dp))
+
                 if (!hasOwnerPermission) {
                     Button(
                         onClick = {
