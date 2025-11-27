@@ -78,7 +78,10 @@ class MainActivity : AppCompatActivity() {
 
         if (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.DeviceOwner) {
             setupLockTaskPackage(this)
-        } else if (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.Dhizuku) {
+        } else if (
+            DeviceOwnerManager.status.value.mode == DeviceOwnerMode.Dhizuku
+            && userSettings.dhizukuRequestPermissionOnLaunch
+        ) {
             DeviceOwnerManager.requestDhizukuPermission(
                 onGranted = {
                     setupLockTaskPackage(this)

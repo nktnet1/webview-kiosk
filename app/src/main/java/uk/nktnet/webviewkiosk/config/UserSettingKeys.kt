@@ -91,6 +91,10 @@ object UserSettingsKeys {
                 const val KEYGUARD = "device.owner.lock_task_feature.keyguard"
                 const val BLOCK_ACTIVITY_START_IN_TASK = "device.owner.lock_task_feature.block_activity_start_in_task"
             }
+
+            object Dhizuku {
+                const val REQUEST_PERMISSION_ON_LAUNCH = "device.owner.dhizuku.request_permission_on_launch"
+            }
         }
     }
 
