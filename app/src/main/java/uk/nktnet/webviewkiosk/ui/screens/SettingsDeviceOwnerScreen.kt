@@ -29,6 +29,7 @@ import uk.nktnet.webviewkiosk.main.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.main.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.dhizuku.DhizukuRequestPermissionOnLaunchSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureBlockActivityStartInTaskSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureGlobalActionsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureHomeSetting
@@ -158,7 +159,25 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 )
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(6.dp))
+
+            if (deviceOwnerStatus.mode == DeviceOwnerMode.DeviceOwner) {
+                Button(
+                    enabled = isDeviceOwner,
+                    onClick = { showDeviceOwnerRemovalDialog = true },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 1.dp),
+                ) {
+                    Text("Deactivate Device Owner")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
 
             Text(
                 text = "Lock Task Features",
@@ -193,7 +212,21 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 }
             }
 
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Text(
+                text = "Dhizuku",
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
+            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+
+            DhizukuRequestPermissionOnLaunchSetting()
+
             if (deviceOwnerStatus.mode == DeviceOwnerMode.Dhizuku) {
+                Spacer(modifier = Modifier.height(8.dp))
+
                 if (!hasOwnerPermission) {
                     Button(
                         onClick = {
@@ -229,20 +262,6 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                         .padding(vertical = 1.dp),
                 ) {
                     Text("Open Dhizuku")
-                }
-            } else {
-                Button(
-                    enabled = isDeviceOwner,
-                    onClick = { showDeviceOwnerRemovalDialog = true },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 1.dp),
-                ) {
-                    Text("Deactivate Device Owner")
                 }
             }
 

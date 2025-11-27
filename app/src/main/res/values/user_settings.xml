@@ -187,6 +187,9 @@
     <string name="device_custom_auth_password_title">Custom Auth Password</string>
     <string name="device_custom_auth_password_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
+    <string name="device_owner_dhizuku_request_permission_on_launch_title">Dhizuku Request Permission on Launch</string>
+    <string name="device_owner_dhizuku_request_permission_on_launch_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+
     <string name="device_unlock_auth_requirement_title">Unlock Auth Requirement</string>
     <string name="device_unlock_auth_requirement_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
