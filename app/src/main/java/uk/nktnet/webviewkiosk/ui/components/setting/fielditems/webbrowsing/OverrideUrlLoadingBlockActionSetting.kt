@@ -24,7 +24,7 @@ fun OverrideUrlLoadingBlockActionSetting() {
             Actions are:
             - Show Block Page (display a HTML block page)
             - Prevent Navigation (does nothing when links are clicked)
-            - Show Toast (prevents navigation and shows your custom block message)
+            - Show Toast (shows a toast with your custom block message)
 
             This option will NOT take effect for:
             - JavaScript navigation

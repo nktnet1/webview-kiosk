@@ -117,16 +117,16 @@ This actions available in the dialog are:
 
 ## 12. Override URL Loading Block Action
 
-Action to take when a URL navigation (via [shouldOverrideUrlLoading[*https://developer.android.com/reference/android/webkit/WebViewClient#shouldOverrideUrlLoading(android.webkit.WebView,%20android.webkit.WebResourceRequest)])
+Action to take when a URL navigation (via [shouldOverrideUrlLoading](https://developer.android.com/reference/android/webkit/WebViewClient#shouldOverrideUrlLoading(android.webkit.WebView,%20android.webkit.WebResourceRequest)]))
 matches the blacklist regex.
 
 Typically, this is from clicking links (`<a>` tags) on a webpage's HTML.
 
-| Action             | Description                                             |
-| ------------------ | ------------------------------------------------------- |
-| Show Block Page    | Display a HTML block page                               |
-| Prevent Navigation | Does nothing when links are clicked                     |
-| Show Toast         | Prevents navigation and shows your custom block message |
+| Action             | Description                                  |
+| ------------------ | -------------------------------------------- |
+| Show Block Page    | Display a HTML block page                    |
+| Prevent Navigation | Does nothing when links are clicked          |
+| Show Toast         | Shows a toast with your custom block message |
 
 This option will NOT take effect for:
 
