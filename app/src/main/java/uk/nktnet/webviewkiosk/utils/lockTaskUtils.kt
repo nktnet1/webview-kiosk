@@ -152,7 +152,8 @@ fun requireAuthForUnlock(context: Context, userSettings: UserSettings): Boolean 
     if (userSettings.unlockAuthRequirement == UnlockAuthRequirementOption.REQUIRE) {
         return true
     }
-    return DeviceOwnerManager.DPM.isLockTaskPermitted(context.packageName)
+    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+    return dpm.isLockTaskPermitted(context.packageName)
 }
 
 fun unlockWithAuthIfRequired(
