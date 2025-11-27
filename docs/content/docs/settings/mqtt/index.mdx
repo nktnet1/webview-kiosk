@@ -5,11 +5,34 @@ description: Remote management and monitoring of your kiosk device
 
 import { APP_NAME } from '@/config/app';
 
+<Callout title="Tip" type="info">
+
+New to MQTT? see the resources below:
+
+- [EMQX — Getting Started with MQTT](https://www.emqx.com/en/blog/the-easiest-guide-to-getting-started-with-mqtt)
+- [HiveMQ — MQTT Essentials](https://www.hivemq.com/mqtt/)
+- [AWS — What Is MQTT?](https://aws.amazon.com/what-is/mqtt/)
+
+To understand MQTT's publish and subscribe architecture, refer to
+
+* [EMQX — MQTT 5: Introduction to the Publish/Subscribe Model](https://www.emqx.com/en/blog/mqtt-5-introduction-to-publish-subscribe-model)
+* [HiveMQ — MQTT Essentials Part 2: Publish & Subscribe](https://www.hivemq.com/blog/mqtt-essentials-part2-publish-subscribe)
+
+{APP_NAME} also utilises the request-response pattern for manual query
+of device information states.<br/>
+This pattern is explained in:
+
+- [EMQX — MQTT 5: Request–Response](https://www.emqx.com/en/blog/mqtt5-request-response)
+- [HiveMQ — MQTT 5 Essentials Part 9: Request–Response Pattern](https://www.hivemq.com/blog/mqtt5-essentials-part9-request-response-pattern/)
+
+</Callout>
+
 ### 1. Introduction
 
-Message Queueing Telemetry Transport ([MQTT](https://mqtt.org)) is a lightweight messaging protocol
-for devices with limited resources. MQTT is built on top of TCP/IP and is ideal
-for machine-to-machine communication and the Internet of Things (IoT).
+Message Queueing Telemetry Transport ([MQTT](https://mqtt.org)) is a
+lightweight messaging protocol for devices with limited resources. MQTT is
+built on top of TCP/IP and is ideal for machine-to-machine communication and
+the Internet of Things (IoT).
 
 {APP_NAME} utilises the MQTT protocol to enable you to remotely
 
@@ -28,7 +51,7 @@ between devices and applications.
 Our recommendation for open source, self-hostable brokers (server) and clients
 (to send messages to {APP_NAME}) are:
 
-1. [EMQX](https://github.com/emqx/emqx) and [MQTTX](https://github.com/emqx/MQTTX) - specifically [MQTTX Web](https://github.com/emqx/MQTTX/tree/main/web)
+1. [EMQX](https://github.com/emqx/emqx) and [MQTTX](https://github.com/emqx/MQTTX) (or [MQTTX Web](https://github.com/emqx/MQTTX/tree/main/web))
 1. [Eclipse Mosquitto](https://github.com/eclipse-mosquitto/mosquitto) and
    [Home Assistant](https://github.com/home-assistant) - see the
    [Integration Guide](https://www.home-assistant.io/integrations/mqtt)
@@ -77,6 +100,8 @@ connected. Instead, you will need to reconnect by:
 - clicking the restart button in MQTT settings
 - manually restarting the application
 - send a `Reconnect` command
+
+**Default:** false
 
 ### 5. Debug Logs
 

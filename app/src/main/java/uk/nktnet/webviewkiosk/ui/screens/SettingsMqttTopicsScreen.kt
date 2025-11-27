@@ -23,7 +23,7 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
     val publishTopics = listOf(
         Triple(
             "Event",
-            "Send device state changes",
+            "Send device and webview state changes",
             Screen.SettingsMqttTopicsPublishEvent.route
         ),
         Triple(
