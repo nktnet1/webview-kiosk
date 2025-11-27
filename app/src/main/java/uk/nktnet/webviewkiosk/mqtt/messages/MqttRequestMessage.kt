@@ -8,7 +8,7 @@ import uk.nktnet.webviewkiosk.utils.BaseJson
 
 @Serializable
 sealed interface MqttRequestMessage {
-    val identifier: String? get() = null
+    val messageId: String? get() = null
     var responseTopic: String?
     var correlationData: String?
 }
@@ -16,7 +16,7 @@ sealed interface MqttRequestMessage {
 @Serializable
 @SerialName("get_status")
 data class MqttStatusRequest(
-    override val identifier: String? = null,
+    override val messageId: String? = null,
     override var responseTopic: String? = null,
     override var correlationData: String? = null
 ) : MqttRequestMessage {
@@ -26,7 +26,7 @@ data class MqttStatusRequest(
 @Serializable
 @SerialName("get_settings")
 data class MqttSettingsRequest(
-    override val identifier: String? = null,
+    override val messageId: String? = null,
     val settings: Array<JsonElement> = emptyArray(),
     override var responseTopic: String? = null,
     override var correlationData: String? = null
@@ -46,7 +46,7 @@ data class MqttSettingsRequest(
 @Serializable
 @SerialName("get_system_info")
 data class MqttSystemInfoRequest(
-    override val identifier: String? = null,
+    override val messageId: String? = null,
     override var responseTopic: String? = null,
     override var correlationData: String? = null
 ) : MqttRequestMessage {
@@ -56,7 +56,7 @@ data class MqttSystemInfoRequest(
 @Serializable
 @SerialName("error")
 data class MqttErrorRequest(
-    override val identifier: String? = null,
+    override val messageId: String? = null,
     override var responseTopic: String? = null,
     override var correlationData: String? = null,
     val error: String = "unknown request",

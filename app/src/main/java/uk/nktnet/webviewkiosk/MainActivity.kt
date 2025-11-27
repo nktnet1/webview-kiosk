@@ -35,6 +35,7 @@ import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.handleMainIntent
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttClearHistoryMqttCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttErrorRequest
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttInteractMqttCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttReconnectMqttCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttSettingsRequest
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttStatusRequest
@@ -159,6 +160,9 @@ class MainActivity : AppCompatActivity() {
                         }
                         is MqttClearHistoryMqttCommand -> {
                             WebViewNavigation.clearHistory(systemSettings)
+                        }
+                        is MqttInteractMqttCommand -> {
+                            UserInteractionStateSingleton.onUserInteraction()
                         }
                         else -> Unit
                     }

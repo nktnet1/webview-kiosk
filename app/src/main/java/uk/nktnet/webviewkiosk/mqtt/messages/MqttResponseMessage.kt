@@ -10,7 +10,7 @@ import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
 
 @Serializable
 sealed interface MqttResponseMessage {
-    var identifier: String?
+    var messageId: String?
     val appInstanceId: String
     fun getType(): String
 }
@@ -18,7 +18,7 @@ sealed interface MqttResponseMessage {
 @Serializable
 @SerialName("get_status")
 data class MqttStatusResponse(
-    override var identifier: String? = null,
+    override var messageId: String? = null,
     override val appInstanceId: String,
     val data: WebviewKioskStatus,
 ) : MqttResponseMessage {
@@ -28,7 +28,7 @@ data class MqttStatusResponse(
 @Serializable
 @SerialName("get_settings")
 data class MqttSettingsResponse(
-    override var identifier: String? = null,
+    override var messageId: String? = null,
     override val appInstanceId: String,
     val data: JsonObject,
 ) : MqttResponseMessage {
@@ -38,7 +38,7 @@ data class MqttSettingsResponse(
 @Serializable
 @SerialName("get_system_info")
 data class MqttSystemInfoResponse(
-    override var identifier: String? = null,
+    override var messageId: String? = null,
     override val appInstanceId: String,
     val data: SystemInfo,
 ) : MqttResponseMessage {
@@ -48,7 +48,7 @@ data class MqttSystemInfoResponse(
 @Serializable
 @SerialName("error")
 data class MqttErrorResponse(
-    override var identifier: String? = null,
+    override var messageId: String? = null,
     override val appInstanceId: String,
     val errorMessage: String,
 ) : MqttResponseMessage {

@@ -52,7 +52,7 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                 .filter {
                     it.tag.contains(searchQuery.text, ignoreCase = true)
                     || (it.message?.contains(searchQuery.text, ignoreCase = true) == true)
-                    || (it.identifier?.contains(searchQuery.text, ignoreCase = true) == true)
+                    || (it.messageId?.contains(searchQuery.text, ignoreCase = true) == true)
                 }
                 .sortedBy { it.timestamp }
                 .let { if (ascending) it else it.reversed() }
@@ -172,9 +172,9 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                                 ),
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
-                            logEntry.identifier?.let {
+                            logEntry.messageId?.let {
                                 Text(
-                                    text = "identifier: $it",
+                                    text = "messageId: $it",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.padding(top = 4.dp)
