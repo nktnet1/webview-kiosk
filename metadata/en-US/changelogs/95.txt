@@ -1,0 +1,4 @@
+## Changes
+
+- feat: dhizuku request permission on launch setting
+- fix: crash on unlock when Dhizuku exists but permission not granted
