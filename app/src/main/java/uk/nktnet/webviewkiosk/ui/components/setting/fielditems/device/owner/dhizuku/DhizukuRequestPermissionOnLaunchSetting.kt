@@ -8,7 +8,7 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
-fun DhizukuRequestPermissionOnLaunch() {
+fun DhizukuRequestPermissionOnLaunchSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
 

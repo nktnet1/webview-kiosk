@@ -29,7 +29,7 @@ import uk.nktnet.webviewkiosk.main.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.main.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.dhizuku.DhizukuRequestPermissionOnLaunch
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.dhizuku.DhizukuRequestPermissionOnLaunchSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureBlockActivityStartInTaskSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureGlobalActionsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureHomeSetting
@@ -222,7 +222,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
             )
             HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
 
-            DhizukuRequestPermissionOnLaunch()
+            DhizukuRequestPermissionOnLaunchSetting()
 
             Spacer(modifier = Modifier.height(8.dp))
 
