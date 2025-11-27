@@ -323,7 +323,7 @@ class MainActivity : AppCompatActivity() {
         if (!isChangingConfigurations) {
             AuthenticationManager.resetAuthentication()
             MqttManager.disconnect(
-                reason = MqttDisconnectingEvent.DisconnectReason.ACTIVITY_STOPPED
+                reason = MqttDisconnectingEvent.DisconnectReason.SYSTEM_ACTIVITY_STOPPED
             )
         }
     }

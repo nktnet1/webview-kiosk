@@ -39,7 +39,7 @@ data class MqttDisconnectingEvent(
         USER_INITIATED_DISCONNECT,
         USER_INITIATED_RESTART,
         USER_INITIATED_SETTINGS_DISABLED,
-        ACTIVITY_STOPPED,
+        SYSTEM_ACTIVITY_STOPPED,
         MQTT_RECONNECT_COMMAND_RECEIVED,
     }
     override fun getEventType(): String = "disconnecting"
