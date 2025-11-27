@@ -423,7 +423,7 @@ object MqttManager {
             )
 
         responseMessage.messageId = responseMessage.messageId?.let {
-            "res:$it"
+            "response:$it"
         } ?: UUID.randomUUID().toString()
         val payload = MqttResponseJsonParser.encodeToString(responseMessage)
         publishToMqtt(
@@ -646,8 +646,9 @@ object MqttManager {
     }
 
     fun disconnect(
+        reason: MqttDisconnectingEvent.DisconnectReason,
         onDisconnected: (() -> Unit)? = null,
-        onError: ((String?) -> Unit)? = null
+        onError: ((String?) -> Unit)? = null,
     ) {
         val c = client
         if (c == null) {
@@ -666,6 +667,9 @@ object MqttManager {
             MqttDisconnectingEvent(
                 messageId = UUID.randomUUID().toString(),
                 appInstanceId = config.appInstanceId,
+                data = MqttDisconnectingEvent.DisconnectingData(
+                    reason = reason,
+                )
             ),
             whenComplete = { _, _ ->
                 @SuppressLint("NewApi")

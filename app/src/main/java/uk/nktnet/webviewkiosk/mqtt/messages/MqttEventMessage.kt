@@ -24,11 +24,24 @@ data class MqttConnectedEvent(
 }
 
 @Serializable
-@SerialName("disconnected")
+@SerialName("disconnecting")
 data class MqttDisconnectingEvent(
     override val messageId: String? = null,
     override val appInstanceId: String,
+    val data: DisconnectingData
 ) : MqttEventMessage {
+    @Serializable
+    data class DisconnectingData(
+        val reason: DisconnectReason
+    )
+    @Serializable
+    enum class DisconnectReason {
+        USER_INITIATED_DISCONNECT,
+        USER_INITIATED_RESTART,
+        USER_INITIATED_SETTINGS_DISABLED,
+        ACTIVITY_STOPPED,
+        MQTT_RECONNECT_COMMAND_RECEIVED,
+    }
     override fun getEventType(): String = "disconnecting"
 }
 

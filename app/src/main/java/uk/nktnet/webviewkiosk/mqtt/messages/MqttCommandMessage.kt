@@ -52,7 +52,6 @@ data class MqttGoToUrlMqttCommand(
     data class UrlData(
         val url: String
     )
-
     override fun toString() = "Go to URL"
 }
 

@@ -34,6 +34,7 @@ import uk.nktnet.webviewkiosk.main.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.handleMainIntent
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttClearHistoryMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttDisconnectingEvent
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttErrorRequest
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttInteractMqttCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttReconnectMqttCommand
@@ -153,6 +154,7 @@ class MainActivity : AppCompatActivity() {
                     when (commandMessage) {
                         is MqttReconnectMqttCommand -> {
                             MqttManager.disconnect (
+                                reason = MqttDisconnectingEvent.DisconnectReason.MQTT_RECONNECT_COMMAND_RECEIVED,
                                 onDisconnected = {
                                     MqttManager.connect(context)
                                 }
@@ -320,7 +322,9 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         if (!isChangingConfigurations) {
             AuthenticationManager.resetAuthentication()
-            MqttManager.disconnect {}
+            MqttManager.disconnect(
+                reason = MqttDisconnectingEvent.DisconnectReason.ACTIVITY_STOPPED
+            )
         }
     }
 
@@ -353,7 +357,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         unregisterReceiver(restrictionsReceiver)
-        MqttManager.disconnect()
         super.onDestroy()
     }
 
