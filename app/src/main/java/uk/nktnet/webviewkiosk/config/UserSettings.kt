@@ -461,6 +461,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Device.Owner.LockTaskFeature.BLOCK_ACTIVITY_START_IN_TASK,
         true
     )
+    var dhizukuRequestPermissionOnLaunch by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.Owner.LockTaskFeature.BLOCK_ACTIVITY_START_IN_TASK,
+        true
+    )
 
     // JS Scripts
     var applyAppTheme by booleanPref(
@@ -573,6 +579,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Device.Owner.LockTaskFeature.SYSTEM_INFO, lockTaskFeatureSystemInfo)
             put(UserSettingsKeys.Device.Owner.LockTaskFeature.KEYGUARD, lockTaskFeatureKeyguard)
             put(UserSettingsKeys.Device.Owner.LockTaskFeature.BLOCK_ACTIVITY_START_IN_TASK, lockTaskFeatureBlockActivityStartInTask)
+            put(UserSettingsKeys.Device.Owner.Dhizuku.REQUEST_PERMISSION_ON_LAUNCH, dhizukuRequestPermissionOnLaunch)
 
             put(UserSettingsKeys.JsScripts.APPLY_APP_THEME, applyAppTheme)
             put(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
@@ -684,6 +691,7 @@ class UserSettings(val context: Context) {
             lockTaskFeatureSystemInfo = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.SYSTEM_INFO, lockTaskFeatureSystemInfo)
             lockTaskFeatureKeyguard = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.KEYGUARD, lockTaskFeatureKeyguard)
             lockTaskFeatureBlockActivityStartInTask = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.BLOCK_ACTIVITY_START_IN_TASK, lockTaskFeatureBlockActivityStartInTask)
+            dhizukuRequestPermissionOnLaunch = json.optBoolean(UserSettingsKeys.Device.Owner.Dhizuku.REQUEST_PERMISSION_ON_LAUNCH, dhizukuRequestPermissionOnLaunch)
 
             applyAppTheme = json.optBoolean(UserSettingsKeys.JsScripts.APPLY_APP_THEME, applyAppTheme)
             applyDesktopViewportWidth = json.optInt(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
