@@ -524,15 +524,15 @@ object MqttManager {
                 val json = Json.parseToJsonElement(payloadStr).jsonObject
                 val messageId = getValueFromPrimitiveJson(payloadStr, "messageId")
 
-                val applyNow = json["applyNow"]?.jsonPrimitive?.booleanOrNull ?: true
+                val refresh = json["refresh"]?.jsonPrimitive?.booleanOrNull ?: true
                 val showToast = json["showToast"]?.jsonPrimitive?.booleanOrNull ?: true
-                val settingsStr = json["settings"]?.toString() ?: "{}"
+                val settingsStr = json["data"]?.toString() ?: "{}"
 
                 val settingsMessage = MqttSettingsMessage(
                     messageId = messageId,
-                    refresh = applyNow,
+                    refresh = refresh,
                     showToast = showToast,
-                    settings = settingsStr
+                    data = settingsStr
                 )
                 addDebugLog(
                     "settings received",
