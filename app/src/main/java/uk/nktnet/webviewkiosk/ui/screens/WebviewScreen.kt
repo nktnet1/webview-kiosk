@@ -41,21 +41,22 @@ import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayo
 import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBarSearchSuggestions
 import uk.nktnet.webviewkiosk.ui.components.webview.LinkOptionsDialog
-import uk.nktnet.webviewkiosk.utils.SchemeType
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
 import uk.nktnet.webviewkiosk.utils.enterImmersiveMode
 import uk.nktnet.webviewkiosk.utils.exitImmersiveMode
-import uk.nktnet.webviewkiosk.utils.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.getMimeType
 import uk.nktnet.webviewkiosk.utils.isSupportedFileURLMimeType
-import uk.nktnet.webviewkiosk.utils.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
+import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.webview.html.generateFileMissingPage
 import uk.nktnet.webviewkiosk.utils.webview.html.generateUnsupportedMimeTypePage
+import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
+import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
 import java.io.File
 
@@ -220,7 +221,7 @@ fun WebviewScreen(navController: NavController) {
         }
         val uri = newUrl.toUri()
 
-        if (schemeType == SchemeType.WEBVIEW_KIOSK && uri.host == "block") {
+        if (isCustomBlockPageUrl(schemeType, uri)) {
             val blockUrl = uri.getQueryParameter("url")
             if (blockUrl != null) {
                 webView.loadUrl(blockUrl)
