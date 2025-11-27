@@ -124,6 +124,13 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU,
         true
     )
+    var overrideUrlLoadingBlockAction by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.WebBrowsing.OVERRIDE_URL_LOADING_BLOCK_ACTION,
+        OverrideUrlLoadingBlockActionOption.SHOW_BLOCK_PAGE.name,
+        fromString = OverrideUrlLoadingBlockActionOption::fromString
+    )
     var addressBarActions by enumListPref(
         getRestrictions,
         prefs = prefs,
@@ -524,6 +531,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebBrowsing.ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
             put(UserSettingsKeys.WebBrowsing.ALLOW_DEFAULT_LONG_PRESS, allowDefaultLongPress)
             put(UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, allowLinkLongPressContextMenu)
+            put(UserSettingsKeys.WebBrowsing.OVERRIDE_URL_LOADING_BLOCK_ACTION, overrideUrlLoadingBlockAction.name)
             put(UserSettingsKeys.WebBrowsing.ADDRESS_BAR_ACTIONS, JSONArray(addressBarActions.map { it.name }))
             put(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION, kioskControlPanelRegion.name)
             put(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_ACTIONS, JSONArray(kioskControlPanelActions.map { it.name }))
@@ -612,6 +620,9 @@ class UserSettings(val context: Context) {
             allowOtherUrlSchemes = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_OTHER_URL_SCHEMES, allowOtherUrlSchemes)
             allowDefaultLongPress = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_DEFAULT_LONG_PRESS, allowDefaultLongPress)
             allowLinkLongPressContextMenu = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU, allowLinkLongPressContextMenu)
+            overrideUrlLoadingBlockAction = OverrideUrlLoadingBlockActionOption.fromString(
+                json.optString(UserSettingsKeys.WebBrowsing.OVERRIDE_URL_LOADING_BLOCK_ACTION, overrideUrlLoadingBlockAction.name)
+            )
             json.optJSONArray(UserSettingsKeys.WebBrowsing.ADDRESS_BAR_ACTIONS)?.let { arr ->
                 addressBarActions = AddressBarActionOption.parseFromJsonArray(arr)
             }

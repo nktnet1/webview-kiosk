@@ -238,4 +238,14 @@
         <item>IF_CONTENT_SCROLLS</item>
     </string-array>
 
+    <string-array name="entries_override_url_loading_block_action_option">
+        <item>Show Block Page</item>
+        <item>Prevent Navigation</item>
+        <item>Show Toast</item>
+    </string-array>
+    <string-array name="entry_values_override_url_loading_block_action_option">
+        <item>SHOW_BLOCK_PAGE</item>
+        <item>PREVENT_NAVIGATION</item>
+        <item>SHOW_TOAST</item>
+    </string-array>
 </resources>

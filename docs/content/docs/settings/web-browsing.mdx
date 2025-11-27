@@ -115,7 +115,29 @@ This actions available in the dialog are:
 
 **Default:** true
 
-## 12. Address Bar Actions
+## 12. Override URL Loading Block Action
+
+Action to take when a URL navigation (via [shouldOverrideUrlLoading](https://developer.android.com/reference/android/webkit/WebViewClient#shouldOverrideUrlLoading(android.webkit.WebView,%20android.webkit.WebResourceRequest)]))
+matches the blacklist regex.
+
+Typically, this is from clicking links (`<a>` tags) on a webpage's HTML.
+
+| Action             | Description                                  |
+| ------------------ | -------------------------------------------- |
+| Show Block Page    | Display a HTML block page                    |
+| Prevent Navigation | Does nothing when links are clicked          |
+| Show Toast         | Shows a toast with your custom block message |
+
+This option will NOT take effect for:
+
+- JavaScript navigation
+- Custom URL loading, e.g. from the Address Bar, Bookmarks, History, etc
+
+In those other cases, the block page will simply be shown.
+
+**Default:** Show Block Page
+
+## 13. Address Bar Actions
 
 This setting is only controlling the UI aspect of the Address Bar.
 
@@ -133,7 +155,7 @@ The following actions are available to be configured (remove or rearrange):
 | Bookmark | Opens the bookmark dialog.<br />Requires: `Web Browsing -> Allow Bookmark Access` |
 | Files    | Opens the local files dialog.<br />Requires: `Web Content -> Allow Local Files` |
 
-## 13. Kiosk Control Panel Region
+## 14. Kiosk Control Panel Region
 
 Controls which part of the screen can be multi-tapped 10 times in quick
 succession to show the Kiosk Control Panel dialog.
@@ -206,7 +228,7 @@ You can also disable this setting and instead configure
 
 **Default:** Top left
 
-## 14. Kiosk Control Panel Actions
+## 15. Kiosk Control Panel Actions
 
 This setting is only controlling the UI aspect of the Kiosk Control Panel.
 Access will still need to be enabled using the dependent settings.
@@ -316,7 +338,7 @@ The following actions are available to be configured (remove or rearrange):
   </tbody>
 </table>
 
-## 15. Search Provider URL
+## 16. Search Provider URL
 
 The URL used for search queries in the address bar. This URL must include the
 search string query parameter.
@@ -336,7 +358,7 @@ For example,
 
 **Default:** https://google.com/search?q=
 
-## 16. Search Suggestion Engine
+## 17. Search Suggestion Engine
 
 Configure the search engine for text suggestions (autocomplete/hints)
 when typing in the address bar.

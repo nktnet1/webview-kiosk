@@ -100,6 +100,14 @@
         android:description="@string/web_browsing_allow_link_long_press_context_menu_description"
     />
     <restriction
+        android:key="web_browsing.override_url_loading_block_action"
+        android:restrictionType="choice"
+        android:entries="@array/entries_override_url_loading_block_action_option"
+        android:entryValues="@array/entry_values_override_url_loading_block_action_option"
+        android:title="@string/web_browsing_override_url_loading_block_action_title"
+        android:description="@string/web_browsing_override_url_loading_block_action_description"
+    />
+    <restriction
         android:key="web_browsing.address_bar_actions"
         android:restrictionType="multi-select"
         android:entries="@array/entries_address_bar_action_option"

@@ -24,6 +24,7 @@ import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
 import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleExternalScheme
@@ -186,12 +187,20 @@ fun createCustomWebview(
                     }
 
                     if (blockCause != null) {
-                        loadBlockedPage(
-                            view,
-                            userSettings,
-                            requestUrl,
-                            blockCause,
-                        )
+                        when (userSettings.overrideUrlLoadingBlockAction) {
+                            OverrideUrlLoadingBlockActionOption.SHOW_BLOCK_PAGE -> {
+                                loadBlockedPage(
+                                    view,
+                                    userSettings,
+                                    requestUrl,
+                                    blockCause,
+                                )
+                            }
+                            OverrideUrlLoadingBlockActionOption.SHOW_TOAST -> {
+                                config.showToast(userSettings.blockedMessage)
+                            }
+                            else -> Unit
+                        }
                         return true
                     }
                     return false
