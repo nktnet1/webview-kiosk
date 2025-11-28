@@ -20,7 +20,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
 import androidx.navigation.NavController
-import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -328,30 +327,25 @@ fun WebviewScreen(navController: NavController) {
 
                         urlBarText = urlBarText.copy(text = initialUrl)
 
-                        fun initWebviewApply(initialUrl: String) = webView.apply {
-                            customLoadUrl(initialUrl)
-                        }
-
-                        if (userSettings.allowRefresh && userSettings.allowPullToRefresh) {
-                            WebviewAwareSwipeRefreshLayout(ctx, webView).apply {
-                                setOnRefreshListener {
-                                    isSwipeRefreshing = true
-                                    WebViewNavigation.refresh(
-                                        ::customLoadUrl,
-                                        systemSettings,
-                                        userSettings
-                                    )
-                                }
-                                addView(initWebviewApply(initialUrl))
+                        WebviewAwareSwipeRefreshLayout(ctx, webView).apply {
+                            isEnabled = userSettings.allowRefresh && userSettings.allowPullToRefresh
+                            setOnRefreshListener {
+                                isSwipeRefreshing = true
+                                WebViewNavigation.refresh(
+                                    ::customLoadUrl,
+                                    systemSettings,
+                                    userSettings
+                                )
                             }
-                        } else {
-                            initWebviewApply(initialUrl)
+                            addView(
+                                webView.apply {
+                                    customLoadUrl(initialUrl)
+                                }
+                            )
                         }
                     },
                     update = { view ->
-                        if (view is SwipeRefreshLayout) {
-                            view.isRefreshing = isSwipeRefreshing
-                        }
+                        view.isRefreshing = isSwipeRefreshing
                     },
                     modifier = Modifier.fillMaxSize()
                 )
