@@ -537,6 +537,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Mqtt.Connection.CLIENT_ID,
         "wk-${'$'}{${MqttVariableNameOption.APP_INSTANCE_ID.name}}"
     )
+    var mqttUseTls by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Connection.USE_TLS,
+        false
+    )
     var mqttUsername by stringPrefOptional(
         getRestrictions,
         prefs,
@@ -546,12 +552,6 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.PASSWORD
-    )
-    var mqttUseTls by booleanPref(
-        getRestrictions,
-        prefs,
-        UserSettingsKeys.Mqtt.Connection.USE_TLS,
-        false
     )
     var mqttCleanStart by booleanPref(
         getRestrictions,
@@ -896,9 +896,9 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.Connection.SERVER_HOST, mqttServerHost)
             put(UserSettingsKeys.Mqtt.Connection.SERVER_PORT, mqttServerPort)
             put(UserSettingsKeys.Mqtt.Connection.CLIENT_ID, mqttClientId)
+            put(UserSettingsKeys.Mqtt.Connection.USE_TLS, mqttUseTls)
             put(UserSettingsKeys.Mqtt.Connection.USERNAME, mqttUsername)
             // put(UserSettingsKeys.Mqtt.Connection.PASSWORD, mqttPassword)
-            put(UserSettingsKeys.Mqtt.Connection.USE_TLS, mqttUseTls)
             put(UserSettingsKeys.Mqtt.Connection.CLEAN_START, mqttCleanStart)
             put(UserSettingsKeys.Mqtt.Connection.KEEP_ALIVE, mqttKeepAlive)
             put(UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT, mqttConnectTimeout)
@@ -1060,9 +1060,9 @@ class UserSettings(val context: Context) {
             mqttServerHost = json.optString(UserSettingsKeys.Mqtt.Connection.SERVER_HOST, mqttServerHost)
             mqttServerPort = json.optInt(UserSettingsKeys.Mqtt.Connection.SERVER_PORT, mqttServerPort)
             mqttClientId = json.optString(UserSettingsKeys.Mqtt.Connection.CLIENT_ID, mqttClientId)
+            mqttUseTls = json.optBoolean(UserSettingsKeys.Mqtt.Connection.USE_TLS, mqttUseTls)
             mqttUsername = json.optString(UserSettingsKeys.Mqtt.Connection.USERNAME, mqttUsername)
             mqttPassword = json.optString(UserSettingsKeys.Mqtt.Connection.PASSWORD, mqttPassword)
-            mqttUseTls = json.optBoolean(UserSettingsKeys.Mqtt.Connection.USE_TLS, mqttUseTls)
             mqttCleanStart = json.optBoolean(UserSettingsKeys.Mqtt.Connection.CLEAN_START, mqttCleanStart)
             mqttKeepAlive = json.optInt(UserSettingsKeys.Mqtt.Connection.KEEP_ALIVE, mqttKeepAlive)
             mqttConnectTimeout = json.optInt(UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT, mqttConnectTimeout)

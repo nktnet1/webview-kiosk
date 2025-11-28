@@ -359,9 +359,10 @@ object MqttManager {
 
     fun publishStatusResponse(statusRequest: MqttStatusRequest, status: WebviewKioskStatus) {
         val statusMessage = MqttStatusResponse(
-            messageId = statusRequest.messageId,
+            messageId = UUID.randomUUID().toString(),
             appInstanceId = config.appInstanceId,
-            data = status
+            requestMessageId = statusRequest.messageId,
+            data = status,
         )
         publishResponseMessage(
             statusMessage,
@@ -371,9 +372,10 @@ object MqttManager {
 
     fun publishSettingsResponse(settingsRequest: MqttSettingsRequest, settings: JSONObject) {
         val settingsMessage = MqttSettingsResponse(
-            messageId = settingsRequest.messageId,
+            messageId = UUID.randomUUID().toString(),
             appInstanceId = config.appInstanceId,
-            data = filterSettingsJson(settings, settingsRequest.settings)
+            requestMessageId = settingsRequest.messageId,
+            data = filterSettingsJson(settings, settingsRequest.settings),
         )
         publishResponseMessage(
             settingsMessage,
@@ -386,9 +388,10 @@ object MqttManager {
         systemInfo: SystemInfo
     ) {
         val statusMessage = MqttSystemInfoResponse(
-            messageId = systemInfoRequest.messageId,
+            messageId = UUID.randomUUID().toString(),
             appInstanceId = config.appInstanceId,
-            data = systemInfo
+            requestMessageId = systemInfoRequest.messageId,
+            data = systemInfo,
         )
         publishResponseMessage(
             statusMessage,
@@ -400,9 +403,10 @@ object MqttManager {
         errorRequest: MqttErrorRequest,
     ) {
         val errorMessage = MqttErrorResponse(
-            messageId = errorRequest.messageId,
+            messageId = UUID.randomUUID().toString(),
             appInstanceId = config.appInstanceId,
-            errorMessage = errorRequest.error
+            requestMessageId = errorRequest.messageId,
+            errorMessage = errorRequest.error,
         )
         publishResponseMessage(
             errorMessage,
@@ -422,9 +426,6 @@ object MqttManager {
                 )
             )
 
-        responseMessage.messageId = responseMessage.messageId?.let {
-            "response:$it"
-        } ?: UUID.randomUUID().toString()
         val payload = MqttResponseJsonParser.encodeToString(responseMessage)
         publishToMqtt(
             topic,

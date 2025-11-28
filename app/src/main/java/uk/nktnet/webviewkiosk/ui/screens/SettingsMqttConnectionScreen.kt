@@ -45,9 +45,9 @@ fun SettingsMqttConnectionScreen(navController: NavController) {
 
             MqttServerHostSetting()
             MqttServerPortSetting()
+            MqttUseTlsSetting()
             MqttUsernameSetting()
             MqttPasswordSetting()
-            MqttUseTlsSetting()
 
             MqttClientIdSetting()
             MqttCleanStartSetting()
