@@ -40,6 +40,8 @@ fun SettingsAppearanceScreen(
             WebViewInsetSetting()
             ImmersiveModeSetting()
             BlockedMessageSetting()
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
