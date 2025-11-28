@@ -27,19 +27,19 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
 import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
+import uk.nktnet.webviewkiosk.utils.webview.SchemeType
+import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleExternalScheme
-import uk.nktnet.webviewkiosk.utils.webview.html.BlockCause
-import uk.nktnet.webviewkiosk.utils.webview.html.generateBlockedPageHtml
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOverrideScript
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorPromptRequest
-import uk.nktnet.webviewkiosk.utils.webview.isBlockedUrl
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BatteryInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BrightnessInterface
-import java.net.URLEncoder
+import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
+import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
 
 data class WebViewConfig(
     val systemSettings: SystemSettings,
@@ -238,6 +238,17 @@ fun createCustomWebview(
                         whitelistRegexes = config.whitelistRegexes,
                         userSettings = userSettings
                     )
+
+                    val uri = url.toUri()
+                    if (isCustomBlockPageUrl(schemeType, uri)) {
+                        // Already on custom block page.
+                        val blockUrl = uri.getQueryParameter("url")
+                        blockUrl?.let {
+                            config.updateAddressBarAndHistory(blockUrl, originalUrl)
+                        }
+                        return
+                    }
+
                     if (blockCause != null) {
                         loadBlockedPage(
                             view,
@@ -394,62 +405,4 @@ fun createCustomWebview(
     }
 
     return webView
-}
-
-enum class SchemeType {
-    FILE,
-    WEB,
-    DATA,
-    WEBVIEW_KIOSK,
-    OTHER
-}
-
-fun getBlockInfo(
-    url: String,
-    blacklistRegexes: List<Regex>,
-    whitelistRegexes: List<Regex>,
-    userSettings: UserSettings
-): Pair<SchemeType, BlockCause?> {
-    val uri = url.toUri()
-    val scheme = uri.scheme?.lowercase() ?: ""
-    val schemeType = when (scheme) {
-        "file" -> SchemeType.FILE
-        "http", "https" -> SchemeType.WEB
-        "data" -> SchemeType.DATA
-        "webviewkiosk" -> SchemeType.WEBVIEW_KIOSK
-        else -> SchemeType.OTHER
-    }
-
-    val blockCause = when {
-        isBlockedUrl(url, blacklistRegexes, whitelistRegexes) -> BlockCause.BLACKLIST
-        schemeType == SchemeType.FILE && !userSettings.allowLocalFiles -> BlockCause.LOCAL_FILE
-        else -> null
-    }
-    return schemeType to blockCause
-}
-
-fun loadBlockedPage(
-    webView: WebView?,
-    userSettings: UserSettings,
-    url: String,
-    blockCause: BlockCause,
-) {
-    val baseUrl = if ( url.toUri().scheme !in setOf("http", "https", "file")) {
-        "webviewkiosk://block?cause=${blockCause.name}&url=${URLEncoder.encode(url, "UTF-8")}"
-    } else {
-        url
-    }
-
-    webView?.loadDataWithBaseURL(
-        baseUrl,
-        generateBlockedPageHtml(
-            userSettings.theme,
-            blockCause,
-            userSettings.blockedMessage,
-            url
-        ),
-        "text/html",
-        "UTF-8",
-        null
-    )
 }

@@ -46,6 +46,8 @@ fun SettingsWebEngineScreen(navController: NavController) {
             SslErrorModeSetting()
             MixedContentModeSetting()
             OverScrollModeSetting()
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
