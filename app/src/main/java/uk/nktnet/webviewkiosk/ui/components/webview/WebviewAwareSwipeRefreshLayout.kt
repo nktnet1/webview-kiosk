@@ -8,7 +8,6 @@ import android.webkit.WebView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
 class WebviewAwareSwipeRefreshLayout : SwipeRefreshLayout {
-
     private var webview: WebView? = null
     private var initialY = 0f
     private var canRefresh = false

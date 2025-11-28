@@ -40,6 +40,8 @@ fun SettingsJsScriptsScreen(
             EnableBrightnessApiSetting()
             CustomScriptOnPageStartSetting()
             CustomScriptOnPageFinishSetting()
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
