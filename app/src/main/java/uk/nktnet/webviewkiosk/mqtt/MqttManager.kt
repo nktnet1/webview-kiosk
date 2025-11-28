@@ -18,6 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONObject
@@ -507,7 +508,25 @@ object MqttManager {
                         "topic: ${publish.topic}\ncommand: $command",
                         command.messageId
                     )
-                    scope.launch { _commands.emit(command) }
+
+                    val targets = command.targetInstances
+                    if (
+                        targets.isNullOrEmpty()
+                        || targets.contains(config.appInstanceId)
+                    ) {
+                        addDebugLog(
+                            "command received",
+                            "topic: ${publish.topic}\ncommand: $command",
+                            command.messageId
+                        )
+                        scope.launch { _commands.emit(command) }
+                    } else {
+                        addDebugLog(
+                            "command received (ignored)",
+                            "topic: ${publish.topic}\ncommand: $command",
+                            command.messageId
+                        )
+                    }
                 } catch (e: Exception) {
                     scope.launch { _commands.emit(MqttErrorCommand(e.message ?: e.toString())) }
                     val messageId = getValueFromPrimitiveJson(payloadStr, "messageId")
@@ -523,24 +542,35 @@ object MqttManager {
             retainAsPublished = config.subscribeSettingsRetainAsPublished,
             onMessage = { publish, payloadStr ->
                 val json = Json.parseToJsonElement(payloadStr).jsonObject
-                val messageId = getValueFromPrimitiveJson(payloadStr, "messageId")
-
-                val refresh = json["refresh"]?.jsonPrimitive?.booleanOrNull ?: true
-                val showToast = json["showToast"]?.jsonPrimitive?.booleanOrNull ?: true
-                val settingsStr = json["data"]?.toString() ?: "{}"
 
                 val settingsMessage = MqttSettingsMessage(
-                    messageId = messageId,
-                    refresh = refresh,
-                    showToast = showToast,
-                    data = settingsStr
+                    messageId = getValueFromPrimitiveJson(payloadStr, "messageId"),
+                    refresh = json["refresh"]?.jsonPrimitive?.booleanOrNull ?: true,
+                    showToast = json["showToast"]?.jsonPrimitive?.booleanOrNull ?: true,
+                    targetInstances = runCatching {
+                        json["targetInstances"]?.jsonArray?.mapNotNull {
+                            it.jsonPrimitive.contentOrNull }?.toSet()
+                        }.getOrNull(),
+                    data = json["data"]?.toString() ?: "{}"
                 )
-                addDebugLog(
-                    "settings received",
-                    "topic: ${publish.topic}\nsettings: $settingsStr",
-                    messageId = messageId,
-                )
-                scope.launch { _settings.emit(settingsMessage) }
+
+                if (
+                    settingsMessage.targetInstances.isNullOrEmpty()
+                    || settingsMessage.targetInstances.contains(config.appInstanceId)
+                ) {
+                    addDebugLog(
+                        "settings received",
+                        "topic: ${publish.topic}\nsettings: ${settingsMessage.data}",
+                        messageId = settingsMessage.messageId,
+                    )
+                    scope.launch { _settings.emit(settingsMessage) }
+                } else {
+                    addDebugLog(
+                        "settings received (ignored)",
+                        "topic: ${publish.topic}\nsettings: ${settingsMessage.data}",
+                        messageId = settingsMessage.messageId,
+                    )
+                }
             }
         )
 
@@ -563,9 +593,10 @@ object MqttManager {
                         val bytes = ByteArray(buf.remaining()).also { buf.get(it) }
                         request.correlationData = String(bytes, UTF_8)
                     }
+                    val targets = request.targetInstances
                     if (
-                        request.targetAppInstanceId.isNullOrEmpty()
-                        || request.targetAppInstanceId == config.appInstanceId
+                        targets.isNullOrEmpty()
+                        || targets.contains(config.appInstanceId)
                     ) {
                         addDebugLog(
                             "request received",
@@ -588,7 +619,13 @@ object MqttManager {
                                 messageId = messageId,
                                 responseTopic = getValueFromPrimitiveJson(payloadStr, "responseTopic"),
                                 correlationData = getValueFromPrimitiveJson(payloadStr, "correlationData"),
-                                targetAppInstanceId = getValueFromPrimitiveJson(payloadStr, "targetAppInstanceId"),
+                                targetInstances = runCatching {
+                                    Json.parseToJsonElement(payloadStr)
+                                        .jsonObject["targetInstances"]
+                                        ?.jsonArray
+                                        ?.mapNotNull { it.jsonPrimitive.contentOrNull }
+                                        ?.toSet()
+                                    }.getOrNull(),
                                 error = e.message ?: e.toString(),
                             )
                         )
