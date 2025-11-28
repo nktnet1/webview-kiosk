@@ -7,7 +7,7 @@ import uk.nktnet.webviewkiosk.utils.BaseJson
 
 @Serializable
 sealed interface MqttCommandMessage {
-    val messageId: String? get() = null
+    val messageId: String?
 }
 
 @Serializable

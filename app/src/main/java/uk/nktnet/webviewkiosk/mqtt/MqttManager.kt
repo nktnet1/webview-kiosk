@@ -375,7 +375,7 @@ object MqttManager {
             messageId = UUID.randomUUID().toString(),
             appInstanceId = config.appInstanceId,
             requestMessageId = settingsRequest.messageId,
-            data = filterSettingsJson(settings, settingsRequest.settings),
+            data = filterSettingsJson(settings, settingsRequest.data),
         )
         publishResponseMessage(
             settingsMessage,
@@ -563,12 +563,23 @@ object MqttManager {
                         val bytes = ByteArray(buf.remaining()).also { buf.get(it) }
                         request.correlationData = String(bytes, UTF_8)
                     }
-                    addDebugLog(
-                        "request received",
-                        "topic: ${publish.topic}\nrequest: $request",
-                        request.messageId
-                    )
-                    scope.launch { _requests.emit(request) }
+                    if (
+                        request.targetAppInstanceId.isNullOrEmpty()
+                        || request.targetAppInstanceId == config.appInstanceId
+                    ) {
+                        addDebugLog(
+                            "request received",
+                            "topic: ${publish.topic}\nrequest: $request",
+                            request.messageId
+                        )
+                        scope.launch { _requests.emit(request) }
+                    } else {
+                        addDebugLog(
+                            "request received (ignored)",
+                            "topic: ${publish.topic}\nrequest: $request",
+                            request.messageId
+                        )
+                    }
                 } catch (e: Exception) {
                     val messageId = getValueFromPrimitiveJson(payloadStr, "messageId")
                     scope.launch {
@@ -577,7 +588,8 @@ object MqttManager {
                                 messageId = messageId,
                                 responseTopic = getValueFromPrimitiveJson(payloadStr, "responseTopic"),
                                 correlationData = getValueFromPrimitiveJson(payloadStr, "correlationData"),
-                                error = e.message ?: e.toString()
+                                targetAppInstanceId = getValueFromPrimitiveJson(payloadStr, "targetAppInstanceId"),
+                                error = e.message ?: e.toString(),
                             )
                         )
                     }

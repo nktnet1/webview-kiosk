@@ -8,7 +8,8 @@ import uk.nktnet.webviewkiosk.utils.BaseJson
 
 @Serializable
 sealed interface MqttRequestMessage {
-    val messageId: String? get() = null
+    val messageId: String?
+    val targetAppInstanceId: String?
     var responseTopic: String?
     var correlationData: String?
 }
@@ -17,8 +18,9 @@ sealed interface MqttRequestMessage {
 @SerialName("get_status")
 data class MqttStatusRequest(
     override val messageId: String? = null,
+    override val targetAppInstanceId: String? = null,
     override var responseTopic: String? = null,
-    override var correlationData: String? = null
+    override var correlationData: String? = null,
 ) : MqttRequestMessage {
     override fun toString() = "Get Status"
 }
@@ -27,19 +29,20 @@ data class MqttStatusRequest(
 @SerialName("get_settings")
 data class MqttSettingsRequest(
     override val messageId: String? = null,
-    val settings: Array<JsonElement> = emptyArray(),
+    override val targetAppInstanceId: String? = null,
     override var responseTopic: String? = null,
-    override var correlationData: String? = null
+    override var correlationData: String? = null,
+    val data: Array<JsonElement> = emptyArray(),
 ) : MqttRequestMessage {
     override fun toString() = "Get Settings"
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
         other as MqttSettingsRequest
-        return settings.contentEquals(other.settings)
+        return data.contentEquals(other.data)
     }
     override fun hashCode(): Int {
-        return settings.contentHashCode()
+        return data.contentHashCode()
     }
 }
 
@@ -47,8 +50,9 @@ data class MqttSettingsRequest(
 @SerialName("get_system_info")
 data class MqttSystemInfoRequest(
     override val messageId: String? = null,
+    override val targetAppInstanceId: String? = null,
     override var responseTopic: String? = null,
-    override var correlationData: String? = null
+    override var correlationData: String? = null,
 ) : MqttRequestMessage {
     override fun toString() = "Get System Info"
 }
@@ -57,6 +61,7 @@ data class MqttSystemInfoRequest(
 @SerialName("error")
 data class MqttErrorRequest(
     override val messageId: String? = null,
+    override val targetAppInstanceId: String? = null,
     override var responseTopic: String? = null,
     override var correlationData: String? = null,
     val error: String = "unknown request",
