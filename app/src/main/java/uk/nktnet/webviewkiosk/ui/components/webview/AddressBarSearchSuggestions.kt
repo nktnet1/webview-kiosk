@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.webview
+package com.nktnet.webview_kiosk.ui.components.webview
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

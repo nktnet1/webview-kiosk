@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device
+package com.nktnet.webview_kiosk.ui.components.setting.fielditems.device
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -9,10 +9,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldItem
-import uk.nktnet.webviewkiosk.utils.setWindowBrightness
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.UserSettingsKeys
+import com.nktnet.webview_kiosk.ui.components.setting.fields.NumberSettingFieldItem
+import com.nktnet.webview_kiosk.utils.setWindowBrightness
 import kotlin.math.roundToInt
 
 @Composable

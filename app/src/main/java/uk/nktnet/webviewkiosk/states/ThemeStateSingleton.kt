@@ -1,8 +1,8 @@
-package uk.nktnet.webviewkiosk.states
+package com.nktnet.webview_kiosk.states
 
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
-import uk.nktnet.webviewkiosk.config.option.ThemeOption
+import com.nktnet.webview_kiosk.config.option.ThemeOption
 
 object ThemeStateSingleton {
     val currentTheme: MutableState<ThemeOption> = mutableStateOf(ThemeOption.SYSTEM)

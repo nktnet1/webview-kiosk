@@ -1,9 +1,9 @@
-package uk.nktnet.webviewkiosk.main
+package com.nktnet.webview_kiosk.main
 
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
-import uk.nktnet.webviewkiosk.utils.validateUrl
+import com.nktnet.webview_kiosk.utils.validateUrl
 
 data class IntentResult(
     val uploadUri: Uri? = null,

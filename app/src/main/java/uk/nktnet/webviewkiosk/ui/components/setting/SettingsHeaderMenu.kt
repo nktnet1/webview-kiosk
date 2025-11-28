@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting
+package com.nktnet.webview_kiosk.ui.components.setting
 
 import android.content.ClipData
 import android.content.Intent
@@ -14,16 +14,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.UserSettings
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.config.UserSettings
 import androidx.core.net.toUri
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.Screen
-import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
-import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ExportSettingsDialog
-import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ImportSettingsDialog
-import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.Screen
+import com.nktnet.webview_kiosk.states.ThemeStateSingleton
+import com.nktnet.webview_kiosk.ui.components.setting.dialog.ExportSettingsDialog
+import com.nktnet.webview_kiosk.ui.components.setting.dialog.ImportSettingsDialog
+import com.nktnet.webview_kiosk.utils.updateDeviceSettings
 
 @Composable
 fun SettingsHeaderMenu(

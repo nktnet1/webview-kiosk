@@ -1,12 +1,12 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing
+package com.nktnet.webview_kiosk.ui.components.setting.fielditems.webbrowsing
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.config.option.AddressBarActionOption
-import uk.nktnet.webviewkiosk.ui.components.setting.fields.EnumListSettingFieldItem
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.UserSettingsKeys
+import com.nktnet.webview_kiosk.config.option.AddressBarActionOption
+import com.nktnet.webview_kiosk.ui.components.setting.fields.EnumListSettingFieldItem
 
 @Composable
 fun AddressBarActionsSetting() {

@@ -1,8 +1,8 @@
-package uk.nktnet.webviewkiosk.utils.webview
+package com.nktnet.webview_kiosk.utils.webview
 
 import android.net.Uri
 import android.webkit.URLUtil
-import uk.nktnet.webviewkiosk.utils.isDataSchemeUrl
+import com.nktnet.webview_kiosk.utils.isDataSchemeUrl
 
 fun resolveUrlOrSearch(searchProviderUrl: String, input: String): String {
     val trimmed = input.trim()

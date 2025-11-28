@@ -1,11 +1,11 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.dhizuku
+package com.nktnet.webview_kiosk.ui.components.setting.fielditems.device.owner.dhizuku
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.UserSettingsKeys
+import com.nktnet.webview_kiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
 fun DhizukuRequestPermissionOnLaunchSetting() {

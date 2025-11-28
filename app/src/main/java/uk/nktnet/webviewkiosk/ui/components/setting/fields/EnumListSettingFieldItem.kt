@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fields
+package com.nktnet.webview_kiosk.ui.components.setting.fields
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
@@ -12,7 +12,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import org.json.JSONArray
 import sh.calvin.reorderable.ReorderableColumn
-import uk.nktnet.webviewkiosk.R
+import com.nktnet.webview_kiosk.R
 
 @Composable
 fun <T : Enum<T>> EnumListSettingFieldItem(
