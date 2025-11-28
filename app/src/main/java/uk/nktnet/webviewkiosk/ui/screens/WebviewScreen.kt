@@ -280,7 +280,6 @@ fun WebviewScreen(navController: NavController) {
     cookieManager.setAcceptThirdPartyCookies(
         webView, userSettings.acceptThirdPartyCookies
     )
-
     Box(
         modifier = Modifier
             .fillMaxSize()
