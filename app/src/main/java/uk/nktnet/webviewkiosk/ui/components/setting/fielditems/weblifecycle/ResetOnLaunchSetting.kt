@@ -13,7 +13,7 @@ fun ResetOnLaunchSetting() {
     val userSettings = remember { UserSettings(context) }
 
     BooleanSettingFieldItem(
-        label = "Reset on App Launch",
+        label = "Reset on Launch",
         infoText = """
              When enabled, the app will always start fresh at the Home URL when
              closed and re-opened, as opposed to the last visited URL.

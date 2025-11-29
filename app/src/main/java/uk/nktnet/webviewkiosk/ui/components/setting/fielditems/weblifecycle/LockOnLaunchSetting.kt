@@ -13,7 +13,7 @@ fun LockOnLaunchSetting() {
     val userSettings = remember { UserSettings(context) }
 
     BooleanSettingFieldItem(
-        label = "Lock on App Launch",
+        label = "Lock on Launch",
         infoText = """
             When enabled, the app will immediately enter locked/pinned mode on startup,
             preventing exit until unpinned.
