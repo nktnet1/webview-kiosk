@@ -60,7 +60,7 @@ fun ImportSettingsDialog(
             ) {
                 Text(
                     text = "Import Settings",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
@@ -69,7 +69,9 @@ fun ImportSettingsDialog(
                         Tab(
                             selected = selectedTab == tab,
                             onClick = { selectedTab = tab },
-                            text = { Text(tab.name) }
+                            text = { Text(tab.name) },
+                            selectedContentColor = MaterialTheme.colorScheme.primary,
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -140,7 +142,12 @@ fun ImportSettingsDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    TextButton(onClick = onDismiss) {
+                    TextButton(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
                         Text("Cancel")
                     }
 

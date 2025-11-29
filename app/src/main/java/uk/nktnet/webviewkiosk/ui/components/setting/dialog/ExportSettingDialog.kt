@@ -56,7 +56,7 @@ fun ExportSettingsDialog(
             ) {
                 Text(
                     text = "Export Settings",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
 
@@ -65,7 +65,9 @@ fun ExportSettingsDialog(
                         Tab(
                             selected = selectedTab == tab,
                             onClick = { selectedTab = tab },
-                            text = { Text(tab.name) }
+                            text = { Text(tab.name) },
+                            selectedContentColor = MaterialTheme.colorScheme.primary,
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -111,7 +113,12 @@ fun ExportSettingsDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss) {
+                    TextButton(
+                        onClick = onDismiss,
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
                         Text("Cancel")
                     }
                     Spacer(Modifier.width(8.dp))
