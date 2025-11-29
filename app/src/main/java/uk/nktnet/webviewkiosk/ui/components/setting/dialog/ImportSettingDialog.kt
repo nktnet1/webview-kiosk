@@ -61,7 +61,7 @@ fun ImportSettingsDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    val success = userSettings.importFromBase64(importText)
+                    val success = userSettings.importBase64(importText)
                     if (success) {
                         updateDeviceSettings(context)
                         showToast("Imported settings successfully")

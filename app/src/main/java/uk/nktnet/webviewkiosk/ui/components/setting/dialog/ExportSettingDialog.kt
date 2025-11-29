@@ -34,7 +34,7 @@ fun ExportSettingsDialog(
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
 
-    val exportText = remember { userSettings.exportToBase64() }
+    val exportText = remember { userSettings.exportBase64() }
 
     AlertDialog(
         onDismissRequest = onDismiss,

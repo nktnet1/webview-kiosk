@@ -512,7 +512,7 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH
     )
 
-    fun exportToBase64(): String {
+    fun exportJson(): JSONObject {
         val json = JSONObject().apply {
             put(UserSettingsKeys.WebContent.HOME_URL, homeUrl)
             put(UserSettingsKeys.WebContent.WEBSITE_BLACKLIST, websiteBlacklist)
@@ -597,12 +597,12 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
         }
-        return Base64.encodeToString(json.toString().toByteArray(), Base64.NO_WRAP)
+        return json
     }
 
-    fun importFromBase64(base64: String): Boolean {
+    fun importJson(jsonStr: String): Boolean {
         return try {
-            val json = JSONObject(String(Base64.decode(base64, Base64.NO_WRAP)))
+            val json = JSONObject(jsonStr)
 
             homeUrl = json.optString(UserSettingsKeys.WebContent.HOME_URL, homeUrl)
             websiteBlacklist = json.optString(UserSettingsKeys.WebContent.WEBSITE_BLACKLIST, websiteBlacklist)
@@ -713,6 +713,20 @@ class UserSettings(val context: Context) {
             customScriptOnPageStart = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             customScriptOnPageFinish = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
             true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            false
+        }
+    }
+
+    fun exportBase64(): String {
+        return Base64.encodeToString(exportJson().toString().toByteArray(), Base64.NO_WRAP)
+    }
+
+    fun importBase64(base64: String): Boolean {
+        return try {
+            val decoded = String(Base64.decode(base64, Base64.NO_WRAP))
+            importJson(decoded)
         } catch (e: Exception) {
             e.printStackTrace()
             false
