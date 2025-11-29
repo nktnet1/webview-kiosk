@@ -115,7 +115,7 @@ object UserSettingsKeys {
             const val SERVER_HOST = "mqtt.connection.server_host"
             const val SERVER_PORT = "mqtt.connection.server_port"
             const val CLIENT_ID = "mqtt.connection.client_id"
-            const val USE_TLS = "mqtt.connection.connection.use_tls"
+            const val USE_TLS = "mqtt.connection.use_tls"
             const val USERNAME = "mqtt.connection.username"
             const val PASSWORD = "mqtt.connection.password"
             const val CLEAN_START = "mqtt.connection.clean_start"
