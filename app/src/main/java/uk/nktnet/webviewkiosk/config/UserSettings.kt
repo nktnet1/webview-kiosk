@@ -957,10 +957,6 @@ class UserSettings(val context: Context) {
         return json
     }
 
-    fun exportBase64(): String {
-        return Base64.encodeToString(exportJson().toString().toByteArray(), Base64.NO_WRAP)
-    }
-
     fun importJson(jsonStr: String): Boolean {
         return try {
             val json = JSONObject(jsonStr)
@@ -1145,6 +1141,10 @@ class UserSettings(val context: Context) {
             e.printStackTrace()
             false
         }
+    }
+
+    fun exportBase64(): String {
+        return Base64.encodeToString(exportJson().toString().toByteArray(), Base64.NO_WRAP)
     }
 
     fun importBase64(base64: String): Boolean {

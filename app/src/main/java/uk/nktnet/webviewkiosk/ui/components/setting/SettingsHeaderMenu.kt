@@ -1,86 +1,42 @@
 package uk.nktnet.webviewkiosk.ui.components.setting
 
-import android.content.ClipData
 import android.content.Intent
 import android.provider.Settings
-import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.UserSettings
 import androidx.core.net.toUri
-import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.Screen
-import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ExportSettingsDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ImportSettingsDialog
-import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
 
 @Composable
 fun SettingsHeaderMenu(
     navController: NavController,
 ) {
-    val tintColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
-    var showMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val userSettings = remember { UserSettings(context) }
+
+    val tintColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+
+    var showMenu by remember { mutableStateOf(false) }
     var showImportDialog by remember { mutableStateOf(false) }
-    var importText by remember { mutableStateOf("") }
-    var importError by remember { mutableStateOf(false) }
-
     var showExportDialog by remember { mutableStateOf(false) }
-    var exportText by remember { mutableStateOf("") }
-
-    val toastRef = remember { mutableStateOf<Toast?>(null) }
-    fun showToast(message: String) {
-        toastRef.value?.cancel()
-        toastRef.value = Toast.makeText(context, message, Toast.LENGTH_SHORT).also { it.show() }
-    }
-
-    val clipboard = LocalClipboard.current
-    val scope = rememberCoroutineScope()
 
     ImportSettingsDialog(
         showDialog = showImportDialog,
         onDismiss = { showImportDialog = false },
-        importText = importText,
-        onImportTextChange = {
-            importText = it
-            importError = false
-        },
-        importError = importError,
-        onImportConfirm = {
-            val success = userSettings.importBase64(importText)
-            if (success) {
-                updateDeviceSettings(context)
-                showToast("Settings imported successfully")
-                showImportDialog = false
-            } else {
-                importError = true
-            }
-        }
     )
 
     ExportSettingsDialog(
         showDialog = showExportDialog,
         onDismiss = { showExportDialog = false },
-        exportText = exportText,
-        onCopy = {
-            scope.launch {
-                val clipData = ClipData.newPlainText("Exported Data", exportText)
-                clipboard.setClipEntry(clipData.toClipEntry())
-                showExportDialog = false
-            }
-        }
     )
 
     Row(
@@ -111,8 +67,6 @@ fun SettingsHeaderMenu(
                             onClick = {
                                 showMenu = false
                                 showImportDialog = true
-                                importText = ""
-                                importError = false
                             },
                             leadingIcon = {
                                 Icon(
@@ -126,7 +80,6 @@ fun SettingsHeaderMenu(
                             text = { Text("Export", color = tintColor) },
                             onClick = {
                                 showMenu = false
-                                exportText = userSettings.exportBase64()
                                 showExportDialog = true
                             },
                             leadingIcon = {
