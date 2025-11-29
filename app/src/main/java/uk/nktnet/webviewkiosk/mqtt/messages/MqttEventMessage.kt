@@ -32,10 +32,10 @@ data class MqttDisconnectingEvent(
 ) : MqttEventMessage {
     @Serializable
     data class DisconnectingData(
-        val reason: DisconnectReason
+        val cause: DisconnectCause
     )
     @Serializable
-    enum class DisconnectReason {
+    enum class DisconnectCause {
         USER_INITIATED_DISCONNECT,
         USER_INITIATED_RESTART,
         USER_INITIATED_SETTINGS_DISABLED,

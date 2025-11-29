@@ -36,7 +36,7 @@ fun MqttEnabledSetting() {
                 userSettings.mqttEnabled = isEnabled
                 if (!isEnabled && MqttManager.isConnectedOrReconnect()) {
                     MqttManager.disconnect(
-                        reason = MqttDisconnectingEvent.DisconnectReason.USER_INITIATED_SETTINGS_DISABLED
+                        cause = MqttDisconnectingEvent.DisconnectCause.USER_INITIATED_SETTINGS_DISABLED
                     )
                     MqttManager.updateConfig(systemSettings, userSettings, false)
                 }

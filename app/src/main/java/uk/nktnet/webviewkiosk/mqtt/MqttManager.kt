@@ -713,7 +713,7 @@ object MqttManager {
     }
 
     fun disconnect(
-        reason: MqttDisconnectingEvent.DisconnectReason,
+        cause: MqttDisconnectingEvent.DisconnectCause,
         onDisconnected: (() -> Unit)? = null,
         onError: ((String?) -> Unit)? = null,
     ) {
@@ -735,7 +735,7 @@ object MqttManager {
                 messageId = UUID.randomUUID().toString(),
                 appInstanceId = config.appInstanceId,
                 data = MqttDisconnectingEvent.DisconnectingData(
-                    reason = reason,
+                    cause = cause,
                 )
             ),
             whenComplete = { _, _ ->

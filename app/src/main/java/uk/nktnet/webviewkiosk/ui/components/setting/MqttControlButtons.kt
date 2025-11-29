@@ -89,7 +89,7 @@ fun MqttControlButtons() {
                     Button(
                         onClick = {
                             MqttManager.disconnect(
-                                reason = MqttDisconnectingEvent.DisconnectReason.USER_INITIATED_DISCONNECT
+                                cause = MqttDisconnectingEvent.DisconnectCause.USER_INITIATED_DISCONNECT
                             ) {
                                 mqttClientState = MqttManager.getState()
                                 showToast("MQTT disconnected successfully")
@@ -106,7 +106,7 @@ fun MqttControlButtons() {
                         onClick = {
                             mqttClientState = MqttClientState.CONNECTING
                             MqttManager.disconnect(
-                                reason = MqttDisconnectingEvent.DisconnectReason.USER_INITIATED_RESTART,
+                                cause = MqttDisconnectingEvent.DisconnectCause.USER_INITIATED_RESTART,
                                 onDisconnected = {
                                     mqttClientState = MqttManager.getState()
                                     MqttManager.connect(

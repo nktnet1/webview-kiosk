@@ -157,7 +157,7 @@ class MainActivity : AppCompatActivity() {
                     when (commandMessage) {
                         is MqttReconnectMqttCommand -> {
                             MqttManager.disconnect (
-                                reason = MqttDisconnectingEvent.DisconnectReason.MQTT_RECONNECT_COMMAND_RECEIVED,
+                                cause = MqttDisconnectingEvent.DisconnectCause.MQTT_RECONNECT_COMMAND_RECEIVED,
                                 onDisconnected = {
                                     MqttManager.connect(context)
                                 }
@@ -329,7 +329,7 @@ class MainActivity : AppCompatActivity() {
         if (!isChangingConfigurations) {
             AuthenticationManager.resetAuthentication()
             MqttManager.disconnect(
-                reason = MqttDisconnectingEvent.DisconnectReason.SYSTEM_ACTIVITY_STOPPED
+                cause = MqttDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_STOPPED
             )
         }
     }
