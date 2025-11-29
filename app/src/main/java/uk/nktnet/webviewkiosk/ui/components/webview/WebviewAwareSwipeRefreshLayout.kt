@@ -1,7 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.webview
 
 import android.content.Context
-import android.os.Build
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.webkit.WebView
@@ -10,7 +9,6 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 class WebviewAwareSwipeRefreshLayout : SwipeRefreshLayout {
     private var webview: WebView? = null
     private var initialY = 0f
-    private var canRefresh = false
 
     constructor(context: Context) : super(context)
 
@@ -18,31 +16,19 @@ class WebviewAwareSwipeRefreshLayout : SwipeRefreshLayout {
 
     constructor(context: Context, webview: WebView) : super(context) {
         this.webview = webview
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            webview.setOnScrollChangeListener { _, _, scrollY, _, _ ->
-                isEnabled = scrollY == 0
-            }
-        } else {
-            webview.viewTreeObserver.addOnScrollChangedListener {
-                isEnabled = webview.scrollY == 0
-            }
-        }
     }
 
     override fun onInterceptTouchEvent(ev: MotionEvent): Boolean {
-        if (ev.pointerCount > 1) {
+        if (!isEnabled || ev.pointerCount > 1) {
             return false
         }
 
-        when (ev.actionMasked) {
-            MotionEvent.ACTION_DOWN -> {
-                initialY = ev.y
-                val wv = webview
-                canRefresh = wv != null && wv.scrollY == 0 && initialY <= height / 4
-            }
+        if (ev.actionMasked == MotionEvent.ACTION_DOWN) {
+            initialY = ev.y
         }
 
-        if (!canRefresh) {
+        val currView = webview
+        if (currView == null || currView.scrollY != 0 || initialY > height / 4) {
             return false
         }
 
