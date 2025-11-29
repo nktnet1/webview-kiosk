@@ -1,37 +1,27 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
+
+enum class ImportTab {
+    Base64,
+    JSON
+}
 
 @Composable
 fun ImportSettingsDialog(
@@ -42,7 +32,6 @@ fun ImportSettingsDialog(
 
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
 
@@ -54,88 +43,135 @@ fun ImportSettingsDialog(
 
     var importError by remember { mutableStateOf(false) }
     var importText by remember { mutableStateOf("") }
+    var selectedTab by remember { mutableStateOf(ImportTab.Base64) }
+    val tabs = ImportTab.entries.toTypedArray()
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        modifier = Modifier.padding(bottom = 16.dp),
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    val success = userSettings.importBase64(importText)
-                    if (success) {
-                        updateDeviceSettings(context)
-                        showToast("Imported settings successfully")
-                        onDismiss()
-                    } else {
-                        importError = true
-                    }
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    contentColor = MaterialTheme.colorScheme.onPrimary
-                )
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            tonalElevation = 6.dp,
+            shape = MaterialTheme.shapes.medium,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 600.dp)
+                    .padding(16.dp)
             ) {
-                Text("Import")
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
-        },
-        title = { Text("Import Settings (Base64)") },
-        text = {
-            Column {
-                OutlinedTextField(
-                    value = importText,
-                    onValueChange = { importText = it },
-                    placeholder = { Text("Paste your exported Base64 string here.") },
-                    isError = importError,
-                    minLines = 10,
-                    modifier = Modifier.fillMaxWidth()
+                Text(
+                    text = "Import Settings",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
                 )
-                if (importError) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "Invalid input or corrupted data",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+
+                PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
+                    tabs.forEach { tab ->
+                        Tab(
+                            selected = selectedTab == tab,
+                            onClick = { selectedTab = tab },
+                            text = { Text(tab.name) }
+                        )
+                    }
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(Modifier.height(8.dp))
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                ) {
+                    OutlinedTextField(
+                        value = importText,
+                        onValueChange = {
+                            importText = it
+                            importError = false
+                        },
+                        placeholder = {
+                            Text(
+                                if (selectedTab == ImportTab.Base64) {
+                                    "Paste your Base64 config string."
+                                } else {
+                                    "Paste your JSON string."
+                                }
+                            )
+                        },
+                        isError = importError,
+                        minLines = 4,
+                        maxLines = 14,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp)
+                            .verticalScroll(rememberScrollState())
+                    )
+
+                    Spacer(Modifier.height(2.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = { importText = "" }) {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_clear_24),
+                                contentDescription = "Clear",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                        IconButton(onClick = {
+                            scope.launch {
+                                val clipEntry = clipboard.getClipEntry()
+                                importText = clipEntry?.clipData?.getItemAt(0)?.text?.toString() ?: ""
+                            }
+                        }) {
+                            Icon(
+                                painter = painterResource(R.drawable.outline_content_paste_24),
+                                contentDescription = "Paste",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(
-                        onClick = { importText = "" },
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.baseline_clear_24),
-                            contentDescription = "Clear",
-                            tint = MaterialTheme.colorScheme.error
-                        )
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel")
                     }
-                    IconButton(
-                        onClick = {
-                            scope.launch {
-                                val clipEntry = clipboard.getClipEntry()
-                                importText = clipEntry
-                                    ?.clipData
-                                    ?.getItemAt(0)
-                                    ?.text
-                                    ?.toString() ?: ""
-                            }
+
+                    Spacer(Modifier.width(8.dp))
+
+                    TextButton(onClick = {
+                        val success = if (selectedTab == ImportTab.Base64) {
+                            userSettings.importBase64(importText)
+                        } else {
+                            userSettings.importJson(importText)
                         }
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.outline_content_paste_24),
-                            contentDescription = "Paste",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+
+                        if (success) {
+                            updateDeviceSettings(context)
+                            showToast("Imported settings successfully")
+                            onDismiss()
+                        } else {
+                            importError = true
+                            showToast(
+                                if (selectedTab == ImportTab.Base64) {
+                                    "Failed to import Base64."
+                                } else {
+                                    "Failed to import JSON."
+                                }
+                            )
+                        }
+                    }) {
+                        Text("Import")
                     }
                 }
             }
         }
-    )
+    }
 }

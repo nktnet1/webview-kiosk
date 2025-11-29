@@ -51,8 +51,8 @@ fun ExportSettingsDialog(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .heightIn(max = 600.dp)
                     .padding(16.dp)
-                    .fillMaxHeight()
             ) {
                 Text(
                     text = "Export Settings",
