@@ -19,9 +19,11 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.M
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttPasswordSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttServerHostSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttServerPortSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttWebSocketServerPathSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttUseTlsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttUsernameSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttSocketConnectTimeoutSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttUseWebSocketSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsButton
 
 @Composable
@@ -55,6 +57,9 @@ fun SettingsMqttConnectionScreen(navController: NavController) {
             MqttConnectTimeoutSetting()
             MqttSocketConnectTimeoutSetting()
             MqttAutomaticReconnectSetting()
+
+            MqttUseWebSocketSetting()
+            MqttWebSocketServerPathSetting()
 
             Spacer(modifier = Modifier.height(6.dp))
         }

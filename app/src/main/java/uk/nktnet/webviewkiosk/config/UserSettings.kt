@@ -583,6 +583,19 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Mqtt.Connection.CLEAN_START,
         true
     )
+    var mqttUseWebSocket by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Connection.USE_WEBSOCKET,
+        false
+    )
+    var mqttWebSocketServerPath by stringPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Connection.WEBSOCKET_SERVER_PATH,
+        "/mqtt"
+    )
+
     var mqttPublishEventTopic by stringPref(
         getRestrictions,
         prefs,
@@ -905,6 +918,9 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT, mqttConnectTimeout)
             put(UserSettingsKeys.Mqtt.Connection.SOCKET_CONNECT_TIMEOUT, mqttSocketConnectTimeout)
             put(UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT, mqttAutomaticReconnect)
+            put(UserSettingsKeys.Mqtt.Connection.USE_WEBSOCKET, mqttUseWebSocket)
+            put(UserSettingsKeys.Mqtt.Connection.WEBSOCKET_SERVER_PATH, mqttWebSocketServerPath)
+
             put(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
             put(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.code)
             put(UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN, mqttPublishEventRetain)
@@ -1070,6 +1086,10 @@ class UserSettings(val context: Context) {
             mqttConnectTimeout = json.optInt(UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT, mqttConnectTimeout)
             mqttSocketConnectTimeout = json.optInt(UserSettingsKeys.Mqtt.Connection.SOCKET_CONNECT_TIMEOUT, mqttSocketConnectTimeout)
             mqttAutomaticReconnect = json.optBoolean(UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT, mqttAutomaticReconnect)
+
+            mqttUseWebSocket = json.optBoolean(UserSettingsKeys.Mqtt.Connection.USE_WEBSOCKET, mqttUseWebSocket)
+            mqttWebSocketServerPath = json.optString(UserSettingsKeys.Mqtt.Connection.SERVER_HOST, mqttServerHost)
+
             mqttPublishEventTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
             mqttPublishEventQos = MqttQosOption.fromString(
                 json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.name)

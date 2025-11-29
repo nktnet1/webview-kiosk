@@ -5,6 +5,7 @@ import android.annotation.SuppressLint
 import android.content.Context
 import com.hivemq.client.mqtt.MqttClient
 import com.hivemq.client.mqtt.MqttClientState
+import com.hivemq.client.mqtt.MqttWebSocketConfig
 import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PayloadFormatIndicator
@@ -122,6 +123,8 @@ object MqttManager {
             keepAlive = userSettings.mqttKeepAlive,
             mqttConnectTimeout = userSettings.mqttConnectTimeout,
             socketConnectTimeout = userSettings.mqttSocketConnectTimeout,
+            useWebSocket = userSettings.mqttUseWebSocket,
+            webSocketServerPath = userSettings.mqttWebSocketServerPath,
 
             publishEventTopic = userSettings.mqttPublishEventTopic,
             publishEventQos = userSettings.mqttPublishEventQos,
@@ -173,12 +176,26 @@ object MqttManager {
             .serverHost(config.serverHost)
             .serverPort(config.serverPort)
 
-        if (config.clientId.isNotEmpty()) {
-            builder = builder.identifier(mqttVariableReplacement(config.clientId))
+        if (config.useWebSocket) {
+            builder = builder
+                .webSocketConfig(
+                    MqttWebSocketConfig.builder()
+                        .subprotocol("mqtt")
+                        .serverPath(
+                            config.webSocketServerPath.trim().let { path ->
+                                if (path.startsWith("/")) path else "/$path"
+                            }
+                        )
+                        .build()
+                )
         }
 
         if (config.useTls) {
             builder = builder.sslWithDefaultConfig()
+        }
+
+        if (config.clientId.isNotEmpty()) {
+            builder = builder.identifier(mqttVariableReplacement(config.clientId))
         }
 
         builder = if (config.username.isNotEmpty() && config.password.isNotEmpty()) {

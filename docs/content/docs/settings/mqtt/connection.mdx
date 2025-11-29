@@ -26,8 +26,10 @@ For example,
 The TCP port of the MQTT broker the app should connect to.
 
 Typically,
-- 1883 (TCP Port)
-- 8883 (TLS TCP Port)
+- `1883`: MQTT (TCP)
+- `8883`: MQTTS (TCP with SSL/TLS)
+- `8083`: WS (Websocket)
+- `8084`: WSS (Websocket Secure)
 
 **Default:** 1883
 
@@ -105,3 +107,20 @@ after an unexpected disconnect.
 In {APP_NAME}, this is implemented linearly at a fixed 3-second interval.
 
 **Default:** true
+
+### 12. Use WebSocket
+
+When enabled, the client will connect securely to the broker using TLS.
+Ensure the broker supports TLS on the configured port, e.g.
+- `8083`: WS (Websocket)
+- `8084`: WSS (Websocket Secure)
+
+**Default:** false
+
+### 12. WebSocket Server Path
+
+The path the MQTT broker WebSocket server listens on.
+
+Must start with a `/`.
+
+**Default:** /mqtt

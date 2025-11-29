@@ -18,6 +18,8 @@ data class MqttConfig(
     val keepAlive: Int,
     val mqttConnectTimeout: Int,
     val socketConnectTimeout: Int,
+    val useWebSocket: Boolean,
+    val webSocketServerPath: String,
 
     val publishEventTopic: String,
     val publishEventQos: MqttQosOption,

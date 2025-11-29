@@ -113,6 +113,7 @@ dependencies {
     implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.hivemq.mqtt.client)
+    implementation(platform(libs.hivemq.mqtt.client.websocket))
     retrofix(libs.android.retrostreams)
     retrofix(libs.android.retrofuture)
     implementation(libs.dhizuku.api)
