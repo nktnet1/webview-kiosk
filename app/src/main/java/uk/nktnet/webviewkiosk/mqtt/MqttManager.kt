@@ -224,6 +224,10 @@ object MqttManager {
             .payloadFormatIndicator(Mqtt5PayloadFormatIndicator.UTF_8)
             .contentType("text/plain")
             .payload(mqttVariableReplacement(config.willPayload).toByteArray())
+            .userProperties()
+                .add("username", config.username)
+                .add("appInstanceId", config.appInstanceId)
+                .applyUserProperties()
             .applyWillPublish()
 
         return builder
@@ -282,6 +286,10 @@ object MqttManager {
         var connection = c.connectWith()
             .cleanStart(config.cleanStart)
             .keepAlive(config.keepAlive)
+            .userProperties()
+                .add("username", config.username)
+                .add("appInstanceId", config.appInstanceId)
+                .applyUserProperties()
 
         var rb = connection.restrictions()
             .requestProblemInformation(config.restrictionsRequestProblemInformation)
@@ -485,6 +493,10 @@ object MqttManager {
                 .payloadFormatIndicator(Mqtt5PayloadFormatIndicator.UTF_8)
                 .contentType("application/json")
                 .payload(payload.toByteArray())
+                .userProperties()
+                    .add("username", config.username)
+                    .add("appInstanceId", config.appInstanceId)
+                    .applyUserProperties()
                 .send()
                 .whenComplete { result, throwable ->
                     whenComplete?.invoke(result, throwable)
@@ -681,6 +693,10 @@ object MqttManager {
                 .retainHandling(retainHandling.toMqttRetainHandling())
                 .retainAsPublished(retainAsPublished)
                 .noLocal(true)
+                .userProperties()
+                    .add("username", config.username)
+                    .add("appInstanceId", config.appInstanceId)
+                    .applyUserProperties()
                 .callback { publish ->
                     val payloadStr = publish.payloadAsBytes.toString(UTF_8)
                     onMessage(publish, payloadStr)
@@ -740,7 +756,13 @@ object MqttManager {
             ),
             whenComplete = { _, _ ->
                 @SuppressLint("NewApi")
-                c.disconnect().whenComplete { _, throwable ->
+                c.disconnectWith()
+                    .userProperties()
+                        .add("username", config.username)
+                        .add("appInstanceId", config.appInstanceId)
+                        .applyUserProperties()
+                    .send()
+                    .whenComplete { _, throwable ->
                     if (throwable == null) {
                         onDisconnected?.invoke()
                     } else {
