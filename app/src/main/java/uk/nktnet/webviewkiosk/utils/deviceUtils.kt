@@ -65,6 +65,10 @@ fun updateDeviceSettings(context: Context) {
     ThemeStateSingleton.setTheme(userSettings.theme)
     setDeviceRotation(context, userSettings.rotation)
     setWindowBrightness(context, userSettings.brightness)
+    /**
+     * We might already be locked task mode (e.g. from MQTT), so this
+     * needs to be applied again.
+     */
     applyLockTaskFeatures(context)
 }
 

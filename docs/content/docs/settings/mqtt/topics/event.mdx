@@ -1,0 +1,30 @@
+---
+title: Event
+description: Publish device and webview state changes
+---
+
+### 1. Topic Name
+
+All global variables are supported, in addition to `EVENT_TYPE`.
+For example,
+
+```js
+wk/${USERNAME}/${APP_INSTANCE_ID}/event/${EVENT_TYPE}
+```
+
+**Default:**
+
+```js
+wk/event/${EVENT_TYPE}
+```
+
+### 2. Quality of Service (QoS)
+
+Quality of Service (QoS) ensures different message delivery guarantees
+in case of connection failures.
+
+**Default:** At Most Once (0)
+
+### 3. Retain
+
+**Default:** false

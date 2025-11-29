@@ -9,11 +9,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import uk.nktnet.webviewkiosk.mqtt.MqttManager
 import uk.nktnet.webviewkiosk.utils.getIsLocked
 
 object LockStateSingleton {
     private val _isLocked = mutableStateOf(false)
     val isLocked: State<Boolean> = _isLocked
+
+    private var previousIsLocked: Boolean = _isLocked.value
 
     private var monitoringJob: Job? = null
     private var isStarted = false
@@ -29,7 +32,15 @@ object LockStateSingleton {
 
         monitoringJob = CoroutineScope(Dispatchers.Default).launch {
             while (true) {
+                previousIsLocked = _isLocked.value
                 _isLocked.value = getIsLocked(activityManager)
+                if (previousIsLocked != _isLocked.value) {
+                    if (_isLocked.value) {
+                        MqttManager.publishLockEvent()
+                    } else {
+                        MqttManager.publishUnlockEvent()
+                    }
+                }
                 delay(1000L)
             }
         }
