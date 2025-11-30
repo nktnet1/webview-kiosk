@@ -135,6 +135,8 @@
 
     <string-array name="entries_kiosk_control_panel_action_option">
         <item>Navigation</item>
+        <item>Back</item>
+        <item>Forward</item>
         <item>Refresh</item>
         <item>Home</item>
         <item>History</item>
@@ -146,6 +148,8 @@
     </string-array>
     <string-array name="entry_values_kiosk_control_panel_action_option">
         <item>NAVIGATION</item>
+        <item>BACK</item>
+        <item>FORWARD</item>
         <item>REFRESH</item>
         <item>HOME</item>
         <item>HISTORY</item>

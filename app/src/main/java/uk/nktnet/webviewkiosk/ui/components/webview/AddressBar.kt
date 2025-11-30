@@ -127,8 +127,9 @@ fun AddressBar(
     }
 
     val menuItems: Map<AddressBarActionOption, @Composable () -> Unit> = remember(
-        systemSettings.historyIndex,
         isLocked,
+        systemSettings.historyIndex,
+        systemSettings.historyStack.size,
     ) {
         val canGoForward = systemSettings.historyIndex < (systemSettings.historyStack.size - 1)
         val canGoBack = systemSettings.historyIndex > 0
