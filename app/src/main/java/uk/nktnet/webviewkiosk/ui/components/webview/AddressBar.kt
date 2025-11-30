@@ -201,9 +201,9 @@ fun AddressBar(
                 focusedContainerColor = MaterialTheme.colorScheme.surface,
             ),
             keyboardOptions = KeyboardOptions.Default.copy(
-                imeAction = ImeAction.Go
+                imeAction = ImeAction.Search,
             ),
-            keyboardActions = KeyboardActions(onGo = {
+            keyboardActions = KeyboardActions(onSearch = {
                 if (urlBarText.text.isNotBlank()) {
                     addressBarSearch(urlBarText.text)
                 }
