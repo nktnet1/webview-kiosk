@@ -44,6 +44,7 @@ import uk.nktnet.webviewkiosk.mqtt.messages.MqttGoToUrlMqttCommand
 import uk.nktnet.webviewkiosk.mqtt.MqttManager
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttRefreshMqttCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttUnlockMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttSearchMqttCommand
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
 import uk.nktnet.webviewkiosk.ui.components.webview.FloatingToolbar
@@ -452,6 +453,7 @@ fun WebviewScreen(navController: NavController) {
                 is MqttGoHomeMqttCommand -> WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings)
                 is MqttRefreshMqttCommand -> WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
                 is MqttGoToUrlMqttCommand -> customLoadUrl(commandMessage.data.url)
+                is MqttSearchMqttCommand -> addressBarSearch(commandMessage.data.query)
                 is MqttLockMqttCommand -> tryLockTask(activity)
                 is MqttUnlockMqttCommand -> tryUnlockTask(activity)
                 is MqttErrorCommand -> showToast("Received invalid MQTT command. See debug logs in MQTT settings.")

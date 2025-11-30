@@ -62,6 +62,20 @@ data class MqttGoToUrlMqttCommand(
 }
 
 @Serializable
+@SerialName("search")
+data class MqttSearchMqttCommand(
+    override val messageId: String? = null,
+    override val targetInstances: Set<String>? = null,
+    val data: QueryData,
+) : MqttCommandMessage {
+    @Serializable
+    data class QueryData(
+        val query: String
+    )
+    override fun toString() = "Search"
+}
+
+@Serializable
 @SerialName("clear_history")
 data class MqttClearHistoryMqttCommand(
     override val messageId: String? = null,
