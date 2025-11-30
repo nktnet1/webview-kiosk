@@ -86,6 +86,7 @@
     </string-array>
 
     <string-array name="entries_address_bar_action_option">
+        <item>Navigation</item>
         <item>Back</item>
         <item>Forward</item>
         <item>Refresh</item>
@@ -95,6 +96,7 @@
         <item>Files</item>
     </string-array>
     <string-array name="entry_values_address_bar_action_option">
+        <item>NAVIGATION</item>
         <item>BACK</item>
         <item>FORWARD</item>
         <item>REFRESH</item>

@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.config.option
 import org.json.JSONArray
 
 enum class AddressBarActionOption(val label: String) {
+    NAVIGATION("Navigation"),
     BACK("Back"),
     FORWARD("Forward"),
     REFRESH("Refresh"),

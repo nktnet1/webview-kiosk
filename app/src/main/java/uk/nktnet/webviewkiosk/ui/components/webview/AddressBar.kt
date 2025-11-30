@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -100,12 +101,64 @@ fun AddressBar(
         }
     }
 
-    val menuItems: Map<AddressBarActionOption, @Composable () -> Unit> = remember {
+    val menuItems: Map<AddressBarActionOption, @Composable () -> Unit> = remember(
+        systemSettings.historyIndex
+    ) {
+        val canGoForward = systemSettings.historyIndex < (systemSettings.historyStack.size - 1)
+        val canGoBack = systemSettings.historyIndex > 0
+
         mapOf(
+            AddressBarActionOption.NAVIGATION to {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(
+                        4.dp,
+                        Alignment.CenterHorizontally
+                    )
+                ) {
+                    IconButton(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        enabled = canGoBack,
+                        shape = RectangleShape,
+                        onClick = {
+                            WebViewNavigation.goBack(customLoadUrl, systemSettings)
+                            menuExpanded = false
+                        }
+                    ) {
+                        Icon(
+                            modifier = Modifier.padding(start = 8.dp),
+                            painter = painterResource(R.drawable.baseline_arrow_back_24),
+                            contentDescription = AddressBarActionOption.BACK.label
+                        )
+                    }
+
+                    IconButton(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        shape = RectangleShape,
+                        enabled = canGoForward,
+                        onClick = {
+                            WebViewNavigation.goForward(customLoadUrl, systemSettings)
+                            menuExpanded = false
+                        }
+                    ) {
+                        Icon(
+                            modifier = Modifier.padding(end = 8.dp),
+                            painter = painterResource(R.drawable.baseline_arrow_forward_24),
+                            contentDescription = AddressBarActionOption.FORWARD.label
+                        )
+                    }
+                }
+            },
             AddressBarActionOption.BACK to {
                 AddressBarMenuItem(
                     action = AddressBarActionOption.BACK,
-                    enabled = systemSettings.historyIndex > 0,
+                    enabled = canGoBack,
                     onClick = {
                         WebViewNavigation.goBack(customLoadUrl, systemSettings)
                         menuExpanded = false
@@ -116,7 +169,7 @@ fun AddressBar(
             AddressBarActionOption.FORWARD to {
                 AddressBarMenuItem(
                     action = AddressBarActionOption.FORWARD,
-                    enabled = systemSettings.historyIndex < (systemSettings.historyStack.size - 1),
+                    enabled = canGoForward,
                     onClick = {
                         WebViewNavigation.goForward(customLoadUrl, systemSettings)
                         menuExpanded = false
@@ -223,6 +276,7 @@ fun AddressBar(
         val enabledActions = remember {
             userSettings.addressBarActions.filter { action ->
                 when (action) {
+                    AddressBarActionOption.NAVIGATION -> userSettings.allowBackwardsNavigation
                     AddressBarActionOption.BACK -> userSettings.allowBackwardsNavigation
                     AddressBarActionOption.FORWARD -> userSettings.allowBackwardsNavigation
                     AddressBarActionOption.REFRESH -> userSettings.allowRefresh
