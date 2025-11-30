@@ -73,7 +73,7 @@ import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
 private fun ActionButton(
-    text: String,
+    action: KioskControlPanelActionOption,
     enabled: Boolean,
     onClick: () -> Unit,
     iconRes: Int,
@@ -86,13 +86,11 @@ private fun ActionButton(
     ) {
         Icon(
             painter = painterResource(iconRes),
-            contentDescription = text,
+            contentDescription = action.label,
             modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text,
-        )
+        Text(action.label)
     }
 }
 
@@ -123,7 +121,9 @@ fun KioskControlPanel(
     val toastRef = remember { mutableStateOf<Toast?>(null) }
     fun showToast(message: String) {
         toastRef.value?.cancel()
-        toastRef.value = Toast.makeText(context, message, Toast.LENGTH_SHORT).also { it.show() }
+        toastRef.value = Toast.makeText(
+            context, message, Toast.LENGTH_SHORT
+        ).also { it.show() }
     }
 
     var showDialog by remember { mutableStateOf(false) }
@@ -266,7 +266,12 @@ fun KioskControlPanel(
     val menuItems: Map<KioskControlPanelActionOption, @Composable () -> Unit> = remember(
         isSticky,
         isLocked,
+        systemSettings.historyIndex,
+        systemSettings.historyStack.size,
     ) {
+        val canGoForward = systemSettings.historyIndex < (systemSettings.historyStack.size - 1)
+        val canGoBack = systemSettings.historyIndex > 0
+
         mapOf(
             KioskControlPanelActionOption.NAVIGATION to {
                 Row(
@@ -278,7 +283,7 @@ fun KioskControlPanel(
                             WebViewNavigation.goBack(customLoadUrl, systemSettings)
                             showDialog = isSticky
                         },
-                        enabled = enableInteraction,
+                        enabled = enableInteraction && canGoBack,
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(
@@ -298,7 +303,7 @@ fun KioskControlPanel(
                             WebViewNavigation.goForward(customLoadUrl, systemSettings)
                             showDialog = isSticky
                         },
-                        enabled = enableInteraction,
+                        enabled = enableInteraction && canGoForward,
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(
@@ -314,9 +319,31 @@ fun KioskControlPanel(
                     }
                 }
             },
+            KioskControlPanelActionOption.BACK to {
+                ActionButton(
+                    action = KioskControlPanelActionOption.BACK,
+                    enabled = enableInteraction && canGoBack,
+                    onClick = {
+                        WebViewNavigation.goBack(customLoadUrl, systemSettings)
+                        showDialog = isSticky
+                    },
+                    iconRes = R.drawable.baseline_arrow_back_24
+                )
+            },
+            KioskControlPanelActionOption.FORWARD to {
+                ActionButton(
+                    action = KioskControlPanelActionOption.FORWARD,
+                    enabled = enableInteraction && canGoForward,
+                    onClick = {
+                        WebViewNavigation.goForward(customLoadUrl, systemSettings)
+                        showDialog = isSticky
+                    },
+                    iconRes = R.drawable.baseline_arrow_forward_24
+                )
+            },
             KioskControlPanelActionOption.HOME to {
                 ActionButton(
-                    text = "Home",
+                    action = KioskControlPanelActionOption.HOME,
                     enabled = enableInteraction,
                     onClick = {
                         WebViewNavigation.goHome(customLoadUrl, systemSettings, userSettings)
@@ -327,7 +354,7 @@ fun KioskControlPanel(
             },
             KioskControlPanelActionOption.REFRESH to {
                 ActionButton(
-                    text = "Refresh",
+                    action = KioskControlPanelActionOption.REFRESH,
                     enabled = enableInteraction,
                     onClick = {
                         WebViewNavigation.refresh(customLoadUrl, systemSettings, userSettings)
@@ -338,7 +365,7 @@ fun KioskControlPanel(
             },
             KioskControlPanelActionOption.HISTORY to {
                 ActionButton(
-                    text = "History",
+                    action = KioskControlPanelActionOption.HISTORY,
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = isSticky
@@ -349,7 +376,7 @@ fun KioskControlPanel(
             },
             KioskControlPanelActionOption.BOOKMARK to {
                 ActionButton(
-                    text = "Bookmark",
+                    action = KioskControlPanelActionOption.BOOKMARK,
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = isSticky
@@ -360,7 +387,7 @@ fun KioskControlPanel(
             },
             KioskControlPanelActionOption.FILES to {
                 ActionButton(
-                    text = "Files",
+                    action = KioskControlPanelActionOption.FILES,
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = isSticky
@@ -369,20 +396,31 @@ fun KioskControlPanel(
                     iconRes = R.drawable.outline_folder_24
                 )
             },
-            KioskControlPanelActionOption.LOCK to {
+            KioskControlPanelActionOption.SETTINGS to {
                 ActionButton(
-                    text = "Lock",
+                    action = KioskControlPanelActionOption.SETTINGS,
                     enabled = enableInteraction,
                     onClick = {
-                        tryLockTask(activity, ::showToast)
+                        showDialog = false
+                        navController.navigate(Screen.Settings.route)
+                    },
+                    iconRes = R.drawable.baseline_settings_24
+                )
+            },
+            KioskControlPanelActionOption.LOCK to {
+                ActionButton(
+                    action = KioskControlPanelActionOption.LOCK,
+                    enabled = enableInteraction,
+                    onClick = {
                         showDialog = isSticky
+                        tryLockTask(activity, ::showToast)
                     },
                     iconRes = R.drawable.baseline_lock_24
                 )
             },
             KioskControlPanelActionOption.UNLOCK to {
                 ActionButton(
-                    text = "Unlock",
+                    action = KioskControlPanelActionOption.UNLOCK,
                     enabled = enableInteraction,
                     onClick = {
                         activity?.let {
@@ -392,17 +430,6 @@ fun KioskControlPanel(
                     iconRes = R.drawable.baseline_lock_open_24
                 )
             },
-            KioskControlPanelActionOption.SETTINGS to {
-                ActionButton(
-                    text = "Settings",
-                    enabled = enableInteraction,
-                    onClick = {
-                        showDialog = false
-                        navController.navigate(Screen.Settings.route)
-                    },
-                    iconRes = R.drawable.baseline_settings_24
-                )
-            }
         )
     }
 
@@ -468,6 +495,8 @@ fun KioskControlPanel(
                         userSettings.kioskControlPanelActions.forEach { action ->
                             val include = when (action) {
                                 KioskControlPanelActionOption.NAVIGATION -> userSettings.allowBackwardsNavigation
+                                KioskControlPanelActionOption.BACK -> userSettings.allowBackwardsNavigation
+                                KioskControlPanelActionOption.FORWARD -> userSettings.allowBackwardsNavigation
                                 KioskControlPanelActionOption.HOME -> userSettings.allowGoHome
                                 KioskControlPanelActionOption.REFRESH -> userSettings.allowRefresh
                                 KioskControlPanelActionOption.HISTORY -> userSettings.allowHistoryAccess

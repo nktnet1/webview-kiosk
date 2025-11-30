@@ -4,6 +4,8 @@ import org.json.JSONArray
 
 enum class KioskControlPanelActionOption(val label: String) {
     NAVIGATION("Navigation"),
+    BACK("Back"),
+    FORWARD("Forward"),
     REFRESH("Refresh"),
     HOME("Home"),
     HISTORY("History"),
