@@ -295,6 +295,7 @@ fun WebviewScreen(navController: NavController) {
                         ComposeView(ctx).apply {
                             setContent {
                                 AddressBar(
+                                    navController = navController,
                                     urlBarText = urlBarText,
                                     onUrlBarTextChange = { urlBarText = it },
                                     hasFocus = addressBarHasFocus,

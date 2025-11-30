@@ -123,7 +123,9 @@ fun KioskControlPanel(
     val toastRef = remember { mutableStateOf<Toast?>(null) }
     fun showToast(message: String) {
         toastRef.value?.cancel()
-        toastRef.value = Toast.makeText(context, message, Toast.LENGTH_SHORT).also { it.show() }
+        toastRef.value = Toast.makeText(
+            context, message, Toast.LENGTH_SHORT
+        ).also { it.show() }
     }
 
     var showDialog by remember { mutableStateOf(false) }
@@ -369,13 +371,24 @@ fun KioskControlPanel(
                     iconRes = R.drawable.outline_folder_24
                 )
             },
+            KioskControlPanelActionOption.SETTINGS to {
+                ActionButton(
+                    text = "Settings",
+                    enabled = enableInteraction,
+                    onClick = {
+                        showDialog = false
+                        navController.navigate(Screen.Settings.route)
+                    },
+                    iconRes = R.drawable.baseline_settings_24
+                )
+            },
             KioskControlPanelActionOption.LOCK to {
                 ActionButton(
                     text = "Lock",
                     enabled = enableInteraction,
                     onClick = {
-                        tryLockTask(activity, ::showToast)
                         showDialog = isSticky
+                        tryLockTask(activity, ::showToast)
                     },
                     iconRes = R.drawable.baseline_lock_24
                 )
@@ -392,17 +405,6 @@ fun KioskControlPanel(
                     iconRes = R.drawable.baseline_lock_open_24
                 )
             },
-            KioskControlPanelActionOption.SETTINGS to {
-                ActionButton(
-                    text = "Settings",
-                    enabled = enableInteraction,
-                    onClick = {
-                        showDialog = false
-                        navController.navigate(Screen.Settings.route)
-                    },
-                    iconRes = R.drawable.baseline_settings_24
-                )
-            }
         )
     }
 

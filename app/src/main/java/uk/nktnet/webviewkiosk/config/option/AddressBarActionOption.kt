@@ -10,7 +10,10 @@ enum class AddressBarActionOption(val label: String) {
     HOME("Home"),
     HISTORY("History"),
     BOOKMARK("Bookmark"),
-    FILES("Files");
+    FILES("Files"),
+    SETTINGS("Settings"),
+    LOCK("Lock"),
+    UNLOCK("Unlock");
 
     companion object {
         fun itemFromString(value: String?): AddressBarActionOption? {

@@ -1,5 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.components.webview
 
+import android.widget.Toast
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -20,15 +22,20 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.AddressBarActionOption
 import uk.nktnet.webviewkiosk.config.option.WebViewInset
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
+import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
+import uk.nktnet.webviewkiosk.utils.tryLockTask
+import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
@@ -53,6 +60,7 @@ private fun AddressBarMenuItem(
 
 @Composable
 fun AddressBar(
+    navController: NavController,
     urlBarText: TextFieldValue,
     onUrlBarTextChange: (TextFieldValue) -> Unit,
     hasFocus: Boolean,
@@ -61,6 +69,7 @@ fun AddressBar(
     customLoadUrl: (newUrl: String) -> Unit,
 ) {
     val context = LocalContext.current
+    val activity = LocalActivity.current
     val focusManager = LocalFocusManager.current
 
     val userSettings = remember { UserSettings(context) }
@@ -73,6 +82,14 @@ fun AddressBar(
     var allowFocus by remember { mutableStateOf(false) }
 
     val isLocked by LockStateSingleton.isLocked
+
+    val toastRef = remember { mutableStateOf<Toast?>(null) }
+    fun showToast(message: String) {
+        toastRef.value?.cancel()
+        toastRef.value = Toast.makeText(
+            context, message, Toast.LENGTH_SHORT
+        ).also { it.show() }
+    }
 
     val statusBarInset = WindowInsets.statusBars
     val addressBarInset = remember (isLocked, statusBarInset) {
@@ -101,8 +118,17 @@ fun AddressBar(
         }
     }
 
+    LaunchedEffect(Unit) {
+        WaitingForUnlockStateSingleton.unlockSuccess.collect {
+            if (menuExpanded) {
+                menuExpanded = false
+            }
+        }
+    }
+
     val menuItems: Map<AddressBarActionOption, @Composable () -> Unit> = remember(
-        systemSettings.historyIndex
+        systemSettings.historyIndex,
+        isLocked,
     ) {
         val canGoForward = systemSettings.historyIndex < (systemSettings.historyStack.size - 1)
         val canGoBack = systemSettings.historyIndex > 0
@@ -226,7 +252,39 @@ fun AddressBar(
                     },
                     iconRes = R.drawable.outline_folder_24,
                 )
-            }
+            },
+            AddressBarActionOption.SETTINGS to {
+                AddressBarMenuItem(
+                    action = AddressBarActionOption.SETTINGS,
+                    onClick = {
+                        navController.navigate(Screen.Settings.route)
+                        menuExpanded = false
+                    },
+                    iconRes = R.drawable.baseline_settings_24,
+                )
+            },
+            AddressBarActionOption.LOCK to {
+                AddressBarMenuItem(
+                    action = AddressBarActionOption.LOCK,
+                    onClick = {
+                        tryLockTask(activity, ::showToast)
+                        menuExpanded = false
+                    },
+                    iconRes = R.drawable.baseline_lock_24,
+                )
+            },
+            AddressBarActionOption.UNLOCK to {
+                AddressBarMenuItem(
+                    action = AddressBarActionOption.UNLOCK,
+                    onClick = {
+                        activity?.let {
+                            unlockWithAuthIfRequired(activity, ::showToast)
+                        }
+                        menuExpanded = false
+                    },
+                    iconRes = R.drawable.baseline_lock_open_24,
+                )
+            },
         )
     }
 
@@ -273,7 +331,7 @@ fun AddressBar(
             }
         )
 
-        val enabledActions = remember {
+        val enabledActions = remember(userSettings, isLocked) {
             userSettings.addressBarActions.filter { action ->
                 when (action) {
                     AddressBarActionOption.NAVIGATION -> userSettings.allowBackwardsNavigation
@@ -284,6 +342,9 @@ fun AddressBar(
                     AddressBarActionOption.HISTORY -> userSettings.allowHistoryAccess
                     AddressBarActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
                     AddressBarActionOption.FILES -> userSettings.allowLocalFiles
+                    AddressBarActionOption.SETTINGS -> !isLocked
+                    AddressBarActionOption.LOCK -> !isLocked
+                    AddressBarActionOption.UNLOCK -> isLocked
                 }
             }
         }
