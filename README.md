@@ -27,23 +27,27 @@
 Webview Kiosk is a free and open-source Android application for secure,
 kiosk-style web browsing.
 
+It can function as digital signage, a kid-friendly restricted browser, an
+immersive web reader, an interactive signup form, a home assistant dashboard,
+or simply a wall clock.
+
 Designed for small businesses and device owners who are looking for a simple
 and standalone Kiosk solution.
 
 ## Key Features
 
-- **Lock Task Mode (Pin):** prevent access to your device's home screen, apps and status bar
-- **Secure Settings:** configurations are protected by biometrics, device credentials or custom password
-- **URL Filtering:** use regular expression to control web access through blacklisting and whitelisting
-- **Export/Import:** allows for the backup and restore of user settings and configurations
-- **Local files:** display an image, audio, video, or HTML file in kiosk mode from your device
-- **Managed Configurations:** for fully-managed (company-owned) devices, settings can be set
+- <b>Lock Task Mode (Pin):</b> prevent access to your device's home screen, apps and status bar
+- <b>Secure Settings:</b> configurations are protected by biometrics, device credentials or custom password
+- <b>URL Filtering:</b> use regular expression to control web access through blacklisting and whitelisting
+- <b>Export/Import:</b> allows for the backup and restore of user settings and configurations
+- <b>Local files:</b> display an image, audio, video, or HTML file in kiosk mode from your device
+- <b>Managed Configurations:</b> for fully-managed (company-owned) devices, settings can be set
   and restricted remotely through an MDM/EMM provider
 
 ## Additional Permissions
 
-The Android permissions below are **optional**, and their corresponding features
-are **disabled in the app settings by default**:
+The Android permissions below are <b>optional</b> and their corresponding features
+are <b>disabled in the app settings by default</b>
 
 - CAMERA
 - RECORD_AUDIO
@@ -58,7 +62,7 @@ These permissions will not be used for any other purpose.
 
 From [v0.17.0](https://github.com/nktnet1/webview-kiosk/releases/tag/v0.17.0),
 Google Play's [automatic protection](https://support.google.com/googleplay/android-developer/answer/10183279)
-has been intentionally **disabled** to allow installations from the Aurora Store.
+has been intentionally <b>disabled</b> to allow installations from the Aurora Store.
 
 From [v0.15.7](https://github.com/nktnet1/webview-kiosk/releases/tag/v0.15.7),
 the package name for all installation sources except the Google Play Store has
