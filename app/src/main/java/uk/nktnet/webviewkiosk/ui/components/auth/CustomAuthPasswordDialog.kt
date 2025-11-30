@@ -116,7 +116,10 @@ fun CustomAuthPasswordDialog() {
                             imeAction = ImeAction.Done
                         )
                     } else {
-                        KeyboardOptions.Default.copy(imeAction = ImeAction.Done)
+                        KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done
+                        )
                     },
                     keyboardActions = KeyboardActions(
                         onDone = { handleUnlock() },
