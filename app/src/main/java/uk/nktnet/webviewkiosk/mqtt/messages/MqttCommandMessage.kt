@@ -13,7 +13,7 @@ sealed interface MqttCommandMessage {
 
 @Serializable
 @SerialName("go_back")
-data class MqttGoBackMqttCommand(
+data class MqttGoBackCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
 ) : MqttCommandMessage {
@@ -22,7 +22,7 @@ data class MqttGoBackMqttCommand(
 
 @Serializable
 @SerialName("go_forward")
-data class MqttGoForwardMqttCommand(
+data class MqttGoForwardCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
 ) : MqttCommandMessage {
@@ -31,7 +31,7 @@ data class MqttGoForwardMqttCommand(
 
 @Serializable
 @SerialName("go_home")
-data class MqttGoHomeMqttCommand(
+data class MqttGoHomeCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
 ) : MqttCommandMessage {
@@ -40,7 +40,7 @@ data class MqttGoHomeMqttCommand(
 
 @Serializable
 @SerialName("refresh")
-data class MqttRefreshMqttCommand(
+data class MqttRefreshCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
 ) : MqttCommandMessage {
@@ -49,7 +49,7 @@ data class MqttRefreshMqttCommand(
 
 @Serializable
 @SerialName("go_to_url")
-data class MqttGoToUrlMqttCommand(
+data class MqttGoToUrlCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     val data: UrlData,
@@ -63,7 +63,7 @@ data class MqttGoToUrlMqttCommand(
 
 @Serializable
 @SerialName("search")
-data class MqttSearchMqttCommand(
+data class MqttSearchCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     val data: QueryData,
@@ -95,7 +95,7 @@ data class MqttInteractMqttCommand(
 
 @Serializable
 @SerialName("lock")
-data class MqttLockMqttCommand(
+data class MqttLockCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
 ) : MqttCommandMessage {
@@ -104,7 +104,7 @@ data class MqttLockMqttCommand(
 
 @Serializable
 @SerialName("unlock")
-data class MqttUnlockMqttCommand(
+data class MqttUnlockCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
 ) : MqttCommandMessage {

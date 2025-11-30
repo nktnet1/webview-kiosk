@@ -36,15 +36,15 @@ import uk.nktnet.webviewkiosk.handlers.backbutton.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.ResetOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.KioskControlPanel
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttErrorCommand
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttGoBackMqttCommand
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttGoForwardMqttCommand
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttLockMqttCommand
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttGoHomeMqttCommand
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttGoToUrlMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttGoBackCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttGoForwardCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttLockCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttGoHomeCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttGoToUrlCommand
 import uk.nktnet.webviewkiosk.mqtt.MqttManager
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttRefreshMqttCommand
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttUnlockMqttCommand
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttSearchMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttRefreshCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttUnlockCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttSearchCommand
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
 import uk.nktnet.webviewkiosk.ui.components.webview.FloatingToolbar
@@ -448,14 +448,14 @@ fun WebviewScreen(navController: NavController) {
     LaunchedEffect(Unit) {
         MqttManager.commands.collect { commandMessage ->
             when (commandMessage) {
-                is MqttGoBackMqttCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)
-                is MqttGoForwardMqttCommand -> WebViewNavigation.goForward(::customLoadUrl, systemSettings)
-                is MqttGoHomeMqttCommand -> WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings)
-                is MqttRefreshMqttCommand -> WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
-                is MqttGoToUrlMqttCommand -> customLoadUrl(commandMessage.data.url)
-                is MqttSearchMqttCommand -> addressBarSearch(commandMessage.data.query)
-                is MqttLockMqttCommand -> tryLockTask(activity)
-                is MqttUnlockMqttCommand -> tryUnlockTask(activity)
+                is MqttGoBackCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)
+                is MqttGoForwardCommand -> WebViewNavigation.goForward(::customLoadUrl, systemSettings)
+                is MqttGoHomeCommand -> WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings)
+                is MqttRefreshCommand -> WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
+                is MqttGoToUrlCommand -> customLoadUrl(commandMessage.data.url)
+                is MqttSearchCommand -> addressBarSearch(commandMessage.data.query)
+                is MqttLockCommand -> tryLockTask(activity)
+                is MqttUnlockCommand -> tryUnlockTask(activity)
                 is MqttErrorCommand -> showToast("Received invalid MQTT command. See debug logs in MQTT settings.")
                 else -> Unit
             }
