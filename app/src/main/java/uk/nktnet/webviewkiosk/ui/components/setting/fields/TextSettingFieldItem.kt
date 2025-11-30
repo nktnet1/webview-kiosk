@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
@@ -47,11 +49,6 @@ fun TextSettingFieldItem(
     var value by remember { mutableStateOf(initialValue) }
     var draftValue by remember { mutableStateOf(initialValue) }
     var draftError by remember { mutableStateOf(false) }
-    val visualTransformation = if (isPassword) {
-        PasswordVisualTransformation()
-    } else {
-        VisualTransformation.None
-    }
 
     GenericSettingFieldItem(
         label = label,
@@ -112,7 +109,18 @@ fun TextSettingFieldItem(
                     },
                     enabled = !restricted,
                     readOnly = readOnly,
-                    visualTransformation = visualTransformation,
+                    visualTransformation = if (isPassword) {
+                        PasswordVisualTransformation()
+                    } else {
+                        VisualTransformation.None
+                    },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = if (isPassword) {
+                            KeyboardType.Password
+                        } else {
+                            KeyboardType.Text
+                        }
+                    ),
                     onValueChange = {
                         draftValue = it
                         draftError = !validator(it)
