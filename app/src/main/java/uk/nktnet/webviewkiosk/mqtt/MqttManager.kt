@@ -61,6 +61,7 @@ import java.util.Date
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.jvm.optionals.getOrNull
 import kotlin.text.Charsets.UTF_8
 
 data class MqttLogEntry(
@@ -231,8 +232,11 @@ object MqttManager {
             .applyWillPublish()
 
         return builder
-            .addConnectedListener {
-                addDebugLog("connect success")
+            .addConnectedListener { connectedListener ->
+                addDebugLog(
+                    "connect success",
+                    "Client ID: ${connectedListener.clientConfig.clientIdentifier.getOrNull()}"
+                )
                 subscribeToTopics()
             }
             .addDisconnectedListener { context ->

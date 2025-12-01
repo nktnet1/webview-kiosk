@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.toClipEntry
 import kotlinx.coroutines.launch
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.MqttVariableNameOption
@@ -28,6 +29,10 @@ fun MqttClientIdSetting() {
         label = "Client ID",
         infoText = """
             A unique identifier for this client when connecting to the MQTT broker.
+            
+            Leave this field blank if you want the broker server to generate a
+            client ID for ${Constants.APP_NAME}.
+
             Supports global variables such as APP_INSTANCE_ID and USERNAME, which
             you can use like:
             - wk-${'$'}{${MqttVariableNameOption.APP_INSTANCE_ID.name}}
