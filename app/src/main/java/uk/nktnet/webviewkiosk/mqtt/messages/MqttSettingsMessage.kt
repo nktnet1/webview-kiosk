@@ -8,5 +8,6 @@ data class MqttSettingsMessage(
     val refresh: Boolean = true,
     val showToast: Boolean = true,
     val targetInstances: Set<String>? = null,
+    val targetUsernames: Set<String>? = null,
     val data: String,
 )

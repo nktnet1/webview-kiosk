@@ -538,10 +538,11 @@ object MqttManager {
                         command.messageId
                     )
 
-                    val targets = command.targetInstances
+                    val targetInstances = command.targetInstances
+                    val targetUsernames = command.targetUsernames
                     if (
-                        targets.isNullOrEmpty()
-                        || targets.contains(config.appInstanceId)
+                        (targetInstances.isNullOrEmpty() || targetInstances.contains(config.appInstanceId))
+                        && (targetUsernames.isNullOrEmpty() || targetUsernames.contains(config.username))
                     ) {
                         addDebugLog(
                             "command received",
@@ -578,14 +579,22 @@ object MqttManager {
                     showToast = json["showToast"]?.jsonPrimitive?.booleanOrNull ?: true,
                     targetInstances = runCatching {
                         json["targetInstances"]?.jsonArray?.mapNotNull {
-                            it.jsonPrimitive.contentOrNull }?.toSet()
-                        }.getOrNull(),
+                            it.jsonPrimitive.contentOrNull
+                        }?.toSet()
+                    }.getOrNull(),
+                    targetUsernames = runCatching {
+                        json["targetUsernames"]?.jsonArray?.mapNotNull {
+                            it.jsonPrimitive.contentOrNull
+                        }?.toSet()
+                    }.getOrNull(),
                     data = json["data"]?.toString() ?: "{}"
                 )
 
+                val targetInstances = settingsMessage.targetInstances
+                val targetUsernames = settingsMessage.targetUsernames
                 if (
-                    settingsMessage.targetInstances.isNullOrEmpty()
-                    || settingsMessage.targetInstances.contains(config.appInstanceId)
+                    (targetInstances.isNullOrEmpty() || targetInstances.contains(config.appInstanceId))
+                    && (targetUsernames.isNullOrEmpty() || targetUsernames.contains(config.username))
                 ) {
                     addDebugLog(
                         "settings received",
@@ -622,10 +631,11 @@ object MqttManager {
                         val bytes = ByteArray(buf.remaining()).also { buf.get(it) }
                         request.correlationData = String(bytes, UTF_8)
                     }
-                    val targets = request.targetInstances
+                    val targetInstances = request.targetInstances
+                    val targetUsernames = request.targetUsernames
                     if (
-                        targets.isNullOrEmpty()
-                        || targets.contains(config.appInstanceId)
+                        (targetInstances.isNullOrEmpty() || targetInstances.contains(config.appInstanceId))
+                        && (targetUsernames.isNullOrEmpty() || targetUsernames.contains(config.username))
                     ) {
                         addDebugLog(
                             "request received",

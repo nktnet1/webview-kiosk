@@ -10,6 +10,7 @@ import uk.nktnet.webviewkiosk.utils.BaseJson
 sealed interface MqttRequestMessage {
     val messageId: String?
     val targetInstances: Set<String>?
+    val targetUsernames: Set<String>?
     var responseTopic: String?
     var correlationData: String?
 }
@@ -19,6 +20,7 @@ sealed interface MqttRequestMessage {
 data class MqttStatusRequest(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
     override var responseTopic: String? = null,
     override var correlationData: String? = null,
 ) : MqttRequestMessage {
@@ -30,6 +32,7 @@ data class MqttStatusRequest(
 data class MqttSettingsRequest(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
     override var responseTopic: String? = null,
     override var correlationData: String? = null,
     val data: Array<JsonElement> = emptyArray(),
@@ -51,6 +54,7 @@ data class MqttSettingsRequest(
 data class MqttSystemInfoRequest(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
     override var responseTopic: String? = null,
     override var correlationData: String? = null,
 ) : MqttRequestMessage {
@@ -62,6 +66,7 @@ data class MqttSystemInfoRequest(
 data class MqttErrorRequest(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
     override var responseTopic: String? = null,
     override var correlationData: String? = null,
     val error: String = "unknown request",

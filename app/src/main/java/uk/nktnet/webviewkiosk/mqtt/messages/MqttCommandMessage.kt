@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.utils.BaseJson
 sealed interface MqttCommandMessage {
     val messageId: String?
     val targetInstances: Set<String>?
+    val targetUsernames: Set<String>?
 }
 
 @Serializable
@@ -16,6 +17,7 @@ sealed interface MqttCommandMessage {
 data class MqttGoBackCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
     override fun toString() = "Go Back"
 }
@@ -25,6 +27,7 @@ data class MqttGoBackCommand(
 data class MqttGoForwardCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
     override fun toString() = "Go Forward"
 }
@@ -34,6 +37,7 @@ data class MqttGoForwardCommand(
 data class MqttGoHomeCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
     override fun toString() = "Go Home"
 }
@@ -43,6 +47,7 @@ data class MqttGoHomeCommand(
 data class MqttRefreshCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
     override fun toString() = "Refresh"
 }
@@ -52,6 +57,7 @@ data class MqttRefreshCommand(
 data class MqttGoToUrlCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
     val data: UrlData,
 ) : MqttCommandMessage {
     @Serializable
@@ -66,6 +72,7 @@ data class MqttGoToUrlCommand(
 data class MqttSearchCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
     val data: QueryData,
 ) : MqttCommandMessage {
     @Serializable
@@ -80,6 +87,7 @@ data class MqttSearchCommand(
 data class MqttClearHistoryMqttCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
     override fun toString() = "Clear History"
 }
@@ -89,6 +97,7 @@ data class MqttClearHistoryMqttCommand(
 data class MqttInteractMqttCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
     override fun toString() = "interact"
 }
@@ -98,6 +107,7 @@ data class MqttInteractMqttCommand(
 data class MqttLockCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
     override fun toString() = "Lock"
 }
@@ -107,6 +117,7 @@ data class MqttLockCommand(
 data class MqttUnlockCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
     override fun toString() = "Unlock"
 }
@@ -116,6 +127,7 @@ data class MqttUnlockCommand(
 data class MqttReconnectMqttCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
     override fun toString() = "Reconnect"
 }
@@ -125,6 +137,7 @@ data class MqttReconnectMqttCommand(
 data class MqttErrorCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
     val error: String = "unknown command",
 ) : MqttCommandMessage {
     override fun toString() = "Command Error: $error"
