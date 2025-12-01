@@ -2,8 +2,10 @@ package uk.nktnet.webviewkiosk.ui.components.webview
 
 import android.widget.Toast
 import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
@@ -15,10 +17,12 @@ import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -137,8 +141,7 @@ fun AddressBar(
         mapOf(
             AddressBarActionOption.NAVIGATION to {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(
                         4.dp,
@@ -293,25 +296,25 @@ fun AddressBar(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .windowInsetsPadding(addressBarInset)
+            .padding(
+                horizontal = 8.dp,
+                vertical = 6.dp
+            )
             .fillMaxWidth()
             .focusProperties { canFocus = allowFocus }
-            .height(70.dp)
-            .padding(horizontal = 8.dp)
     ) {
-        OutlinedTextField(
+        BasicTextField(
             value = urlBarText,
             onValueChange = { onUrlBarTextChange(it) },
             singleLine = true,
+            textStyle = MaterialTheme.typography.bodyMedium.copy(
+                color = MaterialTheme.colorScheme.onSurface
+            ),
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
                 .onFocusChanged(onFocusChanged)
                 .focusProperties { canFocus = allowFocus },
-            shape = RoundedCornerShape(percent = 50),
-            colors = OutlinedTextFieldDefaults.colors(
-                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                focusedContainerColor = MaterialTheme.colorScheme.surface,
-            ),
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Search,
             ),
@@ -320,14 +323,47 @@ fun AddressBar(
                     addressBarSearch(urlBarText.text)
                 }
             }),
-            trailingIcon = {
-                IconButton(
-                    onClick = { addressBarSearch(urlBarText.text) }
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            decorationBox = { innerTextField ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(45.dp)
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            RoundedCornerShape(50)
+                        )
+                        .padding(start = 16.dp, end = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.baseline_search_24),
-                        contentDescription = "Go"
-                    )
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(end = 0.dp),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        if (urlBarText.text.isEmpty()) {
+                            Text(
+                                text = "Search",
+                                style = LocalTextStyle.current.copy(
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                                    fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                                    fontStyle = FontStyle.Italic,
+                                )
+                            )
+                        }
+                        innerTextField()
+                    }
+
+                    IconButton(
+                        onClick = { addressBarSearch(urlBarText.text) },
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_search_24),
+                            contentDescription = "Go"
+                        )
+                    }
                 }
             }
         )
@@ -362,7 +398,7 @@ fun AddressBar(
                     },
                     modifier = Modifier
                         .padding(0.dp)
-                        .size(width = 24.dp, height = 80.dp)
+                        .width(24.dp)
                         .wrapContentSize(Alignment.Center)
                 ) {
                     Icon(
