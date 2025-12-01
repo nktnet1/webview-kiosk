@@ -285,7 +285,22 @@ object MqttManager {
             addDebugLog("connect failed", "client is not initialised")
             return
         }
-        addDebugLog("connect pending", "Attempting to connect...")
+
+        val websocketInfo = if (config.useWebSocket) {
+            "yes (path: ${config.webSocketServerPath})"
+        } else {
+            "no"
+        }
+        addDebugLog(
+            "connect pending...",
+            """
+                host: ${config.serverHost}
+                port: ${config.serverPort}
+                tls: ${if (config.useTls) "yes" else "no"}
+                websocket: $websocketInfo
+                username: ${config.username}
+            """.trimIndent()
+        )
 
         var connection = c.connectWith()
             .cleanStart(config.cleanStart)
