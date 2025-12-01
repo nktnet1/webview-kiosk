@@ -1,5 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.components.webview
 
+import android.widget.Toast
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -12,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
@@ -19,15 +22,20 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.AddressBarActionOption
 import uk.nktnet.webviewkiosk.config.option.WebViewInset
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
+import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
+import uk.nktnet.webviewkiosk.utils.tryLockTask
+import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
@@ -52,6 +60,7 @@ private fun AddressBarMenuItem(
 
 @Composable
 fun AddressBar(
+    navController: NavController,
     urlBarText: TextFieldValue,
     onUrlBarTextChange: (TextFieldValue) -> Unit,
     hasFocus: Boolean,
@@ -60,6 +69,7 @@ fun AddressBar(
     customLoadUrl: (newUrl: String) -> Unit,
 ) {
     val context = LocalContext.current
+    val activity = LocalActivity.current
     val focusManager = LocalFocusManager.current
 
     val userSettings = remember { UserSettings(context) }
@@ -72,6 +82,14 @@ fun AddressBar(
     var allowFocus by remember { mutableStateOf(false) }
 
     val isLocked by LockStateSingleton.isLocked
+
+    val toastRef = remember { mutableStateOf<Toast?>(null) }
+    fun showToast(message: String) {
+        toastRef.value?.cancel()
+        toastRef.value = Toast.makeText(
+            context, message, Toast.LENGTH_SHORT
+        ).also { it.show() }
+    }
 
     val statusBarInset = WindowInsets.statusBars
     val addressBarInset = remember (isLocked, statusBarInset) {
@@ -100,12 +118,74 @@ fun AddressBar(
         }
     }
 
-    val menuItems: Map<AddressBarActionOption, @Composable () -> Unit> = remember {
+    LaunchedEffect(Unit) {
+        WaitingForUnlockStateSingleton.unlockSuccess.collect {
+            if (menuExpanded) {
+                menuExpanded = false
+            }
+        }
+    }
+
+    val menuItems: Map<AddressBarActionOption, @Composable () -> Unit> = remember(
+        isLocked,
+        systemSettings.historyIndex,
+        systemSettings.historyStack.size,
+    ) {
+        val canGoForward = systemSettings.historyIndex < (systemSettings.historyStack.size - 1)
+        val canGoBack = systemSettings.historyIndex > 0
+
         mapOf(
+            AddressBarActionOption.NAVIGATION to {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(
+                        4.dp,
+                        Alignment.CenterHorizontally
+                    )
+                ) {
+                    IconButton(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        enabled = canGoBack,
+                        shape = RectangleShape,
+                        onClick = {
+                            WebViewNavigation.goBack(customLoadUrl, systemSettings)
+                            menuExpanded = false
+                        }
+                    ) {
+                        Icon(
+                            modifier = Modifier.padding(start = 8.dp),
+                            painter = painterResource(R.drawable.baseline_arrow_back_24),
+                            contentDescription = AddressBarActionOption.BACK.label
+                        )
+                    }
+
+                    IconButton(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxHeight(),
+                        shape = RectangleShape,
+                        enabled = canGoForward,
+                        onClick = {
+                            WebViewNavigation.goForward(customLoadUrl, systemSettings)
+                            menuExpanded = false
+                        }
+                    ) {
+                        Icon(
+                            modifier = Modifier.padding(end = 8.dp),
+                            painter = painterResource(R.drawable.baseline_arrow_forward_24),
+                            contentDescription = AddressBarActionOption.FORWARD.label
+                        )
+                    }
+                }
+            },
             AddressBarActionOption.BACK to {
                 AddressBarMenuItem(
                     action = AddressBarActionOption.BACK,
-                    enabled = systemSettings.historyIndex > 0,
+                    enabled = canGoBack,
                     onClick = {
                         WebViewNavigation.goBack(customLoadUrl, systemSettings)
                         menuExpanded = false
@@ -116,7 +196,7 @@ fun AddressBar(
             AddressBarActionOption.FORWARD to {
                 AddressBarMenuItem(
                     action = AddressBarActionOption.FORWARD,
-                    enabled = systemSettings.historyIndex < (systemSettings.historyStack.size - 1),
+                    enabled = canGoForward,
                     onClick = {
                         WebViewNavigation.goForward(customLoadUrl, systemSettings)
                         menuExpanded = false
@@ -173,7 +253,39 @@ fun AddressBar(
                     },
                     iconRes = R.drawable.outline_folder_24,
                 )
-            }
+            },
+            AddressBarActionOption.SETTINGS to {
+                AddressBarMenuItem(
+                    action = AddressBarActionOption.SETTINGS,
+                    onClick = {
+                        navController.navigate(Screen.Settings.route)
+                        menuExpanded = false
+                    },
+                    iconRes = R.drawable.baseline_settings_24,
+                )
+            },
+            AddressBarActionOption.LOCK to {
+                AddressBarMenuItem(
+                    action = AddressBarActionOption.LOCK,
+                    onClick = {
+                        tryLockTask(activity, ::showToast)
+                        menuExpanded = false
+                    },
+                    iconRes = R.drawable.baseline_lock_24,
+                )
+            },
+            AddressBarActionOption.UNLOCK to {
+                AddressBarMenuItem(
+                    action = AddressBarActionOption.UNLOCK,
+                    onClick = {
+                        activity?.let {
+                            unlockWithAuthIfRequired(activity, ::showToast)
+                        }
+                        menuExpanded = false
+                    },
+                    iconRes = R.drawable.baseline_lock_open_24,
+                )
+            },
         )
     }
 
@@ -220,9 +332,10 @@ fun AddressBar(
             }
         )
 
-        val enabledActions = remember {
+        val enabledActions = remember(userSettings, isLocked) {
             userSettings.addressBarActions.filter { action ->
                 when (action) {
+                    AddressBarActionOption.NAVIGATION -> userSettings.allowBackwardsNavigation
                     AddressBarActionOption.BACK -> userSettings.allowBackwardsNavigation
                     AddressBarActionOption.FORWARD -> userSettings.allowBackwardsNavigation
                     AddressBarActionOption.REFRESH -> userSettings.allowRefresh
@@ -230,6 +343,9 @@ fun AddressBar(
                     AddressBarActionOption.HISTORY -> userSettings.allowHistoryAccess
                     AddressBarActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
                     AddressBarActionOption.FILES -> userSettings.allowLocalFiles
+                    AddressBarActionOption.SETTINGS -> !isLocked
+                    AddressBarActionOption.LOCK -> !isLocked
+                    AddressBarActionOption.UNLOCK -> isLocked
                 }
             }
         }

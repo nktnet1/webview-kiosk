@@ -3,13 +3,17 @@ package uk.nktnet.webviewkiosk.config.option
 import org.json.JSONArray
 
 enum class AddressBarActionOption(val label: String) {
+    NAVIGATION("Navigation"),
     BACK("Back"),
     FORWARD("Forward"),
     REFRESH("Refresh"),
     HOME("Home"),
     HISTORY("History"),
     BOOKMARK("Bookmark"),
-    FILES("Files");
+    FILES("Files"),
+    SETTINGS("Settings"),
+    LOCK("Lock"),
+    UNLOCK("Unlock");
 
     companion object {
         fun itemFromString(value: String?): AddressBarActionOption? {
