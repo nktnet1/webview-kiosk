@@ -1,6 +1,9 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.content.ClipData
+import android.widget.Toast
 import androidx.compose.foundation.border
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,6 +16,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalClipboard
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -20,6 +26,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.mqtt.MqttManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
@@ -30,14 +37,26 @@ import java.util.Locale
 
 @Composable
 fun SettingsMqttDebugScreen(navController: NavController) {
+    val context = LocalContext.current
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var ascending by remember { mutableStateOf(false) }
     val dateFormat = SimpleDateFormat("yyyy/MM/dd h:mm:ss a", Locale.getDefault())
+
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
 
     val logs = remember {
         mutableStateListOf<MqttLogEntry>().apply {
             addAll(MqttManager.debugLogHistory.asReversed())
         }
+    }
+
+    var toastRef: Toast? = null
+    val showToast: (String) -> Unit = { msg ->
+        toastRef?.cancel()
+        toastRef = Toast.makeText(
+            context, msg, Toast.LENGTH_SHORT
+        ).apply { show() }
     }
 
     LaunchedEffect(Unit) {
@@ -164,7 +183,25 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                         .weight(1f)
                 ) {
                     items(filteredLogs) { logEntry ->
-                        Column(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .combinedClickable(
+                                    onClick = {
+                                        showToast("Click and hold to copy message.")
+                                    },
+                                    onLongClick = {
+                                        scope.launch {
+                                            clipboard.setClipEntry(
+                                                ClipData.newPlainText(
+                                                    logEntry.tag,
+                                                    logEntry.message
+                                                ).toClipEntry()
+                                            )
+                                        }
+                                    }
+                                )
+                         ) {
                             Text(
                                 text = "${dateFormat.format(logEntry.timestamp)} - ${logEntry.tag}",
                                 style = MaterialTheme.typography.bodySmall.copy(
