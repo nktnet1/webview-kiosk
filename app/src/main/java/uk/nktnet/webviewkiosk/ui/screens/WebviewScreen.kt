@@ -27,6 +27,7 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.AddressBarModeOption
+import uk.nktnet.webviewkiosk.config.option.AddressBarPositionOption
 import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
 import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
 import uk.nktnet.webviewkiosk.handlers.DimScreenOnInactivityTimeoutHandler
@@ -279,35 +280,36 @@ fun WebviewScreen(navController: NavController) {
     cookieManager.setAcceptThirdPartyCookies(
         webView, userSettings.acceptThirdPartyCookies
     )
+
+    val addressBarView = @Composable {
+        AndroidView(
+            factory = { ctx ->
+                ComposeView(ctx).apply {
+                    setContent {
+                        AddressBar(
+                            navController = navController,
+                            urlBarText = urlBarText,
+                            onUrlBarTextChange = { urlBarText = it },
+                            hasFocus = addressBarHasFocus,
+                            onFocusChanged = { addressBarHasFocus = it.isFocused },
+                            addressBarSearch = addressBarSearch,
+                            customLoadUrl = ::customLoadUrl
+                        )
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .windowInsetsPadding(userSettings.webViewInset.toWindowInsets())
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            if (showAddressBar) {
-                /**
-                 * Wrap in AndroidView to avoid breaking autofill (e.g. Bitwarden/Proton Pass)
-                 * in the WebView further below. Unsure why this is necessary.
-                 */
-                AndroidView(
-                    factory = { ctx ->
-                        ComposeView(ctx).apply {
-                            setContent {
-                                AddressBar(
-                                    navController = navController,
-                                    urlBarText = urlBarText,
-                                    onUrlBarTextChange = { urlBarText = it },
-                                    hasFocus = addressBarHasFocus,
-                                    onFocusChanged = { focusState -> addressBarHasFocus = focusState.isFocused },
-                                    addressBarSearch = addressBarSearch,
-                                    customLoadUrl = ::customLoadUrl,
-                                )
-                            }
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
+            if (showAddressBar && userSettings.addressBarPosition == AddressBarPositionOption.TOP) {
+                addressBarView()
             }
 
             Box(modifier = Modifier.weight(1f)) {
@@ -373,6 +375,10 @@ fun WebviewScreen(navController: NavController) {
                         modifier = Modifier.align(Alignment.TopStart)
                     )
                 }
+            }
+
+            if (showAddressBar && userSettings.addressBarPosition == AddressBarPositionOption.BOTTOM) {
+                addressBarView()
             }
         }
 
