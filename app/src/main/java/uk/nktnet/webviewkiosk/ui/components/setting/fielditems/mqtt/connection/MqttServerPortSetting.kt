@@ -20,8 +20,8 @@ fun MqttServerPortSetting() {
             Typically,
             - 1883 - MQTT (TCP)
             - 8883 - MQTTS (TCP with SSL/TLS)
-            - 80 - WS (Websocket, same port as HTTP)
-            - 443 - WSS (Websocket Secure, same port as HTTPS)
+            - 80 - WS (WebSocket, same port as HTTP)
+            - 443 - WSS (WebSocket Secure, same port as HTTPS)
         """.trimIndent(),
         initialValue = userSettings.mqttServerPort,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.SERVER_PORT),
