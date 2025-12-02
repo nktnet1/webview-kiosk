@@ -1101,7 +1101,7 @@ class UserSettings(val context: Context) {
             mqttAutomaticReconnect = json.optBoolean(UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT, mqttAutomaticReconnect)
 
             mqttUseWebSocket = json.optBoolean(UserSettingsKeys.Mqtt.Connection.USE_WEBSOCKET, mqttUseWebSocket)
-            mqttWebSocketServerPath = json.optString(UserSettingsKeys.Mqtt.Connection.SERVER_HOST, mqttServerHost)
+            mqttWebSocketServerPath = json.optString(UserSettingsKeys.Mqtt.Connection.WEBSOCKET_SERVER_PATH, mqttServerHost)
 
             mqttPublishEventTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
             mqttPublishEventQos = MqttQosOption.fromString(
