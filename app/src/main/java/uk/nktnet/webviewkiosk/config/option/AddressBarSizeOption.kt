@@ -17,7 +17,7 @@ enum class AddressBarSizeOption(
     EXTRA_SMALL(
         label = "Extra Small",
         heightDp = 35.dp,
-        paddingDp = 4.dp,
+        paddingDp = 3.dp,
         fontSizeSp = 12.sp,
         moreVertWidthDp = 20.dp,
         searchIconSizeDp = 30.dp,
