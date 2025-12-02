@@ -10,28 +10,54 @@ enum class AddressBarSizeOption(
     val heightDp: Dp,
     val paddingDp: Dp,
     val fontSizeSp: TextUnit,
-    val moreVertWidth: Dp,
+    val moreVertWidthDp: Dp,
+    val searchIconSizeDp: Dp,
+    val searchIconPaddingDp: Dp,
 ) {
+    EXTRA_SMALL(
+        label = "Extra Small",
+        heightDp = 35.dp,
+        paddingDp = 4.dp,
+        fontSizeSp = 12.sp,
+        moreVertWidthDp = 20.dp,
+        searchIconSizeDp = 30.dp,
+        searchIconPaddingDp = 4.dp,
+    ),
     SMALL(
-        "Small",
-        45.dp,
-        6.dp,
-        14.sp,
-        24.dp,
+        label = "Small",
+        heightDp = 45.dp,
+        paddingDp = 6.dp,
+        fontSizeSp = 14.sp,
+        moreVertWidthDp = 24.dp,
+        searchIconSizeDp = 35.dp,
+        searchIconPaddingDp = 6.dp,
     ),
     MEDIUM(
-        "Medium",
-        55.dp,
-        8.dp,
-        16.sp,
-        28.dp,
+        label = "Medium",
+        heightDp = 55.dp,
+        paddingDp = 8.dp,
+        fontSizeSp = 16.sp,
+        moreVertWidthDp = 26.dp,
+        searchIconSizeDp = 40.dp,
+        searchIconPaddingDp = 8.dp,
     ),
     LARGE(
-        "Large",
-        65.dp,
-        10.dp,
-        18.sp,
-        32.dp,
+        label = "Large",
+        heightDp = 65.dp,
+        paddingDp = 10.dp,
+        fontSizeSp = 20.sp,
+        moreVertWidthDp = 32.dp,
+        searchIconSizeDp = 45.dp,
+        searchIconPaddingDp = 10.dp,
+    ),
+    EXTRA_LARGE(
+        label = "Extra Large",
+        heightDp = 75.dp,
+        paddingDp = 12.dp,
+        fontSizeSp = 26.sp,
+        moreVertWidthDp = 36.dp,
+        searchIconSizeDp = 56.dp,
+        searchIconPaddingDp = 12.dp,
     );
 
     companion object {
@@ -39,7 +65,7 @@ enum class AddressBarSizeOption(
             return entries.find {
                 it.name.equals(value, true)
                 || it.label.equals(value, true)
-            } ?: SMALL
+            } ?: MEDIUM
         }
     }
 }

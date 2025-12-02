@@ -339,11 +339,16 @@ fun AddressBar(
                     }
 
                     IconButton(
+                        modifier = Modifier
+                            .size(userSettings.addressBarSize.searchIconSizeDp),
                         onClick = { addressBarSearch(urlBarText.text) },
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_search_24),
-                            contentDescription = "Go"
+                            contentDescription = "Search",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(userSettings.addressBarSize.searchIconPaddingDp),
                         )
                     }
                 }
@@ -380,7 +385,7 @@ fun AddressBar(
                     },
                     modifier = Modifier
                         .padding(0.dp)
-                        .width(userSettings.addressBarSize.moreVertWidth)
+                        .width(userSettings.addressBarSize.moreVertWidthDp)
                         .wrapContentSize(Alignment.Center)
                 ) {
                     Icon(
