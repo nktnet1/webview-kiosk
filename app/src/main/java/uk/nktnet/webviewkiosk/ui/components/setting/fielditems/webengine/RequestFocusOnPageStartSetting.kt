@@ -7,17 +7,17 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
-fun MediaPlaybackRequiresUserGestureSetting() {
+fun RequestFocusOnPageStartSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
 
     BooleanSettingFieldItem(
-        label = "Require User Gesture for Media Playback",
+        label = "Request Focus on Page Start",
         infoText = """
-            Sets whether the WebView requires a user gesture (e.g. tap) to play media.
+            Sets whether the WebView should request focus when a page starts loading.
         """.trimIndent(),
-        initialValue = userSettings.mediaPlaybackRequiresUserGesture,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE),
-        onSave = { userSettings.mediaPlaybackRequiresUserGesture = it }
+        initialValue = userSettings.requestFocusOnPageStart,
+        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.REQUEST_FOCUS_ON_PAGE_START),
+        onSave = { userSettings.requestFocusOnPageStart = it }
     )
 }
