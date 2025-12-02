@@ -372,7 +372,15 @@ fun WebviewScreen(navController: NavController) {
                         onSelect = { selected ->
                             addressBarSearch(selected)
                         },
-                        modifier = Modifier.align(Alignment.TopStart)
+                        modifier = Modifier.align(
+                            if (
+                                userSettings.addressBarPosition == AddressBarPositionOption.TOP
+                            ) {
+                                Alignment.TopStart
+                            } else {
+                                Alignment.BottomStart
+                            }
+                        )
                     )
                 }
             }

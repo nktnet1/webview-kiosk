@@ -18,8 +18,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun AddressBarSearchSuggestions(
     suggestions: List<String>,
-    modifier: Modifier = Modifier,
-    onSelect: (String) -> Unit
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     Column(
         modifier = modifier
