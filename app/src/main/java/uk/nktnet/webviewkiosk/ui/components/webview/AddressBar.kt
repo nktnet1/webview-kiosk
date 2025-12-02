@@ -33,7 +33,6 @@ import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.AddressBarActionOption
-import uk.nktnet.webviewkiosk.config.option.WebViewInset
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
@@ -93,22 +92,6 @@ fun AddressBar(
         toastRef.value = Toast.makeText(
             context, message, Toast.LENGTH_SHORT
         ).also { it.show() }
-    }
-
-    val statusBarInset = WindowInsets.statusBars
-    val addressBarInset = remember (isLocked, statusBarInset) {
-        when (userSettings.webViewInset) {
-            WebViewInset.StatusBars,
-            WebViewInset.SystemBars,
-            WebViewInset.SafeDrawing,
-            WebViewInset.SafeGestures,
-            WebViewInset.SafeContent -> WindowInsets()
-            else -> if (!isLocked) {
-                statusBarInset
-            } else {
-                WindowInsets()
-            }
-        }
     }
 
     LaunchedEffect(Unit) {
@@ -295,9 +278,8 @@ fun AddressBar(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .windowInsetsPadding(addressBarInset)
             .padding(
-                horizontal = 8.dp,
+                horizontal = 6.dp,
                 vertical = 6.dp
             )
             .fillMaxWidth()
