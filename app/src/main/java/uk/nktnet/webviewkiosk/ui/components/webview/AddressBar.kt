@@ -279,8 +279,7 @@ fun AddressBar(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .padding(
-                horizontal = 6.dp,
-                vertical = 6.dp
+                userSettings.addressBarSize.paddingDp
             )
             .fillMaxWidth()
             .focusProperties { canFocus = allowFocus }
@@ -289,8 +288,9 @@ fun AddressBar(
             value = urlBarText,
             onValueChange = { onUrlBarTextChange(it) },
             singleLine = true,
-            textStyle = MaterialTheme.typography.bodyMedium.copy(
-                color = MaterialTheme.colorScheme.onSurface
+            textStyle = LocalTextStyle.current.copy(
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = userSettings.addressBarSize.fontSizeSp
             ),
             modifier = Modifier
                 .fillMaxWidth()
@@ -310,7 +310,7 @@ fun AddressBar(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(45.dp)
+                        .height(userSettings.addressBarSize.heightDp)
                         .border(
                             1.dp,
                             MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
@@ -330,7 +330,7 @@ fun AddressBar(
                                 text = "Search",
                                 style = LocalTextStyle.current.copy(
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                                    fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                                    fontSize = userSettings.addressBarSize.fontSizeSp,
                                     fontStyle = FontStyle.Italic,
                                 )
                             )
@@ -380,13 +380,13 @@ fun AddressBar(
                     },
                     modifier = Modifier
                         .padding(0.dp)
-                        .width(24.dp)
+                        .width(userSettings.addressBarSize.moreVertWidth)
                         .wrapContentSize(Alignment.Center)
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.outline_more_vert_24),
                         contentDescription = "Menu",
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
 

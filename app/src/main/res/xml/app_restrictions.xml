@@ -359,6 +359,14 @@
         android:title="@string/appearance_address_bar_position_title"
         android:description="@string/appearance_address_bar_position_description"
     />
+    <restriction
+        android:key="appearance.address_bar_size"
+        android:restrictionType="choice"
+        android:entries="@array/entries_address_bar_size_option"
+        android:entryValues="@array/entry_values_address_bar_size_option"
+        android:title="@string/appearance_address_bar_size_title"
+        android:description="@string/appearance_address_bar_size_description"
+    />
 
     <!-- Device -->
     <restriction

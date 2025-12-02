@@ -30,6 +30,17 @@
         <item>TOP</item>
         <item>BOTTOM</item>
     </string-array>
+    <string-array name="entries_address_bar_size_option">
+        <item>Small</item>
+        <item>Medium</item>
+        <item>Large</item>
+    </string-array>
+
+    <string-array name="entry_values_address_bar_size_option">
+        <item>SMALL</item>
+        <item>MEDIUM</item>
+        <item>LARGE</item>
+    </string-array>
 
     <string-array name="entries_floating_toolbar_mode_option">
         <item>Hidden</item>

@@ -18,21 +18,7 @@ See also: `Settings -> JS Scripts -> Apply App Theme`.
 
 **Default:** System
 
-## 2. Address Bar Mode
-
-Select one of:
-
-1. Hidden
-1. Hidden when locked
-1. Shown
-
-With `Hidden when locked`, the address bar will be visible in the default view,
-but disappears when the app is locked (pinned) using the floating toolbar
-<span className="inline-flex">(<Wrench className="-rotate-90"/>)</span>.
-
-**Default:** Hidden when locked
-
-## 3. Floating Toolbar Mode
+## 2. Floating Toolbar Mode
 
 Control the visibility and behaviour of the floating toolbar menu button:
 
@@ -45,7 +31,7 @@ Kiosk Control Panel.
 
 **Default:** Hidden when locked
 
-## 4. Window Insets
+## 3. Window Insets
 
 Controls padding for full-screen content relative to system UI elements. Use
 `WebViewInset` in your app to select the desired inset for full-height/width
@@ -65,7 +51,7 @@ components. For details, see the
 
 **Default:** System Bars
 
-## 5. Immersive Mode
+## 4. Immersive Mode
 
 In immersive mode, your system bars (status and navigation) are hidden.
 
@@ -87,8 +73,44 @@ For more details, refer to:
 
 **Default:** Only when locked
 
-## 6. Blocked Message
+## 5. Blocked Message
 
 The message to display when a URL matches the blacklist regex filter rule.
 
 **Default:** This site is blocked by {APP_NAME}
+
+
+## 6. Address Bar Mode
+
+Customise the visibility of the address bar. Select one of:
+
+1. Hidden
+1. Hidden when locked
+1. Shown
+
+With `Hidden when locked`, the address bar will be visible in the default view,
+but disappears when the app is locked (pinned) using the floating toolbar
+<span className="inline-flex">(<Wrench className="-rotate-90"/>)</span>.
+
+**Default:** Hidden when locked
+
+
+## 7. Address Bar Position
+
+Customise the position of the address bar. Select one of:
+
+1. Top
+1. Bottom
+
+**Default:** Top
+
+## 8. Address Bar Size
+
+Customise the size of the address bar, which will determine the
+height, font size, padding and icon size. Select one of:
+
+1. Small
+1. Medium
+1. Large
+
+**Default:** Small

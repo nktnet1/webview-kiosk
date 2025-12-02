@@ -15,7 +15,7 @@ fun AddressBarModeSetting() {
 
     DropdownSettingFieldItem(
         label = "Address Bar Mode",
-        infoText = "Control the visibility of the browser address bar.",
+        infoText = "Customise the visibility of the address bar.",
         options = AddressBarModeOption.entries,
         restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE),
         initialValue = userSettings.addressBarMode,

@@ -373,6 +373,13 @@ class UserSettings(val context: Context) {
         AddressBarPositionOption.TOP.name,
         fromString = AddressBarPositionOption::fromString
     )
+    var addressBarSize by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Appearance.ADDRESS_BAR_SIZE,
+        AddressBarSizeOption.SMALL.name,
+        fromString = AddressBarSizeOption::fromString
+    )
 
     // Device
     var keepScreenOn by booleanPref(
@@ -578,6 +585,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
             put(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name)
             put(UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION, addressBarPosition.name)
+            put(UserSettingsKeys.Appearance.ADDRESS_BAR_SIZE, addressBarSize.name)
 
             put(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)
             put(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.name)
@@ -691,6 +699,7 @@ class UserSettings(val context: Context) {
             blockedMessage = json.optString(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
             addressBarMode = AddressBarModeOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name))
             addressBarPosition = AddressBarPositionOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION, addressBarPosition.name))
+            addressBarSize = AddressBarSizeOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_SIZE, addressBarSize.name))
 
             keepScreenOn = json.optBoolean(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)
             rotation = DeviceRotationOption.fromString(json.optString(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.name))
