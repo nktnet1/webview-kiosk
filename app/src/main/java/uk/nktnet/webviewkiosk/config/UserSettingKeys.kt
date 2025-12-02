@@ -69,7 +69,7 @@ object UserSettingsKeys {
         const val BLOCKED_MESSAGE = "appearance.blocked_message"
         const val ADDRESS_BAR_MODE = "appearance.address_bar_mode"
         const val ADDRESS_BAR_POSITION = "appearance.address_bar_position"
-
+        const val ADDRESS_BAR_SIZE = "appearance.address_bar_size"
     }
 
     object Device {

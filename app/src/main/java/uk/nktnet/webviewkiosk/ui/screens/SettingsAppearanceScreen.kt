@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.ThemeS
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.WebViewInsetSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.AddressBarPositionSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.AddressBarSizeSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.FloatingToolbarModeSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.ImmersiveModeSetting
 
@@ -42,6 +43,7 @@ fun SettingsAppearanceScreen(
             BlockedMessageSetting()
             AddressBarModeSetting()
             AddressBarPositionSetting()
+            AddressBarSizeSetting()
 
             Spacer(modifier = Modifier.height(16.dp))
         }

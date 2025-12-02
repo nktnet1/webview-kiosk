@@ -165,6 +165,9 @@
     <string name="appearance_address_bar_position_title">Address Bar Position</string>
     <string name="appearance_address_bar_position_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
 
+    <string name="appearance_address_bar_size_title">Address Bar Size</string>
+    <string name="appearance_address_bar_size_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
+
     <!-- Device -->
     <string name="device_keep_screen_on_title">Keep Screen On</string>
     <string name="device_keep_screen_on_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
