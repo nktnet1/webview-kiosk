@@ -22,6 +22,10 @@ fun MqttUseWebSocketSetting() {
             which is typically
             - 80 for WS
             - 443 for WSS (WebSocket Secure)
+
+            You should use WebSocket when absolutely necessary, e.g. when
+            connected to a network with a firewall that blocks non-standard
+            ports. This is because using WebSocket will consume more resources.
         """.trimIndent(),
         initialValue = userSettings.mqttUseWebSocket,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.USE_WEBSOCKET),

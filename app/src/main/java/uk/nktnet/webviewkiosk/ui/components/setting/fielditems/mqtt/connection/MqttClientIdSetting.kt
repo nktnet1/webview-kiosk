@@ -29,7 +29,7 @@ fun MqttClientIdSetting() {
         label = "Client ID",
         infoText = """
             A unique identifier for this client when connecting to the MQTT broker.
-            
+
             Leave this field blank if you want the broker server to generate a
             client ID for ${Constants.APP_NAME}.
 
