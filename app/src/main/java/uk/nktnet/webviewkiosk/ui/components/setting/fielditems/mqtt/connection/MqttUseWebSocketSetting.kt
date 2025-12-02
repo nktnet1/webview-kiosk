@@ -20,8 +20,8 @@ fun MqttUseWebSocketSetting() {
 
             Ensure the broker supports WebSocket on the selected port,
             which is typically
-            - 8083 for WS
-            - 8084 for WSS (WebSocket Secure)
+            - 80 for WS
+            - 443 for WSS (WebSocket Secure)
         """.trimIndent(),
         initialValue = userSettings.mqttUseWebSocket,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.USE_WEBSOCKET),

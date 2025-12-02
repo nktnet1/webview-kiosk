@@ -28,8 +28,8 @@ The TCP port of the MQTT broker the app should connect to.
 Typically,
 - `1883`: MQTT (TCP)
 - `8883`: MQTTS (TCP with SSL/TLS)
-- `8083`: WS (Websocket)
-- `8084`: WSS (Websocket Secure)
+- `80`: WS (Websocket, same port as HTTP)
+- `443`: WSS (Websocket Secure, same port as HTTPS)
 
 **Default:** 1883
 
@@ -57,7 +57,7 @@ The password used to authenticate with the MQTT broker.
 A unique identifier for this client when connecting to the MQTT broker.
 
 Leave this field blank if you want the broker server to generate a
-client ID for ${Constants.APP_NAME}.
+client ID for {APP_NAME}.
 
 Global variables are supported.
 
@@ -111,8 +111,8 @@ In {APP_NAME}, this is implemented linearly at a fixed 3-second interval.
 
 When enabled, the client will connect securely to the broker using TLS.
 Ensure the broker supports TLS on the configured port, e.g.
-- `8083`: WS (Websocket)
-- `8084`: WSS (Websocket Secure)
+- `80`: WS (Websocket, same port as HTTP)
+- `443`: WSS (Websocket Secure, same port as HTTPS)
 
 **Default:** false
 
