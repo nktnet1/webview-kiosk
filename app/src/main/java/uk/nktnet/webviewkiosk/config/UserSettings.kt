@@ -288,6 +288,12 @@ class UserSettings(val context: Context) {
         OverScrollModeOption.IF_CONTENT_SCROLLS.name,
         fromString = OverScrollModeOption::fromString
     )
+    var requestFocusOnPageStart by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.REQUEST_FOCUS_ON_PAGE_START,
+        true
+    )
 
     // Web Lifecycle
     var lockOnLaunch by booleanPref(
@@ -571,6 +577,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebEngine.SSL_ERROR_MODE, sslErrorMode.name)
             put(UserSettingsKeys.WebEngine.MIXED_CONTENT_MODE, mixedContentMode.name)
             put(UserSettingsKeys.WebEngine.OVER_SCROLL_MODE, overScrollMode.name)
+            put(UserSettingsKeys.WebEngine.REQUEST_FOCUS_ON_PAGE_START, requestFocusOnPageStart)
 
             put(UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, lockOnLaunch)
             put(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, resetOnLaunch)
@@ -683,6 +690,7 @@ class UserSettings(val context: Context) {
             overScrollMode = OverScrollModeOption.fromString(
                 json.optString(UserSettingsKeys.WebEngine.OVER_SCROLL_MODE, overScrollMode.name)
             )
+            requestFocusOnPageStart = json.optBoolean(UserSettingsKeys.WebEngine.REQUEST_FOCUS_ON_PAGE_START, requestFocusOnPageStart)
 
             lockOnLaunch = json.optBoolean(UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH, lockOnLaunch)
             resetOnLaunch = json.optBoolean(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, resetOnLaunch)

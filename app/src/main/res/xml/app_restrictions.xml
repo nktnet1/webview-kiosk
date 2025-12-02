@@ -271,6 +271,12 @@
         android:title="@string/web_engine_over_scroll_mode_title"
         android:description="@string/web_engine_over_scroll_mode_description"
     />
+    <restriction
+        android:key="web_engine.request_focus_on_page_start"
+        android:restrictionType="bool"
+        android:title="@string/web_engine_request_focus_on_page_start_title"
+        android:description="@string/web_engine_request_focus_on_page_start_description"
+    />
 
     <!-- Web Lifecycle -->
     <restriction
