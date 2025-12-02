@@ -332,13 +332,6 @@ class UserSettings(val context: Context) {
         ThemeOption.SYSTEM.name,
         fromString = ThemeOption::fromString
     )
-    var addressBarMode by stringEnumPref(
-        getRestrictions,
-        prefs,
-        UserSettingsKeys.Appearance.ADDRESS_BAR_MODE,
-        AddressBarModeOption.HIDDEN_WHEN_LOCKED.name,
-        fromString = AddressBarModeOption::fromString
-    )
     var floatingToolbarMode by stringEnumPref(
         getRestrictions,
         prefs,
@@ -365,6 +358,27 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.Appearance.BLOCKED_MESSAGE,
         "This site is blocked by ${Constants.APP_NAME}."
+    )
+    var addressBarMode by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Appearance.ADDRESS_BAR_MODE,
+        AddressBarModeOption.HIDDEN_WHEN_LOCKED.name,
+        fromString = AddressBarModeOption::fromString
+    )
+    var addressBarPosition by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION,
+        AddressBarPositionOption.TOP.name,
+        fromString = AddressBarPositionOption::fromString
+    )
+    var addressBarSize by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Appearance.ADDRESS_BAR_SIZE,
+        AddressBarSizeOption.SMALL.name,
+        fromString = AddressBarSizeOption::fromString
     )
 
     // Device
@@ -873,11 +887,13 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS, refreshOnLoadingErrorIntervalSeconds)
 
             put(UserSettingsKeys.Appearance.THEME, theme.name)
-            put(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name)
             put(UserSettingsKeys.Appearance.FLOATING_TOOLBAR_MODE, floatingToolbarMode.name)
             put(UserSettingsKeys.Appearance.WEBVIEW_INSET, webViewInset.name)
             put(UserSettingsKeys.Appearance.IMMERSIVE_MODE, immersiveMode.name)
             put(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
+            put(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name)
+            put(UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION, addressBarPosition.name)
+            put(UserSettingsKeys.Appearance.ADDRESS_BAR_SIZE, addressBarSize.name)
 
             put(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)
             put(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.name)
@@ -1031,13 +1047,15 @@ class UserSettings(val context: Context) {
             refreshOnLoadingErrorIntervalSeconds = json.optInt(UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS, refreshOnLoadingErrorIntervalSeconds)
 
             theme = ThemeOption.fromString(json.optString(UserSettingsKeys.Appearance.THEME, theme.name))
-            addressBarMode = AddressBarModeOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name))
             floatingToolbarMode = FloatingToolbarModeOption.fromString(json.optString(UserSettingsKeys.Appearance.FLOATING_TOOLBAR_MODE, floatingToolbarMode.name))
             webViewInset = WebViewInset.fromString(json.optString(UserSettingsKeys.Appearance.WEBVIEW_INSET, webViewInset.name))
             immersiveMode = ImmersiveModeOption.fromString(
                 json.optString(UserSettingsKeys.Appearance.IMMERSIVE_MODE, immersiveMode.name)
             )
             blockedMessage = json.optString(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
+            addressBarMode = AddressBarModeOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name))
+            addressBarPosition = AddressBarPositionOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION, addressBarPosition.name))
+            addressBarSize = AddressBarSizeOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_SIZE, addressBarSize.name))
 
             keepScreenOn = json.optBoolean(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)
             rotation = DeviceRotationOption.fromString(json.optString(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.name))

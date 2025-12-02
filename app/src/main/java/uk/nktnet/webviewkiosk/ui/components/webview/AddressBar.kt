@@ -33,7 +33,6 @@ import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.AddressBarActionOption
-import uk.nktnet.webviewkiosk.config.option.WebViewInset
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
@@ -93,22 +92,6 @@ fun AddressBar(
         toastRef.value = Toast.makeText(
             context, message, Toast.LENGTH_SHORT
         ).also { it.show() }
-    }
-
-    val statusBarInset = WindowInsets.statusBars
-    val addressBarInset = remember (isLocked, statusBarInset) {
-        when (userSettings.webViewInset) {
-            WebViewInset.StatusBars,
-            WebViewInset.SystemBars,
-            WebViewInset.SafeDrawing,
-            WebViewInset.SafeGestures,
-            WebViewInset.SafeContent -> WindowInsets()
-            else -> if (!isLocked) {
-                statusBarInset
-            } else {
-                WindowInsets()
-            }
-        }
     }
 
     LaunchedEffect(Unit) {
@@ -295,11 +278,10 @@ fun AddressBar(
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .windowInsetsPadding(addressBarInset)
             .padding(
-                horizontal = 8.dp,
-                vertical = 6.dp
+                userSettings.addressBarSize.paddingDp
             )
+            .imePadding()
             .fillMaxWidth()
             .focusProperties { canFocus = allowFocus }
     ) {
@@ -307,8 +289,9 @@ fun AddressBar(
             value = urlBarText,
             onValueChange = { onUrlBarTextChange(it) },
             singleLine = true,
-            textStyle = MaterialTheme.typography.bodyMedium.copy(
-                color = MaterialTheme.colorScheme.onSurface
+            textStyle = LocalTextStyle.current.copy(
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = userSettings.addressBarSize.fontSizeSp
             ),
             modifier = Modifier
                 .fillMaxWidth()
@@ -328,7 +311,7 @@ fun AddressBar(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(45.dp)
+                        .height(userSettings.addressBarSize.heightDp)
                         .border(
                             1.dp,
                             MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
@@ -348,7 +331,7 @@ fun AddressBar(
                                 text = "Search",
                                 style = LocalTextStyle.current.copy(
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                                    fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                                    fontSize = userSettings.addressBarSize.fontSizeSp,
                                     fontStyle = FontStyle.Italic,
                                 )
                             )
@@ -357,11 +340,16 @@ fun AddressBar(
                     }
 
                     IconButton(
+                        modifier = Modifier
+                            .size(userSettings.addressBarSize.searchIconSizeDp),
                         onClick = { addressBarSearch(urlBarText.text) },
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_search_24),
-                            contentDescription = "Go"
+                            contentDescription = "Search",
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(userSettings.addressBarSize.searchIconPaddingDp),
                         )
                     }
                 }
@@ -398,13 +386,13 @@ fun AddressBar(
                     },
                     modifier = Modifier
                         .padding(0.dp)
-                        .width(24.dp)
+                        .width(userSettings.addressBarSize.moreVertWidthDp)
                         .wrapContentSize(Alignment.Center)
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.outline_more_vert_24),
                         contentDescription = "Menu",
-                        modifier = Modifier.size(32.dp)
+                        modifier = Modifier.fillMaxSize()
                     )
                 }
 

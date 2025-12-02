@@ -5,21 +5,23 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.config.option.AddressBarModeOption
+import uk.nktnet.webviewkiosk.config.option.AddressBarPositionOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
 
 @Composable
-fun AddressBarModeSetting() {
+fun AddressBarPositionSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
 
     DropdownSettingFieldItem(
-        label = "Address Bar Mode",
-        infoText = "Customise the visibility of the address bar.",
-        options = AddressBarModeOption.entries,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE),
-        initialValue = userSettings.addressBarMode,
-        onSave = { userSettings.addressBarMode = it },
+        label = "Address Bar Position",
+        infoText = """
+            Customise the position of the address bar - either top or bottom.
+        """.trimIndent(),
+        options = AddressBarPositionOption.entries,
+        restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION),
+        initialValue = userSettings.addressBarPosition,
+        onSave = { userSettings.addressBarPosition = it },
         itemText = { it.label },
     )
 }
