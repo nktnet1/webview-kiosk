@@ -8,6 +8,7 @@ import uk.nktnet.webviewkiosk.utils.BaseJson
 @Serializable
 sealed interface MqttCommandMessage {
     val messageId: String?
+    val interact: Boolean
     val targetInstances: Set<String>?
     val targetUsernames: Set<String>?
 }
@@ -16,6 +17,7 @@ sealed interface MqttCommandMessage {
 @SerialName("go_back")
 data class MqttGoBackCommand(
     override val messageId: String? = null,
+    override val interact: Boolean = true,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
@@ -26,6 +28,7 @@ data class MqttGoBackCommand(
 @SerialName("go_forward")
 data class MqttGoForwardCommand(
     override val messageId: String? = null,
+    override val interact: Boolean = true,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
@@ -36,6 +39,7 @@ data class MqttGoForwardCommand(
 @SerialName("go_home")
 data class MqttGoHomeCommand(
     override val messageId: String? = null,
+    override val interact: Boolean = true,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
@@ -46,6 +50,7 @@ data class MqttGoHomeCommand(
 @SerialName("refresh")
 data class MqttRefreshCommand(
     override val messageId: String? = null,
+    override val interact: Boolean = true,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
@@ -56,6 +61,7 @@ data class MqttRefreshCommand(
 @SerialName("go_to_url")
 data class MqttGoToUrlCommand(
     override val messageId: String? = null,
+    override val interact: Boolean = true,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     val data: UrlData,
@@ -71,6 +77,7 @@ data class MqttGoToUrlCommand(
 @SerialName("search")
 data class MqttSearchCommand(
     override val messageId: String? = null,
+    override val interact: Boolean = true,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     val data: QueryData,
@@ -86,6 +93,7 @@ data class MqttSearchCommand(
 @SerialName("clear_history")
 data class MqttClearHistoryMqttCommand(
     override val messageId: String? = null,
+    override val interact: Boolean = true,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
@@ -96,6 +104,7 @@ data class MqttClearHistoryMqttCommand(
 @SerialName("interact")
 data class MqttInteractMqttCommand(
     override val messageId: String? = null,
+    override val interact: Boolean = true,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
@@ -106,6 +115,7 @@ data class MqttInteractMqttCommand(
 @SerialName("lock")
 data class MqttLockCommand(
     override val messageId: String? = null,
+    override val interact: Boolean = true,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
@@ -116,6 +126,7 @@ data class MqttLockCommand(
 @SerialName("unlock")
 data class MqttUnlockCommand(
     override val messageId: String? = null,
+    override val interact: Boolean = true,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
@@ -126,6 +137,7 @@ data class MqttUnlockCommand(
 @SerialName("reconnect")
 data class MqttReconnectMqttCommand(
     override val messageId: String? = null,
+    override val interact: Boolean = true,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
@@ -136,6 +148,7 @@ data class MqttReconnectMqttCommand(
 @SerialName("error")
 data class MqttErrorCommand(
     override val messageId: String? = null,
+    override val interact: Boolean = true,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     val error: String = "unknown command",

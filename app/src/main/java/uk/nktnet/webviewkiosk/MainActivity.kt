@@ -154,6 +154,9 @@ class MainActivity : AppCompatActivity() {
 
             LaunchedEffect(Unit) {
                 MqttManager.commands.collect { commandMessage ->
+                    if (commandMessage.interact) {
+                        UserInteractionStateSingleton.onUserInteraction()
+                    }
                     when (commandMessage) {
                         is MqttReconnectMqttCommand -> {
                             MqttManager.disconnect (
