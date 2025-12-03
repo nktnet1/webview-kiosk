@@ -9,5 +9,10 @@ data class MqttSettingsMessage(
     val showToast: Boolean = true,
     val targetInstances: Set<String>? = null,
     val targetUsernames: Set<String>? = null,
-    val data: String,
-)
+    val data: SettingsUpdateData,
+) {
+    @Serializable
+    data class SettingsUpdateData(
+        val settings: String,
+    )
+}

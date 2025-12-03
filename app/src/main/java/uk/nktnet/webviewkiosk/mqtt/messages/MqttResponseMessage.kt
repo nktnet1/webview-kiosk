@@ -36,9 +36,13 @@ data class MqttSettingsResponse(
     override val username: String,
     override val appInstanceId: String,
     override val requestMessageId: String?,
-    val data: JsonObject,
+    val data: SettingsResponseData,
 ) : MqttResponseMessage {
     override fun getType(): String = "settings"
+    @Serializable
+    data class SettingsResponseData(
+        val settings: JsonObject,
+    )
 }
 
 @Serializable

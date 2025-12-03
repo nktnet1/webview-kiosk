@@ -179,7 +179,7 @@ class MainActivity : AppCompatActivity() {
 
             LaunchedEffect(Unit) {
                 MqttManager.settings.collect { settingsMessage ->
-                    userSettings.importJson(settingsMessage.data)
+                    userSettings.importJson(settingsMessage.data.settings)
 
                     if (settingsMessage.refresh) {
                         updateDeviceSettings(context)

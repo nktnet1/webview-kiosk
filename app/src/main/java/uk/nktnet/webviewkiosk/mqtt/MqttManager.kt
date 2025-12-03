@@ -428,7 +428,9 @@ object MqttManager {
             username = config.username,
             appInstanceId = config.appInstanceId,
             requestMessageId = settingsRequest.messageId,
-            data = filterSettingsJson(settings, settingsRequest.data),
+            data = MqttSettingsResponse.SettingsResponseData(
+                filterSettingsJson(settings, settingsRequest.data.settings),
+            ),
         )
         publishResponseMessage(
             settingsMessage,
@@ -601,6 +603,9 @@ object MqttManager {
             retainAsPublished = config.subscribeSettingsRetainAsPublished,
             onMessage = { publish, payloadStr ->
                 val json = Json.parseToJsonElement(payloadStr).jsonObject
+                val settingsStr = runCatching {
+                    json["data"]?.jsonObject?.get("settings")?.toString() ?: "{}"
+                }.getOrElse { "{}" }
 
                 val settingsMessage = MqttSettingsMessage(
                     messageId = getValueFromPrimitiveJson(payloadStr, "messageId"),
@@ -616,7 +621,9 @@ object MqttManager {
                             it.jsonPrimitive.contentOrNull
                         }?.toSet()
                     }.getOrNull(),
-                    data = json["data"]?.toString() ?: "{}"
+                    data = MqttSettingsMessage.SettingsUpdateData(
+                        settingsStr
+                    )
                 )
 
                 val targetInstances = settingsMessage.targetInstances

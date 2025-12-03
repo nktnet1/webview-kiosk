@@ -35,17 +35,21 @@ data class MqttSettingsRequest(
     override val targetUsernames: Set<String>? = null,
     override var responseTopic: String? = null,
     override var correlationData: String? = null,
-    val data: Array<JsonElement> = emptyArray(),
+    val data: SettingsRequestData,
 ) : MqttRequestMessage {
-    override fun toString() = "Get Settings"
-    override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-        other as MqttSettingsRequest
-        return data.contentEquals(other.data)
-    }
-    override fun hashCode(): Int {
-        return data.contentHashCode()
+    @Serializable
+    data class SettingsRequestData(
+        val settings: Array<JsonElement> = emptyArray(),
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (javaClass != other?.javaClass) return false
+            other as SettingsRequestData
+            return settings.contentEquals(other.settings)
+        }
+        override fun hashCode(): Int {
+            return settings.contentHashCode()
+        }
     }
 }
 
