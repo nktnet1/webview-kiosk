@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import uk.nktnet.webviewkiosk.config.option.LockStateType
 import uk.nktnet.webviewkiosk.mqtt.MqttManager
 import uk.nktnet.webviewkiosk.utils.getIsLocked
 
@@ -36,7 +37,8 @@ object LockStateSingleton {
                 _isLocked.value = getIsLocked(activityManager)
                 if (previousIsLocked != _isLocked.value) {
                     if (_isLocked.value) {
-                        MqttManager.publishLockEvent()
+                        val state = LockStateType.fromActivityManager(activityManager)
+                        MqttManager.publishLockEvent(state)
                     } else {
                         MqttManager.publishUnlockEvent()
                     }

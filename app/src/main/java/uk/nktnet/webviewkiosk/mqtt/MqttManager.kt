@@ -26,6 +26,7 @@ import org.json.JSONObject
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.option.LockStateType
 import uk.nktnet.webviewkiosk.config.option.MqttQosOption
 import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption
 import uk.nktnet.webviewkiosk.config.option.MqttVariableNameOption
@@ -50,7 +51,7 @@ import uk.nktnet.webviewkiosk.mqtt.messages.MqttSettingsResponse
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttStatusResponse
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttSystemInfoResponse
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttUnlockEvent
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttUrlVisitedEvent
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttUrlChangedEvent
 import uk.nktnet.webviewkiosk.utils.SystemInfo
 import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
 import uk.nktnet.webviewkiosk.utils.filterSettingsJson
@@ -357,21 +358,22 @@ object MqttManager {
             }
     }
 
-    fun publishUrlVisitedEvent(url: String) {
-        val event = MqttUrlVisitedEvent(
+    fun publishUrlChangedEvent(url: String) {
+        val event = MqttUrlChangedEvent(
             messageId = UUID.randomUUID().toString(),
             username = config.username,
             appInstanceId = config.appInstanceId,
-            data = MqttUrlVisitedEvent.UrlData(url),
+            data = MqttUrlChangedEvent.UrlData(url),
         )
         publishEventMessage(event)
     }
 
-    fun publishLockEvent() {
+    fun publishLockEvent(lockStateType: LockStateType) {
         val event = MqttLockEvent(
             messageId = UUID.randomUUID().toString(),
             username = config.username,
-            appInstanceId = config.appInstanceId
+            appInstanceId = config.appInstanceId,
+            data = MqttLockEvent.LockStateData(lockStateType)
         )
         publishEventMessage(event)
     }
@@ -380,7 +382,7 @@ object MqttManager {
         val event = MqttUnlockEvent(
             messageId = UUID.randomUUID().toString(),
             username = config.username,
-            appInstanceId = config.appInstanceId
+            appInstanceId = config.appInstanceId,
         )
         publishEventMessage(event)
     }

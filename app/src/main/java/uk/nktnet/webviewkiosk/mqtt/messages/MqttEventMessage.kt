@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.mqtt.messages
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.json.Json
+import uk.nktnet.webviewkiosk.config.option.LockStateType
 import uk.nktnet.webviewkiosk.utils.BaseJson
 import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
 
@@ -49,14 +50,14 @@ data class MqttDisconnectingEvent(
 }
 
 @Serializable
-@SerialName("url_visited")
-data class MqttUrlVisitedEvent(
+@SerialName("url_changed")
+data class MqttUrlChangedEvent(
     override val messageId: String,
     override val username: String,
     override val appInstanceId: String,
     val data: UrlData
 ) : MqttEventMessage {
-    override fun getEventType(): String = "url_visited"
+    override fun getEventType(): String = "url_changed"
 
     @Serializable
     data class UrlData(
@@ -70,8 +71,14 @@ data class MqttLockEvent(
     override val messageId: String,
     override val username: String,
     override val appInstanceId: String,
+    val data: LockStateData,
 ) : MqttEventMessage {
     override fun getEventType(): String = "lock"
+
+    @Serializable
+    data class LockStateData(
+        val lockStateType: LockStateType
+    )
 }
 
 @Serializable

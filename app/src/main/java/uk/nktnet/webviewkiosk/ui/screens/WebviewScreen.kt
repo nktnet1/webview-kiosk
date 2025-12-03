@@ -191,7 +191,7 @@ fun WebviewScreen(navController: NavController) {
             mqttLastPublishedUrlJob?.cancel()
             mqttLastPublishedUrlJob = scope.launch {
                 delay(1000)
-                MqttManager.publishUrlVisitedEvent(url)
+                MqttManager.publishUrlChangedEvent(url)
                 mqttLastPublishedUrl = url
             }
         }
