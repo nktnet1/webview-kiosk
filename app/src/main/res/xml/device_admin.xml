@@ -3,5 +3,6 @@
     <support-transfer-ownership />
 
     <uses-policies>
+        <force-lock />
     </uses-policies>
 </device-admin>

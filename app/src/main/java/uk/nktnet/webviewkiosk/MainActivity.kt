@@ -37,6 +37,7 @@ import uk.nktnet.webviewkiosk.mqtt.messages.MqttClearHistoryMqttCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttDisconnectingEvent
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttErrorRequest
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttInteractMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttLockDeviceCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttReconnectMqttCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttSettingsRequest
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttStatusRequest
@@ -171,6 +172,11 @@ class MainActivity : AppCompatActivity() {
                         }
                         is MqttInteractMqttCommand -> {
                             UserInteractionStateSingleton.onUserInteraction()
+                        }
+                        is MqttLockDeviceCommand -> {
+                            if (DeviceOwnerManager.hasOwnerPermission(context)) {
+                                DeviceOwnerManager.DPM.lockNow()
+                            }
                         }
                         else -> Unit
                     }

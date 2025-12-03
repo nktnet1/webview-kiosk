@@ -145,6 +145,17 @@ data class MqttReconnectMqttCommand(
 }
 
 @Serializable
+@SerialName("lock_device")
+data class MqttLockDeviceCommand(
+    override val messageId: String? = null,
+    override val interact: Boolean = true,
+    override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
+) : MqttCommandMessage {
+    override fun toString() = "Lock Device"
+}
+
+@Serializable
 @SerialName("error")
 data class MqttErrorCommand(
     override val messageId: String? = null,
