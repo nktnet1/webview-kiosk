@@ -1,11 +1,11 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -60,23 +60,26 @@ fun GenericSettingFieldDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Text(
                     title,
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.bodyLarge,
                 )
-                Icon(
-                    painter = painterResource(R.drawable.baseline_info_24),
-                    contentDescription = "Info",
+                IconButton(
+                    onClick = { showInfoDialog = true },
                     modifier = Modifier
-                        .size(25.dp)
-                        .clickable { showInfoDialog = true }
-                        .padding(
-                            start = 5.dp
-                        )
-                        .align(Alignment.CenterVertically)
-                )
+                        .offset(x = 2.dp)
+                        .size(24.dp)
+                        .padding(3.dp),
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.baseline_info_24),
+                        contentDescription = "Info",
+                    )
+                }
             }
         },
         text = {
