@@ -451,7 +451,7 @@
     />
     <restriction
         android:key="js_scripts.apply_desktop_viewport_width"
-        android:restrictionType="bool"
+        android:restrictionType="integer"
         android:title="@string/js_scripts_apply_desktop_viewport_width_title"
         android:description="@string/js_scripts_apply_desktop_viewport_width_description"
     />
