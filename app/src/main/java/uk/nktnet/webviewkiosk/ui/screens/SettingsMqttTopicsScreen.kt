@@ -23,12 +23,12 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
     val publishTopics = listOf(
         Triple(
             "Event",
-            "Send device and webview state changes",
+            "Publish device and webview state changes",
             Screen.SettingsMqttTopicsPublishEvent.route
         ),
         Triple(
             "Response",
-            "Send information when requested using commands",
+            "Publish replies to information requests",
             Screen.SettingsMqttTopicsPublishResponse.route
         ),
     )
@@ -36,17 +36,17 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
     val subscribeTopics = listOf(
         Triple(
             "Command",
-            "React to commands from broker",
+            "Subscribe to control commands (actions)",
             Screen.SettingsMqttTopicsSubscribeCommand.route
         ),
         Triple(
             "Settings",
-            "React to setting changes from broker",
+            "Subscribe to setting (configuration) changes",
             Screen.SettingsMqttTopicsSubscribeSettings.route
         ),
         Triple(
             "Request",
-            "React to requests from broker",
+            "Subscribe to requests for information",
             Screen.SettingsMqttTopicsSubscribeRequest.route
         ),
     )

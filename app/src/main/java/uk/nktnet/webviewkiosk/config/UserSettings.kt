@@ -747,6 +747,7 @@ class UserSettings(val context: Context) {
         """
             {
               "message": "Client has disconnected.",
+              "username": "${'$'}{USERNAME}",
               "appInstanceId": "${'$'}{APP_INSTANCE_ID}"
             }
         """.trimIndent(),

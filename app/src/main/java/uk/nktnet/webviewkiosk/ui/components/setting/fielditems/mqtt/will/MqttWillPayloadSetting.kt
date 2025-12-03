@@ -25,6 +25,7 @@ fun MqttWillPayloadSetting() {
             For example,
               {
                 "message": "Client has disconnected.",
+                "username": "${'$'}{${MqttVariableNameOption.USERNAME.name}}",
                 "appInstanceId": "${'$'}{${MqttVariableNameOption.APP_INSTANCE_ID.name}}"
               }
         """.trimIndent(),

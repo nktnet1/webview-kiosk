@@ -9,6 +9,7 @@ import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
 @Serializable
 sealed interface MqttEventMessage {
     val messageId: String
+    val username: String
     val appInstanceId: String
     fun getEventType(): String
 }
@@ -17,6 +18,7 @@ sealed interface MqttEventMessage {
 @SerialName("connected")
 data class MqttConnectedEvent(
     override val messageId: String,
+    override val username: String,
     override val appInstanceId: String,
     val data: WebviewKioskStatus,
 ) : MqttEventMessage {
@@ -27,6 +29,7 @@ data class MqttConnectedEvent(
 @SerialName("disconnecting")
 data class MqttDisconnectingEvent(
     override val messageId: String,
+    override val username: String,
     override val appInstanceId: String,
     val data: DisconnectingData
 ) : MqttEventMessage {
@@ -49,6 +52,7 @@ data class MqttDisconnectingEvent(
 @SerialName("url_visited")
 data class MqttUrlVisitedEvent(
     override val messageId: String,
+    override val username: String,
     override val appInstanceId: String,
     val data: UrlData
 ) : MqttEventMessage {
@@ -64,6 +68,7 @@ data class MqttUrlVisitedEvent(
 @SerialName("lock")
 data class MqttLockEvent(
     override val messageId: String,
+    override val username: String,
     override val appInstanceId: String,
 ) : MqttEventMessage {
     override fun getEventType(): String = "lock"
@@ -73,6 +78,7 @@ data class MqttLockEvent(
 @SerialName("unlock")
 data class MqttUnlockEvent(
     override val messageId: String,
+    override val username: String,
     override val appInstanceId: String,
 ) : MqttEventMessage {
     override fun getEventType(): String = "unlock"

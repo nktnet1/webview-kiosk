@@ -344,8 +344,9 @@ object MqttManager {
                     publishEventMessage(
                         MqttConnectedEvent(
                             messageId = UUID.randomUUID().toString(),
+                            username = config.username,
                             appInstanceId = config.appInstanceId,
-                            data = getStatus(context)
+                            data = getStatus(context),
                         )
                     )
                 } else {
@@ -359,6 +360,7 @@ object MqttManager {
     fun publishUrlVisitedEvent(url: String) {
         val event = MqttUrlVisitedEvent(
             messageId = UUID.randomUUID().toString(),
+            username = config.username,
             appInstanceId = config.appInstanceId,
             data = MqttUrlVisitedEvent.UrlData(url),
         )
@@ -368,6 +370,7 @@ object MqttManager {
     fun publishLockEvent() {
         val event = MqttLockEvent(
             messageId = UUID.randomUUID().toString(),
+            username = config.username,
             appInstanceId = config.appInstanceId
         )
         publishEventMessage(event)
@@ -376,6 +379,7 @@ object MqttManager {
     fun publishUnlockEvent() {
         val event = MqttUnlockEvent(
             messageId = UUID.randomUUID().toString(),
+            username = config.username,
             appInstanceId = config.appInstanceId
         )
         publishEventMessage(event)
@@ -405,6 +409,7 @@ object MqttManager {
     fun publishStatusResponse(statusRequest: MqttStatusRequest, status: WebviewKioskStatus) {
         val statusMessage = MqttStatusResponse(
             messageId = UUID.randomUUID().toString(),
+            username = config.username,
             appInstanceId = config.appInstanceId,
             requestMessageId = statusRequest.messageId,
             data = status,
@@ -418,6 +423,7 @@ object MqttManager {
     fun publishSettingsResponse(settingsRequest: MqttSettingsRequest, settings: JSONObject) {
         val settingsMessage = MqttSettingsResponse(
             messageId = UUID.randomUUID().toString(),
+            username = config.username,
             appInstanceId = config.appInstanceId,
             requestMessageId = settingsRequest.messageId,
             data = filterSettingsJson(settings, settingsRequest.data),
@@ -434,6 +440,7 @@ object MqttManager {
     ) {
         val statusMessage = MqttSystemInfoResponse(
             messageId = UUID.randomUUID().toString(),
+            username = config.username,
             appInstanceId = config.appInstanceId,
             requestMessageId = systemInfoRequest.messageId,
             data = systemInfo,
@@ -449,6 +456,7 @@ object MqttManager {
     ) {
         val errorMessage = MqttErrorResponse(
             messageId = UUID.randomUUID().toString(),
+            username = config.username,
             appInstanceId = config.appInstanceId,
             requestMessageId = errorRequest.messageId,
             errorMessage = errorRequest.error,
@@ -778,6 +786,7 @@ object MqttManager {
         publishEventMessage(
             MqttDisconnectingEvent(
                 messageId = UUID.randomUUID().toString(),
+                username = config.username,
                 appInstanceId = config.appInstanceId,
                 data = MqttDisconnectingEvent.DisconnectingData(
                     cause = cause,
