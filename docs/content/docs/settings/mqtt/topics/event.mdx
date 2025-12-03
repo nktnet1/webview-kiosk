@@ -3,7 +3,11 @@ title: Event
 description: Publish device and webview state changes
 ---
 
-### 1. Topic Name
+import { APP_NAME } from '@/config/app';
+
+## 1. Settings
+
+### 1.1. Topic Name
 
 All global variables are supported, in addition to `EVENT_TYPE`.
 For example,
@@ -18,13 +22,131 @@ wk/${USERNAME}/${APP_INSTANCE_ID}/event/${EVENT_TYPE}
 wk/event/${EVENT_TYPE}
 ```
 
-### 2. Quality of Service (QoS)
+### 1.2. Quality of Service (QoS)
 
 Quality of Service (QoS) ensures different message delivery guarantees
 in case of connection failures.
 
 **Default:** At Most Once (0)
 
-### 3. Retain
+### 1.3. Retain
 
 **Default:** false
+
+## 2. Events
+
+All published events will contain the
+[shared payload properties](/docs/settings/mqtt/topics#2-shared-payload-properties)
+mentioned previously, as well as an additional `eventType` property.
+
+### 2.1. Connected
+
+The `connected` event is published when {APP_NAME} has successfully connected
+to your configured MQTT Broker.
+
+Example payload:
+
+```json
+{
+  "eventType": "connected",
+  "messageId": "41576b3f-20ef-49a1-8793-afaa7d130514",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1",
+  "data": {
+    "currentUrl": "https://webviewkiosk.nktnet.uk",
+    "lastInteractionTime": 1764689417653,
+    "isLocked": false,
+    "batteryPercentage": 62,
+    "appBrightnessPercentage": -1,
+    "systemBrightness": 255
+  }
+}
+```
+
+### 2.2. Disconnecting
+
+The `disconnecting` event will be published just before the MQTT
+connection will be halted.
+
+The cause of disconnection will be included, and is one of:
+- `USER_INITIATED_DISCONNECT`
+- `USER_INITIATED_RESTART`
+- `USER_INITIATED_SETTINGS_DISABLED`
+- `SYSTEM_ACTIVITY_STOPPED,`
+- `MQTT_RECONNECT_COMMAND_RECEIVED`
+
+Example payload:
+
+```json
+{
+  "eventType": "disconnecting",
+  "messageId": "45dcd504-0795-467b-b58c-5afc5da31c17",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1",
+  "data": {
+    "cause": "SYSTEM_ACTIVITY_STOPPED"
+  }
+}
+```
+
+### 2.3. URL Changed
+
+The `url_changed` event is sent each time a new page starts loading.
+
+This is [debounced](https://developer.mozilla.org/en-US/docs/Glossary/Debounce)
+by 1 second, and will not be sent on app launch or refresh, as the URL did
+not change.
+
+Example Payload:
+
+```json
+{
+  "eventType": "url_changed",
+  "messageId": "b304f047-0e5b-4389-bcbc-3f9eb1ee4ec3",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1",
+  "data": {
+    "url": "https://webviewkiosk.nktnet.uk/docs/installation/"
+  }
+}
+```
+
+### 2.4. Lock
+
+The `lock` event is triggered whenever the app enters Lock Task Mode
+(or Screen Pinning for user-owned devices) from an unlocked state.
+
+The `lockStateType` is passed as data, which can be one of:
+- `LOCK_TASK`
+- `SCREEN_PINNING`
+- `UNKNOWN` (on Android 5.0)
+
+Example payload:
+
+```json
+{
+  "eventType": "lock",
+  "messageId": "fada3acc-50aa-42dc-be96-681c295b8d4a",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1",
+  "data": {
+    "lockStateType": "LOCK_TASK"
+  }
+}
+```
+
+### 2.5. Unlock
+
+The `unlock` event is triggered when the app exits Lock Task Mode
+(or Screen Pinning for user-owned devices) from a locked state.
+
+Example Payload:
+
+```json
+{
+  "eventType": "unlock",
+  "messageId": "74dd1313-88ed-48db-b707-5eda8c598e4d",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1"
+}
+```

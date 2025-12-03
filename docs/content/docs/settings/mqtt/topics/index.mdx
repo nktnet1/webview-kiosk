@@ -14,7 +14,9 @@ To understand MQTT's publish and subscribe architecture, refer to
 
 </Callout>
 
-### Quality of Service (QoS)
+## 1. Common Settings
+
+### 1.1. Quality of Service (QoS)
 
 All topics in {APP_NAME} will allow the Quality of Service to be configured using one of:
 
@@ -31,7 +33,7 @@ For more information, see:
 - [EMQX QoS Guide](https://www.emqx.com/en/blog/introduction-to-mqtt-qos)
 - [HiveMQ QoS Guide](https://www.hivemq.com/blog/mqtt-essentials-part-6-mqtt-quality-of-service-levels)
 
-### Retained Messages
+### 1.2. Retained Messages
 
 For publish topics, the `retain` property (type boolean) can be configured (default: false)
 
@@ -51,12 +53,53 @@ For more information, see:
 - [EMQX Retained Messages Guide](https://www.emqx.com/en/blog/mqtt5-features-retain-message)
 - [HiveMQ Retained Messages Guide](https://www.hivemq.com/blog/mqtt-essentials-part-8-retained-messages/)
 
-### Request-Response Pattern
+## 2. Shared Payload Properties
 
-{APP_NAME} also utilises the request-response pattern for manual query
-of device information states.
+### 2.1. Message ID
 
-This pattern is explained in:
+For **published messages**, a
+[UUID](https://developer.mozilla.org/en-US/docs/Glossary/UUID)
+will be generated.
 
-- [EMQX — MQTT 5: Request-Response](https://www.emqx.com/en/blog/mqtt5-request-response)
-- [HiveMQ — MQTT 5 Essentials Part 9: Request-Response Pattern](https://www.hivemq.com/blog/mqtt5-essentials-part9-request-response-pattern/)
+For **subscribed messages**, this can optionally be provided, which will appear in
+the app's debug logs.
+
+For response messages, the payload will contain a `requestMessageId`
+if the `messageId` provided in the request.
+
+Example in Payload:
+
+```json
+{
+  "messageId": "e5e7cb82-cff4-11f0-a32b-5a93ec0e6f92"
+}
+```
+
+### 2.2. App Instance ID
+
+For **published messages**, the `appInstanceId`, which you can find
+in the [Settings -> About](/docs/settings/about) screen, will be included
+in each message, both in the payload and as a
+[user property](https://www.emqx.com/en/blog/mqtt5-user-properties).
+
+Example in Payload:
+
+```json
+{
+  "appInstanceId": "c345e39c-accd-11f0-9ea0-5a93ec0e6f91"
+}
+```
+
+## 2.3. Username
+
+For **published messages**, the MQTT connection `username` will be included
+in each message, both in the payload and as a
+[user property](https://www.emqx.com/en/blog/mqtt5-user-properties).
+
+Example in Payload:
+
+```json
+{
+  "username": "test-user-001"
+}
+```
