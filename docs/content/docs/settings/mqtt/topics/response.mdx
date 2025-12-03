@@ -3,6 +3,8 @@ title: Response
 description: MQTT5 pattern for synchronous, one-to-one based protocols
 ---
 
+import { APP_NAME } from '@/config/app';
+
 <Callout title="Tip" type="info">
 
 {APP_NAME} also utilises the request-response pattern for manual query
@@ -14,4 +16,146 @@ This pattern is explained in:
 
 </Callout>
 
-import { APP_NAME } from '@/config/app';
+## 1. Settings
+
+### 1.1. Topic Name
+
+All global variables are supported, in addition to `RESPONSE_TYPE`.
+For example,
+
+```js
+wk/${USERNAME}/${APP_INSTANCE_ID}/response/${RESPONSE_TYPE}
+```
+
+**Default:**
+
+```js
+wk/response/${RESPONSE_TYPE}
+```
+
+### 1.2. Quality of Service (QoS)
+
+Quality of Service (QoS) ensures different message delivery guarantees
+in case of connection failures.
+
+**Default:** At Most Once (0)
+
+### 1.3. Retain
+
+Keep response topic messages retained for new subscribers.
+
+**Default:** false
+
+## 2. Responses
+
+### 2.1. Get Status
+
+```json
+{
+  "responseType": "get_status",
+  "messageId": "e3d50b37-febf-4289-86ff-bf2f5506fafc",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1",
+  "requestMessageId": null,
+  "data": {
+    "currentUrl": "https://webviewkiosk.nktnet.uk",
+    "isLocked": false,
+    "lockStateType": "NONE",
+    "lastInteractionTime": 1764695317211,
+    "batteryPercentage": 62,
+    "appBrightnessPercentage": -1,
+    "systemBrightness": 255
+  }
+}
+```
+
+### 2.2. Get Settings
+
+```jsonc
+{
+  "responseType": "get_settings",
+  "messageId": "887eb103-43c8-4306-b9cc-97f1e8499fe1",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1",
+  "requestMessageId": null,
+  "data": {
+    "settings": {
+      // Response settings depends on the request payload
+      "appearance.theme": "SYSTEM",
+      "device.rotation": "AUTO"
+    }
+  }
+}
+```
+
+### 2.3. Get System Info
+
+```json
+{
+  "responseType": "get_system_info",
+  "messageId": "154ec3ff-ff5a-49e6-9fa0-f6311e6893b8",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1",
+  "requestMessageId": null,
+  "data": {
+    "app": {
+      "name": "Webview Kiosk",
+      "packageName": "uk.nktnet.webviewkiosk",
+      "versionName": "0.25.0.12-mqtt-beta",
+      "versionCode": 98,
+      "minSdk": 21,
+      "targetSdk": 36,
+      "isDebug": true,
+      "installer": null,
+      "isDeviceOwner": false,
+      "isLockTaskPermitted": true,
+      "dhizukuPermissionGranted": true,
+      "instanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1"
+    },
+    "device": {
+      "releaseVersion": "15",
+      "sdkVersion": 35,
+      "incrementalVersion": "12592187",
+      "webViewVersion": "141.0.7390.122",
+      "screenWidth": 1080,
+      "screenHeight": 2400,
+      "screenDensity": 2.625,
+      "isManagedProfile": false,
+      "timeZone": "Australia/Sydney",
+      "locale": "en_US",
+      "totalMemory": 2070986752,
+      "totalStorage": 6228115456,
+      "manufacturer": "Google",
+      "model": "sdk_gphone64_arm64",
+      "brand": "google",
+      "device": "emu64a",
+      "product": "sdk_gphone64_arm64",
+      "hardware": "ranchu",
+      "board": "goldfish_arm64",
+      "bootloader": "unknown",
+      "securityPatch": "2024-09-05",
+      "supportedAbis": [
+        "arm64-v8a"
+      ],
+      "supported32BitAbis": [],
+      "supported64BitAbis": [
+        "arm64-v8a"
+      ],
+      "buildFingerprint": "google/sdk_gphone64_arm64/emu64a:15/AE3A.240806.036/12592187:user/release-keys"
+    }
+  }
+}
+```
+
+### 2.4. Error
+
+```json
+{
+  "responseType": "error",
+  "messageId": "8dd31926-e3be-4c26-8cae-e8057418e728",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1",
+  "requestMessageId": null,
+  "errorMessage": "Unexpected JSON token at offset 0: Serializer for subclass 'invalid' is not found in the polymorphic scope of 'MqttRequestMessage' at path: $\nCheck if class with serial name 'invalid' exists and serializer is registered in a corresponding SerializersModule.\nTo be registered automatically, class 'invalid' has to be '@Serializable', and the base class 'MqttRequestMessage' has to be sealed and '@Serializable'.\nJSON input: {\n  \"requestType\": \"invalid\"\n}"
+}
+```
