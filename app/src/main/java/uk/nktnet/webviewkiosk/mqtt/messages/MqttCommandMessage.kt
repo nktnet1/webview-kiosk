@@ -21,7 +21,7 @@ data class MqttGoBackCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
-    override fun toString() = "Go Back"
+    override fun toString() = "go_back"
 }
 
 @Serializable
@@ -32,7 +32,7 @@ data class MqttGoForwardCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
-    override fun toString() = "Go Forward"
+    override fun toString() = "go_forward"
 }
 
 @Serializable
@@ -43,7 +43,7 @@ data class MqttGoHomeCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
-    override fun toString() = "Go Home"
+    override fun toString() = "go_home"
 }
 
 @Serializable
@@ -54,7 +54,7 @@ data class MqttRefreshCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
-    override fun toString() = "Refresh"
+    override fun toString() = "refresh"
 }
 
 @Serializable
@@ -70,7 +70,7 @@ data class MqttGoToUrlCommand(
     data class UrlData(
         val url: String
     )
-    override fun toString() = "Go to URL"
+    override fun toString() = "go_to_url"
 }
 
 @Serializable
@@ -86,7 +86,7 @@ data class MqttSearchCommand(
     data class QueryData(
         val query: String
     )
-    override fun toString() = "Search"
+    override fun toString() = "search"
 }
 
 @Serializable
@@ -97,7 +97,7 @@ data class MqttClearHistoryMqttCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
-    override fun toString() = "Clear History"
+    override fun toString() = "clear_history"
 }
 
 @Serializable
@@ -119,7 +119,7 @@ data class MqttLockCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
-    override fun toString() = "Lock"
+    override fun toString() = "lock"
 }
 
 @Serializable
@@ -130,7 +130,7 @@ data class MqttUnlockCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
-    override fun toString() = "Unlock"
+    override fun toString() = "unlock"
 }
 
 @Serializable
@@ -141,7 +141,7 @@ data class MqttReconnectMqttCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
-    override fun toString() = "Reconnect"
+    override fun toString() = "reconnect"
 }
 
 @Serializable
@@ -152,7 +152,7 @@ data class MqttLockDeviceCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
 ) : MqttCommandMessage {
-    override fun toString() = "Lock Device"
+    override fun toString() = "lock_device"
 }
 
 @Serializable
@@ -164,7 +164,7 @@ data class MqttErrorCommand(
     override val targetUsernames: Set<String>? = null,
     val error: String = "unknown command",
 ) : MqttCommandMessage {
-    override fun toString() = "Command Error: $error"
+    override fun toString() = "error"
 }
 
 val MqttCommandJsonParser = Json(BaseJson) {
