@@ -8,14 +8,15 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
-fun MqttSubscribeSettingsRetainedAsPublishedSetting() {
+fun MqttSubscribeSettingsRetainAsPublishedSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
 
     BooleanSettingFieldItem(
-        label = "Retained As Published",
+        label = "Retain as Published",
         infoText = """
-            Keep settings topic messages retained for new subscribers.
+            Controls whether retained messages from the broker keep their original
+            retained flag when delivered to the subscriber.
         """.trimIndent(),
         initialValue = userSettings.mqttSubscribeSettingsRetainAsPublished,
         restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_AS_PUBLISHED),

@@ -13,7 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.command.MqttSubscribeCommandQosSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.command.MqttSubscribeCommandRetainHandlingSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.command.MqttSubscribeCommandRetainedAsPublishedSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.command.MqttSubscribeCommandRetainAsPublishedSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.command.MqttSubscribeCommandTopicSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsButton
 
@@ -39,7 +39,7 @@ fun SettingsMqttTopicsSubscribeCommandScreen(navController: NavController) {
             MqttSubscribeCommandTopicSetting()
             MqttSubscribeCommandQosSetting()
             MqttSubscribeCommandRetainHandlingSetting()
-            MqttSubscribeCommandRetainedAsPublishedSetting()
+            MqttSubscribeCommandRetainAsPublishedSetting()
 
             Spacer(modifier = Modifier.height(8.dp))
         }
