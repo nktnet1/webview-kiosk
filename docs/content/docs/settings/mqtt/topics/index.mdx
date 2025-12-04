@@ -37,16 +37,16 @@ For more information, see:
 
 For publish topics, the `retain` property (type boolean) can be configured (default: false)
 
-For subscribe topics, the `retained as published` property (type boolean) can be configured (default: false),
-as well as:
+For subscribe topics, the `retain as published` property (type boolean, default false) can be configured,
+as well as `retain handling`, which can be:
 
 | Retain Handling | Description |
 |-----------------|-------------|
-| Send | The broker sends the retained message to the subscriber when it subscribes. |
-| Send if Subscription Does not Exist | The broker sends the retained message only if the subscription is new and didn't exist before. |
-| Do Not Send | The broker does not send any retained messages when the subscription is made. |
+| Send (0) | The broker sends the retained message to the subscriber when it subscribes. |
+| Send if Subscription Does not Exist (1) | The broker sends the retained message only if the subscription is new and didn't exist before. |
+| Do Not Send (2) | The broker does not send any retained messages when the subscription is made. |
 
-The default is `Do Not Send (2)`.
+The default `retain handling` is `Do Not Send (2)`.
 
 For more information, see:
 
@@ -90,7 +90,7 @@ Example in Payload:
 }
 ```
 
-## 2.3. Username
+### 2.3. Username
 
 For **published messages**, the MQTT connection `username` will be included
 in each message, both in the payload and as a

@@ -1,6 +1,6 @@
 ---
 title: Response
-description: MQTT5 pattern for synchronous, one-to-one based protocols
+description: Publish replies to information requests
 ---
 
 import { APP_NAME } from '@/config/app';
@@ -50,6 +50,10 @@ Keep response topic messages retained for new subscribers.
 
 ### 2.1. Get Status
 
+This response is published when a `get_status` request is received.
+
+Example Payload:
+
 ```json
 {
   "responseType": "get_status",
@@ -71,6 +75,12 @@ Keep response topic messages retained for new subscribers.
 
 ### 2.2. Get Settings
 
+This response is published when a `get_settings` request is received.
+
+The returned settings will depend on what was included in the request payload.
+
+Example Payload:
+
 ```jsonc
 {
   "responseType": "get_settings",
@@ -89,6 +99,8 @@ Keep response topic messages retained for new subscribers.
 ```
 
 ### 2.3. Get System Info
+
+This response is published when a `get_system_info` request is received.
 
 ```json
 {
@@ -149,13 +161,20 @@ Keep response topic messages retained for new subscribers.
 
 ### 2.4. Error
 
+This response is published whenever an error occurs with processing a request.
+
+For example, the `requestType` could be invalid.
+
+Example Payload:
+
 ```json
 {
   "responseType": "error",
-  "messageId": "8dd31926-e3be-4c26-8cae-e8057418e728",
+  "messageId": "058a8f44-d34a-43b6-a7e7-8f5537cea62f",
   "username": "medium-phone-api-35",
   "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1",
   "requestMessageId": null,
+  "payloadStr": "{\n  \"requestType\": \"invalid\"\n}",
   "errorMessage": "Unexpected JSON token at offset 0: Serializer for subclass 'invalid' is not found in the polymorphic scope of 'MqttRequestMessage' at path: $\nCheck if class with serial name 'invalid' exists and serializer is registered in a corresponding SerializersModule.\nTo be registered automatically, class 'invalid' has to be '@Serializable', and the base class 'MqttRequestMessage' has to be sealed and '@Serializable'.\nJSON input: {\n  \"requestType\": \"invalid\"\n}"
 }
 ```

@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.sett
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption
@@ -16,7 +17,8 @@ fun MqttSubscribeSettingsRetainHandlingSetting() {
     DropdownSettingFieldItem(
         label = "Retain Handling",
         infoText = """
-            Control how retained messages are delivered for settings subscriptions.
+            Control whether ${Constants.APP_NAME}} should receive existing
+            retained messages when subscribing.
         """.trimIndent(),
         options = MqttRetainHandlingOption.entries,
         initialValue = userSettings.mqttSubscribeSettingsRetainHandling,
