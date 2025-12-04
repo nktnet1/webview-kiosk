@@ -284,7 +284,7 @@ fun KioskControlPanel(
                             showDialog = isSticky
                         },
                         enabled = enableInteraction && canGoBack,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_arrow_back_24),
@@ -294,7 +294,7 @@ fun KioskControlPanel(
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             "Back",
-                            style = MaterialTheme.typography.labelSmall
+                            style = MaterialTheme.typography.labelSmall,
                         )
                     }
 
@@ -306,15 +306,15 @@ fun KioskControlPanel(
                         enabled = enableInteraction && canGoForward,
                         modifier = Modifier.weight(1f)
                     ) {
+                        Text(
+                            "Forward",
+                            style = MaterialTheme.typography.labelSmall,
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
                         Icon(
                             painter = painterResource(R.drawable.baseline_arrow_forward_24),
                             contentDescription = "Forward",
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            "Forward",
-                            style = MaterialTheme.typography.labelSmall
+                            modifier = Modifier.size(24.dp),
                         )
                     }
                 }

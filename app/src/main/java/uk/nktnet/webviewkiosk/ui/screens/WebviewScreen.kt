@@ -284,7 +284,6 @@ fun WebviewScreen(navController: NavController) {
             userSettings.searchProviderUrl, input.trim()
         )
         if (searchUrl.isNotBlank() && (searchUrl != systemSettings.currentUrl || userSettings.allowRefresh)) {
-            webView.requestFocus()
             customLoadUrl(searchUrl)
         }
     }

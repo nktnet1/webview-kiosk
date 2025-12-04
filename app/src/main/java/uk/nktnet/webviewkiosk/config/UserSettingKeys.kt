@@ -51,6 +51,7 @@ object UserSettingsKeys {
         const val SSL_ERROR_MODE = "web_engine.ssl_error_mode"
         const val MIXED_CONTENT_MODE = "web_engine.mixed_content_mode"
         const val OVER_SCROLL_MODE = "web_engine.over_scroll_mode"
+        const val REQUEST_FOCUS_ON_PAGE_START = "web_engine.request_focus_on_page_start"
     }
 
     object WebLifecycle {
