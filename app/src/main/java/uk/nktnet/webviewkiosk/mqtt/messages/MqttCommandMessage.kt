@@ -91,7 +91,7 @@ data class MqttSearchCommand(
 
 @Serializable
 @SerialName("clear_history")
-data class MqttClearHistoryMqttCommand(
+data class MqttClearHistoryCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
@@ -101,14 +101,19 @@ data class MqttClearHistoryMqttCommand(
 }
 
 @Serializable
-@SerialName("interact")
-data class MqttInteractMqttCommand(
+@SerialName("toast")
+data class MqttToastCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
+    val data: ToastData
 ) : MqttCommandMessage {
-    override fun toString() = "interact"
+    @Serializable
+    data class ToastData(
+        val message: String
+    )
+    override fun toString() = "toast"
 }
 
 @Serializable
@@ -135,7 +140,7 @@ data class MqttUnlockCommand(
 
 @Serializable
 @SerialName("reconnect")
-data class MqttReconnectMqttCommand(
+data class MqttReconnectCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,

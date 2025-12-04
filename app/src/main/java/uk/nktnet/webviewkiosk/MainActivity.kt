@@ -33,15 +33,15 @@ import uk.nktnet.webviewkiosk.main.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.main.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.main.SetupNavHost
 import uk.nktnet.webviewkiosk.main.handleMainIntent
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttClearHistoryMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttClearHistoryCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttDisconnectingEvent
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttErrorRequest
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttInteractMqttCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttLockDeviceCommand
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttReconnectMqttCommand
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttReconnectCommand
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttSettingsRequest
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttStatusRequest
 import uk.nktnet.webviewkiosk.mqtt.messages.MqttSystemInfoRequest
+import uk.nktnet.webviewkiosk.mqtt.messages.MqttToastCommand
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
@@ -159,7 +159,7 @@ class MainActivity : AppCompatActivity() {
                         UserInteractionStateSingleton.onUserInteraction()
                     }
                     when (commandMessage) {
-                        is MqttReconnectMqttCommand -> {
+                        is MqttReconnectCommand -> {
                             MqttManager.disconnect (
                                 cause = MqttDisconnectingEvent.DisconnectCause.MQTT_RECONNECT_COMMAND_RECEIVED,
                                 onDisconnected = {
@@ -167,11 +167,11 @@ class MainActivity : AppCompatActivity() {
                                 }
                             )
                         }
-                        is MqttClearHistoryMqttCommand -> {
+                        is MqttClearHistoryCommand -> {
                             WebViewNavigation.clearHistory(systemSettings)
                         }
-                        is MqttInteractMqttCommand -> {
-                            UserInteractionStateSingleton.onUserInteraction()
+                        is MqttToastCommand -> {
+                            showToast(commandMessage.data.message)
                         }
                         is MqttLockDeviceCommand -> {
                             if (DeviceOwnerManager.hasOwnerPermission(context)) {
