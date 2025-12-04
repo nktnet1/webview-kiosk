@@ -463,6 +463,7 @@ object MqttManager {
             username = config.username,
             appInstanceId = config.appInstanceId,
             requestMessageId = errorRequest.messageId,
+            payloadStr = errorRequest.payloadStr,
             errorMessage = errorRequest.error,
         )
         publishResponseMessage(
@@ -701,6 +702,7 @@ object MqttManager {
                                         ?.mapNotNull { it.jsonPrimitive.contentOrNull }
                                         ?.toSet()
                                     }.getOrNull(),
+                                payloadStr = payloadStr,
                                 error = e.message ?: e.toString(),
                             )
                         )

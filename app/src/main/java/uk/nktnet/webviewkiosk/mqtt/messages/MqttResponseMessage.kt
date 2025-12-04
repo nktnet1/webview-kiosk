@@ -64,6 +64,7 @@ data class MqttErrorResponse(
     override val username: String,
     override val appInstanceId: String,
     override val requestMessageId: String?,
+    val payloadStr: String,
     val errorMessage: String,
 ) : MqttResponseMessage {
     override fun getType(): String = "error"

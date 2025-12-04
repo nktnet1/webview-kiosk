@@ -73,7 +73,8 @@ data class MqttErrorRequest(
     override val targetUsernames: Set<String>? = null,
     override var responseTopic: String? = null,
     override var correlationData: String? = null,
-    val error: String = "unknown request",
+    val payloadStr: String,
+    val error: String,
 ) : MqttRequestMessage {
     override fun toString() = "Request Error: $error"
 }
