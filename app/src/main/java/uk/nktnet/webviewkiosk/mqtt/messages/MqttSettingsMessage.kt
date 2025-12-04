@@ -5,10 +5,10 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MqttSettingsMessage(
     val messageId: String? = null,
-    val refresh: Boolean = true,
-    val showToast: Boolean = true,
     val targetInstances: Set<String>? = null,
     val targetUsernames: Set<String>? = null,
+    val showToast: Boolean = true,
+    val reloadActivity: Boolean = true,
     val data: SettingsUpdateData,
 ) {
     @Serializable

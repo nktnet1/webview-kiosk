@@ -610,8 +610,6 @@ object MqttManager {
 
                 val settingsMessage = MqttSettingsMessage(
                     messageId = getValueFromPrimitiveJson(payloadStr, "messageId"),
-                    refresh = json["refresh"]?.jsonPrimitive?.booleanOrNull ?: true,
-                    showToast = json["showToast"]?.jsonPrimitive?.booleanOrNull ?: true,
                     targetInstances = runCatching {
                         json["targetInstances"]?.jsonArray?.mapNotNull {
                             it.jsonPrimitive.contentOrNull
@@ -622,6 +620,8 @@ object MqttManager {
                             it.jsonPrimitive.contentOrNull
                         }?.toSet()
                     }.getOrNull(),
+                    showToast = json["showToast"]?.jsonPrimitive?.booleanOrNull ?: true,
+                    reloadActivity = json["refresh"]?.jsonPrimitive?.booleanOrNull ?: true,
                     data = MqttSettingsMessage.SettingsUpdateData(
                         settingsStr
                     )

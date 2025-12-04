@@ -187,7 +187,7 @@ class MainActivity : AppCompatActivity() {
                 MqttManager.settings.collect { settingsMessage ->
                     userSettings.importJson(settingsMessage.data.settings)
 
-                    if (settingsMessage.refresh) {
+                    if (settingsMessage.reloadActivity) {
                         updateDeviceSettings(context)
                     }
 
@@ -196,7 +196,7 @@ class MainActivity : AppCompatActivity() {
                     // If we're on another screen though (e.g. settings), then let the user
                     // decide when to navigate back.
                     if (
-                        settingsMessage.refresh
+                        settingsMessage.reloadActivity
                         && navController.currentDestination?.route == Screen.WebView.route
                     ) {
                         navigateToWebViewScreen(navController)
