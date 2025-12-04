@@ -53,19 +53,13 @@ For more information, see:
 - [EMQX Retained Messages Guide](https://www.emqx.com/en/blog/mqtt5-features-retain-message)
 - [HiveMQ Retained Messages Guide](https://www.hivemq.com/blog/mqtt-essentials-part-8-retained-messages/)
 
-## 2. Shared Payload Properties
+## 2. Shared Publish Payload Properties
 
 ### 2.1. Message ID
 
-For **published messages**, a
+For **published topics**, a
 [UUID](https://developer.mozilla.org/en-US/docs/Glossary/UUID)
-will be generated.
-
-For **subscribed messages**, this can optionally be provided, which will appear in
-the app's debug logs.
-
-For response messages, the payload will contain a `requestMessageId`
-if the `messageId` provided in the request.
+will be generated for all messages.
 
 Example in Payload:
 
@@ -77,7 +71,7 @@ Example in Payload:
 
 ### 2.2. App Instance ID
 
-For **published messages**, the `appInstanceId`, which you can find
+For **published topics**, the `appInstanceId`, which you can find
 in the [Settings -> About](/docs/settings/about) screen, will be included
 in each message, both in the payload and as a
 [user property](https://www.emqx.com/en/blog/mqtt5-user-properties).
@@ -92,7 +86,7 @@ Example in Payload:
 
 ### 2.3. Username
 
-For **published messages**, the MQTT connection `username` will be included
+For **published topics**, the MQTT connection `username` will be included
 in each message, both in the payload and as a
 [user property](https://www.emqx.com/en/blog/mqtt5-user-properties).
 
@@ -101,5 +95,60 @@ Example in Payload:
 ```json
 {
   "username": "test-user-001"
+}
+```
+
+## 3. Shared Subscribe Payload Properties
+
+### 3.1. Message ID
+
+For **subscribed topics**, the `messageId` can be optionally specified, which
+will be displayed and highlighted in the debug logs
+
+For request-response, the response payload will include a `requestMessageId`
+property with the value you've provided when making the request.
+
+```json
+{
+  "messageId": "example-001"
+}
+```
+
+### 3.2. Target Instances & Target Usernames
+
+<Callout title="Warning" type="warning">
+
+These properties are intended for convenience and testing purposes,
+with all messages being received and filtered client-side.
+
+It is better practice subscribe only to topics that the client
+needs, e.g. by modifying the default topic names and making use
+of the global variables.
+
+</Callout>
+
+For **subscribed topics**, the `targetInstances` and `targetUsernames` (**type:** string array)
+can be optionally provided.
+
+{APP_NAME} will ignore messages that contain these properties if neither
+of its `appInstanceId` or `username` were specified in the array.
+
+When the arrays are empty (or `null`/`undefined`), all messages will be processed.
+
+```json tab="Target Instances"
+{
+  "targetInstances": [
+    "4f79ca9c-d0c6-11f0-953d-5a93ec0e6f90",
+    "55ebdc6c-d0c6-11f0-8fcc-5a93ec0e6f90"
+  ]
+}
+```
+
+```json tab="Target Usernames"
+{
+  "targetUsernames": [
+    "user-001",
+    "user-002"
+  ]
 }
 ```
