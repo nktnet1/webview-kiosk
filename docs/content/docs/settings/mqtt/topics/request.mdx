@@ -128,7 +128,7 @@ Example payload:
 ### 2.2. Get Settings
 
 Retrieves configured user settings of your choosing by providing an array of
-setting keys, e.g.
+setting keys inside the payload data. This array could look like:
 
 ```json
 [
@@ -137,9 +137,12 @@ setting keys, e.g.
 ]
 ```
 
-If no arrays are provided, all settings will be returned.
+The values for the following settings will not be returned for security reasons:
 
-See the example payload format further below.
+- `device.custom_auth_password`
+- `mqtt.connection.password`
+
+If no setting keys are provided, all valid settings will be returned.
 
 #### 2.2.1. Parse as Array
 
