@@ -1,13 +1,16 @@
-import { loader } from "fumadocs-core/source";
-import { createMDXSource } from "fumadocs-mdx";
-import { docs, legal as legalPages } from "@/.source";
+import { loader, multiple } from "fumadocs-core/source";
+import { docs, legal as legalPages } from "fumadocs-mdx:collections/server";
+import { toFumadocsSource } from "fumadocs-mdx/runtime/server";
 
-export const source = loader({
-  baseUrl: "/docs",
-  source: docs.toFumadocsSource(),
-});
+export const source = loader(
+  multiple({
+    docs: docs.toFumadocsSource(),
+  }),
+  {
+    baseUrl: "/docs",
+  }
+);
 
-export const legal = loader({
+export const legal = loader(toFumadocsSource(legalPages, []), {
   baseUrl: "/",
-  source: createMDXSource(legalPages, []),
 });

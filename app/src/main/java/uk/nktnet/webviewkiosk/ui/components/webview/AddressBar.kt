@@ -279,7 +279,7 @@ fun AddressBar(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .padding(
-                userSettings.addressBarSize.paddingDp
+                userSettings.addressBarSize.paddingDp,
             )
             .imePadding()
             .fillMaxWidth()
@@ -377,7 +377,8 @@ fun AddressBar(
         if (enabledActions.isNotEmpty()) {
             Box(
                 modifier = Modifier
-                    .padding(start = 4.dp)
+                    .padding(2.dp)
+                    .offset(x = userSettings.addressBarSize.paddingDp / 4)
             ) {
                 IconButton(
                     onClick = {
@@ -385,9 +386,8 @@ fun AddressBar(
                         menuExpanded = true
                     },
                     modifier = Modifier
-                        .padding(0.dp)
-                        .width(userSettings.addressBarSize.moreVertWidthDp)
-                        .wrapContentSize(Alignment.Center)
+                        .height(userSettings.addressBarSize.moreVertHeightDp)
+                        .aspectRatio(2f / 3f)
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.outline_more_vert_24),

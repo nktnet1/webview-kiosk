@@ -33,6 +33,14 @@ fun SettingsMoreActionsScreen(navController: NavController) {
         ).apply { show() }
     }
 
+    val maintenanceWebView = remember { WebView(context.applicationContext) }
+    DisposableEffect(Unit) {
+        onDispose {
+            maintenanceWebView.stopLoading()
+            maintenanceWebView.destroy()
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -67,28 +75,20 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 showToast("Cookies cleared.")
             }
             ActionButton("Clear Cache") {
-                val webView = WebView(context)
-                webView.clearCache(true)
-                webView.destroy()
+                maintenanceWebView.clearCache(true)
                 showToast("Cache cleared.")
             }
             ActionButton("Clear Form Data") {
-                val webView = WebView(context)
-                webView.clearFormData()
-                webView.destroy()
+                maintenanceWebView.clearFormData()
                 showToast("Form data cleared.")
             }
             ActionButton("Clear History") {
-                val webView = WebView(context)
-                webView.clearHistory()
+                maintenanceWebView.clearHistory()
                 WebViewNavigation.clearHistory(systemSettings)
-                webView.destroy()
                 showToast("History cleared.")
             }
             ActionButton("Clear SSL Preferences") {
-                val webView = WebView(context)
-                webView.clearSslPreferences()
-                webView.destroy()
+                maintenanceWebView.clearSslPreferences()
                 showToast("SSL preferences cleared.")
             }
             ActionButton("Clear Web Storage") {
