@@ -171,7 +171,9 @@ class MainActivity : AppCompatActivity() {
                             WebViewNavigation.clearHistory(systemSettings)
                         }
                         is MqttToastCommand -> {
-                            showToast(commandMessage.data.message)
+                            if (commandMessage.data.message.isNotBlank()) {
+                                showToast(commandMessage.data.message)
+                            }
                         }
                         is MqttLockDeviceCommand -> {
                             if (DeviceOwnerManager.hasOwnerPermission(context)) {
