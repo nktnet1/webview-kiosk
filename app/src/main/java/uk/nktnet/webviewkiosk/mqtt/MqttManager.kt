@@ -621,7 +621,7 @@ object MqttManager {
                         }?.toSet()
                     }.getOrNull(),
                     showToast = json["showToast"]?.jsonPrimitive?.booleanOrNull ?: true,
-                    reloadActivity = json["refresh"]?.jsonPrimitive?.booleanOrNull ?: true,
+                    reloadActivity = json["reloadActivity"]?.jsonPrimitive?.booleanOrNull ?: true,
                     data = MqttSettingsMessage.SettingsUpdateData(
                         settingsStr
                     )
