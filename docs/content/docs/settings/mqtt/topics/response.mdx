@@ -27,6 +27,11 @@ in addition to `RESPONSE_TYPE`. For example,
 wk/${USERNAME}/${APP_INSTANCE_ID}/response/${RESPONSE_TYPE}
 ```
 
+If a `responseTopic` is specified in the request, either in the
+payload or using MQTT V5's metadata
+([3.1.3.2.7. Response Topic](https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901066)),
+the reply will be published to that `responseTopic` instead.
+
 **Default:**
 
 ```js
@@ -48,6 +53,16 @@ Keep response topic messages retained for new subscribers.
 
 ## 2. Payload
 
+All published events will contain the
+[shared payload properties](/docs/settings/mqtt/topics#2-shared-payload-properties)
+mentioned previously, as well as the following:
+
+| Property | Type | Description |
+|-|-|-|
+| `responseType` | string | The type of response matching the request type, e.g. `get_status`. |
+| `requestMessageId` | string *(nullable)* | if a `messageId` was provided in the request, it will be re-used here. |
+| `correlationData` | string *(nullable)* | if provided in the request, either in the payload or using MQTT V5's metadata ([3.1.3.2.7. Correlation Data](https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901067)), it will be present here in addition to the message's metadata. |
+
 ### 2.1. Get Status
 
 This response is published when a `get_status` request is received.
@@ -61,6 +76,7 @@ Example Payload:
   "username": "medium-phone-api-35",
   "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1",
   "requestMessageId": null,
+  "correlationData": null,
   "data": {
     "currentUrl": "https://webviewkiosk.nktnet.uk",
     "isLocked": false,
@@ -88,6 +104,7 @@ Example Payload:
   "username": "medium-phone-api-35",
   "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1",
   "requestMessageId": null,
+  "correlationData": null,
   "data": {
     "settings": {
       // Response settings depends on the request payload
@@ -109,6 +126,7 @@ This response is published when a `get_system_info` request is received.
   "username": "medium-phone-api-35",
   "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1",
   "requestMessageId": null,
+  "correlationData": null,
   "data": {
     "app": {
       "name": "Webview Kiosk",
@@ -174,6 +192,7 @@ Example Payload:
   "username": "medium-phone-api-35",
   "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1",
   "requestMessageId": null,
+  "correlationData": null,
   "payloadStr": "{\n  \"requestType\": \"invalid\"\n}",
   "errorMessage": "Unexpected JSON token at offset 0: Serializer for subclass 'invalid' is not found in the polymorphic scope of 'MqttRequestMessage' at path: $\nCheck if class with serial name 'invalid' exists and serializer is registered in a corresponding SerializersModule.\nTo be registered automatically, class 'invalid' has to be '@Serializable', and the base class 'MqttRequestMessage' has to be sealed and '@Serializable'.\nJSON input: {\n  \"requestType\": \"invalid\"\n}"
 }
