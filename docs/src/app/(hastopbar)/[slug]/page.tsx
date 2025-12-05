@@ -13,9 +13,9 @@ export default async function Page(props: PageProps<"/[slug]">) {
   const { body: Mdx, toc } = await page.data.load();
 
   return (
-    <div>
+    <main className="mx-auto w-full max-w-page px-4 py-4 md:px-8 md:py-6">
       <div
-        className="container rounded-xl border py-12 md:px-8"
+        className="container rounded-xl border py-4 md:py-12 px-4 md:px-8"
         style={{
           backgroundColor: "black",
           backgroundImage: [
@@ -31,13 +31,13 @@ export default async function Page(props: PageProps<"/[slug]">) {
         </h1>
         <p className="mb-4 text-white/80">{page.data.description}</p>
       </div>
-      <article className="container grid grid-cols-1 px-0 py-8 lg:grid-cols-[2fr_1fr] lg:px-4">
+      <article className="container grid grid-cols-1 px-0 py-2 md:py-4 lg:grid-cols-[2fr_1fr] lg:px-4">
         <div className="prose p-4">
           <InlineTOC items={toc} />
           <Mdx components={defaultMdxComponents} />
         </div>
       </article>
-    </div>
+    </main>
   );
 }
 
