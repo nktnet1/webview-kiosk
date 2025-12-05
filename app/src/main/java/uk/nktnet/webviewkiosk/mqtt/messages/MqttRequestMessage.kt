@@ -35,7 +35,7 @@ data class MqttSettingsRequest(
     override val targetUsernames: Set<String>? = null,
     override var responseTopic: String? = null,
     override var correlationData: String? = null,
-    val data: SettingsRequestData,
+    val data: SettingsRequestData = SettingsRequestData(),
 ) : MqttRequestMessage {
     @Serializable
     data class SettingsRequestData(
