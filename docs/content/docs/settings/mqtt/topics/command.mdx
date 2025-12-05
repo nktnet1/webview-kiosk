@@ -9,17 +9,17 @@ import { APP_NAME } from '@/config/app';
 
 ### 1.1. Topic Name
 
-All global variables are supported, in addition to `EVENT_TYPE`.
+All [global variables](/docs/settings/mqtt/#3-global-variables) are supported.
 For example,
 
 ```js
-wk/${USERNAME}/${APP_INSTANCE_ID}/event/${EVENT_TYPE}
+wk/${USERNAME}/${APP_INSTANCE_ID}/command
 ```
 
 **Default:**
 
 ```js
-wk/event/${EVENT_TYPE}
+wk/command
 ```
 
 ### 1.2. Quality of Service (QoS)
