@@ -43,12 +43,21 @@ retained flag when delivered to the subscriber.
 
 **Default:** false
 
-## 2. Payload Examples
+## 2. Payload
+
+In addition to the
+[Shared Subscribe Payload Properties](/docs/settings/mqtt/topics/#3-shared-subscribe-payload-properties),
+the following properties can be specified:
+
+| Property | Type | Description |
+|-|-|-|
+| `showToast` | boolean *(optional)* | Whether a toast message should be displayed.<br />**Default:** `true` |
+| `reloadActivity` | boolean *(optional)* | Whether the activity should be reloaded, which is necessary for some settings to to take effect (e.g. `device.rotation`)<br />**Default:** `true`     |
 
 For a list of available setting keys, refer to
 [./app/src/main/res/xml/app_restrictions.xml](https://github.com/nktnet1/webview-kiosk/blob/main/app/src/main/res/xml/app_restrictions.xml).
 
-Below are some example payloads
+Example Payloads:
 
 ```json tab="Minimal"
 {
@@ -60,12 +69,13 @@ Below are some example payloads
 }
 ```
 
-```json tab="Multiple Settings"
+```json tab="Extended"
 {
   "data": {
     "settings": {
       "appearance.theme": "LIGHT",
-      "appearance.address_bar_position": "BOTTOM"
+      "appearance.address_bar_position": "BOTTOM",
+      "web_browsing.allow_refresh": false
     }
   },
   "messageId": "example-001",

@@ -43,15 +43,16 @@ retained flag when delivered to the subscriber.
 
 **Default:** false
 
-## 2. Commands
+## 2. Payload
 
 In addition to the
 [Shared Subscribe Payload Properties](/docs/settings/mqtt/topics/#3-shared-subscribe-payload-properties),
 the following properties exists for all commands:
 
-- `command`: *(string)* the type of command to execute
-- `interact`: *(boolean, default true)* whether a user interaction should be triggered
-    - this will, for example, restore the brightness if `Web Lifecycle -> Dim Screen on Inactivity (seconds)` is configured
+| Property | Type | Description |
+|-|-|-|
+| `command` | string | The command to execute, e.g. `clear_history` |
+| `interact` | boolean *(optional)* | Whether a user interaction should be triggered. For example, this will restore brightness if `Web Lifecycle -> Dim Screen on Inactivity (seconds)` is configured. <br />**Default:** `true`|
 
 ### 2.1. Go Back
 
