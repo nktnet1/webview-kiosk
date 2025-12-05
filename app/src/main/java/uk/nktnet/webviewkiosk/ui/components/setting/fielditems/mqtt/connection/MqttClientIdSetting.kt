@@ -1,12 +1,26 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection
 
 import android.content.ClipData
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.toClipEntry
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -25,6 +39,8 @@ fun MqttClientIdSetting() {
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
 
+    val recommendedClientId = "wk-${'$'}{${MqttVariableNameOption.APP_INSTANCE_ID.name}}"
+
     TextSettingFieldItem(
         label = "Client ID",
         infoText = """
@@ -35,7 +51,7 @@ fun MqttClientIdSetting() {
 
             Supports global variables such as APP_INSTANCE_ID and USERNAME, which
             you can use like:
-            - wk-${'$'}{${MqttVariableNameOption.APP_INSTANCE_ID.name}}
+            - $recommendedClientId
         """.trimIndent(),
         placeholder = "e.g. wk-${'$'}{APP_INSTANCE_ID}",
         initialValue = userSettings.mqttClientId,
@@ -58,5 +74,35 @@ fun MqttClientIdSetting() {
             }
         },
         onSave = { userSettings.mqttClientId = it },
+        extraContent = { setValue: (String) -> Unit ->
+            if (restricted) return@TextSettingFieldItem
+            Button(
+                onClick = { setValue(recommendedClientId) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                shape = RoundedCornerShape(4.dp),
+                colors = ButtonDefaults.buttonColors()
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "Use recommended:",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Text(
+                        text = recommendedClientId,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+        }
     )
 }
