@@ -230,9 +230,10 @@ fun WebviewScreen(navController: NavController) {
         )
     )
 
-    DisposableEffect(Unit) {
+    DisposableEffect(webView) {
         onDispose {
             webView.stopLoading()
+            webView.removeAllViews()
             webView.destroy()
         }
     }

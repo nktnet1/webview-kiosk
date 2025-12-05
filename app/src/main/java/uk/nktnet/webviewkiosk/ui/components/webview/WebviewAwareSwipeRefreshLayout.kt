@@ -7,7 +7,7 @@ import android.webkit.WebView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
 class WebviewAwareSwipeRefreshLayout : SwipeRefreshLayout {
-    private var webview: WebView? = null
+    private lateinit var webview: WebView
     private var initialY = 0f
 
     constructor(context: Context) : super(context)
@@ -27,8 +27,7 @@ class WebviewAwareSwipeRefreshLayout : SwipeRefreshLayout {
             initialY = ev.y
         }
 
-        val currView = webview
-        if (currView == null || currView.scrollY != 0 || initialY > height / 4) {
+        if (webview.scrollY != 0 || initialY > height / 4) {
             return false
         }
 
