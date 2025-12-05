@@ -20,7 +20,11 @@ fun MqttPublishResponseTopicSetting() {
     TextSettingFieldItem(
         label = "Topic",
         infoText = """
-            The MQTT topic to publish response messages.
+            Default MQTT topic to publish reply messages to requests.
+
+            If a responseTopic is specified in the request, either in the
+            payload or in MQTT V5's metadata, the reply will be published
+            to that responseTopic instead.
 
             Supported variables:
             - ${MqttVariableNameOption.RESPONSE_TYPE.name}

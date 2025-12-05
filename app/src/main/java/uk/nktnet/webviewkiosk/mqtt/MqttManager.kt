@@ -480,13 +480,12 @@ object MqttManager {
         responseMessage: MqttResponseMessage,
         requestMessage: MqttRequestMessage,
     ) {
-        val topic = requestMessage.responseTopic.takeIf { !it.isNullOrEmpty() }
-            ?: mqttVariableReplacement(
-                config.publishResponseTopic,
-                mapOf(
-                    MqttVariableNameOption.RESPONSE_TYPE.name to responseMessage.getType()
-                )
+        val topic = mqttVariableReplacement(
+            requestMessage.responseTopic.takeIf { !it.isNullOrEmpty() } ?: config.publishResponseTopic,
+            mapOf(
+                MqttVariableNameOption.RESPONSE_TYPE.name to responseMessage.getType()
             )
+        )
 
         val payload = MqttResponseJsonParser.encodeToString(responseMessage)
         publishToMqtt(
