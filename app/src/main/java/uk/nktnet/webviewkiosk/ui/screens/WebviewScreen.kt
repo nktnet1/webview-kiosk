@@ -202,6 +202,13 @@ fun WebviewScreen(navController: NavController) {
         )
     )
 
+    DisposableEffect(Unit) {
+        onDispose {
+            webView.stopLoading()
+            webView.destroy()
+        }
+    }
+
     fun customLoadUrl(newUrl: String) {
         systemSettings.urlBeingHandled = newUrl
         val (schemeType, blockCause) = getBlockInfo(
