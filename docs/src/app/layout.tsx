@@ -1,6 +1,6 @@
 import "@/app/global.css";
 import { Toaster } from "@/components/ui/sonner";
-import { RootProvider } from "fumadocs-ui/provider";
+import { RootProvider } from "fumadocs-ui/provider/next";
 import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
 
