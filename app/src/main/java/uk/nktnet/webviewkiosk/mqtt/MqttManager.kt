@@ -414,6 +414,7 @@ object MqttManager {
             username = config.username,
             appInstanceId = config.appInstanceId,
             requestMessageId = statusRequest.messageId,
+            correlationData = statusRequest.correlationData,
             data = status,
         )
         publishResponseMessage(
@@ -428,6 +429,7 @@ object MqttManager {
             username = config.username,
             appInstanceId = config.appInstanceId,
             requestMessageId = settingsRequest.messageId,
+            correlationData = settingsRequest.correlationData,
             data = MqttSettingsResponse.SettingsResponseData(
                 filterSettingsJson(settings, settingsRequest.data.settings),
             ),
@@ -447,6 +449,7 @@ object MqttManager {
             username = config.username,
             appInstanceId = config.appInstanceId,
             requestMessageId = systemInfoRequest.messageId,
+            correlationData = systemInfoRequest.correlationData,
             data = systemInfo,
         )
         publishResponseMessage(
@@ -463,6 +466,7 @@ object MqttManager {
             username = config.username,
             appInstanceId = config.appInstanceId,
             requestMessageId = errorRequest.messageId,
+            correlationData = errorRequest.correlationData,
             payloadStr = errorRequest.payloadStr,
             errorMessage = errorRequest.error,
         )
@@ -655,25 +659,26 @@ object MqttManager {
             retainHandling = config.subscribeRequestRetainHandling,
             retainAsPublished = config.subscribeRequestRetainAsPublished,
             onMessage = { publish, payloadStr ->
+                @SuppressLint("NewApi")
+                val responseTopic = publish.responseTopic.takeIf { it.isPresent }?.get()?.toString()
+                @SuppressLint("NewApi")
+                val correlationData = publish.correlationData.takeIf { it.isPresent }?.let { buf ->
+                    val bytes = ByteArray(buf.get().remaining()).also { buf.get().get(it) }
+                    String(bytes, UTF_8)
+                }
+
                 try {
                     val request = MqttRequestJsonParser.decodeFromString<MqttRequestMessage>(payloadStr)
 
-                    @SuppressLint("NewApi")
-                    if (publish.responseTopic.isPresent) {
-                        request.responseTopic = publish.responseTopic.get().toString()
-                    }
-                    @SuppressLint("NewApi")
-                    if (publish.correlationData.isPresent) {
-                        val buf = publish.correlationData.get()
-                        val bytes = ByteArray(buf.remaining()).also { buf.get(it) }
-                        request.correlationData = String(bytes, UTF_8)
-                    }
                     val targetInstances = request.targetInstances
                     val targetUsernames = request.targetUsernames
                     if (
                         (targetInstances.isNullOrEmpty() || targetInstances.contains(config.appInstanceId))
                         && (targetUsernames.isNullOrEmpty() || targetUsernames.contains(config.username))
                     ) {
+                        request.responseTopic = responseTopic ?: request.responseTopic
+                        request.correlationData = correlationData ?: request.correlationData
+
                         addDebugLog(
                             "request received",
                             "topic: ${publish.topic}\nrequest: $request",
@@ -693,8 +698,8 @@ object MqttManager {
                         _requests.emit(
                             MqttErrorRequest(
                                 messageId = messageId,
-                                responseTopic = getValueFromPrimitiveJson(payloadStr, "responseTopic"),
-                                correlationData = getValueFromPrimitiveJson(payloadStr, "correlationData"),
+                                responseTopic = responseTopic ?: getValueFromPrimitiveJson(payloadStr, "responseTopic"),
+                                correlationData = correlationData ?: getValueFromPrimitiveJson(payloadStr, "correlationData"),
                                 targetInstances = runCatching {
                                     Json.parseToJsonElement(payloadStr)
                                         .jsonObject["targetInstances"]

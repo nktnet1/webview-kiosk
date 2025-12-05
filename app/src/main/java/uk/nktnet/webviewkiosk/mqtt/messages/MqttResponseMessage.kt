@@ -14,6 +14,7 @@ sealed interface MqttResponseMessage {
     val username: String
     val appInstanceId: String
     val requestMessageId: String?
+    val correlationData: String?
     fun getType(): String
 }
 
@@ -24,6 +25,7 @@ data class MqttStatusResponse(
     override val username: String,
     override val appInstanceId: String,
     override val requestMessageId: String?,
+    override val correlationData: String?,
     val data: WebviewKioskStatus,
 ) : MqttResponseMessage {
     override fun getType(): String = "status"
@@ -36,6 +38,7 @@ data class MqttSettingsResponse(
     override val username: String,
     override val appInstanceId: String,
     override val requestMessageId: String?,
+    override val correlationData: String?,
     val data: SettingsResponseData,
 ) : MqttResponseMessage {
     override fun getType(): String = "settings"
@@ -52,6 +55,7 @@ data class MqttSystemInfoResponse(
     override val username: String,
     override val appInstanceId: String,
     override val requestMessageId: String?,
+    override val correlationData: String?,
     val data: SystemInfo,
 ) : MqttResponseMessage {
     override fun getType(): String = "system_info"
@@ -64,6 +68,7 @@ data class MqttErrorResponse(
     override val username: String,
     override val appInstanceId: String,
     override val requestMessageId: String?,
+    override val correlationData: String?,
     val payloadStr: String,
     val errorMessage: String,
 ) : MqttResponseMessage {
