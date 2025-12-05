@@ -73,9 +73,14 @@ Example Payloads:
 {
   "data": {
     "settings": {
+      "web_browsing.allow_refresh": false,
+      "web_browsing.address_bar_actions": [
+        "GO_BACK",
+        "GO_FORWARD",
+        "REFRESH"
+      ],
       "appearance.theme": "LIGHT",
-      "appearance.address_bar_position": "BOTTOM",
-      "web_browsing.allow_refresh": false
+      "appearance.address_bar_position": "BOTTOM"
     }
   },
   "messageId": "example-001",
@@ -85,3 +90,6 @@ Example Payloads:
   "reloadActivity": false
 }
 ```
+
+If a key is specified, but its value is invalid (e.g. wrong type), the default
+value for the key (which may differ from the current value) will be used.
