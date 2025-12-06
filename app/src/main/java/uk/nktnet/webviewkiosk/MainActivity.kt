@@ -22,14 +22,14 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import uk.nktnet.webviewkiosk.auth.AuthenticationManager
+import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.handlers.backbutton.BackButtonService
-import uk.nktnet.webviewkiosk.main.DeviceOwnerManager
-import uk.nktnet.webviewkiosk.main.DeviceOwnerMode
-import uk.nktnet.webviewkiosk.main.SetupNavHost
-import uk.nktnet.webviewkiosk.main.handleMainIntent
+import uk.nktnet.webviewkiosk.managers.BackButtonManager
+import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
+import uk.nktnet.webviewkiosk.managers.DeviceOwnerMode
+import uk.nktnet.webviewkiosk.ui.screens.SetupNavHost
+import uk.nktnet.webviewkiosk.utils.handleMainIntent
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
@@ -53,7 +53,7 @@ class MainActivity : AppCompatActivity() {
     private var uploadProgress by mutableFloatStateOf(0f)
     private lateinit var userSettings: UserSettings
     private lateinit var systemSettings: SystemSettings
-    private lateinit var backButtonService: BackButtonService
+    private lateinit var backButtonService: BackButtonManager
 
     val restrictionsReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -91,7 +91,7 @@ class MainActivity : AppCompatActivity() {
 
         LockStateSingleton.startMonitoring(application)
 
-        backButtonService = BackButtonService(
+        backButtonService = BackButtonManager(
             lifecycleScope = lifecycleScope,
         )
         onBackPressedDispatcher.addCallback(

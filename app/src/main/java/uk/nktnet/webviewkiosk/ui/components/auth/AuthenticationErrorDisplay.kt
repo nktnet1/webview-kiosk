@@ -7,7 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import uk.nktnet.webviewkiosk.auth.AuthenticationManager
+import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 
 @Composable
 fun AuthenticationErrorDisplay(

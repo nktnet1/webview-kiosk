@@ -32,7 +32,7 @@ import uk.nktnet.webviewkiosk.config.option.AddressBarPositionOption
 import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
 import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
 import uk.nktnet.webviewkiosk.handlers.DimScreenOnInactivityTimeoutHandler
-import uk.nktnet.webviewkiosk.handlers.backbutton.BackPressHandler
+import uk.nktnet.webviewkiosk.handlers.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.ResetOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.KioskControlPanel
 import uk.nktnet.webviewkiosk.states.LockStateSingleton

@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.handlers.backbutton
+package uk.nktnet.webviewkiosk.handlers
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect

@@ -19,8 +19,8 @@ import uk.nktnet.webviewkiosk.BuildConfig
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
-import uk.nktnet.webviewkiosk.main.DeviceOwnerManager
-import uk.nktnet.webviewkiosk.main.DeviceOwnerMode
+import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
+import uk.nktnet.webviewkiosk.managers.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.states.KeepScreenOnStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
 import java.util.TimeZone

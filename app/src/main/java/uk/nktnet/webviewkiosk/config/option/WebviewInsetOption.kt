@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.runtime.Composable
 
-enum class WebViewInset(val label: String) {
+enum class WebViewInsetOption(val label: String) {
     None("None"),
     StatusBars("Status Bars"),
     NavigationBars("Navigation Bars"),
@@ -33,7 +33,7 @@ enum class WebViewInset(val label: String) {
     }
 
     companion object {
-        fun fromString(value: String?): WebViewInset =
+        fun fromString(value: String?): WebViewInsetOption =
             entries.find {
                 it.name.equals(value, ignoreCase = true)
                 || it.label.equals(value, ignoreCase = true)

@@ -349,8 +349,8 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.Appearance.WEBVIEW_INSET,
-        WebViewInset.SystemBars.name,
-        fromString = WebViewInset::fromString
+        WebViewInsetOption.SystemBars.name,
+        fromString = WebViewInsetOption::fromString
     )
     var immersiveMode by stringEnumPref(
         getRestrictions,
@@ -700,7 +700,7 @@ class UserSettings(val context: Context) {
 
             theme = ThemeOption.fromString(json.optString(UserSettingsKeys.Appearance.THEME, theme.name))
             floatingToolbarMode = FloatingToolbarModeOption.fromString(json.optString(UserSettingsKeys.Appearance.FLOATING_TOOLBAR_MODE, floatingToolbarMode.name))
-            webViewInset = WebViewInset.fromString(json.optString(UserSettingsKeys.Appearance.WEBVIEW_INSET, webViewInset.name))
+            webViewInset = WebViewInsetOption.fromString(json.optString(UserSettingsKeys.Appearance.WEBVIEW_INSET, webViewInset.name))
             immersiveMode = ImmersiveModeOption.fromString(
                 json.optString(UserSettingsKeys.Appearance.IMMERSIVE_MODE, immersiveMode.name)
             )

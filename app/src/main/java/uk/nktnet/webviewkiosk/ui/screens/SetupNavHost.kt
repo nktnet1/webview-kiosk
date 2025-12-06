@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.main
+package uk.nktnet.webviewkiosk.ui.screens
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
@@ -6,7 +6,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import uk.nktnet.webviewkiosk.config.Screen
-import uk.nktnet.webviewkiosk.ui.screens.*
 import uk.nktnet.webviewkiosk.utils.authComposable
 
 @Composable
