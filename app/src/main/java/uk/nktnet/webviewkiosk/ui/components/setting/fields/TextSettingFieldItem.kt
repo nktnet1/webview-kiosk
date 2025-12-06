@@ -63,7 +63,7 @@ fun TextSettingFieldItem(
             draftValue = value
             draftError = !validator(value)
             showDialog = true
-        }
+        },
     ) { v ->
         val description = descriptionFormatter?.invoke(v) ?: run {
             if (isMultiline) {
@@ -186,8 +186,8 @@ fun TextSettingFieldItem(
                             onClick = {
                                 scope.launch {
                                     val clipEntry = clipboard.getClipEntry()
-                                    val pasteData =
-                                        clipEntry?.clipData?.getItemAt(0)?.text?.toString() ?: ""
+                                    val pasteData = clipEntry
+                                        ?.clipData?.getItemAt(0)?.text.toString()
                                     draftValue = pasteData
                                     draftError = !validator(pasteData)
                                 }

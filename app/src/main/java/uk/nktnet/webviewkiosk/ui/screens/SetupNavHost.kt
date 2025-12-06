@@ -57,6 +57,39 @@ fun SetupNavHost(
             authComposable(Screen.SettingsJsScript.route) {
                 SettingsJsScriptsScreen(navController)
             }
+            authComposable(Screen.SettingsMqtt.route) {
+                SettingsMqttScreen(navController)
+            }
+            authComposable(Screen.SettingsMqttConnection.route) {
+                SettingsMqttConnectionScreen(navController)
+            }
+            authComposable(Screen.SettingsMqttWill.route) {
+                SettingsMqttWillScreen(navController)
+            }
+            authComposable(Screen.SettingsMqttRestrictions.route) {
+                SettingsMqttRestrictionsScreen(navController)
+            }
+            authComposable(Screen.SettingsMqttDebug.route) {
+                SettingsMqttDebugScreen(navController)
+            }
+            authComposable(Screen.SettingsMqttTopics.route) {
+                SettingsMqttTopicsScreen(navController)
+            }
+            authComposable(Screen.SettingsMqttTopicsPublishEvent.route) {
+                SettingsMqttTopicsPublishEventScreen(navController)
+            }
+            authComposable(Screen.SettingsMqttTopicsPublishResponse.route) {
+                SettingsMqttTopicsPublishResponseScreen(navController)
+            }
+            authComposable(Screen.SettingsMqttTopicsSubscribeCommand.route) {
+                SettingsMqttTopicsSubscribeCommandScreen(navController)
+            }
+            authComposable(Screen.SettingsMqttTopicsSubscribeSettings.route) {
+                SettingsMqttTopicsSubscribeSettingsScreen(navController)
+            }
+            authComposable(Screen.SettingsMqttTopicsSubscribeRequest.route) {
+                SettingsMqttTopicsSubscribeRequestScreen(navController)
+            }
             authComposable(Screen.SettingsAbout.route) {
                 SettingsAboutScreen(navController)
             }
