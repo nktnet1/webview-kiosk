@@ -58,11 +58,13 @@ fun WebViewFindBar(
     var query by remember { mutableStateOf("") }
     var currentMatch by remember { mutableIntStateOf(0) }
     var totalMatches by remember { mutableIntStateOf(0) }
+    var doneSearching by remember { mutableStateOf(false) }
 
     LaunchedEffect(webView) {
-        webView.setFindListener { activeOrdinal, matches, _ ->
-            currentMatch = activeOrdinal + 1
-            totalMatches = matches
+        webView.setFindListener { activeMatchOrdinal, numberOfMatches, isDoneCounting ->
+            currentMatch = activeMatchOrdinal + 1
+            totalMatches = numberOfMatches
+            doneSearching = isDoneCounting
         }
     }
 
@@ -83,6 +85,7 @@ fun WebViewFindBar(
         BasicTextField(
             value = query,
             onValueChange = {
+                doneSearching = false
                 query = it
                 webView.findAllAsync(it)
             },
@@ -134,10 +137,13 @@ fun WebViewFindBar(
                         Text(
                             "$displayMatch/$totalMatches",
                             style = MaterialTheme.typography.bodyMedium.copy(
-                                color = if (totalMatches == 0) {
+                                color = if (doneSearching && totalMatches == 0) {
                                     MaterialTheme.colorScheme.error
                                 } else {
                                     MaterialTheme.colorScheme.onSurface
+                                    MaterialTheme.colorScheme.onSurface.copy(
+                                        alpha = if (doneSearching) 1f else 0.5f
+                                    )
                                 },
                             ),
                             modifier = Modifier.padding(start = 4.dp)
