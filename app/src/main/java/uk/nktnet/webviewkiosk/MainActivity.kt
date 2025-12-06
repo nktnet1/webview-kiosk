@@ -92,7 +92,6 @@ class MainActivity : AppCompatActivity() {
                     }
                 )
             }
-
         }
 
         LockStateSingleton.startMonitoring(application)

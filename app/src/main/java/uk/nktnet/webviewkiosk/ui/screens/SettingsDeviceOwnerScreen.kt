@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.rosan.dhizuku.shared.DhizukuVariables
+import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
@@ -84,6 +85,15 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
         toastRef = Toast.makeText(
             context, msg, Toast.LENGTH_SHORT
         ).apply { show() }
+    }
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000)
+            isDeviceOwner = dpm.isDeviceOwnerApp(context.packageName)
+            isLockedTaskPermitted = dpm.isLockTaskPermitted(context.packageName)
+            hasOwnerPermission = DeviceOwnerManager.hasOwnerPermission(context)
+        }
     }
 
     if (showDeviceOwnerRemovalDialog) {
