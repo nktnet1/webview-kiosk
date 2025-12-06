@@ -22,15 +22,6 @@
         <item>SHOWN</item>
     </string-array>
 
-    <string-array name="entries_address_bar_position_option">
-        <item>Top</item>
-        <item>Bottom</item>
-    </string-array>
-    <string-array name="entry_values_address_bar_position_option">
-        <item>TOP</item>
-        <item>BOTTOM</item>
-    </string-array>
-
     <string-array name="entries_address_bar_size_option">
         <item>Extra Small</item>
         <item>Small</item>
@@ -44,6 +35,15 @@
         <item>MEDIUM</item>
         <item>LARGE</item>
         <item>EXTRA_LARGE</item>
+    </string-array>
+
+    <string-array name="entries_address_bar_position_option">
+        <item>Top</item>
+        <item>Bottom</item>
+    </string-array>
+    <string-array name="entry_values_address_bar_position_option">
+        <item>TOP</item>
+        <item>BOTTOM</item>
     </string-array>
 
     <string-array name="entries_floating_toolbar_mode_option">

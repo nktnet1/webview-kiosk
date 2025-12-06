@@ -42,8 +42,8 @@ fun SettingsAppearanceScreen(
             ImmersiveModeSetting()
             BlockedMessageSetting()
             AddressBarModeSetting()
-            AddressBarPositionSetting()
             AddressBarSizeSetting()
+            AddressBarPositionSetting()
 
             Spacer(modifier = Modifier.height(16.dp))
         }
