@@ -1,0 +1,16 @@
+## Changes
+
+- feat: appearance -> address bar position (top/bottom)
+- feat: appearance -> address bar size (small/medium/large + extras)
+- feat: more action buttons for Address Bar and Kiosk Control Panel
+- feat: find text in page (i.e. webview text search)
+- feat: import/export user settings as json
+- feat: web engine -> request focus on page start
+
+- fix: apply desktop viewport width restriction type, bool -> integer
+- fix: change address bar ime action and handler to search
+- fix: clean up webview with disposable effect
+- fix: clip setting list item rounded corners
+- fix: custom password dialog unlock keyboard type
+- fix: swap forward icon placement in kiosk control panel
+- fix: webview allow refresh (swipeable) bug
