@@ -34,7 +34,7 @@ fun InfoItem(label: String, value: String, showToast: (msg: String) -> Unit) {
             .padding(vertical = 12.dp)
             .combinedClickable(
                 onClick = {
-                    showToast("Click and hold to copy value.")
+                    showToast("Tap and hold to copy value.")
                 },
                 onLongClick = {
                     scope.launch {

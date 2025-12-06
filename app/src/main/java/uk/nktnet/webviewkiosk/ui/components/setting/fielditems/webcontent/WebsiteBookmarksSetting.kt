@@ -9,14 +9,14 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.validateUrl
 
 @Composable
-fun BookmarksSetting() {
+fun WebsiteBookmarksSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
 
     var currentValue by remember { mutableStateOf(userSettings.websiteBookmarks) }
 
     TextSettingFieldItem(
-        label = "Bookmarks",
+        label = "Website Bookmarks",
         infoText = """
             Add your bookmark URLs, one per line.
             You can access the bookmarks using the address bar menu.

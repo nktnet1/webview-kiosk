@@ -9,10 +9,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 
 @Composable
 fun SettingListItem(title: String, description: String, onClick: () -> Unit) {
@@ -27,13 +27,14 @@ fun SettingListItem(title: String, description: String, onClick: () -> Unit) {
             )
         },
         modifier = Modifier
-            .clickable { onClick() }
             .fillMaxWidth()
             .padding(vertical = 4.dp)
+            .clip(MaterialTheme.shapes.medium)
             .border(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.outline,
                 shape = MaterialTheme.shapes.medium
             )
+            .clickable { onClick() }
     )
 }

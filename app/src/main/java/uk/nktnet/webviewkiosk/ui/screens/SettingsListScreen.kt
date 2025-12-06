@@ -81,9 +81,14 @@ fun SettingsListScreen(
             verticalArrangement = Arrangement.Top
         ) {
             settingsItems.forEach { (title, description, route) ->
-                SettingListItem(title, description) { navController.navigate(route) }
+                SettingListItem(
+                    title = title,
+                    description = description,
+                    onClick = {
+                        navController.navigate(route)
+                    },
+                )
             }
-
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
