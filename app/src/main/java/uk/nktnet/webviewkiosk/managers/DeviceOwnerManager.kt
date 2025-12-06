@@ -79,8 +79,7 @@ object DeviceOwnerManager {
                 }
                 DeviceOwnerMode.Dhizuku -> {
                     Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && Dhizuku.isPermissionGranted()
-                }
-                else -> {
+                } else -> {
                     false
                 }
             }
