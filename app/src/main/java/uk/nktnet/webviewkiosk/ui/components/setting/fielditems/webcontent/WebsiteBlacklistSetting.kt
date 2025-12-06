@@ -9,12 +9,12 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.validateMultilineRegex
 
 @Composable
-fun WhitelistSetting() {
+fun WebsiteBlacklistSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
 
     TextSettingFieldItem(
-        label = "Whitelist Regex",
+        label = "Website Blacklist",
         infoText = """
             Specify regular expressions (regex), one per line.
 
@@ -28,14 +28,14 @@ fun WhitelistSetting() {
         """.trimIndent(),
         placeholder = """
             e.g.
-                ^https://trusted\.org/?$
-                ^https://.*\.trusted\.org/.*
+                ^.*$
+                ^https://.*\.?google\.com/?.*
         """.trimIndent(),
-        initialValue = userSettings.websiteWhitelist,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebContent.WEBSITE_WHITELIST),
+        initialValue = userSettings.websiteBlacklist,
+        restricted = userSettings.isRestricted(UserSettingsKeys.WebContent.WEBSITE_BLACKLIST),
         isMultiline = true,
         validator = { validateMultilineRegex(it) },
         validationMessage = "Some lines contain invalid regular expressions.",
-        onSave = { userSettings.websiteWhitelist = it }
+        onSave = { userSettings.websiteBlacklist = it }
     )
 }

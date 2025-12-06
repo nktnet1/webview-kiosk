@@ -13,10 +13,10 @@ import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.AllowLocalFilesSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.BlacklistSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.BookmarksSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.WebsiteBlacklistSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.WebsiteBookmarksSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.HomeUrlSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.WhitelistSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.WebsiteWhitelistSetting
 
 @Composable
 fun SettingsWebContentScreen(navController: NavController) {
@@ -35,9 +35,9 @@ fun SettingsWebContentScreen(navController: NavController) {
                 .verticalScroll(rememberScrollState())
         ) {
             HomeUrlSetting()
-            BlacklistSetting()
-            WhitelistSetting()
-            BookmarksSetting()
+            WebsiteBlacklistSetting()
+            WebsiteWhitelistSetting()
+            WebsiteBookmarksSetting()
             AllowLocalFilesSetting()
 
             Spacer(modifier = Modifier.height(12.dp))
