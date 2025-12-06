@@ -11,6 +11,7 @@ enum class AddressBarActionOption(val label: String) {
     HISTORY("History"),
     BOOKMARK("Bookmark"),
     FILES("Files"),
+    FIND("Find"),
     SETTINGS("Settings"),
     LOCK("Lock"),
     UNLOCK("Unlock");
@@ -29,7 +30,8 @@ enum class AddressBarActionOption(val label: String) {
             HOME,
             HISTORY,
             BOOKMARK,
-            FILES
+            FILES,
+            FIND,
         )
 
         fun parseFromJsonArray(jsonArray: JSONArray?): List<AddressBarActionOption> {

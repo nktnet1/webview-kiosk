@@ -10,10 +10,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.webkit.WebView
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import uk.nktnet.webviewkiosk.R
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.ImeAction
 
 @Composable
@@ -37,20 +41,28 @@ private fun RoundIconButton(
 @Composable
 fun WebViewFindBar(
     webView: WebView,
-    findInPageActive: Boolean,
+    showFindInPage: Boolean,
     onActiveChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    if (!findInPageActive) return
+    if (!showFindInPage) return
 
     var query by remember { mutableStateOf("") }
-    var activeMatch by remember { mutableIntStateOf(0) }
+    var currentMatch by remember { mutableIntStateOf(0) }
     var totalMatches by remember { mutableIntStateOf(0) }
+
+    val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(webView) {
         webView.setFindListener { activeOrdinal, matches, _ ->
-            activeMatch = activeOrdinal + 1
+            currentMatch = activeOrdinal + 1
             totalMatches = matches
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (showFindInPage) {
+            focusRequester.requestFocus()
         }
     }
 
@@ -62,42 +74,80 @@ fun WebViewFindBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        TextField(
+        BasicTextField(
             value = query,
-            singleLine = true,
             onValueChange = {
                 query = it
                 webView.findAllAsync(it)
             },
-            placeholder = { Text("Find in page…") },
-            modifier = Modifier.weight(1f),
+            singleLine = true,
+            textStyle = LocalTextStyle.current.copy(
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 14.sp
+            ),
+            modifier = Modifier
+                .focusRequester(focusRequester)
+                .weight(1f),
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Next
             ),
             keyboardActions = KeyboardActions(
                 onNext = { webView.findNext(true) }
             ),
-            trailingIcon = {
-                if (totalMatches > 0) {
-                    Text(
-                        "$activeMatch/$totalMatches",
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(end = 4.dp)
-                    )
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            decorationBox = { innerTextField ->
+                Row(
+                    modifier = Modifier
+                        .wrapContentSize()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .height(50.dp)
+                        .padding(horizontal = 14.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        if (query.isEmpty()) {
+                            Text(
+                                "Find in page…",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                ),
+                            )
+                        }
+                        innerTextField()
+                    }
+
+                    if (query.isNotEmpty()) {
+                        val displayMatch = if (totalMatches == 0) 0 else currentMatch
+                        Text(
+                            "$displayMatch/$totalMatches",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = if (totalMatches == 0) {
+                                    MaterialTheme.colorScheme.error
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                            ),
+                            modifier = Modifier.padding(start = 4.dp)
+                        )
+                    }
                 }
             }
         )
+
 
         Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             RoundIconButton(
                 iconRes = R.drawable.keyboard_arrow_up_24,
                 contentDesc = "Next",
-                onClick = { webView.findNext(true) }
+                onClick = { webView.findNext(false) }
             )
             RoundIconButton(
                 iconRes = R.drawable.keyboard_arrow_down_24,
                 contentDesc = "Previous",
-                onClick = { webView.findNext(false) }
+                onClick = { webView.findNext(true) }
             )
             RoundIconButton(
                 iconRes = R.drawable.baseline_clear_24,
@@ -105,7 +155,7 @@ fun WebViewFindBar(
                 onClick = {
                     onActiveChange(false)
                     webView.clearMatches()
-                    activeMatch = 0
+                    currentMatch = 0
                     totalMatches = 0
                 }
             )

@@ -102,7 +102,7 @@ fun WebviewScreen(navController: NavController) {
     var authHost by remember { mutableStateOf<String?>(null) }
     var authRealm by remember { mutableStateOf<String?>(null) }
 
-    var findInPageActive by remember { mutableStateOf(true) }
+    var showFindInPage by remember { mutableStateOf(false) }
 
     var toastRef: Toast? = null
     val showToast: (String) -> Unit = { msg ->
@@ -302,6 +302,7 @@ fun WebviewScreen(navController: NavController) {
                             onUrlBarTextChange = { urlBarText = it },
                             hasFocus = addressBarHasFocus,
                             onFocusChanged = { addressBarHasFocus = it.isFocused },
+                            showFindInPage = { showFindInPage = true },
                             addressBarSearch = addressBarSearch,
                             customLoadUrl = ::customLoadUrl
                         )
@@ -401,8 +402,8 @@ fun WebviewScreen(navController: NavController) {
 
             WebViewFindBar(
                 webView = webView,
-                findInPageActive = findInPageActive,
-                onActiveChange = { findInPageActive = it },
+                showFindInPage = showFindInPage,
+                onActiveChange = { showFindInPage = it },
             )
 
             if (showAddressBar && userSettings.addressBarPosition == AddressBarPositionOption.BOTTOM) {
