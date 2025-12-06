@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting
+package com.nktnet.webview_kiosk.ui.components.setting
 
 import android.content.Intent
 import android.provider.Settings
@@ -10,12 +10,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.R
+import com.nktnet.webview_kiosk.R
 import androidx.core.net.toUri
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.Screen
-import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ExportSettingsDialog
-import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ImportSettingsDialog
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.Screen
+import com.nktnet.webview_kiosk.ui.components.setting.dialog.ExportSettingsDialog
+import com.nktnet.webview_kiosk.ui.components.setting.dialog.ImportSettingsDialog
 
 @Composable
 fun SettingsHeaderMenu(

@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.managers
+package com.nktnet.webview_kiosk.managers
 
 import android.os.Build
 import android.view.KeyEvent
@@ -9,7 +9,7 @@ import androidx.lifecycle.LifecycleCoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
+import com.nktnet.webview_kiosk.states.BackButtonStateSingleton
 
 class BackButtonManager(
     private val lifecycleScope: LifecycleCoroutineScope,

@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.states
+package com.nktnet.webview_kiosk.states
 
 import android.app.ActivityManager
 import android.app.Application
@@ -9,7 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.utils.getIsLocked
+import com.nktnet.webview_kiosk.utils.getIsLocked
 
 object LockStateSingleton {
     private val _isLocked = mutableStateOf(false)

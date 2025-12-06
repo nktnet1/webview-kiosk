@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing
+package com.nktnet.webview_kiosk.ui.components.setting.fielditems.webbrowsing
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -24,11 +24,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
-import uk.nktnet.webviewkiosk.utils.validateUrl
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.UserSettingsKeys
+import com.nktnet.webview_kiosk.ui.components.setting.fields.TextSettingFieldItem
+import com.nktnet.webview_kiosk.utils.validateUrl
 
 @Composable
 fun SearchProviderUrlSetting() {

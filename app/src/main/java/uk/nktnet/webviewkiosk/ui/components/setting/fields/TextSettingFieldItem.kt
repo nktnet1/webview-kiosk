@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fields
+package com.nktnet.webview_kiosk.ui.components.setting.fields
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,8 +21,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.ui.components.setting.dialog.GenericSettingFieldDialog
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.ui.components.setting.dialog.GenericSettingFieldDialog
 
 @Composable
 fun TextSettingFieldItem(

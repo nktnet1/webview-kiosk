@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config
+package com.nktnet.webview_kiosk.config
 sealed class Screen(val route: String) {
     object AdminRestrictionsChanged : Screen("admin/restrictions_changed")
 

@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.theme
+package com.nktnet.webview_kiosk.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

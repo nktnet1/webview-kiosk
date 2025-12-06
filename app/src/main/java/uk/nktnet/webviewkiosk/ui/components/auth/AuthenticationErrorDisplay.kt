@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.auth
+package com.nktnet.webview_kiosk.ui.components.auth
 
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.foundation.layout.*
@@ -7,7 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import uk.nktnet.webviewkiosk.managers.AuthenticationManager
+import com.nktnet.webview_kiosk.managers.AuthenticationManager
 
 @Composable
 fun AuthenticationErrorDisplay(

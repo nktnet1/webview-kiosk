@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.webview
+package com.nktnet.webview_kiosk.ui.components.webview
 
 import android.widget.Toast
 import androidx.activity.compose.LocalActivity
@@ -28,18 +28,18 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.delay
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.Screen
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.AddressBarActionOption
-import uk.nktnet.webviewkiosk.states.LockStateSingleton
-import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
-import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
-import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
-import uk.nktnet.webviewkiosk.utils.tryLockTask
-import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
-import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.config.Screen
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.option.AddressBarActionOption
+import com.nktnet.webview_kiosk.states.LockStateSingleton
+import com.nktnet.webview_kiosk.states.WaitingForUnlockStateSingleton
+import com.nktnet.webview_kiosk.utils.handleUserKeyEvent
+import com.nktnet.webview_kiosk.utils.handleUserTouchEvent
+import com.nktnet.webview_kiosk.utils.tryLockTask
+import com.nktnet.webview_kiosk.utils.unlockWithAuthIfRequired
+import com.nktnet.webview_kiosk.utils.webview.WebViewNavigation
 
 @Composable
 private fun AddressBarMenuItem(

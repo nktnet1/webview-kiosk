@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.managers
+package com.nktnet.webview_kiosk.managers
 
 import android.annotation.SuppressLint
 import android.app.admin.DevicePolicyManager
@@ -13,7 +13,7 @@ import com.rosan.dhizuku.api.Dhizuku
 import com.rosan.dhizuku.api.DhizukuBinderWrapper
 import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
 import kotlinx.coroutines.flow.MutableStateFlow
-import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+import com.nktnet.webview_kiosk.WebviewKioskAdminReceiver
 
 enum class DeviceOwnerMode {
     DeviceOwner,
