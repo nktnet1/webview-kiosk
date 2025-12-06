@@ -349,8 +349,8 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.Appearance.WEBVIEW_INSET,
-        WebViewInset.SystemBars.name,
-        fromString = WebViewInset::fromString
+        WebViewInsetOption.SystemBars.name,
+        fromString = WebViewInsetOption::fromString
     )
     var immersiveMode by stringEnumPref(
         getRestrictions,
@@ -372,19 +372,19 @@ class UserSettings(val context: Context) {
         AddressBarModeOption.HIDDEN_WHEN_LOCKED.name,
         fromString = AddressBarModeOption::fromString
     )
-    var addressBarPosition by stringEnumPref(
-        getRestrictions,
-        prefs,
-        UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION,
-        AddressBarPositionOption.TOP.name,
-        fromString = AddressBarPositionOption::fromString
-    )
     var addressBarSize by stringEnumPref(
         getRestrictions,
         prefs,
         UserSettingsKeys.Appearance.ADDRESS_BAR_SIZE,
         AddressBarSizeOption.SMALL.name,
         fromString = AddressBarSizeOption::fromString
+    )
+    var addressBarPosition by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION,
+        AddressBarPositionOption.TOP.name,
+        fromString = AddressBarPositionOption::fromString
     )
 
     // Device
@@ -900,8 +900,8 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Appearance.IMMERSIVE_MODE, immersiveMode.name)
             put(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
             put(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name)
-            put(UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION, addressBarPosition.name)
             put(UserSettingsKeys.Appearance.ADDRESS_BAR_SIZE, addressBarSize.name)
+            put(UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION, addressBarPosition.name)
 
             put(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)
             put(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.name)
@@ -1057,14 +1057,14 @@ class UserSettings(val context: Context) {
 
             theme = ThemeOption.fromString(json.optString(UserSettingsKeys.Appearance.THEME, theme.name))
             floatingToolbarMode = FloatingToolbarModeOption.fromString(json.optString(UserSettingsKeys.Appearance.FLOATING_TOOLBAR_MODE, floatingToolbarMode.name))
-            webViewInset = WebViewInset.fromString(json.optString(UserSettingsKeys.Appearance.WEBVIEW_INSET, webViewInset.name))
+            webViewInset = WebViewInsetOption.fromString(json.optString(UserSettingsKeys.Appearance.WEBVIEW_INSET, webViewInset.name))
             immersiveMode = ImmersiveModeOption.fromString(
                 json.optString(UserSettingsKeys.Appearance.IMMERSIVE_MODE, immersiveMode.name)
             )
             blockedMessage = json.optString(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
             addressBarMode = AddressBarModeOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name))
-            addressBarPosition = AddressBarPositionOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION, addressBarPosition.name))
             addressBarSize = AddressBarSizeOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_SIZE, addressBarSize.name))
+            addressBarPosition = AddressBarPositionOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION, addressBarPosition.name))
 
             keepScreenOn = json.optBoolean(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)
             rotation = DeviceRotationOption.fromString(json.optString(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.name))

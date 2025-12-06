@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.mqtt
+package uk.nktnet.webviewkiosk.config.mqtt
 
 import uk.nktnet.webviewkiosk.config.option.MqttQosOption
 import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption

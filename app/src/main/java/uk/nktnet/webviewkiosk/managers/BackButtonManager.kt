@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.handlers.backbutton
+package uk.nktnet.webviewkiosk.managers
 
 import android.os.Build
 import android.view.KeyEvent
@@ -11,7 +11,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 
-class BackButtonService(
+class BackButtonManager(
     private val lifecycleScope: LifecycleCoroutineScope,
 ) {
     private var backLongPressJob: Job? = null

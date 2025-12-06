@@ -26,7 +26,7 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.MqttVariableNameOption
-import uk.nktnet.webviewkiosk.mqtt.MqttManager
+import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 
 @Composable

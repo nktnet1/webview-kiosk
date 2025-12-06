@@ -28,9 +28,9 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.mqtt.MqttManager
+import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.mqtt.MqttLogEntry
+import uk.nktnet.webviewkiosk.managers.MqttLogEntry
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import java.text.SimpleDateFormat
 import java.util.Locale

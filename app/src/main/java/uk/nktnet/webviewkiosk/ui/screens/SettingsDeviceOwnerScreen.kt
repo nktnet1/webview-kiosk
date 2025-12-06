@@ -25,8 +25,8 @@ import androidx.navigation.NavController
 import com.rosan.dhizuku.shared.DhizukuVariables
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.main.DeviceOwnerManager
-import uk.nktnet.webviewkiosk.main.DeviceOwnerMode
+import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
+import uk.nktnet.webviewkiosk.managers.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.dhizuku.DhizukuRequestPermissionOnLaunchSetting

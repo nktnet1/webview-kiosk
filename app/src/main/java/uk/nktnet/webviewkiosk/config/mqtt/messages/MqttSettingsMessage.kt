@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.mqtt.messages
+package uk.nktnet.webviewkiosk.config.mqtt.messages
 
 import kotlinx.serialization.Serializable
 

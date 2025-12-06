@@ -5,7 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.config.option.WebViewInset
+import uk.nktnet.webviewkiosk.config.option.WebViewInsetOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
 
 @Composable
@@ -16,7 +16,7 @@ fun WebViewInsetSetting() {
     DropdownSettingFieldItem(
         label = "WebView Insets",
         infoText = "Select which WindowInsets the WebView should respect for padding.",
-        options = WebViewInset.entries,
+        options = WebViewInsetOption.entries,
         initialValue = userSettings.webViewInset,
         restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.WEBVIEW_INSET),
         onSave = { userSettings.webViewInset = it },

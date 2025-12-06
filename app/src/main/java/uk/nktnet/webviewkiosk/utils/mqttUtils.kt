@@ -9,7 +9,7 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONObject
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.mqtt.MqttManager
+import uk.nktnet.webviewkiosk.managers.MqttManager
 
 fun isValidMqttPublishTopic(topic: String): Boolean {
     return topic.matches(Regex("^[^\\u0000+#]+$"))

@@ -12,11 +12,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.mqtt.MqttManager
+import uk.nktnet.webviewkiosk.managers.MqttManager
 import com.hivemq.client.mqtt.MqttClientState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttDisconnectingEvent
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttDisconnectingEvent
 import kotlin.math.max
 
 @Composable

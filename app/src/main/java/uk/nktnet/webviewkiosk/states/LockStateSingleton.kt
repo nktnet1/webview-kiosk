@@ -10,7 +10,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.option.LockStateType
-import uk.nktnet.webviewkiosk.mqtt.MqttManager
+import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.utils.getIsLocked
 
 object LockStateSingleton {

@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.main
+package uk.nktnet.webviewkiosk.managers
 
 import android.annotation.SuppressLint
 import android.app.admin.DevicePolicyManager

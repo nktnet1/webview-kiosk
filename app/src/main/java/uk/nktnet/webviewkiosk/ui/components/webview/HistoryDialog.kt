@@ -25,8 +25,8 @@ import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.mqtt.MqttManager
-import uk.nktnet.webviewkiosk.mqtt.messages.MqttClearHistoryCommand
+import uk.nktnet.webviewkiosk.managers.MqttManager
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttClearHistoryCommand
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
