@@ -17,23 +17,30 @@ import uk.nktnet.webviewkiosk.R
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.input.ImeAction
 
 @Composable
 private fun RoundIconButton(
+    enabled: Boolean = true,
     iconRes: Int,
     contentDesc: String,
     onClick: () -> Unit,
+    iconTint: Color = MaterialTheme.colorScheme.onSurface,
 ) {
     IconButton(
+        enabled = enabled,
         onClick = onClick,
-        modifier = Modifier.size(32.dp)
+        modifier = Modifier.size(32.dp),
+        colors = IconButtonDefaults.iconButtonColors(
+            contentColor = iconTint,
+        )
     ) {
         Icon(
             painter = painterResource(iconRes),
             contentDescription = contentDesc,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(24.dp),
         )
     }
 }
@@ -41,17 +48,16 @@ private fun RoundIconButton(
 @Composable
 fun WebViewFindBar(
     webView: WebView,
-    showFindInPage: Boolean,
+    isActiveFindInPage: Boolean,
     onActiveChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
+    focusRequester: FocusRequester,
 ) {
-    if (!showFindInPage) return
+    if (!isActiveFindInPage) return
 
     var query by remember { mutableStateOf("") }
     var currentMatch by remember { mutableIntStateOf(0) }
     var totalMatches by remember { mutableIntStateOf(0) }
-
-    val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(webView) {
         webView.setFindListener { activeOrdinal, matches, _ ->
@@ -61,7 +67,7 @@ fun WebViewFindBar(
     }
 
     LaunchedEffect(Unit) {
-        if (showFindInPage) {
+        if (isActiveFindInPage) {
             focusRequester.requestFocus()
         }
     }
@@ -70,7 +76,7 @@ fun WebViewFindBar(
         modifier = modifier
             .wrapContentSize()
             .background(MaterialTheme.colorScheme.surface)
-            .padding(4.dp),
+            .padding(vertical = 4.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -101,7 +107,7 @@ fun WebViewFindBar(
                         .wrapContentSize()
                         .background(MaterialTheme.colorScheme.surface)
                         .height(50.dp)
-                        .padding(horizontal = 14.dp, vertical = 4.dp),
+                        .padding(horizontal = 6.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Box(
@@ -110,7 +116,7 @@ fun WebViewFindBar(
                     ) {
                         if (query.isEmpty()) {
                             Text(
-                                "Find in page…",
+                                "Find in page",
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                                 ),
@@ -137,20 +143,24 @@ fun WebViewFindBar(
             }
         )
 
-
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
             RoundIconButton(
+                enabled = totalMatches > 1,
                 iconRes = R.drawable.keyboard_arrow_up_24,
                 contentDesc = "Next",
                 onClick = { webView.findNext(false) }
             )
             RoundIconButton(
+                enabled = totalMatches > 1,
                 iconRes = R.drawable.keyboard_arrow_down_24,
                 contentDesc = "Previous",
                 onClick = { webView.findNext(true) }
             )
             RoundIconButton(
                 iconRes = R.drawable.baseline_clear_24,
+                iconTint = MaterialTheme.colorScheme.error,
                 contentDesc = "Close",
                 onClick = {
                     onActiveChange(false)

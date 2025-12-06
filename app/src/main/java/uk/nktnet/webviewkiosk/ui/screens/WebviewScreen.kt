@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
@@ -102,7 +103,15 @@ fun WebviewScreen(navController: NavController) {
     var authHost by remember { mutableStateOf<String?>(null) }
     var authRealm by remember { mutableStateOf<String?>(null) }
 
-    var showFindInPage by remember { mutableStateOf(false) }
+    var isActiveFindInPage by remember { mutableStateOf(false) }
+    val findInPageFocusRequester = remember { FocusRequester() }
+    val showFindInPage: () -> Unit = {
+        if (!isActiveFindInPage) {
+            isActiveFindInPage = true
+        } else {
+            findInPageFocusRequester.requestFocus()
+        }
+    }
 
     var toastRef: Toast? = null
     val showToast: (String) -> Unit = { msg ->
@@ -302,7 +311,7 @@ fun WebviewScreen(navController: NavController) {
                             onUrlBarTextChange = { urlBarText = it },
                             hasFocus = addressBarHasFocus,
                             onFocusChanged = { addressBarHasFocus = it.isFocused },
-                            showFindInPage = { showFindInPage = true },
+                            showFindInPage = showFindInPage,
                             addressBarSearch = addressBarSearch,
                             customLoadUrl = ::customLoadUrl
                         )
@@ -402,8 +411,9 @@ fun WebviewScreen(navController: NavController) {
 
             WebViewFindBar(
                 webView = webView,
-                showFindInPage = showFindInPage,
-                onActiveChange = { showFindInPage = it },
+                isActiveFindInPage = isActiveFindInPage,
+                onActiveChange = { isActiveFindInPage = it },
+                focusRequester = findInPageFocusRequester,
             )
 
             if (showAddressBar && userSettings.addressBarPosition == AddressBarPositionOption.BOTTOM) {
