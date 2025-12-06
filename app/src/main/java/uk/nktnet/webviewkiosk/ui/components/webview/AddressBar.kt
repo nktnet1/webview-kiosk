@@ -281,7 +281,6 @@ fun AddressBar(
             .padding(
                 userSettings.addressBarSize.paddingDp,
             )
-            .imePadding()
             .fillMaxWidth()
             .focusProperties { canFocus = allowFocus }
     ) {
