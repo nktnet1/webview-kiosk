@@ -12,6 +12,7 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.LocalContext
@@ -41,6 +42,7 @@ import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayo
 import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBarSearchSuggestions
 import uk.nktnet.webviewkiosk.ui.components.webview.LinkOptionsDialog
+import uk.nktnet.webviewkiosk.ui.components.webview.WebViewFindBar
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
 import uk.nktnet.webviewkiosk.utils.enterImmersiveMode
 import uk.nktnet.webviewkiosk.utils.exitImmersiveMode
@@ -100,6 +102,16 @@ fun WebviewScreen(navController: NavController) {
     var authHandler by remember { mutableStateOf<HttpAuthHandler?>(null) }
     var authHost by remember { mutableStateOf<String?>(null) }
     var authRealm by remember { mutableStateOf<String?>(null) }
+
+    var isActiveFindInPage by remember { mutableStateOf(false) }
+    val findInPageFocusRequester = remember { FocusRequester() }
+    val showFindInPage: () -> Unit = {
+        if (!isActiveFindInPage) {
+            isActiveFindInPage = true
+        } else {
+            findInPageFocusRequester.requestFocus()
+        }
+    }
 
     var toastRef: Toast? = null
     val showToast: (String) -> Unit = { msg ->
@@ -299,6 +311,7 @@ fun WebviewScreen(navController: NavController) {
                             onUrlBarTextChange = { urlBarText = it },
                             hasFocus = addressBarHasFocus,
                             onFocusChanged = { addressBarHasFocus = it.isFocused },
+                            showFindInPage = showFindInPage,
                             addressBarSearch = addressBarSearch,
                             customLoadUrl = ::customLoadUrl
                         )
@@ -313,13 +326,17 @@ fun WebviewScreen(navController: NavController) {
         modifier = Modifier
             .fillMaxSize()
             .windowInsetsPadding(userSettings.webViewInset.toWindowInsets())
+            .imePadding()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (showAddressBar && userSettings.addressBarPosition == AddressBarPositionOption.TOP) {
                 addressBarView()
             }
 
-            Box(modifier = Modifier.weight(1f)) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+            ) {
                 AndroidView(
                     factory = { ctx ->
                         var initialUrl = lastVisitedUrl
@@ -392,6 +409,13 @@ fun WebviewScreen(navController: NavController) {
                 }
             }
 
+            WebViewFindBar(
+                webView = webView,
+                isActiveFindInPage = isActiveFindInPage,
+                onActiveChange = { isActiveFindInPage = it },
+                focusRequester = findInPageFocusRequester,
+            )
+
             if (showAddressBar && userSettings.addressBarPosition == AddressBarPositionOption.BOTTOM) {
                 addressBarView()
             }
@@ -433,7 +457,12 @@ fun WebviewScreen(navController: NavController) {
         DimScreenOnInactivityTimeoutHandler()
     }
 
-    KioskControlPanel(navController, 10, ::customLoadUrl)
+    KioskControlPanel(
+        navController,
+        10,
+        showFindInPage,
+        ::customLoadUrl
+    )
 
     BackPressHandler(::customLoadUrl)
 

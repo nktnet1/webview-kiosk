@@ -98,6 +98,7 @@ private fun ActionButton(
 fun KioskControlPanel(
     navController: NavController,
     requiredTaps: Int,
+    showFindInPage: () -> Unit,
     customLoadUrl: (newUrl: String) -> Unit,
 ) {
     val context = LocalContext.current
@@ -396,6 +397,17 @@ fun KioskControlPanel(
                     iconRes = R.drawable.outline_folder_24
                 )
             },
+            KioskControlPanelActionOption.FIND to {
+                ActionButton(
+                    action = KioskControlPanelActionOption.FIND,
+                    enabled = enableInteraction,
+                    onClick = {
+                        showDialog = isSticky
+                        showFindInPage()
+                    },
+                    iconRes = R.drawable.find_in_page_24
+                )
+            },
             KioskControlPanelActionOption.SETTINGS to {
                 ActionButton(
                     action = KioskControlPanelActionOption.SETTINGS,
@@ -502,6 +514,7 @@ fun KioskControlPanel(
                                 KioskControlPanelActionOption.HISTORY -> userSettings.allowHistoryAccess
                                 KioskControlPanelActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
                                 KioskControlPanelActionOption.FILES -> userSettings.allowLocalFiles
+                                KioskControlPanelActionOption.FIND -> true
                                 KioskControlPanelActionOption.SETTINGS -> !isLocked
                                 KioskControlPanelActionOption.LOCK -> !isLocked
                                 KioskControlPanelActionOption.UNLOCK -> isLocked

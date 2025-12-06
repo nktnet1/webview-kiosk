@@ -68,6 +68,7 @@ fun AddressBar(
     onUrlBarTextChange: (TextFieldValue) -> Unit,
     hasFocus: Boolean,
     onFocusChanged: (FocusState) -> Unit,
+    showFindInPage: () -> Unit,
     addressBarSearch: (String) -> Unit,
     customLoadUrl: (newUrl: String) -> Unit,
 ) {
@@ -240,6 +241,16 @@ fun AddressBar(
                     iconRes = R.drawable.outline_folder_24,
                 )
             },
+            AddressBarActionOption.FIND to {
+                AddressBarMenuItem(
+                    action = AddressBarActionOption.FIND,
+                    onClick = {
+                        showFindInPage()
+                        menuExpanded = false
+                    },
+                    iconRes = R.drawable.find_in_page_24,
+                )
+            },
             AddressBarActionOption.SETTINGS to {
                 AddressBarMenuItem(
                     action = AddressBarActionOption.SETTINGS,
@@ -281,7 +292,6 @@ fun AddressBar(
             .padding(
                 userSettings.addressBarSize.paddingDp,
             )
-            .imePadding()
             .fillMaxWidth()
             .focusProperties { canFocus = allowFocus }
     ) {
@@ -370,6 +380,7 @@ fun AddressBar(
                     AddressBarActionOption.SETTINGS -> !isLocked
                     AddressBarActionOption.LOCK -> !isLocked
                     AddressBarActionOption.UNLOCK -> isLocked
+                    AddressBarActionOption.FIND -> true
                 }
             }
         }
