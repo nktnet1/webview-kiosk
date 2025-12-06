@@ -11,6 +11,7 @@ enum class KioskControlPanelActionOption(val label: String) {
     HISTORY("History"),
     BOOKMARK("Bookmark"),
     FILES("Files"),
+    FIND("Find"),
     SETTINGS("Settings"),
     LOCK("Lock"),
     UNLOCK("Unlock");

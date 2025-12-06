@@ -457,7 +457,12 @@ fun WebviewScreen(navController: NavController) {
         DimScreenOnInactivityTimeoutHandler()
     }
 
-    KioskControlPanel(navController, 10, ::customLoadUrl)
+    KioskControlPanel(
+        navController,
+        10,
+        showFindInPage,
+        ::customLoadUrl
+    )
 
     BackPressHandler(::customLoadUrl)
 

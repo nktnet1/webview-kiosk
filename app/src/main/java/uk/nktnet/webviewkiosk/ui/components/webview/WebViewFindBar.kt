@@ -106,7 +106,7 @@ fun WebViewFindBar(
                     modifier = Modifier
                         .wrapContentSize()
                         .background(MaterialTheme.colorScheme.surface)
-                        .height(50.dp)
+                        .height(45.dp)
                         .padding(horizontal = 6.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -126,7 +126,11 @@ fun WebViewFindBar(
                     }
 
                     if (query.isNotEmpty()) {
-                        val displayMatch = if (totalMatches == 0) 0 else currentMatch
+                        val displayMatch = if (totalMatches == 0) {
+                            0
+                        } else {
+                            currentMatch
+                        }
                         Text(
                             "$displayMatch/$totalMatches",
                             style = MaterialTheme.typography.bodyMedium.copy(
