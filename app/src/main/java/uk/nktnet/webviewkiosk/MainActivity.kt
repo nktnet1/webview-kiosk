@@ -22,6 +22,8 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
@@ -82,11 +84,15 @@ class MainActivity : AppCompatActivity() {
             DeviceOwnerManager.status.value.mode == DeviceOwnerMode.Dhizuku
             && userSettings.dhizukuRequestPermissionOnLaunch
         ) {
-            DeviceOwnerManager.requestDhizukuPermission(
-                onGranted = {
-                    setupLockTaskPackage(this)
-                }
-            )
+            lifecycleScope.launch {
+                delay(1000)
+                DeviceOwnerManager.requestDhizukuPermission(
+                    onGranted = {
+                        setupLockTaskPackage(this@MainActivity)
+                    }
+                )
+            }
+
         }
 
         LockStateSingleton.startMonitoring(application)
