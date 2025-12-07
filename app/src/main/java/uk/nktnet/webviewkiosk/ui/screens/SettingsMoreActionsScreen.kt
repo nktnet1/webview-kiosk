@@ -33,7 +33,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
         ).apply { show() }
     }
 
-    val webView = remember { WebView(context.applicationContext) }
+    val webView = remember { WebView(context) }
 
     DisposableEffect(webView) {
         onDispose {
