@@ -3,7 +3,6 @@ package uk.nktnet.webviewkiosk.ui.screens
 import android.webkit.CookieManager
 import android.webkit.HttpAuthHandler
 import android.webkit.URLUtil.isValidUrl
-import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -113,14 +112,6 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
-    var toastRef: Toast? = null
-    val showToast: (String) -> Unit = { msg ->
-        toastRef?.cancel()
-        toastRef = Toast.makeText(context, msg, Toast.LENGTH_SHORT).apply {
-            show()
-        }
-    }
-
     val blacklistRegexes: List<Regex> by lazy {
         userSettings.websiteBlacklist.lines()
             .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
@@ -194,7 +185,6 @@ fun WebviewScreen(navController: NavController) {
             userSettings = userSettings,
             blacklistRegexes = blacklistRegexes,
             whitelistRegexes = whitelistRegexes,
-            showToast = showToast,
             setLastErrorUrl = { errorUrl ->
                 lastErrorUrl = errorUrl
             },
@@ -435,12 +425,12 @@ fun WebviewScreen(navController: NavController) {
                     },
                     onLockClick = {
                         focusManager.clearFocus()
-                        tryLockTask(activity, showToast)
+                        tryLockTask(activity)
                     },
                     onUnlockClick = {
                         activity?.let {
                             focusManager.clearFocus()
-                            unlockWithAuthIfRequired(activity, showToast)
+                            unlockWithAuthIfRequired(activity)
                         }
                     },
                     navController = navController

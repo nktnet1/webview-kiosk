@@ -63,7 +63,7 @@ fun handleCustomUnlockShortcut(
         && isShortcutPressed(event, userSettings.customUnlockShortcut)
 
     if (shouldUnlock) {
-        unlockWithAuthIfRequired(activity) {}
+        unlockWithAuthIfRequired(activity)
     }
     return shouldUnlock
 }

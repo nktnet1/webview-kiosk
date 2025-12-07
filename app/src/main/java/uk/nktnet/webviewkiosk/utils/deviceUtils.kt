@@ -16,11 +16,11 @@ import android.app.admin.DevicePolicyManager
 import android.content.pm.PackageManager
 import kotlinx.serialization.Serializable
 import uk.nktnet.webviewkiosk.BuildConfig
+import uk.nktnet.webviewkiosk.config.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
-import uk.nktnet.webviewkiosk.managers.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.states.KeepScreenOnStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
 import java.util.TimeZone

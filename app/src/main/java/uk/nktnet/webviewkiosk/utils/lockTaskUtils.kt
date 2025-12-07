@@ -12,19 +12,15 @@ import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 
 private fun tryLockAction(
-    activity: Activity?,
+    activity: Activity,
     action: Activity.() -> Unit,
     onSuccess: () -> Unit = {},
     onFailed: (String) -> Unit
 ): Boolean {
-    if (activity == null) {
-        onFailed("Activity is not initialised.")
-        return false
-    }
-
     return try {
         activity.action()
         onSuccess()
@@ -85,26 +81,30 @@ fun applyLockTaskFeatures(context: Context) {
     }
 }
 
-fun tryLockTask(activity: Activity?, showToast: (String) -> Unit = {}): Boolean {
-    activity?.let {
-        applyLockTaskFeatures(activity)
+fun tryLockTask(activity: Activity?): Boolean {
+    if (activity == null) {
+        return false
     }
+    applyLockTaskFeatures(activity)
     return tryLockAction(
         activity,
         Activity::startLockTask,
         onSuccess = {
             AuthenticationManager.resetAuthentication()
         },
-        onFailed = { showToast("Failed to lock: $it") }
+        onFailed = { ToastManager.show(activity, "Failed to lock: $it") }
     )
 }
 
-fun tryUnlockTask(activity: Activity?, showToast: (String) -> Unit = {}): Boolean {
+fun tryUnlockTask(activity: Activity?): Boolean {
+    if (activity == null) {
+        return false
+    }
     return tryLockAction(
         activity,
         Activity::stopLockTask,
         onSuccess = {},
-        onFailed = { showToast("Failed to unlock: $it") }
+        onFailed = { ToastManager.show(activity, "Failed to unlock: $it") }
     )
 }
 
@@ -158,7 +158,6 @@ fun requireAuthForUnlock(context: Context, userSettings: UserSettings): Boolean 
 
 fun unlockWithAuthIfRequired(
     activity: Activity,
-    showToast: (String) -> Unit
 ) {
     val userSettings = UserSettings(activity)
 
@@ -169,7 +168,7 @@ fun unlockWithAuthIfRequired(
             description = "Please authenticate to unlock Webview Kiosk"
         )
     } else {
-        tryUnlockTask(activity, showToast)
+        tryUnlockTask(activity)
         CoroutineScope(Dispatchers.Main).launch {
             WaitingForUnlockStateSingleton.emitUnlockSuccess()
         }

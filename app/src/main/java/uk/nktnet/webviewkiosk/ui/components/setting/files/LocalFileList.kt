@@ -12,7 +12,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import android.widget.Toast
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.toClipEntry
@@ -21,6 +20,7 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.getDisplayName
 import uk.nktnet.webviewkiosk.utils.getLocalUrl
 import uk.nktnet.webviewkiosk.utils.getUUID
@@ -44,11 +44,6 @@ fun LocalFileList(
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
 
-    val toastRef = remember { mutableStateOf<Toast?>(null) }
-    fun showToast(message: String) {
-        toastRef.value?.cancel()
-        toastRef.value = Toast.makeText(context, message, Toast.LENGTH_SHORT).also { it.show() }
-    }
     var activeFile by remember { mutableStateOf<File?>(null) }
     var showRenameDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -221,7 +216,7 @@ fun LocalFileList(
                         if (file.renameTo(newFile)) {
                             refreshFiles()
                         } else {
-                            showToast("Rename failed")
+                            ToastManager.show(context, "Rename failed")
                         }
                         showRenameDialog = false
                         activeFile = null
@@ -263,7 +258,7 @@ fun LocalFileList(
                         if (file.delete()) {
                             refreshFiles()
                         } else {
-                            showToast("Failed to delete ${file.getDisplayName()}")
+                            ToastManager.show(context, "Failed to delete ${file.getDisplayName()}")
                         }
                         showDeleteDialog = false
                         activeFile = null

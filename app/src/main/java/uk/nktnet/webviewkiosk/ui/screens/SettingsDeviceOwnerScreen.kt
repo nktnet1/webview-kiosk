@@ -4,7 +4,6 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.os.Build
-import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -26,8 +25,9 @@ import com.rosan.dhizuku.shared.DhizukuVariables
 import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.Constants
+import uk.nktnet.webviewkiosk.config.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
-import uk.nktnet.webviewkiosk.managers.DeviceOwnerMode
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.dhizuku.DhizukuRequestPermissionOnLaunchSetting
@@ -41,7 +41,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.lock
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 
-fun openPackage(context: Context, packageName: String, showToast: (msg: String) -> Unit) {
+fun openPackage(context: Context, packageName: String) {
     try {
         val pm = context.packageManager
         val intent = pm.getLaunchIntentForPackage(packageName)
@@ -49,10 +49,10 @@ fun openPackage(context: Context, packageName: String, showToast: (msg: String) 
             intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(intent)
         } else {
-            showToast("App not installed")
+            ToastManager.show(context, "App not installed")
         }
     } catch (e: Exception) {
-        showToast("Error: $e")
+        ToastManager.show(context, "Error: $e")
     }
 }
 
@@ -78,14 +78,6 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
     val deviceOwnerStatus by DeviceOwnerManager.status.collectAsState()
 
     var showDeviceOwnerRemovalDialog by remember { mutableStateOf(false) }
-
-    var toastRef: Toast? = null
-    val showToast: (String) -> Unit = { msg ->
-        toastRef?.cancel()
-        toastRef = Toast.makeText(
-            context, msg, Toast.LENGTH_SHORT
-        ).apply { show() }
-    }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -212,7 +204,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                     onClick = {
                         setupLockTaskPackage(context)
                         isLockedTaskPermitted = dpm.isLockTaskPermitted(context.packageName)
-                        showToast("Added ${Constants.APP_NAME} to lock task packages.")
+                        ToastManager.show(context, "Added ${Constants.APP_NAME} to lock task packages.")
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -264,7 +256,6 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                         openPackage(
                             context,
                             DhizukuVariables.OFFICIAL_PACKAGE_NAME,
-                            showToast,
                         )
                     },
                     modifier = Modifier
