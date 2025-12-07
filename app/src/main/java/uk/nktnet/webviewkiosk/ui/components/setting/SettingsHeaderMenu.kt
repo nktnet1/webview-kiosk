@@ -1,7 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.setting
 
 import android.content.Intent
-import android.provider.Settings
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,6 +15,8 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ExportSettingsDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ImportSettingsDialog
+import uk.nktnet.webviewkiosk.utils.openDefaultLauncherSettings
+import uk.nktnet.webviewkiosk.utils.openSettings
 
 @Composable
 fun SettingsHeaderMenu(
@@ -94,8 +95,7 @@ fun SettingsHeaderMenu(
                             text = { Text("Settings", color = tintColor) },
                             onClick = {
                                 showMenu = false
-                                val intent = Intent(Settings.ACTION_SETTINGS)
-                                context.startActivity(intent)
+                                openSettings(context)
                             },
                             leadingIcon = {
                                 Icon(
@@ -109,7 +109,7 @@ fun SettingsHeaderMenu(
                             text = { Text("Launcher", color = tintColor) },
                             onClick = {
                                 showMenu = false
-                                context.startActivity(Intent(Settings.ACTION_HOME_SETTINGS))
+                                openDefaultLauncherSettings(context)
                             },
                             leadingIcon = {
                                 Icon(
