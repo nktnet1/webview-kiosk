@@ -17,7 +17,7 @@
 <div align="center">
 
 [<img src="./docs/public/static/images/badges/github.png" alt="Get it on GitHub" width="260px" />](https://github.com/nktnet1/webview-kiosk/releases)
-[<img src="./docs/public/static/images/badges/obtanium.png" alt="Get it on Obtanium" width="260px" />](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk)
+[<img src="./docs/public/static/images/badges/obtainium.png" alt="Get it on Obtainium" width="260px" />](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk)
 [<img src="./docs/public/static/images/badges/google-play.svg" alt="Get it on Google Play" width="260px" />](https://play.google.com/store/apps/details?id=com.nktnet.webview_kiosk)
 [<img src="./docs/public/static/images/badges/f-droid.svg" alt="Get it on F-Droid" width="260px" />](https://f-droid.org/packages/uk.nktnet.webviewkiosk)
 [<img src="./docs/public/static/images/badges/izzy-on-droid.svg" alt="Get it on IzzyOnDroid" width="260px" />](https://apt.izzysoft.de/fdroid/index/apk/uk.nktnet.webviewkiosk)
