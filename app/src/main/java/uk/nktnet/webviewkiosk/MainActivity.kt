@@ -7,7 +7,6 @@ import android.content.IntentFilter
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -29,7 +28,6 @@ import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.managers.BackButtonManager
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
-import uk.nktnet.webviewkiosk.managers.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.ui.screens.SetupNavHost
 import uk.nktnet.webviewkiosk.utils.handleMainIntent
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
@@ -115,16 +113,8 @@ class MainActivity : AppCompatActivity() {
 
         systemSettings.isFreshLaunch = true
 
-        var toastRef: Toast? = null
-        val showToast: (String) -> Unit = { msg ->
-            toastRef?.cancel()
-            toastRef = Toast.makeText(
-                this, msg, Toast.LENGTH_SHORT
-            ).apply { show() }
-        }
-
         if (userSettings.lockOnLaunch) {
-            tryLockTask(this, showToast)
+            tryLockTask(this)
         }
 
         if (intent != null) {
@@ -151,7 +141,7 @@ class MainActivity : AppCompatActivity() {
                         biometricResult == AuthenticationManager.AuthenticationResult.AuthenticationSuccess
                         || biometricResult == AuthenticationManager.AuthenticationResult.AuthenticationNotSet
                     ) {
-                        tryUnlockTask(activity, showToast)
+                        tryUnlockTask(activity)
                         WaitingForUnlockStateSingleton.emitUnlockSuccess()
                     }
                     WaitingForUnlockStateSingleton.stopWaiting()

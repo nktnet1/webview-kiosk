@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.permissions
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,6 +14,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.getPermissionDisplay
 
 @Composable
@@ -24,12 +24,6 @@ fun SitePermissionsList(
     val context = LocalContext.current
     val systemSettings = remember { SystemSettings(context) }
     var sitePermissions by remember { mutableStateOf(systemSettings.sitePermissionsMap) }
-
-    val toastRef = remember { mutableStateOf<Toast?>(null) }
-    fun showToast(message: String) {
-        toastRef.value?.cancel()
-        toastRef.value = Toast.makeText(context, message, Toast.LENGTH_SHORT).also { it.show() }
-    }
 
     var activeSite by remember { mutableStateOf<String?>(null) }
     var showEditDialog by remember { mutableStateOf(false) }
@@ -185,7 +179,7 @@ fun SitePermissionsList(
                         activeSite?.let {
                             systemSettings.setSitePermissions(it, emptySet())
                             sitePermissions = systemSettings.sitePermissionsMap
-                            showToast("Deleted $it")
+                            ToastManager.show(context, "Deleted $it")
                         }
                         showDeleteDialog = false
                     },

@@ -3,7 +3,6 @@ package uk.nktnet.webviewkiosk.ui.screens
 import android.webkit.CookieManager
 import android.webkit.WebStorage
 import android.webkit.WebView
-import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -15,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
@@ -24,14 +24,6 @@ import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 fun SettingsMoreActionsScreen(navController: NavController) {
     val context = LocalContext.current
     val systemSettings = SystemSettings(context)
-
-    var toastRef: Toast? by remember { mutableStateOf(null) }
-    val showToast: (String) -> Unit = { msg ->
-        toastRef?.cancel()
-        toastRef = Toast.makeText(
-            context, msg, Toast.LENGTH_SHORT
-        ).apply { show() }
-    }
 
     val webView = remember { WebView(context) }
 
@@ -74,28 +66,28 @@ fun SettingsMoreActionsScreen(navController: NavController) {
             ActionButton("Clear Cookies") {
                 CookieManager.getInstance().removeAllCookies(null)
                 CookieManager.getInstance().flush()
-                showToast("Cookies cleared.")
+                ToastManager.show(context, "Cookies cleared.")
             }
             ActionButton("Clear Cache") {
                 webView.clearCache(true)
-                showToast("Cache cleared.")
+                ToastManager.show(context, "Cache cleared.")
             }
             ActionButton("Clear Form Data") {
                 webView.clearFormData()
-                showToast("Form data cleared.")
+                ToastManager.show(context, "Form data cleared.")
             }
             ActionButton("Clear History") {
                 webView.clearHistory()
                 WebViewNavigation.clearHistory(systemSettings)
-                showToast("History cleared.")
+                ToastManager.show(context, "History cleared.")
             }
             ActionButton("Clear SSL Preferences") {
                 webView.clearSslPreferences()
-                showToast("SSL preferences cleared.")
+                ToastManager.show(context, "SSL preferences cleared.")
             }
             ActionButton("Clear Web Storage") {
                 WebStorage.getInstance().deleteAllData()
-                showToast("Web storage cleared.")
+                ToastManager.show(context, "Web storage cleared.")
             }
 
             Spacer(modifier = Modifier.padding(bottom = 10.dp))

@@ -27,6 +27,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
 import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleExternalScheme
@@ -46,7 +47,6 @@ data class WebViewConfig(
     val userSettings: UserSettings,
     val blacklistRegexes: List<Regex>,
     val whitelistRegexes: List<Regex>,
-    val showToast: (message: String) -> Unit,
     val setLastErrorUrl: (errorUrl: String) -> Unit,
     val finishSwipeRefresh: () -> Unit,
     val onProgressChanged: (newProgress: Int) -> Unit,
@@ -200,7 +200,7 @@ fun createCustomWebview(
                                 )
                             }
                             OverrideUrlLoadingBlockActionOption.SHOW_TOAST -> {
-                                config.showToast(userSettings.blockedMessage)
+                                ToastManager.show(context, userSettings.blockedMessage)
                             }
                             else -> Unit
                         }
@@ -400,7 +400,8 @@ fun createCustomWebview(
             }
 
             setDownloadListener { _, _, _, _, _ ->
-                config.showToast(
+                ToastManager.show(
+                    context,
                     "Downloading files is not supported in ${Constants.APP_NAME}."
                 )
             }

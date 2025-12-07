@@ -14,12 +14,7 @@ import com.rosan.dhizuku.api.DhizukuBinderWrapper
 import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
-
-enum class DeviceOwnerMode {
-    DeviceOwner,
-    Dhizuku,
-    None,
-}
+import uk.nktnet.webviewkiosk.config.DeviceOwnerMode
 
 object DeviceOwnerManager {
     lateinit var DPM: DevicePolicyManager
@@ -58,10 +53,7 @@ object DeviceOwnerManager {
                 return
             }
 
-            val dpm = binderWrapperDevicePolicyManager(context)
-            if (dpm == null) {
-                return
-            }
+            val dpm = binderWrapperDevicePolicyManager(context) ?: return
 
             DPM = dpm
             DAR = Dhizuku.getOwnerComponent()

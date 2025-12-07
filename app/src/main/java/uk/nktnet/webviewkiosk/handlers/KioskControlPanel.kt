@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.handlers
 
-import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -58,6 +57,7 @@ import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
 import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelActionOption
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
@@ -118,14 +118,6 @@ fun KioskControlPanel(
     val scope = rememberCoroutineScope()
     var enableDismiss by remember { mutableStateOf(false) }
     var enableInteraction by remember { mutableStateOf(true) }
-
-    val toastRef = remember { mutableStateOf<Toast?>(null) }
-    fun showToast(message: String) {
-        toastRef.value?.cancel()
-        toastRef.value = Toast.makeText(
-            context, message, Toast.LENGTH_SHORT
-        ).also { it.show() }
-    }
 
     var showDialog by remember { mutableStateOf(false) }
     var isSticky by remember { mutableStateOf(systemSettings.isKioskControlPanelSticky) }
@@ -222,7 +214,7 @@ fun KioskControlPanel(
                             when {
                                 tapsLeft <= 0 -> {
                                     tapsLeft = requiredTaps
-                                    toastRef.value?.cancel()
+                                    ToastManager.cancel()
                                     enableInteraction = false
                                     handleShowDialog()
                                     scope.launch {
@@ -231,7 +223,8 @@ fun KioskControlPanel(
                                     }
                                 }
                                 tapsLeft <= 5 -> {
-                                    showToast(
+                                    ToastManager.show(
+                                        context,
                                         "Tap $tapsLeft more times to open the Kiosk Control Panel"
                                     )
                                 }
@@ -425,7 +418,7 @@ fun KioskControlPanel(
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = isSticky
-                        tryLockTask(activity, ::showToast)
+                        tryLockTask(activity)
                     },
                     iconRes = R.drawable.baseline_lock_24
                 )
@@ -436,7 +429,7 @@ fun KioskControlPanel(
                     enabled = enableInteraction,
                     onClick = {
                         activity?.let {
-                            unlockWithAuthIfRequired(activity, ::showToast)
+                            unlockWithAuthIfRequired(activity)
                         }
                     },
                     iconRes = R.drawable.baseline_lock_open_24
@@ -485,7 +478,7 @@ fun KioskControlPanel(
                             modifier = Modifier.offset(y = (-2).dp),
                             onClick = {
                                 val newSticky = !isSticky
-                                showToast("Sticky mode ${if (newSticky) "enabled." else "disabled."}")
+                                ToastManager.show(context, "Sticky mode ${if (newSticky) "enabled." else "disabled."}")
                                 isSticky = newSticky
                                 systemSettings.isKioskControlPanelSticky = newSticky
                             },

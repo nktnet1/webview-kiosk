@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
-import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -16,6 +15,7 @@ import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
 
 enum class ImportTab {
@@ -34,12 +34,6 @@ fun ImportSettingsDialog(
     val userSettings = remember { UserSettings(context) }
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
-
-    val toastRef = remember { mutableStateOf<Toast?>(null) }
-    fun showToast(message: String) {
-        toastRef.value?.cancel()
-        toastRef.value = Toast.makeText(context, message, Toast.LENGTH_SHORT).also { it.show() }
-    }
 
     var importError by remember { mutableStateOf(false) }
     var importText by remember { mutableStateOf("") }
@@ -162,11 +156,12 @@ fun ImportSettingsDialog(
 
                         if (success) {
                             updateDeviceSettings(context)
-                            showToast("Imported settings successfully")
+                            ToastManager.show(context, "Imported settings successfully")
                             onDismiss()
                         } else {
                             importError = true
-                            showToast(
+                            ToastManager.show(
+                                context,
                                 if (selectedTab == ImportTab.Base64) {
                                     "Failed to import Base64."
                                 } else {

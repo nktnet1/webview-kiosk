@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.ui.components.webview
 
-import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -86,14 +85,6 @@ fun AddressBar(
     var allowFocus by remember { mutableStateOf(false) }
 
     val isLocked by LockStateSingleton.isLocked
-
-    val toastRef = remember { mutableStateOf<Toast?>(null) }
-    fun showToast(message: String) {
-        toastRef.value?.cancel()
-        toastRef.value = Toast.makeText(
-            context, message, Toast.LENGTH_SHORT
-        ).also { it.show() }
-    }
 
     LaunchedEffect(Unit) {
         delay(200)
@@ -265,7 +256,7 @@ fun AddressBar(
                 AddressBarMenuItem(
                     action = AddressBarActionOption.LOCK,
                     onClick = {
-                        tryLockTask(activity, ::showToast)
+                        tryLockTask(activity)
                         menuExpanded = false
                     },
                     iconRes = R.drawable.baseline_lock_24,
@@ -276,7 +267,7 @@ fun AddressBar(
                     action = AddressBarActionOption.UNLOCK,
                     onClick = {
                         activity?.let {
-                            unlockWithAuthIfRequired(activity, ::showToast)
+                            unlockWithAuthIfRequired(activity)
                         }
                         menuExpanded = false
                     },
