@@ -71,7 +71,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 openWifiSettings(context)
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                ActionButton("Data Usage") {
+                ActionButton("Data Usage Settings") {
                     openDataUsageSettings(context)
                 }
             }
