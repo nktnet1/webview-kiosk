@@ -4,13 +4,14 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { legal } from "@/lib/source";
 import { createMetadata } from "@/utils/metadata";
+import { PageLastUpdate } from "fumadocs-ui/page";
 
 export default async function Page(props: PageProps<"/[slug]">) {
   const params = await props.params;
   const page = legal.getPage([params.slug]);
 
   if (!page) notFound();
-  const { body: Mdx, toc } = await page.data.load();
+  const { body: Mdx, toc, lastModified } = await page.data.load();
 
   return (
     <main className="mx-auto w-full max-w-page px-4 py-4 md:px-8 md:py-6">
@@ -35,6 +36,9 @@ export default async function Page(props: PageProps<"/[slug]">) {
         <div className="prose p-4">
           <InlineTOC items={toc} />
           <Mdx components={defaultMdxComponents} />
+        </div>
+        <div className="prose p-4 flex justify-center mt-3">
+          {lastModified && <PageLastUpdate date={lastModified} />}
         </div>
       </article>
     </main>

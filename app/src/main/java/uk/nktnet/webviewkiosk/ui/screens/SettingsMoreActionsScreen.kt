@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.os.Build
 import android.webkit.CookieManager
 import android.webkit.WebStorage
 import android.webkit.WebView
@@ -18,6 +19,11 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
+import uk.nktnet.webviewkiosk.utils.openDataUsageSettings
+import uk.nktnet.webviewkiosk.utils.openDefaultAppsSettings
+import uk.nktnet.webviewkiosk.utils.openDefaultLauncherSettings
+import uk.nktnet.webviewkiosk.utils.openSettings
+import uk.nktnet.webviewkiosk.utils.openWifiSettings
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
@@ -49,7 +55,31 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 .verticalScroll(rememberScrollState())
                 .fillMaxSize()
         ) {
-            ActionButton("Open App Info") { openAppDetailsSettings(context) }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SectionHeader("Shortcuts")
+            ActionButton("App Info") { openAppDetailsSettings(context) }
+            ActionButton("Default Launcher") {
+                openDefaultLauncherSettings(context)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                ActionButton("Default Apps") {
+                    openDefaultAppsSettings(context)
+                }
+            }
+            ActionButton("WiFi Settings") {
+                openWifiSettings(context)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                ActionButton("Data Usage Settings") {
+                    openDataUsageSettings(context)
+                }
+            }
+            ActionButton("Device Settings") {
+                openSettings(context)
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             SectionHeader("Manage")
             ActionButton("Local Files") {
@@ -61,6 +91,8 @@ fun SettingsMoreActionsScreen(navController: NavController) {
             ActionButton("Device Owner") {
                 navController.navigate(Screen.SettingsDeviceOwner.route)
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
 
             SectionHeader("Clear")
             ActionButton("Clear Cookies") {
@@ -116,7 +148,7 @@ private fun SectionHeader(title: String) {
         text = title,
         style = MaterialTheme.typography.titleLarge,
         color = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.padding(top = 22.dp, bottom = 8.dp)
+        modifier = Modifier.padding(bottom = 8.dp)
     )
     HorizontalDivider(
         Modifier.padding(bottom = 8.dp),
