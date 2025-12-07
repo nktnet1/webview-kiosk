@@ -4,6 +4,7 @@ import {
   DocsBody,
   DocsDescription,
   DocsTitle,
+  PageLastUpdate,
 } from "fumadocs-ui/page";
 import { notFound } from "next/navigation";
 import { createRelativeLink } from "fumadocs-ui/mdx";
@@ -16,7 +17,7 @@ export default async function Page(props: {
   const page = source.getPage(params.slug);
   if (!page) notFound();
 
-  const { body: Mdx, toc } = await page.data.load();
+  const { body: Mdx, toc, lastModified } = await page.data.load();
 
   return (
     <DocsPage
@@ -34,6 +35,7 @@ export default async function Page(props: {
           })}
         />
       </DocsBody>
+      {lastModified && <PageLastUpdate date={lastModified} />}
     </DocsPage>
   );
 }
