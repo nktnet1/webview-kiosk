@@ -69,7 +69,7 @@ fun HistoryDialog(
         return if (url.startsWith(prefix) && url.contains( Constants.WEB_CONTENT_FILES_DIR)) {
             val start = url.indexOf(prefix) + prefix.length
             val end = url.indexOf(dir) + dir.length
-            url.substring(0, start) + "..." + url.substring(end)
+            url.take(start) + "..." + url.substring(end)
         } else url
     }
 
