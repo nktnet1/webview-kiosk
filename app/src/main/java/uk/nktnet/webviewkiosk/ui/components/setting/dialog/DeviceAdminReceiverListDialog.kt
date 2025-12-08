@@ -13,8 +13,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -154,8 +156,11 @@ private fun ConfirmTransferDialog(
         onDismissRequest = onDismiss,
         title = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                AdminIcon(selectedAdminReceiver.app.icon)
-                Spacer(Modifier.width(8.dp))
+                AdminIcon(
+                    selectedAdminReceiver.app.icon,
+                    modifier = Modifier.size(40.dp)
+                )
+                Spacer(Modifier.width(12.dp))
                 Text(
                     "Ownership Transfer",
                     style = MaterialTheme.typography.titleLarge,
@@ -163,23 +168,27 @@ private fun ConfirmTransferDialog(
             }
         },
         text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
                 Text(
                     """
                         Are you sure you want to transfer ownership to ${selectedAdminReceiver.app.name}?
                     """.trimIndent(),
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(14.dp))
                 Text(
                     """
                         This action cannot be undone.
                     """.trimIndent(),
                     style = MaterialTheme.typography.bodyMedium,
                 )
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(14.dp))
                 HorizontalDivider()
-                Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(14.dp))
                 Column(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
@@ -370,7 +379,10 @@ private fun AdminCard(
                 .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            AdminIcon(admin.app.icon)
+            AdminIcon(
+                admin.app.icon,
+                modifier = Modifier.size(40.dp)
+            )
             Spacer(Modifier.width(12.dp))
             Column {
                 Text(admin.app.name, style = MaterialTheme.typography.bodyMedium)
@@ -385,7 +397,10 @@ private fun AdminCard(
 }
 
 @Composable
-private fun AdminIcon(icon: Drawable) {
+private fun AdminIcon(
+    icon: Drawable,
+    modifier: Modifier = Modifier,
+) {
     val bitmap = createBitmap(
         icon.intrinsicWidth.coerceAtLeast(1),
         icon.intrinsicHeight.coerceAtLeast(1)
@@ -397,7 +412,7 @@ private fun AdminIcon(icon: Drawable) {
     Image(
         bitmap = bitmap.asImageBitmap(),
         contentDescription = null,
-        modifier = Modifier.size(40.dp),
+        modifier = modifier,
         contentScale = ContentScale.Fit
     )
 }
