@@ -15,7 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import uk.nktnet.webviewkiosk.managers.AppInfo
+import uk.nktnet.webviewkiosk.config.data.AppInfo
 
 @Composable
 fun AppCard(

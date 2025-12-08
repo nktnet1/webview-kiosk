@@ -10,7 +10,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
-import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.RemoteException
 import org.lsposed.hiddenapibypass.HiddenApiBypass
@@ -19,20 +18,8 @@ import com.rosan.dhizuku.api.DhizukuBinderWrapper
 import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+import uk.nktnet.webviewkiosk.config.data.AdminAppInfo
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
-
-open class AppInfo(
-    val packageName: String,
-    val name: String,
-    val icon: Drawable
-)
-
-class AdminAppInfo(
-    packageName: String,
-    name: String,
-    icon: Drawable,
-    val admin: ComponentName
-) : AppInfo(packageName, name, icon)
 
 object DeviceOwnerManager {
     lateinit var DPM: DevicePolicyManager

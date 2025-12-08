@@ -6,7 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import uk.nktnet.webviewkiosk.managers.AppInfo
+import uk.nktnet.webviewkiosk.config.data.AppInfo
 
 @Composable
 fun <T : AppInfo> AppList(
