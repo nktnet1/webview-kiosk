@@ -23,4 +23,3 @@ fun <T : AppInfo> AppList(
         }
     }
 }
-

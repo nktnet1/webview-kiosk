@@ -27,7 +27,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.R
 
-
 @Composable
 fun AppSearchBar(
     searchQuery: TextFieldValue,

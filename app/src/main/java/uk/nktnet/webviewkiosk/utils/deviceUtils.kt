@@ -14,11 +14,13 @@ import androidx.core.content.pm.PackageInfoCompat
 import androidx.webkit.WebViewCompat
 import android.app.admin.DevicePolicyManager
 import android.content.pm.PackageManager
-import kotlinx.serialization.Serializable
 import uk.nktnet.webviewkiosk.BuildConfig
-import uk.nktnet.webviewkiosk.config.DeviceOwnerMode
+import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.data.SystemAppInfo
+import uk.nktnet.webviewkiosk.config.data.SystemDeviceInfo
+import uk.nktnet.webviewkiosk.config.data.SystemInfo
 import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.states.KeepScreenOnStateSingleton
@@ -67,57 +69,6 @@ fun updateDeviceSettings(context: Context) {
     setWindowBrightness(context, userSettings.brightness)
     applyLockTaskFeatures(context)
 }
-
-@Serializable
-data class SystemAppInfo(
-    val name: String,
-    val packageName: String,
-    val versionName: String,
-    val versionCode: Long,
-    val minSdk: Int,
-    val targetSdk: Int,
-    val isDebug: Boolean,
-    val installer: String?,
-    val isDeviceOwner: Boolean,
-    val isLockTaskPermitted: Boolean,
-    val dhizukuPermissionGranted: Boolean,
-    val instanceId: String
-)
-
-@Serializable
-data class SystemDeviceInfo(
-    val releaseVersion: String,
-    val sdkVersion: Int,
-    val incrementalVersion: String,
-    val webViewVersion: String?,
-    val screenWidth: Int,
-    val screenHeight: Int,
-    val screenDensity: Float,
-    val isManagedProfile: Boolean?,
-    val timeZone: String,
-    val locale: String,
-    val totalMemory: Long,
-    val totalStorage: Long,
-    val manufacturer: String,
-    val model: String,
-    val brand: String,
-    val device: String,
-    val product: String,
-    val hardware: String,
-    val board: String,
-    val bootloader: String,
-    val securityPatch: String?,
-    val supportedAbis: List<String>,
-    val supported32BitAbis: List<String>,
-    val supported64BitAbis: List<String>,
-    val buildFingerprint: String
-)
-
-@Serializable
-data class SystemInfo(
-    val app: SystemAppInfo,
-    val device: SystemDeviceInfo
-)
 
 fun getAppInfo(context: Context): SystemAppInfo {
     val pm = context.packageManager

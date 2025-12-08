@@ -19,7 +19,7 @@ import com.rosan.dhizuku.api.DhizukuBinderWrapper
 import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
-import uk.nktnet.webviewkiosk.config.DeviceOwnerMode
+import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 
 open class AppInfo(
     val packageName: String,
