@@ -10,6 +10,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -30,7 +31,6 @@ import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 fun SettingsMoreActionsScreen(navController: NavController) {
     val context = LocalContext.current
     val systemSettings = SystemSettings(context)
-
     val webView = remember { WebView(context) }
 
     DisposableEffect(webView) {
@@ -49,80 +49,128 @@ fun SettingsMoreActionsScreen(navController: NavController) {
     ) {
         SettingLabel(navController = navController, label = "More Actions")
         SettingDivider()
-
         Column(
             modifier = Modifier
                 .verticalScroll(rememberScrollState())
                 .fillMaxSize()
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             SectionHeader("Shortcuts")
-            ActionButton("App Info") { openAppDetailsSettings(context) }
-            ActionButton("Default Launcher") {
-                openDefaultLauncherSettings(context)
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                ActionButton("Default Apps") {
-                    openDefaultAppsSettings(context)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ActionButton("App Info", modifier = Modifier.weight(1f)) {
+                    openAppDetailsSettings(context)
+                }
+                ActionButton("Device Settings", modifier = Modifier.weight(1f)) {
+                    openSettings(context)
                 }
             }
-            ActionButton("WiFi Settings") {
-                openWifiSettings(context)
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                ActionButton("Data Usage Settings") {
-                    openDataUsageSettings(context)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ActionButton("Default Launcher", modifier = Modifier.weight(1f)) {
+                    openDefaultLauncherSettings(context)
+                }
+                ActionButton("Default Apps", modifier = Modifier.weight(1f)) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        openDefaultAppsSettings(context)
+                    } else {
+                        ToastManager.show(
+                            context,
+                            "Error: requires SDK ${Build.VERSION_CODES.N} (current: ${Build.VERSION.SDK_INT}"
+                        )
+                    }
                 }
             }
-            ActionButton("Device Settings") {
-                openSettings(context)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ActionButton("WiFi Settings", modifier = Modifier.weight(1f)) {
+                    openWifiSettings(context)
+                }
+                ActionButton("Data Usage", modifier = Modifier.weight(1f)) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        openDataUsageSettings(context)
+                    } else {
+                        ToastManager.show(
+                            context,
+                            "Error: requires SDK ${Build.VERSION_CODES.P} (current: ${Build.VERSION.SDK_INT}"
+                        )
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-
+            Spacer(modifier = Modifier.height(12.dp))
             SectionHeader("Manage")
-            ActionButton("Local Files") {
-                navController.navigate(Screen.SettingsWebContentFiles.route)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ActionButton("Local Files", modifier = Modifier.weight(1f)) {
+                    navController.navigate(Screen.SettingsWebContentFiles.route)
+                }
+                ActionButton("Site Permissions", modifier = Modifier.weight(1f)) {
+                    navController.navigate(Screen.SettingsWebBrowsingSitePermissions.route)
+                }
             }
-            ActionButton("Site Permissions") {
-                navController.navigate(Screen.SettingsWebBrowsingSitePermissions.route)
-            }
-            ActionButton("Device Owner") {
+            ActionButton("Device Owner", modifier = Modifier.fillMaxWidth()) {
                 navController.navigate(Screen.SettingsDeviceOwner.route)
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
-
+            Spacer(modifier = Modifier.height(12.dp))
             SectionHeader("Clear")
-            ActionButton("Clear Cookies") {
-                CookieManager.getInstance().removeAllCookies(null)
-                CookieManager.getInstance().flush()
-                ToastManager.show(context, "Cookies cleared.")
-            }
-            ActionButton("Clear Cache") {
-                webView.clearCache(true)
-                ToastManager.show(context, "Cache cleared.")
-            }
-            ActionButton("Clear Form Data") {
-                webView.clearFormData()
-                ToastManager.show(context, "Form data cleared.")
-            }
-            ActionButton("Clear History") {
-                webView.clearHistory()
-                WebViewNavigation.clearHistory(systemSettings)
-                ToastManager.show(context, "History cleared.")
-            }
-            ActionButton("Clear SSL Preferences") {
-                webView.clearSslPreferences()
-                ToastManager.show(context, "SSL preferences cleared.")
-            }
-            ActionButton("Clear Web Storage") {
-                WebStorage.getInstance().deleteAllData()
-                ToastManager.show(context, "Web storage cleared.")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ActionButton("Cookies", modifier = Modifier.weight(1f)) {
+                    CookieManager.getInstance().removeAllCookies(null)
+                    CookieManager.getInstance().flush()
+                    ToastManager.show(context, "Cookies cleared.")
+                }
+                ActionButton("Cache", modifier = Modifier.weight(1f)) {
+                    webView.clearCache(true)
+                    ToastManager.show(context, "Cache cleared.")
+                }
             }
 
-            Spacer(modifier = Modifier.padding(bottom = 10.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ActionButton("Form Data", modifier = Modifier.weight(1f)) {
+                    webView.clearFormData()
+                    ToastManager.show(context, "Form data cleared.")
+                }
+                ActionButton("History", modifier = Modifier.weight(1f)) {
+                    webView.clearHistory()
+                    WebViewNavigation.clearHistory(systemSettings)
+                    ToastManager.show(context, "History cleared.")
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ActionButton("SSL Preferences", modifier = Modifier.weight(1f)) {
+                    webView.clearSslPreferences()
+                    ToastManager.show(context, "SSL preferences cleared.")
+                }
+                ActionButton("Web Storage", modifier = Modifier.weight(1f)) {
+                    WebStorage.getInstance().deleteAllData()
+                    ToastManager.show(context, "Web storage cleared.")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }
@@ -130,16 +178,20 @@ fun SettingsMoreActionsScreen(navController: NavController) {
 @Composable
 private fun ActionButton(
     label: String,
+    modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    onClick: () -> Unit
+    color: Color = MaterialTheme.colorScheme.primary,
+    onClick: () -> Unit,
 ) {
     Button(
         enabled = enabled,
         onClick = onClick,
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 2.dp)
-    ) { Text(label) }
+        colors = ButtonDefaults.buttonColors(containerColor = color),
+        modifier = modifier.padding(vertical = 2.dp),
+        contentPadding = PaddingValues(vertical = 4.dp, horizontal = 8.dp)
+    ) {
+        Text(label, style = MaterialTheme.typography.bodySmall)
+    }
 }
 
 @Composable
@@ -148,10 +200,10 @@ private fun SectionHeader(title: String) {
         text = title,
         style = MaterialTheme.typography.titleLarge,
         color = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.padding(bottom = 8.dp)
+        modifier = Modifier.padding(bottom = 4.dp)
     )
     HorizontalDivider(
-        Modifier.padding(bottom = 8.dp),
+        Modifier.padding(bottom = 4.dp),
         DividerDefaults.Thickness,
         DividerDefaults.color
     )
