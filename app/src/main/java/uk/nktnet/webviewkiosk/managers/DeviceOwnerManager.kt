@@ -1,10 +1,14 @@
 package uk.nktnet.webviewkiosk.managers
 
 import android.annotation.SuppressLint
+import android.app.admin.DeviceAdminInfo
+import android.app.admin.DeviceAdminReceiver
 import android.app.admin.DevicePolicyManager
 import android.app.admin.IDevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.RemoteException
@@ -14,7 +18,8 @@ import com.rosan.dhizuku.api.DhizukuBinderWrapper
 import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
-import uk.nktnet.webviewkiosk.config.DeviceOwnerMode
+import uk.nktnet.webviewkiosk.config.data.AdminAppInfo
+import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 
 object DeviceOwnerManager {
     lateinit var DPM: DevicePolicyManager
@@ -111,6 +116,35 @@ object DeviceOwnerManager {
         } catch (e: Throwable) {
             e.printStackTrace()
             onDenied()
+        }
+    }
+
+    fun getDeviceAdminReceivers(context: Context, pm: PackageManager): List<AdminAppInfo> {
+        return pm.queryBroadcastReceivers(
+            Intent(DeviceAdminReceiver.ACTION_DEVICE_ADMIN_ENABLED),
+            PackageManager.GET_META_DATA
+        ).mapNotNull {
+            try {
+                DeviceAdminInfo(context, it)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        }.filter {
+            it.isVisible
+            && it.packageName != context.packageName
+            && it.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0
+        }.map { deviceAdminInfo ->
+            val appInfo = pm.getApplicationInfo(deviceAdminInfo.packageName, 0)
+            AdminAppInfo(
+                packageName = appInfo.packageName,
+                name = pm.getApplicationLabel(appInfo).toString(),
+                icon = pm.getApplicationIcon(appInfo),
+                admin = ComponentName(
+                    deviceAdminInfo.packageName,
+                    deviceAdminInfo.receiverName
+                )
+            )
         }
     }
 

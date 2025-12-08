@@ -53,3 +53,18 @@ fun openSettings(context: Context) {
     val intent = Intent(Settings.ACTION_SETTINGS)
     safeStartActivity(context, intent)
 }
+
+fun openPackage(context: Context, packageName: String) {
+    try {
+        val pm = context.packageManager
+        val intent = pm.getLaunchIntentForPackage(packageName)
+        if (intent != null) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            context.startActivity(intent)
+        } else {
+            ToastManager.show(context, "Error: $packageName is not installed.")
+        }
+    } catch (e: Exception) {
+        ToastManager.show(context, "Error: $e")
+    }
+}

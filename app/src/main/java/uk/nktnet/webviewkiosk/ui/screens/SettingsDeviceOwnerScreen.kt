@@ -25,11 +25,12 @@ import com.rosan.dhizuku.shared.DhizukuVariables
 import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.DeviceOwnerMode
+import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
+import uk.nktnet.webviewkiosk.ui.components.setting.dialog.DeviceAdminReceiverListDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.dhizuku.DhizukuRequestPermissionOnLaunchSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureBlockActivityStartInTaskSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureGlobalActionsSetting
@@ -39,22 +40,8 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.lock
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureOverviewSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureSystemInfoSetting
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
+import uk.nktnet.webviewkiosk.utils.openPackage
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
-
-fun openPackage(context: Context, packageName: String) {
-    try {
-        val pm = context.packageManager
-        val intent = pm.getLaunchIntentForPackage(packageName)
-        if (intent != null) {
-            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
-        } else {
-            ToastManager.show(context, "App not installed")
-        }
-    } catch (e: Exception) {
-        ToastManager.show(context, "Error: $e")
-    }
-}
 
 @Composable
 fun SettingsDeviceOwnerScreen(navController: NavController) {
@@ -78,6 +65,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
     val deviceOwnerStatus by DeviceOwnerManager.status.collectAsState()
 
     var showDeviceOwnerRemovalDialog by remember { mutableStateOf(false) }
+    var showAdminReceiverListDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -86,53 +74,6 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
             isLockedTaskPermitted = dpm.isLockTaskPermitted(context.packageName)
             hasOwnerPermission = DeviceOwnerManager.hasOwnerPermission(context)
         }
-    }
-
-    if (showDeviceOwnerRemovalDialog) {
-        AlertDialog(
-            onDismissRequest = { showDeviceOwnerRemovalDialog = false },
-            title = { Text("Deactivate Device Owner") },
-            text = {
-                Text(
-                    normaliseInfoText("""
-                        Are you sure you want to unset ${Constants.APP_NAME} as the
-                        device owner?
-
-                        This means Lock Task Mode will no longer be available, and
-                        the kiosk lock feature will default to Screen Pinning.
-                    """.trimIndent())
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        showDeviceOwnerRemovalDialog = false
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                            try {
-                                @Suppress("DEPRECATION")
-                                dpm.clearProfileOwner(adminComponent)
-                            } catch (e: Throwable) {
-                                e.printStackTrace()
-                            }
-                        }
-                        try {
-                            @Suppress("DEPRECATION")
-                            dpm.clearDeviceOwnerApp(context.packageName)
-                        } catch (e: Throwable) {
-                            e.printStackTrace()
-                        }
-                        isDeviceOwner = dpm.isDeviceOwnerApp(context.packageName)
-                    }
-                ) { Text("Yes") }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { showDeviceOwnerRemovalDialog = false }
-                ) {
-                    Text("No")
-                }
-            }
-        )
     }
 
     Column(
@@ -163,9 +104,11 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            if (deviceOwnerStatus.mode == DeviceOwnerMode.DeviceOwner) {
+            if (
+                deviceOwnerStatus.mode == DeviceOwnerMode.DeviceOwner
+                && isDeviceOwner
+            ) {
                 Button(
-                    enabled = isDeviceOwner,
                     onClick = { showDeviceOwnerRemovalDialog = true },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.errorContainer,
@@ -176,6 +119,17 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                         .padding(vertical = 1.dp),
                 ) {
                     Text("Deactivate Device Owner")
+                }
+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    Button(
+                        onClick = { showAdminReceiverListDialog = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 1.dp),
+                    ) {
+                        Text("Transfer Ownership")
+                    }
                 }
             }
 
@@ -268,5 +222,62 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
         }
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        DeviceAdminReceiverListDialog(
+            showDialog = showAdminReceiverListDialog,
+            onDismiss = { showAdminReceiverListDialog = false }
+        )
+    }
+
+    if (showDeviceOwnerRemovalDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeviceOwnerRemovalDialog = false },
+            title = { Text("Deactivate Device Owner") },
+            text = {
+                Text(
+                    normaliseInfoText("""
+                        Are you sure you want to unset ${Constants.APP_NAME} as the
+                        device owner?
+
+                        This means Lock Task Mode will no longer be available, and
+                        the kiosk lock feature will default to Screen Pinning.
+                    """.trimIndent())
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeviceOwnerRemovalDialog = false
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                            try {
+                                @Suppress("DEPRECATION")
+                                dpm.clearProfileOwner(adminComponent)
+                            } catch (e: Throwable) {
+                                e.printStackTrace()
+                            }
+                        }
+                        try {
+                            @Suppress("DEPRECATION")
+                            dpm.clearDeviceOwnerApp(context.packageName)
+                        } catch (e: Throwable) {
+                            e.printStackTrace()
+                        }
+                        DeviceOwnerManager.init(context)
+                        isDeviceOwner = dpm.isDeviceOwnerApp(context.packageName)
+                    }
+                ) { Text("Yes") }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDeviceOwnerRemovalDialog = false
+                    }
+                ) {
+                    Text("No")
+                }
+            }
+        )
     }
 }
