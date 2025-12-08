@@ -1,7 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
 import android.app.admin.DevicePolicyManager
-import android.content.ComponentName
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
@@ -67,44 +66,25 @@ fun DeviceAdminReceiverListDialog(
         }
     }
 
-    val selected = selectedAdmin?.admin
-    if (showConfirmDialog && selected != null) {
-        AlertDialog(
-            onDismissRequest = { showConfirmDialog = false },
-            title = { Text("Ownership Transfer") },
-            text = { Text("Are you sure you want to transfer ownership to ${selected.className}?") },
-            confirmButton = {
-                TextButton(onClick = {
-                    isProcessing = true
-                    try {
-                        dpm.transferOwnership(
-                            DeviceOwnerManager.DAR,
-                            selected,
-                            null
-                        )
-                        showConfirmDialog = false
-                    } catch (e: Exception) {
-                        ToastManager.show(context, "Error: ${e.message}")
-                    } finally {
-                        isProcessing = false
-                    }
-                }) {
-                    Text("Yes")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showConfirmDialog = false }) {
-                    Text("No")
-                }
-            }
-        )
-    }
+    ConfirmTransferDialog(
+        show = showConfirmDialog,
+        selectedAdminReceiver = selectedAdmin,
+        onDismiss = {
+            showConfirmDialog = false
+            selectedAdmin = null
+        },
+        onConfirm = {
+            showConfirmDialog = false
+            selectedAdmin = null
+            onDismiss()
+            DeviceOwnerManager.init(context)
+        },
+        isProcessing = { isProcessing = it },
+    )
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background,
             shape = MaterialTheme.shapes.medium
         ) {
@@ -112,124 +92,27 @@ fun DeviceAdminReceiverListDialog(
                 Text("Admin Receivers", style = MaterialTheme.typography.headlineMedium)
                 Spacer(Modifier.height(16.dp))
 
-                Row(
-                    modifier = Modifier
-                        .wrapContentHeight()
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    BasicTextField(
-                        value = searchQuery.text,
-                        onValueChange = { searchQuery = TextFieldValue(it) },
-                        singleLine = true,
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        textStyle = LocalTextStyle.current.copy(
-                            color = MaterialTheme.colorScheme.onSurface,
-                            fontSize = MaterialTheme.typography.bodySmall.fontSize
-                        ),
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(43.dp),
-                        decorationBox = { innerTextField ->
-                            Box(
-                                contentAlignment = Alignment.CenterStart,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .border(
-                                        1.dp,
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                        MaterialTheme.shapes.small
-                                    )
-                                    .padding(horizontal = 12.dp)
-                            ) {
-                                if (searchQuery.text.isEmpty()) {
-                                    Text(
-                                        text = "Search ${admins.size} admin receivers",
-                                        style = LocalTextStyle.current.copy(
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                                            fontSize = MaterialTheme.typography.bodySmall.fontSize,
-                                            fontStyle = FontStyle.Italic,
-                                        )
-                                    )
-                                }
-                                innerTextField()
-                            }
-                        }
-                    )
-
-                    IconButton(
-                        onClick = { ascending = !ascending },
-                        shape = RoundedCornerShape(12.dp),
-                        modifier = Modifier
-                            .align(Alignment.CenterVertically)
-                            .graphicsLayer(scaleX = 0.9f, scaleY = 0.9f)
-                            .border(
-                                1.dp,
-                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                MaterialTheme.shapes.small
-                            )
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.baseline_sort_24),
-                            contentDescription = "Sort Order",
-                            modifier = Modifier
-                                .size(22.dp)
-                                .graphicsLayer(scaleY = if (ascending) -1f else 1f, scaleX = -1f)
-                        )
-                    }
-                }
+                AdminSearchBar(
+                    searchQuery = searchQuery,
+                    onSearchChange = { searchQuery = TextFieldValue(it) },
+                    ascending = ascending,
+                    onSortToggle = { ascending = !ascending },
+                    adminCount = admins.size
+                )
 
                 Spacer(Modifier.height(16.dp))
 
-                LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    state = listState
-                ) {
-                    items(filteredAdmins, key = { it.admin.packageName }) { admin ->
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp)
-                                .clickable(enabled = !isProcessing) {
-                                    selectedAdmin = admin
-                                    showConfirmDialog = true
-                                },
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (selectedAdmin == admin) {
-                                    MaterialTheme.colorScheme.primaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.surfaceContainer
-                                },
-                                contentColor = if (selectedAdmin == admin) {
-                                    MaterialTheme.colorScheme.onPrimaryContainer
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
-                                }
-                            )
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                AdminIcon(admin.app.icon)
-                                Spacer(Modifier.width(12.dp))
-                                Column {
-                                    Text(admin.app.name, style = MaterialTheme.typography.bodyMedium)
-                                    Text(
-                                        admin.admin.className,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Spacer(Modifier.height(16.dp))
+                AdminList(
+                    admins = filteredAdmins,
+                    selectedAdmin = selectedAdmin,
+                    onSelectAdmin = {
+                        selectedAdmin = it
+                        showConfirmDialog = true
+                    },
+                    listState = listState,
+                    isProcessing = isProcessing,
+                    modifier = Modifier.weight(1f)
+                )
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -237,6 +120,254 @@ fun DeviceAdminReceiverListDialog(
                 ) {
                     TextButton(onClick = onDismiss) { Text("Close") }
                 }
+            }
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.P)
+@Composable
+private fun ConfirmTransferDialog(
+    show: Boolean,
+    selectedAdminReceiver: DeviceAdmin?,
+    onDismiss: () -> Unit,
+    onConfirm: () -> Unit,
+    isProcessing: (Boolean) -> Unit,
+) {
+    if (!show || selectedAdminReceiver == null) {
+        return
+    }
+
+    val context = LocalContext.current
+    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AdminIcon(selectedAdminReceiver.app.icon)
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    "Ownership Transfer",
+                    style = MaterialTheme.typography.titleLarge,
+                )
+            }
+        },
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Text(
+                    """
+                        Are you sure you want to transfer ownership to ${selectedAdminReceiver.app.name}?
+                    """.trimIndent(),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    """
+                        This action cannot be undone.
+                    """.trimIndent(),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Spacer(Modifier.height(12.dp))
+                HorizontalDivider()
+                Spacer(Modifier.height(12.dp))
+                Column {
+                    Row {
+                        Text(
+                            "Package:",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            selectedAdminReceiver.admin.packageName,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(3f)
+                        )
+                    }
+                    Spacer(Modifier.height(4.dp))
+                    Row {
+                        Text(
+                            "Receiver:",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Text(
+                            selectedAdminReceiver.admin.className,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.weight(3f)
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = {
+                isProcessing(true)
+                try {
+                    dpm.transferOwnership(
+                        DeviceOwnerManager.DAR,
+                        selectedAdminReceiver.admin,
+                        null
+                    )
+                    onConfirm()
+                } catch (e: Exception) {
+                    ToastManager.show(context, "Error: ${e.message}")
+                } finally {
+                    isProcessing(false)
+                }
+            }) { Text("Yes") }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("No") }
+        }
+    )
+}
+
+@Composable
+private fun AdminSearchBar(
+    searchQuery: TextFieldValue,
+    onSearchChange: (String) -> Unit,
+    ascending: Boolean,
+    onSortToggle: () -> Unit,
+    adminCount: Int
+) {
+    Row(
+        modifier = Modifier
+            .wrapContentHeight()
+            .fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        BasicTextField(
+            value = searchQuery.text,
+            onValueChange = onSearchChange,
+            singleLine = true,
+            cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
+            textStyle = LocalTextStyle.current.copy(
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = MaterialTheme.typography.bodySmall.fontSize
+            ),
+            modifier = Modifier
+                .weight(1f)
+                .height(43.dp),
+            decorationBox = { innerTextField ->
+                Box(
+                    contentAlignment = Alignment.CenterStart,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(
+                            1.dp,
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                            MaterialTheme.shapes.small
+                        )
+                        .padding(horizontal = 12.dp)
+                ) {
+                    if (searchQuery.text.isEmpty()) {
+                        Text(
+                            text = "Search $adminCount admin receivers",
+                            style = LocalTextStyle.current.copy(
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                                fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                                fontStyle = FontStyle.Italic,
+                            )
+                        )
+                    }
+                    innerTextField()
+                }
+            }
+        )
+
+        IconButton(
+            onClick = onSortToggle,
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier
+                .align(Alignment.CenterVertically)
+                .graphicsLayer(scaleX = 0.9f, scaleY = 0.9f)
+                .border(
+                    1.dp,
+                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    MaterialTheme.shapes.small
+                )
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.baseline_sort_24),
+                contentDescription = "Sort Order",
+                modifier = Modifier
+                    .size(22.dp)
+                    .graphicsLayer(scaleY = if (ascending) -1f else 1f, scaleX = -1f)
+            )
+        }
+    }
+}
+
+@Composable
+private fun AdminList(
+    admins: List<DeviceAdmin>,
+    selectedAdmin: DeviceAdmin?,
+    onSelectAdmin: (DeviceAdmin) -> Unit,
+    listState: androidx.compose.foundation.lazy.LazyListState,
+    isProcessing: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    LazyColumn(
+        state = listState,
+        modifier = modifier
+    ) {
+        items(admins, key = { it.admin.packageName }) { admin ->
+            AdminCard(
+                admin = admin,
+                isSelected = selectedAdmin == admin,
+                onClick = { onSelectAdmin(admin) },
+                isProcessing = isProcessing
+            )
+        }
+    }
+}
+
+@Composable
+private fun AdminCard(
+    admin: DeviceAdmin,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    isProcessing: Boolean
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clickable(enabled = !isProcessing, onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isSelected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceContainer
+            },
+            contentColor = if (isSelected) {
+                MaterialTheme.colorScheme.onPrimaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            }
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            AdminIcon(admin.app.icon)
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text(admin.app.name, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    admin.admin.className,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
     }

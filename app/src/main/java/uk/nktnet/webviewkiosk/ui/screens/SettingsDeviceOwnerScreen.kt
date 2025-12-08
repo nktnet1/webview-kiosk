@@ -118,9 +118,11 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            if (deviceOwnerStatus.mode == DeviceOwnerMode.DeviceOwner) {
+            if (
+                deviceOwnerStatus.mode == DeviceOwnerMode.DeviceOwner
+                && isDeviceOwner
+            ) {
                 Button(
-                    enabled = isDeviceOwner,
                     onClick = { showDeviceOwnerRemovalDialog = true },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.errorContainer,
@@ -135,7 +137,6 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     Button(
-                        enabled = true,
                         onClick = { showAdminReceiverListDialog = true },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -277,13 +278,16 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                         } catch (e: Throwable) {
                             e.printStackTrace()
                         }
+                        DeviceOwnerManager.init(context)
                         isDeviceOwner = dpm.isDeviceOwnerApp(context.packageName)
                     }
                 ) { Text("Yes") }
             },
             dismissButton = {
                 TextButton(
-                    onClick = { showDeviceOwnerRemovalDialog = false }
+                    onClick = {
+                        showDeviceOwnerRemovalDialog = false
+                    }
                 ) {
                     Text("No")
                 }
