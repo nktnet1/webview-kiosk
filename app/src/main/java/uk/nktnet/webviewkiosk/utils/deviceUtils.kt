@@ -69,7 +69,7 @@ fun updateDeviceSettings(context: Context) {
 }
 
 @Serializable
-data class AppInfo(
+data class SystemAppInfo(
     val name: String,
     val packageName: String,
     val versionName: String,
@@ -85,7 +85,7 @@ data class AppInfo(
 )
 
 @Serializable
-data class DeviceInfo(
+data class SystemDeviceInfo(
     val releaseVersion: String,
     val sdkVersion: Int,
     val incrementalVersion: String,
@@ -115,11 +115,11 @@ data class DeviceInfo(
 
 @Serializable
 data class SystemInfo(
-    val app: AppInfo,
-    val device: DeviceInfo
+    val app: SystemAppInfo,
+    val device: SystemDeviceInfo
 )
 
-fun getAppInfo(context: Context): AppInfo {
+fun getAppInfo(context: Context): SystemAppInfo {
     val pm = context.packageManager
     val packageName = context.packageName
     val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
@@ -166,7 +166,7 @@ fun getAppInfo(context: Context): AppInfo {
         null
     }
 
-    return AppInfo(
+    return SystemAppInfo(
         name = context.applicationInfo.loadLabel(pm).toString(),
         packageName = packageName,
         versionName = versionName,
@@ -182,7 +182,7 @@ fun getAppInfo(context: Context): AppInfo {
     )
 }
 
-fun getDeviceInfo(context: Context): DeviceInfo {
+fun getDeviceInfo(context: Context): SystemDeviceInfo {
     val memInfo = ActivityManager.MemoryInfo()
     val am = context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
     am.getMemoryInfo(memInfo)
@@ -215,7 +215,7 @@ fun getDeviceInfo(context: Context): DeviceInfo {
         context.resources.configuration.locale.toString()
     }
 
-    return DeviceInfo(
+    return SystemDeviceInfo(
         releaseVersion = Build.VERSION.RELEASE,
         sdkVersion = Build.VERSION.SDK_INT,
         incrementalVersion = Build.VERSION.INCREMENTAL,

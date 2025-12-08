@@ -21,16 +21,19 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.DeviceOwnerMode
 
-data class DeviceAdmin(
-    val app: DeviceAdminAppInfo,
-    val admin: ComponentName
-)
-
-data class DeviceAdminAppInfo(
+open class AppInfo(
     val packageName: String,
     val name: String,
     val icon: Drawable
 )
+
+class AdminAppInfo(
+    packageName: String,
+    name: String,
+    icon: Drawable,
+    val admin: ComponentName
+) : AppInfo(packageName, name, icon)
+
 object DeviceOwnerManager {
     lateinit var DPM: DevicePolicyManager
         private set
@@ -129,7 +132,7 @@ object DeviceOwnerManager {
         }
     }
 
-    fun getDeviceAdminReceivers(context: Context, pm: PackageManager): List<DeviceAdmin> {
+    fun getDeviceAdminReceivers(context: Context, pm: PackageManager): List<AdminAppInfo> {
         return pm.queryBroadcastReceivers(
             Intent(DeviceAdminReceiver.ACTION_DEVICE_ADMIN_ENABLED),
             PackageManager.GET_META_DATA
@@ -142,20 +145,19 @@ object DeviceOwnerManager {
             }
         }.filter {
             it.isVisible
-                    && it.packageName != context.packageName
-                    && it.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0
+            && it.packageName != context.packageName
+            && it.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0
         }.map { deviceAdminInfo ->
             val appInfo = pm.getApplicationInfo(deviceAdminInfo.packageName, 0)
-            val app = DeviceAdminAppInfo(
+            AdminAppInfo(
                 packageName = appInfo.packageName,
                 name = pm.getApplicationLabel(appInfo).toString(),
-                icon = pm.getApplicationIcon(appInfo)
+                icon = pm.getApplicationIcon(appInfo),
+                admin = ComponentName(
+                    deviceAdminInfo.packageName,
+                    deviceAdminInfo.receiverName
+                )
             )
-            val componentName = ComponentName(
-                deviceAdminInfo.packageName,
-                deviceAdminInfo.receiverName
-            )
-            DeviceAdmin(app, componentName)
         }
     }
 
