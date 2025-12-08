@@ -140,8 +140,8 @@ private fun ConfirmTransferDialog(
                 )
                 Spacer(Modifier.width(12.dp))
                 Text(
-                    "Ownership Transfer",
-                    style = MaterialTheme.typography.titleLarge,
+                    selectedAdminReceiver.name,
+                    style = MaterialTheme.typography.titleMedium,
                 )
             }
         },
