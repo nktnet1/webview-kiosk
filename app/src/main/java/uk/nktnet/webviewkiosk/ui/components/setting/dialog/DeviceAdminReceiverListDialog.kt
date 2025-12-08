@@ -47,7 +47,6 @@ fun DeviceAdminReceiverListDialog(
     }
 
     val context = LocalContext.current
-    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
 
     var admins by remember {
         mutableStateOf(
@@ -94,8 +93,12 @@ fun DeviceAdminReceiverListDialog(
             color = MaterialTheme.colorScheme.background,
             shape = MaterialTheme.shapes.medium
         ) {
-            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-                Text("Admin Receivers", style = MaterialTheme.typography.headlineMedium)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp)
+            ) {
+                Text("Admin Receivers", style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(16.dp))
 
                 AdminSearchBar(

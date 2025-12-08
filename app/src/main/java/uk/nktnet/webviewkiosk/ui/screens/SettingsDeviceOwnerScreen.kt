@@ -40,22 +40,8 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.lock
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureOverviewSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureSystemInfoSetting
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
+import uk.nktnet.webviewkiosk.utils.openPackage
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
-
-fun openPackage(context: Context, packageName: String) {
-    try {
-        val pm = context.packageManager
-        val intent = pm.getLaunchIntentForPackage(packageName)
-        if (intent != null) {
-            intent.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
-        } else {
-            ToastManager.show(context, "App not installed")
-        }
-    } catch (e: Exception) {
-        ToastManager.show(context, "Error: $e")
-    }
-}
 
 @Composable
 fun SettingsDeviceOwnerScreen(navController: NavController) {
