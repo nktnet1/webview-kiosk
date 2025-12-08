@@ -26,15 +26,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.core.graphics.createBitmap
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.managers.DeviceAdmin
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
-import uk.nktnet.webviewkiosk.utils.DeviceAdmin
-import uk.nktnet.webviewkiosk.utils.getDeviceAdminReceivers
 
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable
@@ -49,7 +49,13 @@ fun DeviceAdminReceiverListDialog(
     val context = LocalContext.current
     val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
 
-    var admins by remember { mutableStateOf(getDeviceAdminReceivers(context, context.packageManager)) }
+    var admins by remember {
+        mutableStateOf(
+            DeviceOwnerManager.getDeviceAdminReceivers(
+                context, context.packageManager
+            )
+        )
+    }
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var ascending by remember { mutableStateOf(true) }
     val listState = rememberLazyListState()
@@ -171,36 +177,12 @@ private fun ConfirmTransferDialog(
                 Spacer(Modifier.height(12.dp))
                 HorizontalDivider()
                 Spacer(Modifier.height(12.dp))
-                Column {
-                    Row {
-                        Text(
-                            "Package:",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Text(
-                            selectedAdminReceiver.admin.packageName,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.weight(3f)
-                        )
-                    }
-                    Spacer(Modifier.height(4.dp))
-                    Row {
-                        Text(
-                            "Receiver:",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.weight(1f)
-                        )
-                        Text(
-                            selectedAdminReceiver.admin.className,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.weight(3f)
-                        )
-                    }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    LabelValueRow("App", selectedAdminReceiver.app.name)
+                    LabelValueRow("Package", selectedAdminReceiver.admin.packageName)
+                    LabelValueRow("Receiver", selectedAdminReceiver.admin.className)
                 }
             }
         },
@@ -219,12 +201,38 @@ private fun ConfirmTransferDialog(
                 } finally {
                     isProcessing(false)
                 }
-            }) { Text("Yes") }
+            }) {
+                Text(
+                    "Transfer",
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("No") }
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
         }
     )
+}
+
+@Composable
+private fun LabelValueRow(label: String, value: String) {
+    Row {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.weight(1f)
+        )
+        Text(
+            value,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(3f)
+        )
+    }
 }
 
 @Composable
