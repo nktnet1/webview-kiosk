@@ -37,9 +37,7 @@ fun DeviceAdminReceiverListDialog(
 
     var adminApps by remember {
         mutableStateOf(
-            DeviceOwnerManager.getDeviceAdminReceivers(
-                context, context.packageManager
-            )
+            DeviceOwnerManager.getDeviceAdminReceivers(context)
         )
     }
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
@@ -50,7 +48,10 @@ fun DeviceAdminReceiverListDialog(
     val filteredAdmins by remember(searchQuery.text, adminApps, ascending) {
         derivedStateOf {
             adminApps
-                .filter { it.name.contains(searchQuery.text, ignoreCase = true) }
+                .filter {
+                    it.name.contains(searchQuery.text, ignoreCase = true)
+                    || it.packageName.contains(searchQuery.text, ignoreCase = true)
+                }
                 .sortedBy { it.name }
                 .let { if (ascending) it else it.reversed() }
         }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -19,6 +20,7 @@ import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.ui.components.setting.dialog.AppLauncherDialog
 import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
 import uk.nktnet.webviewkiosk.utils.openDataUsageSettings
 import uk.nktnet.webviewkiosk.utils.openDefaultAppsSettings
@@ -32,6 +34,9 @@ fun SettingsMoreActionsScreen(navController: NavController) {
     val context = LocalContext.current
     val systemSettings = SystemSettings(context)
     val webView = remember { WebView(context) }
+    var showAppLauncherDialog by remember {
+        mutableStateOf(false)
+    }
 
     DisposableEffect(webView) {
         onDispose {
@@ -120,8 +125,16 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                     navController.navigate(Screen.SettingsWebBrowsingSitePermissions.route)
                 }
             }
-            ActionButton("Device Owner", modifier = Modifier.fillMaxWidth()) {
-                navController.navigate(Screen.SettingsDeviceOwner.route)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ActionButton("Device Owner", modifier = Modifier.weight(1f)) {
+                    navController.navigate(Screen.SettingsDeviceOwner.route)
+                }
+                ActionButton("App Launcher", modifier = Modifier.weight(1f)) {
+                    showAppLauncherDialog = true
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
@@ -173,6 +186,11 @@ fun SettingsMoreActionsScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
         }
     }
+
+    AppLauncherDialog(
+        showDialog = showAppLauncherDialog,
+        onDismiss = { showAppLauncherDialog = false }
+    )
 }
 
 @Composable

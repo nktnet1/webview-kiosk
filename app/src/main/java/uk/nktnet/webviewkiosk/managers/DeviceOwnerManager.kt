@@ -19,6 +19,7 @@ import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.data.AdminAppInfo
+import uk.nktnet.webviewkiosk.config.data.AppInfo
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 
 object DeviceOwnerManager {
@@ -119,7 +120,26 @@ object DeviceOwnerManager {
         }
     }
 
-    fun getDeviceAdminReceivers(context: Context, pm: PackageManager): List<AdminAppInfo> {
+    fun getLaunchableApps(context: Context): List<AppInfo> {
+        val pm = context.packageManager
+        return pm.getInstalledApplications(0)
+            .filter { it.packageName != context.packageName }
+            .mapNotNull { appInfo ->
+                val launchIntent = pm.getLaunchIntentForPackage(appInfo.packageName)
+                if (launchIntent != null) {
+                    AppInfo(
+                        packageName = appInfo.packageName,
+                        name = pm.getApplicationLabel(appInfo).toString(),
+                        icon = pm.getApplicationIcon(appInfo)
+                    )
+                } else {
+                    null
+                }
+            }
+    }
+
+    fun getDeviceAdminReceivers(context: Context): List<AdminAppInfo> {
+        val pm = context.packageManager
         return pm.queryBroadcastReceivers(
             Intent(DeviceAdminReceiver.ACTION_DEVICE_ADMIN_ENABLED),
             PackageManager.GET_META_DATA
@@ -146,6 +166,7 @@ object DeviceOwnerManager {
                 )
             )
         }
+        .distinctBy { it.packageName }
     }
 
     private fun updateStatus(mode: DeviceOwnerMode) {
