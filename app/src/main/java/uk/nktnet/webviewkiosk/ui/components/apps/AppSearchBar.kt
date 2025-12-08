@@ -33,7 +33,8 @@ fun AppSearchBar(
     searchQuery: TextFieldValue,
     onSearchChange: (String) -> Unit,
     onSortToggle: () -> Unit,
-    appCount: Int
+    appCount: Int,
+    ascending: Boolean,
 ) {
     Row(
         modifier = Modifier
@@ -95,7 +96,12 @@ fun AppSearchBar(
             Icon(
                 painter = painterResource(id = R.drawable.baseline_sort_24),
                 contentDescription = "Sort Order",
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier
+                    .size(22.dp)
+                    .graphicsLayer(
+                        scaleY = if (ascending) -1f else 1f,
+                        scaleX = -1f
+                    )
             )
         }
     }

@@ -82,17 +82,18 @@ fun DeviceAdminReceiverListDialog(
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                Text("Transfer Device Owner", style = MaterialTheme.typography.titleLarge)
+                Text("Transfer Ownership", style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(16.dp))
 
                 AppSearchBar(
                     searchQuery = searchQuery,
                     onSearchChange = { searchQuery = TextFieldValue(it) },
                     onSortToggle = { ascending = !ascending },
-                    appCount = adminApps.size
+                    appCount = adminApps.size,
+                    ascending = ascending,
                 )
 
-                Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(8.dp))
 
                 AppList(
                     apps = filteredAdmins,
