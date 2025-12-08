@@ -118,7 +118,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(6.dp))
 
-//            if (deviceOwnerStatus.mode == DeviceOwnerMode.DeviceOwner) {
+            if (deviceOwnerStatus.mode == DeviceOwnerMode.DeviceOwner) {
                 Button(
                     enabled = isDeviceOwner,
                     onClick = { showDeviceOwnerRemovalDialog = true },
@@ -133,16 +133,18 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                     Text("Deactivate Device Owner")
                 }
 
-                Button(
-                    enabled = true,
-                    onClick = { showAdminReceiverListDialog = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 1.dp),
-                ) {
-                    Text("Transfer Ownership")
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    Button(
+                        enabled = true,
+                        onClick = { showAdminReceiverListDialog = true },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 1.dp),
+                    ) {
+                        Text("Transfer Ownership")
+                    }
                 }
-//            }
+            }
 
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -235,10 +237,12 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
         }
     }
 
-    DeviceAdminReceiverListDialog(
-        showDialog = showAdminReceiverListDialog,
-        onDismiss = { showAdminReceiverListDialog = false }
-    )
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+        DeviceAdminReceiverListDialog(
+            showDialog = showAdminReceiverListDialog,
+            onDismiss = { showAdminReceiverListDialog = false }
+        )
+    }
 
     if (showDeviceOwnerRemovalDialog) {
         AlertDialog(

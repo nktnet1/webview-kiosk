@@ -1,7 +1,12 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
+import android.app.admin.DevicePolicyManager
+import android.content.ComponentName
+import android.content.Context
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -27,21 +32,31 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.core.graphics.createBitmap
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
+import uk.nktnet.webviewkiosk.managers.ToastManager
+import uk.nktnet.webviewkiosk.utils.DeviceAdmin
 import uk.nktnet.webviewkiosk.utils.getDeviceAdminReceivers
 
+@RequiresApi(Build.VERSION_CODES.P)
 @Composable
 fun DeviceAdminReceiverListDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit
 ) {
-    if (!showDialog) return
+    if (!showDialog) {
+        return
+    }
 
     val context = LocalContext.current
+    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+
     var admins by remember { mutableStateOf(getDeviceAdminReceivers(context, context.packageManager)) }
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var ascending by remember { mutableStateOf(true) }
     val listState = rememberLazyListState()
     var isProcessing by remember { mutableStateOf(false) }
+    var selectedAdmin by remember { mutableStateOf<DeviceAdmin?>(null) }
+    var showConfirmDialog by remember { mutableStateOf(false) }
 
     val filteredAdmins by remember(searchQuery.text, admins, ascending) {
         derivedStateOf {
@@ -50,6 +65,39 @@ fun DeviceAdminReceiverListDialog(
                 .sortedBy { it.app.name }
                 .let { if (ascending) it else it.reversed() }
         }
+    }
+
+    val selected = selectedAdmin?.admin
+    if (showConfirmDialog && selected != null) {
+        AlertDialog(
+            onDismissRequest = { showConfirmDialog = false },
+            title = { Text("Ownership Transfer") },
+            text = { Text("Are you sure you want to transfer ownership to ${selected.className}?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    isProcessing = true
+                    try {
+                        dpm.transferOwnership(
+                            DeviceOwnerManager.DAR,
+                            selected,
+                            null
+                        )
+                        showConfirmDialog = false
+                    } catch (e: Exception) {
+                        ToastManager.show(context, "Error: ${e.message}")
+                    } finally {
+                        isProcessing = false
+                    }
+                }) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showConfirmDialog = false }) {
+                    Text("No")
+                }
+            }
+        )
     }
 
     Dialog(onDismissRequest = onDismiss) {
@@ -144,10 +192,21 @@ fun DeviceAdminReceiverListDialog(
                                 .fillMaxWidth()
                                 .padding(vertical = 4.dp)
                                 .clickable(enabled = !isProcessing) {
-                                    isProcessing = true
-                                    println("Selected admin: ${admin.app.packageName}")
-                                    isProcessing = false
+                                    selectedAdmin = admin
+                                    showConfirmDialog = true
+                                },
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (selectedAdmin == admin) {
+                                    MaterialTheme.colorScheme.primaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceContainer
+                                },
+                                contentColor = if (selectedAdmin == admin) {
+                                    MaterialTheme.colorScheme.onPrimaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
                                 }
+                            )
                         ) {
                             Row(
                                 modifier = Modifier
@@ -196,8 +255,7 @@ private fun AdminIcon(icon: Drawable) {
     Image(
         bitmap = bitmap.asImageBitmap(),
         contentDescription = null,
-        modifier = Modifier
-            .size(40.dp),
+        modifier = Modifier.size(40.dp),
         contentScale = ContentScale.Fit
     )
 }
