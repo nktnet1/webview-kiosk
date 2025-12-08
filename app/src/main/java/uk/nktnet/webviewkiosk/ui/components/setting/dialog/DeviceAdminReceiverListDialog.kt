@@ -60,7 +60,6 @@ fun DeviceAdminReceiverListDialog(
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var ascending by remember { mutableStateOf(true) }
     val listState = rememberLazyListState()
-    var isProcessing by remember { mutableStateOf(false) }
     var selectedAdmin by remember { mutableStateOf<DeviceAdmin?>(null) }
     var showConfirmDialog by remember { mutableStateOf(false) }
 
@@ -86,7 +85,6 @@ fun DeviceAdminReceiverListDialog(
             onDismiss()
             DeviceOwnerManager.init(context)
         },
-        isProcessing = { isProcessing = it },
     )
 
     Dialog(onDismissRequest = onDismiss) {
@@ -121,7 +119,6 @@ fun DeviceAdminReceiverListDialog(
                         showConfirmDialog = true
                     },
                     listState = listState,
-                    isProcessing = isProcessing,
                     modifier = Modifier.weight(1f)
                 )
 
@@ -143,7 +140,6 @@ private fun ConfirmTransferDialog(
     selectedAdminReceiver: DeviceAdmin?,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
-    isProcessing: (Boolean) -> Unit,
 ) {
     if (!show || selectedAdminReceiver == null) {
         return
@@ -200,7 +196,6 @@ private fun ConfirmTransferDialog(
         },
         confirmButton = {
             TextButton(onClick = {
-                isProcessing(true)
                 try {
                     dpm.transferOwnership(
                         DeviceOwnerManager.DAR,
@@ -210,8 +205,6 @@ private fun ConfirmTransferDialog(
                     onConfirm()
                 } catch (e: Exception) {
                     ToastManager.show(context, "Error: ${e.message}")
-                } finally {
-                    isProcessing(false)
                 }
             }) {
                 Text(
@@ -330,7 +323,6 @@ private fun AdminList(
     selectedAdmin: DeviceAdmin?,
     onSelectAdmin: (DeviceAdmin) -> Unit,
     listState: androidx.compose.foundation.lazy.LazyListState,
-    isProcessing: Boolean,
     modifier: Modifier = Modifier,
 ) {
     LazyColumn(
@@ -342,7 +334,6 @@ private fun AdminList(
                 admin = admin,
                 isSelected = selectedAdmin == admin,
                 onClick = { onSelectAdmin(admin) },
-                isProcessing = isProcessing
             )
         }
     }
@@ -353,13 +344,13 @@ private fun AdminCard(
     admin: DeviceAdmin,
     isSelected: Boolean,
     onClick: () -> Unit,
-    isProcessing: Boolean
+    enabled: Boolean = true,
 ) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clickable(enabled = !isProcessing, onClick = onClick),
+            .clickable(enabled = enabled, onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = if (isSelected) {
                 MaterialTheme.colorScheme.primaryContainer
