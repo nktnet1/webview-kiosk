@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,14 +27,20 @@ fun AppLauncherDialog(
 
     val context = LocalContext.current
 
-    var apps by remember { mutableStateOf<List<AppInfo>>(emptyList()) }
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var ascending by remember { mutableStateOf(true) }
-    var loading by remember { mutableStateOf(true) }
+
+    var apps by remember { mutableStateOf<List<AppInfo>>(emptyList()) }
+    var progress by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(Unit) {
-        apps = DeviceOwnerManager.getLaunchableApps(context)
-        loading = false
+        var currentApps = emptyList<AppInfo>()
+        DeviceOwnerManager.getLaunchableAppsFlow(context)
+            .collect { state ->
+                currentApps = currentApps + state.apps
+                apps = currentApps
+                progress = state.progress
+            }
     }
 
     val filteredApps by remember(searchQuery.text, apps, ascending) {
@@ -70,18 +77,21 @@ fun AppLauncherDialog(
                     ascending = ascending,
                 )
 
-                Spacer(Modifier.height(8.dp))
-
-                if (loading) {
-                    Box(
+                if (progress < 1f) {
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        color = ProgressIndicatorDefaults.linearColor,
+                        trackColor = ProgressIndicatorDefaults.linearTrackColor,
+                        strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
                         modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                } else if (filteredApps.isEmpty()) {
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                            .height(4.dp)
+                    )
+                } else {
+                    Spacer(Modifier.height(8.dp))
+                }
+                if (filteredApps.isEmpty() && progress == 1f) {
                     Box(
                         modifier = Modifier
                             .weight(1f)

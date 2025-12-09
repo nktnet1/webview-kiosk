@@ -35,19 +35,17 @@ fun DeviceAdminReceiverListDialog(
 
     val context = LocalContext.current
 
-    var adminApps by remember {
-        mutableStateOf(
-            DeviceOwnerManager.getDeviceAdminReceivers(context)
-        )
-    }
+    var apps by remember { mutableStateOf<List<AdminAppInfo>>(emptyList()) }
+    var progress by remember { mutableFloatStateOf(0f) }
+
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var ascending by remember { mutableStateOf(true) }
-    var selectedAdmin by remember { mutableStateOf<AdminAppInfo?>(null) }
+    var selectedApp by remember { mutableStateOf<AdminAppInfo?>(null) }
     var showConfirmDialog by remember { mutableStateOf(false) }
 
-    val filteredAdmins by remember(searchQuery.text, adminApps, ascending) {
+    val filteredApps by remember(searchQuery.text, apps, ascending) {
         derivedStateOf {
-            adminApps
+            apps
                 .filter {
                     it.name.contains(searchQuery.text, ignoreCase = true)
                     || it.packageName.contains(searchQuery.text, ignoreCase = true)
@@ -57,16 +55,26 @@ fun DeviceAdminReceiverListDialog(
         }
     }
 
+    LaunchedEffect(Unit) {
+        val currentAdminApps = mutableListOf<AdminAppInfo>()
+        DeviceOwnerManager.getDeviceAdminReceiversFlow(context)
+            .collect { state ->
+                currentAdminApps.addAll(state.apps)
+                apps = currentAdminApps.toList()
+                progress = state.progress
+            }
+    }
+
     ConfirmTransferDialog(
         show = showConfirmDialog,
-        selectedAdminReceiver = selectedAdmin,
+        selectedAdminReceiver = selectedApp,
         onDismiss = {
             showConfirmDialog = false
-            selectedAdmin = null
+            selectedApp = null
         },
         onConfirm = {
             showConfirmDialog = false
-            selectedAdmin = null
+            selectedApp = null
             onDismiss()
             DeviceOwnerManager.init(context)
         },
@@ -90,20 +98,47 @@ fun DeviceAdminReceiverListDialog(
                     searchQuery = searchQuery,
                     onSearchChange = { searchQuery = TextFieldValue(it) },
                     onSortToggle = { ascending = !ascending },
-                    appCount = adminApps.size,
+                    appCount = apps.size,
                     ascending = ascending,
                 )
 
-                Spacer(Modifier.height(8.dp))
+                if (progress < 1f) {
+                    LinearProgressIndicator(
+                        progress = { progress },
+                        color = ProgressIndicatorDefaults.linearColor,
+                        trackColor = ProgressIndicatorDefaults.linearTrackColor,
+                        strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 4.dp)
+                            .height(4.dp)
+                    )
+                } else {
+                    Spacer(Modifier.height(8.dp))
+                }
 
-                AppList(
-                    apps = filteredAdmins,
-                    onSelectApp = {
-                        selectedAdmin = it
-                        showConfirmDialog = true
-                    },
-                    modifier = Modifier.weight(1f)
-                )
+                if (filteredApps.isEmpty() && progress == 1f) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(top = 32.dp),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Text("No apps available.")
+                    }
+                } else {
+                    AppList(
+                        apps = filteredApps,
+                        onSelectApp = {
+                            selectedApp = it
+                            showConfirmDialog = true
+                        },
+                        getKey = { it.admin.className },
+                        getDescription = { it.admin.className },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),

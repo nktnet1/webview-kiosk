@@ -12,14 +12,20 @@ import uk.nktnet.webviewkiosk.config.data.AppInfo
 fun <T : AppInfo> AppList(
     apps: List<T>,
     modifier: Modifier = Modifier,
-    onSelectApp: (T) -> Unit
+    onSelectApp: (T) -> Unit,
+    getKey: ((T) -> String)? = null,
+    getDescription: ((T) -> String)? = null
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
         state = rememberLazyListState(),
     ) {
-        items(apps, key = { it.packageName }) { app ->
-            AppCard(app = app, onClick = { onSelectApp(app) })
+        items(apps, key = { app -> getKey?.invoke(app) ?: app.packageName }) { app ->
+            AppCard(
+                app = app,
+                description = getDescription?.invoke(app),
+                onClick = { onSelectApp(app) }
+            )
         }
     }
 }
