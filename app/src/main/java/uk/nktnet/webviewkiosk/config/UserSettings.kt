@@ -376,7 +376,7 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.Appearance.ADDRESS_BAR_SIZE,
-        AddressBarSizeOption.SMALL.name,
+        AddressBarSizeOption.MEDIUM.name,
         fromString = AddressBarSizeOption::fromString
     )
     var addressBarPosition by stringEnumPref(
