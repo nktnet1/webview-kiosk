@@ -241,8 +241,8 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                         Are you sure you want to unset ${Constants.APP_NAME} as the
                         device owner?
 
-                        This means Lock Task Mode will no longer be available, and
-                        the kiosk lock feature will default to Screen Pinning.
+                        This means Lock Task Mode will no longer be available, meaning
+                        the kiosk lock feature will utilise Screen Pinning instead.
                     """.trimIndent())
                 )
             },
@@ -267,7 +267,12 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                         DeviceOwnerManager.init(context)
                         isDeviceOwner = dpm.isDeviceOwnerApp(context.packageName)
                     }
-                ) { Text("Yes") }
+                ) {
+                    Text(
+                        "Deactivate",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
             },
             dismissButton = {
                 TextButton(
@@ -275,7 +280,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                         showDeviceOwnerRemovalDialog = false
                     }
                 ) {
-                    Text("No")
+                    Text("Cancel")
                 }
             }
         )
