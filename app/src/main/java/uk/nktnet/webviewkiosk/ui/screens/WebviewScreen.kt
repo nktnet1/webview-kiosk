@@ -299,7 +299,7 @@ fun WebviewScreen(navController: NavController) {
         webView, userSettings.acceptThirdPartyCookies
     )
 
-    val addressBarView = @Composable {
+    val composableAddressBarView = @Composable {
         AndroidView(
             factory = { ctx ->
                 ComposeView(ctx).apply {
@@ -325,6 +325,48 @@ fun WebviewScreen(navController: NavController) {
         )
     }
 
+    val composableWebView = @Composable {
+        AndroidView(
+            factory = { ctx ->
+                var initialUrl = lastVisitedUrl
+
+                if (systemSettings.intentUrl.isNotEmpty()) {
+                    initialUrl = systemSettings.intentUrl
+                    systemSettings.intentUrl = ""
+                } else if (systemSettings.isFreshLaunch) {
+                    systemSettings.isFreshLaunch = false
+                    if (userSettings.resetOnLaunch) {
+                        initialUrl = userSettings.homeUrl
+                        systemSettings.clearHistory()
+                    }
+                }
+
+                urlBarText = urlBarText.copy(text = initialUrl)
+
+                WebviewAwareSwipeRefreshLayout(ctx, webView).apply {
+                    isEnabled = userSettings.allowRefresh && userSettings.allowPullToRefresh
+                    setOnRefreshListener {
+                        isSwipeRefreshing = true
+                        WebViewNavigation.refresh(
+                            ::customLoadUrl,
+                            systemSettings,
+                            userSettings
+                        )
+                    }
+                    addView(
+                        webView.apply {
+                            customLoadUrl(initialUrl)
+                        }
+                    )
+                }
+            },
+            update = { view ->
+                view.isRefreshing = isSwipeRefreshing
+            },
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -333,52 +375,14 @@ fun WebviewScreen(navController: NavController) {
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (showAddressBar && userSettings.addressBarPosition == AddressBarPositionOption.TOP) {
-                addressBarView()
+                composableAddressBarView()
             }
 
             Box(
                 modifier = Modifier
                     .weight(1f)
             ) {
-                AndroidView(
-                    factory = { ctx ->
-                        var initialUrl = lastVisitedUrl
-
-                        if (systemSettings.intentUrl.isNotEmpty()) {
-                            initialUrl = systemSettings.intentUrl
-                            systemSettings.intentUrl = ""
-                        } else if (systemSettings.isFreshLaunch) {
-                            systemSettings.isFreshLaunch = false
-                            if (userSettings.resetOnLaunch) {
-                                initialUrl = userSettings.homeUrl
-                                systemSettings.clearHistory()
-                            }
-                        }
-
-                        urlBarText = urlBarText.copy(text = initialUrl)
-
-                        WebviewAwareSwipeRefreshLayout(ctx, webView).apply {
-                            isEnabled = userSettings.allowRefresh && userSettings.allowPullToRefresh
-                            setOnRefreshListener {
-                                isSwipeRefreshing = true
-                                WebViewNavigation.refresh(
-                                    ::customLoadUrl,
-                                    systemSettings,
-                                    userSettings
-                                )
-                            }
-                            addView(
-                                webView.apply {
-                                    customLoadUrl(initialUrl)
-                                }
-                            )
-                        }
-                    },
-                    update = { view ->
-                        view.isRefreshing = isSwipeRefreshing
-                    },
-                    modifier = Modifier.fillMaxSize()
-                )
+                composableWebView()
 
                 if (progress < 100) {
                     LinearProgressIndicator(
@@ -420,7 +424,7 @@ fun WebviewScreen(navController: NavController) {
             )
 
             if (showAddressBar && userSettings.addressBarPosition == AddressBarPositionOption.BOTTOM) {
-                addressBarView()
+                composableAddressBarView()
             }
         }
 
