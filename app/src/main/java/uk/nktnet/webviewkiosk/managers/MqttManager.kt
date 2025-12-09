@@ -639,14 +639,14 @@ object MqttManager {
                 ) {
                     addDebugLog(
                         "settings received",
-                        "topic: ${publish.topic}\nsettings: ${settingsMessage.data}",
+                        "topic: ${publish.topic}",
                         messageId = settingsMessage.messageId,
                     )
                     scope.launch { _settings.emit(settingsMessage) }
                 } else {
                     addDebugLog(
                         "settings received (ignored)",
-                        "topic: ${publish.topic}\nsettings: ${settingsMessage.data}",
+                        "topic: ${publish.topic}",
                         messageId = settingsMessage.messageId,
                     )
                 }
