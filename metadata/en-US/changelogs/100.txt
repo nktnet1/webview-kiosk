@@ -1,0 +1,20 @@
+## New Features
+
+- feat: prevent screenshots, screen recordings, recents app preview (device -> prevent screen capture)
+- feat: launch other apps (configurable as an action in the address bar or kiosk control panel)
+- feat: ability to transfer device owner
+- feat: more setting actions - shortcuts (e.g. to WiFi, Data, Default Apps)
+
+## New Permission
+
+The QUERY_ALL_PACKAGES permission is requested for:
+
+1. Launching other apps, which can be helpful if Webview Kiosk set as the default launcher
+2. Transferring device ownership to another admin receiver (e.g. OwnDroid or Dhizuku)
+
+## Bug Fixes
+
+- fix: dhizuku permission lost due to upstream false negative bug (issue 205)
+- fix: require auth on resume of activity
+- fix: webview inset option casing (potentially reset preference)
+- fix: default for address bar size - MEDIUM
