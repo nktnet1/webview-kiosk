@@ -61,12 +61,27 @@ fun setDeviceRotation(context: Context, rotation: DeviceRotationOption) {
     }
 }
 
+fun applyPreventScreenCapture(context: Context) {
+    val userSettings = UserSettings(context)
+    if (context is Activity) {
+        if (userSettings.preventScreenCapture) {
+            context.window.setFlags(
+                WindowManager.LayoutParams.FLAG_SECURE,
+                WindowManager.LayoutParams.FLAG_SECURE
+            )
+        } else {
+            context.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+    }
+}
+
 fun updateDeviceSettings(context: Context) {
     val userSettings = UserSettings(context)
     KeepScreenOnStateSingleton.setKeepScreenOn(userSettings.keepScreenOn)
     ThemeStateSingleton.setTheme(userSettings.theme)
     setDeviceRotation(context, userSettings.rotation)
     setWindowBrightness(context, userSettings.brightness)
+    applyPreventScreenCapture(context)
     applyLockTaskFeatures(context)
 }
 
