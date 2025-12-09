@@ -33,7 +33,7 @@ android {
         minSdk = 21
         targetSdk = 36
         versionCode = 100
-        versionName = "0.25.0.13-mqtt-beta"
+        versionName = "0.25.0.14-mqtt-beta"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("int", "MIN_SDK_VERSION", "$minSdk")
     }
