@@ -180,9 +180,9 @@ object DeviceOwnerManager {
                 null
             }
         }.filter {
-            it.isVisible &&
-                    it.packageName != context.packageName &&
-                    it.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0
+            it.isVisible
+            && it.packageName != context.packageName
+            && it.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0
         }.distinctBy {
             it.receiverName
         }
