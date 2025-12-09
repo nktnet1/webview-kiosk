@@ -64,10 +64,13 @@ fun DeviceAdminReceiverListDialog(
                 currentApps.addAll(state.apps)
                 apps = currentApps.toList()
                 progress = state.progress
-                if (progress < 1f && currentApps.isNotEmpty()) {
-                    listState.scrollToItem(0)
-                }
             }
+    }
+
+    LaunchedEffect(apps, progress) {
+        if (progress < 1f && apps.isNotEmpty()) {
+            listState.animateScrollToItem(0)
+        }
     }
 
     ConfirmTransferDialog(

@@ -42,10 +42,13 @@ fun AppLauncherDialog(
                 currentApps = currentApps + state.apps
                 apps = currentApps
                 progress = state.progress
-                if (progress < 1f && currentApps.isNotEmpty()) {
-                    listState.scrollToItem(0)
-                }
             }
+    }
+
+    LaunchedEffect(apps, progress) {
+        if (progress < 1f && apps.isNotEmpty()) {
+            listState.animateScrollToItem(0)
+        }
     }
 
     val filteredApps by remember(searchQuery.text, apps, ascending) {
