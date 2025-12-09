@@ -134,7 +134,7 @@ object DeviceOwnerManager {
         val resolved = pm.queryIntentActivities(
             Intent(Intent.ACTION_MAIN)
                 .addCategory(Intent.CATEGORY_LAUNCHER),
-            0
+            0,
         ).filter {
             it.activityInfo.packageName != context.packageName
         }.groupBy {
