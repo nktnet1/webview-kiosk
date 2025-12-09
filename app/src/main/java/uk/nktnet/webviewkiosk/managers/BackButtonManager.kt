@@ -76,6 +76,7 @@ class BackButtonManager(
                     isLegacyLongPressEmitted = true
                 }
             }
+            return true
         }
         return false
     }
