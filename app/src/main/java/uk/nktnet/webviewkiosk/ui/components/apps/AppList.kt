@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.ui.components.apps
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
@@ -12,14 +13,21 @@ import uk.nktnet.webviewkiosk.config.data.AppInfo
 fun <T : AppInfo> AppList(
     apps: List<T>,
     modifier: Modifier = Modifier,
-    onSelectApp: (T) -> Unit
+    onSelectApp: (T) -> Unit,
+    getKey: ((T) -> String)? = null,
+    getDescription: ((T) -> String)? = null,
+    listState: LazyListState = rememberLazyListState()
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
-        state = rememberLazyListState(),
+        state = listState,
     ) {
-        items(apps, key = { it.packageName }) { app ->
-            AppCard(app = app, onClick = { onSelectApp(app) })
+        items(apps, key = { app -> getKey?.invoke(app) ?: app.packageName }) { app ->
+            AppCard(
+                app = app,
+                description = getDescription?.invoke(app),
+                onClick = { onSelectApp(app) }
+            )
         }
     }
 }

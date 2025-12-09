@@ -16,9 +16,15 @@ import org.lsposed.hiddenapibypass.HiddenApiBypass
 import com.rosan.dhizuku.api.Dhizuku
 import com.rosan.dhizuku.api.DhizukuBinderWrapper
 import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.data.AdminAppInfo
+import uk.nktnet.webviewkiosk.config.data.AppInfo
+import uk.nktnet.webviewkiosk.config.data.AppLoadState
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 
 object DeviceOwnerManager {
@@ -119,34 +125,97 @@ object DeviceOwnerManager {
         }
     }
 
-    fun getDeviceAdminReceivers(context: Context, pm: PackageManager): List<AdminAppInfo> {
-        return pm.queryBroadcastReceivers(
+    fun getLaunchableAppsFlow(
+        context: Context,
+        chunkSize: Int = 10
+    ): Flow<AppLoadState<AppInfo>> = flow {
+        val pm = context.packageManager
+        val allApps = pm.getInstalledApplications(0)
+            .filter { it.packageName != context.packageName }
+
+        val total = allApps.size
+        if (total == 0) {
+            return@flow
+        }
+
+        val currentChunk = mutableListOf<AppInfo>()
+
+        for ((index, appInfo) in allApps.withIndex()) {
+            val launchIntent = pm.getLaunchIntentForPackage(appInfo.packageName)
+            if (launchIntent != null) {
+                currentChunk.add(
+                    AppInfo(
+                        packageName = appInfo.packageName,
+                        name = pm.getApplicationLabel(appInfo).toString(),
+                        icon = pm.getApplicationIcon(appInfo)
+                    )
+                )
+            }
+
+            if (currentChunk.size == chunkSize || index == allApps.lastIndex) {
+                emit(
+                    AppLoadState(
+                        currentChunk.toList(),
+                        (index + 1).toFloat() / total
+                    )
+                )
+                currentChunk.clear()
+            }
+        }
+    }.flowOn(Dispatchers.IO)
+
+    fun getDeviceAdminReceiversFlow(
+        context: Context,
+        chunkSize: Int = 5
+    ): Flow<AppLoadState<AdminAppInfo>> = flow {
+        val pm = context.packageManager
+
+        val filteredReceivers = pm.queryBroadcastReceivers(
             Intent(DeviceAdminReceiver.ACTION_DEVICE_ADMIN_ENABLED),
             PackageManager.GET_META_DATA
         ).mapNotNull {
             try {
                 DeviceAdminInfo(context, it)
-            } catch (e: Exception) {
-                e.printStackTrace()
+            } catch (_: Exception) {
                 null
             }
         }.filter {
-            it.isVisible
-            && it.packageName != context.packageName
-            && it.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0
-        }.map { deviceAdminInfo ->
+            it.isVisible &&
+                    it.packageName != context.packageName &&
+                    it.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0
+        }.distinctBy {
+            it.receiverName
+        }
+
+        val total = filteredReceivers.size
+        if (total == 0) {
+            return@flow
+        }
+
+        val currentChunk = mutableListOf<AdminAppInfo>()
+
+        filteredReceivers.forEachIndexed { index, deviceAdminInfo ->
             val appInfo = pm.getApplicationInfo(deviceAdminInfo.packageName, 0)
-            AdminAppInfo(
-                packageName = appInfo.packageName,
-                name = pm.getApplicationLabel(appInfo).toString(),
-                icon = pm.getApplicationIcon(appInfo),
-                admin = ComponentName(
-                    deviceAdminInfo.packageName,
-                    deviceAdminInfo.receiverName
+            currentChunk.add(
+                AdminAppInfo(
+                    packageName = appInfo.packageName,
+                    name = pm.getApplicationLabel(appInfo).toString(),
+                    icon = pm.getApplicationIcon(appInfo),
+                    admin = ComponentName(deviceAdminInfo.packageName, deviceAdminInfo.receiverName)
                 )
             )
+
+            if (currentChunk.size == chunkSize || index == total - 1) {
+                emit(
+                    AppLoadState(
+                        currentChunk.toList(),
+                        (index + 1).toFloat() / total
+                    )
+                )
+                currentChunk.clear()
+            }
         }
-    }
+    }.flowOn(Dispatchers.IO)
 
     private fun updateStatus(mode: DeviceOwnerMode) {
         status.value = Status(mode)

@@ -20,6 +20,7 @@ import uk.nktnet.webviewkiosk.config.data.AppInfo
 @Composable
 fun AppCard(
     app: AppInfo,
+    description: String? = null,
     onClick: () -> Unit
 ) {
     Card(
@@ -42,7 +43,7 @@ fun AppCard(
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    app.packageName,
+                    description ?: app.packageName,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

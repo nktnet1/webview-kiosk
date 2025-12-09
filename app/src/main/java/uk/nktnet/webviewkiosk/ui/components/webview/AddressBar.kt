@@ -69,6 +69,10 @@ fun AddressBar(
     onFocusChanged: (FocusState) -> Unit,
     showFindInPage: () -> Unit,
     addressBarSearch: (String) -> Unit,
+    showHistoryDialog: () -> Unit,
+    showBookmarkDialog: () -> Unit,
+    showFilesDialog: () -> Unit,
+    showAppsDialog: () -> Unit,
     customLoadUrl: (newUrl: String) -> Unit,
 ) {
     val context = LocalContext.current
@@ -79,9 +83,7 @@ fun AddressBar(
     val systemSettings = remember { SystemSettings(context) }
 
     var menuExpanded by remember { mutableStateOf(false) }
-    var showHistoryDialog by remember { mutableStateOf(false) }
-    var showBookmarksDialog by remember { mutableStateOf(false) }
-    var showLocalFilesDialog by remember { mutableStateOf(false) }
+
     var allowFocus by remember { mutableStateOf(false) }
 
     val isLocked by LockStateSingleton.isLocked
@@ -206,7 +208,7 @@ fun AddressBar(
                 AddressBarMenuItem(
                     action = AddressBarActionOption.HISTORY,
                     onClick = {
-                        showHistoryDialog = true
+                        showHistoryDialog()
                         menuExpanded = false
                     },
                     iconRes = R.drawable.outline_history_24,
@@ -216,7 +218,7 @@ fun AddressBar(
                 AddressBarMenuItem(
                     action = AddressBarActionOption.BOOKMARK,
                     onClick = {
-                        showBookmarksDialog = true
+                        showBookmarkDialog()
                         menuExpanded = false
                     },
                     iconRes = R.drawable.outline_bookmark_24,
@@ -226,7 +228,7 @@ fun AddressBar(
                 AddressBarMenuItem(
                     action = AddressBarActionOption.FILES,
                     onClick = {
-                        showLocalFilesDialog = true
+                        showFilesDialog()
                         menuExpanded = false
                     },
                     iconRes = R.drawable.outline_folder_24,
@@ -240,6 +242,16 @@ fun AddressBar(
                         menuExpanded = false
                     },
                     iconRes = R.drawable.find_in_page_24,
+                )
+            },
+            AddressBarActionOption.APPS to {
+                AddressBarMenuItem(
+                    action = AddressBarActionOption.APPS,
+                    onClick = {
+                        showAppsDialog()
+                        menuExpanded = false
+                    },
+                    iconRes = R.drawable.apps_24px,
                 )
             },
             AddressBarActionOption.SETTINGS to {
@@ -368,10 +380,11 @@ fun AddressBar(
                     AddressBarActionOption.HISTORY -> userSettings.allowHistoryAccess
                     AddressBarActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
                     AddressBarActionOption.FILES -> userSettings.allowLocalFiles
+                    AddressBarActionOption.FIND -> true
+                    AddressBarActionOption.APPS -> !isLocked
                     AddressBarActionOption.SETTINGS -> !isLocked
                     AddressBarActionOption.LOCK -> !isLocked
                     AddressBarActionOption.UNLOCK -> isLocked
-                    AddressBarActionOption.FIND -> true
                 }
             }
         }
@@ -412,22 +425,4 @@ fun AddressBar(
             }
         }
     }
-
-    HistoryDialog(
-        showHistoryDialog,
-        { showHistoryDialog = false },
-        customLoadUrl
-    )
-
-    BookmarksDialog(
-        showBookmarksDialog,
-        { showBookmarksDialog = false },
-        customLoadUrl
-    )
-
-    LocalFilesDialog(
-        showLocalFilesDialog,
-        { showLocalFilesDialog = false },
-        customLoadUrl
-    )
 }
