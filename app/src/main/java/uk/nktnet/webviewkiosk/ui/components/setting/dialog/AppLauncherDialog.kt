@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.*
@@ -32,6 +33,7 @@ fun AppLauncherDialog(
 
     var apps by remember { mutableStateOf<List<AppInfo>>(emptyList()) }
     var progress by remember { mutableFloatStateOf(0f) }
+    val listState = rememberLazyListState()
 
     LaunchedEffect(Unit) {
         var currentApps = emptyList<AppInfo>()
@@ -40,6 +42,9 @@ fun AppLauncherDialog(
                 currentApps = currentApps + state.apps
                 apps = currentApps
                 progress = state.progress
+                if (progress < 1f && currentApps.isNotEmpty()) {
+                    listState.scrollToItem(0)
+                }
             }
     }
 
@@ -105,7 +110,8 @@ fun AppLauncherDialog(
                     AppList(
                         apps = filteredApps,
                         onSelectApp = { openPackage(context, it.packageName) },
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
+                        listState = listState,
                     )
                 }
 

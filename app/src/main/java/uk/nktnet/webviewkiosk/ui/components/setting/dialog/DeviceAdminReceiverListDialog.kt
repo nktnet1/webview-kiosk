@@ -5,6 +5,7 @@ import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
@@ -37,6 +38,7 @@ fun DeviceAdminReceiverListDialog(
 
     var apps by remember { mutableStateOf<List<AdminAppInfo>>(emptyList()) }
     var progress by remember { mutableFloatStateOf(0f) }
+    val listState = rememberLazyListState()
 
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var ascending by remember { mutableStateOf(true) }
@@ -56,12 +58,15 @@ fun DeviceAdminReceiverListDialog(
     }
 
     LaunchedEffect(Unit) {
-        val currentAdminApps = mutableListOf<AdminAppInfo>()
+        val currentApps = mutableListOf<AdminAppInfo>()
         DeviceOwnerManager.getDeviceAdminReceiversFlow(context)
             .collect { state ->
-                currentAdminApps.addAll(state.apps)
-                apps = currentAdminApps.toList()
+                currentApps.addAll(state.apps)
+                apps = currentApps.toList()
                 progress = state.progress
+                if (progress < 1f && currentApps.isNotEmpty()) {
+                    listState.scrollToItem(0)
+                }
             }
     }
 
@@ -136,7 +141,8 @@ fun DeviceAdminReceiverListDialog(
                         },
                         getKey = { it.admin.className },
                         getDescription = { it.admin.className },
-                        modifier = Modifier.weight(1f)
+                        listState = listState,
+                        modifier = Modifier.weight(1f),
                     )
                 }
 
