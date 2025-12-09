@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.utils
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -54,15 +55,21 @@ fun openSettings(context: Context) {
     safeStartActivity(context, intent)
 }
 
-fun openPackage(context: Context, packageName: String) {
+fun openPackage(context: Context, packageName: String, activityName: String? = null) {
     try {
-        val pm = context.packageManager
-        val intent = pm.getLaunchIntentForPackage(packageName)
+        val intent = if (activityName != null) {
+            Intent().apply {
+                component = ComponentName(packageName, activityName)
+            }
+        } else {
+            context.packageManager.getLaunchIntentForPackage(packageName)
+        }
+
         if (intent != null) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(intent)
         } else {
-            ToastManager.show(context, "Error: $packageName is not installed.")
+            ToastManager.show(context, "Error: $packageName cannot be opened.")
         }
     } catch (e: Exception) {
         ToastManager.show(context, "Error: $e")
