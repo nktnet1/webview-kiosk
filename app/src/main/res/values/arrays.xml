@@ -119,6 +119,7 @@
         <item>Bookmark</item>
         <item>Files</item>
         <item>Find</item>
+        <item>Apps</item>
         <item>Settings</item>
         <item>Lock</item>
         <item>Unlock</item>
@@ -132,6 +133,7 @@
         <item>HISTORY</item>
         <item>BOOKMARK</item>
         <item>FILES</item>
+        <item>APPS</item>
         <item>SETTINGS</item>
         <item>LOCK</item>
         <item>UNLOCK</item>
@@ -168,6 +170,7 @@
         <item>Bookmark</item>
         <item>Files</item>
         <item>Find</item>
+        <item>Apps</item>
         <item>Settings</item>
         <item>Lock</item>
         <item>Unlock</item>
@@ -182,6 +185,7 @@
         <item>BOOKMARK</item>
         <item>FILES</item>
         <item>FIND</item>
+        <item>APPS</item>
         <item>SETTINGS</item>
         <item>LOCK</item>
         <item>UNLOCK</item>

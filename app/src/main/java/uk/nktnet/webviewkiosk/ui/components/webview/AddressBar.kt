@@ -34,6 +34,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.AddressBarActionOption
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
+import uk.nktnet.webviewkiosk.ui.components.setting.dialog.AppLauncherDialog
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.tryLockTask
@@ -82,6 +83,8 @@ fun AddressBar(
     var showHistoryDialog by remember { mutableStateOf(false) }
     var showBookmarksDialog by remember { mutableStateOf(false) }
     var showLocalFilesDialog by remember { mutableStateOf(false) }
+    var showAppsDialog by remember { mutableStateOf(false) }
+
     var allowFocus by remember { mutableStateOf(false) }
 
     val isLocked by LockStateSingleton.isLocked
@@ -242,6 +245,16 @@ fun AddressBar(
                     iconRes = R.drawable.find_in_page_24,
                 )
             },
+            AddressBarActionOption.APPS to {
+                AddressBarMenuItem(
+                    action = AddressBarActionOption.APPS,
+                    onClick = {
+                        showAppsDialog = true
+                        menuExpanded = false
+                    },
+                    iconRes = R.drawable.apps_24px,
+                )
+            },
             AddressBarActionOption.SETTINGS to {
                 AddressBarMenuItem(
                     action = AddressBarActionOption.SETTINGS,
@@ -368,10 +381,11 @@ fun AddressBar(
                     AddressBarActionOption.HISTORY -> userSettings.allowHistoryAccess
                     AddressBarActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
                     AddressBarActionOption.FILES -> userSettings.allowLocalFiles
+                    AddressBarActionOption.FIND -> true
+                    AddressBarActionOption.APPS -> !isLocked
                     AddressBarActionOption.SETTINGS -> !isLocked
                     AddressBarActionOption.LOCK -> !isLocked
                     AddressBarActionOption.UNLOCK -> isLocked
-                    AddressBarActionOption.FIND -> true
                 }
             }
         }
@@ -429,5 +443,10 @@ fun AddressBar(
         showLocalFilesDialog,
         { showLocalFilesDialog = false },
         customLoadUrl
+    )
+
+    AppLauncherDialog(
+        showDialog = showAppsDialog,
+        onDismiss = { showAppsDialog = false }
     )
 }

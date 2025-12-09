@@ -61,6 +61,7 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
+import uk.nktnet.webviewkiosk.ui.components.setting.dialog.AppLauncherDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.BookmarksDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.HistoryDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.LocalFilesDialog
@@ -124,6 +125,7 @@ fun KioskControlPanel(
     var showBookmarksDialog by remember { mutableStateOf(false) }
     var showHistoryDialog by remember { mutableStateOf(false) }
     var showLocalFilesDialog by remember { mutableStateOf(false) }
+    var showAppsDialog by remember { mutableStateOf(false) }
 
     val kioskControlPanelRegion = if (
         userSettings.kioskControlPanelRegion == KioskControlPanelRegionOption.DISABLED
@@ -167,24 +169,6 @@ fun KioskControlPanel(
             }
         }
     }
-
-    HistoryDialog(
-        showHistoryDialog,
-        { showHistoryDialog = false },
-        customLoadUrl
-    )
-
-    BookmarksDialog(
-        showBookmarksDialog,
-        { showBookmarksDialog = false },
-        customLoadUrl
-    )
-
-    LocalFilesDialog(
-        showLocalFilesDialog,
-        { showLocalFilesDialog = false },
-        customLoadUrl
-    )
 
     if (kioskControlPanelRegion != KioskControlPanelRegionOption.DISABLED) {
         Box(
@@ -401,6 +385,16 @@ fun KioskControlPanel(
                     iconRes = R.drawable.find_in_page_24
                 )
             },
+            KioskControlPanelActionOption.APPS to {
+                ActionButton(
+                    action = KioskControlPanelActionOption.APPS,
+                    enabled = enableInteraction,
+                    onClick = {
+                        showAppsDialog = true
+                    },
+                    iconRes = R.drawable.apps_24px
+                )
+            },
             KioskControlPanelActionOption.SETTINGS to {
                 ActionButton(
                     action = KioskControlPanelActionOption.SETTINGS,
@@ -508,6 +502,7 @@ fun KioskControlPanel(
                                 KioskControlPanelActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
                                 KioskControlPanelActionOption.FILES -> userSettings.allowLocalFiles
                                 KioskControlPanelActionOption.FIND -> true
+                                KioskControlPanelActionOption.APPS -> !isLocked
                                 KioskControlPanelActionOption.SETTINGS -> !isLocked
                                 KioskControlPanelActionOption.LOCK -> !isLocked
                                 KioskControlPanelActionOption.UNLOCK -> isLocked
@@ -562,4 +557,27 @@ fun KioskControlPanel(
             }
         }
     }
+
+    HistoryDialog(
+        showHistoryDialog,
+        { showHistoryDialog = false },
+        customLoadUrl
+    )
+
+    BookmarksDialog(
+        showBookmarksDialog,
+        { showBookmarksDialog = false },
+        customLoadUrl
+    )
+
+    LocalFilesDialog(
+        showLocalFilesDialog,
+        { showLocalFilesDialog = false },
+        customLoadUrl
+    )
+
+    AppLauncherDialog(
+        showDialog = showAppsDialog,
+        onDismiss = { showAppsDialog = false }
+    )
 }
