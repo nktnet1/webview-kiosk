@@ -4,7 +4,7 @@ It can function as digital signage, a kid-friendly restricted browser, an immers
 
 Designed for small businesses and device owners who are looking for a simple and standalone Kiosk solution.
 
-## Key Features
+### Key Features
 
 - <b>Lock Task Mode (Pin):</b> prevent access to your device's home screen, apps and status bar
 - <b>Secure Settings:</b> configurations are protected by biometrics, device credentials or custom password
@@ -17,7 +17,7 @@ For more details, visit the official documentation:
 
 - https://webviewkiosk.nktnet.uk
 
-## 2. Additional Permissions
+### 2. Additional Permissions
 
 The Android permissions below are <b>optional</b> and their corresponding features are <b>disabled in the app settings by default</b>:
 
