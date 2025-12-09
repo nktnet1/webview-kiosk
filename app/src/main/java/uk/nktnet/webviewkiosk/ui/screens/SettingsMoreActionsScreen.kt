@@ -59,7 +59,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 .verticalScroll(rememberScrollState())
                 .fillMaxSize()
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             SectionHeader("Shortcuts")
             Row(
@@ -112,7 +112,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             SectionHeader("Manage")
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -137,7 +137,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             SectionHeader("Clear")
             Row(
                 modifier = Modifier.fillMaxWidth(),
