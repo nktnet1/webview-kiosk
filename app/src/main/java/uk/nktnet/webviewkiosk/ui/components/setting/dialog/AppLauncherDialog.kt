@@ -15,7 +15,8 @@ import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.ui.components.apps.AppList
 import uk.nktnet.webviewkiosk.ui.components.apps.AppSearchBar
 import uk.nktnet.webviewkiosk.utils.openPackage
-import uk.nktnet.webviewkiosk.config.data.AppInfo
+import uk.nktnet.webviewkiosk.config.data.LaunchableAppInfo
+import uk.nktnet.webviewkiosk.managers.ToastManager
 
 @Composable
 fun AppLauncherDialog(
@@ -31,12 +32,14 @@ fun AppLauncherDialog(
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var ascending by remember { mutableStateOf(true) }
 
-    var apps by remember { mutableStateOf<List<AppInfo>>(emptyList()) }
+    var apps by remember { mutableStateOf<List<LaunchableAppInfo>>(emptyList()) }
     var progress by remember { mutableFloatStateOf(0f) }
     val listState = rememberLazyListState()
 
+    var activityDialogApp by remember { mutableStateOf<LaunchableAppInfo?>(null) }
+
     LaunchedEffect(Unit) {
-        var currentApps = emptyList<AppInfo>()
+        var currentApps = emptyList<LaunchableAppInfo>()
         DeviceOwnerManager.getLaunchableAppsFlow(context)
             .collect { state ->
                 currentApps = currentApps + state.apps
@@ -112,9 +115,28 @@ fun AppLauncherDialog(
                 } else {
                     AppList(
                         apps = filteredApps,
-                        onSelectApp = { openPackage(context, it.packageName) },
+                        onSelectApp = { app ->
+                            if (app.activities.size == 1) {
+                                openPackage(
+                                    context,
+                                    app.packageName,
+                                    app.activities.first().name
+                                )
+                            } else if (app.activities.size >= 2) {
+                                activityDialogApp = app
+                            } else {
+                                ToastManager.show(context, "Error: no activities for app.")
+                            }
+                        },
                         modifier = Modifier.weight(1f),
                         listState = listState,
+                        getDescription = { app ->
+                            if (app.activities.size > 1) {
+                                "${app.packageName} (${app.activities.size})"
+                            } else {
+                                app.packageName
+                            }
+                        },
                     )
                 }
 
@@ -126,5 +148,44 @@ fun AppLauncherDialog(
                 }
             }
         }
+    }
+
+    activityDialogApp?.let { app ->
+        AlertDialog(
+            onDismissRequest = { activityDialogApp = null },
+            title = { Text(app.name) },
+            text = {
+                Column {
+                    Text(
+                        "Select an activity to launch:",
+                        modifier = Modifier.padding(bottom = 12.dp)
+                    )
+                    app.activities.forEach { activity ->
+                        Button(
+                            onClick = {
+                                openPackage(context, app.packageName, activity.name)
+                                activityDialogApp = null
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 1.dp)
+                        ) {
+                            Text(
+                                activity.label,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
+
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = { activityDialogApp = null }
+                ) {
+                    Text("Close")
+                }
+            }
+        )
     }
 }

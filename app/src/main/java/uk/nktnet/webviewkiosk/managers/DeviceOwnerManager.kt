@@ -23,9 +23,9 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.data.AdminAppInfo
-import uk.nktnet.webviewkiosk.config.data.AppInfo
 import uk.nktnet.webviewkiosk.config.data.AppLoadState
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
+import uk.nktnet.webviewkiosk.config.data.LaunchableAppInfo
 
 object DeviceOwnerManager {
     lateinit var DPM: DevicePolicyManager
@@ -128,38 +128,55 @@ object DeviceOwnerManager {
     fun getLaunchableAppsFlow(
         context: Context,
         chunkSize: Int = 10
-    ): Flow<AppLoadState<AppInfo>> = flow {
+    ): Flow<AppLoadState<LaunchableAppInfo>> = flow {
         val pm = context.packageManager
-        val allApps = pm.getInstalledApplications(0)
-            .filter { it.packageName != context.packageName }
 
-        val total = allApps.size
-        if (total == 0) {
+        val resolved = pm.queryIntentActivities(
+            Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_LAUNCHER),
+            0,
+        ).filter {
+            it.activityInfo.packageName != context.packageName
+        }.groupBy {
+            it.activityInfo.packageName
+        }
+
+        if (resolved.isEmpty()) {
+            emit(AppLoadState<LaunchableAppInfo>(emptyList(), 1f))
             return@flow
         }
 
-        val currentChunk = mutableListOf<AppInfo>()
+        val total = resolved.size
+        var processed = 0
 
-        for ((index, appInfo) in allApps.withIndex()) {
-            val launchIntent = pm.getLaunchIntentForPackage(appInfo.packageName)
-            if (launchIntent != null) {
-                currentChunk.add(
-                    AppInfo(
-                        packageName = appInfo.packageName,
-                        name = pm.getApplicationLabel(appInfo).toString(),
-                        icon = pm.getApplicationIcon(appInfo)
-                    )
+        val current = mutableListOf<LaunchableAppInfo>()
+
+        for ((pkg, list) in resolved) {
+            val appInfo = pm.getApplicationInfo(pkg, 0)
+            current.add(
+                LaunchableAppInfo(
+                    packageName = pkg,
+                    name = pm.getApplicationLabel(appInfo).toString(),
+                    icon = pm.getApplicationIcon(appInfo),
+                    activities = list.map {
+                        LaunchableAppInfo.Activity(
+                            label = it.loadLabel(pm).toString(),
+                            name = it.activityInfo.name
+                        )
+                    }
                 )
-            }
+            )
 
-            if (currentChunk.size == chunkSize || index == allApps.lastIndex) {
+            processed++
+
+            if (current.size == chunkSize || processed == total) {
                 emit(
                     AppLoadState(
-                        currentChunk.toList(),
-                        (index + 1).toFloat() / total
+                        apps = current.toList(),
+                        progress = processed.toFloat() / total
                     )
                 )
-                currentChunk.clear()
+                current.clear()
             }
         }
     }.flowOn(Dispatchers.IO)
@@ -189,6 +206,7 @@ object DeviceOwnerManager {
 
         val total = filteredReceivers.size
         if (total == 0) {
+            emit(AppLoadState<AdminAppInfo>(emptyList(), 1f))
             return@flow
         }
 
