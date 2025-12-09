@@ -105,7 +105,6 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(6.dp))
 
             if (
-                true ||
                 deviceOwnerStatus.mode == DeviceOwnerMode.DeviceOwner
                 && isDeviceOwner
             ) {

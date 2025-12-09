@@ -50,7 +50,7 @@ fun DeviceAdminReceiverListDialog(
             apps
                 .filter {
                     it.name.contains(searchQuery.text, ignoreCase = true)
-                    || it.packageName.contains(searchQuery.text, ignoreCase = true)
+                    || it.admin.className.contains(searchQuery.text, ignoreCase = true)
                 }
                 .sortedBy { it.name }
                 .let { if (ascending) it else it.reversed() }
