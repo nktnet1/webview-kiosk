@@ -133,6 +133,7 @@
         <item>HISTORY</item>
         <item>BOOKMARK</item>
         <item>FILES</item>
+        <item>FIND</item>
         <item>APPS</item>
         <item>SETTINGS</item>
         <item>LOCK</item>
@@ -202,14 +203,14 @@
         <item>Safe Content</item>
     </string-array>
     <string-array name="entry_values_webview_inset_option">
-        <item>None</item>
-        <item>StatusBars</item>
-        <item>NavigationBars</item>
-        <item>SystemBars</item>
-        <item>DisplayCutout</item>
-        <item>SafeDrawing</item>
-        <item>SafeGestures</item>
-        <item>SafeContent</item>
+        <item>NONE</item>
+        <item>STATUS_BARS</item>
+        <item>NAVIGATION_BARS</item>
+        <item>SYSTEM_BARS</item>
+        <item>DISPLAY_CUTOUT</item>
+        <item>SAFE_DRAWING</item>
+        <item>SAFE_GESTURES</item>
+        <item>SAFE_CONTENT</item>
     </string-array>
 
     <string-array name="entries_back_button_hold_action_option">

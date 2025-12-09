@@ -349,7 +349,7 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.Appearance.WEBVIEW_INSET,
-        WebViewInsetOption.SystemBars.name,
+        WebViewInsetOption.SYSTEM_BARS.name,
         fromString = WebViewInsetOption::fromString
     )
     var immersiveMode by stringEnumPref(
