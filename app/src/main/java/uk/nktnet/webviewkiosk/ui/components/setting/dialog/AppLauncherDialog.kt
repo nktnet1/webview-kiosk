@@ -74,7 +74,7 @@ fun AppLauncherDialog(
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                Text("Launch Apps", style = MaterialTheme.typography.titleLarge)
+                Text("Apps", style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(16.dp))
 
                 AppSearchBar(
