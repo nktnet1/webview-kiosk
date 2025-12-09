@@ -17,12 +17,13 @@ fun PreventScreenCaptureSetting() {
         label = "Prevent Screen Capture",
         infoText = """
             Prevent screenshots, screen recording and content previews in Recent Apps.
+            This is done by setting the FLAG_SECURE window flag.
         """.trimIndent(),
         initialValue = userSettings.preventScreenCapture,
         restricted = userSettings.isRestricted(UserSettingsKeys.Device.PREVENT_SCREEN_CAPTURE),
         onSave = {
             userSettings.preventScreenCapture = it
-            applyPreventScreenCapture(context)
+            applyPreventScreenCapture(context, it)
         }
     )
 }
