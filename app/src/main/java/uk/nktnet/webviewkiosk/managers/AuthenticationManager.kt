@@ -20,7 +20,9 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 object AuthenticationManager {
     private var activity: AppCompatActivity? = null
 
-    private val _resultState = MutableStateFlow<AuthenticationResult?>(null)
+    private val _resultState = MutableStateFlow<AuthenticationResult>(
+        AuthenticationResult.Loading
+    )
     val promptResults: StateFlow<AuthenticationResult?> = _resultState.asStateFlow()
 
     val showCustomAuth: MutableState<Boolean> = mutableStateOf(false)

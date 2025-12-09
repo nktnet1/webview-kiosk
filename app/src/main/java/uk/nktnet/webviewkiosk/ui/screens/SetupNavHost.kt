@@ -21,76 +21,76 @@ fun SetupNavHost(
         }
 
         navigation(startDestination = Screen.Settings.route, route = "settings_list") {
-            authComposable(Screen.Settings.route) {
+            authComposable(Screen.Settings.route, navController) {
                 SettingsListScreen(navController)
             }
-            authComposable(Screen.SettingsMoreActions.route) {
+            authComposable(Screen.SettingsMoreActions.route, navController) {
                 SettingsMoreActionsScreen(navController)
             }
-            authComposable(Screen.SettingsWebContent.route) {
+            authComposable(Screen.SettingsWebContent.route, navController) {
                 SettingsWebContentScreen(navController)
             }
-            authComposable(Screen.SettingsWebContentFiles.route) {
+            authComposable(Screen.SettingsWebContentFiles.route, navController) {
                 SettingsWebContentFilesScreen(navController)
             }
-            authComposable(Screen.SettingsWebBrowsing.route) {
+            authComposable(Screen.SettingsWebBrowsing.route, navController) {
                 SettingsWebBrowsingScreen(navController)
             }
-            authComposable(Screen.SettingsWebBrowsingSitePermissions.route) {
+            authComposable(Screen.SettingsWebBrowsingSitePermissions.route, navController) {
                 SettingsWebBrowsingSitePermissionsScreen(navController)
             }
-            authComposable(Screen.SettingsWebEngine.route) {
+            authComposable(Screen.SettingsWebEngine.route, navController) {
                 SettingsWebEngineScreen(navController)
             }
-            authComposable(Screen.SettingsWebLifecycle.route) {
+            authComposable(Screen.SettingsWebLifecycle.route, navController) {
                 SettingsWebLifecycleScreen(navController)
             }
-            authComposable(Screen.SettingsAppearance.route) {
+            authComposable(Screen.SettingsAppearance.route, navController) {
                 SettingsAppearanceScreen(navController)
             }
-            authComposable(Screen.SettingsDevice.route) {
+            authComposable(Screen.SettingsDevice.route, navController) {
                 SettingsDeviceScreen(navController)
             }
-            authComposable(Screen.SettingsDeviceOwner.route) {
+            authComposable(Screen.SettingsDeviceOwner.route, navController) {
                 SettingsDeviceOwnerScreen(navController)
             }
-            authComposable(Screen.SettingsJsScript.route) {
+            authComposable(Screen.SettingsJsScript.route, navController) {
                 SettingsJsScriptsScreen(navController)
             }
-            authComposable(Screen.SettingsMqtt.route) {
+            authComposable(Screen.SettingsMqtt.route, navController) {
                 SettingsMqttScreen(navController)
             }
-            authComposable(Screen.SettingsMqttConnection.route) {
+            authComposable(Screen.SettingsMqttConnection.route, navController) {
                 SettingsMqttConnectionScreen(navController)
             }
-            authComposable(Screen.SettingsMqttWill.route) {
+            authComposable(Screen.SettingsMqttWill.route, navController) {
                 SettingsMqttWillScreen(navController)
             }
-            authComposable(Screen.SettingsMqttRestrictions.route) {
+            authComposable(Screen.SettingsMqttRestrictions.route, navController) {
                 SettingsMqttRestrictionsScreen(navController)
             }
-            authComposable(Screen.SettingsMqttDebug.route) {
+            authComposable(Screen.SettingsMqttDebug.route, navController) {
                 SettingsMqttDebugScreen(navController)
             }
-            authComposable(Screen.SettingsMqttTopics.route) {
+            authComposable(Screen.SettingsMqttTopics.route, navController) {
                 SettingsMqttTopicsScreen(navController)
             }
-            authComposable(Screen.SettingsMqttTopicsPublishEvent.route) {
+            authComposable(Screen.SettingsMqttTopicsPublishEvent.route, navController) {
                 SettingsMqttTopicsPublishEventScreen(navController)
             }
-            authComposable(Screen.SettingsMqttTopicsPublishResponse.route) {
+            authComposable(Screen.SettingsMqttTopicsPublishResponse.route, navController) {
                 SettingsMqttTopicsPublishResponseScreen(navController)
             }
-            authComposable(Screen.SettingsMqttTopicsSubscribeCommand.route) {
+            authComposable(Screen.SettingsMqttTopicsSubscribeCommand.route, navController) {
                 SettingsMqttTopicsSubscribeCommandScreen(navController)
             }
-            authComposable(Screen.SettingsMqttTopicsSubscribeSettings.route) {
+            authComposable(Screen.SettingsMqttTopicsSubscribeSettings.route, navController) {
                 SettingsMqttTopicsSubscribeSettingsScreen(navController)
             }
-            authComposable(Screen.SettingsMqttTopicsSubscribeRequest.route) {
+            authComposable(Screen.SettingsMqttTopicsSubscribeRequest.route, navController) {
                 SettingsMqttTopicsSubscribeRequestScreen(navController)
             }
-            authComposable(Screen.SettingsAbout.route) {
+            authComposable(Screen.SettingsAbout.route, navController) {
                 SettingsAboutScreen(navController)
             }
         }

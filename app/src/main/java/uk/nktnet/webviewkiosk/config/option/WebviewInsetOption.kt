@@ -11,25 +11,25 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.runtime.Composable
 
 enum class WebViewInsetOption(val label: String) {
-    None("None"),
-    StatusBars("Status Bars"),
-    NavigationBars("Navigation Bars"),
-    SystemBars("System Bars"),
-    DisplayCutout("Display Cutout"),
-    SafeDrawing("Safe Drawing"),
-    SafeGestures("Safe Gestures"),
-    SafeContent("Safe Content");
+    NONE("None"),
+    STATUS_BARS("Status Bars"),
+    NAVIGATION_BARS("Navigation Bars"),
+    SYSTEM_BARS("System Bars"),
+    DISPLAY_CUTOUT("Display Cutout"),
+    SAFE_DRAWING("Safe Drawing"),
+    SAFE_GESTURES("Safe Gestures"),
+    SAFE_CONTENT("Safe Content");
 
     @Composable
     fun toWindowInsets(): WindowInsets = when (this) {
-        None -> WindowInsets()
-        StatusBars -> WindowInsets.statusBars
-        NavigationBars -> WindowInsets.navigationBars
-        SystemBars -> WindowInsets.systemBars
-        DisplayCutout -> WindowInsets.displayCutout
-        SafeDrawing -> WindowInsets.safeDrawing
-        SafeGestures -> WindowInsets.safeGestures
-        SafeContent -> WindowInsets.safeContent
+        NONE -> WindowInsets()
+        STATUS_BARS -> WindowInsets.statusBars
+        NAVIGATION_BARS -> WindowInsets.navigationBars
+        SYSTEM_BARS -> WindowInsets.systemBars
+        DISPLAY_CUTOUT -> WindowInsets.displayCutout
+        SAFE_DRAWING -> WindowInsets.safeDrawing
+        SAFE_GESTURES -> WindowInsets.safeGestures
+        SAFE_CONTENT -> WindowInsets.safeContent
     }
 
     companion object {
@@ -37,6 +37,6 @@ enum class WebViewInsetOption(val label: String) {
             entries.find {
                 it.name.equals(value, ignoreCase = true)
                 || it.label.equals(value, ignoreCase = true)
-            } ?: SystemBars
+            } ?: SYSTEM_BARS
     }
 }

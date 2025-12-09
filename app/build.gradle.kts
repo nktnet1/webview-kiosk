@@ -32,12 +32,25 @@ android {
         applicationId = "uk.nktnet.webviewkiosk"
         minSdk = 21
         targetSdk = 36
-        versionCode = 98
+        versionCode = 100
         versionName = "0.25.0.13-mqtt-beta"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        setProperty("archivesBaseName", "${applicationId}-v${versionCode}-${versionName}")
-
         buildConfigField("int", "MIN_SDK_VERSION", "$minSdk")
+    }
+
+    base {
+        archivesName.set(
+            "${defaultConfig.applicationId}-v${defaultConfig.versionCode}-${defaultConfig.versionName}"
+        )
+    }
+
+    applicationVariants.all {
+        outputs.all {
+            val outputImpl = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            val appIdFormatted = applicationId.replace('.', '_')
+            val apkName = "${appIdFormatted}-v${versionName}.apk"
+            outputImpl.outputFileName = apkName
+        }
     }
 
     signingConfigs {

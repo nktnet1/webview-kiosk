@@ -134,11 +134,21 @@ unpinning, which is outside the control of {APP_NAME}.
 
 **Default:** Default
 
-## 11. Device Owner
+## 11. Prevent Screen Capture
+
+Prevent screenshots, screen recording and content previews in Recent Apps.
+This is done by setting the FLAG_SECURE window flag.
+
+For more information, see
+[Android Fraud Prevention: Secure Sensitive Activities](https://developer.android.com/security/fraud-prevention/activities)
+
+**Default:** false
+
+## 12. Device Owner
 
 For more information about `Device Owner`, see the [Security](/docs/security) documentation.
 
-### 11.1. Lock Task Features
+### 12.1. Lock Task Features
 
 {APP_NAME} The settings below are extracted from the official documentations:
 - [Lock Task Mode -> Customise UI](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode#customize-ui)
@@ -256,11 +266,10 @@ For more information about `Device Owner`, see the [Security](/docs/security) do
   </tbody>
 </table>
 
-## 11.2. Dhizuku
+### 12.2. Dhizuku Request Permission on Launch
 
-### 11.2.1. Request Permission on Launch
-
-When enabled, if Dhizuku is installed and has not granted {APP_NAME}
-access to Device Owner privileges, prompt the user for permission.
+When enabled, if [Dhizuku](https://github.com/iamr0s/Dhizuku) is installed and
+has not granted {APP_NAME} access through the
+[Dhizuku API](https://github.com/iamr0s/Dhizuku-API), prompt for permission.
 
 **Default:** true

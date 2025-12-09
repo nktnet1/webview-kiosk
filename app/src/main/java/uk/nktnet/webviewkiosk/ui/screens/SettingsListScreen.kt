@@ -76,9 +76,10 @@ fun SettingsListScreen(
 
         Column(
             modifier = Modifier
+                .padding(top = 2.dp)
                 .weight(1f)
                 .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.Top
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             settingsItems.forEach { (title, description, route) ->
                 SettingListItem(
@@ -89,7 +90,7 @@ fun SettingsListScreen(
                     },
                 )
             }
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
         }
     }
 }

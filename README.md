@@ -17,7 +17,7 @@
 <div align="center">
 
 [<img src="./docs/public/static/images/badges/github.png" alt="Get it on GitHub" width="260px" />](https://github.com/nktnet1/webview-kiosk/releases)
-[<img src="./docs/public/static/images/badges/obtanium.png" alt="Get it on Obtanium" width="260px" />](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk)
+[<img src="./docs/public/static/images/badges/obtainium.png" alt="Get it on Obtainium" width="260px" />](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk)
 [<img src="./docs/public/static/images/badges/google-play.svg" alt="Get it on Google Play" width="260px" />](https://play.google.com/store/apps/details?id=com.nktnet.webview_kiosk)
 [<img src="./docs/public/static/images/badges/f-droid.svg" alt="Get it on F-Droid" width="260px" />](https://f-droid.org/packages/uk.nktnet.webviewkiosk)
 [<img src="./docs/public/static/images/badges/izzy-on-droid.svg" alt="Get it on IzzyOnDroid" width="260px" />](https://apt.izzysoft.de/fdroid/index/apk/uk.nktnet.webviewkiosk)
@@ -47,16 +47,20 @@ and standalone Kiosk solution.
 ## Additional Permissions
 
 The Android permissions below are <b>optional</b> and their corresponding features
-are <b>disabled in the app settings by default</b>
+are <b>disabled in the app settings by default</b>:
 
 - CAMERA
 - RECORD_AUDIO
 - ACCESS_FINE_LOCATION
 - ACCESS_COARSE_LOCATION
 
-You should only enable them if they are needed by your website or web application.
-
+Only enable them if they are needed by your website or web application.
 These permissions will not be used for any other purpose.
+
+In addition, the <b>QUERY_ALL_PACKAGES</b> permission is used for:
+
+1. Launching other apps, which can be helpful if Webview Kiosk set as the default launcher
+2. Transferring device ownership to another admin receiver (e.g. [OwnDroid](https://github.com/BinTianqi/OwnDroid) or [Dhizuku](https://github.com/iamr0s/Dhizuku))
 
 ## Installation Notes
 

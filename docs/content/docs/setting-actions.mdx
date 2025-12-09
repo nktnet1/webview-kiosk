@@ -31,31 +31,41 @@ device settings page, which will allow you to select your desired launcher, e.g.
 
 ## 3. Help
 
-This will open the Webview Kiosk Home Page:
+This will open the Webview Kiosk Home Page in your default browser:
 
 - https://webviewkiosk.nktnet.uk
 
-in your default browser application.
-
 ## 4. More
 
-This will open the `More Actions` page.
+This will open the `More Actions` screen.
 
-### 4.1. Open app info
+### 4.1. Shortcut Actions
 
-Opens the application details setting in your device.
+Open relevant device settings via intent.
 
-For more details, see Android's official documentation for
-[Settings.html#ACTION_APPLICATION_DETAILS_SETTINGS](https://developer.android.com/reference/android/provider/Settings.html#ACTION_APPLICATION_DETAILS_SETTINGS)
+| Shortcut         | Description |
+|------------------|-------------|
+| App Info         | Opens the application details settings for this app.<br />See [ACTION_APPLICATION_DETAILS_SETTINGS](https://developer.android.com/reference/android/provider/Settings.html#ACTION_APPLICATION_DETAILS_SETTINGS) |
+| Default Launcher | Opens the device's default launcher settings.<br />See [ACTION_HOME_SETTINGS](https://developer.android.com/reference/android/provider/Settings.html#ACTION_HOME_SETTINGS) |
+| Default Apps     | Opens the default apps management screen (Android N+).<br />See [ACTION_MANAGE_DEFAULT_APPS_SETTINGS](https://developer.android.com/reference/android/provider/Settings.html#ACTION_MANAGE_DEFAULT_APPS_SETTINGS) |
+| Wi-Fi            | Opens the Wi-Fi settings screen.<br />See [ACTION_WIFI_SETTINGS](https://developer.android.com/reference/android/provider/Settings.html#ACTION_WIFI_SETTINGS) |
+| Data Usage       | Opens the data usage settings screen (Android P+).<br />See [ACTION_DATA_USAGE_SETTINGS](https://developer.android.com/reference/android/provider/Settings.html#ACTION_DATA_USAGE_SETTINGS) |
+| Settings         | Opens the main device settings screen.<br />See [ACTION_SETTINGS](https://developer.android.com/reference/android/provider/Settings.html#ACTION_SETTINGS) |
 
 ### 4.2. Manage Actions
 
-| Action                     | Description |
-|----------------------------|-------------|
-| Local Files                | Opens `Web Content -> Manage Local Files`. |
-| Site Permissions           | Opens `Web Browsing -> Manage Site Permissions`. |
+Manage stored data and states.
+
+| Action           | Description |
+|------------------|-------------|
+| Local Files      | Opens `Web Content -> Manage Local Files`. |
+| Site Permissions | Opens `Web Browsing -> Manage Site Permissions`. |
+| Device Owner     | Opens `Device -> Manage Device Owner`. |
+| App Launcher     | Opens a dialog for installed apps on the device that can be launched. |
 
 ### 4.3. Clear Actions
+
+Clear WebView or application data and cache.
 
 | Action                     | Description |
 |----------------------------|-------------|

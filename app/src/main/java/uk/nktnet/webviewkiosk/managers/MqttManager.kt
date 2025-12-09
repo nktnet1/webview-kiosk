@@ -26,6 +26,7 @@ import org.json.JSONObject
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.data.SystemInfo
 import uk.nktnet.webviewkiosk.config.option.LockStateType
 import uk.nktnet.webviewkiosk.config.option.MqttQosOption
 import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption
@@ -53,7 +54,6 @@ import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttStatusResponse
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSystemInfoResponse
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttUnlockEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttUrlChangedEvent
-import uk.nktnet.webviewkiosk.utils.SystemInfo
 import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
 import uk.nktnet.webviewkiosk.utils.filterSettingsJson
 import uk.nktnet.webviewkiosk.utils.getStatus

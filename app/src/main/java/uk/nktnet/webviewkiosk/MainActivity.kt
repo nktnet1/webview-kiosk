@@ -7,7 +7,6 @@ import android.content.IntentFilter
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -24,7 +23,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import uk.nktnet.webviewkiosk.utils.getStatus
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.*
+import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttClearHistoryCommand
@@ -39,7 +41,7 @@ import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttToastCommand
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.BackButtonManager
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
-import uk.nktnet.webviewkiosk.managers.DeviceOwnerMode
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.screens.SetupNavHost
 import uk.nktnet.webviewkiosk.utils.handleMainIntent
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
@@ -96,11 +98,14 @@ class MainActivity : AppCompatActivity() {
             DeviceOwnerManager.status.value.mode == DeviceOwnerMode.Dhizuku
             && userSettings.dhizukuRequestPermissionOnLaunch
         ) {
-            DeviceOwnerManager.requestDhizukuPermission(
-                onGranted = {
-                    setupLockTaskPackage(this)
-                }
-            )
+            lifecycleScope.launch {
+                delay(1000)
+                DeviceOwnerManager.requestDhizukuPermission(
+                    onGranted = {
+                        setupLockTaskPackage(this@MainActivity)
+                    }
+                )
+            }
         }
 
         LockStateSingleton.startMonitoring(application)
@@ -126,16 +131,8 @@ class MainActivity : AppCompatActivity() {
 
         systemSettings.isFreshLaunch = true
 
-        var toastRef: Toast? = null
-        val showToast: (String) -> Unit = { msg ->
-            toastRef?.cancel()
-            toastRef = Toast.makeText(
-                this, msg, Toast.LENGTH_SHORT
-            ).apply { show() }
-        }
-
         if (userSettings.lockOnLaunch) {
-            tryLockTask(this, showToast)
+            tryLockTask(this)
         }
 
         if (intent != null) {
@@ -172,7 +169,7 @@ class MainActivity : AppCompatActivity() {
                         }
                         is MqttToastCommand -> {
                             if (commandMessage.data.message.isNotBlank()) {
-                                showToast(commandMessage.data.message)
+                                ToastManager.show(context, commandMessage.data.message)
                             }
                         }
                         is MqttLockDeviceCommand -> {
@@ -203,11 +200,11 @@ class MainActivity : AppCompatActivity() {
                     ) {
                         navigateToWebViewScreen(navController)
                         if (settingsMessage.showToast) {
-                            showToast("MQTT: settings applied.")
+                            ToastManager.show(context, "MQTT: settings applied.")
                         }
                     } else {
                         if (settingsMessage.showToast) {
-                            showToast("MQTT: settings received.")
+                            ToastManager.show(context, "MQTT: settings received.")
                         }
                     }
 
@@ -232,7 +229,7 @@ class MainActivity : AppCompatActivity() {
                             )
                         }
                         is MqttErrorRequest -> {
-                            showToast("MQTT: invalid request. See debug logs.")
+                            ToastManager.show(context, "MQTT: invalid request. See debug logs.")
                             MqttManager.publishErrorResponse(request)
                         }
                     }
@@ -250,7 +247,7 @@ class MainActivity : AppCompatActivity() {
                         biometricResult == AuthenticationManager.AuthenticationResult.AuthenticationSuccess
                         || biometricResult == AuthenticationManager.AuthenticationResult.AuthenticationNotSet
                     ) {
-                        tryUnlockTask(activity, showToast)
+                        tryUnlockTask(activity)
                         WaitingForUnlockStateSingleton.emitUnlockSuccess()
                     }
                     WaitingForUnlockStateSingleton.stopWaiting()

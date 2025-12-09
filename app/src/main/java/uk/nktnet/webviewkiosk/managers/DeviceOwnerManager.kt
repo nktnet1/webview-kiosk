@@ -1,10 +1,14 @@
 package uk.nktnet.webviewkiosk.managers
 
 import android.annotation.SuppressLint
+import android.app.admin.DeviceAdminInfo
+import android.app.admin.DeviceAdminReceiver
 import android.app.admin.DevicePolicyManager
 import android.app.admin.IDevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.RemoteException
@@ -12,14 +16,16 @@ import org.lsposed.hiddenapibypass.HiddenApiBypass
 import com.rosan.dhizuku.api.Dhizuku
 import com.rosan.dhizuku.api.DhizukuBinderWrapper
 import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
-
-enum class DeviceOwnerMode {
-    DeviceOwner,
-    Dhizuku,
-    None,
-}
+import uk.nktnet.webviewkiosk.config.data.AdminAppInfo
+import uk.nktnet.webviewkiosk.config.data.AppLoadState
+import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
+import uk.nktnet.webviewkiosk.config.data.LaunchableAppInfo
 
 object DeviceOwnerManager {
     lateinit var DPM: DevicePolicyManager
@@ -58,10 +64,7 @@ object DeviceOwnerManager {
                 return
             }
 
-            val dpm = binderWrapperDevicePolicyManager(context)
-            if (dpm == null) {
-                return
-            }
+            val dpm = binderWrapperDevicePolicyManager(context) ?: return
 
             DPM = dpm
             DAR = Dhizuku.getOwnerComponent()
@@ -79,8 +82,7 @@ object DeviceOwnerManager {
                 }
                 DeviceOwnerMode.Dhizuku -> {
                     Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && Dhizuku.isPermissionGranted()
-                }
-                else -> {
+                } else -> {
                     false
                 }
             }
@@ -122,6 +124,116 @@ object DeviceOwnerManager {
             onDenied()
         }
     }
+
+    fun getLaunchableAppsFlow(
+        context: Context,
+        chunkSize: Int = 10
+    ): Flow<AppLoadState<LaunchableAppInfo>> = flow {
+        val pm = context.packageManager
+
+        val resolved = pm.queryIntentActivities(
+            Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_LAUNCHER),
+            0,
+        ).filter {
+            it.activityInfo.packageName != context.packageName
+        }.groupBy {
+            it.activityInfo.packageName
+        }
+
+        if (resolved.isEmpty()) {
+            emit(AppLoadState<LaunchableAppInfo>(emptyList(), 1f))
+            return@flow
+        }
+
+        val total = resolved.size
+        var processed = 0
+
+        val current = mutableListOf<LaunchableAppInfo>()
+
+        for ((pkg, list) in resolved) {
+            val appInfo = pm.getApplicationInfo(pkg, 0)
+            current.add(
+                LaunchableAppInfo(
+                    packageName = pkg,
+                    name = pm.getApplicationLabel(appInfo).toString(),
+                    icon = pm.getApplicationIcon(appInfo),
+                    activities = list.map {
+                        LaunchableAppInfo.Activity(
+                            label = it.loadLabel(pm).toString(),
+                            name = it.activityInfo.name
+                        )
+                    }
+                )
+            )
+
+            processed++
+
+            if (current.size == chunkSize || processed == total) {
+                emit(
+                    AppLoadState(
+                        apps = current.toList(),
+                        progress = processed.toFloat() / total
+                    )
+                )
+                current.clear()
+            }
+        }
+    }.flowOn(Dispatchers.IO)
+
+    fun getDeviceAdminReceiversFlow(
+        context: Context,
+        chunkSize: Int = 5
+    ): Flow<AppLoadState<AdminAppInfo>> = flow {
+        val pm = context.packageManager
+
+        val filteredReceivers = pm.queryBroadcastReceivers(
+            Intent(DeviceAdminReceiver.ACTION_DEVICE_ADMIN_ENABLED),
+            PackageManager.GET_META_DATA
+        ).mapNotNull {
+            try {
+                DeviceAdminInfo(context, it)
+            } catch (_: Exception) {
+                null
+            }
+        }.filter {
+            it.isVisible
+            && it.packageName != context.packageName
+            && it.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0
+        }.distinctBy {
+            it.receiverName
+        }
+
+        val total = filteredReceivers.size
+        if (total == 0) {
+            emit(AppLoadState<AdminAppInfo>(emptyList(), 1f))
+            return@flow
+        }
+
+        val currentChunk = mutableListOf<AdminAppInfo>()
+
+        filteredReceivers.forEachIndexed { index, deviceAdminInfo ->
+            val appInfo = pm.getApplicationInfo(deviceAdminInfo.packageName, 0)
+            currentChunk.add(
+                AdminAppInfo(
+                    packageName = appInfo.packageName,
+                    name = pm.getApplicationLabel(appInfo).toString(),
+                    icon = pm.getApplicationIcon(appInfo),
+                    admin = ComponentName(deviceAdminInfo.packageName, deviceAdminInfo.receiverName)
+                )
+            )
+
+            if (currentChunk.size == chunkSize || index == total - 1) {
+                emit(
+                    AppLoadState(
+                        currentChunk.toList(),
+                        (index + 1).toFloat() / total
+                    )
+                )
+                currentChunk.clear()
+            }
+        }
+    }.flowOn(Dispatchers.IO)
 
     private fun updateStatus(mode: DeviceOwnerMode) {
         status.value = Status(mode)

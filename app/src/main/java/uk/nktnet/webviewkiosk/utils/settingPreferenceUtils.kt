@@ -172,10 +172,7 @@ fun <T : Enum<T>> enumListPref(
             val jsonArray = if (getRestrictions()?.containsKey(key) == true) {
                 JSONArray(getRestrictions()?.getStringArray(key))
             } else {
-                val stringValue = prefs.getString(key, null)
-                if (stringValue == null) {
-                    return default
-                }
+                val stringValue = prefs.getString(key, null) ?: return default
                 JSONArray(stringValue)
             }
             LinkedHashSet(

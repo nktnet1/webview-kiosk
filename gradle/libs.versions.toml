@@ -1,5 +1,5 @@
 [versions]
-agp = "8.11.2"
+agp = "8.13.1"
 androidRetrofix = "1.0.0"
 androidRetrostreams = "1.7.4"
 appcompat = "1.7.1"

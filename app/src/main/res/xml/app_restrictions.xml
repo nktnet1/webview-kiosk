@@ -442,6 +442,12 @@
         android:description="@string/device_unlock_auth_requirement_description"
     />
     <restriction
+        android:key="device.prevent_screen_capture"
+        android:restrictionType="bool"
+        android:title="@string/device_prevent_screen_capture_title"
+        android:description="@string/device_prevent_screen_capture_description"
+    />
+    <restriction
         android:key="device.owner.dhizuku.request_permission_on_launch"
         android:restrictionType="bool"
         android:title="@string/device_owner_dhizuku_request_permission_on_launch_title"

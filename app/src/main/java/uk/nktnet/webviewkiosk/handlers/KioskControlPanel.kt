@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.handlers
 
-import android.widget.Toast
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -58,12 +57,10 @@ import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
 import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelActionOption
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
-import uk.nktnet.webviewkiosk.ui.components.webview.BookmarksDialog
-import uk.nktnet.webviewkiosk.ui.components.webview.HistoryDialog
-import uk.nktnet.webviewkiosk.ui.components.webview.LocalFilesDialog
 import uk.nktnet.webviewkiosk.utils.canDisableKioskControlPanelRegion
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
@@ -99,6 +96,10 @@ fun KioskControlPanel(
     navController: NavController,
     requiredTaps: Int,
     showFindInPage: () -> Unit,
+    showHistoryDialog: () -> Unit,
+    showBookmarkDialog: () -> Unit,
+    showFilesDialog: () -> Unit,
+    showAppsDialog: () -> Unit,
     customLoadUrl: (newUrl: String) -> Unit,
 ) {
     val context = LocalContext.current
@@ -119,19 +120,8 @@ fun KioskControlPanel(
     var enableDismiss by remember { mutableStateOf(false) }
     var enableInteraction by remember { mutableStateOf(true) }
 
-    val toastRef = remember { mutableStateOf<Toast?>(null) }
-    fun showToast(message: String) {
-        toastRef.value?.cancel()
-        toastRef.value = Toast.makeText(
-            context, message, Toast.LENGTH_SHORT
-        ).also { it.show() }
-    }
-
     var showDialog by remember { mutableStateOf(false) }
     var isSticky by remember { mutableStateOf(systemSettings.isKioskControlPanelSticky) }
-    var showBookmarksDialog by remember { mutableStateOf(false) }
-    var showHistoryDialog by remember { mutableStateOf(false) }
-    var showLocalFilesDialog by remember { mutableStateOf(false) }
 
     val kioskControlPanelRegion = if (
         userSettings.kioskControlPanelRegion == KioskControlPanelRegionOption.DISABLED
@@ -176,24 +166,6 @@ fun KioskControlPanel(
         }
     }
 
-    HistoryDialog(
-        showHistoryDialog,
-        { showHistoryDialog = false },
-        customLoadUrl
-    )
-
-    BookmarksDialog(
-        showBookmarksDialog,
-        { showBookmarksDialog = false },
-        customLoadUrl
-    )
-
-    LocalFilesDialog(
-        showLocalFilesDialog,
-        { showLocalFilesDialog = false },
-        customLoadUrl
-    )
-
     if (kioskControlPanelRegion != KioskControlPanelRegionOption.DISABLED) {
         Box(
             Modifier
@@ -222,7 +194,7 @@ fun KioskControlPanel(
                             when {
                                 tapsLeft <= 0 -> {
                                     tapsLeft = requiredTaps
-                                    toastRef.value?.cancel()
+                                    ToastManager.cancel()
                                     enableInteraction = false
                                     handleShowDialog()
                                     scope.launch {
@@ -231,7 +203,8 @@ fun KioskControlPanel(
                                     }
                                 }
                                 tapsLeft <= 5 -> {
-                                    showToast(
+                                    ToastManager.show(
+                                        context,
                                         "Tap $tapsLeft more times to open the Kiosk Control Panel"
                                     )
                                 }
@@ -370,7 +343,7 @@ fun KioskControlPanel(
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = isSticky
-                        showHistoryDialog = true
+                        showHistoryDialog()
                     },
                     iconRes = R.drawable.outline_history_24
                 )
@@ -381,7 +354,7 @@ fun KioskControlPanel(
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = isSticky
-                        showBookmarksDialog = true
+                        showBookmarkDialog()
                     },
                     iconRes = R.drawable.outline_bookmark_24
                 )
@@ -392,7 +365,7 @@ fun KioskControlPanel(
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = isSticky
-                        showLocalFilesDialog = true
+                        showFilesDialog()
                     },
                     iconRes = R.drawable.outline_folder_24
                 )
@@ -406,6 +379,16 @@ fun KioskControlPanel(
                         showFindInPage()
                     },
                     iconRes = R.drawable.find_in_page_24
+                )
+            },
+            KioskControlPanelActionOption.APPS to {
+                ActionButton(
+                    action = KioskControlPanelActionOption.APPS,
+                    enabled = enableInteraction,
+                    onClick = {
+                        showAppsDialog()
+                    },
+                    iconRes = R.drawable.apps_24px
                 )
             },
             KioskControlPanelActionOption.SETTINGS to {
@@ -425,7 +408,7 @@ fun KioskControlPanel(
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = isSticky
-                        tryLockTask(activity, ::showToast)
+                        tryLockTask(activity)
                     },
                     iconRes = R.drawable.baseline_lock_24
                 )
@@ -436,7 +419,7 @@ fun KioskControlPanel(
                     enabled = enableInteraction,
                     onClick = {
                         activity?.let {
-                            unlockWithAuthIfRequired(activity, ::showToast)
+                            unlockWithAuthIfRequired(activity)
                         }
                     },
                     iconRes = R.drawable.baseline_lock_open_24
@@ -485,7 +468,7 @@ fun KioskControlPanel(
                             modifier = Modifier.offset(y = (-2).dp),
                             onClick = {
                                 val newSticky = !isSticky
-                                showToast("Sticky mode ${if (newSticky) "enabled." else "disabled."}")
+                                ToastManager.show(context, "Sticky mode ${if (newSticky) "enabled." else "disabled."}")
                                 isSticky = newSticky
                                 systemSettings.isKioskControlPanelSticky = newSticky
                             },
@@ -515,6 +498,7 @@ fun KioskControlPanel(
                                 KioskControlPanelActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
                                 KioskControlPanelActionOption.FILES -> userSettings.allowLocalFiles
                                 KioskControlPanelActionOption.FIND -> true
+                                KioskControlPanelActionOption.APPS -> !isLocked
                                 KioskControlPanelActionOption.SETTINGS -> !isLocked
                                 KioskControlPanelActionOption.LOCK -> !isLocked
                                 KioskControlPanelActionOption.UNLOCK -> isLocked

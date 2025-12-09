@@ -1,7 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,6 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.files.LocalFileList
@@ -56,12 +56,12 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                         }
                     }
                     filesList = listLocalFiles(filesDir)
-                    Toast.makeText(context, "File uploaded", Toast.LENGTH_SHORT).show()
+                    ToastManager.show(context, "File uploaded")
                 } catch (e: Exception) {
                     if (e is CancellationException) {
                         // Ignore cancellation caused by leaving the UI
                     } else {
-                        Toast.makeText(context, "Upload failed: ${e.message}", Toast.LENGTH_SHORT).show()
+                        ToastManager.show(context, "Upload failed: ${e.message}")
                     }
                 } finally {
                     uploading = false

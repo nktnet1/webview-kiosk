@@ -1,6 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device
 
-import android.widget.Toast
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -28,25 +28,26 @@ import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.CustomSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.keyEventToShortcutString
 import uk.nktnet.webviewkiosk.utils.modifierKeyCodes
 
 fun handleUnlockShortcutKeyEvent(
+    context: Context,
     event: KeyEvent,
     isListening: Boolean,
     draftValue: String,
-    showToast: (String) -> Unit
 ): Pair<String, Boolean> {
     if (!isListening) return draftValue to false
     val shortcut = keyEventToShortcutString(event)
     if (shortcut == null) {
         if (event.keyCode !in modifierKeyCodes) {
-            showToast("Shortcut must use CTRL/SHIFT/ALT/META.")
+            ToastManager.show(context, "Shortcut must use CTRL/SHIFT/ALT/META.")
         }
         return draftValue to true
     }
-    showToast("Shortcut: $shortcut")
+    ToastManager.show(context, "Shortcut: $shortcut")
     return shortcut to false
 }
 
@@ -61,11 +62,6 @@ fun CustomUnlockShortcutSetting() {
     var currentValue by remember { mutableStateOf(userSettings.customUnlockShortcut) }
     var draftValue by remember { mutableStateOf(currentValue) }
     var isListening by remember { mutableStateOf(false) }
-    var toastRef by remember { mutableStateOf<Toast?>(null) }
-    val showToast: (String) -> Unit = { msg ->
-        toastRef?.cancel()
-        toastRef = Toast.makeText(context, msg, Toast.LENGTH_SHORT).apply { show() }
-    }
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -132,7 +128,12 @@ fun CustomUnlockShortcutSetting() {
                         )
                         .onPreviewKeyEvent { event ->
                             val (newDraft, newListening) =
-                                handleUnlockShortcutKeyEvent(event.nativeKeyEvent, isListening, draftValue, showToast)
+                                handleUnlockShortcutKeyEvent(
+                                    context,
+                                    event.nativeKeyEvent,
+                                    isListening,
+                                    draftValue,
+                                )
                             val handled = newDraft != draftValue || newListening != isListening
                             draftValue = newDraft
                             isListening = newListening

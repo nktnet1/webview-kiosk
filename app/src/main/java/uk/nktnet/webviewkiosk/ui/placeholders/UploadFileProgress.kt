@@ -1,7 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.placeholders
 
 import android.net.Uri
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.saveContentIntentToFile
 import java.io.File
 
@@ -43,7 +43,7 @@ fun UploadFileProgress(
             }
             onComplete(file)
         } catch (e: Exception) {
-            Toast.makeText(context, "Upload failed: ${e.message}", Toast.LENGTH_SHORT).show()
+            ToastManager.show(context,  "Upload failed: ${e.message}")
         }
     }
 

@@ -111,7 +111,7 @@ This actions available in the dialog are:
 
 1. Copy Link
 2. Open Link
-3. Open in Browser (only available when not in Locked mode)
+3. Open in Browser (only available when not in locked mode)
 
 **Default:** true
 
@@ -156,9 +156,10 @@ The following actions are available to be configured (remove or rearrange):
 | Bookmark   | Opens the bookmark dialog.<br />Requires: `Web Browsing -> Allow Bookmark Access` |
 | Files      | Opens the local files dialog.<br />Requires: `Web Content -> Allow Local Files` |
 | Find       | Opens a search bar to find matching text on the current page. |
-| Settings   | Opens the settings page (only visible when unlocked, requires authentication) |
-| Lock       | Opens the settings page (only visible when unlocked) |
-| Unlock     | Opens the settings page (only visible when locked, requires authentication) |
+| Apps       | Opens a dialog allowing you to launch other apps (only visible when unlocked). |
+| Settings   | Opens the settings page (only visible when unlocked, requires authentication). |
+| Lock       | Opens the settings page (only visible when unlocked). |
+| Unlock     | Opens the settings page (only visible when locked, requires authentication). |
 
 ## 14. Kiosk Control Panel Region
 
@@ -334,6 +335,15 @@ The following actions are available to be configured (remove or rearrange):
       </td>
       <td>
         Opens a search bar to find matching text on the current page.
+      </td>
+    </tr>
+    <tr>
+      <td>
+        Apps
+      </td>
+      <td>
+        Opens a dialog allowing you to launch other apps. This option will
+        only be visible if the device is not in locked mode.
       </td>
     </tr>
     <tr>

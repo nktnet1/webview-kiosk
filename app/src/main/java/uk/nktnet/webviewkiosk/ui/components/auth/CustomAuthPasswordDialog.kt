@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.ui.components.auth
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -25,6 +24,7 @@ import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.managers.ToastManager
 
 @Composable
 fun CustomAuthPasswordDialog() {
@@ -46,14 +46,6 @@ fun CustomAuthPasswordDialog() {
     var waiting by remember { mutableStateOf(false) }
     var isError by remember { mutableStateOf(false) }
 
-    var toastRef: Toast? = null
-    val showToast: (String) -> Unit = { msg ->
-        toastRef?.cancel()
-        toastRef = Toast.makeText(
-            context, msg, Toast.LENGTH_SHORT
-        ).apply { show() }
-    }
-
     LaunchedEffect(Unit) {
         delay(100)
         focusRequester.requestFocus()
@@ -73,7 +65,7 @@ fun CustomAuthPasswordDialog() {
                     delay(remaining)
                 }
                 isError = true
-                showToast("Incorrect password")
+                ToastManager.show(context, "Incorrect password")
             }
             waiting = false
         }
