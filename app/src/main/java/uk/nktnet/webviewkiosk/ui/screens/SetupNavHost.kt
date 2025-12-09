@@ -21,43 +21,43 @@ fun SetupNavHost(
         }
 
         navigation(startDestination = Screen.Settings.route, route = "settings_list") {
-            authComposable(Screen.Settings.route) {
+            authComposable(Screen.Settings.route, navController) {
                 SettingsListScreen(navController)
             }
-            authComposable(Screen.SettingsMoreActions.route) {
+            authComposable(Screen.SettingsMoreActions.route, navController) {
                 SettingsMoreActionsScreen(navController)
             }
-            authComposable(Screen.SettingsWebContent.route) {
+            authComposable(Screen.SettingsWebContent.route, navController) {
                 SettingsWebContentScreen(navController)
             }
-            authComposable(Screen.SettingsWebContentFiles.route) {
+            authComposable(Screen.SettingsWebContentFiles.route, navController) {
                 SettingsWebContentFilesScreen(navController)
             }
-            authComposable(Screen.SettingsWebBrowsing.route) {
+            authComposable(Screen.SettingsWebBrowsing.route, navController) {
                 SettingsWebBrowsingScreen(navController)
             }
-            authComposable(Screen.SettingsWebBrowsingSitePermissions.route) {
+            authComposable(Screen.SettingsWebBrowsingSitePermissions.route, navController) {
                 SettingsWebBrowsingSitePermissionsScreen(navController)
             }
-            authComposable(Screen.SettingsWebEngine.route) {
+            authComposable(Screen.SettingsWebEngine.route, navController) {
                 SettingsWebEngineScreen(navController)
             }
-            authComposable(Screen.SettingsWebLifecycle.route) {
+            authComposable(Screen.SettingsWebLifecycle.route, navController) {
                 SettingsWebLifecycleScreen(navController)
             }
-            authComposable(Screen.SettingsAppearance.route) {
+            authComposable(Screen.SettingsAppearance.route, navController) {
                 SettingsAppearanceScreen(navController)
             }
-            authComposable(Screen.SettingsDevice.route) {
+            authComposable(Screen.SettingsDevice.route, navController) {
                 SettingsDeviceScreen(navController)
             }
-            authComposable(Screen.SettingsDeviceOwner.route) {
+            authComposable(Screen.SettingsDeviceOwner.route, navController) {
                 SettingsDeviceOwnerScreen(navController)
             }
-            authComposable(Screen.SettingsJsScript.route) {
+            authComposable(Screen.SettingsJsScript.route, navController) {
                 SettingsJsScriptsScreen(navController)
             }
-            authComposable(Screen.SettingsAbout.route) {
+            authComposable(Screen.SettingsAbout.route, navController) {
                 SettingsAboutScreen(navController)
             }
         }

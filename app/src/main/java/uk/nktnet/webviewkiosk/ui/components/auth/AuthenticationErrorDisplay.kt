@@ -12,7 +12,8 @@ import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 @Composable
 fun AuthenticationErrorDisplay(
     errorResult: AuthenticationManager.AuthenticationResult?,
-    onRetry: () -> Unit
+    onRetry: () -> Unit,
+    onCancel: (() -> Unit)? = null,
 ) {
     val dispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
 
@@ -43,7 +44,9 @@ fun AuthenticationErrorDisplay(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Button(
-                onClick = { dispatcher?.onBackPressed() },
+                onClick = {
+                    onCancel?.invoke() ?: dispatcher?.onBackPressed()
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.secondary,
                     contentColor = MaterialTheme.colorScheme.onSecondary
