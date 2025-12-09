@@ -16,7 +16,7 @@ fun PreventScreenCaptureSetting() {
     BooleanSettingFieldItem(
         label = "Prevent Screen Capture",
         infoText = """
-            Prevent screenshots, screen recording, and content previews in Recent Apps."
+            Prevent screenshots, screen recording and content previews in Recent Apps.
         """.trimIndent(),
         initialValue = userSettings.preventScreenCapture,
         restricted = userSettings.isRestricted(UserSettingsKeys.Device.PREVENT_SCREEN_CAPTURE),

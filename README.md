@@ -47,16 +47,20 @@ and standalone Kiosk solution.
 ## Additional Permissions
 
 The Android permissions below are <b>optional</b> and their corresponding features
-are <b>disabled in the app settings by default</b>
+are <b>disabled in the app settings by default</b>:
 
 - CAMERA
 - RECORD_AUDIO
 - ACCESS_FINE_LOCATION
 - ACCESS_COARSE_LOCATION
 
-You should only enable them if they are needed by your website or web application.
-
+Only enable them if they are needed by your website or web application.
 These permissions will not be used for any other purpose.
+
+In addition, the <b>QUERY_ALL_PACKAGES</b> permission is used for:
+
+1. Launching other apps, which can be helpful if Webview Kiosk set as the default launcher
+2. Transferring device ownership to another admin receiver (e.g. [OwnDroid](https://github.com/BinTianqi/OwnDroid) or [Dhizuku](https://github.com/iamr0s/Dhizuku))
 
 ## Installation Notes
 
