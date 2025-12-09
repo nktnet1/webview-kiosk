@@ -61,10 +61,6 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
-import uk.nktnet.webviewkiosk.ui.components.setting.dialog.AppLauncherDialog
-import uk.nktnet.webviewkiosk.ui.components.webview.BookmarksDialog
-import uk.nktnet.webviewkiosk.ui.components.webview.HistoryDialog
-import uk.nktnet.webviewkiosk.ui.components.webview.LocalFilesDialog
 import uk.nktnet.webviewkiosk.utils.canDisableKioskControlPanelRegion
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
@@ -100,6 +96,10 @@ fun KioskControlPanel(
     navController: NavController,
     requiredTaps: Int,
     showFindInPage: () -> Unit,
+    showHistoryDialog: () -> Unit,
+    showBookmarkDialog: () -> Unit,
+    showFilesDialog: () -> Unit,
+    showAppsDialog: () -> Unit,
     customLoadUrl: (newUrl: String) -> Unit,
 ) {
     val context = LocalContext.current
@@ -122,10 +122,6 @@ fun KioskControlPanel(
 
     var showDialog by remember { mutableStateOf(false) }
     var isSticky by remember { mutableStateOf(systemSettings.isKioskControlPanelSticky) }
-    var showBookmarksDialog by remember { mutableStateOf(false) }
-    var showHistoryDialog by remember { mutableStateOf(false) }
-    var showLocalFilesDialog by remember { mutableStateOf(false) }
-    var showAppsDialog by remember { mutableStateOf(false) }
 
     val kioskControlPanelRegion = if (
         userSettings.kioskControlPanelRegion == KioskControlPanelRegionOption.DISABLED
@@ -347,7 +343,7 @@ fun KioskControlPanel(
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = isSticky
-                        showHistoryDialog = true
+                        showHistoryDialog()
                     },
                     iconRes = R.drawable.outline_history_24
                 )
@@ -358,7 +354,7 @@ fun KioskControlPanel(
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = isSticky
-                        showBookmarksDialog = true
+                        showBookmarkDialog()
                     },
                     iconRes = R.drawable.outline_bookmark_24
                 )
@@ -369,7 +365,7 @@ fun KioskControlPanel(
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = isSticky
-                        showLocalFilesDialog = true
+                        showFilesDialog()
                     },
                     iconRes = R.drawable.outline_folder_24
                 )
@@ -390,7 +386,7 @@ fun KioskControlPanel(
                     action = KioskControlPanelActionOption.APPS,
                     enabled = enableInteraction,
                     onClick = {
-                        showAppsDialog = true
+                        showAppsDialog()
                     },
                     iconRes = R.drawable.apps_24px
                 )
@@ -557,27 +553,4 @@ fun KioskControlPanel(
             }
         }
     }
-
-    HistoryDialog(
-        showHistoryDialog,
-        { showHistoryDialog = false },
-        customLoadUrl
-    )
-
-    BookmarksDialog(
-        showBookmarksDialog,
-        { showBookmarksDialog = false },
-        customLoadUrl
-    )
-
-    LocalFilesDialog(
-        showLocalFilesDialog,
-        { showLocalFilesDialog = false },
-        customLoadUrl
-    )
-
-    AppLauncherDialog(
-        showDialog = showAppsDialog,
-        onDismiss = { showAppsDialog = false }
-    )
 }

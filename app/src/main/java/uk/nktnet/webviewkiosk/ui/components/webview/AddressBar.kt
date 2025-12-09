@@ -34,7 +34,6 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.AddressBarActionOption
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
-import uk.nktnet.webviewkiosk.ui.components.setting.dialog.AppLauncherDialog
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.tryLockTask
@@ -70,6 +69,10 @@ fun AddressBar(
     onFocusChanged: (FocusState) -> Unit,
     showFindInPage: () -> Unit,
     addressBarSearch: (String) -> Unit,
+    showHistoryDialog: () -> Unit,
+    showBookmarkDialog: () -> Unit,
+    showFilesDialog: () -> Unit,
+    showAppsDialog: () -> Unit,
     customLoadUrl: (newUrl: String) -> Unit,
 ) {
     val context = LocalContext.current
@@ -80,10 +83,6 @@ fun AddressBar(
     val systemSettings = remember { SystemSettings(context) }
 
     var menuExpanded by remember { mutableStateOf(false) }
-    var showHistoryDialog by remember { mutableStateOf(false) }
-    var showBookmarksDialog by remember { mutableStateOf(false) }
-    var showLocalFilesDialog by remember { mutableStateOf(false) }
-    var showAppsDialog by remember { mutableStateOf(false) }
 
     var allowFocus by remember { mutableStateOf(false) }
 
@@ -209,7 +208,7 @@ fun AddressBar(
                 AddressBarMenuItem(
                     action = AddressBarActionOption.HISTORY,
                     onClick = {
-                        showHistoryDialog = true
+                        showHistoryDialog()
                         menuExpanded = false
                     },
                     iconRes = R.drawable.outline_history_24,
@@ -219,7 +218,7 @@ fun AddressBar(
                 AddressBarMenuItem(
                     action = AddressBarActionOption.BOOKMARK,
                     onClick = {
-                        showBookmarksDialog = true
+                        showBookmarkDialog()
                         menuExpanded = false
                     },
                     iconRes = R.drawable.outline_bookmark_24,
@@ -229,7 +228,7 @@ fun AddressBar(
                 AddressBarMenuItem(
                     action = AddressBarActionOption.FILES,
                     onClick = {
-                        showLocalFilesDialog = true
+                        showFilesDialog()
                         menuExpanded = false
                     },
                     iconRes = R.drawable.outline_folder_24,
@@ -249,7 +248,7 @@ fun AddressBar(
                 AddressBarMenuItem(
                     action = AddressBarActionOption.APPS,
                     onClick = {
-                        showAppsDialog = true
+                        showAppsDialog()
                         menuExpanded = false
                     },
                     iconRes = R.drawable.apps_24px,
@@ -426,27 +425,4 @@ fun AddressBar(
             }
         }
     }
-
-    HistoryDialog(
-        showHistoryDialog,
-        { showHistoryDialog = false },
-        customLoadUrl
-    )
-
-    BookmarksDialog(
-        showBookmarksDialog,
-        { showBookmarksDialog = false },
-        customLoadUrl
-    )
-
-    LocalFilesDialog(
-        showLocalFilesDialog,
-        { showLocalFilesDialog = false },
-        customLoadUrl
-    )
-
-    AppLauncherDialog(
-        showDialog = showAppsDialog,
-        onDismiss = { showAppsDialog = false }
-    )
 }

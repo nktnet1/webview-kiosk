@@ -39,8 +39,12 @@ import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
 import uk.nktnet.webviewkiosk.ui.components.webview.FloatingToolbar
 import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
 import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
+import uk.nktnet.webviewkiosk.ui.components.setting.dialog.AppLauncherDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBarSearchSuggestions
+import uk.nktnet.webviewkiosk.ui.components.webview.BookmarksDialog
+import uk.nktnet.webviewkiosk.ui.components.webview.HistoryDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.LinkOptionsDialog
+import uk.nktnet.webviewkiosk.ui.components.webview.LocalFilesDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.WebViewFindBar
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
 import uk.nktnet.webviewkiosk.utils.enterImmersiveMode
@@ -79,6 +83,11 @@ fun WebviewScreen(navController: NavController) {
             )
         )
     }
+
+    var isOpenBookmarkDialog by remember { mutableStateOf(false) }
+    var isOpenHistoryDialog by remember { mutableStateOf(false) }
+    var isOpenFilesDialog by remember { mutableStateOf(false) }
+    var isOpenAppsDialog by remember { mutableStateOf(false) }
 
     var isSwipeRefreshing by remember { mutableStateOf(false) }
     var addressBarHasFocus by remember { mutableStateOf(false) }
@@ -303,7 +312,11 @@ fun WebviewScreen(navController: NavController) {
                             onFocusChanged = { addressBarHasFocus = it.isFocused },
                             showFindInPage = showFindInPage,
                             addressBarSearch = addressBarSearch,
-                            customLoadUrl = ::customLoadUrl
+                            showHistoryDialog = { isOpenHistoryDialog = true },
+                            showBookmarkDialog = { isOpenBookmarkDialog = true },
+                            showFilesDialog = { isOpenFilesDialog = true },
+                            showAppsDialog = { isOpenAppsDialog = true },
+                            customLoadUrl = ::customLoadUrl,
                         )
                     }
                 }
@@ -448,10 +461,14 @@ fun WebviewScreen(navController: NavController) {
     }
 
     KioskControlPanel(
-        navController,
-        10,
-        showFindInPage,
-        ::customLoadUrl
+        navController = navController,
+        requiredTaps = 10,
+        showFindInPage = showFindInPage,
+        showHistoryDialog = { isOpenHistoryDialog = true },
+        showBookmarkDialog = { isOpenBookmarkDialog = true },
+        showFilesDialog = { isOpenFilesDialog = true },
+        showAppsDialog = { isOpenAppsDialog = true },
+        customLoadUrl = ::customLoadUrl,
     )
 
     BackPressHandler(::customLoadUrl)
@@ -462,5 +479,28 @@ fun WebviewScreen(navController: NavController) {
         link = linkToOpen,
         onDismiss = { linkToOpen = null },
         onOpenLink = { url -> customLoadUrl(url) },
+    )
+
+    HistoryDialog(
+        isOpenHistoryDialog,
+        { isOpenHistoryDialog = false },
+        ::customLoadUrl
+    )
+
+    BookmarksDialog(
+        isOpenBookmarkDialog,
+        { isOpenBookmarkDialog = false },
+        ::customLoadUrl
+    )
+
+    LocalFilesDialog(
+        isOpenFilesDialog,
+        { isOpenFilesDialog = false },
+        ::customLoadUrl
+    )
+
+    AppLauncherDialog(
+        showDialog = isOpenAppsDialog,
+        onDismiss = { isOpenAppsDialog = false }
     )
 }
