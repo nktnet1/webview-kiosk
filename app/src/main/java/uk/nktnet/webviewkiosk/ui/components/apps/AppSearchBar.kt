@@ -48,9 +48,8 @@ fun AppSearchBar(
             onValueChange = onSearchChange,
             singleLine = true,
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            textStyle = LocalTextStyle.current.copy(
+            textStyle = MaterialTheme.typography.bodyMedium.copy(
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = MaterialTheme.typography.bodyLarge.fontSize
             ),
             modifier = Modifier
                 .weight(1f)
@@ -65,7 +64,7 @@ fun AppSearchBar(
                             MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                             MaterialTheme.shapes.small
                         )
-                        .padding(horizontal = 12.dp)
+                        .padding(start = 14.dp, end = 8.dp)
                 ) {
                     Box(
                         modifier = Modifier.weight(1f),
@@ -74,9 +73,8 @@ fun AppSearchBar(
                         if (searchQuery.text.isEmpty()) {
                             Text(
                                 text = "Search $appCount apps",
-                                style = TextStyle(
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                                    fontSize = MaterialTheme.typography.bodyLarge.fontSize,
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                                     fontStyle = FontStyle.Italic
                                 )
                             )
@@ -89,7 +87,6 @@ fun AppSearchBar(
                         onClick = { onSearchChange("") },
                         modifier = Modifier
                             .size(26.dp)
-                            .offset(x = 4.dp)
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_clear_24),
