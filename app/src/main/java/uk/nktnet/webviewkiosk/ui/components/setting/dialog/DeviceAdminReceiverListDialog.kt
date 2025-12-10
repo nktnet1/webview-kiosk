@@ -13,10 +13,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import kotlinx.coroutines.launch
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.data.AdminAppInfo
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
@@ -35,6 +38,7 @@ fun DeviceAdminReceiverListDialog(
     }
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     var apps by remember { mutableStateOf<List<AdminAppInfo>>(emptyList()) }
     var progress by remember { mutableFloatStateOf(0f) }
@@ -67,8 +71,8 @@ fun DeviceAdminReceiverListDialog(
             }
     }
 
-    LaunchedEffect(apps, progress) {
-        if (progress < 1f && apps.isNotEmpty()) {
+    LaunchedEffect(filteredApps) {
+        if (filteredApps.isNotEmpty()) {
             listState.animateScrollToItem(0)
         }
     }
@@ -150,11 +154,49 @@ fun DeviceAdminReceiverListDialog(
                 }
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = onDismiss) { Text("Close") }
+                    Row {
+                        IconButton(
+                            enabled = listState.canScrollBackward,
+                            onClick = {
+                                scope.launch {
+                                    listState.animateScrollToItem(0)
+                                }
+                            },
+                        ) {
+                            Icon(
+                                painter = painterResource(
+                                    id = R.drawable.keyboard_double_arrow_up_24
+                                ),
+                                contentDescription = "Scroll to top",
+                            )
+                        }
+
+                        IconButton(
+                            enabled = listState.canScrollForward,
+                            onClick = {
+                                scope.launch {
+                                    listState.animateScrollToItem(
+                                        listState.layoutInfo.totalItemsCount - 1
+                                    )
+                                }
+                            }
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.keyboard_double_arrow_down_24),
+                                contentDescription = "Scroll to bottom"
+                            )
+                        }
+                    }
+
+                    TextButton(onClick = onDismiss) {
+                        Text("Close")
+                    }
                 }
+
             }
         }
     }
