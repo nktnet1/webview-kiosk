@@ -33,7 +33,7 @@
     <string name="web_browsing_clear_history_on_home_title">Clear History on Home</string>
     <string name="web_browsing_clear_history_on_home_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
-    <string name="web_browsing_replace_history_url_on_redirect_title">Clear History on Home</string>
+    <string name="web_browsing_replace_history_url_on_redirect_title">Replace History URL on Redirect</string>
     <string name="web_browsing_replace_history_url_on_redirect_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_allow_history_access_title">Allow History Access</string>
@@ -57,7 +57,7 @@
     <string name="web_browsing_address_bar_actions_title">Address Bar Actions</string>
     <string name="web_browsing_address_bar_actions_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
-    <string name="web_browsing_kiosk_control_panel_region_title">Allow Kiosk Control Panel</string>
+    <string name="web_browsing_kiosk_control_panel_region_title">Kiosk Control Panel Region</string>
     <string name="web_browsing_kiosk_control_panel_region_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_kiosk_control_panel_actions_title">Kiosk Control Panel Actions</string>
@@ -66,7 +66,7 @@
     <string name="web_browsing_search_provider_url_title">Search Provider URL</string>
     <string name="web_browsing_search_provider_url_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
-    <string name="web_browsing_search_suggestion_engine_title">Allow Kiosk Control Panel</string>
+    <string name="web_browsing_search_suggestion_engine_title">Search Suggestion Engine</string>
     <string name="web_browsing_search_suggestion_engine_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <!-- Web Engine -->
