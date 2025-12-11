@@ -41,8 +41,7 @@ import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
 import uk.nktnet.webviewkiosk.utils.getLocalUrl
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
-import uk.nktnet.webviewkiosk.utils.handleBlockVolumeKeys
-import uk.nktnet.webviewkiosk.utils.handleCustomUnlockShortcut
+import uk.nktnet.webviewkiosk.utils.handleKeyEvent
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
@@ -253,7 +252,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (handleCustomUnlockShortcut(this, event)) {
+        if (handleKeyEvent(this, event)) {
             return true
         }
         return super.dispatchKeyEvent(event)
@@ -274,20 +273,22 @@ class MainActivity : AppCompatActivity() {
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         return (
-            (userSettings.blockVolumeKeys && handleBlockVolumeKeys(event))
-            || backButtonService.onKeyDown(keyCode)
+            handleKeyEvent(this, event)
             || super.onKeyDown(keyCode, event)
         )
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
         return (
-            (userSettings.blockVolumeKeys && handleBlockVolumeKeys(event))
-            || backButtonService.onKeyUp(keyCode)
+            handleKeyEvent(this, event)
             || super.onKeyUp(keyCode, event)
         )
     }
 
-    override fun onKeyLongPress(keyCode: Int, event: KeyEvent) =
-        backButtonService.onKeyLongPress(keyCode) || super.onKeyLongPress(keyCode, event)
+    override fun onKeyLongPress(keyCode: Int, event: KeyEvent): Boolean {
+        return (
+            backButtonService.onKeyLongPress(keyCode)
+            || super.onKeyLongPress(keyCode, event)
+        )
+    }
 }

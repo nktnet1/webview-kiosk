@@ -10,7 +10,7 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
-import uk.nktnet.webviewkiosk.utils.handleAlertBuilderLegacyKeyEvent
+import uk.nktnet.webviewkiosk.utils.handleKeyEvent
 import uk.nktnet.webviewkiosk.utils.hasPermissionForResource
 
 @SuppressLint("SetTextI18n")
@@ -39,7 +39,7 @@ fun handleGeolocationRequest(
             .setPositiveButton("Close") { _, _ -> callback?.invoke(origin, false, false) }
             .show()
         dialog.setOnKeyListener { _, _, event ->
-            handleAlertBuilderLegacyKeyEvent(context, event)
+            handleKeyEvent(context, event)
         }
         return
     }
@@ -84,6 +84,6 @@ fun handleGeolocationRequest(
         .show()
 
     dialog.setOnKeyListener { _, _, event ->
-        handleAlertBuilderLegacyKeyEvent(context, event)
+        handleKeyEvent(context, event)
     }
 }

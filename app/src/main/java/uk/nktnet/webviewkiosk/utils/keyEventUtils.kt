@@ -52,7 +52,7 @@ fun isShortcutPressed(event: KeyEvent, storedShortcut: String): Boolean {
     return shortcut.equals(storedShortcut, ignoreCase = true)
 }
 
-fun handleCustomUnlockShortcut(
+private fun handleCustomUnlockShortcut(
     context: Context,
     event: KeyEvent,
 ): Boolean {
@@ -70,7 +70,7 @@ fun handleCustomUnlockShortcut(
     return shouldUnlock
 }
 
-fun handleBlockVolumeKeys(event: KeyEvent): Boolean {
+private fun handleBlockVolumeKeys(event: KeyEvent): Boolean {
     return when (event.keyCode) {
         KeyEvent.KEYCODE_VOLUME_UP,
         KeyEvent.KEYCODE_VOLUME_DOWN,
@@ -79,7 +79,7 @@ fun handleBlockVolumeKeys(event: KeyEvent): Boolean {
     }
 }
 
-fun handleAlertBuilderLegacyKeyEvent(context: Context, event: KeyEvent): Boolean {
+fun handleKeyEvent(context: Context, event: KeyEvent): Boolean {
     UserInteractionStateSingleton.onUserInteraction()
     val userSettings = UserSettings(context)
     return (userSettings.blockVolumeKeys && handleBlockVolumeKeys(event))

@@ -11,7 +11,7 @@ import android.webkit.SslErrorHandler
 import androidx.appcompat.app.AlertDialog
 import android.view.ViewGroup.LayoutParams
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
-import uk.nktnet.webviewkiosk.utils.handleAlertBuilderLegacyKeyEvent
+import uk.nktnet.webviewkiosk.utils.handleKeyEvent
 
 @SuppressLint("SetTextI18n")
 fun handleSslErrorPromptRequest(
@@ -99,6 +99,6 @@ fun handleSslErrorPromptRequest(
     }
 
     dialog.setOnKeyListener { _, _, event ->
-        handleAlertBuilderLegacyKeyEvent(context, event)
+        handleKeyEvent(context, event)
     }
 }
