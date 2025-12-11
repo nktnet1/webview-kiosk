@@ -82,6 +82,8 @@ private fun handleBlockVolumeKeys(event: KeyEvent): Boolean {
 fun handleKeyEvent(context: Context, event: KeyEvent): Boolean {
     UserInteractionStateSingleton.onUserInteraction()
     val userSettings = UserSettings(context)
-    return (userSettings.blockVolumeKeys && handleBlockVolumeKeys(event))
+    return (
+        (userSettings.blockVolumeKeys && handleBlockVolumeKeys(event))
         || handleCustomUnlockShortcut(context, event)
+    )
 }
