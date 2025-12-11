@@ -12,6 +12,45 @@ import uk.nktnet.webviewkiosk.utils.authComposable
 fun SetupNavHost(
     navController: NavHostController,
 ) {
+    val settingsScreens: List<Pair<String, @Composable () -> Unit>> = listOf(
+        Screen.Settings.route to { SettingsListScreen(navController) },
+        Screen.SettingsMoreActions.route to { SettingsMoreActionsScreen(navController) },
+        Screen.SettingsWebContent.route to { SettingsWebContentScreen(navController) },
+        Screen.SettingsWebContentFiles.route to { SettingsWebContentFilesScreen(navController) },
+        Screen.SettingsWebBrowsing.route to { SettingsWebBrowsingScreen(navController) },
+        Screen.SettingsWebBrowsingSitePermissions.route to {
+            SettingsWebBrowsingSitePermissionsScreen(navController)
+        },
+        Screen.SettingsWebEngine.route to { SettingsWebEngineScreen(navController) },
+        Screen.SettingsWebLifecycle.route to { SettingsWebLifecycleScreen(navController) },
+        Screen.SettingsAppearance.route to { SettingsAppearanceScreen(navController) },
+        Screen.SettingsDevice.route to { SettingsDeviceScreen(navController) },
+        Screen.SettingsDeviceOwner.route to { SettingsDeviceOwnerScreen(navController) },
+        Screen.SettingsJsScript.route to { SettingsJsScriptsScreen(navController) },
+        Screen.SettingsMqtt.route to { SettingsMqttScreen(navController) },
+        Screen.SettingsMqttConnection.route to { SettingsMqttConnectionScreen(navController) },
+        Screen.SettingsMqttWill.route to { SettingsMqttWillScreen(navController) },
+        Screen.SettingsMqttRestrictions.route to { SettingsMqttRestrictionsScreen(navController) },
+        Screen.SettingsMqttDebug.route to { SettingsMqttDebugScreen(navController) },
+        Screen.SettingsMqttTopics.route to { SettingsMqttTopicsScreen(navController) },
+        Screen.SettingsMqttTopicsPublishEvent.route to {
+            SettingsMqttTopicsPublishEventScreen(navController)
+        },
+        Screen.SettingsMqttTopicsPublishResponse.route to {
+            SettingsMqttTopicsPublishResponseScreen(navController)
+        },
+        Screen.SettingsMqttTopicsSubscribeCommand.route to {
+            SettingsMqttTopicsSubscribeCommandScreen(navController)
+        },
+        Screen.SettingsMqttTopicsSubscribeSettings.route to {
+            SettingsMqttTopicsSubscribeSettingsScreen(navController)
+        },
+        Screen.SettingsMqttTopicsSubscribeRequest.route to {
+            SettingsMqttTopicsSubscribeRequestScreen(navController)
+        },
+        Screen.SettingsAbout.route to { SettingsAboutScreen(navController) }
+    )
+
     NavHost(navController, startDestination = Screen.WebView.route) {
         composable(Screen.WebView.route) {
             WebviewScreen(navController)
@@ -19,79 +58,11 @@ fun SetupNavHost(
         composable(Screen.AdminRestrictionsChanged.route) {
             AdminRestrictionsChangedScreen(navController)
         }
-
         navigation(startDestination = Screen.Settings.route, route = "settings_list") {
-            authComposable(Screen.Settings.route, navController) {
-                SettingsListScreen(navController)
-            }
-            authComposable(Screen.SettingsMoreActions.route, navController) {
-                SettingsMoreActionsScreen(navController)
-            }
-            authComposable(Screen.SettingsWebContent.route, navController) {
-                SettingsWebContentScreen(navController)
-            }
-            authComposable(Screen.SettingsWebContentFiles.route, navController) {
-                SettingsWebContentFilesScreen(navController)
-            }
-            authComposable(Screen.SettingsWebBrowsing.route, navController) {
-                SettingsWebBrowsingScreen(navController)
-            }
-            authComposable(Screen.SettingsWebBrowsingSitePermissions.route, navController) {
-                SettingsWebBrowsingSitePermissionsScreen(navController)
-            }
-            authComposable(Screen.SettingsWebEngine.route, navController) {
-                SettingsWebEngineScreen(navController)
-            }
-            authComposable(Screen.SettingsWebLifecycle.route, navController) {
-                SettingsWebLifecycleScreen(navController)
-            }
-            authComposable(Screen.SettingsAppearance.route, navController) {
-                SettingsAppearanceScreen(navController)
-            }
-            authComposable(Screen.SettingsDevice.route, navController) {
-                SettingsDeviceScreen(navController)
-            }
-            authComposable(Screen.SettingsDeviceOwner.route, navController) {
-                SettingsDeviceOwnerScreen(navController)
-            }
-            authComposable(Screen.SettingsJsScript.route, navController) {
-                SettingsJsScriptsScreen(navController)
-            }
-            authComposable(Screen.SettingsMqtt.route, navController) {
-                SettingsMqttScreen(navController)
-            }
-            authComposable(Screen.SettingsMqttConnection.route, navController) {
-                SettingsMqttConnectionScreen(navController)
-            }
-            authComposable(Screen.SettingsMqttWill.route, navController) {
-                SettingsMqttWillScreen(navController)
-            }
-            authComposable(Screen.SettingsMqttRestrictions.route, navController) {
-                SettingsMqttRestrictionsScreen(navController)
-            }
-            authComposable(Screen.SettingsMqttDebug.route, navController) {
-                SettingsMqttDebugScreen(navController)
-            }
-            authComposable(Screen.SettingsMqttTopics.route, navController) {
-                SettingsMqttTopicsScreen(navController)
-            }
-            authComposable(Screen.SettingsMqttTopicsPublishEvent.route, navController) {
-                SettingsMqttTopicsPublishEventScreen(navController)
-            }
-            authComposable(Screen.SettingsMqttTopicsPublishResponse.route, navController) {
-                SettingsMqttTopicsPublishResponseScreen(navController)
-            }
-            authComposable(Screen.SettingsMqttTopicsSubscribeCommand.route, navController) {
-                SettingsMqttTopicsSubscribeCommandScreen(navController)
-            }
-            authComposable(Screen.SettingsMqttTopicsSubscribeSettings.route, navController) {
-                SettingsMqttTopicsSubscribeSettingsScreen(navController)
-            }
-            authComposable(Screen.SettingsMqttTopicsSubscribeRequest.route, navController) {
-                SettingsMqttTopicsSubscribeRequestScreen(navController)
-            }
-            authComposable(Screen.SettingsAbout.route, navController) {
-                SettingsAboutScreen(navController)
+            for ((route, content) in settingsScreens) {
+                authComposable(route, navController) {
+                    content()
+                }
             }
         }
     }

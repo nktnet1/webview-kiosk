@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -47,16 +48,15 @@ fun AppSearchBar(
             onValueChange = onSearchChange,
             singleLine = true,
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            textStyle = LocalTextStyle.current.copy(
+            textStyle = MaterialTheme.typography.bodyMedium.copy(
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = MaterialTheme.typography.bodySmall.fontSize
             ),
             modifier = Modifier
                 .weight(1f)
                 .height(43.dp),
             decorationBox = { innerTextField ->
-                Box(
-                    contentAlignment = Alignment.CenterStart,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
                         .border(
@@ -64,19 +64,38 @@ fun AppSearchBar(
                             MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                             MaterialTheme.shapes.small
                         )
-                        .padding(horizontal = 12.dp)
+                        .padding(start = 14.dp, end = 8.dp)
                 ) {
-                    if (searchQuery.text.isEmpty()) {
-                        Text(
-                            text = "Search $appCount apps",
-                            style = TextStyle(
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                                fontSize = MaterialTheme.typography.bodySmall.fontSize,
-                                fontStyle = FontStyle.Italic
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.CenterStart
+                    ) {
+                        if (searchQuery.text.isEmpty()) {
+                            Text(
+                                text = "Search $appCount apps",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+                                    fontStyle = FontStyle.Italic
+                                )
                             )
-                        )
+                        }
+                        innerTextField()
                     }
-                    innerTextField()
+
+                    IconButton(
+                        enabled = searchQuery.text.isNotEmpty(),
+                        onClick = { onSearchChange("") },
+                        modifier = Modifier
+                            .size(26.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_clear_24),
+                            contentDescription = "Clear",
+                            modifier = Modifier
+                                .size(24.dp)
+                                .padding(2.dp),
+                            )
+                    }
                 }
             }
         )
