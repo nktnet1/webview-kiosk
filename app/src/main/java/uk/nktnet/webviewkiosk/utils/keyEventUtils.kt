@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Context.ACTIVITY_SERVICE
 import android.view.KeyEvent
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 
 val modifierKeyCodes = setOf(
     KeyEvent.KEYCODE_SHIFT_LEFT,
@@ -17,6 +18,7 @@ val modifierKeyCodes = setOf(
     KeyEvent.KEYCODE_META_LEFT,
     KeyEvent.KEYCODE_META_RIGHT
 )
+
 fun keyEventToShortcutString(event: KeyEvent): String? {
     if (event.action != KeyEvent.ACTION_DOWN) {
         return null
@@ -75,4 +77,11 @@ fun handleBlockVolumeKeys(event: KeyEvent): Boolean {
         KeyEvent.KEYCODE_VOLUME_MUTE -> true
         else -> false
     }
+}
+
+fun handleAlertBuilderLegacyKeyEvent(context: Context, event: KeyEvent): Boolean {
+    UserInteractionStateSingleton.onUserInteraction()
+    val userSettings = UserSettings(context)
+    return (userSettings.blockVolumeKeys && handleBlockVolumeKeys(event))
+        || handleCustomUnlockShortcut(context, event)
 }

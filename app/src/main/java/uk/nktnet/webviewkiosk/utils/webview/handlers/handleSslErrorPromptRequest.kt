@@ -11,7 +11,7 @@ import android.webkit.SslErrorHandler
 import androidx.appcompat.app.AlertDialog
 import android.view.ViewGroup.LayoutParams
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
-import uk.nktnet.webviewkiosk.utils.handleCustomUnlockShortcut
+import uk.nktnet.webviewkiosk.utils.handleAlertBuilderLegacyKeyEvent
 
 @SuppressLint("SetTextI18n")
 fun handleSslErrorPromptRequest(
@@ -99,7 +99,6 @@ fun handleSslErrorPromptRequest(
     }
 
     dialog.setOnKeyListener { _, _, event ->
-        handleCustomUnlockShortcut(context, event)
-        false
+        handleAlertBuilderLegacyKeyEvent(context, event)
     }
 }

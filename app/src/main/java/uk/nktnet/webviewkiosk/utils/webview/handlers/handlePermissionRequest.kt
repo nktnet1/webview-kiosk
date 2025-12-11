@@ -10,7 +10,7 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
-import uk.nktnet.webviewkiosk.utils.handleCustomUnlockShortcut
+import uk.nktnet.webviewkiosk.utils.handleAlertBuilderLegacyKeyEvent
 import uk.nktnet.webviewkiosk.utils.hasPermissionForResource
 
 data class WebPermission(
@@ -142,7 +142,6 @@ fun handlePermissionRequest(
     val dialog = builder.show()
 
     dialog.setOnKeyListener { _, _, event ->
-        handleCustomUnlockShortcut(context, event)
-        false
+        handleAlertBuilderLegacyKeyEvent(context, event)
     }
 }

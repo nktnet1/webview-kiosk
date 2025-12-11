@@ -10,7 +10,7 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
-import uk.nktnet.webviewkiosk.utils.handleCustomUnlockShortcut
+import uk.nktnet.webviewkiosk.utils.handleAlertBuilderLegacyKeyEvent
 import uk.nktnet.webviewkiosk.utils.hasPermissionForResource
 
 @SuppressLint("SetTextI18n")
@@ -26,7 +26,7 @@ fun handleGeolocationRequest(
         && hasPermissionForResource(context, Constants.GEOLOCATION_RESOURCE)
     )
     if (!isAllowed) {
-        AlertDialog.Builder(context)
+        val dialog = AlertDialog.Builder(context)
             .setTitle("Permission blocked")
             .setMessage(
                 """
@@ -38,6 +38,9 @@ fun handleGeolocationRequest(
             )
             .setPositiveButton("Close") { _, _ -> callback?.invoke(origin, false, false) }
             .show()
+        dialog.setOnKeyListener { _, _, event ->
+            handleAlertBuilderLegacyKeyEvent(context, event)
+        }
         return
     }
 
@@ -81,7 +84,6 @@ fun handleGeolocationRequest(
         .show()
 
     dialog.setOnKeyListener { _, _, event ->
-        handleCustomUnlockShortcut(context, event)
-        false
+        handleAlertBuilderLegacyKeyEvent(context, event)
     }
 }
