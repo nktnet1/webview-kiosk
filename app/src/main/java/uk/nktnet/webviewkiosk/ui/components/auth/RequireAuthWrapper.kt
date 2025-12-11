@@ -55,7 +55,7 @@ private fun RequireAuthentication(
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) {
+            if (event == Lifecycle.Event.ON_START) {
                 if (!AuthenticationManager.checkAuthAndRefreshSession()) {
                     showAuthPrompt()
                 }
