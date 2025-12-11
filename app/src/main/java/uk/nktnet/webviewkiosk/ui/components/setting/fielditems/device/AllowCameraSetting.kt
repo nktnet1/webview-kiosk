@@ -9,8 +9,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -27,7 +29,7 @@ fun AllowCameraSetting() {
     ) = rememberPermissionState(Manifest.permission.CAMERA)
 
     BooleanSettingFieldItem(
-        label = "Allow Camera",
+        label = stringResource(id = R.string.device_allow_camera_title),
         infoText = """
             Set to true to give WebView access to your device's camera.
 

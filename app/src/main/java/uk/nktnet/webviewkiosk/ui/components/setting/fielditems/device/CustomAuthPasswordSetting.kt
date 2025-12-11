@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -17,7 +19,7 @@ fun CustomAuthPasswordSetting() {
     val maxCharacters = 128
 
     TextSettingFieldItem(
-        label = "Custom Auth Password",
+        label = stringResource(id = R.string.device_custom_auth_password_title),
         infoText = """
             Specify a custom password to protect your settings or when unlocking from
             the kiosk state.
