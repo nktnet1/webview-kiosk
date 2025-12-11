@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -14,7 +16,7 @@ fun DimScreenOnInactivitySecondsSetting() {
     val userSettings = remember { UserSettings(context) }
 
     NumberSettingFieldItem(
-        label = "Dim Screen on Inactivity (seconds)",
+        label = stringResource(id = R.string.web_lifecycle_dim_screen_on_inactivity_seconds_title),
         infoText = """
             Number of seconds of inactivity before the screen is dimmed.
 

@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -14,7 +16,7 @@ fun RefreshOnLoadingErrorIntervalSecondsSetting() {
     val userSettings = remember { UserSettings(context) }
 
     NumberSettingFieldItem(
-        label = "Refresh on Loading Error Interval (seconds)",
+        label = stringResource(id = R.string.web_lifecycle_refresh_on_loading_error_interval_seconds_title),
         infoText = """
             Interval in seconds between automatic refresh attempts when a page fails
             to load. This usually indicate the inability to connect to the server,
