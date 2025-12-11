@@ -67,3 +67,12 @@ fun handleCustomUnlockShortcut(
     }
     return shouldUnlock
 }
+
+fun handleBlockVolumeKeys(event: KeyEvent): Boolean {
+    return when (event.keyCode) {
+        KeyEvent.KEYCODE_VOLUME_UP,
+        KeyEvent.KEYCODE_VOLUME_DOWN,
+        KeyEvent.KEYCODE_VOLUME_MUTE -> true
+        else -> false
+    }
+}

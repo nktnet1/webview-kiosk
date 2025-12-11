@@ -452,6 +452,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Device.PREVENT_SCREEN_CAPTURE,
         false
     )
+    var blockVolumeKeys by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.BLOCK_VOLUME_KEYS,
+        false
+    )
 
     var lockTaskFeatureHome by booleanPref(
         getRestrictions,
@@ -612,6 +618,7 @@ class UserSettings(val context: Context) {
             // put(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD, customAuthPassword)
             put(UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT, unlockAuthRequirement.name)
             put(UserSettingsKeys.Device.PREVENT_SCREEN_CAPTURE, preventScreenCapture)
+            put(UserSettingsKeys.Device.BLOCK_VOLUME_KEYS, blockVolumeKeys)
 
             put(UserSettingsKeys.Device.Owner.LockTaskFeature.HOME, lockTaskFeatureHome)
             put(UserSettingsKeys.Device.Owner.LockTaskFeature.OVERVIEW, lockTaskFeatureOverview)
@@ -733,6 +740,7 @@ class UserSettings(val context: Context) {
                 json.optString(UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT, unlockAuthRequirement.name)
             )
             preventScreenCapture = json.optBoolean(UserSettingsKeys.Device.PREVENT_SCREEN_CAPTURE, preventScreenCapture)
+            blockVolumeKeys = json.optBoolean(UserSettingsKeys.Device.BLOCK_VOLUME_KEYS, blockVolumeKeys)
 
             lockTaskFeatureHome = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.HOME, lockTaskFeatureHome)
             lockTaskFeatureOverview = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.OVERVIEW, lockTaskFeatureOverview)

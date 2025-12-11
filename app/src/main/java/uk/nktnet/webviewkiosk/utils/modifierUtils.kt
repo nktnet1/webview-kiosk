@@ -10,10 +10,11 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.pointerInteropFilter
+import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 
 fun Modifier.handleUserTouchEvent(): Modifier {
-    return this.pointerInteropFilter { motionEvent ->
+    return this.pointerInteropFilter { _ ->
         UserInteractionStateSingleton.onUserInteraction()
         false
     }
@@ -22,6 +23,7 @@ fun Modifier.handleUserTouchEvent(): Modifier {
 @Composable
 fun Modifier.handleUserKeyEvent(context: Context, isVisible: Boolean): Modifier {
     val focusRequester = remember { FocusRequester() }
+    val userSettings = UserSettings(context)
 
     LaunchedEffect(isVisible) {
         if (isVisible) {
@@ -33,9 +35,14 @@ fun Modifier.handleUserKeyEvent(context: Context, isVisible: Boolean): Modifier 
         .focusRequester(focusRequester)
         .focusable()
         .onPreviewKeyEvent { event ->
-            handleCustomUnlockShortcut(
-                context,
-                event.nativeKeyEvent
+            (
+                userSettings.blockVolumeKeys
+                && handleBlockVolumeKeys(event.nativeKeyEvent)
+            ) || (
+                handleCustomUnlockShortcut(
+                    context,
+                    event.nativeKeyEvent
+                )
             )
         }
 }

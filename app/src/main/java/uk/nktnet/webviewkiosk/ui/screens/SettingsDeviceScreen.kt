@@ -16,6 +16,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowCamer
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowLocationSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowMicrophoneSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.BackButtonHoldActionSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.BlockVolumeKeysSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.BrightnessSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.CustomAuthPasswordSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.CustomUnlockShortcutSetting
@@ -51,6 +52,7 @@ fun SettingsDeviceScreen(navController: NavController) {
             CustomAuthPasswordSetting()
             UnlockAuthRequirementSetting()
             PreventScreenCaptureSetting()
+            BlockVolumeKeysSetting()
 
             Spacer(modifier = Modifier.height(12.dp))
 
