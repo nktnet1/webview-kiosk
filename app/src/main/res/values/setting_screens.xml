@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">Settings</string>
+
+    <string name="settings_web_content_title">Web Content</string>
+    <string name="settings_web_content_description">Home URL, blacklist, whitelist, bookmark, files</string>
+
+    <string name="settings_web_browsing_title">Web Browsing</string>
+    <string name="settings_web_browsing_description">Refresh, navigation, history, bookmark, search provider</string>
+
+    <string name="settings_web_engine_title">Web Engine</string>
+    <string name="settings_web_engine_description">JavaScript, DOM storage, cookies, cache, user agent, zoom</string>
+
+    <string name="settings_web_lifecycle_title">Web Lifecycle</string>
+    <string name="settings_web_lifecycle_description">Lock on launch, reset on launch, reset on inactivity</string>
+
+    <string name="settings_appearance_title">Appearance</string>
+    <string name="settings_appearance_description">Theme, address bar, insets, immersive, blocked message</string>
+
+    <string name="settings_device_title">Device</string>
+    <string name="settings_device_description">Timeout, rotation, camera, microphone, location, unlock shortcut</string>
+
+    <string name="settings_js_scripts_title">JS Scripts</string>
+    <string name="settings_js_scripts_description">Apply theme, desktop viewport, custom scripts</string>
+
+    <string name="settings_about_title">About</string>
+    <string name="settings_about_description">Package name, app version, debug build, installer</string>
+</resources>
