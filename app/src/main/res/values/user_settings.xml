@@ -51,7 +51,7 @@
     <string name="web_browsing_allow_link_long_press_context_menu_title">Allow Link Long Press Context Menu</string>
     <string name="web_browsing_allow_link_long_press_context_menu_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
-    <string name="web_browsing_override_url_loading_block_action_title">Blacklist URL Action</string>
+    <string name="web_browsing_override_url_loading_block_action_title">Override URL Loading Block Action</string>
     <string name="web_browsing_override_url_loading_block_action_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_address_bar_actions_title">Address Bar Actions</string>
@@ -100,7 +100,7 @@
     <string name="web_engine_support_zoom_title">Support Zoom</string>
     <string name="web_engine_support_zoom_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
-    <string name="web_engine_built_in_zoom_controls_title">Built In Zoom Control</string>
+    <string name="web_engine_built_in_zoom_controls_title">Built-in Zoom Controls</string>
     <string name="web_engine_built_in_zoom_controls_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_display_zoom_controls_title">Display Zoom Controls</string>
