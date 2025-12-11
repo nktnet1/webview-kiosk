@@ -17,6 +17,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
@@ -33,7 +35,7 @@ fun UserAgentSetting() {
     val restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE)
 
     TextSettingFieldItem(
-        label = "User Agent",
+        label = stringResource(id = R.string.web_engine_user_agent_title),
         infoText = """
             The User Agent string controls how the web engine identifies itself
             to websites. Some sites may behave differently depending on this value.
