@@ -215,7 +215,7 @@
     <string name="js_scripts_apply_app_theme_title">Apply App Theme</string>
     <string name="js_scripts_apply_app_theme_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
-    <string name="js_scripts_apply_desktop_viewport_width_title">Apply Desktop Viewport Width</string>
+    <string name="js_scripts_apply_desktop_viewport_width_title">Apply Desktop Viewport Width (px)</string>
     <string name="js_scripts_apply_desktop_viewport_width_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
     <string name="js_scripts_enable_battery_api_title">Enable Battery API</string>
@@ -224,10 +224,10 @@
     <string name="js_scripts_enable_brightness_api_title">Enable Brightness API</string>
     <string name="js_scripts_enable_brightness_api_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
-    <string name="js_scripts_custom_script_on_page_start_title">Custom Script on Page Start</string>
+    <string name="js_scripts_custom_script_on_page_start_title">On Page Start (custom)</string>
     <string name="js_scripts_custom_script_on_page_start_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
-    <string name="js_scripts_custom_script_on_page_finish_title">Custom Script on Page Finish</string>
+    <string name="js_scripts_custom_script_on_page_finish_title">On Page Finish (custom)</string>
     <string name="js_scripts_custom_script_on_page_finish_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
 </resources>

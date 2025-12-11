@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -14,7 +16,7 @@ fun ApplyAppThemeSetting() {
     val userSettings = remember { UserSettings(context) }
 
     BooleanSettingFieldItem(
-        label = "Apply App Theme",
+        label = stringResource(id = R.string.js_scripts_apply_app_theme_title),
         infoText = """
             This script injects JavaScript code that will set prefers-color-scheme
             according to your selected theme in ${Constants.APP_NAME} Appearance settings,
