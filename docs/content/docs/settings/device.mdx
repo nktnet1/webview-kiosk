@@ -134,7 +134,7 @@ unpinning, which is outside the control of {APP_NAME}.
 
 **Default:** Default
 
-## 11. Prevent Screen Capture
+## 11. Block Screen Capture
 
 Prevent screenshots, screen recording and content previews in Recent Apps.
 This is done by setting the FLAG_SECURE window flag.
@@ -144,11 +144,21 @@ For more information, see
 
 **Default:** false
 
-## 12. Device Owner
+## 12. Block Volume Keys
+
+Disable the volume control buttons, specifically:
+
+- [KEYCODE_VOLUME_UP](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_VOLUME_UP)
+- [KEYCODE_VOLUME_DOWN](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_VOLUME_DOWN)
+- [KEYCODE_VOLUME_MUTE](https://developer.android.com/reference/android/view/KeyEvent#KEYCODE_VOLUME_MUTE)
+
+**Default:** false
+
+## 13. Device Owner
 
 For more information about `Device Owner`, see the [Security](/docs/security) documentation.
 
-### 12.1. Lock Task Features
+### 13.1. Lock Task Features
 
 {APP_NAME} The settings below are extracted from the official documentations:
 - [Lock Task Mode -> Customise UI](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode#customize-ui)
@@ -266,7 +276,7 @@ For more information about `Device Owner`, see the [Security](/docs/security) do
   </tbody>
 </table>
 
-### 12.2. Dhizuku Request Permission on Launch
+### 13.2. Dhizuku Request Permission on Launch
 
 When enabled, if [Dhizuku](https://github.com/iamr0s/Dhizuku) is installed and
 has not granted {APP_NAME} access through the

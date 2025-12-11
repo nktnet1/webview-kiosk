@@ -205,8 +205,11 @@
     <string name="device_unlock_auth_requirement_title">Unlock Auth Requirement</string>
     <string name="device_unlock_auth_requirement_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
-    <string name="device_prevent_screen_capture_title">Prevent Screen Capture</string>
-    <string name="device_prevent_screen_capture_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_block_screen_capture_title">Block Screen Capture</string>
+    <string name="device_block_screen_capture_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+
+    <string name="device_block_volume_keys_title">Block Volume Keys</string>
+    <string name="device_block_volume_keys_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <!-- JS Scripts -->
     <string name="js_scripts_apply_app_theme_title">Apply App Theme</string>

@@ -61,9 +61,9 @@ fun setDeviceRotation(context: Context, rotation: DeviceRotationOption) {
     }
 }
 
-fun applyPreventScreenCapture(context: Context, shouldPrevent: Boolean) {
+fun applyBlockScreenCapture(context: Context, shouldBlock: Boolean) {
     if (context is Activity) {
-        if (shouldPrevent) {
+        if (shouldBlock) {
             context.window.setFlags(
                 WindowManager.LayoutParams.FLAG_SECURE,
                 WindowManager.LayoutParams.FLAG_SECURE
@@ -80,7 +80,7 @@ fun updateDeviceSettings(context: Context) {
     ThemeStateSingleton.setTheme(userSettings.theme)
     setDeviceRotation(context, userSettings.rotation)
     setWindowBrightness(context, userSettings.brightness)
-    applyPreventScreenCapture(context, userSettings.preventScreenCapture)
+    applyBlockScreenCapture(context, userSettings.blockScreenCapture)
     applyLockTaskFeatures(context)
 }
 
