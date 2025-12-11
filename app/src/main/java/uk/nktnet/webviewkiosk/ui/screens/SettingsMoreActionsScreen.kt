@@ -13,8 +13,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.managers.ToastManager
@@ -52,7 +54,10 @@ fun SettingsMoreActionsScreen(navController: NavController) {
             .windowInsetsPadding(WindowInsets.safeContent)
             .padding(horizontal = 16.dp)
     ) {
-        SettingLabel(navController = navController, label = "More Actions")
+        SettingLabel(
+            navController = navController,
+            label = stringResource(R.string.settings_more_actions_title)
+        )
         SettingDivider()
         Column(
             modifier = Modifier

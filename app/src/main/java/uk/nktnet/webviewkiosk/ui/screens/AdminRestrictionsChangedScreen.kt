@@ -6,12 +6,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.delay
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 
 @Composable
@@ -43,7 +45,7 @@ fun AdminRestrictionsChangedScreen(
         ) {
             Spacer(modifier = Modifier.height(spacerHeight.dp))
             Text(
-                text = "New Configurations",
+                text = stringResource(R.string.admin_restrictions_changed_title),
                 style = MaterialTheme.typography.headlineMedium,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onBackground
