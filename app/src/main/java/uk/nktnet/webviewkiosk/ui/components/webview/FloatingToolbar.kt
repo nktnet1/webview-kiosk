@@ -23,6 +23,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
@@ -190,7 +191,9 @@ fun FloatingToolbar(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.baseline_build_24),
-                    contentDescription = "Menu",
+                    contentDescription = stringResource(
+                        id = R.string.floating_toolbar_icon_content_description
+                    ),
                     tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(36.dp)
                 )
@@ -204,7 +207,7 @@ fun FloatingToolbar(
                     .handleUserKeyEvent(context, menuExpanded)
             ) {
                 MenuItem(
-                    "Home",
+                    stringResource(id = R.string.floating_toolbar_menu_home),
                     R.drawable.baseline_home_24,
                     tintColor
                 ) {
@@ -213,7 +216,7 @@ fun FloatingToolbar(
                 }
                 if (isLocked) {
                     MenuItem(
-                        "Unlock",
+                        stringResource(id = R.string.floating_toolbar_menu_unlock),
                         R.drawable.baseline_lock_open_24,
                         tintColor
                     ) {
@@ -222,7 +225,7 @@ fun FloatingToolbar(
                     }
                 } else {
                     MenuItem(
-                        "Lock",
+                        stringResource(id = R.string.floating_toolbar_menu_lock),
                         R.drawable.baseline_lock_24,
                         tintColor
                     ) {
@@ -230,7 +233,7 @@ fun FloatingToolbar(
                         onLockClick()
                     }
                     MenuItem(
-                        "Settings",
+                        stringResource(id = R.string.floating_toolbar_menu_settings),
                         R.drawable.baseline_settings_24,
                         tintColor
                     ) {
