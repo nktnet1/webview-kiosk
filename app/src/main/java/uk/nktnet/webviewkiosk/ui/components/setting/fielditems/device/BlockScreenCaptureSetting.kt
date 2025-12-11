@@ -6,7 +6,7 @@ import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
-import uk.nktnet.webviewkiosk.utils.applyPreventScreenCapture
+import uk.nktnet.webviewkiosk.utils.applyBlockScreenCapture
 
 @Composable
 fun BlockScreenCaptureSetting() {
@@ -14,7 +14,7 @@ fun BlockScreenCaptureSetting() {
     val userSettings = remember { UserSettings(context) }
 
     BooleanSettingFieldItem(
-        label = "Prevent Screen Capture",
+        label = "Block Screen Capture",
         infoText = """
             Prevent screenshots, screen recording and content previews in Recent Apps.
             This is done by setting the FLAG_SECURE window flag.
@@ -23,7 +23,7 @@ fun BlockScreenCaptureSetting() {
         restricted = userSettings.isRestricted(UserSettingsKeys.Device.BLOCK_SCREEN_CAPTURE),
         onSave = {
             userSettings.blockScreenCapture = it
-            applyPreventScreenCapture(context, it)
+            applyBlockScreenCapture(context, it)
         }
     )
 }
