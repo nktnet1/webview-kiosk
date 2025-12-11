@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="about_open_app_info">Open App Info</string>
+    <string name="about_section_app">App</string>
+    <string name="about_section_device">Device</string>
+
+    <!-- App Info Labels -->
+    <string name="about_app_name">Name</string>
+    <string name="about_app_package">Package</string>
+    <string name="about_app_version">Version</string>
+    <string name="about_app_min_sdk">Min SDK</string>
+    <string name="about_app_target_sdk">Target SDK</string>
+    <string name="about_app_debug_build">Debug Build</string>
+    <string name="about_app_installer">Installer</string>
+    <string name="about_app_device_owner">Device Owner</string>
+    <string name="about_app_lock_task_permitted">Lock Task Permitted</string>
+    <string name="about_app_dhizuku_permission_granted">Dhizuku Permission Granted</string>
+    <string name="about_app_instance_id">Instance ID</string>
+
+    <!-- Device Info Labels -->
+    <string name="about_device_android_version">Android Version</string>
+    <string name="about_device_webview_version">WebView Version</string>
+    <string name="about_device_screen_display">Screen / Display</string>
+    <string name="about_device_managed_profile">Managed Profile</string>
+    <string name="about_device_time_zone">Time Zone</string>
+    <string name="about_device_locale">Locale</string>
+    <string name="about_device_total_ram">Total RAM</string>
+    <string name="about_device_total_storage">Total Storage</string>
+    <string name="about_device_model">Model</string>
+    <string name="about_device_manufacturer">Manufacturer</string>
+    <string name="about_device_brand">Brand</string>
+    <string name="about_device_device">Device</string>
+    <string name="about_device_product">Product</string>
+    <string name="about_device_hardware">Hardware</string>
+    <string name="about_device_board">Board</string>
+    <string name="about_device_bootloader">Bootloader</string>
+    <string name="about_device_security_patch">Security Patch</string>
+    <string name="about_device_supported_abis">Supported ABIs</string>
+    <string name="about_device_supported_32bit_abis">Supported 32-bit ABIs</string>
+    <string name="about_device_supported_64bit_abis">Supported 64-bit ABIs</string>
+    <string name="about_device_build_fingerprint">Build Fingerprint</string>
+
+</resources>
