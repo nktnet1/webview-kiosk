@@ -84,7 +84,7 @@ object UserSettingsKeys {
         const val CUSTOM_UNLOCK_SHORTCUT = "device.custom_unlock_shortcut"
         const val CUSTOM_AUTH_PASSWORD = "device.custom_auth_password"
         const val UNLOCK_AUTH_REQUIREMENT = "device.unlock_auth_requirement"
-        const val PREVENT_SCREEN_CAPTURE = "device.prevent_screen_capture"
+        const val BLOCK_SCREEN_CAPTURE = "device.block_screen_capture"
         const val BLOCK_VOLUME_KEYS = "device.block_volume_keys"
 
         object Owner {

@@ -442,10 +442,10 @@
         android:description="@string/device_unlock_auth_requirement_description"
     />
     <restriction
-        android:key="device.prevent_screen_capture"
+        android:key="device.block_screen_capture"
         android:restrictionType="bool"
-        android:title="@string/device_prevent_screen_capture_title"
-        android:description="@string/device_prevent_screen_capture_description"
+        android:title="@string/device_block_screen_capture_title"
+        android:description="@string/device_block_screen_capture_description"
     />
     <restriction
         android:key="device.block_volume_keys"
