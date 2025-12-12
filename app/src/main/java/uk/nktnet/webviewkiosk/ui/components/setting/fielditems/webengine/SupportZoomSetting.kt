@@ -2,6 +2,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -12,7 +14,7 @@ fun SupportZoomSetting() {
     val userSettings = UserSettings(context)
 
     BooleanSettingFieldItem(
-        label = "Support Zoom",
+        label = stringResource(id = R.string.web_engine_support_zoom_title),
         infoText = """
             Sets whether the WebView should support zooming using its on-screen
             zoom controls and gestures.

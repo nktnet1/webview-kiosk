@@ -2,6 +2,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -12,7 +14,7 @@ fun BuiltInZoomControlsSetting() {
     val userSettings = UserSettings(context)
 
     BooleanSettingFieldItem(
-        label = "Built In Zoom Controls",
+        label = stringResource(id = R.string.web_engine_built_in_zoom_controls_title),
         infoText = """
            Sets whether the WebView should use its built-in zoom mechanisms.
 

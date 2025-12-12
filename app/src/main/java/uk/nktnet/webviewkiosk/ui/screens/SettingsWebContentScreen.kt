@@ -7,8 +7,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
@@ -26,7 +28,10 @@ fun SettingsWebContentScreen(navController: NavController) {
             .windowInsetsPadding(WindowInsets.safeContent)
             .padding(horizontal = 16.dp)
     ) {
-        SettingLabel(navController = navController, label = "Web Content")
+        SettingLabel(
+            navController = navController,
+            label = stringResource(R.string.settings_web_content_title)
+        )
         SettingDivider()
 
         Column(

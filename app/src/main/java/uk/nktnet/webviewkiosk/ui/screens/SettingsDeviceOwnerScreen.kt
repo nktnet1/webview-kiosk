@@ -19,10 +19,12 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.rosan.dhizuku.shared.DhizukuVariables
 import kotlinx.coroutines.delay
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
@@ -82,7 +84,10 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
             .windowInsetsPadding(WindowInsets.safeContent)
             .padding(horizontal = 16.dp)
     ) {
-        SettingLabel(navController = navController, label = "Device Owner")
+        SettingLabel(
+            navController = navController,
+            label = stringResource(R.string.settings_device_owner_title)
+        )
         SettingDivider()
 
         Column(

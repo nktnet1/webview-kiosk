@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.AddressBarSizeOption
@@ -14,7 +16,7 @@ fun AddressBarSizeSetting() {
     val userSettings = remember { UserSettings(context) }
 
     DropdownSettingFieldItem(
-        label = "Address Bar Size",
+        label = stringResource(id = R.string.appearance_address_bar_size_title),
         infoText = """
             Customise the size of the address bar, which will determine the
             height, font size, padding and icon size.

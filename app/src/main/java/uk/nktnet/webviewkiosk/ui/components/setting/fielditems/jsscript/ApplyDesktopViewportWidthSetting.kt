@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -14,7 +16,7 @@ fun ApplyDesktopViewportWidthSetting() {
     val userSettings = remember { UserSettings(context) }
 
     NumberSettingFieldItem(
-        label = "Apply Desktop Viewport Width (px)",
+        label = stringResource(id = R.string.js_scripts_apply_desktop_viewport_width_title),
         infoText = """
             This script injects JavaScript code that sets
             document.meta.content to 'width=YOUR_WIDTH_VALUE',

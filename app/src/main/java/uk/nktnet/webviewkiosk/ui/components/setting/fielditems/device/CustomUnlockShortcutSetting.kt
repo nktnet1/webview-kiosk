@@ -23,6 +23,7 @@ import android.view.KeyEvent
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
@@ -75,7 +76,7 @@ fun CustomUnlockShortcutSetting() {
     }
 
     CustomSettingFieldItem(
-        label = "Custom Unlock Shortcut",
+        label = stringResource(id = R.string.device_custom_unlock_shortcut_title),
         infoText = """
             Provide a custom keyboard shortcut using a modifier key (CTRL/SHIFT/ALT/META)
             in combination with another standard key to unlock/unpin the application.

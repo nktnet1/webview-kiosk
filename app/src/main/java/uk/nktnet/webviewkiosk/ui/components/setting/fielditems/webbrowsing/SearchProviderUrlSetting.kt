@@ -24,6 +24,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -48,7 +50,7 @@ fun SearchProviderUrlSetting() {
     )
 
     TextSettingFieldItem(
-        label = "Search Provider URL",
+        label = stringResource(id = R.string.web_browsing_search_provider_url_title),
         infoText = """
             The URL used for search queries in the address bar.
 

@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.states.KeepScreenOnStateSingleton
@@ -14,7 +16,7 @@ fun KeepScreenOnSetting() {
     val userSettings = remember { UserSettings(context) }
 
     BooleanSettingFieldItem(
-        label = "Keep Screen On",
+        label = stringResource(id = R.string.device_keep_screen_on_title),
         infoText = "Enable this option to keep your device awake (no screen timeout).",
         initialValue = userSettings.keepScreenOn,
         restricted = userSettings.isRestricted(UserSettingsKeys.Device.KEEP_SCREEN_ON),

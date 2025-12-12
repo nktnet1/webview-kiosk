@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
@@ -15,7 +17,7 @@ fun KioskControlPanelRegionSetting() {
     val userSettings = remember { UserSettings(context) }
 
     DropdownSettingFieldItem(
-        label = "Kiosk Control Panel Region",
+        label = stringResource(id = R.string.web_browsing_kiosk_control_panel_region_title),
         infoText = """
             Controls which part of the screen can be multi-tapped 10 times in quick
             succession to show the Kiosk Control Panel.
