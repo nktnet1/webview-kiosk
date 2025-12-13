@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk
+package com.nktnet.webview_kiosk
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -23,30 +23,30 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.managers.AuthenticationManager
-import uk.nktnet.webviewkiosk.config.*
-import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
-import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.managers.BackButtonManager
-import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
-import uk.nktnet.webviewkiosk.ui.screens.SetupNavHost
-import uk.nktnet.webviewkiosk.utils.handleMainIntent
-import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
-import uk.nktnet.webviewkiosk.states.LockStateSingleton
-import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
-import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
-import uk.nktnet.webviewkiosk.ui.components.auth.CustomAuthPasswordDialog
-import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
-import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
-import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
-import uk.nktnet.webviewkiosk.utils.getLocalUrl
-import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
-import uk.nktnet.webviewkiosk.utils.handleKeyEvent
-import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
-import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
-import uk.nktnet.webviewkiosk.utils.tryLockTask
-import uk.nktnet.webviewkiosk.utils.tryUnlockTask
-import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
+import com.nktnet.webview_kiosk.managers.AuthenticationManager
+import com.nktnet.webview_kiosk.config.*
+import com.nktnet.webview_kiosk.config.data.DeviceOwnerMode
+import com.nktnet.webview_kiosk.config.option.ThemeOption
+import com.nktnet.webview_kiosk.managers.BackButtonManager
+import com.nktnet.webview_kiosk.managers.DeviceOwnerManager
+import com.nktnet.webview_kiosk.ui.screens.SetupNavHost
+import com.nktnet.webview_kiosk.utils.handleMainIntent
+import com.nktnet.webview_kiosk.states.UserInteractionStateSingleton
+import com.nktnet.webview_kiosk.states.LockStateSingleton
+import com.nktnet.webview_kiosk.states.ThemeStateSingleton
+import com.nktnet.webview_kiosk.states.WaitingForUnlockStateSingleton
+import com.nktnet.webview_kiosk.ui.components.auth.CustomAuthPasswordDialog
+import com.nktnet.webview_kiosk.ui.components.webview.KeepScreenOnOption
+import com.nktnet.webview_kiosk.ui.placeholders.UploadFileProgress
+import com.nktnet.webview_kiosk.ui.theme.WebviewKioskTheme
+import com.nktnet.webview_kiosk.utils.getLocalUrl
+import com.nktnet.webview_kiosk.utils.getWebContentFilesDir
+import com.nktnet.webview_kiosk.utils.handleKeyEvent
+import com.nktnet.webview_kiosk.utils.navigateToWebViewScreen
+import com.nktnet.webview_kiosk.utils.setupLockTaskPackage
+import com.nktnet.webview_kiosk.utils.tryLockTask
+import com.nktnet.webview_kiosk.utils.tryUnlockTask
+import com.nktnet.webview_kiosk.utils.updateDeviceSettings
 
 class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavHostController

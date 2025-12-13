@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device
+package com.nktnet.webview_kiosk.ui.components.setting.fielditems.device
 
 import android.content.Context
 import androidx.compose.foundation.background
@@ -26,13 +26,13 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.managers.ToastManager
-import uk.nktnet.webviewkiosk.ui.components.setting.fields.CustomSettingFieldItem
-import uk.nktnet.webviewkiosk.utils.keyEventToShortcutString
-import uk.nktnet.webviewkiosk.utils.modifierKeyCodes
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.UserSettingsKeys
+import com.nktnet.webview_kiosk.managers.ToastManager
+import com.nktnet.webview_kiosk.ui.components.setting.fields.CustomSettingFieldItem
+import com.nktnet.webview_kiosk.utils.keyEventToShortcutString
+import com.nktnet.webview_kiosk.utils.modifierKeyCodes
 
 fun handleUnlockShortcutKeyEvent(
     context: Context,

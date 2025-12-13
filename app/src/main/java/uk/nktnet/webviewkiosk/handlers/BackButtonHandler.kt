@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.handlers
+package com.nktnet.webview_kiosk.handlers
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -10,11 +10,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
-import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
-import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.option.BackButtonHoldActionOption
+import com.nktnet.webview_kiosk.states.BackButtonStateSingleton
+import com.nktnet.webview_kiosk.utils.webview.WebViewNavigation
 
 @Composable
 fun BackPressHandler(

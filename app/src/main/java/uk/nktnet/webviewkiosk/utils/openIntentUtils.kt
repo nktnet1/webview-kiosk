@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import android.content.ComponentName
 import android.content.Context
@@ -7,7 +7,7 @@ import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.annotation.RequiresApi
-import uk.nktnet.webviewkiosk.managers.ToastManager
+import com.nktnet.webview_kiosk.managers.ToastManager
 
 private fun safeStartActivity(context: Context, intent: Intent) {
     if (intent.resolveActivity(context.packageManager) != null) {

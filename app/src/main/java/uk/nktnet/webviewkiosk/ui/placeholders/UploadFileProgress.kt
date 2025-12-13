@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.placeholders
+package com.nktnet.webview_kiosk.ui.placeholders
 
 import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
@@ -21,8 +21,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import uk.nktnet.webviewkiosk.managers.ToastManager
-import uk.nktnet.webviewkiosk.utils.saveContentIntentToFile
+import com.nktnet.webview_kiosk.managers.ToastManager
+import com.nktnet.webview_kiosk.utils.saveContentIntentToFile
 import java.io.File
 
 @Composable

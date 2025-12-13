@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.dialog
+package com.nktnet.webview_kiosk.ui.components.setting.dialog
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -7,11 +7,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
-import uk.nktnet.webviewkiosk.config.data.LaunchableAppInfo
-import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
-import uk.nktnet.webviewkiosk.managers.ToastManager
-import uk.nktnet.webviewkiosk.ui.components.apps.AppIcon
-import uk.nktnet.webviewkiosk.utils.openPackage
+import com.nktnet.webview_kiosk.config.data.LaunchableAppInfo
+import com.nktnet.webview_kiosk.managers.DeviceOwnerManager
+import com.nktnet.webview_kiosk.managers.ToastManager
+import com.nktnet.webview_kiosk.ui.components.apps.AppIcon
+import com.nktnet.webview_kiosk.utils.openPackage
 
 @Composable
 fun AppLauncherDialog(

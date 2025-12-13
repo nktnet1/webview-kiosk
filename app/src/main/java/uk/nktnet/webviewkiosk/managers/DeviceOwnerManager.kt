@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.managers
+package com.nktnet.webview_kiosk.managers
 
 import android.annotation.SuppressLint
 import android.app.admin.DeviceAdminInfo
@@ -22,12 +22,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
-import uk.nktnet.webviewkiosk.config.data.AdminAppInfo
-import uk.nktnet.webviewkiosk.config.data.AppInfo
-import uk.nktnet.webviewkiosk.config.data.AppLoadState
-import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
-import uk.nktnet.webviewkiosk.config.data.LaunchableAppInfo
+import com.nktnet.webview_kiosk.WebviewKioskAdminReceiver
+import com.nktnet.webview_kiosk.config.data.AdminAppInfo
+import com.nktnet.webview_kiosk.config.data.AppInfo
+import com.nktnet.webview_kiosk.config.data.AppLoadState
+import com.nktnet.webview_kiosk.config.data.DeviceOwnerMode
+import com.nktnet.webview_kiosk.config.data.LaunchableAppInfo
 
 object DeviceOwnerManager {
     lateinit var DPM: DevicePolicyManager

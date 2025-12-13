@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils.webview.handlers
+package com.nktnet.webview_kiosk.utils.webview.handlers
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -10,8 +10,8 @@ import android.widget.TextView
 import android.webkit.SslErrorHandler
 import androidx.appcompat.app.AlertDialog
 import android.view.ViewGroup.LayoutParams
-import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
-import uk.nktnet.webviewkiosk.utils.handleKeyEvent
+import com.nktnet.webview_kiosk.states.UserInteractionStateSingleton
+import com.nktnet.webview_kiosk.utils.handleKeyEvent
 
 @SuppressLint("SetTextI18n")
 fun handleSslErrorPromptRequest(

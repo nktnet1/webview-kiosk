@@ -1,15 +1,15 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing
+package com.nktnet.webview_kiosk.ui.components.setting.fielditems.webbrowsing
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
-import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldItem
-import uk.nktnet.webviewkiosk.utils.canDisableKioskControlPanelRegion
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.UserSettingsKeys
+import com.nktnet.webview_kiosk.config.option.KioskControlPanelRegionOption
+import com.nktnet.webview_kiosk.ui.components.setting.fields.DropdownSettingFieldItem
+import com.nktnet.webview_kiosk.utils.canDisableKioskControlPanelRegion
 
 @Composable
 fun KioskControlPanelRegionSetting() {

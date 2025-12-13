@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config.option
+package com.nktnet.webview_kiosk.config.option
 
 enum class OverrideUrlLoadingBlockActionOption(val label: String) {
     SHOW_BLOCK_PAGE("Show Block Page"),

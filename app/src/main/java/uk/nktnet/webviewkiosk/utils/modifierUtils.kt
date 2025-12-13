@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import android.content.Context
 import androidx.compose.foundation.focusable
@@ -10,7 +10,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.pointerInteropFilter
-import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
+import com.nktnet.webview_kiosk.states.UserInteractionStateSingleton
 
 fun Modifier.handleUserTouchEvent(): Modifier {
     return this.pointerInteropFilter { _ ->

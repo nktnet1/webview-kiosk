@@ -1,14 +1,14 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent
+package com.nktnet.webview_kiosk.ui.components.setting.fielditems.webcontent
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
-import uk.nktnet.webviewkiosk.utils.validateMultilineRegex
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.UserSettingsKeys
+import com.nktnet.webview_kiosk.ui.components.setting.fields.TextSettingFieldItem
+import com.nktnet.webview_kiosk.utils.validateMultilineRegex
 
 @Composable
 fun WebsiteBlacklistSetting() {

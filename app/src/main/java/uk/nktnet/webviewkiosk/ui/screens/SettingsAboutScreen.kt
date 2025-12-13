@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.screens
+package com.nktnet.webview_kiosk.ui.screens
 
 import android.content.ClipData
 import androidx.compose.foundation.combinedClickable
@@ -17,13 +17,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.managers.ToastManager
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.utils.getSystemInfo
-import uk.nktnet.webviewkiosk.utils.humanReadableSize
-import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
-import uk.nktnet.webviewkiosk.R
+import com.nktnet.webview_kiosk.managers.ToastManager
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
+import com.nktnet.webview_kiosk.utils.getSystemInfo
+import com.nktnet.webview_kiosk.utils.humanReadableSize
+import com.nktnet.webview_kiosk.utils.openAppDetailsSettings
+import com.nktnet.webview_kiosk.R
 
 @Composable
 fun InfoItem(label: String, value: String) {

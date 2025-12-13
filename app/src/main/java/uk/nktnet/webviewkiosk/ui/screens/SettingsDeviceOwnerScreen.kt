@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.screens
+package com.nktnet.webview_kiosk.ui.screens
 
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
@@ -24,26 +24,26 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.rosan.dhizuku.shared.DhizukuVariables
 import kotlinx.coroutines.delay
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
-import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
-import uk.nktnet.webviewkiosk.ui.components.setting.dialog.DeviceAdminReceiverListDialog
-import uk.nktnet.webviewkiosk.ui.components.setting.dialog.LockTaskPackagesDialog
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.dhizuku.DhizukuRequestPermissionOnLaunchSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureBlockActivityStartInTaskSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureGlobalActionsSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureHomeSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureKeyguardSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureNotificationsSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureOverviewSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureSystemInfoSetting
-import uk.nktnet.webviewkiosk.utils.normaliseInfoText
-import uk.nktnet.webviewkiosk.utils.openPackage
-import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.WebviewKioskAdminReceiver
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.data.DeviceOwnerMode
+import com.nktnet.webview_kiosk.managers.DeviceOwnerManager
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
+import com.nktnet.webview_kiosk.ui.components.setting.dialog.DeviceAdminReceiverListDialog
+import com.nktnet.webview_kiosk.ui.components.setting.dialog.LockTaskPackagesDialog
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.device.owner.dhizuku.DhizukuRequestPermissionOnLaunchSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureBlockActivityStartInTaskSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureGlobalActionsSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureHomeSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureKeyguardSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureNotificationsSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureOverviewSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureSystemInfoSetting
+import com.nktnet.webview_kiosk.utils.normaliseInfoText
+import com.nktnet.webview_kiosk.utils.openPackage
+import com.nktnet.webview_kiosk.utils.setupLockTaskPackage
 
 @Composable
 fun SettingsDeviceOwnerScreen(navController: NavController) {

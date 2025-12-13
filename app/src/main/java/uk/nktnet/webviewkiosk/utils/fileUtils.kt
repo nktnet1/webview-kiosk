@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import android.content.ContentResolver
 import android.content.Context
@@ -9,7 +9,7 @@ import android.text.format.Formatter
 import android.webkit.MimeTypeMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import uk.nktnet.webviewkiosk.config.Constants
+import com.nktnet.webview_kiosk.config.Constants
 import java.io.File
 import java.util.UUID
 

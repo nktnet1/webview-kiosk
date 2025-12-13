@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.webview
+package com.nktnet.webview_kiosk.ui.components.webview
 
 import android.graphics.Paint
 import androidx.compose.foundation.background
@@ -29,12 +29,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.Screen
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.states.LockStateSingleton
-import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
-import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.config.Screen
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.states.LockStateSingleton
+import com.nktnet.webview_kiosk.utils.handleUserKeyEvent
+import com.nktnet.webview_kiosk.utils.handleUserTouchEvent
 import kotlin.math.roundToInt
 
 data class Bounds(val minX: Float, val minY: Float, val maxX: Float, val maxY: Float)

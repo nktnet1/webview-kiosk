@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.webview
+package com.nktnet.webview_kiosk.ui.components.webview
 
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -7,7 +7,7 @@ import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
-import uk.nktnet.webviewkiosk.states.KeepScreenOnStateSingleton
+import com.nktnet.webview_kiosk.states.KeepScreenOnStateSingleton
 
 @Composable
 fun KeepScreenOnOption() {

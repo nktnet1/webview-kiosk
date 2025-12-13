@@ -1,7 +1,7 @@
-package uk.nktnet.webviewkiosk.utils.webview.html
+package com.nktnet.webview_kiosk.utils.webview.html
 
 import android.text.Html
-import uk.nktnet.webviewkiosk.config.option.ThemeOption
+import com.nktnet.webview_kiosk.config.option.ThemeOption
 
 enum class BlockCause(val label: String) {
     BLACKLIST("URL matches blacklist"),

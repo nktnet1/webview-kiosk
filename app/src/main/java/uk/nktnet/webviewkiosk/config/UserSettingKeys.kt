@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config
+package com.nktnet.webview_kiosk.config
 
 object UserSettingsKeys {
     const val PREFS_NAME = "user_settings"

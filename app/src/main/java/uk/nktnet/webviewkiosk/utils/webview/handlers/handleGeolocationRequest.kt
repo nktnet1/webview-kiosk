@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils.webview.handlers
+package com.nktnet.webview_kiosk.utils.webview.handlers
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -6,12 +6,12 @@ import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.webkit.GeolocationPermissions
 import androidx.appcompat.app.AlertDialog
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
-import uk.nktnet.webviewkiosk.utils.handleKeyEvent
-import uk.nktnet.webviewkiosk.utils.hasPermissionForResource
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.states.UserInteractionStateSingleton
+import com.nktnet.webview_kiosk.utils.handleKeyEvent
+import com.nktnet.webview_kiosk.utils.hasPermissionForResource
 
 @SuppressLint("SetTextI18n")
 fun handleGeolocationRequest(

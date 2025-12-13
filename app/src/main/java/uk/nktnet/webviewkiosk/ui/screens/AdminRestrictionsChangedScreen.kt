@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.screens
+package com.nktnet.webview_kiosk.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -13,8 +13,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.delay
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.utils.navigateToWebViewScreen
 
 @Composable
 fun AdminRestrictionsChangedScreen(
