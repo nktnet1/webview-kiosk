@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
@@ -15,7 +17,7 @@ fun MqttWebSocketServerPathSetting() {
     val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.WEBSOCKET_SERVER_PATH)
 
     TextSettingFieldItem(
-        label = "WebSocket Server Path",
+        label = stringResource(R.string.mqtt_connection_websocket_server_path_title),
         infoText = """
             The path the MQTT broker WebSocket server listens on.
 

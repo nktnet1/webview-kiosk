@@ -20,8 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -42,7 +44,7 @@ fun MqttClientIdSetting() {
     val recommendedClientId = "wk-${'$'}{${MqttVariableNameOption.APP_INSTANCE_ID.name}}"
 
     TextSettingFieldItem(
-        label = "Client ID",
+        label = stringResource(R.string.mqtt_connection_client_id_title),
         infoText = """
             A unique identifier for this client when connecting to the MQTT broker.
 

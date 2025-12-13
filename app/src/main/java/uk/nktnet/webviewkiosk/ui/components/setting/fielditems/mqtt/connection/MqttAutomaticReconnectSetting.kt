@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -14,7 +16,7 @@ fun MqttAutomaticReconnectSetting() {
     val userSettings = remember { UserSettings(context) }
 
     BooleanSettingFieldItem(
-        label = "Automatic Reconnect",
+        label = stringResource(R.string.mqtt_connection_automatic_reconnect_title),
         infoText = """
             When enabled, attempt to automatically reconnect to the MQTT broker
             after an unexpected disconnect.

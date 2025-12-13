@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldItem
@@ -13,7 +15,7 @@ fun MqttSocketConnectTimeoutSetting() {
     val userSettings = remember { UserSettings(context) }
 
     NumberSettingFieldItem(
-        label = "Socket Connect Timeout (seconds)",
+        label = stringResource(R.string.mqtt_connection_socket_connect_timeout_title),
         infoText = """
             The timeout for connecting the socket to the server.
 

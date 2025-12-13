@@ -256,13 +256,13 @@
     <string name="mqtt_connection_clean_start_title">Clean Start</string>
     <string name="mqtt_connection_clean_start_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
-    <string name="mqtt_connection_keep_alive_title">Keep Alive</string>
+    <string name="mqtt_connection_keep_alive_title">Keep Alive (seconds)</string>
     <string name="mqtt_connection_keep_alive_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
-    <string name="mqtt_connection_connect_timeout_title">Connect Timeout</string>
+    <string name="mqtt_connection_connect_timeout_title">Connect Timeout (seconds)</string>
     <string name="mqtt_connection_connect_timeout_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
-    <string name="mqtt_connection_socket_connect_timeout_title">Socket Connect Timeout</string>
+    <string name="mqtt_connection_socket_connect_timeout_title">Socket Connect Timeout (seconds)</string>
     <string name="mqtt_connection_socket_connect_timeout_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
     <string name="mqtt_connection_automatic_reconnect_title">Automatic Reconnect</string>
