@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.MqttQosOption
@@ -14,7 +16,7 @@ fun MqttWillQosSetting() {
     val userSettings = remember { UserSettings(context) }
 
     DropdownSettingFieldItem(
-        label = "QoS",
+        label = stringResource(R.string.mqtt_will_qos_title),
         infoText = """
             Quality of Service (QoS) for the MQTT last will message.
             Determines the guarantee of message delivery in case of client disconnect.

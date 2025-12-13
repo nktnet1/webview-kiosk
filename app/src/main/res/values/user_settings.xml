@@ -287,10 +287,10 @@
     <string name="mqtt_will_retain_title">Will Retain</string>
     <string name="mqtt_will_retain_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
 
-    <string name="mqtt_will_message_expiry_interval_title">Will Message Expiry Interval</string>
+    <string name="mqtt_will_message_expiry_interval_title">Will Message Expiry Interval (seconds)</string>
     <string name="mqtt_will_message_expiry_interval_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
 
-    <string name="mqtt_will_delay_interval_title">Will Delay Interval</string>
+    <string name="mqtt_will_delay_interval_title">Will Delay Interval (seconds)</string>
     <string name="mqtt_will_delay_interval_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
 
     <!-- MQTT Restrictions -->

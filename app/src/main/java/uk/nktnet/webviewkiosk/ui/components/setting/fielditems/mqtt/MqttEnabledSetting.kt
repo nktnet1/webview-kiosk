@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -18,7 +20,7 @@ fun MqttEnabledSetting() {
     val systemSettings = remember { SystemSettings(context) }
 
     BooleanSettingFieldItem(
-        label = "Enabled",
+        label = stringResource(R.string.mqtt_enabled_title),
         infoText = """
             When enabled, ${Constants.APP_NAME} will connect to your configured
             MQTT broker and subscribe/publish to the defined topics.
