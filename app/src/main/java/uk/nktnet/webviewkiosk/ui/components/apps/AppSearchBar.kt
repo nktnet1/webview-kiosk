@@ -33,7 +33,6 @@ fun AppSearchBar(
     searchQuery: TextFieldValue,
     onSearchChange: (String) -> Unit,
     onSortToggle: () -> Unit,
-    appCount: Int,
     filteredAppCount: Int,
     ascending: Boolean,
 ) {
@@ -73,7 +72,7 @@ fun AppSearchBar(
                     ) {
                         if (searchQuery.text.isEmpty()) {
                             Text(
-                                text = "Search $appCount apps",
+                                text = "Search $filteredAppCount apps",
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                                     fontStyle = FontStyle.Italic

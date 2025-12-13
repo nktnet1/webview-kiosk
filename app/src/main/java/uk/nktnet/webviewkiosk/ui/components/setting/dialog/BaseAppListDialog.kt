@@ -69,7 +69,6 @@ fun <T : AppInfo> BaseAppListDialog(
                     searchQuery = searchQuery,
                     onSearchChange = { searchQuery = TextFieldValue(it) },
                     onSortToggle = { ascending = !ascending },
-                    appCount = apps.size,
                     filteredAppCount = filteredApps.size,
                     ascending = ascending,
                 )
