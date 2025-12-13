@@ -41,6 +41,7 @@ fun AppSearchBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         BasicTextField(
+            enabled = filteredAppCount > 1,
             value = searchQuery.text,
             onValueChange = onSearchChange,
             singleLine = true,
@@ -69,7 +70,13 @@ fun AppSearchBar(
                     ) {
                         if (searchQuery.text.isEmpty()) {
                             Text(
-                                text = "Search $filteredAppCount apps",
+                                text = if (filteredAppCount > 1) {
+                                    "Search $filteredAppCount apps"
+                                } else if (filteredAppCount == 1) {
+                                    "Showing 1 app."
+                                } else {
+                                    "No apps available."
+                                },
                                 style = MaterialTheme.typography.bodyMedium.copy(
                                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                                     fontStyle = FontStyle.Italic
