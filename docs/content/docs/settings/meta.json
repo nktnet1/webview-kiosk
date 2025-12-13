@@ -8,6 +8,7 @@
     "appearance",
     "device",
     "js-scripts",
+    "mqtt",
     "about"
   ]
 }

@@ -17,18 +17,31 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import android.view.KeyEvent
 import androidx.activity.compose.LocalActivity
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import uk.nktnet.webviewkiosk.utils.getStatus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.config.*
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
+import uk.nktnet.webviewkiosk.managers.MqttManager
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttClearHistoryCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttDisconnectingEvent
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorRequest
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockDeviceCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttReconnectCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSettingsRequest
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttStatusRequest
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSystemInfoRequest
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttToastCommand
+import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.BackButtonManager
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.screens.SetupNavHost
 import uk.nktnet.webviewkiosk.utils.handleMainIntent
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
@@ -40,6 +53,7 @@ import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
 import uk.nktnet.webviewkiosk.utils.getLocalUrl
+import uk.nktnet.webviewkiosk.utils.getSystemInfo
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handleKeyEvent
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
@@ -47,6 +61,7 @@ import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
+import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavHostController
@@ -108,6 +123,8 @@ class MainActivity : AppCompatActivity() {
             IntentFilter(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED)
         )
 
+        MqttManager.updateConfig(systemSettings, userSettings)
+
         val webContentDir = getWebContentFilesDir(this)
 
         AuthenticationManager.init(this)
@@ -129,7 +146,95 @@ class MainActivity : AppCompatActivity() {
 
             val waitingForUnlock by WaitingForUnlockStateSingleton.waitingForUnlock.collectAsState()
             val biometricResult by AuthenticationManager.promptResults.collectAsState()
+            val context = LocalContext.current
+
             val activity = LocalActivity.current
+
+            LaunchedEffect(Unit) {
+                MqttManager.commands.collect { commandMessage ->
+                    if (commandMessage.interact) {
+                        UserInteractionStateSingleton.onUserInteraction()
+                    }
+                    when (commandMessage) {
+                        is MqttReconnectCommand -> {
+                            MqttManager.disconnect (
+                                cause = MqttDisconnectingEvent.DisconnectCause.MQTT_RECONNECT_COMMAND_RECEIVED,
+                                onDisconnected = {
+                                    MqttManager.connect(context)
+                                }
+                            )
+                        }
+                        is MqttClearHistoryCommand -> {
+                            WebViewNavigation.clearHistory(systemSettings)
+                        }
+                        is MqttToastCommand -> {
+                            if (commandMessage.data.message.isNotBlank()) {
+                                ToastManager.show(context, commandMessage.data.message)
+                            }
+                        }
+                        is MqttLockDeviceCommand -> {
+                            if (DeviceOwnerManager.hasOwnerPermission(context)) {
+                                DeviceOwnerManager.DPM.lockNow()
+                            }
+                        }
+                        else -> Unit
+                    }
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                MqttManager.settings.collect { settingsMessage ->
+                    userSettings.importJson(settingsMessage.data.settings)
+
+                    if (settingsMessage.reloadActivity) {
+                        updateDeviceSettings(context)
+                    }
+
+                    // Counterintuitive, but this acts as a "Refresh" of the webview screen,
+                    // which will recreate + apply settings.
+                    // If we're on another screen though (e.g. settings), then let the user
+                    // decide when to navigate back.
+                    if (
+                        settingsMessage.reloadActivity
+                        && navController.currentDestination?.route == Screen.WebView.route
+                    ) {
+                        navigateToWebViewScreen(navController)
+                        if (settingsMessage.showToast) {
+                            ToastManager.show(context, "MQTT: settings applied.")
+                        }
+                    } else {
+                        if (settingsMessage.showToast) {
+                            ToastManager.show(context, "MQTT: settings received.")
+                        }
+                    }
+
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                MqttManager.requests.collect { request ->
+                    when (request) {
+                        is MqttStatusRequest -> {
+                            MqttManager.publishStatusResponse(
+                                request, getStatus(context)
+                            )
+                        }
+                        is MqttSettingsRequest -> {
+                            val settings = userSettings.exportJson()
+                            MqttManager.publishSettingsResponse(request, settings)
+                        }
+                        is MqttSystemInfoRequest -> {
+                            MqttManager.publishSystemInfoResponse(
+                                request, getSystemInfo(context)
+                            )
+                        }
+                        is MqttErrorRequest -> {
+                            ToastManager.show(context, "MQTT: invalid request. See debug logs.")
+                            MqttManager.publishErrorResponse(request)
+                        }
+                    }
+                }
+            }
 
             LaunchedEffect(waitingForUnlock, biometricResult) {
                 if (
@@ -209,6 +314,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        if (userSettings.mqttEnabled && !MqttManager.isConnectedOrReconnect()) {
+            MqttManager.connect(this)
+        }
         AuthenticationManager.init(this)
     }
 
@@ -228,6 +336,11 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         if (!isChangingConfigurations) {
             AuthenticationManager.resetAuthentication()
+            if (MqttManager.getState().isConnected) {
+                MqttManager.disconnect(
+                    cause = MqttDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_STOPPED
+                )
+            }
         }
     }
 

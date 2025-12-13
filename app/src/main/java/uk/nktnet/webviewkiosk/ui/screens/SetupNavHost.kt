@@ -27,6 +27,27 @@ fun SetupNavHost(
         Screen.SettingsDevice.route to { SettingsDeviceScreen(navController) },
         Screen.SettingsDeviceOwner.route to { SettingsDeviceOwnerScreen(navController) },
         Screen.SettingsJsScript.route to { SettingsJsScriptsScreen(navController) },
+        Screen.SettingsMqtt.route to { SettingsMqttScreen(navController) },
+        Screen.SettingsMqttConnection.route to { SettingsMqttConnectionScreen(navController) },
+        Screen.SettingsMqttWill.route to { SettingsMqttWillScreen(navController) },
+        Screen.SettingsMqttRestrictions.route to { SettingsMqttRestrictionsScreen(navController) },
+        Screen.SettingsMqttDebug.route to { SettingsMqttDebugScreen(navController) },
+        Screen.SettingsMqttTopics.route to { SettingsMqttTopicsScreen(navController) },
+        Screen.SettingsMqttTopicsPublishEvent.route to {
+            SettingsMqttTopicsPublishEventScreen(navController)
+        },
+        Screen.SettingsMqttTopicsPublishResponse.route to {
+            SettingsMqttTopicsPublishResponseScreen(navController)
+        },
+        Screen.SettingsMqttTopicsSubscribeCommand.route to {
+            SettingsMqttTopicsSubscribeCommandScreen(navController)
+        },
+        Screen.SettingsMqttTopicsSubscribeSettings.route to {
+            SettingsMqttTopicsSubscribeSettingsScreen(navController)
+        },
+        Screen.SettingsMqttTopicsSubscribeRequest.route to {
+            SettingsMqttTopicsSubscribeRequestScreen(navController)
+        },
         Screen.SettingsAbout.route to { SettingsAboutScreen(navController) }
     )
 
