@@ -39,7 +39,7 @@ fun GenericSettingFieldDialog(
         AlertDialog(
             onDismissRequest = { showInfoDialog = false },
             title = {
-                Column() {
+                Column {
                     Text(
                         text = title,
                         style = MaterialTheme.typography.titleMedium,
@@ -65,7 +65,11 @@ fun GenericSettingFieldDialog(
                 }
             },
             confirmButton = {
-                TextButton(onClick = { showInfoDialog = false }) { Text("OK") }
+                TextButton(
+                    onClick = { showInfoDialog = false }
+                ) {
+                    Text("Close")
+                }
             },
         )
     }
