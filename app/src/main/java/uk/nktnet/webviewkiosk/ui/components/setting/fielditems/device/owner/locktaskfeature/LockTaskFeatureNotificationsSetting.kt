@@ -2,6 +2,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.loc
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -12,7 +14,7 @@ fun LockTaskFeatureNotificationsSetting() {
     val userSettings = UserSettings(context)
 
     BooleanSettingFieldItem(
-        label = "Enable Notifications",
+        label = stringResource(id = R.string.device_owner_lock_task_feature_notifications_title),
         infoText = """
             Enables notifications for all apps.
 

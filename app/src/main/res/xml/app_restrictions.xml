@@ -453,6 +453,50 @@
         android:title="@string/device_block_volume_keys_title"
         android:description="@string/device_block_volume_keys_description"
     />
+
+    <!-- Device Owner -->
+    <restriction
+        android:key="device.owner.lock_task_feature.home"
+        android:restrictionType="bool"
+        android:title="@string/device_owner_lock_task_feature_home_title"
+        android:description="@string/device_owner_lock_task_feature_home_description"
+    />
+    <restriction
+        android:key="device.owner.lock_task_feature.overview"
+        android:restrictionType="bool"
+        android:title="@string/device_owner_lock_task_feature_overview_title"
+        android:description="@string/device_owner_lock_task_feature_overview_description"
+    />
+    <restriction
+        android:key="device.owner.lock_task_feature.global_actions"
+        android:restrictionType="bool"
+        android:title="@string/device_owner_lock_task_feature_global_actions_title"
+        android:description="@string/device_owner_lock_task_feature_global_actions_description"
+    />
+    <restriction
+        android:key="device.owner.lock_task_feature.notifications"
+        android:restrictionType="bool"
+        android:title="@string/device_owner_lock_task_feature_notifications_title"
+        android:description="@string/device_owner_lock_task_feature_notifications_description"
+    />
+    <restriction
+        android:key="device.owner.lock_task_feature.system_info"
+        android:restrictionType="bool"
+        android:title="@string/device_owner_lock_task_feature_system_info_title"
+        android:description="@string/device_owner_lock_task_feature_system_info_description"
+    />
+    <restriction
+        android:key="device.owner.lock_task_feature.keyguard"
+        android:restrictionType="bool"
+        android:title="@string/device_owner_lock_task_feature_keyguard_title"
+        android:description="@string/device_owner_lock_task_feature_keyguard_description"
+    />
+    <restriction
+        android:key="device.owner.lock_task_feature.block_activity_start_in_task"
+        android:restrictionType="bool"
+        android:title="@string/device_owner_lock_task_feature_block_activity_start_in_task_title"
+        android:description="@string/device_owner_lock_task_feature_block_activity_start_in_task_description"
+    />
     <restriction
         android:key="device.owner.dhizuku.request_permission_on_launch"
         android:restrictionType="bool"

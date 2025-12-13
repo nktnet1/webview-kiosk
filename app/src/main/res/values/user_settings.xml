@@ -199,9 +199,6 @@
     <string name="device_custom_auth_password_title">Custom Auth Password</string>
     <string name="device_custom_auth_password_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
-    <string name="device_owner_dhizuku_request_permission_on_launch_title">Dhizuku Request Permission on Launch</string>
-    <string name="device_owner_dhizuku_request_permission_on_launch_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
-
     <string name="device_unlock_auth_requirement_title">Unlock Auth Requirement</string>
     <string name="device_unlock_auth_requirement_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
@@ -210,6 +207,31 @@
 
     <string name="device_block_volume_keys_title">Block Volume Keys</string>
     <string name="device_block_volume_keys_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+
+    <!-- Device Owner -->
+    <string name="device_owner_lock_task_feature_home_title">Show Home Button</string>
+    <string name="device_owner_lock_task_feature_home_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+
+    <string name="device_owner_lock_task_feature_overview_title">Show Overview Button</string>
+    <string name="device_owner_lock_task_feature_overview_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+
+    <string name="device_owner_lock_task_feature_global_actions_title">Enable Global Actions</string>
+    <string name="device_owner_lock_task_feature_global_actions_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+
+    <string name="device_owner_lock_task_feature_notifications_title">Enable Notifications</string>
+    <string name="device_owner_lock_task_feature_notifications_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+
+    <string name="device_owner_lock_task_feature_system_info_title">Show System Info</string>
+    <string name="device_owner_lock_task_feature_system_info_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+
+    <string name="device_owner_lock_task_feature_keyguard_title">Enable Keyguard</string>
+    <string name="device_owner_lock_task_feature_keyguard_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+
+    <string name="device_owner_lock_task_feature_block_activity_start_in_task_title">Block Activity Start in Task</string>
+    <string name="device_owner_lock_task_feature_block_activity_start_in_task_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+
+    <string name="device_owner_dhizuku_request_permission_on_launch_title">Dhizuku Request Permission on Launch</string>
+    <string name="device_owner_dhizuku_request_permission_on_launch_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <!-- JS Scripts -->
     <string name="js_scripts_apply_app_theme_title">Apply App Theme</string>
