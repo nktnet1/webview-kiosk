@@ -1,7 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
 import android.content.ClipData
-import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
@@ -31,6 +30,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.managers.MqttLogEntry
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -49,14 +49,6 @@ fun SettingsMqttDebugScreen(navController: NavController) {
         mutableStateListOf<MqttLogEntry>().apply {
             addAll(MqttManager.debugLogHistory.asReversed())
         }
-    }
-
-    var toastRef: Toast? = null
-    val showToast: (String) -> Unit = { msg ->
-        toastRef?.cancel()
-        toastRef = Toast.makeText(
-            context, msg, Toast.LENGTH_SHORT
-        ).apply { show() }
     }
 
     LaunchedEffect(Unit) {
@@ -108,8 +100,8 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                         .weight(1f)
                         .height(43.dp),
                     decorationBox = { innerTextField ->
-                        Box(
-                            contentAlignment = Alignment.CenterStart,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .border(
@@ -117,19 +109,39 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                     MaterialTheme.shapes.small
                                 )
-                                .padding(horizontal = 12.dp)
+                                .padding(start = 14.dp, end = 8.dp)
                         ) {
-                            if (searchQuery.text.isEmpty()) {
-                                Text(
-                                    text = "Search the last ${logs.size} logs",
-                                    style = LocalTextStyle.current.copy(
-                                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                                        fontSize = MaterialTheme.typography.bodySmall.fontSize,
-                                        fontStyle = FontStyle.Italic,
+                            Box(
+                                modifier = Modifier.weight(1f),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                if (searchQuery.text.isEmpty()) {
+                                    Text(
+                                        text = "Search the last ${logs.size} logs",
+                                        style = LocalTextStyle.current.copy(
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                                            fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                                            fontStyle = FontStyle.Italic,
+                                        )
                                     )
+                                }
+                                innerTextField()
+                            }
+
+                            IconButton(
+                                enabled = searchQuery.text.isNotEmpty(),
+                                onClick = { searchQuery = TextFieldValue("") },
+                                modifier = Modifier
+                                    .size(26.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_clear_24),
+                                    contentDescription = "Clear",
+                                    modifier = Modifier
+                                        .size(24.dp)
+                                        .padding(2.dp),
                                 )
                             }
-                            innerTextField()
                         }
                     }
                 )
@@ -188,7 +200,10 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                                 .fillMaxWidth()
                                 .combinedClickable(
                                     onClick = {
-                                        showToast("Click and hold to copy message.")
+                                        ToastManager.show(
+                                            context,
+                                            "Click and hold to copy message."
+                                        )
                                     },
                                     onLongClick = {
                                         scope.launch {

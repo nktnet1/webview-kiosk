@@ -17,24 +17,14 @@ import com.hivemq.client.mqtt.MqttClientState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttDisconnectingEvent
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import kotlin.math.max
 
 @Composable
 fun MqttControlButtons() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-
     var mqttClientState by remember { mutableStateOf(MqttManager.getState()) }
-
-    var toastRef: Toast? = null
-    val coroutineScope = rememberCoroutineScope()
-    val showToast: (String) -> Unit = { msg ->
-        coroutineScope.launch(Dispatchers.Main) {
-            toastRef?.cancel()
-            toastRef = Toast.makeText(context, msg, Toast.LENGTH_SHORT)
-                .apply { show() }
-        }
-    }
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -92,7 +82,7 @@ fun MqttControlButtons() {
                                 cause = MqttDisconnectingEvent.DisconnectCause.USER_INITIATED_DISCONNECT
                             ) {
                                 mqttClientState = MqttManager.getState()
-                                showToast("MQTT disconnected successfully")
+                                ToastManager.show(context, "MQTT disconnected successfully")
                             }
                         },
                         modifier = Modifier.weight(1f),
@@ -113,17 +103,17 @@ fun MqttControlButtons() {
                                         context,
                                         onConnected = {
                                             mqttClientState = MqttManager.getState()
-                                            showToast("Restart successfully.")
+                                            ToastManager.show(context, "Restart successfully.")
                                         },
                                         onError = {
                                             mqttClientState = MqttManager.getState()
-                                            showToast("Error restarting: $it")
+                                            ToastManager.show(context, "Error restarting: $it")
                                         }
                                     )
                                 },
                                 onError = {
                                     mqttClientState = MqttManager.getState()
-                                    showToast("Error disconnecting: $it")
+                                    ToastManager.show(context, "Error disconnecting: $it")
                                 }
                             )
 
@@ -146,9 +136,10 @@ fun MqttControlButtons() {
                             userSettings.mqttConnectTimeout
                         )
                         if (res) {
-                            showToast("Cancelling... (max $maxWait seconds)")
+                            ToastManager.show(context, "Cancelling... (max $maxWait seconds)")
                         } else {
-                            showToast(
+                            ToastManager.show(
+                                context,
                                 "Already cancelling - please wait up to $maxWait seconds."
                             )
                         }
@@ -167,16 +158,18 @@ fun MqttControlButtons() {
                             context,
                             onConnected = {
                                 mqttClientState = MqttManager.getState()
-                                showToast("MQTT connected successfully.")
+                                ToastManager.show(context, "MQTT connected successfully.")
                             },
                             onError = {
                                 mqttClientState = MqttManager.getState()
-                                showToast("MQTT connection failed: $it")
+                                ToastManager.show(context, "MQTT connection failed: $it")
                             }
                         )
                     },
                     modifier = Modifier.fillMaxWidth()
-                ) { Text("Connect") }
+                ) {
+                    Text("Connect")
+                }
             }
         }
     }

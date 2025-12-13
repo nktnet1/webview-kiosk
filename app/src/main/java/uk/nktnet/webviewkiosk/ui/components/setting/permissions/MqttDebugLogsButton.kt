@@ -21,5 +21,7 @@ fun MqttDebugLogsButton (navController: NavController) {
             contentColor = MaterialTheme.colorScheme.onTertiaryContainer
         ),
         modifier = Modifier.fillMaxWidth()
-    ) { Text("Debug Logs") }
+    ) {
+        Text("Debug Logs")
+    }
 }
