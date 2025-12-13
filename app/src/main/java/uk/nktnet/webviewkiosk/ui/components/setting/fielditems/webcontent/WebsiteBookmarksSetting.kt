@@ -16,7 +16,7 @@ fun WebsiteBookmarksSetting() {
     val userSettings = remember { UserSettings(context) }
 
     TextSettingFieldItem(
-        label = stringResource(id = R.string.web_content_website_blacklist_title),
+        label = stringResource(id = R.string.web_content_website_bookmarks_title ),
         infoText = """
             Add your bookmark URLs, one per line.
             You can access the bookmarks using the address bar menu.
