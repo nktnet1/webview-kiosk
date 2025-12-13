@@ -19,7 +19,7 @@ fun MqttPublishResponseTopicSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Topics.Publish.Response.TOPIC
 
     TextSettingFieldItem(
-        label = stringResource(R.string.mqtt_publish_response_retain_title),
+        label = stringResource(R.string.mqtt_publish_response_topic_title),
         infoText = """
             Default MQTT topic to publish reply messages to requests.
 
