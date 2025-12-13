@@ -10,6 +10,8 @@ import RegexPlayground from '@/components/RegexPlayground';
 
 Configure the Home URL, which can be returned to as per <a href="/docs/settings/web-browsing/#allow-go-home">`Web Browsing -> Allow Go Home`</a>.
 
+**Default:** https://webviewkiosk.nktnet.uk
+
 ## 2. Blacklist & Whitelist Regex
 
 Specify regular expressions (regex), one per line.
@@ -19,6 +21,8 @@ These patterns also use partial matching.
 If you need strict control, anchor your regex with `^` and `$`.
 
 Whitelist patterns take precedence over blacklist patterns.
+
+**Default:** (blank)
 
 ### 2.1. Blacklist Example
 
@@ -51,6 +55,8 @@ Allow `https://allowsite.com` home page and all subdomains and paths for `https:
 Specify bookmarked URLs one per line.
 
 This is accessible in the address bar. See also: "Allow Bookmark Access" under `Web Browsing`.
+
+**Default:** (blank)
 
 ## 4. Allow Local Files
 
