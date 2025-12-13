@@ -22,6 +22,7 @@ import uk.nktnet.webviewkiosk.utils.rememberPermissionState
 fun AllowMicrophoneSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.Device.ALLOW_MICROPHONE
 
     val (
         permissionState,
@@ -37,7 +38,8 @@ fun AllowMicrophoneSetting() {
             WebView's RESOURCE_AUDIO_CAPTURE feature.
         """.trimIndent(),
         initialValue = userSettings.allowMicrophone,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Device.ALLOW_MICROPHONE),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.allowMicrophone = it },
         itemText = { v ->
             val statusText = if (permissionState.granted) "" else "(no permission)"

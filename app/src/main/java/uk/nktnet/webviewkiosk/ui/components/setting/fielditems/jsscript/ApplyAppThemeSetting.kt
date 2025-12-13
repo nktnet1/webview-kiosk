@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun ApplyAppThemeSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.JsScripts.APPLY_APP_THEME
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.js_scripts_apply_app_theme_title),
@@ -27,7 +28,8 @@ fun ApplyAppThemeSetting() {
             If the theme setting is "System", this script is a no-op (does nothing).
         """.trimIndent(),
         initialValue = userSettings.applyAppTheme,
-        restricted = userSettings.isRestricted(UserSettingsKeys.JsScripts.APPLY_APP_THEME),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.applyAppTheme = it }
     )
 }

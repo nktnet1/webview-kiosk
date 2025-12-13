@@ -14,13 +14,15 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldI
 fun WebViewInsetSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Appearance.WEBVIEW_INSET
 
     DropdownSettingFieldItem(
         label = stringResource(id = R.string.appearance_webview_inset_title),
         infoText = "Select which WindowInsets the WebView should respect for padding.",
         options = WebViewInsetOption.entries,
         initialValue = userSettings.webViewInset,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.WEBVIEW_INSET),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.webViewInset = it },
         itemText = { it.label },
     )

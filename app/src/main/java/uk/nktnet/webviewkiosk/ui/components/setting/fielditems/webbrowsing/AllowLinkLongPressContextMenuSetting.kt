@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun AllowLinkLongPressContextMenuSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_browsing_allow_link_long_press_context_menu_title),
@@ -26,7 +27,8 @@ fun AllowLinkLongPressContextMenuSetting() {
             This allows actions like opening or copying the link.
         """.trimIndent(),
         initialValue = userSettings.allowLinkLongPressContextMenu,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.allowLinkLongPressContextMenu = it }
     )
 }

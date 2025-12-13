@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +29,7 @@ fun GenericSettingFieldDialog(
     infoText: String,
     onDismiss: () -> Unit,
     onSave: () -> Unit,
+    settingKey: String,
     restricted: Boolean,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -37,10 +39,21 @@ fun GenericSettingFieldDialog(
         AlertDialog(
             onDismissRequest = { showInfoDialog = false },
             title = {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.bodyLarge,
-                )
+                Column() {
+                    Text(
+                        text = title,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        settingKey,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider()
+                }
+
             },
             text = {
                 Column(
@@ -66,7 +79,7 @@ fun GenericSettingFieldDialog(
                 Text(
                     title,
                     modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.titleMedium,
                 )
                 IconButton(
                     onClick = { showInfoDialog = true },

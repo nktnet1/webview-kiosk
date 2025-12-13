@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun ResetOnLaunchSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_lifecycle_reset_on_launch_title),
@@ -23,7 +24,8 @@ fun ResetOnLaunchSetting() {
              The navigation history will also be cleared.
         """.trimIndent(),
         initialValue = userSettings.resetOnLaunch,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.resetOnLaunch = it }
     )
 }

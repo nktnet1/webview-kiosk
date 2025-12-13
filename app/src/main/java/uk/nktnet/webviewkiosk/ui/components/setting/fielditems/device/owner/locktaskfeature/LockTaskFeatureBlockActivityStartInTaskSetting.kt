@@ -12,6 +12,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun LockTaskFeatureBlockActivityStartInTaskSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.BLOCK_ACTIVITY_START_IN_TASK
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.device_owner_lock_task_feature_block_activity_start_in_task_title),
@@ -22,7 +23,8 @@ fun LockTaskFeatureBlockActivityStartInTaskSetting() {
             This requires Android 11 (API Level 30).
         """.trimIndent(),
         initialValue = userSettings.lockTaskFeatureBlockActivityStartInTask,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Device.Owner.LockTaskFeature.BLOCK_ACTIVITY_START_IN_TASK),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.lockTaskFeatureBlockActivityStartInTask = it },
     )
 }

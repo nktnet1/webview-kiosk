@@ -22,6 +22,7 @@ import uk.nktnet.webviewkiosk.utils.rememberPermissionState
 fun AllowCameraSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.Device.ALLOW_CAMERA
 
     val (
         permissionState,
@@ -37,7 +38,8 @@ fun AllowCameraSetting() {
             WebView's RESOURCE_VIDEO_CAPTURE feature.
         """.trimIndent(),
         initialValue = userSettings.allowCamera,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Device.ALLOW_CAMERA),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.allowCamera = it },
         itemText = { v ->
             val statusText = if (permissionState.granted) "" else "(no permission)"

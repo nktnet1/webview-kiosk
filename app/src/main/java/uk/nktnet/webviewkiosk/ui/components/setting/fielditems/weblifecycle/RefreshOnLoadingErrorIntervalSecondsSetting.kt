@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldIte
 fun RefreshOnLoadingErrorIntervalSecondsSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS
 
     NumberSettingFieldItem(
         label = stringResource(id = R.string.web_lifecycle_refresh_on_loading_error_interval_seconds_title),
@@ -28,7 +29,8 @@ fun RefreshOnLoadingErrorIntervalSecondsSetting() {
         """.trimIndent(),
         placeholder = "e.g. 5",
         initialValue = userSettings.refreshOnLoadingErrorIntervalSeconds,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         min = Constants.MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS,
         onSave = { userSettings.refreshOnLoadingErrorIntervalSeconds = it }
     )

@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun LockOnLaunchSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_lifecycle_lock_on_launch_title),
@@ -23,7 +24,8 @@ fun LockOnLaunchSetting() {
             On some devices, you may still be prompted with a confirmation screen.
         """.trimIndent(),
         initialValue = userSettings.lockOnLaunch,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.lockOnLaunch = it }
     )
 }

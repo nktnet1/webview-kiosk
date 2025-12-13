@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.EnumListSettingFieldI
 fun KioskControlPanelActionsSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_ACTIONS
 
     EnumListSettingFieldItem(
         label = stringResource(id = R.string.web_browsing_kiosk_control_panel_actions_title),
@@ -33,9 +34,9 @@ fun KioskControlPanelActionsSetting() {
         getLabel = { it.label },
         getDefault = { KioskControlPanelActionOption.getDefault() },
         initialValue = userSettings.kioskControlPanelActions,
-        restricted = userSettings.isRestricted(
-            UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_ACTIONS
-        ),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
+
         onSave = { newList -> userSettings.kioskControlPanelActions = newList }
     )
 }

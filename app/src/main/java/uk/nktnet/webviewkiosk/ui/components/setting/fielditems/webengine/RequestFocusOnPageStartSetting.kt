@@ -12,6 +12,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun RequestFocusOnPageStartSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.WebEngine.REQUEST_FOCUS_ON_PAGE_START
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_engine_request_focus_on_page_start_title),
@@ -19,7 +20,8 @@ fun RequestFocusOnPageStartSetting() {
             Sets whether the WebView should request focus when a page starts loading.
         """.trimIndent(),
         initialValue = userSettings.requestFocusOnPageStart,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.REQUEST_FOCUS_ON_PAGE_START),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.requestFocusOnPageStart = it }
     )
 }

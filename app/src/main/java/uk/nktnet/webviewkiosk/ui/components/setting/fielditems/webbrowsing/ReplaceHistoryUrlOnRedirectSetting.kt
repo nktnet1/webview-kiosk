@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun ReplaceHistoryUrlOnRedirectSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebBrowsing.REPLACE_HISTORY_URL_ON_REDIRECT
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_browsing_replace_history_url_on_redirect_title),
@@ -22,7 +23,8 @@ fun ReplaceHistoryUrlOnRedirectSetting() {
             history navigation stack.
         """.trimIndent(),
         initialValue = userSettings.replaceHistoryUrlOnRedirect,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.REPLACE_HISTORY_URL_ON_REDIRECT),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.replaceHistoryUrlOnRedirect = it }
     )
 }

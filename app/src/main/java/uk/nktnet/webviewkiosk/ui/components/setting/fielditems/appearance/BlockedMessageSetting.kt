@@ -13,12 +13,14 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 fun BlockedMessageSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Appearance.BLOCKED_MESSAGE
 
     TextSettingFieldItem(
         label = stringResource(id = R.string.appearance_blocked_message_title),
         infoText = "Custom message shown on blocked pages.",
         placeholder = "e.g. This site is blocked by <Company Name>",
-        restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.BLOCKED_MESSAGE),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.blockedMessage,
         isMultiline = true,
         onSave = { userSettings.blockedMessage = it }

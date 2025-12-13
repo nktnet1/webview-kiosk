@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun AllowFileAccessFromFileURLsSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_engine_allow_file_access_from_file_urls_title),
@@ -30,7 +31,8 @@ fun AllowFileAccessFromFileURLsSetting() {
             cookies and app private data.
         """.trimIndent(),
         initialValue = userSettings.allowFileAccessFromFileURLs,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.allowFileAccessFromFileURLs = it }
     )
 }

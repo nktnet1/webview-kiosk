@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.EnumListSettingFieldI
 fun AddressBarActionsSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebBrowsing.ADDRESS_BAR_ACTIONS
 
     EnumListSettingFieldItem(
         label = stringResource(id = R.string.web_browsing_address_bar_actions_title),
@@ -26,9 +27,8 @@ fun AddressBarActionsSetting() {
         getLabel = { it.label },
         getDefault = { AddressBarActionOption.getDefault() },
         initialValue = userSettings.addressBarActions,
-        restricted = userSettings.isRestricted(
-            UserSettingsKeys.WebBrowsing.ADDRESS_BAR_ACTIONS
-        ),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { newList -> userSettings.addressBarActions = newList }
     )
 }

@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldI
 fun AddressBarPositionSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION
 
     DropdownSettingFieldItem(
         label = stringResource(id = R.string.appearance_address_bar_position_title),
@@ -21,7 +22,8 @@ fun AddressBarPositionSetting() {
             Customise the position of the address bar - either top or bottom.
         """.trimIndent(),
         options = AddressBarPositionOption.entries,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.addressBarPosition,
         onSave = { userSettings.addressBarPosition = it },
         itemText = { it.label },

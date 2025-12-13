@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun AllowDefaultLongPressSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebBrowsing.ALLOW_DEFAULT_LONG_PRESS
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_browsing_allow_default_long_press_title),
@@ -24,7 +25,8 @@ fun AllowDefaultLongPressSetting() {
             by the "Allow Link Long Press Context Menu" setting.
         """.trimIndent(),
         initialValue = userSettings.allowDefaultLongPress,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.ALLOW_DEFAULT_LONG_PRESS),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.allowDefaultLongPress = it }
     )
 }

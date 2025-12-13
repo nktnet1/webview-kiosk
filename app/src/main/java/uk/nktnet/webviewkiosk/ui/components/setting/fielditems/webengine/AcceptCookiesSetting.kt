@@ -13,12 +13,14 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun AcceptCookiesSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebEngine.ACCEPT_COOKIES
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_engine_accept_cookies_title),
         infoText = "Allow websites to store and read cookies.",
         initialValue = userSettings.acceptCookies,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.ACCEPT_COOKIES),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.acceptCookies = it }
     )
 }

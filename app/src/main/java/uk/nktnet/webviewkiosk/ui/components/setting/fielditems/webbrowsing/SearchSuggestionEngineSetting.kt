@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldI
 fun SearchSuggestionEngineSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebBrowsing.SEARCH_SUGGESTION_ENGINE
 
     DropdownSettingFieldItem(
         label = stringResource(id = R.string.web_browsing_search_suggestion_engine_title),
@@ -28,7 +29,8 @@ fun SearchSuggestionEngineSetting() {
         """.trimIndent(),
         options = SearchSuggestionEngineOption.entries,
         initialValue = userSettings.searchSuggestionEngine,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.SEARCH_SUGGESTION_ENGINE),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.searchSuggestionEngine = it },
         itemText = { it.label }
     )

@@ -12,6 +12,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun DisplayZoomControlsSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.WebEngine.DISPLAY_ZOOM_CONTROLS
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_engine_display_zoom_controls_title),
@@ -20,7 +21,8 @@ fun DisplayZoomControlsSetting() {
             when using the built-in zoom mechanisms.
         """.trimIndent(),
         initialValue = userSettings.displayZoomControls,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.DISPLAY_ZOOM_CONTROLS),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.displayZoomControls = it }
     )
 }

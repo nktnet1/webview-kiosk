@@ -15,6 +15,7 @@ fun CustomSettingFieldItem(
     label: String,
     infoText: String,
     value: String,
+    settingKey: String,
     restricted: Boolean,
     onSave: () -> Unit,
     onDismissCallback: () -> Unit = {},
@@ -51,6 +52,7 @@ fun CustomSettingFieldItem(
                 showDialog = false
                 onDismissCallback()
             },
+            settingKey = settingKey,
             onSave = {
                 onSave()
                 showDialog = false

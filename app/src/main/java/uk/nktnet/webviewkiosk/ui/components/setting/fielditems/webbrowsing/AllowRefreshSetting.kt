@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun AllowRefreshSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebBrowsing.ALLOW_REFRESH
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_browsing_allow_refresh_title),
@@ -22,7 +23,8 @@ fun AllowRefreshSetting() {
             - kiosk control panel
             - pull to refresh (can be configured separately)
         """.trimIndent(),
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.ALLOW_REFRESH),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.allowRefresh,
         onSave = { userSettings.allowRefresh = it }
     )

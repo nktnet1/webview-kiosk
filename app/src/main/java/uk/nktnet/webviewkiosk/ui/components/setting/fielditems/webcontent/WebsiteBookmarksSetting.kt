@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.utils.validateUrl
 fun WebsiteBookmarksSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebContent.WEBSITE_BOOKMARKS
 
     TextSettingFieldItem(
         label = stringResource(id = R.string.web_content_website_bookmarks_title ),
@@ -27,7 +28,8 @@ fun WebsiteBookmarksSetting() {
             ${Constants.GITHUB_URL}
         """.trimIndent(),
         initialValue = userSettings.websiteBookmarks,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebContent.WEBSITE_BOOKMARKS),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         isMultiline = true,
         validator = { input ->
             input.isEmpty() || input.lines().all { validateUrl(it.trim()) }

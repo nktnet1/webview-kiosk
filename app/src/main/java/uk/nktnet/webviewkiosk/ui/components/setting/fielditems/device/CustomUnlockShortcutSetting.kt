@@ -66,7 +66,8 @@ fun CustomUnlockShortcutSetting() {
 
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT)
+    val settingKey = UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT
+    val restricted = userSettings.isRestricted(settingKey)
 
     LaunchedEffect(isPressed) {
         if (isPressed && !isListening) {
@@ -87,6 +88,7 @@ fun CustomUnlockShortcutSetting() {
             has a physical keyboard connected.
         """.trimIndent(),
         value = currentValue,
+        settingKey = settingKey,
         restricted = restricted,
         onDismissCallback = {
             isListening = false

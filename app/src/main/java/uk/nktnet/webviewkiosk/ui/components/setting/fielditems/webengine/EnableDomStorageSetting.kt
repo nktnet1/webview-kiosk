@@ -12,12 +12,14 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun EnableDomStorageSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.WebEngine.ENABLE_DOM_STORAGE
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_engine_enable_dom_storage_title),
         infoText = "Allow web pages to use DOM storage APIs like local storage and session storage.",
         initialValue = userSettings.enableDomStorage,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.ENABLE_DOM_STORAGE),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.enableDomStorage = it }
     )
 }

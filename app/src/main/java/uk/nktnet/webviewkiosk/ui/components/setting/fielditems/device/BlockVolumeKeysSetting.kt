@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun BlockVolumeKeysSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Device.BLOCK_VOLUME_KEYS
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.device_block_volume_keys_title),
@@ -20,7 +21,8 @@ fun BlockVolumeKeysSetting() {
             Prevent users from changing the device volume using hardware keys while in the kiosk app.
         """.trimIndent(),
         initialValue = userSettings.blockVolumeKeys,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Device.BLOCK_VOLUME_KEYS),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.blockVolumeKeys = it }
     )
 }

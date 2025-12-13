@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldI
 fun FloatingToolbarModeSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Appearance.FLOATING_TOOLBAR_MODE
 
     DropdownSettingFieldItem(
         label = stringResource(id = R.string.appearance_floating_toolbar_mode_title),
@@ -24,7 +25,8 @@ fun FloatingToolbarModeSetting() {
             Kiosk Control Panel.
         """.trimIndent(),
         options = FloatingToolbarModeOption.entries,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.FLOATING_TOOLBAR_MODE),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.floatingToolbarMode,
         onSave = { userSettings.floatingToolbarMode = it },
         itemText = { it.label },

@@ -12,6 +12,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun LockTaskFeatureOverviewSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.OVERVIEW
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.device_owner_lock_task_feature_overview_title),
@@ -21,7 +22,8 @@ fun LockTaskFeatureOverviewSetting() {
             If you enable this button, you must also enable the Home button.
         """.trimIndent(),
         initialValue = userSettings.lockTaskFeatureOverview,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Device.Owner.LockTaskFeature.OVERVIEW),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.lockTaskFeatureOverview = it },
     )
 }

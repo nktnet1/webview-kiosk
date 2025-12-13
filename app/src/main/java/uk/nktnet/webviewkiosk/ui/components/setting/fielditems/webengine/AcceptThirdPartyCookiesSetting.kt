@@ -13,12 +13,14 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun AcceptThirdPartyCookiesSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebEngine.ACCEPT_THIRD_PARTY_COOKIES
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_engine_accept_third_party_cookies_title),
         infoText = "Allow third-party websites to set cookies in this WebView.",
         initialValue = userSettings.acceptThirdPartyCookies,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.ACCEPT_THIRD_PARTY_COOKIES),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.acceptThirdPartyCookies = it }
     )
 }
