@@ -230,4 +230,92 @@
     <string name="js_scripts_custom_script_on_page_finish_title">On Page Finish (custom)</string>
     <string name="js_scripts_custom_script_on_page_finish_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
+    <!-- MQTT -->
+    <string name="mqtt_enabled_title">MQTT Enabled</string>
+    <string name="mqtt_enabled_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/</string>
+
+    <!-- MQTT Connection -->
+    <string name="mqtt_connection_server_host_title">Server Host</string>
+    <string name="mqtt_connection_server_host_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+
+    <string name="mqtt_connection_server_port_title">Server Port</string>
+    <string name="mqtt_connection_server_port_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+
+    <string name="mqtt_connection_client_id_title">Client ID</string>
+    <string name="mqtt_connection_client_id_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+
+    <string name="mqtt_connection_use_tls_title">Use TLS</string>
+    <string name="mqtt_connection_use_tls_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+
+    <string name="mqtt_connection_username_title">Username</string>
+    <string name="mqtt_connection_username_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+
+    <string name="mqtt_connection_password_title">Password</string>
+    <string name="mqtt_connection_password_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+
+    <string name="mqtt_connection_clean_start_title">Clean Start</string>
+    <string name="mqtt_connection_clean_start_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+
+    <string name="mqtt_connection_keep_alive_title">Keep Alive</string>
+    <string name="mqtt_connection_keep_alive_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+
+    <string name="mqtt_connection_connect_timeout_title">Connect Timeout</string>
+    <string name="mqtt_connection_connect_timeout_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+
+    <string name="mqtt_connection_socket_connect_timeout_title">Socket Connect Timeout</string>
+    <string name="mqtt_connection_socket_connect_timeout_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+
+    <string name="mqtt_connection_automatic_reconnect_title">Automatic Reconnect</string>
+    <string name="mqtt_connection_automatic_reconnect_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+
+    <string name="mqtt_connection_use_websocket_title">Use WebSocket</string>
+    <string name="mqtt_connection_use_websocket_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+
+    <string name="mqtt_connection_websocket_server_path_title">WebSocket Server Path</string>
+    <string name="mqtt_connection_websocket_server_path_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+
+    <!-- MQTT Will -->
+    <string name="mqtt_will_topic_title">Will Topic</string>
+    <string name="mqtt_will_topic_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
+
+    <string name="mqtt_will_qos_title">Will QoS</string>
+    <string name="mqtt_will_qos_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
+
+    <string name="mqtt_will_payload_title">Will Payload</string>
+    <string name="mqtt_will_payload_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
+
+    <string name="mqtt_will_retain_title">Will Retain</string>
+    <string name="mqtt_will_retain_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
+
+    <string name="mqtt_will_message_expiry_interval_title">Will Message Expiry Interval</string>
+    <string name="mqtt_will_message_expiry_interval_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
+
+    <string name="mqtt_will_delay_interval_title">Will Delay Interval</string>
+    <string name="mqtt_will_delay_interval_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/will/</string>
+
+    <!-- MQTT Restrictions -->
+    <string name="mqtt_restrictions_receive_maximum_title">Receive Maximum</string>
+    <string name="mqtt_restrictions_receive_maximum_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
+
+    <string name="mqtt_restrictions_send_maximum_title">Send Maximum</string>
+    <string name="mqtt_restrictions_send_maximum_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
+
+    <string name="mqtt_restrictions_maximum_packet_size_title">Maximum Packet Size</string>
+    <string name="mqtt_restrictions_maximum_packet_size_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
+
+    <string name="mqtt_restrictions_send_maximum_packet_size_title">Send Maximum Packet Size</string>
+    <string name="mqtt_restrictions_send_maximum_packet_size_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
+
+    <string name="mqtt_restrictions_topic_alias_maximum_title">Topic Alias Maximum</string>
+    <string name="mqtt_restrictions_topic_alias_maximum_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
+
+    <string name="mqtt_restrictions_send_topic_alias_maximum_title">Send Topic Alias Maximum</string>
+    <string name="mqtt_restrictions_send_topic_alias_maximum_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
+
+    <string name="mqtt_restrictions_request_problem_information_title">Request Problem Information</string>
+    <string name="mqtt_restrictions_request_problem_information_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
+
+    <string name="mqtt_restrictions_request_response_information_title">Request Response Information</string>
+    <string name="mqtt_restrictions_request_response_information_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
+
 </resources>

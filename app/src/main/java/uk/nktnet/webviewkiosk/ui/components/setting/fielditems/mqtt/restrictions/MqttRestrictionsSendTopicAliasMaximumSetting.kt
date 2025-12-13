@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.restriction
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldItem
@@ -13,7 +15,7 @@ fun MqttRestrictionsSendTopicAliasMaximumSetting() {
     val userSettings = remember { UserSettings(context) }
 
     NumberSettingFieldItem(
-        label = "Send Topic Alias Maximum",
+        label = stringResource(R.string.mqtt_restrictions_send_topic_alias_maximum_title),
         infoText = """
             Maximum number of topic aliases the client can send.
         """.trimIndent(),
