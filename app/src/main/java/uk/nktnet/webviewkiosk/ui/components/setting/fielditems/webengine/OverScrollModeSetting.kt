@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldI
 fun OverScrollModeSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebEngine.OVER_SCROLL_MODE
 
     DropdownSettingFieldItem(
         label = stringResource(id = R.string.web_engine_over_scroll_mode_title),
@@ -27,7 +28,8 @@ fun OverScrollModeSetting() {
         """.trimIndent(),
         options = OverScrollModeOption.entries,
         initialValue = userSettings.overScrollMode,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.OVER_SCROLL_MODE),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.overScrollMode = it },
         itemText = { it.label },
     )

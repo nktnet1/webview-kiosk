@@ -18,6 +18,7 @@ fun MqttEnabledSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
+    val settingKey = UserSettingsKeys.Mqtt.ENABLED
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_enabled_title),
@@ -31,7 +32,8 @@ fun MqttEnabledSetting() {
             the "Connect" button after enabling this option (or simply restarts the app).
         """.trimIndent(),
         initialValue = userSettings.mqttEnabled,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.ENABLED),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { isEnabled ->
             val isChanged = isEnabled != userSettings.mqttEnabled
             if (isChanged) {

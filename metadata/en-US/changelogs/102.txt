@@ -1,0 +1,7 @@
+## Changes
+
+- feat: display custom key in setting info
+- feat: lock task features app restrictions + localisation
+- fix: back button service fallback (regression)
+- fix: disable app search when there is 1 or fewer results
+- fix: lock task feature, only apply overview and notifications if home is set

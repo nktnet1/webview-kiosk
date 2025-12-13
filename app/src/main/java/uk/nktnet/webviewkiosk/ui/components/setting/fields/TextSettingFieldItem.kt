@@ -32,6 +32,7 @@ fun TextSettingFieldItem(
     initialValue: String,
     isMultiline: Boolean,
     modifier: Modifier = Modifier,
+    settingKey: String,
     restricted: Boolean,
     onLongClick: ((value: String) -> Unit)? = null,
     validator: (String) -> Boolean = { true },
@@ -90,6 +91,7 @@ fun TextSettingFieldItem(
         GenericSettingFieldDialog(
             title = label,
             infoText = infoText,
+            settingKey = settingKey,
             restricted = restricted,
             onDismiss = { showDialog = false },
             onSave = {

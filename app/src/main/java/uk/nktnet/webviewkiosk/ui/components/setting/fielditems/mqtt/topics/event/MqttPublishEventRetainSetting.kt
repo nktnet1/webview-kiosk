@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun MqttPublishEventRetainSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_publish_event_retain_title),
@@ -20,7 +21,8 @@ fun MqttPublishEventRetainSetting() {
             Keep event topic messages retained for new subscribers.
         """.trimIndent(),
         initialValue = userSettings.mqttPublishEventRetain,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.mqttPublishEventRetain = it }
     )
 }

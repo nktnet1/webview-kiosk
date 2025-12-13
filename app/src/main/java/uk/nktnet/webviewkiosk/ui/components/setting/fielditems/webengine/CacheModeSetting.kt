@@ -14,13 +14,15 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldI
 fun CacheModeSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebEngine.CACHE_MODE
 
     DropdownSettingFieldItem(
         label = stringResource(id = R.string.web_engine_cache_mode_title),
         infoText = "Control how the WebView uses its cache when loading pages.",
         options = CacheModeOption.entries,
         initialValue = userSettings.cacheMode,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.CACHE_MODE),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.cacheMode = it },
         itemText = { it.label },
     )

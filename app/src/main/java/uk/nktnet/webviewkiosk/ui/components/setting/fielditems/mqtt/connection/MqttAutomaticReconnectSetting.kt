@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun MqttAutomaticReconnectSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_automatic_reconnect_title),
@@ -25,7 +26,8 @@ fun MqttAutomaticReconnectSetting() {
             ${Constants.MQTT_AUTO_RECONNECT_INTERVAL_SECONDS}-second interval.
         """.trimIndent(),
         initialValue = userSettings.mqttAutomaticReconnect,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.mqttAutomaticReconnect = it }
     )
 }

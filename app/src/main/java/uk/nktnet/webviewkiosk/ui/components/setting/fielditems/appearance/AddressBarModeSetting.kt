@@ -14,12 +14,14 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldI
 fun AddressBarModeSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Appearance.ADDRESS_BAR_MODE
 
     DropdownSettingFieldItem(
         label = stringResource(id = R.string.appearance_address_bar_mode_title),
         infoText = "Customise the visibility of the address bar.",
         options = AddressBarModeOption.entries,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.addressBarMode,
         onSave = { userSettings.addressBarMode = it },
         itemText = { it.label },

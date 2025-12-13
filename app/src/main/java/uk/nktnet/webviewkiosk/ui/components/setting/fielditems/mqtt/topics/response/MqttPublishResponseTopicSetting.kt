@@ -16,8 +16,7 @@ import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
 fun MqttPublishResponseTopicSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Publish.Response.TOPIC)
+    val settingKey = UserSettingsKeys.Mqtt.Topics.Publish.Response.TOPIC
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_publish_response_retain_title),
@@ -40,7 +39,8 @@ fun MqttPublishResponseTopicSetting() {
         initialValue = userSettings.mqttPublishResponseTopic,
         descriptionFormatter = { mqttVariableReplacement(it) },
         validator = { it.isEmpty() || isValidMqttPublishTopic(it) },
-        restricted = restricted,
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         isMultiline = false,
         onSave = { userSettings.mqttPublishResponseTopic = it }
     )

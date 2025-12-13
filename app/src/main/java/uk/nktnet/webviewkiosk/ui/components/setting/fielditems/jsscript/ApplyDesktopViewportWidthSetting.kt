@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldIte
 fun ApplyDesktopViewportWidthSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH
 
     NumberSettingFieldItem(
         label = stringResource(id = R.string.js_scripts_apply_desktop_viewport_width_title),
@@ -41,7 +42,8 @@ fun ApplyDesktopViewportWidthSetting() {
             To disable, use the value 0.
         """.trimIndent(),
         initialValue = userSettings.applyDesktopViewportWidth,
-        restricted = userSettings.isRestricted(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         min = Constants.MIN_DESKTOP_WIDTH,
         placeholder = "e.g. 1024 (or 0 to disable)",
         onSave = { userSettings.applyDesktopViewportWidth = it }

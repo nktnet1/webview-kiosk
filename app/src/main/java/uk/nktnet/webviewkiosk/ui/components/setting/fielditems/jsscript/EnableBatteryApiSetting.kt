@@ -12,6 +12,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun EnableBatteryApiSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.JsScripts.ENABLE_BATTERY_API
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.js_scripts_enable_battery_api_title),
@@ -25,7 +26,8 @@ fun EnableBatteryApiSetting() {
             battery information.
         """.trimIndent(),
         initialValue = userSettings.enableBatteryApi,
-        restricted = userSettings.isRestricted(UserSettingsKeys.JsScripts.ENABLE_BATTERY_API),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.enableBatteryApi = it }
     )
 }

@@ -15,15 +15,15 @@ import uk.nktnet.webviewkiosk.utils.isValidMqttSubscribeTopic
 fun MqttSubscribeCommandTopicSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC)
+    val settingKey = UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_subscribe_command_topic_title),
         infoText = "The MQTT topic to subscribe for command messages.",
         placeholder = "e.g. devices/+/command",
         initialValue = userSettings.mqttSubscribeCommandTopic,
-        restricted = restricted,
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         validator = { it.isEmpty() || isValidMqttSubscribeTopic(it) },
         descriptionFormatter = {
             mqttVariableReplacement( it)

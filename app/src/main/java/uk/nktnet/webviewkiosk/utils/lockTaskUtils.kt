@@ -51,16 +51,20 @@ fun applyLockTaskFeatures(context: Context) {
 
     if (userSettings.lockTaskFeatureHome) {
         features = features or DevicePolicyManager.LOCK_TASK_FEATURE_HOME
+
+        if (userSettings.lockTaskFeatureOverview) {
+            features = features or DevicePolicyManager.LOCK_TASK_FEATURE_OVERVIEW
+        }
+
+        if (userSettings.lockTaskFeatureNotifications) {
+            features = features or DevicePolicyManager.LOCK_TASK_FEATURE_NOTIFICATIONS
+        }
     }
-    if (userSettings.lockTaskFeatureOverview) {
-        features = features or DevicePolicyManager.LOCK_TASK_FEATURE_OVERVIEW
-    }
+
     if (userSettings.lockTaskFeatureGlobalActions) {
         features = features or DevicePolicyManager.LOCK_TASK_FEATURE_GLOBAL_ACTIONS
     }
-    if (userSettings.lockTaskFeatureNotifications) {
-        features = features or DevicePolicyManager.LOCK_TASK_FEATURE_NOTIFICATIONS
-    }
+
     if (userSettings.lockTaskFeatureSystemInfo) {
         features = features or DevicePolicyManager.LOCK_TASK_FEATURE_SYSTEM_INFO
     }

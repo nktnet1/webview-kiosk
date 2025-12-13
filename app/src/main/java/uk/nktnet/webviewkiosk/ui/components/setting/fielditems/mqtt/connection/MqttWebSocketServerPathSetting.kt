@@ -13,8 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 fun MqttWebSocketServerPathSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.WEBSOCKET_SERVER_PATH)
+    val settingKey = UserSettingsKeys.Mqtt.Connection.WEBSOCKET_SERVER_PATH
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_websocket_server_path_title),
@@ -25,7 +24,8 @@ fun MqttWebSocketServerPathSetting() {
         """.trimIndent(),
         placeholder = "/mqtt",
         initialValue = userSettings.mqttWebSocketServerPath,
-        restricted = restricted,
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         validator = { it.isEmpty() || it.startsWith('/') },
         validationMessage = "Path must start with '/'",
         isMultiline = false,

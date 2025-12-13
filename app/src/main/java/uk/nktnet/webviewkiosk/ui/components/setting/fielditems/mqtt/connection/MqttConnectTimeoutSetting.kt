@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldIte
 fun MqttConnectTimeoutSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT
 
     NumberSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_connect_timeout_title),
@@ -23,7 +24,8 @@ fun MqttConnectTimeoutSetting() {
         """.trimIndent(),
         placeholder = "e.g. 30",
         initialValue = userSettings.mqttConnectTimeout,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         min = 0,
         max = 300,
         onSave = { userSettings.mqttConnectTimeout = it }

@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldIte
 fun MqttRestrictionsReceiveMaximumSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Mqtt.Restrictions.RECEIVE_MAXIMUM
 
     NumberSettingFieldItem(
         label = stringResource(R.string.mqtt_restrictions_receive_maximum_title),
@@ -21,7 +22,8 @@ fun MqttRestrictionsReceiveMaximumSetting() {
         """.trimIndent(),
         placeholder = "e.g. 16",
         initialValue = userSettings.mqttRestrictionsReceiveMaximum,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Restrictions.RECEIVE_MAXIMUM),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         min = 0,
         max = 65535,
         onSave = { userSettings.mqttRestrictionsReceiveMaximum = it }

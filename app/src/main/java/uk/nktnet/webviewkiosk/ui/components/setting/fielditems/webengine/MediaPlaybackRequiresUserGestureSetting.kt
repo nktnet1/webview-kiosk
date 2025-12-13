@@ -12,6 +12,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun MediaPlaybackRequiresUserGestureSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_engine_media_playback_requires_user_gesture_title),
@@ -19,7 +20,8 @@ fun MediaPlaybackRequiresUserGestureSetting() {
             Sets whether the WebView requires a user gesture (e.g. tap) to play media.
         """.trimIndent(),
         initialValue = userSettings.mediaPlaybackRequiresUserGesture,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.mediaPlaybackRequiresUserGesture = it }
     )
 }

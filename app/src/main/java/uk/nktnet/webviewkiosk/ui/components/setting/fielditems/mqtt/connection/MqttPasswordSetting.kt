@@ -13,8 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 fun MqttPasswordSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.PASSWORD)
+    val settingKey = UserSettingsKeys.Mqtt.Connection.PASSWORD
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_password_title),
@@ -23,7 +22,8 @@ fun MqttPasswordSetting() {
         """.trimIndent(),
         placeholder = "e.g. **********",
         initialValue = userSettings.mqttPassword,
-        restricted = restricted,
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         isMultiline = false,
         isPassword = true,
         descriptionFormatter = { v -> if (v.isNotBlank()) "*".repeat(20) else "(blank)" },

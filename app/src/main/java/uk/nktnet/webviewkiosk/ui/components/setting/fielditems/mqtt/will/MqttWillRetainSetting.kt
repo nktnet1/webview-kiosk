@@ -13,11 +13,13 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun MqttWillRetainSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Mqtt.Will.RETAIN
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_will_retain_title),
         infoText = "Set to true to retain the last will message on the broker after it is sent.",
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Will.RETAIN),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.mqttWillRetain,
         onSave = { userSettings.mqttWillRetain = it }
     )

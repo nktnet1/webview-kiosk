@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldIte
 fun MqttRestrictionsMaximumPacketSizeSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Mqtt.Restrictions.MAXIMUM_PACKET_SIZE
 
     NumberSettingFieldItem(
         label = stringResource(R.string.mqtt_restrictions_send_maximum_packet_size_title),
@@ -21,7 +22,8 @@ fun MqttRestrictionsMaximumPacketSizeSetting() {
         """.trimIndent(),
         placeholder = "e.g. 2048",
         initialValue = userSettings.mqttRestrictionsMaximumPacketSize,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Restrictions.MAXIMUM_PACKET_SIZE),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         min = 0,
         max = 268_435_460,
         onSave = { userSettings.mqttRestrictionsMaximumPacketSize = it }

@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldIte
 fun MqttKeepAliveSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Mqtt.Connection.KEEP_ALIVE
 
     NumberSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_keep_alive_title),
@@ -24,7 +25,8 @@ fun MqttKeepAliveSetting() {
         """.trimIndent(),
         placeholder = "e.g. 60",
         initialValue = userSettings.mqttKeepAlive,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.KEEP_ALIVE),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         min = 0,
         max = 65535,
         onSave = { userSettings.mqttKeepAlive = it }

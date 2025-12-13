@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldIte
 fun MqttWillDelayIntervalSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Mqtt.Will.DELAY_INTERVAL
 
     NumberSettingFieldItem(
         label = stringResource(R.string.mqtt_will_delay_interval_title),
@@ -22,7 +23,8 @@ fun MqttWillDelayIntervalSetting() {
         """.trimIndent(),
         placeholder = "e.g. 0",
         initialValue = userSettings.mqttWillDelayInterval,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Will.DELAY_INTERVAL),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         min = 0,
         max = Int.MAX_VALUE,
         onSave = { userSettings.mqttWillDelayInterval = it }

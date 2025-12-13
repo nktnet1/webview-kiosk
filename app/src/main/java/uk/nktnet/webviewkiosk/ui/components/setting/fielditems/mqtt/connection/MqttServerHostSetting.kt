@@ -13,8 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 fun MqttServerHostSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.SERVER_HOST)
+    val settingKey = UserSettingsKeys.Mqtt.Connection.SERVER_HOST
 
     TextSettingFieldItem(
         label = stringResource(id = R.string.mqtt_connection_server_host_title),
@@ -28,7 +27,8 @@ fun MqttServerHostSetting() {
         """.trimIndent(),
         placeholder = "e.g. broker.example.com",
         initialValue = userSettings.mqttServerHost,
-        restricted = restricted,
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         isMultiline = false,
         onSave = { userSettings.mqttServerHost = it }
     )

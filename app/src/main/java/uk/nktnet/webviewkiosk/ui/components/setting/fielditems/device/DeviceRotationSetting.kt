@@ -15,6 +15,7 @@ import uk.nktnet.webviewkiosk.utils.setDeviceRotation
 fun DeviceRotationSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Device.DEVICE_ROTATION
 
     DropdownSettingFieldItem(
         label = stringResource(id = R.string.device_rotation_title),
@@ -24,7 +25,8 @@ fun DeviceRotationSetting() {
         """.trimIndent(),
         options = DeviceRotationOption.entries,
         initialValue = userSettings.rotation,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Device.DEVICE_ROTATION),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = {
             userSettings.rotation = it
             setDeviceRotation(context, it)

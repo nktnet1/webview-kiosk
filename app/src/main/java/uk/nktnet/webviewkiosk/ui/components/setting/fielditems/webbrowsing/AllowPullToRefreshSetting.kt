@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun AllowPullToRefreshSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebBrowsing.ALLOW_PULL_TO_REFRESH
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_browsing_allow_pull_to_refresh_title),
@@ -25,7 +26,8 @@ fun AllowPullToRefreshSetting() {
             - the page to have been scrolled fully to the top prior to the gesture
             - a single finger (touch) is used
         """.trimIndent(),
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.ALLOW_PULL_TO_REFRESH),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.allowPullToRefresh,
         onSave = { userSettings.allowPullToRefresh = it }
     )

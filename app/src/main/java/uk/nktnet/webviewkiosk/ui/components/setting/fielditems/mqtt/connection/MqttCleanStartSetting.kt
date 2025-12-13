@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun MqttCleanStartSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Mqtt.Connection.CLEAN_START
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_clean_start_title),
@@ -24,7 +25,8 @@ fun MqttCleanStartSetting() {
             (subscriptions, in-flight messages, etc.) if it exists.
         """.trimIndent(),
         initialValue = userSettings.mqttCleanStart,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.CLEAN_START),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.mqttCleanStart = it }
     )
 }

@@ -14,7 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 fun CustomAuthPasswordSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD)
+    val settingKey = UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD
 
     val maxCharacters = 128
 
@@ -35,7 +35,8 @@ fun CustomAuthPasswordSetting() {
         """.trimIndent(),
         placeholder = "(blank = device credentials)",
         initialValue = userSettings.customAuthPassword,
-        restricted = restricted,
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         isMultiline = false,
         isPassword = true,
         validator = { it.length <= maxCharacters },

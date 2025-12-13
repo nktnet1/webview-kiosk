@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun MqttUseWebSocketSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Mqtt.Connection.USE_WEBSOCKET
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_use_websocket_title),
@@ -31,7 +32,8 @@ fun MqttUseWebSocketSetting() {
             ports like 8883.
         """.trimIndent(),
         initialValue = userSettings.mqttUseWebSocket,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.USE_WEBSOCKET),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.mqttUseWebSocket = it }
     )
 }

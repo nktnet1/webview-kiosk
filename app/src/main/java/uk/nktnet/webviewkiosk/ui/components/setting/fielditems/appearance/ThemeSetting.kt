@@ -15,6 +15,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldI
 fun ThemeSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Appearance.THEME
 
     DropdownSettingFieldItem(
         label = stringResource(id = R.string.appearance_theme_title),
@@ -25,7 +26,8 @@ fun ThemeSetting() {
         """.trimIndent(),
         options = ThemeOption.entries,
         initialValue = userSettings.theme,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.THEME),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         itemText = { it.label },
         onSave = {
             userSettings.theme = it

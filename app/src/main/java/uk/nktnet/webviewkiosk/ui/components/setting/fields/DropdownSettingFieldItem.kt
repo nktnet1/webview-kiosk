@@ -16,6 +16,7 @@ fun <T> DropdownSettingFieldItem(
     infoText: String,
     options: List<T>,
     initialValue: T,
+    settingKey: String,
     restricted: Boolean,
     extraContent: (@Composable ((setValue: (T) -> Unit) -> Unit))? = null,
     validator: (value: T) -> Boolean = { true },
@@ -51,6 +52,7 @@ fun <T> DropdownSettingFieldItem(
             title = label,
             infoText = infoText,
             onDismiss = { showDialog = false },
+            settingKey = settingKey,
             restricted = restricted,
             onSave = {
                 if (!draftError) {

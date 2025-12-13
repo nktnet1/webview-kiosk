@@ -2,6 +2,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.loc
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -10,9 +12,10 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun LockTaskFeatureGlobalActionsSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.GLOBAL_ACTIONS
 
     BooleanSettingFieldItem(
-        label = "Enable Global Actions",
+        label = stringResource(id = R.string.device_owner_lock_task_feature_global_actions_title),
         infoText = """
             Enables the global actions dialog that shows when long-pressing the power button.
 
@@ -20,7 +23,8 @@ fun LockTaskFeatureGlobalActionsSetting() {
             A user typically can't power off the device if you disable this dialog.
         """.trimIndent(),
         initialValue = userSettings.lockTaskFeatureGlobalActions,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Device.Owner.LockTaskFeature.GLOBAL_ACTIONS),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.lockTaskFeatureGlobalActions = it },
     )
 }

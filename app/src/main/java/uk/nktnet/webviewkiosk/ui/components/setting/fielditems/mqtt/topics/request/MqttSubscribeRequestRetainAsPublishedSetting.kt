@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun MqttSubscribeRequestRetainAsPublishedSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_AS_PUBLISHED
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_subscribe_request_retain_as_published_title),
@@ -21,7 +22,8 @@ fun MqttSubscribeRequestRetainAsPublishedSetting() {
             retained flag when delivered to the subscriber.
         """.trimIndent(),
         initialValue = userSettings.mqttSubscribeRequestRetainAsPublished,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_AS_PUBLISHED),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.mqttSubscribeRequestRetainAsPublished = it }
     )
 }

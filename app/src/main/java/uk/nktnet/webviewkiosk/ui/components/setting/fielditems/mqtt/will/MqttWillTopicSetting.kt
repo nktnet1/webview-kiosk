@@ -16,21 +16,21 @@ import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
 fun MqttWillTopicSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Will.TOPIC)
+    val settingKey = UserSettingsKeys.Mqtt.Will.TOPIC
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_will_topic_title),
-        infoText = """
+        infoText = $$"""
             The MQTT topic to publish the last will message if the client
             disconnects unexpectedly.
 
             All global variables are supported, e.g. you can use
-            - wk/${'$'}{${MqttVariableNameOption.USERNAME.name}}/${'$'}{${MqttVariableNameOption.APP_INSTANCE_ID.name}}/will
+            - wk/${$${MqttVariableNameOption.USERNAME.name}}/${$${MqttVariableNameOption.APP_INSTANCE_ID.name}}/will
         """.trimIndent(),
         placeholder = "e.g. wk/will",
         initialValue = userSettings.mqttWillTopic,
-        restricted = restricted,
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         validator = { it.isEmpty() || isValidMqttPublishTopic(it) },
         descriptionFormatter = {
             mqttVariableReplacement( it)

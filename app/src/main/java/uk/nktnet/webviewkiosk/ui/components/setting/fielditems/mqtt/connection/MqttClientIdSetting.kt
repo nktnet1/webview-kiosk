@@ -35,13 +35,13 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 fun MqttClientIdSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.CLIENT_ID)
+    val settingKey = UserSettingsKeys.Mqtt.Connection.CLIENT_ID
+    val restricted = userSettings.isRestricted(settingKey)
 
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
 
-    val recommendedClientId = "wk-${'$'}{${MqttVariableNameOption.APP_INSTANCE_ID.name}}"
+    val recommendedClientId = $$"wk-${$${MqttVariableNameOption.APP_INSTANCE_ID.name}}"
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_client_id_title),
@@ -64,7 +64,8 @@ fun MqttClientIdSetting() {
                 MqttManager.mqttVariableReplacement(it)
             }
         },
-        restricted = restricted,
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         isMultiline = false,
         onLongClick = { v ->
             scope.launch {
@@ -77,7 +78,9 @@ fun MqttClientIdSetting() {
         },
         onSave = { userSettings.mqttClientId = it },
         extraContent = { setValue: (String) -> Unit ->
-            if (restricted) return@TextSettingFieldItem
+            if (restricted) {
+                return@TextSettingFieldItem
+            }
             Button(
                 onClick = { setValue(recommendedClientId) },
                 modifier = Modifier

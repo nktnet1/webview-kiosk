@@ -15,15 +15,15 @@ import uk.nktnet.webviewkiosk.utils.isValidMqttSubscribeTopic
 fun MqttSubscribeRequestTopicSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.TOPIC)
+    val settingKey = UserSettingsKeys.Mqtt.Topics.Subscribe.Request.TOPIC
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_subscribe_request_topic_title),
         infoText = "The MQTT topic to subscribe for request messages.",
         placeholder = "e.g. devices/+/request",
         initialValue = userSettings.mqttSubscribeRequestTopic,
-        restricted = restricted,
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         validator = { it.isEmpty() || isValidMqttSubscribeTopic(it) },
         descriptionFormatter = {
             mqttVariableReplacement(it)

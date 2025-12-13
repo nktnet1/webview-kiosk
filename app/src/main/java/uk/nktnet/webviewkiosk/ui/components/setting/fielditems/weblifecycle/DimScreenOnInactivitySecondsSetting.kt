@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldIte
 fun DimScreenOnInactivitySecondsSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebLifecycle.DIM_SCREEN_ON_INACTIVITY_SECONDS
 
     NumberSettingFieldItem(
         label = stringResource(id = R.string.web_lifecycle_dim_screen_on_inactivity_seconds_title),
@@ -29,7 +30,8 @@ fun DimScreenOnInactivitySecondsSetting() {
         """.trimIndent(),
         placeholder = "e.g. 120",
         initialValue = userSettings.dimScreenOnInactivitySeconds,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebLifecycle.DIM_SCREEN_ON_INACTIVITY_SECONDS),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         min = Constants.MIN_INACTIVITY_TIMEOUT_SECONDS,
         onSave = { userSettings.dimScreenOnInactivitySeconds = it }
     )

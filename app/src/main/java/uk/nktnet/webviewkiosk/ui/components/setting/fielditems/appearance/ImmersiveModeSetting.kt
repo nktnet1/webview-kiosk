@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldI
 fun ImmersiveModeSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Appearance.IMMERSIVE_MODE
 
     DropdownSettingFieldItem(
         label = stringResource(id = R.string.appearance_immersive_mode_title),
@@ -27,7 +28,8 @@ fun ImmersiveModeSetting() {
             (for example, when watching a video), irrespective of this setting.
         """.trimIndent(),
         options = ImmersiveModeOption.entries,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.IMMERSIVE_MODE),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.immersiveMode,
         onSave = { userSettings.immersiveMode = it },
         itemText = { it.label },

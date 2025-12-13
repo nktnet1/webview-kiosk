@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldI
 fun MqttWillQosSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Mqtt.Will.QOS
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.mqtt_will_qos_title),
@@ -23,7 +24,8 @@ fun MqttWillQosSetting() {
         """.trimIndent(),
         options = MqttQosOption.entries,
         initialValue = userSettings.mqttWillQos,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Will.QOS),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.mqttWillQos = it },
         itemText = { it.getSettingLabel() },
     )

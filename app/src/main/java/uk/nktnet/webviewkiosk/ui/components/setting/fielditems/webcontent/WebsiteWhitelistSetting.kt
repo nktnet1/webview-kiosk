@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.utils.validateMultilineRegex
 fun WebsiteWhitelistSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebContent.WEBSITE_WHITELIST
 
     TextSettingFieldItem(
         label = stringResource(id = R.string.web_content_website_whitelist_title),
@@ -34,7 +35,8 @@ fun WebsiteWhitelistSetting() {
                 ^https://.*\.trusted\.org/.*
         """.trimIndent(),
         initialValue = userSettings.websiteWhitelist,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebContent.WEBSITE_WHITELIST),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         isMultiline = true,
         validator = { validateMultilineRegex(it) },
         validationMessage = "Some lines contain invalid regular expressions.",

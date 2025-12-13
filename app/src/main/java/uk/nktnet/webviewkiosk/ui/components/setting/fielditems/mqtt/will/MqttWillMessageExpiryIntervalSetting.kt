@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldIte
 fun MqttWillMessageExpiryIntervalSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Mqtt.Will.MESSAGE_EXPIRY_INTERVAL
 
     NumberSettingFieldItem(
         label = stringResource(R.string.mqtt_will_message_expiry_interval_title),
@@ -22,7 +23,8 @@ fun MqttWillMessageExpiryIntervalSetting() {
         """.trimIndent(),
         placeholder = "e.g. 0",
         initialValue = userSettings.mqttWillMessageExpiryInterval,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Will.MESSAGE_EXPIRY_INTERVAL),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         min = 0,
         max = Int.MAX_VALUE,
         onSave = { userSettings.mqttWillMessageExpiryInterval = it }

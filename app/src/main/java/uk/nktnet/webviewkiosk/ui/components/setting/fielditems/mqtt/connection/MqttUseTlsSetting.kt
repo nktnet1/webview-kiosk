@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun MqttUseTlsSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Mqtt.Connection.USE_TLS
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_use_tls_title),
@@ -21,7 +22,8 @@ fun MqttUseTlsSetting() {
             using TLS. Ensure the broker supports TLS on the configured port.
         """.trimIndent(),
         initialValue = userSettings.mqttUseTls,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.USE_TLS),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.mqttUseTls = it }
     )
 }

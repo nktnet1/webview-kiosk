@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun MqttRestrictionsRequestProblemInformationSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Mqtt.Restrictions.REQUEST_PROBLEM_INFORMATION
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_restrictions_request_problem_information_title),
@@ -21,7 +22,8 @@ fun MqttRestrictionsRequestProblemInformationSetting() {
             from the broker in MQTT responses.
         """.trimIndent(),
         initialValue = userSettings.mqttRestrictionsRequestProblemInformation,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Restrictions.REQUEST_PROBLEM_INFORMATION),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.mqttRestrictionsRequestProblemInformation = it }
     )
 }

@@ -15,6 +15,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldI
 fun UnlockAuthRequirementSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT
 
     DropdownSettingFieldItem(
         label = stringResource(id = R.string.device_unlock_auth_requirement_title),
@@ -36,7 +37,8 @@ fun UnlockAuthRequirementSetting() {
         """.trimIndent(),
         options = UnlockAuthRequirementOption.entries,
         initialValue = userSettings.unlockAuthRequirement,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.unlockAuthRequirement = it },
         itemText = { it.label },
     )

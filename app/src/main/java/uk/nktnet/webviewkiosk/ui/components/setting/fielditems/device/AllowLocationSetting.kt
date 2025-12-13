@@ -22,6 +22,7 @@ import uk.nktnet.webviewkiosk.utils.rememberPermissionState
 fun AllowLocationSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.Device.ALLOW_LOCATION
 
     var requestFine by remember { mutableStateOf(false) }
 
@@ -52,7 +53,8 @@ fun AllowLocationSetting() {
             required for the WebView's GeolocationPermissions.
         """.trimIndent(),
         initialValue = userSettings.allowLocation,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Device.ALLOW_LOCATION),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.allowLocation = it },
         itemText = { v ->
             if (v) "True $statusText" else "False $statusText"

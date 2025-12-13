@@ -16,8 +16,7 @@ import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
 fun MqttPublishEventTopicSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC)
+    val settingKey = UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_publish_event_topic_title),
@@ -38,7 +37,8 @@ fun MqttPublishEventTopicSetting() {
             mqttVariableReplacement( it)
         },
         validator = { it.isEmpty() || isValidMqttPublishTopic(it) },
-        restricted = restricted,
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         isMultiline = false,
         onSave = { userSettings.mqttPublishEventTopic = it }
     )

@@ -13,8 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 fun MqttUsernameSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.USERNAME)
+    val settingKey = UserSettingsKeys.Mqtt.Connection.USERNAME
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_username_title),
@@ -23,7 +22,8 @@ fun MqttUsernameSetting() {
         """.trimIndent(),
         placeholder = "e.g. user001",
         initialValue = userSettings.mqttUsername,
-        restricted = restricted,
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         isMultiline = false,
         onSave = { userSettings.mqttUsername = it }
     )

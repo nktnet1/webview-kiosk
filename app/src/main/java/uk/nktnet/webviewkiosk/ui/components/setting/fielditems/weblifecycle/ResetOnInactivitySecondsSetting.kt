@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldIte
 fun ResetOnInactivitySecondsSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS
 
     NumberSettingFieldItem(
         label = stringResource(id = R.string.web_lifecycle_reset_on_inactivity_seconds_title),
@@ -33,7 +34,8 @@ fun ResetOnInactivitySecondsSetting() {
         """.trimIndent(),
         placeholder = "e.g. 3600 (for 1 hour)",
         initialValue = userSettings.resetOnInactivitySeconds,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         min = Constants.MIN_INACTIVITY_TIMEOUT_SECONDS,
         onSave = { userSettings.resetOnInactivitySeconds = it }
     )

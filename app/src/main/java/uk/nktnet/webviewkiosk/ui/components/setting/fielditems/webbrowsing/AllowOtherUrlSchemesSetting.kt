@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun AllowOtherUrlSchemesSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebBrowsing.ALLOW_OTHER_URL_SCHEMES
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_browsing_allow_other_url_schemes_title),
@@ -24,7 +25,8 @@ fun AllowOtherUrlSchemesSetting() {
             NOTE: This only works when in unlocked/unpinned mode.
         """.trimIndent(),
         initialValue = userSettings.allowOtherUrlSchemes,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.ALLOW_OTHER_URL_SCHEMES),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.allowOtherUrlSchemes = it }
     )
 }

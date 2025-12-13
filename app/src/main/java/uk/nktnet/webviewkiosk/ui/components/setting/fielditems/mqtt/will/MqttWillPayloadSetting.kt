@@ -15,8 +15,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 fun MqttWillPayloadSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-
-    val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Will.PAYLOAD)
+    val settingKey = UserSettingsKeys.Mqtt.Will.PAYLOAD
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_will_payload_title),
@@ -38,7 +37,8 @@ fun MqttWillPayloadSetting() {
             }
         """.trimIndent(),
         initialValue = userSettings.mqttWillPayload,
-        restricted = restricted,
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         isMultiline = true,
         descriptionFormatter = {
             mqttVariableReplacement( it)

@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldI
 fun BackButtonHoldActionSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION
 
     DropdownSettingFieldItem(
         label = stringResource(id = R.string.device_back_button_hold_action_title),
@@ -21,7 +22,8 @@ fun BackButtonHoldActionSetting() {
             Customise the behaviour when the back button is held down (long pressed).
         """.trimIndent(),
         options = BackButtonHoldActionOption.entries,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.backButtonHoldAction,
         onSave = { userSettings.backButtonHoldAction = it },
         itemText = { it.label },

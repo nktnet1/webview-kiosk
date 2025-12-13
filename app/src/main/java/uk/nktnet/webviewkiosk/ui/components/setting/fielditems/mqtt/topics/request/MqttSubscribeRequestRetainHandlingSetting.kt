@@ -15,6 +15,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldI
 fun MqttSubscribeRequestRetainHandlingSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_HANDLING
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.mqtt_subscribe_request_retain_handling_title),
@@ -24,7 +25,8 @@ fun MqttSubscribeRequestRetainHandlingSetting() {
         """.trimIndent(),
         options = MqttRetainHandlingOption.entries,
         initialValue = userSettings.mqttSubscribeRequestRetainHandling,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_HANDLING),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.mqttSubscribeRequestRetainHandling = it },
         itemText = { it.getSettingLabel() },
     )

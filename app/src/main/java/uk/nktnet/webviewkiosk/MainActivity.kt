@@ -387,6 +387,7 @@ class MainActivity : AppCompatActivity() {
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         return (
             handleKeyEvent(this, event)
+            || backButtonService.onKeyDown(keyCode)
             || super.onKeyDown(keyCode, event)
         )
     }
@@ -394,6 +395,7 @@ class MainActivity : AppCompatActivity() {
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
         return (
             handleKeyEvent(this, event)
+            || backButtonService.onKeyUp(keyCode)
             || super.onKeyUp(keyCode, event)
         )
     }

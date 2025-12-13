@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldIte
 fun MqttServerPortSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Mqtt.Connection.SERVER_PORT
 
     NumberSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_server_port_title),
@@ -26,7 +27,8 @@ fun MqttServerPortSetting() {
             - 443 - WSS (WebSocket Secure, same port as HTTPS)
         """.trimIndent(),
         initialValue = userSettings.mqttServerPort,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Connection.SERVER_PORT),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         min = 0,
         placeholder = "e.g. 1883",
         onSave = { userSettings.mqttServerPort = it }
