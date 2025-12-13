@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
@@ -14,7 +16,7 @@ fun OverrideUrlLoadingBlockActionSetting() {
     val userSettings = remember { UserSettings(context) }
 
     DropdownSettingFieldItem(
-        label = "Override Url Loading Block Action",
+        label = stringResource(id = R.string.web_browsing_override_url_loading_block_action_title),
         infoText = """
             Action to take when a URL navigation (via shouldOverrideUrlLoading)
             matches the blacklist regex.

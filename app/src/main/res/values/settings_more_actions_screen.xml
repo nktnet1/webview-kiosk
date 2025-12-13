@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Section Titles -->
+    <string name="settings_more_action_section_shortcuts">Shortcuts</string>
+    <string name="settings_more_action_section_manage">Manage</string>
+    <string name="settings_more_action_section_clear">Clear</string>
+
+    <!-- Shortcut Actions -->
+    <string name="settings_more_action_app_info">App Info</string>
+    <string name="settings_more_action_device_settings">Device Settings</string>
+    <string name="settings_more_action_default_launcher">Default Launcher</string>
+    <string name="settings_more_action_default_apps">Default Apps</string>
+    <string name="settings_more_action_wifi_settings">WiFi Settings</string>
+    <string name="settings_more_action_data_usage">Data Usage</string>
+
+    <!-- Manage Actions -->
+    <string name="settings_more_action_local_files">Local Files</string>
+    <string name="settings_more_action_site_permissions">Site Permissions</string>
+    <string name="settings_more_action_device_owner">Device Owner</string>
+    <string name="settings_more_action_app_launcher">App Launcher</string>
+
+    <!-- Clear Actions -->
+    <string name="settings_more_action_clear_cookies">Cookies</string>
+    <string name="settings_more_action_clear_cache">Cache</string>
+    <string name="settings_more_action_clear_form_data">Form Data</string>
+    <string name="settings_more_action_clear_history">History</string>
+    <string name="settings_more_action_clear_ssl_preferences">SSL Preferences</string>
+    <string name="settings_more_action_clear_web_storage">Web Storage</string>
+
+    <!-- Toast Messages -->
+    <string name="settings_more_action_toast_cookies_cleared">Cookies cleared.</string>
+    <string name="settings_more_action_toast_cache_cleared">Cache cleared.</string>
+    <string name="settings_more_action_toast_form_data_cleared">Form data cleared.</string>
+    <string name="settings_more_action_toast_history_cleared">History cleared.</string>
+    <string name="settings_more_action_toast_ssl_preferences_cleared">SSL preferences cleared.</string>
+    <string name="settings_more_action_toast_web_storage_cleared">Web storage cleared.</string>
+    <string name="settings_more_action_toast_sdk_version_error">Error: requires SDK %1$d (current: %2$d)</string>
+
+</resources>

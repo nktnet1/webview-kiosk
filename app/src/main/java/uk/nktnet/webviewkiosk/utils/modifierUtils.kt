@@ -13,7 +13,7 @@ import androidx.compose.ui.input.pointer.pointerInteropFilter
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 
 fun Modifier.handleUserTouchEvent(): Modifier {
-    return this.pointerInteropFilter { motionEvent ->
+    return this.pointerInteropFilter { _ ->
         UserInteractionStateSingleton.onUserInteraction()
         false
     }
@@ -33,9 +33,6 @@ fun Modifier.handleUserKeyEvent(context: Context, isVisible: Boolean): Modifier 
         .focusRequester(focusRequester)
         .focusable()
         .onPreviewKeyEvent { event ->
-            handleCustomUnlockShortcut(
-                context,
-                event.nativeKeyEvent
-            )
+            handleKeyEvent(context, event.nativeKeyEvent)
         }
 }

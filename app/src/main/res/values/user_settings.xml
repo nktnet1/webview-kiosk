@@ -33,7 +33,7 @@
     <string name="web_browsing_clear_history_on_home_title">Clear History on Home</string>
     <string name="web_browsing_clear_history_on_home_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
-    <string name="web_browsing_replace_history_url_on_redirect_title">Clear History on Home</string>
+    <string name="web_browsing_replace_history_url_on_redirect_title">Replace History URL on Redirect</string>
     <string name="web_browsing_replace_history_url_on_redirect_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_allow_history_access_title">Allow History Access</string>
@@ -51,13 +51,13 @@
     <string name="web_browsing_allow_link_long_press_context_menu_title">Allow Link Long Press Context Menu</string>
     <string name="web_browsing_allow_link_long_press_context_menu_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
-    <string name="web_browsing_override_url_loading_block_action_title">Blacklist URL Action</string>
+    <string name="web_browsing_override_url_loading_block_action_title">Override URL Loading Block Action</string>
     <string name="web_browsing_override_url_loading_block_action_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_address_bar_actions_title">Address Bar Actions</string>
     <string name="web_browsing_address_bar_actions_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
-    <string name="web_browsing_kiosk_control_panel_region_title">Allow Kiosk Control Panel</string>
+    <string name="web_browsing_kiosk_control_panel_region_title">Kiosk Control Panel Region</string>
     <string name="web_browsing_kiosk_control_panel_region_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <string name="web_browsing_kiosk_control_panel_actions_title">Kiosk Control Panel Actions</string>
@@ -66,7 +66,7 @@
     <string name="web_browsing_search_provider_url_title">Search Provider URL</string>
     <string name="web_browsing_search_provider_url_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
-    <string name="web_browsing_search_suggestion_engine_title">Allow Kiosk Control Panel</string>
+    <string name="web_browsing_search_suggestion_engine_title">Search Suggestion Engine</string>
     <string name="web_browsing_search_suggestion_engine_description">https://webviewkiosk.nktnet.uk/docs/settings/web-browsing/</string>
 
     <!-- Web Engine -->
@@ -100,7 +100,7 @@
     <string name="web_engine_support_zoom_title">Support Zoom</string>
     <string name="web_engine_support_zoom_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
-    <string name="web_engine_built_in_zoom_controls_title">Built In Zoom Control</string>
+    <string name="web_engine_built_in_zoom_controls_title">Built-in Zoom Controls</string>
     <string name="web_engine_built_in_zoom_controls_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_display_zoom_controls_title">Display Zoom Controls</string>
@@ -205,14 +205,17 @@
     <string name="device_unlock_auth_requirement_title">Unlock Auth Requirement</string>
     <string name="device_unlock_auth_requirement_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
-    <string name="device_prevent_screen_capture_title">Prevent Screen Capture</string>
-    <string name="device_prevent_screen_capture_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+    <string name="device_block_screen_capture_title">Block Screen Capture</string>
+    <string name="device_block_screen_capture_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+
+    <string name="device_block_volume_keys_title">Block Volume Keys</string>
+    <string name="device_block_volume_keys_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
     <!-- JS Scripts -->
     <string name="js_scripts_apply_app_theme_title">Apply App Theme</string>
     <string name="js_scripts_apply_app_theme_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
-    <string name="js_scripts_apply_desktop_viewport_width_title">Apply Desktop Viewport Width</string>
+    <string name="js_scripts_apply_desktop_viewport_width_title">Apply Desktop Viewport Width (px)</string>
     <string name="js_scripts_apply_desktop_viewport_width_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
     <string name="js_scripts_enable_battery_api_title">Enable Battery API</string>
@@ -221,10 +224,10 @@
     <string name="js_scripts_enable_brightness_api_title">Enable Brightness API</string>
     <string name="js_scripts_enable_brightness_api_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
-    <string name="js_scripts_custom_script_on_page_start_title">Custom Script on Page Start</string>
+    <string name="js_scripts_custom_script_on_page_start_title">On Page Start (custom)</string>
     <string name="js_scripts_custom_script_on_page_start_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
-    <string name="js_scripts_custom_script_on_page_finish_title">Custom Script on Page Finish</string>
+    <string name="js_scripts_custom_script_on_page_finish_title">On Page Finish (custom)</string>
     <string name="js_scripts_custom_script_on_page_finish_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
 </resources>

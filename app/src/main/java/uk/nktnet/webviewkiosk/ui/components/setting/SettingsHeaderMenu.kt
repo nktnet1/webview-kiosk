@@ -8,6 +8,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
 import androidx.core.net.toUri
@@ -47,7 +48,7 @@ fun SettingsHeaderMenu(
     ) {
         SettingLabel(
             navController = navController,
-            label = "Settings",
+            label = stringResource(id = R.string.settings_title),
             endIcon = {
                 Box(
                     modifier = Modifier.align(Alignment.Bottom)
@@ -92,7 +93,12 @@ fun SettingsHeaderMenu(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Settings", color = tintColor) },
+                            text = {
+                                Text(
+                                    "Settings",
+                                    color = tintColor
+                                )
+                            },
                             onClick = {
                                 showMenu = false
                                 openSettings(context)

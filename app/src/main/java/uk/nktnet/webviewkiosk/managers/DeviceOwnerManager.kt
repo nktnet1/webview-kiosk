@@ -12,6 +12,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.RemoteException
+import androidx.annotation.RequiresApi
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 import com.rosan.dhizuku.api.Dhizuku
 import com.rosan.dhizuku.api.DhizukuBinderWrapper
@@ -23,6 +24,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.data.AdminAppInfo
+import uk.nktnet.webviewkiosk.config.data.AppInfo
 import uk.nktnet.webviewkiosk.config.data.AppLoadState
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.config.data.LaunchableAppInfo
@@ -135,9 +137,7 @@ object DeviceOwnerManager {
             Intent(Intent.ACTION_MAIN)
                 .addCategory(Intent.CATEGORY_LAUNCHER),
             0,
-        ).filter {
-            it.activityInfo.packageName != context.packageName
-        }.groupBy {
+        ).groupBy {
             it.activityInfo.packageName
         }
 
@@ -222,6 +222,51 @@ object DeviceOwnerManager {
                     admin = ComponentName(deviceAdminInfo.packageName, deviceAdminInfo.receiverName)
                 )
             )
+
+            if (currentChunk.size == chunkSize || index == total - 1) {
+                emit(
+                    AppLoadState(
+                        currentChunk.toList(),
+                        (index + 1).toFloat() / total
+                    )
+                )
+                currentChunk.clear()
+            }
+        }
+    }.flowOn(Dispatchers.IO)
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun getLockTaskAppsFlow(
+        context: Context,
+        chunkSize: Int = 5
+    ): Flow<AppLoadState<AppInfo>> = flow {
+        val pm = context.packageManager
+        val packagesList = DPM.getLockTaskPackages(DAR)
+
+        val total = packagesList.size
+        if (total == 0) {
+            emit(AppLoadState(emptyList(), 1f))
+            return@flow
+        }
+
+        val currentChunk = mutableListOf<AppInfo>()
+
+        packagesList.forEachIndexed { index, pkg ->
+            try {
+                val appInfo = pm.getApplicationInfo(pkg, 0)
+                val label = pm.getApplicationLabel(appInfo).toString()
+                val icon = pm.getApplicationIcon(appInfo)
+
+                currentChunk.add(
+                    AppInfo(
+                        packageName = pkg,
+                        name = label,
+                        icon = icon
+                    )
+                )
+            } catch (_: Exception) {
+                // skip invalid packages
+            }
 
             if (currentChunk.size == chunkSize || index == total - 1) {
                 emit(

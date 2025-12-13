@@ -19,10 +19,12 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.rosan.dhizuku.shared.DhizukuVariables
 import kotlinx.coroutines.delay
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
@@ -31,6 +33,7 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.DeviceAdminReceiverListDialog
+import uk.nktnet.webviewkiosk.ui.components.setting.dialog.LockTaskPackagesDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.dhizuku.DhizukuRequestPermissionOnLaunchSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureBlockActivityStartInTaskSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureGlobalActionsSetting
@@ -58,20 +61,17 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
     var hasOwnerPermission by remember {
         mutableStateOf(DeviceOwnerManager.hasOwnerPermission(context))
     }
-    var isLockedTaskPermitted by remember {
-        mutableStateOf(dpm.isLockTaskPermitted(context.packageName))
-    }
 
     val deviceOwnerStatus by DeviceOwnerManager.status.collectAsState()
 
     var showDeviceOwnerRemovalDialog by remember { mutableStateOf(false) }
     var showAdminReceiverListDialog by remember { mutableStateOf(false) }
+    var showLockTaskPackagesDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         while (true) {
             delay(1000)
             isDeviceOwner = dpm.isDeviceOwnerApp(context.packageName)
-            isLockedTaskPermitted = dpm.isLockTaskPermitted(context.packageName)
             hasOwnerPermission = DeviceOwnerManager.hasOwnerPermission(context)
         }
     }
@@ -82,7 +82,10 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
             .windowInsetsPadding(WindowInsets.safeContent)
             .padding(horizontal = 16.dp)
     ) {
-        SettingLabel(navController = navController, label = "Device Owner")
+        SettingLabel(
+            navController = navController,
+            label = stringResource(R.string.settings_device_owner_title)
+        )
         SettingDivider()
 
         Column(
@@ -153,18 +156,16 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (hasOwnerPermission && !isLockedTaskPermitted) {
+            if (hasOwnerPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 Button(
                     onClick = {
-                        setupLockTaskPackage(context)
-                        isLockedTaskPermitted = dpm.isLockTaskPermitted(context.packageName)
-                        ToastManager.show(context, "Added ${Constants.APP_NAME} to lock task packages.")
+                        showLockTaskPackagesDialog = true
                     },
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 1.dp),
                 ) {
-                    Text("Set Lock Task Permitted")
+                    Text("Manage Lock Task Packages")
                 }
             }
 
@@ -283,6 +284,13 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                     Text("Cancel")
                 }
             }
+        )
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        LockTaskPackagesDialog(
+            showLockTaskPackagesDialog,
+            { showLockTaskPackagesDialog = false },
         )
     }
 }

@@ -5,8 +5,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingListItem
@@ -18,38 +20,38 @@ fun SettingsListScreen(
 ) {
     val settingsItems = listOf(
         Triple(
-            "Web Content",
-            "Home URL, blacklist, whitelist, bookmark, files",
+            stringResource(id = R.string.settings_web_content_title),
+            stringResource(id = R.string.settings_web_content_description),
             Screen.SettingsWebContent.route
         ),
         Triple(
-            "Web Browsing",
-            "Refresh, navigation, history, bookmark, search provider",
+            stringResource(id = R.string.settings_web_browsing_title),
+            stringResource(id = R.string.settings_web_browsing_description),
             Screen.SettingsWebBrowsing.route
         ),
         Triple(
-            "Web Engine",
-            "JavaScript, DOM storage, cookies, cache, user agent, zoom",
+            stringResource(id = R.string.settings_web_engine_title),
+            stringResource(id = R.string.settings_web_engine_description),
             Screen.SettingsWebEngine.route
         ),
         Triple(
-            "Web Lifecycle",
-            "Lock on launch, reset on launch, reset on inactivity",
+            stringResource(id = R.string.settings_web_lifecycle_title),
+            stringResource(id = R.string.settings_web_lifecycle_description),
             Screen.SettingsWebLifecycle.route
         ),
         Triple(
-            "Appearance",
-            "Theme, address bar, insets, immersive, blocked message",
+            stringResource(id = R.string.settings_appearance_title),
+            stringResource(id = R.string.settings_appearance_description),
             Screen.SettingsAppearance.route
         ),
         Triple(
-            "Device",
-            "Timeout, rotation, camera, microphone, location, unlock shortcut",
+            stringResource(id = R.string.settings_device_title),
+            stringResource(id = R.string.settings_device_description),
             Screen.SettingsDevice.route
         ),
         Triple(
-            "JS Scripts",
-            "Apply theme, desktop viewport, custom scripts",
+            stringResource(id = R.string.settings_js_scripts_title),
+            stringResource(id = R.string.settings_js_scripts_description),
             Screen.SettingsJsScript.route
         ),
         Triple(
@@ -58,8 +60,8 @@ fun SettingsListScreen(
             Screen.SettingsMqtt.route
         ),
         Triple(
-            "About",
-            "Package name, app version, debug build, installer",
+            stringResource(id = R.string.settings_about_title),
+            stringResource(id = R.string.settings_about_description),
             Screen.SettingsAbout.route
         ),
     )

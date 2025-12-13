@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing
+package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -10,15 +10,17 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
-fun AllowBackwardsNavigationSetting() {
+fun BlockVolumeKeysSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_browsing_allow_backwards_navigation_title),
-        infoText = "Whether the user can use the device 'back' button to go back one page in history.",
-        initialValue = userSettings.allowBackwardsNavigation,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.ALLOW_BACKWARDS_NAVIGATION),
-        onSave = { userSettings.allowBackwardsNavigation = it }
+        label = stringResource(id = R.string.device_block_volume_keys_title),
+        infoText = """
+            Prevent users from changing the device volume using hardware keys while in the kiosk app.
+        """.trimIndent(),
+        initialValue = userSettings.blockVolumeKeys,
+        restricted = userSettings.isRestricted(UserSettingsKeys.Device.BLOCK_VOLUME_KEYS),
+        onSave = { userSettings.blockVolumeKeys = it }
     )
 }

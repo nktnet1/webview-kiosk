@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -13,7 +15,7 @@ fun AllowUniversalAccessFromFileURLsSetting() {
     val userSettings = remember { UserSettings(context) }
 
     BooleanSettingFieldItem(
-        label = "Allow Universal Access from File URLs",
+        label = stringResource(id = R.string.web_engine_allow_universal_access_from_file_urls_title),
         infoText = """
             This method was deprecated in API level 30 (Android 11).
 

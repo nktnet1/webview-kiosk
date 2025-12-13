@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
@@ -87,7 +88,10 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
             .padding(horizontal = 16.dp)
             .windowInsetsPadding(WindowInsets.safeContent)
     ) {
-        SettingLabel(navController = navController, label = "Files")
+        SettingLabel(
+            navController = navController,
+            label = stringResource(R.string.settings_files_title)
+        )
         SettingDivider()
 
         Box(

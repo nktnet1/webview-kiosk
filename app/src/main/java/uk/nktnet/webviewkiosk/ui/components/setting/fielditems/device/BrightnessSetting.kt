@@ -9,6 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldItem
@@ -21,7 +23,7 @@ fun BrightnessSetting() {
     val userSettings = remember { UserSettings(context) }
 
     NumberSettingFieldItem(
-        label = "Brightness",
+        label = stringResource(id = R.string.device_brightness_title),
         infoText = """
             Set the app window brightness from 0 (very dim) to 100 (very dark).
 

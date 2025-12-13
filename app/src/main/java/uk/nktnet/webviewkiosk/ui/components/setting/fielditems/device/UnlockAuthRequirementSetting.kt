@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -15,7 +17,7 @@ fun UnlockAuthRequirementSetting() {
     val userSettings = remember { UserSettings(context) }
 
     DropdownSettingFieldItem(
-        label = "Unlock Auth Requirement",
+        label = stringResource(id = R.string.device_unlock_auth_requirement_title),
         infoText = """
             This setting only applies to in-app unlock methods, e.g. when unlocking
             using Kiosk Control Panel or Custom Unlock Shortcut.

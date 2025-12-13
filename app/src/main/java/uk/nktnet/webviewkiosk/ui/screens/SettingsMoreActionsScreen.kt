@@ -13,8 +13,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.managers.ToastManager
@@ -34,9 +36,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
     val context = LocalContext.current
     val systemSettings = SystemSettings(context)
     val webView = remember { WebView(context) }
-    var showAppLauncherDialog by remember {
-        mutableStateOf(false)
-    }
+    var showAppLauncherDialog by remember { mutableStateOf(false) }
 
     DisposableEffect(webView) {
         onDispose {
@@ -52,7 +52,10 @@ fun SettingsMoreActionsScreen(navController: NavController) {
             .windowInsetsPadding(WindowInsets.safeContent)
             .padding(horizontal = 16.dp)
     ) {
-        SettingLabel(navController = navController, label = "More Actions")
+        SettingLabel(
+            navController = navController,
+            label = stringResource(R.string.settings_more_actions_title)
+        )
         SettingDivider()
         Column(
             modifier = Modifier
@@ -61,33 +64,45 @@ fun SettingsMoreActionsScreen(navController: NavController) {
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
-            SectionHeader("Shortcuts")
+            SectionHeader(
+                stringResource(R.string.settings_more_action_section_shortcuts)
+            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                ActionButton("App Info", modifier = Modifier.weight(1f)) {
-                    openAppDetailsSettings(context)
-                }
-                ActionButton("Device Settings", modifier = Modifier.weight(1f)) {
-                    openSettings(context)
-                }
+                ActionButton(
+                    stringResource(R.string.settings_more_action_app_info),
+                    modifier = Modifier.weight(1f)
+                ) { openAppDetailsSettings(context) }
+                ActionButton(
+                    stringResource(R.string.settings_more_action_device_settings),
+                    modifier = Modifier.weight(1f)
+                ) { openSettings(context) }
             }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                ActionButton("Default Launcher", modifier = Modifier.weight(1f)) {
-                    openDefaultLauncherSettings(context)
-                }
-                ActionButton("Default Apps", modifier = Modifier.weight(1f)) {
+                ActionButton(
+                    stringResource(R.string.settings_more_action_default_launcher),
+                    modifier = Modifier.weight(1f)
+                ) { openDefaultLauncherSettings(context) }
+                ActionButton(
+                    stringResource(R.string.settings_more_action_default_apps),
+                    modifier = Modifier.weight(1f)
+                ) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                         openDefaultAppsSettings(context)
                     } else {
                         ToastManager.show(
                             context,
-                            "Error: requires SDK ${Build.VERSION_CODES.N} (current: ${Build.VERSION.SDK_INT}"
+                            context.getString(
+                                R.string.settings_more_action_toast_sdk_version_error,
+                                Build.VERSION_CODES.N,
+                                Build.VERSION.SDK_INT,
+                            )
                         )
                     }
                 }
@@ -97,60 +112,88 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                ActionButton("WiFi Settings", modifier = Modifier.weight(1f)) {
-                    openWifiSettings(context)
-                }
-                ActionButton("Data Usage", modifier = Modifier.weight(1f)) {
+                ActionButton(
+                    stringResource(R.string.settings_more_action_wifi_settings),
+                    modifier = Modifier.weight(1f)
+                ) { openWifiSettings(context) }
+                ActionButton(
+                    stringResource(R.string.settings_more_action_data_usage),
+                    modifier = Modifier.weight(1f)
+                ) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         openDataUsageSettings(context)
                     } else {
                         ToastManager.show(
                             context,
-                            "Error: requires SDK ${Build.VERSION_CODES.P} (current: ${Build.VERSION.SDK_INT}"
+                            context.getString(
+                                R.string.settings_more_action_toast_sdk_version_error,
+                                Build.VERSION_CODES.P,
+                                Build.VERSION.SDK_INT
+                            )
                         )
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            SectionHeader("Manage")
+            SectionHeader(
+                stringResource(R.string.settings_more_action_section_manage)
+            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                ActionButton("Local Files", modifier = Modifier.weight(1f)) {
-                    navController.navigate(Screen.SettingsWebContentFiles.route)
-                }
-                ActionButton("Site Permissions", modifier = Modifier.weight(1f)) {
-                    navController.navigate(Screen.SettingsWebBrowsingSitePermissions.route)
-                }
+                ActionButton(
+                    stringResource(R.string.settings_more_action_local_files),
+                    modifier = Modifier.weight(1f)
+                ) { navController.navigate(Screen.SettingsWebContentFiles.route) }
+                ActionButton(
+                    stringResource(R.string.settings_more_action_site_permissions),
+                    modifier = Modifier.weight(1f)
+                ) { navController.navigate(Screen.SettingsWebBrowsingSitePermissions.route) }
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                ActionButton("Device Owner", modifier = Modifier.weight(1f)) {
-                    navController.navigate(Screen.SettingsDeviceOwner.route)
-                }
-                ActionButton("App Launcher", modifier = Modifier.weight(1f)) {
-                    showAppLauncherDialog = true
-                }
+                ActionButton(
+                    stringResource(R.string.settings_more_action_device_owner),
+                    modifier = Modifier.weight(1f)
+                ) { navController.navigate(Screen.SettingsDeviceOwner.route) }
+                ActionButton(
+                    stringResource(R.string.settings_more_action_app_launcher),
+                    modifier = Modifier.weight(1f)
+                ) { showAppLauncherDialog = true }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            SectionHeader("Clear")
+            SectionHeader(
+                stringResource(R.string.settings_more_action_section_clear)
+            )
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                ActionButton("Cookies", modifier = Modifier.weight(1f)) {
+                ActionButton(
+                    stringResource(R.string.settings_more_action_clear_cookies),
+                    modifier = Modifier.weight(1f)
+                ) {
                     CookieManager.getInstance().removeAllCookies(null)
                     CookieManager.getInstance().flush()
-                    ToastManager.show(context, "Cookies cleared.")
+                    ToastManager.show(
+                        context,
+                        context.getString(R.string.settings_more_action_toast_cookies_cleared)
+                    )
                 }
-                ActionButton("Cache", modifier = Modifier.weight(1f)) {
+                ActionButton(
+                    stringResource(R.string.settings_more_action_clear_cache),
+                    modifier = Modifier.weight(1f)
+                ) {
                     webView.clearCache(true)
-                    ToastManager.show(context, "Cache cleared.")
+                    ToastManager.show(
+                        context,
+                        context.getString(R.string.settings_more_action_toast_cache_cleared)
+                    )
                 }
             }
 
@@ -158,14 +201,26 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                ActionButton("Form Data", modifier = Modifier.weight(1f)) {
+                ActionButton(
+                    stringResource(R.string.settings_more_action_clear_form_data),
+                    modifier = Modifier.weight(1f)
+                ) {
                     webView.clearFormData()
-                    ToastManager.show(context, "Form data cleared.")
+                    ToastManager.show(
+                        context,
+                        context.getString(R.string.settings_more_action_toast_form_data_cleared)
+                    )
                 }
-                ActionButton("History", modifier = Modifier.weight(1f)) {
+                ActionButton(
+                    stringResource(R.string.settings_more_action_clear_history),
+                    modifier = Modifier.weight(1f)
+                ) {
                     webView.clearHistory()
                     WebViewNavigation.clearHistory(systemSettings)
-                    ToastManager.show(context, "History cleared.")
+                    ToastManager.show(
+                        context,
+                        context.getString(R.string.settings_more_action_toast_history_cleared)
+                    )
                 }
             }
 
@@ -173,13 +228,29 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                ActionButton("SSL Preferences", modifier = Modifier.weight(1f)) {
+                ActionButton(
+                    stringResource(R.string.settings_more_action_clear_ssl_preferences),
+                    modifier = Modifier.weight(1f)
+                ) {
                     webView.clearSslPreferences()
-                    ToastManager.show(context, "SSL preferences cleared.")
+                    ToastManager.show(
+                        context,
+                        context.getString(
+                            R.string.settings_more_action_toast_ssl_preferences_cleared
+                        )
+                    )
                 }
-                ActionButton("Web Storage", modifier = Modifier.weight(1f)) {
+                ActionButton(
+                    stringResource(R.string.settings_more_action_clear_web_storage),
+                    modifier = Modifier.weight(1f)
+                ) {
                     WebStorage.getInstance().deleteAllData()
-                    ToastManager.show(context, "Web storage cleared.")
+                    ToastManager.show(
+                        context,
+                        context.getString(
+                            R.string.settings_more_action_toast_web_storage_cleared
+                        )
+                    )
                 }
             }
 

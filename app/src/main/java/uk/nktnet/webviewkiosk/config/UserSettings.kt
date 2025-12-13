@@ -446,10 +446,16 @@ class UserSettings(val context: Context) {
         UnlockAuthRequirementOption.DEFAULT.name,
         fromString = UnlockAuthRequirementOption::fromString
     )
-    var preventScreenCapture by booleanPref(
+    var blockScreenCapture by booleanPref(
         getRestrictions,
         prefs,
-        UserSettingsKeys.Device.PREVENT_SCREEN_CAPTURE,
+        UserSettingsKeys.Device.BLOCK_SCREEN_CAPTURE,
+        false
+    )
+    var blockVolumeKeys by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.BLOCK_VOLUME_KEYS,
         false
     )
 
@@ -920,7 +926,8 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
             // put(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD, customAuthPassword)
             put(UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT, unlockAuthRequirement.name)
-            put(UserSettingsKeys.Device.PREVENT_SCREEN_CAPTURE, preventScreenCapture)
+            put(UserSettingsKeys.Device.BLOCK_SCREEN_CAPTURE, blockScreenCapture)
+            put(UserSettingsKeys.Device.BLOCK_VOLUME_KEYS, blockVolumeKeys)
 
             put(UserSettingsKeys.Device.Owner.LockTaskFeature.HOME, lockTaskFeatureHome)
             put(UserSettingsKeys.Device.Owner.LockTaskFeature.OVERVIEW, lockTaskFeatureOverview)
@@ -1089,7 +1096,8 @@ class UserSettings(val context: Context) {
             unlockAuthRequirement = UnlockAuthRequirementOption.fromString(
                 json.optString(UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT, unlockAuthRequirement.name)
             )
-            preventScreenCapture = json.optBoolean(UserSettingsKeys.Device.PREVENT_SCREEN_CAPTURE, preventScreenCapture)
+            blockScreenCapture = json.optBoolean(UserSettingsKeys.Device.BLOCK_SCREEN_CAPTURE, blockScreenCapture)
+            blockVolumeKeys = json.optBoolean(UserSettingsKeys.Device.BLOCK_VOLUME_KEYS, blockVolumeKeys)
 
             lockTaskFeatureHome = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.HOME, lockTaskFeatureHome)
             lockTaskFeatureOverview = json.optBoolean(UserSettingsKeys.Device.Owner.LockTaskFeature.OVERVIEW, lockTaskFeatureOverview)

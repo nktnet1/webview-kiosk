@@ -11,6 +11,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -40,7 +42,7 @@ fun AllowLocationSetting() {
     }
 
     BooleanSettingFieldItem(
-        label = "Allow Location",
+        label = stringResource(id = R.string.device_allow_location_title),
         infoText = """
             When enabled, websites can request the device's location.
 

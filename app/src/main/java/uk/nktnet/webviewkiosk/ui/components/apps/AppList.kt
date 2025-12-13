@@ -22,7 +22,10 @@ fun <T : AppInfo> AppList(
         modifier = modifier.fillMaxSize(),
         state = listState,
     ) {
-        items(apps, key = { app -> getKey?.invoke(app) ?: app.packageName }) { app ->
+        items(
+            apps,
+            key = { app -> getKey?.invoke(app) ?: app.packageName }
+        ) { app ->
             AppCard(
                 app = app,
                 description = getDescription?.invoke(app),

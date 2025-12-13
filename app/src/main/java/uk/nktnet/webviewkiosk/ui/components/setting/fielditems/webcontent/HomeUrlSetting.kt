@@ -15,8 +15,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -32,7 +34,7 @@ fun HomeUrlSetting() {
     val restricted = userSettings.isRestricted(UserSettingsKeys.WebContent.HOME_URL)
 
     TextSettingFieldItem(
-        label = "Home URL",
+        label = stringResource(id = R.string.web_content_home_url_title),
         infoText = """
             The URL that can be returned to by:
               1. tapping the screen 10 times in quick succession

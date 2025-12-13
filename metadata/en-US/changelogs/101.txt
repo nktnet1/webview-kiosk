@@ -1,0 +1,7 @@
+## Changes
+
+- feat: manage lock task packages
+- feat: block volume keys
+- feat: support launching multiple activities for a single package (e.g. Test DPC)
+- feat: string resources for setting titles + app restrictions
+- fix: trigger auth on start instead of on resume (lifecycle activity)
