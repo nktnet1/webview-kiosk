@@ -318,4 +318,64 @@
     <string name="mqtt_restrictions_request_response_information_title">Request Response Information</string>
     <string name="mqtt_restrictions_request_response_information_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/restrictions/</string>
 
+    <!-- MQTT Topics: Publish and Subscribe -->
+    <!-- Publish Event -->
+    <string name="mqtt_publish_event_topic_title">Event Topic</string>
+    <string name="mqtt_publish_event_topic_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/event/</string>
+
+    <string name="mqtt_publish_event_qos_title">Event QoS</string>
+    <string name="mqtt_publish_event_qos_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/event/</string>
+
+    <string name="mqtt_publish_event_retain_title">Event Retain</string>
+    <string name="mqtt_publish_event_retain_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/event/</string>
+
+    <!-- Publish Response -->
+    <string name="mqtt_publish_response_topic_title">Response Topic</string>
+    <string name="mqtt_publish_response_topic_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/response/</string>
+
+    <string name="mqtt_publish_response_qos_title">Response QoS</string>
+    <string name="mqtt_publish_response_qos_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/response/</string>
+
+    <string name="mqtt_publish_response_retain_title">Response Retain</string>
+    <string name="mqtt_publish_response_retain_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/response/</string>
+
+    <!-- Subscribe Command -->
+    <string name="mqtt_subscribe_command_topic_title">Command Topic</string>
+    <string name="mqtt_subscribe_command_topic_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/command/</string>
+
+    <string name="mqtt_subscribe_command_qos_title">Command QoS</string>
+    <string name="mqtt_subscribe_command_qos_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/command/</string>
+
+    <string name="mqtt_subscribe_command_retain_handling_title">Command Retain Handling</string>
+    <string name="mqtt_subscribe_command_retain_handling_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/command/</string>
+
+    <string name="mqtt_subscribe_command_retain_as_published_title">Command Retain As Published</string>
+    <string name="mqtt_subscribe_command_retain_as_published_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/command/</string>
+
+    <!-- Subscribe Settings -->
+    <string name="mqtt_subscribe_settings_topic_title">Settings Topic</string>
+    <string name="mqtt_subscribe_settings_topic_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/settings/</string>
+
+    <string name="mqtt_subscribe_settings_qos_title">Settings QoS</string>
+    <string name="mqtt_subscribe_settings_qos_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/settings/</string>
+
+    <string name="mqtt_subscribe_settings_retain_handling_title">Settings Retain Handling</string>
+    <string name="mqtt_subscribe_settings_retain_handling_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/settings/</string>
+
+    <string name="mqtt_subscribe_settings_retain_as_published_title">Settings Retain As Published</string>
+    <string name="mqtt_subscribe_settings_retain_as_published_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/settings/</string>
+
+    <!-- Subscribe Request -->
+    <string name="mqtt_subscribe_request_topic_title">Request Topic</string>
+    <string name="mqtt_subscribe_request_topic_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/request/</string>
+
+    <string name="mqtt_subscribe_request_qos_title">Request QoS</string>
+    <string name="mqtt_subscribe_request_qos_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/request/</string>
+
+    <string name="mqtt_subscribe_request_retain_handling_title">Request Retain Handling</string>
+    <string name="mqtt_subscribe_request_retain_handling_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/request/</string>
+
+    <string name="mqtt_subscribe_request_retain_as_published_title">Request Retain As Published</string>
+    <string name="mqtt_subscribe_request_retain_as_published_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/request/</string>
+
 </resources>

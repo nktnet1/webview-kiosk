@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.requ
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -15,7 +17,7 @@ fun MqttSubscribeRequestRetainHandlingSetting() {
     val userSettings = remember { UserSettings(context) }
 
     DropdownSettingFieldItem(
-        label = "Retain Handling",
+        label = stringResource(R.string.mqtt_subscribe_request_retain_handling_title),
         infoText = """
             Control whether ${Constants.APP_NAME}} should receive existing
             retained messages when subscribing.

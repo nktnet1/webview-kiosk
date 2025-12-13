@@ -3,6 +3,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.requ
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.MqttManager.mqttVariableReplacement
@@ -17,7 +19,7 @@ fun MqttSubscribeRequestTopicSetting() {
     val restricted = userSettings.isRestricted(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.TOPIC)
 
     TextSettingFieldItem(
-        label = "Topic",
+        label = stringResource(R.string.mqtt_subscribe_request_topic_title),
         infoText = "The MQTT topic to subscribe for request messages.",
         placeholder = "e.g. devices/+/request",
         initialValue = userSettings.mqttSubscribeRequestTopic,
