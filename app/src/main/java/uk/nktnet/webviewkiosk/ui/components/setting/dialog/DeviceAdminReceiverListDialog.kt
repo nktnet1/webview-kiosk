@@ -25,21 +25,39 @@ fun DeviceAdminReceiverListDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit
 ) {
+    if (!showDialog) {
+        return
+    }
+
     val context = LocalContext.current
     var selectedApp by remember { mutableStateOf<AdminAppInfo?>(null) }
     var showConfirmDialog by remember { mutableStateOf(false) }
 
+    var apps by remember { mutableStateOf<List<AdminAppInfo>>(emptyList()) }
+    var progress by remember { mutableFloatStateOf(0f) }
+
+    LaunchedEffect(Unit) {
+        DeviceOwnerManager.getDeviceAdminReceiversFlow(context).collect { state ->
+            apps = apps + state.apps
+            progress = state.progress
+        }
+    }
+
     BaseAppListDialog(
-        showDialog = showDialog,
         onDismiss = onDismiss,
         title = "Transfer Ownership",
-        fetchAppsFlow = { DeviceOwnerManager.getDeviceAdminReceiversFlow(context) },
-        searchFilter = { app, query ->
-            app.name.contains(query, ignoreCase = true) ||
-                    app.admin.className.contains(query, ignoreCase = true)
-        },
+        apps = apps,
+        progress = progress,
         getDescription = { it.admin.className },
         getKey = { it.admin.className },
+        appFilter = { app, query ->
+            (
+                app.name.contains(query, ignoreCase = true)
+                || app.admin.className.contains(query, ignoreCase = true)
+            ) && (
+                app.packageName != context.packageName
+            )
+        },
         onSelectApp = {
             selectedApp = it
             showConfirmDialog = true
@@ -109,7 +127,7 @@ private fun ConfirmTransferDialog(
                     )
                     AdminLabelValueRow(
                         "Package",
-                        selectedAdminReceiver.admin.packageName
+                        selectedAdminReceiver.packageName
                     )
                     AdminLabelValueRow(
                         "Receiver",

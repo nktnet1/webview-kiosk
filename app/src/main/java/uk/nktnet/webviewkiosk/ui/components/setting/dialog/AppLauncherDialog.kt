@@ -3,12 +3,14 @@ package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.data.LaunchableAppInfo
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
+import uk.nktnet.webviewkiosk.ui.components.apps.AppIcon
 import uk.nktnet.webviewkiosk.utils.openPackage
 
 @Composable
@@ -16,14 +18,26 @@ fun AppLauncherDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit
 ) {
+    if (!showDialog) {
+        return
+    }
+
     val context = LocalContext.current
     var activityDialogApp by remember { mutableStateOf<LaunchableAppInfo?>(null) }
 
+    var apps by remember { mutableStateOf<List<LaunchableAppInfo>>(emptyList()) }
+    var progress by remember { mutableFloatStateOf(0f) }
+
+    LaunchedEffect(Unit) {
+        DeviceOwnerManager.getLaunchableAppsFlow(context).collect { state ->
+            apps = apps + state.apps
+            progress = state.progress
+        }
+    }
+
     BaseAppListDialog(
-        showDialog = showDialog,
         onDismiss = onDismiss,
         title = "Apps",
-        fetchAppsFlow = { DeviceOwnerManager.getLaunchableAppsFlow(context) },
         getDescription = { app ->
             if (app.activities.size > 1) {
                 "${app.packageName} (${app.activities.size})"
@@ -31,6 +45,16 @@ fun AppLauncherDialog(
                 app.packageName
             }
         },
+        apps = apps,
+        appFilter = { app, query ->
+            (
+                app.name.contains(query, ignoreCase = true)
+                || app.packageName.contains(query, ignoreCase = true)
+            ) && (
+                app.packageName != context.packageName
+            )
+        },
+        progress = progress,
         onSelectApp = { app ->
             when {
                 app.activities.size == 1 -> {
@@ -52,7 +76,13 @@ fun AppLauncherDialog(
     activityDialogApp?.let { app ->
         AlertDialog(
             onDismissRequest = { activityDialogApp = null },
-            title = { Text(app.name) },
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    AppIcon(app.icon, modifier = Modifier.size(40.dp))
+                    Spacer(Modifier.width(12.dp))
+                    Text(app.name, style = MaterialTheme.typography.titleMedium)
+                }
+            },
             text = {
                 Column {
                     Text(

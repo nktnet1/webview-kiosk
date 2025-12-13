@@ -9,10 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.data.AppInfo
-import uk.nktnet.webviewkiosk.config.data.AppLoadState
 import uk.nktnet.webviewkiosk.ui.components.apps.AppList
 import uk.nktnet.webviewkiosk.ui.components.apps.AppSearchBar
 import androidx.compose.ui.res.painterResource
@@ -20,25 +18,17 @@ import uk.nktnet.webviewkiosk.R
 
 @Composable
 fun <T : AppInfo> BaseAppListDialog(
-    showDialog: Boolean,
     onDismiss: () -> Unit,
     title: String,
-    fetchAppsFlow: suspend () -> Flow<AppLoadState<T>>,
-    searchFilter: (T, String) -> Boolean = { app, query ->
-        app.name.contains(query, ignoreCase = true)
-        || app.packageName.contains(query, ignoreCase = true)
-    },
-    getDescription: (T) -> String = { it.name },
+    apps: List<T>,
+    progress: Float,
+    appFilter: (T, String) -> Boolean,
+    getDescription: (T) -> String = { it.packageName },
     getKey: (T) -> String = { it.packageName },
     onSelectApp: (T) -> Unit,
+    actionContent: @Composable (() -> Unit)? = null,
 ) {
-    if (!showDialog) {
-        return
-    }
-
     val scope = rememberCoroutineScope()
-    var apps by remember { mutableStateOf<List<T>>(emptyList()) }
-    var progress by remember { mutableFloatStateOf(0f) }
     val listState = rememberLazyListState()
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var ascending by remember { mutableStateOf(true) }
@@ -46,7 +36,7 @@ fun <T : AppInfo> BaseAppListDialog(
     val filteredApps by remember(searchQuery.text, apps, ascending) {
         derivedStateOf {
             apps
-                .filter { app -> searchFilter(app, searchQuery.text) }
+                .filter { app -> appFilter(app, searchQuery.text) }
                 .let { filtered ->
                     if (ascending) {
                         filtered.sortedBy { it.name }
@@ -54,13 +44,6 @@ fun <T : AppInfo> BaseAppListDialog(
                         filtered.sortedByDescending { it.name }
                     }
                 }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        fetchAppsFlow().collect { state ->
-            apps = apps + state.apps
-            progress = state.progress
         }
     }
 
@@ -72,7 +55,7 @@ fun <T : AppInfo> BaseAppListDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier.fillMaxSize().padding(4.dp),
             color = MaterialTheme.colorScheme.background,
             shape = MaterialTheme.shapes.medium
         ) {
@@ -105,6 +88,8 @@ fun <T : AppInfo> BaseAppListDialog(
                 } else {
                     Spacer(Modifier.height(8.dp))
                 }
+
+                actionContent?.invoke()
 
                 if (filteredApps.isEmpty() && progress == 1f) {
                     Box(
