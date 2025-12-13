@@ -12,6 +12,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun LockTaskFeatureSystemInfoSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.SYSTEM_INFO
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.device_owner_lock_task_feature_system_info_title),
@@ -20,7 +21,8 @@ fun LockTaskFeatureSystemInfoSetting() {
             such as connectivity, battery, and sound/vibrate options.
         """.trimIndent(),
         initialValue = userSettings.lockTaskFeatureSystemInfo,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Device.Owner.LockTaskFeature.SYSTEM_INFO),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.lockTaskFeatureSystemInfo = it },
     )
 }

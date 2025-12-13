@@ -12,6 +12,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun BuiltInZoomControlsSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.WebEngine.BUILT_IN_ZOOM_CONTROLS
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_engine_built_in_zoom_controls_title),
@@ -22,7 +23,8 @@ fun BuiltInZoomControlsSetting() {
            over the WebView's content, and the use of a pinch gesture to control zooming.
         """.trimIndent(),
         initialValue = userSettings.builtInZoomControls,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.BUILT_IN_ZOOM_CONTROLS),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.builtInZoomControls = it }
     )
 }

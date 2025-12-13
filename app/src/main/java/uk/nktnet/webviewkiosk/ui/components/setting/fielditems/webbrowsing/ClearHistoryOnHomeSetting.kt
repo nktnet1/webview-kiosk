@@ -13,12 +13,14 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun ClearHistoryOnHomeSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebBrowsing.CLEAR_HISTORY_ON_HOME
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_browsing_clear_history_on_home_title),
         infoText = "Clear the browser history whenever the user triggers an action to return home.",
         initialValue = userSettings.clearHistoryOnHome,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.CLEAR_HISTORY_ON_HOME),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.clearHistoryOnHome = it }
     )
 }

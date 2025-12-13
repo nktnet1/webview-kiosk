@@ -12,6 +12,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun LockTaskFeatureKeyguardSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.KEYGUARD
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.device_owner_lock_task_feature_keyguard_title),
@@ -20,7 +21,8 @@ fun LockTaskFeatureKeyguardSetting() {
             Typically not suitable for devices with public users such as kiosks or digital signage.
         """.trimIndent(),
         initialValue = userSettings.lockTaskFeatureKeyguard,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Device.Owner.LockTaskFeature.KEYGUARD),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.lockTaskFeatureKeyguard = it },
     )
 }

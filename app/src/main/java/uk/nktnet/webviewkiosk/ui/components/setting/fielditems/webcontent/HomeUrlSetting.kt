@@ -31,7 +31,8 @@ fun HomeUrlSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
-    val restricted = userSettings.isRestricted(UserSettingsKeys.WebContent.HOME_URL)
+    val settingKey = UserSettingsKeys.WebContent.HOME_URL
+    val restricted = userSettings.isRestricted(settingKey)
 
     TextSettingFieldItem(
         label = stringResource(id = R.string.web_content_home_url_title),
@@ -45,6 +46,7 @@ fun HomeUrlSetting() {
         """.trimIndent(),
         placeholder = "e.g. ${Constants.WEBSITE_URL}",
         initialValue = userSettings.homeUrl,
+        settingKey = settingKey,
         restricted = restricted,
         isMultiline = false,
         validator = { validateUrl(it) },

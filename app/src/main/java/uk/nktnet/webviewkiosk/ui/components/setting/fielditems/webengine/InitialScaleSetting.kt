@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldIte
 fun InitialScaleSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebEngine.INITIAL_SCALE
 
     NumberSettingFieldItem(
         label = stringResource(id = R.string.web_engine_initial_scale_title),
@@ -35,7 +36,8 @@ fun InitialScaleSetting() {
         """.trimIndent(),
         placeholder = "e.g. 100",
         initialValue = userSettings.initialScale,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.INITIAL_SCALE),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         min = 0,
         onSave = { userSettings.initialScale = it }
     )

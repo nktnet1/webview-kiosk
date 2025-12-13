@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldI
 fun AddressBarSizeSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Appearance.ADDRESS_BAR_SIZE
 
     DropdownSettingFieldItem(
         label = stringResource(id = R.string.appearance_address_bar_size_title),
@@ -22,7 +23,8 @@ fun AddressBarSizeSetting() {
             height, font size, padding and icon size.
         """.trimIndent(),
         options = AddressBarSizeOption.entries,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Appearance.ADDRESS_BAR_SIZE),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.addressBarSize,
         onSave = { userSettings.addressBarSize = it },
         itemText = { it.label },

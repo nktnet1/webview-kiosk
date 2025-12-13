@@ -18,6 +18,7 @@ fun NumberSettingFieldItem(
     infoText: String,
     placeholder: String,
     initialValue: Int,
+    settingKey: String,
     restricted: Boolean,
     min: Int? = null,
     max: Int? = null,
@@ -70,6 +71,7 @@ fun NumberSettingFieldItem(
         GenericSettingFieldDialog(
             title = label,
             infoText = infoText,
+            settingKey = settingKey,
             restricted = restricted,
             onDismiss = { showDialog = false },
             onSave = {

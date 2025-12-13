@@ -21,6 +21,7 @@ import kotlin.math.roundToInt
 fun BrightnessSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Device.BRIGHTNESS
 
     NumberSettingFieldItem(
         label = stringResource(id = R.string.device_brightness_title),
@@ -30,7 +31,8 @@ fun BrightnessSetting() {
             Use -1 to disable (i.e. the system default brightness will be used).
         """.trimIndent(),
         initialValue = userSettings.brightness,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Device.BRIGHTNESS),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         min = -1,
         max = 100,
         placeholder = "e.g. 20",

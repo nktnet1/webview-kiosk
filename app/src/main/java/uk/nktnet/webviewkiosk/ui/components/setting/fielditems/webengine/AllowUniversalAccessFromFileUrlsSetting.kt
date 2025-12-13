@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun AllowUniversalAccessFromFileURLsSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_engine_allow_universal_access_from_file_urls_title),
@@ -32,7 +33,8 @@ fun AllowUniversalAccessFromFileURLsSetting() {
             credentials used on arbitrary web sites.
         """.trimIndent(),
         initialValue = userSettings.allowUniversalAccessFromFileURLs,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.allowUniversalAccessFromFileURLs = it }
     )
 }

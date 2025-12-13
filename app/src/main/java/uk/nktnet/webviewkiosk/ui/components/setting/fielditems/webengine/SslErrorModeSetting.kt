@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldI
 fun SslErrorModeSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebEngine.SSL_ERROR_MODE
 
     DropdownSettingFieldItem(
         label = stringResource(id = R.string.web_engine_ssl_error_mode_option_title),
@@ -28,7 +29,8 @@ fun SslErrorModeSetting() {
         """.trimIndent(),
         options = SslErrorModeOption.entries,
         initialValue = userSettings.sslErrorMode,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.SSL_ERROR_MODE),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.sslErrorMode = it },
         itemText = { it.label },
     )

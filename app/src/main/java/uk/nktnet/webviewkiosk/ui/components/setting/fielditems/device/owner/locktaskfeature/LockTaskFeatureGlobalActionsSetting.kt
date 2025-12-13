@@ -12,6 +12,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun LockTaskFeatureGlobalActionsSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.GLOBAL_ACTIONS
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.device_owner_lock_task_feature_global_actions_title),
@@ -22,7 +23,8 @@ fun LockTaskFeatureGlobalActionsSetting() {
             A user typically can't power off the device if you disable this dialog.
         """.trimIndent(),
         initialValue = userSettings.lockTaskFeatureGlobalActions,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Device.Owner.LockTaskFeature.GLOBAL_ACTIONS),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.lockTaskFeatureGlobalActions = it },
     )
 }

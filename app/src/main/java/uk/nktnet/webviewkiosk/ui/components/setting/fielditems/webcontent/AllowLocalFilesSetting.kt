@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun AllowLocalFilesSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebContent.ALLOW_LOCAL_FILES
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_content_allow_local_files_title),
@@ -22,7 +23,8 @@ fun AllowLocalFilesSetting() {
             This will be accessible using the 3-dot icon on the right of the address bar.
         """.trimIndent(),
         initialValue = userSettings.allowLocalFiles,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebContent.ALLOW_LOCAL_FILES),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.allowLocalFiles = it }
     )
 }

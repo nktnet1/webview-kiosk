@@ -36,7 +36,8 @@ import uk.nktnet.webviewkiosk.utils.validateUrl
 fun SearchProviderUrlSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-    val restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL)
+    val settingKey = UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL
+    val restricted = userSettings.isRestricted(settingKey)
 
     val searchProviders = listOf(
         "Google" to "https://google.com/search?q=",
@@ -59,7 +60,8 @@ fun SearchProviderUrlSetting() {
         """.trimIndent(),
         placeholder = Constants.DEFAULT_SEARCH_PROVIDER_URL,
         initialValue = userSettings.searchProviderUrl,
-        restricted = restricted,
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         isMultiline = false,
         validator = { validateUrl(it) },
         validationMessage = "Invalid search provider URL.",

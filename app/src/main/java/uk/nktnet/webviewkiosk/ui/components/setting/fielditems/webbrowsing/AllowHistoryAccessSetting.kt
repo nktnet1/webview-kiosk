@@ -13,12 +13,14 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun AllowHistoryAccessSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebBrowsing.ALLOW_HISTORY_ACCESS
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_browsing_allow_history_access_title),
         infoText = "Whether the user can access browsing history from the address bar.",
         initialValue = userSettings.allowHistoryAccess,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.ALLOW_HISTORY_ACCESS),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.allowHistoryAccess = it }
     )
 }

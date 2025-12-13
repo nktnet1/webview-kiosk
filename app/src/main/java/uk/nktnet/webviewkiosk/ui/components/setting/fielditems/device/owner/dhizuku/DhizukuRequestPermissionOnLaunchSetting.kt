@@ -11,6 +11,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun DhizukuRequestPermissionOnLaunchSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.Device.Owner.Dhizuku.REQUEST_PERMISSION_ON_LAUNCH
 
     BooleanSettingFieldItem(
         label = "Request Permission on Launch",
@@ -19,9 +20,8 @@ fun DhizukuRequestPermissionOnLaunchSetting() {
             access to Device Owner privileges, prompt the user for permission.
         """.trimIndent(),
         initialValue = userSettings.dhizukuRequestPermissionOnLaunch,
-        restricted = userSettings.isRestricted(
-            UserSettingsKeys.Device.Owner.Dhizuku.REQUEST_PERMISSION_ON_LAUNCH
-        ),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.dhizukuRequestPermissionOnLaunch = it },
     )
 }

@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldI
 fun LayoutAlgorithmSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM
 
     DropdownSettingFieldItem(
         label = stringResource(id = R.string.web_engine_layout_algorithm_title),
@@ -28,7 +29,8 @@ fun LayoutAlgorithmSetting() {
         """.trimIndent(),
         options = LayoutAlgorithmOption.entries,
         initialValue = userSettings.layoutAlgorithm,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.layoutAlgorithm = it },
         itemText = { it.label }
     )

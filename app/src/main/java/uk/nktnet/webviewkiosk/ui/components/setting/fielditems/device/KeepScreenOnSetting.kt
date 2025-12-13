@@ -14,12 +14,14 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun KeepScreenOnSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Device.KEEP_SCREEN_ON
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.device_keep_screen_on_title),
         infoText = "Enable this option to keep your device awake (no screen timeout).",
         initialValue = userSettings.keepScreenOn,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Device.KEEP_SCREEN_ON),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = {
             userSettings.keepScreenOn = it
             KeepScreenOnStateSingleton.setKeepScreenOn(it)

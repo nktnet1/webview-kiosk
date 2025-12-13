@@ -12,12 +12,14 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun EnableJavaScriptSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.WebEngine.ENABLE_JAVASCRIPT
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_engine_enable_javascript_title),
         infoText = "Allow the execution of JavaScript in web pages.",
         initialValue = userSettings.enableJavaScript,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.ENABLE_JAVASCRIPT),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.enableJavaScript = it }
     )
 }

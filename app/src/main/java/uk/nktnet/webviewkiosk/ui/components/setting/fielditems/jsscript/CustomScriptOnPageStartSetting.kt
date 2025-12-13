@@ -13,6 +13,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 fun CustomScriptOnPageStartSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START
 
     TextSettingFieldItem(
         label = stringResource(id = R.string.js_scripts_custom_script_on_page_start_title),
@@ -29,7 +30,8 @@ fun CustomScriptOnPageStartSetting() {
             """.trimIndent(),
         placeholder = "e.g. document.body.style.backgroundColor = 'green';",
         initialValue = userSettings.customScriptOnPageStart,
-        restricted = userSettings.isRestricted(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         isMultiline = true,
         onSave = { userSettings.customScriptOnPageStart = it }
     )

@@ -12,12 +12,14 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun LoadWithOverviewModeSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_engine_load_with_overview_mode_title),
         infoText = "Load the WebView content fully zoomed out to fit the screen width.",
         initialValue = userSettings.loadWithOverviewMode,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.loadWithOverviewMode = it }
     )
 }

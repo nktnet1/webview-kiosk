@@ -289,7 +289,8 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         LockTaskPackagesDialog(
             showLockTaskPackagesDialog,
-            { showLockTaskPackagesDialog = false },
-        )
+        ) {
+            showLockTaskPackagesDialog = false
+        }
     }
 }

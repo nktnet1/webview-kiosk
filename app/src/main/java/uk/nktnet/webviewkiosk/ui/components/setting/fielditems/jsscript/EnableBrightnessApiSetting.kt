@@ -12,6 +12,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun EnableBrightnessApiSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.js_scripts_enable_brightness_api_title),
@@ -29,7 +30,8 @@ fun EnableBrightnessApiSetting() {
               100: very bright
         """.trimIndent(),
         initialValue = userSettings.enableBrightnessApi,
-        restricted = userSettings.isRestricted(UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.enableBrightnessApi = it }
     )
 }

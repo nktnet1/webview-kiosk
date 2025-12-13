@@ -12,6 +12,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun LockTaskFeatureNotificationsSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
+    val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.NOTIFICATIONS
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.device_owner_lock_task_feature_notifications_title),
@@ -27,7 +28,8 @@ fun LockTaskFeatureNotificationsSetting() {
             work in lock task mode.
         """.trimIndent(),
         initialValue = userSettings.lockTaskFeatureNotifications,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Device.Owner.LockTaskFeature.NOTIFICATIONS),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.lockTaskFeatureNotifications = it },
     )
 }

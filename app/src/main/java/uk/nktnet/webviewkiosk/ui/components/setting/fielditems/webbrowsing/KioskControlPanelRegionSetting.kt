@@ -15,6 +15,7 @@ import uk.nktnet.webviewkiosk.utils.canDisableKioskControlPanelRegion
 fun KioskControlPanelRegionSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION
 
     DropdownSettingFieldItem(
         label = stringResource(id = R.string.web_browsing_kiosk_control_panel_region_title),
@@ -31,7 +32,8 @@ fun KioskControlPanelRegionSetting() {
         """.trimIndent(),
         options = KioskControlPanelRegionOption.entries,
         initialValue = userSettings.kioskControlPanelRegion,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.kioskControlPanelRegion = it },
         validator = {
             it != KioskControlPanelRegionOption.DISABLED

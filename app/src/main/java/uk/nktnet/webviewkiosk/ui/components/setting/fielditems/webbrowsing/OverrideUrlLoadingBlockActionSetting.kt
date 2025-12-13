@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldI
 fun OverrideUrlLoadingBlockActionSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebBrowsing.OVERRIDE_URL_LOADING_BLOCK_ACTION
 
     DropdownSettingFieldItem(
         label = stringResource(id = R.string.web_browsing_override_url_loading_block_action_title),
@@ -35,7 +36,8 @@ fun OverrideUrlLoadingBlockActionSetting() {
             In those other cases, the block page will simply be shown.
         """.trimIndent(),
         options = OverrideUrlLoadingBlockActionOption.entries,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.OVERRIDE_URL_LOADING_BLOCK_ACTION),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.overrideUrlLoadingBlockAction,
         onSave = { userSettings.overrideUrlLoadingBlockAction = it },
         itemText = { it.label },

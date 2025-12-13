@@ -27,6 +27,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 fun UserAgentSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebEngine.USER_AGENT
 
     val desktopAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
             "(KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
@@ -44,7 +45,8 @@ fun UserAgentSetting() {
         """.trimIndent(),
         placeholder = "(leave blank for system default)",
         initialValue = userSettings.userAgent,
-        restricted = restricted,
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         isMultiline = false,
         onSave = { userSettings.userAgent = it },
         extraContent = { setValue: (String) -> Unit ->

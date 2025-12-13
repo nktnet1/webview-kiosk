@@ -13,12 +13,14 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun AllowBackwardsNavigationSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebBrowsing.ALLOW_BACKWARDS_NAVIGATION
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.web_browsing_allow_backwards_navigation_title),
         infoText = "Whether the user can use the device 'back' button to go back one page in history.",
         initialValue = userSettings.allowBackwardsNavigation,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebBrowsing.ALLOW_BACKWARDS_NAVIGATION),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.allowBackwardsNavigation = it }
     )
 }

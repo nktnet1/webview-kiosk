@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.utils.applyBlockScreenCapture
 fun BlockScreenCaptureSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.Device.BLOCK_SCREEN_CAPTURE
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.device_block_screen_capture_title),
@@ -22,7 +23,8 @@ fun BlockScreenCaptureSetting() {
             This is done by setting the FLAG_SECURE window flag.
         """.trimIndent(),
         initialValue = userSettings.blockScreenCapture,
-        restricted = userSettings.isRestricted(UserSettingsKeys.Device.BLOCK_SCREEN_CAPTURE),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = {
             userSettings.blockScreenCapture = it
             applyBlockScreenCapture(context, it)

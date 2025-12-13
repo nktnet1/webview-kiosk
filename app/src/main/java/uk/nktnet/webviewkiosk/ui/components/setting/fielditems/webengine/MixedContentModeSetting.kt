@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.DropdownSettingFieldI
 fun MixedContentModeSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val settingKey = UserSettingsKeys.WebEngine.MIXED_CONTENT_MODE
 
     DropdownSettingFieldItem(
         label = stringResource(id = R.string.web_engine_mixed_content_mode_title),
@@ -28,7 +29,8 @@ fun MixedContentModeSetting() {
         """.trimIndent(),
         options = MixedContentModeOption.entries,
         initialValue = userSettings.mixedContentMode,
-        restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.MIXED_CONTENT_MODE),
+        settingKey = settingKey,
+        restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.mixedContentMode = it },
         itemText = { it.label },
     )

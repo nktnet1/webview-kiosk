@@ -22,7 +22,8 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
     getLabel: (T) -> String,
     getDefault: () -> List<T>,
     initialValue: List<T>,
-    restricted: Boolean = false,
+    settingKey: String,
+    restricted: Boolean,
     onSave: (List<T>) -> Unit
 ) {
     var items by remember { mutableStateOf(initialValue) }
@@ -34,6 +35,7 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
         label = label,
         infoText = infoText,
         value = JSONArray(savedItems.map { it.name }).toString(),
+        settingKey = settingKey,
         restricted = restricted,
         onDismissCallback = {},
         onSave = {
