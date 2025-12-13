@@ -74,12 +74,16 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
                 modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
             )
             HorizontalDivider(
-                Modifier.padding(bottom = 4.dp),
+                Modifier.padding(bottom = 8.dp),
                 DividerDefaults.Thickness,
                 DividerDefaults.color
             )
-            publishTopics.forEach { (title, description, route) ->
-                SettingListItem(title, description) { navController.navigate(route) }
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                publishTopics.forEach { (title, description, route) ->
+                    SettingListItem(title, description) { navController.navigate(route) }
+                }
             }
 
             Text(
@@ -89,12 +93,17 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
                 modifier = Modifier.padding(top = 18.dp, bottom = 4.dp)
             )
             HorizontalDivider(
-                Modifier.padding(bottom = 4.dp),
+                Modifier.padding(bottom = 8.dp),
                 DividerDefaults.Thickness,
                 DividerDefaults.color
             )
-            subscribeTopics.forEach { (title, description, route) ->
-                SettingListItem(title, description) { navController.navigate(route) }
+
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                subscribeTopics.forEach { (title, description, route) ->
+                    SettingListItem(title, description) { navController.navigate(route) }
+                }
             }
         }
         Spacer(modifier = Modifier.height(12.dp))

@@ -60,10 +60,14 @@ fun SettingsMqttScreen(navController: NavController) {
 
             MqttEnabledSetting()
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            settingsItems.forEach { (title, description, route) ->
-                SettingListItem(title, description) { navController.navigate(route) }
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                settingsItems.forEach { (title, description, route) ->
+                    SettingListItem(title, description) { navController.navigate(route) }
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
