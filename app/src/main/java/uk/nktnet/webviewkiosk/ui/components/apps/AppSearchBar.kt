@@ -34,6 +34,7 @@ fun AppSearchBar(
     onSearchChange: (String) -> Unit,
     onSortToggle: () -> Unit,
     appCount: Int,
+    filteredAppCount: Int,
     ascending: Boolean,
 ) {
     Row(
@@ -102,6 +103,7 @@ fun AppSearchBar(
 
         IconButton(
             onClick = onSortToggle,
+            enabled = filteredAppCount > 1,
             modifier = Modifier
                 .align(Alignment.CenterVertically)
                 .graphicsLayer(scaleX = 0.9f, scaleY = 0.9f)
