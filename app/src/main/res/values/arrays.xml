@@ -119,6 +119,8 @@
         <item>Bookmark</item>
         <item>Files</item>
         <item>Find</item>
+        <item>Scroll Top</item>
+        <item>Scroll Bot</item>
         <item>Apps</item>
         <item>Settings</item>
         <item>Lock</item>
@@ -134,6 +136,8 @@
         <item>BOOKMARK</item>
         <item>FILES</item>
         <item>FIND</item>
+        <item>SCROLL_TOP</item>
+        <item>SCROLL_BOT</item>
         <item>APPS</item>
         <item>SETTINGS</item>
         <item>LOCK</item>
@@ -171,6 +175,8 @@
         <item>Bookmark</item>
         <item>Files</item>
         <item>Find</item>
+        <item>Scroll Top</item>
+        <item>Scroll Bot</item>
         <item>Apps</item>
         <item>Settings</item>
         <item>Lock</item>
@@ -186,6 +192,8 @@
         <item>BOOKMARK</item>
         <item>FILES</item>
         <item>FIND</item>
+        <item>SCROLL_TOP</item>
+        <item>SCROLL_BOT</item>
         <item>APPS</item>
         <item>SETTINGS</item>
         <item>LOCK</item>

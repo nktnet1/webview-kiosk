@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.handlers
 
+import android.webkit.WebView
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -100,6 +101,7 @@ fun KioskControlPanel(
     showBookmarkDialog: () -> Unit,
     showFilesDialog: () -> Unit,
     showAppsDialog: () -> Unit,
+    webView: WebView,
     customLoadUrl: (newUrl: String) -> Unit,
 ) {
     val context = LocalContext.current
@@ -381,6 +383,28 @@ fun KioskControlPanel(
                     iconRes = R.drawable.find_in_page_24
                 )
             },
+            KioskControlPanelActionOption.SCROLL_TOP to {
+                ActionButton(
+                    action = KioskControlPanelActionOption.SCROLL_TOP,
+                    enabled = enableInteraction,
+                    onClick = {
+                        showDialog = isSticky
+                        webView.pageUp(true)
+                    },
+                    iconRes = R.drawable.keyboard_double_arrow_up_24
+                )
+            },
+            KioskControlPanelActionOption.SCROLL_BOT to {
+                ActionButton(
+                    action = KioskControlPanelActionOption.SCROLL_BOT,
+                    enabled = enableInteraction,
+                    onClick = {
+                        showDialog = isSticky
+                        webView.pageDown(true)
+                    },
+                    iconRes = R.drawable.keyboard_double_arrow_down_24
+                )
+            },
             KioskControlPanelActionOption.APPS to {
                 ActionButton(
                     action = KioskControlPanelActionOption.APPS,
@@ -497,11 +521,13 @@ fun KioskControlPanel(
                                 KioskControlPanelActionOption.HISTORY -> userSettings.allowHistoryAccess
                                 KioskControlPanelActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
                                 KioskControlPanelActionOption.FILES -> userSettings.allowLocalFiles
-                                KioskControlPanelActionOption.FIND -> true
                                 KioskControlPanelActionOption.APPS -> !isLocked
                                 KioskControlPanelActionOption.SETTINGS -> !isLocked
                                 KioskControlPanelActionOption.LOCK -> !isLocked
                                 KioskControlPanelActionOption.UNLOCK -> isLocked
+                                KioskControlPanelActionOption.FIND,
+                                KioskControlPanelActionOption.SCROLL_TOP,
+                                KioskControlPanelActionOption.SCROLL_BOT -> true
                             }
 
                             if (include) {

@@ -345,6 +345,7 @@ fun WebviewScreen(navController: NavController) {
                             showBookmarkDialog = { isOpenBookmarkDialog = true },
                             showFilesDialog = { isOpenFilesDialog = true },
                             showAppsDialog = { isOpenAppsDialog = true },
+                            webView = webView,
                             customLoadUrl = ::customLoadUrl,
                         )
                     }
@@ -501,6 +502,7 @@ fun WebviewScreen(navController: NavController) {
         showBookmarkDialog = { isOpenBookmarkDialog = true },
         showFilesDialog = { isOpenFilesDialog = true },
         showAppsDialog = { isOpenAppsDialog = true },
+        webView = webView,
         customLoadUrl = ::customLoadUrl,
     )
 

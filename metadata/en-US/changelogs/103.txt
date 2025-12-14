@@ -1,0 +1,6 @@
+## Changes
+
+- feat: added actions to scroll top or scroll bot
+    - Web Browsing -> Address Bar Actions
+    - Web Browsing -> Kiosk Control Panel Actions
+- fix: search and sort in app list being disabled
