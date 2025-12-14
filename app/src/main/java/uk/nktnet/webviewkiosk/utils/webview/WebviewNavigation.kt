@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
+import android.webkit.URLUtil.isValidUrl
 import uk.nktnet.webviewkiosk.config.HistoryEntry
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -79,6 +80,7 @@ object WebViewNavigation {
         val replace = (
             shouldReplaceRedirect
             && !originalUrl.isNullOrEmpty()
+            && isValidUrl(originalUrl)
             && originalUrl.trimEnd('/') != newUrl
             && systemSettings.urlBeforeNavigation != currentUrl
         )
