@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.webview
 
+import android.webkit.WebView
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -73,6 +74,7 @@ fun AddressBar(
     showBookmarkDialog: () -> Unit,
     showFilesDialog: () -> Unit,
     showAppsDialog: () -> Unit,
+    webView: WebView,
     customLoadUrl: (newUrl: String) -> Unit,
 ) {
     val context = LocalContext.current
@@ -254,6 +256,26 @@ fun AddressBar(
                     iconRes = R.drawable.apps_24px,
                 )
             },
+            AddressBarActionOption.SCROLL_TOP to {
+                AddressBarMenuItem(
+                    action = AddressBarActionOption.SCROLL_TOP,
+                    onClick = {
+                        webView.pageUp(true)
+                        menuExpanded = false
+                    },
+                    iconRes = R.drawable.keyboard_double_arrow_up_24,
+                )
+            },
+            AddressBarActionOption.SCROLL_BOT to {
+                AddressBarMenuItem(
+                    action = AddressBarActionOption.SCROLL_BOT,
+                    onClick = {
+                        webView.pageDown(true)
+                        menuExpanded = false
+                    },
+                    iconRes = R.drawable.keyboard_double_arrow_down_24,
+                )
+            },
             AddressBarActionOption.SETTINGS to {
                 AddressBarMenuItem(
                     action = AddressBarActionOption.SETTINGS,
@@ -380,11 +402,13 @@ fun AddressBar(
                     AddressBarActionOption.HISTORY -> userSettings.allowHistoryAccess
                     AddressBarActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
                     AddressBarActionOption.FILES -> userSettings.allowLocalFiles
-                    AddressBarActionOption.FIND -> true
                     AddressBarActionOption.APPS -> !isLocked
                     AddressBarActionOption.SETTINGS -> !isLocked
                     AddressBarActionOption.LOCK -> !isLocked
                     AddressBarActionOption.UNLOCK -> isLocked
+                    AddressBarActionOption.FIND,
+                    AddressBarActionOption.SCROLL_TOP,
+                    AddressBarActionOption.SCROLL_BOT-> true
                 }
             }
         }

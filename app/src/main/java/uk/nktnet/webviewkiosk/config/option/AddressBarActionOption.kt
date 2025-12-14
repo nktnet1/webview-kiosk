@@ -12,6 +12,8 @@ enum class AddressBarActionOption(val label: String) {
     BOOKMARK("Bookmark"),
     FILES("Files"),
     FIND("Find"),
+    SCROLL_TOP("Scroll Top"),
+    SCROLL_BOT("Scroll Bot"),
     APPS("Apps"),
     SETTINGS("Settings"),
     LOCK("Lock"),
