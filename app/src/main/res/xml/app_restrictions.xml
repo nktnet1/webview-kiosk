@@ -326,7 +326,7 @@
         android:entryValues="@array/entry_values_floating_toolbar_mode_option"
         android:title="@string/appearance_floating_toolbar_mode_title"
         android:description="@string/appearance_floating_toolbar_mode_description"
-        />
+    />
     <restriction
         android:key="appearance.webview_inset"
         android:restrictionType="choice"
@@ -853,5 +853,4 @@
         android:title="@string/mqtt_subscribe_request_retain_as_published_title"
         android:description="@string/mqtt_subscribe_request_retain_as_published_description"
     />
-
 </restrictions>

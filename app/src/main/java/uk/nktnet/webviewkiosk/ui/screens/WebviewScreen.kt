@@ -42,6 +42,8 @@ import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoForwardCommand
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockCommand
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoHomeCommand
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoToUrlCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttPageDownCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttPageUpCommand
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttRefreshCommand
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttUnlockCommand
@@ -517,16 +519,18 @@ fun WebviewScreen(navController: NavController) {
     )
 
     LaunchedEffect(Unit) {
-        MqttManager.commands.collect { commandMessage ->
-            when (commandMessage) {
+        MqttManager.commands.collect { command ->
+            when (command) {
                 is MqttGoBackCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)
                 is MqttGoForwardCommand -> WebViewNavigation.goForward(::customLoadUrl, systemSettings)
                 is MqttGoHomeCommand -> WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings)
                 is MqttRefreshCommand -> WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
-                is MqttGoToUrlCommand -> customLoadUrl(commandMessage.data.url)
-                is MqttSearchCommand -> addressBarSearch(commandMessage.data.query)
+                is MqttGoToUrlCommand -> customLoadUrl(command.data.url)
+                is MqttSearchCommand -> addressBarSearch(command.data.query)
                 is MqttLockCommand -> tryLockTask(activity)
                 is MqttUnlockCommand -> tryUnlockTask(activity)
+                is MqttPageUpCommand -> { webView.pageUp(command.data.absolute) }
+                is MqttPageDownCommand -> { webView.pageDown(command.data.absolute) }
                 is MqttErrorCommand -> {
                     ToastManager.show(
                         context,

@@ -161,6 +161,38 @@ data class MqttLockDeviceCommand(
 }
 
 @Serializable
+@SerialName("page_up")
+data class MqttPageUpCommand(
+    override val messageId: String? = null,
+    override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
+    override val interact: Boolean = true,
+    val data: PageUpData,
+) : MqttCommandMessage {
+    @Serializable
+    data class PageUpData(
+        val absolute: Boolean
+    )
+    override fun toString() = "page_up"
+}
+
+@Serializable
+@SerialName("page_down")
+data class MqttPageDownCommand(
+    override val messageId: String? = null,
+    override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
+    override val interact: Boolean = true,
+    val data: PageDownData,
+) : MqttCommandMessage {
+    @Serializable
+    data class PageDownData(
+        val absolute: Boolean
+    )
+    override fun toString() = "page_down"
+}
+
+@Serializable
 @SerialName("error")
 data class MqttErrorCommand(
     override val messageId: String? = null,

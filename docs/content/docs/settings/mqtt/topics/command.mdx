@@ -43,7 +43,7 @@ retained flag when delivered to the subscriber.
 
 **Default:** false
 
-## 2. Payload
+## 2. Payloads
 
 In addition to the
 [Shared Subscribe Payload Properties](/docs/settings/mqtt/topics/#3-shared-subscribe-payload-properties),
@@ -346,6 +346,70 @@ Example Payload:
 ```json tab="Full"
 {
   "command": "lock_device",
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": false
+}
+```
+
+### 2.13. Page Up
+
+Scrolls the contents of this WebView up by half the view size.
+
+You can also specify `absolute: true` in the payload's data property
+to scroll fully up the page.
+
+This command uses the
+[Webview#pageDown](https://developer.android.com/reference/android/webkit/WebView#pageDown(boolean))
+API.
+
+Example Payload:
+
+```json tab="Minimal"
+{
+  "command": "page_up"
+}
+```
+
+```json tab="Full"
+{
+  "command": "page_up",
+  "data": {
+    "absolute": true
+  },
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": false
+}
+```
+
+### 2.14. Page Down
+
+Scrolls the contents of this WebView down by half the page size.
+
+You can also specify `absolute: true` in the payload's data property
+to scroll fully down the page.
+
+This command uses the
+[Webview#pageUp](https://developer.android.com/reference/android/webkit/WebView#pageUp(boolean))
+API.
+
+Example Payload:
+
+```json tab="Minimal"
+{
+  "command": "page_down"
+}
+```
+
+```json tab="Full"
+{
+  "command": "page_down",
+  "data": {
+    "absolute": true
+  },
   "messageId": "example-001",
   "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
   "targetUsernames": ["user-001"],
