@@ -72,7 +72,7 @@ fun loadBlockedPage(
         generateBlockedPageHtml(
             userSettings.theme,
             blockCause,
-            userSettings.blockedMessage,
+            userSettings,
             url
         ),
         "text/html",
