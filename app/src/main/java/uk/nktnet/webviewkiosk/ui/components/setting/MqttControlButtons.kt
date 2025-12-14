@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.ui.components.setting
 
-import android.widget.Toast
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -14,8 +13,6 @@ import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import com.hivemq.client.mqtt.MqttClientState
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttDisconnectingEvent
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import kotlin.math.max

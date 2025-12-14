@@ -7,7 +7,7 @@ import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.config.option.MqttVariableNameOption
+import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
 import uk.nktnet.webviewkiosk.managers.MqttManager.mqttVariableReplacement
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
@@ -25,7 +25,7 @@ fun MqttWillTopicSetting() {
             disconnects unexpectedly.
 
             All global variables are supported, e.g. you can use
-            - wk/${$${MqttVariableNameOption.USERNAME.name}}/${$${MqttVariableNameOption.APP_INSTANCE_ID.name}}/will
+            - wk/${$${MqttVariableName.USERNAME.name}}/${$${MqttVariableName.APP_INSTANCE_ID.name}}/will
         """.trimIndent(),
         placeholder = "e.g. wk/will",
         initialValue = userSettings.mqttWillTopic,

@@ -6,6 +6,9 @@ import android.content.SharedPreferences
 import android.util.Base64
 import org.json.JSONArray
 import org.json.JSONObject
+import uk.nktnet.webviewkiosk.config.mqtt.MqttQosOption
+import uk.nktnet.webviewkiosk.config.mqtt.MqttRetainHandlingOption
+import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
 import uk.nktnet.webviewkiosk.config.option.*
 import uk.nktnet.webviewkiosk.utils.booleanPref
 import uk.nktnet.webviewkiosk.utils.enumListPref
@@ -632,7 +635,7 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC,
-        "wk/event/${'$'}{${MqttVariableNameOption.EVENT_TYPE.name}}"
+        $$"wk/event/${$${MqttVariableName.EVENT_TYPE.name}}"
     )
     var mqttPublishEventQos by stringEnumPref(
         getRestrictions,
@@ -651,7 +654,7 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Topics.Publish.Response.TOPIC,
-        "wk/response/${'$'}{${MqttVariableNameOption.RESPONSE_TYPE.name}}"
+        $$"wk/response/${$${MqttVariableName.RESPONSE_TYPE.name}}"
     )
     var mqttPublishResponseQos by stringEnumPref(
         getRestrictions,
@@ -763,11 +766,11 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Will.PAYLOAD,
-        """
+        $$"""
             {
               "message": "Client has disconnected.",
-              "username": "${'$'}{USERNAME}",
-              "appInstanceId": "${'$'}{APP_INSTANCE_ID}"
+              "username": "${USERNAME}",
+              "appInstanceId": "${APP_INSTANCE_ID}"
             }
         """.trimIndent(),
     )

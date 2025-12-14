@@ -7,7 +7,7 @@ import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.config.option.MqttVariableNameOption
+import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
 import uk.nktnet.webviewkiosk.managers.MqttManager.mqttVariableReplacement
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
@@ -20,7 +20,7 @@ fun MqttPublishResponseTopicSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_publish_response_topic_title),
-        infoText = """
+        infoText = $$"""
             Default MQTT topic to publish reply messages to requests.
 
             If a responseTopic is specified in the request, either in the
@@ -28,14 +28,14 @@ fun MqttPublishResponseTopicSetting() {
             to that responseTopic instead.
 
             Supported variables:
-            - ${MqttVariableNameOption.RESPONSE_TYPE.name}
-            - ${MqttVariableNameOption.APP_INSTANCE_ID.name}
-            - ${MqttVariableNameOption.USERNAME.name}
+            - $${MqttVariableName.RESPONSE_TYPE.name}
+            - $${MqttVariableName.APP_INSTANCE_ID.name}
+            - $${MqttVariableName.USERNAME.name}
 
             Example:
-            - wk/response/${'$'}{${MqttVariableNameOption.RESPONSE_TYPE.name}}
+            - wk/response/${$${MqttVariableName.RESPONSE_TYPE.name}}
         """.trimIndent(),
-        placeholder = "e.g. wk/response/${'$'}{${MqttVariableNameOption.RESPONSE_TYPE.name}}",
+        placeholder = $$"e.g. wk/response/${$${MqttVariableName.RESPONSE_TYPE.name}}",
         initialValue = userSettings.mqttPublishResponseTopic,
         descriptionFormatter = { mqttVariableReplacement(it) },
         validator = { it.isEmpty() || isValidMqttPublishTopic(it) },

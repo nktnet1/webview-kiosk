@@ -1,3 +1,4 @@
+<!--suppress AndroidElementNotAllowed -->
 <device-admin>
     <!-- https://developer.android.com/work/versions/android-9.0#migrate_dpcs -->
     <support-transfer-ownership />

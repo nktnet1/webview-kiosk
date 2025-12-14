@@ -28,9 +28,9 @@ import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.data.SystemInfo
 import uk.nktnet.webviewkiosk.config.option.LockStateType
-import uk.nktnet.webviewkiosk.config.option.MqttQosOption
-import uk.nktnet.webviewkiosk.config.option.MqttRetainHandlingOption
-import uk.nktnet.webviewkiosk.config.option.MqttVariableNameOption
+import uk.nktnet.webviewkiosk.config.mqtt.MqttQosOption
+import uk.nktnet.webviewkiosk.config.mqtt.MqttRetainHandlingOption
+import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
 import uk.nktnet.webviewkiosk.config.mqtt.MqttConfig
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttCommandJsonParser
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttCommandMessage
@@ -396,7 +396,7 @@ object MqttManager {
         val topic = mqttVariableReplacement(
             config.publishEventTopic,
             mapOf(
-                MqttVariableNameOption.EVENT_TYPE.name to event.getEventType()
+                MqttVariableName.EVENT_TYPE.name to event.getEventType()
             )
         )
         publishToMqtt(
@@ -484,7 +484,7 @@ object MqttManager {
         val topic = mqttVariableReplacement(
             requestMessage.responseTopic.takeIf { !it.isNullOrEmpty() } ?: config.publishResponseTopic,
             mapOf(
-                MqttVariableNameOption.RESPONSE_TYPE.name to responseMessage.getType()
+                MqttVariableName.RESPONSE_TYPE.name to responseMessage.getType()
             )
         )
 
@@ -839,8 +839,8 @@ object MqttManager {
         additionalReplacementMap: Map<String, String> = emptyMap(),
     ): String {
         val variableReplacementMap = mapOf(
-            MqttVariableNameOption.APP_INSTANCE_ID.name to config.appInstanceId,
-            MqttVariableNameOption.USERNAME.name to config.username,
+            MqttVariableName.APP_INSTANCE_ID.name to config.appInstanceId,
+            MqttVariableName.USERNAME.name to config.username,
         ) + additionalReplacementMap
         val regex = "\\$\\{([^}]+)\\}".toRegex()
         return regex.replace(value) { matchResult ->

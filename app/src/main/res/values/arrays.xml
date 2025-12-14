@@ -292,4 +292,26 @@
         <item>PREVENT_NAVIGATION</item>
         <item>SHOW_TOAST</item>
     </string-array>
+
+    <string-array name="entries_mqtt_qos_option">
+        <item>At Most Once (0)</item>
+        <item>At Least Once (1)</item>
+        <item>Exactly Once (2)</item>
+    </string-array>
+    <string-array name="entry_values_mqtt_qos_option">
+        <item>AT_MOST_ONCE</item>
+        <item>AT_LEAST_ONCE</item>
+        <item>EXACTLY_ONCE</item>
+    </string-array>
+
+    <string-array name="entries_mqtt_retain_handling_option">
+        <item>Send</item>
+        <item>Send If Subscription Does Not Exist</item>
+        <item>Do Not Send</item>
+    </string-array>
+    <string-array name="entry_values_mqtt_retain_handling_option">
+        <item>SEND</item>
+        <item>SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST</item>
+        <item>DO_NOT_SEND</item>
+    </string-array>
 </resources>

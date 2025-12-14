@@ -27,7 +27,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.config.option.MqttVariableNameOption
+import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 
@@ -41,7 +41,7 @@ fun MqttClientIdSetting() {
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
 
-    val recommendedClientId = $$"wk-${$${MqttVariableNameOption.APP_INSTANCE_ID.name}}"
+    val recommendedClientId = $$"wk-${$${MqttVariableName.APP_INSTANCE_ID.name}}"
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_client_id_title),
@@ -55,7 +55,7 @@ fun MqttClientIdSetting() {
             you can use like:
             - $recommendedClientId
         """.trimIndent(),
-        placeholder = "e.g. wk-${'$'}{APP_INSTANCE_ID}",
+        placeholder = $$"e.g. wk-${APP_INSTANCE_ID}",
         initialValue = userSettings.mqttClientId,
         descriptionFormatter = {
             if (it.trim().isEmpty()) {

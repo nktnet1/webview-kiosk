@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config.option
+package uk.nktnet.webviewkiosk.config.mqtt
 
 import com.hivemq.client.mqtt.mqtt5.message.subscribe.Mqtt5RetainHandling
 

@@ -7,7 +7,7 @@ import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.config.option.MqttVariableNameOption
+import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
 import uk.nktnet.webviewkiosk.managers.MqttManager.mqttVariableReplacement
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
@@ -20,18 +20,18 @@ fun MqttPublishEventTopicSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_publish_event_topic_title),
-        infoText = """
+        infoText = $$"""
             The MQTT topic to publish event messages.
 
             Supported variables:
-            - ${MqttVariableNameOption.EVENT_TYPE.name}
-            - ${MqttVariableNameOption.APP_INSTANCE_ID.name}
-            - ${MqttVariableNameOption.USERNAME.name}
+            - $${MqttVariableName.EVENT_TYPE.name}
+            - $${MqttVariableName.APP_INSTANCE_ID.name}
+            - $${MqttVariableName.USERNAME.name}
 
             Example:
-            - wk/event/${'$'}{${MqttVariableNameOption.EVENT_TYPE.name}}
+            - wk/event/${$${MqttVariableName.EVENT_TYPE.name}}
         """.trimIndent(),
-        placeholder = "e.g. wk/event/${'$'}{${MqttVariableNameOption.EVENT_TYPE.name}}",
+        placeholder = $$"e.g. wk/event/${$${MqttVariableName.EVENT_TYPE.name}}",
         initialValue = userSettings.mqttPublishEventTopic,
         descriptionFormatter = {
             mqttVariableReplacement( it)
