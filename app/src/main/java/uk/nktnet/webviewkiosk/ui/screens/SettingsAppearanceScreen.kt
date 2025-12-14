@@ -17,6 +17,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.WebVie
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.AddressBarPositionSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.AddressBarSizeSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.CustomBlockPageHtmlSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.FloatingToolbarModeSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.ImmersiveModeSetting
 
@@ -46,6 +47,7 @@ fun SettingsAppearanceScreen(
             WebViewInsetSetting()
             ImmersiveModeSetting()
             BlockedMessageSetting()
+            CustomBlockPageHtmlSetting()
             AddressBarModeSetting()
             AddressBarSizeSetting()
             AddressBarPositionSetting()
