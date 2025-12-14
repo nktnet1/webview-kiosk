@@ -35,6 +35,7 @@ enum class AddressBarActionOption(val label: String) {
             BOOKMARK,
             FILES,
             FIND,
+            SCROLL_TOP,
         )
 
         fun parseFromJsonArray(jsonArray: JSONArray?): List<AddressBarActionOption> {
