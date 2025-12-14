@@ -41,7 +41,6 @@ fun AppSearchBar(
         verticalAlignment = Alignment.CenterVertically
     ) {
         BasicTextField(
-            enabled = filteredAppCount > 1,
             value = searchQuery.text,
             onValueChange = onSearchChange,
             singleLine = true,
@@ -73,7 +72,7 @@ fun AppSearchBar(
                                 text = if (filteredAppCount > 1) {
                                     "Search $filteredAppCount apps"
                                 } else if (filteredAppCount == 1) {
-                                    "Showing 1 app."
+                                    "Search 1 app."
                                 } else {
                                     "No apps available."
                                 },
@@ -106,7 +105,6 @@ fun AppSearchBar(
 
         IconButton(
             onClick = onSortToggle,
-            enabled = filteredAppCount > 1,
             modifier = Modifier
                 .align(Alignment.CenterVertically)
                 .graphicsLayer(scaleX = 0.9f, scaleY = 0.9f)
