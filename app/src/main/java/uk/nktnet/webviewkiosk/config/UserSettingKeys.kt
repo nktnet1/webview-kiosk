@@ -68,6 +68,7 @@ object UserSettingsKeys {
         const val WEBVIEW_INSET = "appearance.webview_inset"
         const val IMMERSIVE_MODE = "appearance.immersive_mode"
         const val BLOCKED_MESSAGE = "appearance.blocked_message"
+        const val CUSTOM_BLOCK_PAGE_HTML = "appearance.custom_block_page_html"
         const val ADDRESS_BAR_MODE = "appearance.address_bar_mode"
         const val ADDRESS_BAR_SIZE = "appearance.address_bar_size"
         const val ADDRESS_BAR_POSITION = "appearance.address_bar_position"
