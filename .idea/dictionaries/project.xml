@@ -2,6 +2,8 @@
   <dictionary name="project">
     <words>
       <w>abis</w>
+      <w>affero</w>
+      <w>amarok</w>
       <w>autosizing</w>
       <w>bitwarden</w>
       <w>densitydpi</w>
@@ -9,8 +11,21 @@
       <w>dhizuku</w>
       <w>ecosia</w>
       <w>fdroid</w>
+      <w>fumadocs</w>
+      <w>hashchange</w>
       <w>khtml</w>
+      <w>lucide</w>
+      <w>mqtts</w>
+      <w>mqttx</w>
       <w>nktnet</w>
+      <w>obtainium</w>
+      <w>oklch</w>
+      <w>playstore</w>
+      <w>shizuku</w>
+      <w>tailwindcss</w>
+      <w>tbody</w>
+      <w>testdpc</w>
+      <w>thead</w>
       <w>unduck</w>
       <w>unduckified</w>
       <w>webviewkiosk</w>
