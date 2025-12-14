@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.utils.webview.html
 
 import android.text.Html
+import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 
 enum class BlockCause(val label: String) {
@@ -13,7 +14,7 @@ enum class BlockCause(val label: String) {
 fun generateBlockedPageHtml(
     theme: ThemeOption,
     blockCause: BlockCause = BlockCause.BLACKLIST,
-    message: String,
+    userSettings: UserSettings,
     url: String,
 ): String {
     val themeCss = generateThemeCss(theme)
@@ -44,18 +45,32 @@ fun generateBlockedPageHtml(
                     border: none;
                     margin: 20px 0 30px 0px;
                 }
+                .actions {
+                    display: flex;
+                    gap: 12px;
+                    justify-content: center;
+                }
+                button {
+                    font-size: 16px;
+                    border-radius: 6px;
+                }
                 $themeCss
             </style>
           </head>
           <body>
             <h2>🚫 Access Blocked</h2>
-            <p>${Html.escapeHtml(message)}</p>
-            <hr />
+            <p>${Html.escapeHtml(userSettings.blockedMessage)}</p>
 
+            <div class="actions" style="margin-top:5;margin-bot:5px;">
+              <button style="width:100px;" onclick="history.back()">Back</button>
+              <button style="width:100px;" onclick="location.href='${userSettings.homeUrl}'">Home</button>
+            </div>
+
+            <hr />
             <b>URL</b>
             <p>${Html.escapeHtml(url)}</p>
-            <hr />
 
+            <hr />
             <b>CAUSE</b>
             <p>${blockCause}</p>
           </body>
