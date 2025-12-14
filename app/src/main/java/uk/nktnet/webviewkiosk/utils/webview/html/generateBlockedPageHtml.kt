@@ -18,6 +18,9 @@ fun generateBlockedPageHtml(
     url: String,
 ): String {
     val themeCss = generateThemeCss(theme)
+    val message = Html.escapeHtml(userSettings.blockedMessage)
+    val homeUrl = Html.escapeHtml(userSettings.homeUrl)
+    val urlDisplay = Html.escapeHtml(url)
 
     return """
         <html>
@@ -59,16 +62,16 @@ fun generateBlockedPageHtml(
           </head>
           <body>
             <h2>🚫 Access Blocked</h2>
-            <p>${Html.escapeHtml(userSettings.blockedMessage)}</p>
+            <p>${message}</p>
 
             <div class="actions" style="margin-top:5;margin-bot:5px;">
               <button style="width:100px;" onclick="history.back()">Back</button>
-              <button style="width:100px;" onclick="location.href='${userSettings.homeUrl}'">Home</button>
+              <button style="width:100px;" onclick="location.href='${homeUrl}'">Home</button>
             </div>
 
             <hr />
             <b>URL</b>
-            <p>${Html.escapeHtml(url)}</p>
+            <p>${urlDisplay}</p>
 
             <hr />
             <b>CAUSE</b>
