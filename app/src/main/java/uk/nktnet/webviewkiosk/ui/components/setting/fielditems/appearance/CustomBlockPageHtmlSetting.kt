@@ -20,15 +20,13 @@ fun CustomBlockPageHtmlSetting() {
         infoText = """
             Define the custom HTML content to show when a page is blocked.
 
-            You can use standard HTML tags to style the message.
-
             Leave blank to use the default block page.
         """.trimIndent(),
         placeholder = """
             e.g.
                 <div style="text-align:center; margin-top:10%;">
-                    <h1 style="font-size:4rem;">Blocked</h1>
-                    <p style="font-size:3rem;">This site is not accessible.</p>
+                  <h1 style="font-size:4rem;">Blocked</h1>
+                  <p style="font-size:3rem;">This site is not accessible.</p>
                 </div>
 
             or as a redirect:
