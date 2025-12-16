@@ -28,6 +28,15 @@ android {
         includeInBundle = false
     }
 
+    packaging {
+        resources {
+            excludes += listOf(
+                "META-INF/INDEX.LIST",
+                "META-INF/io.netty.versions.properties"
+            )
+        }
+    }
+
     defaultConfig {
         applicationId = "uk.nktnet.webviewkiosk"
         minSdk = 21
@@ -81,26 +90,6 @@ android {
                 outputImpl.outputFileName = apkName
             }
         }
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    packaging {
-        resources {
-            excludes += listOf(
-                "META-INF/INDEX.LIST",
-                "META-INF/io.netty.versions.properties"
-            )
-        }
-    }
-
-    dependenciesInfo {
-        // https://gitlab.com/fdroid/fdroiddata/-/issues/3330
-        includeInApk = false
-        includeInBundle = false
     }
 }
 
