@@ -727,7 +727,7 @@ class UserSettings(val context: Context) {
                 json.optString(UserSettingsKeys.Appearance.IMMERSIVE_MODE, immersiveMode.name)
             )
             blockedMessage = json.optString(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
-            blockedMessage = json.optString(UserSettingsKeys.Appearance.CUSTOM_BLOCK_PAGE_HTML, customBlockPageHtml)
+            customBlockPageHtml = json.optString(UserSettingsKeys.Appearance.CUSTOM_BLOCK_PAGE_HTML, customBlockPageHtml)
             addressBarMode = AddressBarModeOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name))
             addressBarSize = AddressBarSizeOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_SIZE, addressBarSize.name))
             addressBarPosition = AddressBarPositionOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION, addressBarPosition.name))
