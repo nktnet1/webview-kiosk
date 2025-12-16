@@ -79,7 +79,76 @@ The message to display when a URL matches the blacklist regex filter rule.
 
 **Default:** This site is blocked by {APP_NAME}
 
-## 6. Address Bar Mode
+## 6. Custom Block Page HTML
+
+Define the custom HTML content to show when a page is blocked.
+
+Leave blank to use the default block page.
+
+Examples:
+
+```html tab="Minimal"
+<div style="text-align:center; margin-top:10%;">
+  <h1 style="font-size:4rem;">Blocked</h1>
+  <p style="font-size:3rem;">This site is not accessible.</p>
+</div>
+```
+
+```html tab="Redirect"
+<meta http-equiv="refresh" content="0; url=https://webviewkiosk.nktnet.uk">
+```
+
+```html tab="Full"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Blocked</title>
+  <style>
+    body {
+      text-align: center;
+      margin-top: 10%;
+      font-family: sans-serif;
+      color: darkred;
+    }
+    h1 {
+      font-size: 5rem;
+      margin: 1rem 0;
+    }
+    p {
+      font-size: 3.5rem;
+      margin: 1rem 0;
+    }
+    button {
+      font-size: 3rem;
+      height: 100px;
+      width: 280px;
+      padding: 0.75rem 2rem;
+      margin: 1rem;
+      cursor: pointer;
+      border-radius: 20px;
+    }
+  </style>
+  <script>
+    function goHome() {
+      window.location.href = "https://webviewkiosk.nktnet.uk";
+    }
+  </script>
+</head>
+<body>
+  <h1>Blocked</h1>
+  <p>This site is not accessible.</p>
+  <div>
+    <button onclick="window.history.back()">Go Back</button>
+    <button onclick="goHome()">Go Home</button>
+  </div>
+</body>
+</html>
+```
+
+**Default:** (blank)
+
+## 7. Address Bar Mode
 
 Customise the visibility of the address bar. Select one of:
 
@@ -93,7 +162,7 @@ but disappears when the app is locked (pinned) using the floating toolbar
 
 **Default:** Hidden when locked
 
-## 7. Address Bar Size
+## 8. Address Bar Size
 
 Customise the size of the address bar, which will determine the
 height, font size, padding and icon size. Select one of:
@@ -106,7 +175,7 @@ height, font size, padding and icon size. Select one of:
 
 **Default:** Medium
 
-## 8. Address Bar Position
+## 9. Address Bar Position
 
 Customise the position of the address bar. Select one of:
 

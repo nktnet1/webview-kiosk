@@ -350,6 +350,12 @@
         android:description="@string/appearance_blocked_message_description"
     />
     <restriction
+        android:key="appearance.custom_block_page_html"
+        android:restrictionType="string"
+        android:title="@string/appearance_custom_block_page_html_title"
+        android:description="@string/appearance_custom_block_page_html_description"
+    />
+    <restriction
         android:key="appearance.address_bar_mode"
         android:restrictionType="choice"
         android:entries="@array/entries_address_bar_mode_option"

@@ -67,14 +67,17 @@ fun loadBlockedPage(
         url
     }
 
-    webView?.loadDataWithBaseURL(
-        baseUrl,
+    val html = userSettings.customBlockPageHtml.ifBlank {
         generateBlockedPageHtml(
             userSettings.theme,
             blockCause,
-            userSettings.blockedMessage,
+            userSettings,
             url
-        ),
+        )
+    }
+    webView?.loadDataWithBaseURL(
+        baseUrl,
+        html,
         "text/html",
         "UTF-8",
         null

@@ -162,6 +162,9 @@
     <string name="appearance_blocked_message_title">Blocked Message</string>
     <string name="appearance_blocked_message_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
 
+    <string name="appearance_custom_block_page_html_title">Custom Block Page HTML</string>
+    <string name="appearance_custom_block_page_html_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
+
     <string name="appearance_address_bar_mode_title">Address Bar Mode</string>
     <string name="appearance_address_bar_mode_description">https://webviewkiosk.nktnet.uk/docs/settings/appearance/</string>
 

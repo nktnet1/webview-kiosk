@@ -368,6 +368,11 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Appearance.BLOCKED_MESSAGE,
         "This site is blocked by ${Constants.APP_NAME}."
     )
+    var customBlockPageHtml by stringPrefOptional(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Appearance.CUSTOM_BLOCK_PAGE_HTML
+    )
     var addressBarMode by stringEnumPref(
         getRestrictions,
         prefs,
@@ -915,6 +920,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Appearance.WEBVIEW_INSET, webViewInset.name)
             put(UserSettingsKeys.Appearance.IMMERSIVE_MODE, immersiveMode.name)
             put(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
+            put(UserSettingsKeys.Appearance.CUSTOM_BLOCK_PAGE_HTML, customBlockPageHtml)
             put(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name)
             put(UserSettingsKeys.Appearance.ADDRESS_BAR_SIZE, addressBarSize.name)
             put(UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION, addressBarPosition.name)
@@ -1081,6 +1087,7 @@ class UserSettings(val context: Context) {
                 json.optString(UserSettingsKeys.Appearance.IMMERSIVE_MODE, immersiveMode.name)
             )
             blockedMessage = json.optString(UserSettingsKeys.Appearance.BLOCKED_MESSAGE, blockedMessage)
+            customBlockPageHtml = json.optString(UserSettingsKeys.Appearance.CUSTOM_BLOCK_PAGE_HTML, customBlockPageHtml)
             addressBarMode = AddressBarModeOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_MODE, addressBarMode.name))
             addressBarSize = AddressBarSizeOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_SIZE, addressBarSize.name))
             addressBarPosition = AddressBarPositionOption.fromString(json.optString(UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION, addressBarPosition.name))
