@@ -100,6 +100,8 @@ See the [LICENSE](./LICENSE) file for details.
 <div align="center">
   <img src="./metadata/en-US/images/phoneScreenshots/001.phone-default.png" width="275px" alt="Phone Screenshot 1" />&nbsp;
   <img src="./metadata/en-US/images/phoneScreenshots/002.phone-locked.png" width="275px" alt="Phone Screenshot 2"/>&nbsp;
-  <img src="./metadata/en-US/images/phoneScreenshots/003.phone-page-blocked.png" width="275px" alt="Phone Screenshot 3" />&nbsp;
-  <img src="./metadata/en-US/images/phoneScreenshots/004.phone-settings.png" width="275px" alt="Phone Screenshot 4" />
+  <img src="./metadata/en-US/images/phoneScreenshots/003.phone-kiosk-control-panel.png" width="275px" alt="Phone Screenshot 3" />&nbsp;
+  <img src="./metadata/en-US/images/phoneScreenshots/004.phone-page-blocked.png" width="275px" alt="Phone Screenshot 4" />
+  <img src="./metadata/en-US/images/phoneScreenshots/005.phone-settings.png" width="275px" alt="Phone Screenshot 5" />
+  <img src="./metadata/en-US/images/phoneScreenshots/006.phone-settings-mqtt.png" width="275px" alt="Phone Screenshot 6" />
 </div>
