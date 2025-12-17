@@ -36,13 +36,26 @@ and standalone Kiosk solution.
 
 ## Key Features
 
+### Core / Standalone
+
 - <b>Lock Task Mode (Pin):</b> prevent access to your device's home screen, apps and status bar
 - <b>Secure Settings:</b> configurations are protected by biometrics, device credentials or custom password
-- <b>URL Filtering:</b> use regular expression to control web access through blacklisting and whitelisting
-- <b>Export/Import:</b> allows for the backup and restore of user settings and configurations
+- <b>URL Filtering:</b> use regular expressions to control web access through a URL blacklist and whitelist
+- <b>Export/Import:</b> backup and restore user settings in Base64 or JSON format
 - <b>Local files:</b> display an image, audio, video, or HTML file in kiosk mode from your device
-- <b>Managed Configurations:</b> for fully-managed (company-owned) devices, settings can be set
-  and restricted remotely through an MDM/EMM provider
+- <b>Default Launcher:</b> functions as a home app that and can launch other apps
+
+### Remote Management / Enterprise
+
+- <b>Message Queuing Telemetry Transport (MQTT)</b>
+  - Monitor events, update settings, execute commands and build custom
+    automations using the API
+  - Requires an MQTT broker (e.g. Mosquitto, EMQX or HiveMQ)
+- <b>Managed Configurations (App Restrictions)</b>
+  - For fully-managed (company-owned) devices, settings can be remotely
+    configured via an MDM/EMM provider
+  - Advanced users using a device policy controller (e.g. Test DPC or OwnDroid)
+    can also enforce configurations locally
 
 ## Additional Permissions
 
@@ -87,6 +100,8 @@ See the [LICENSE](./LICENSE) file for details.
 <div align="center">
   <img src="./metadata/en-US/images/phoneScreenshots/001.phone-default.png" width="275px" alt="Phone Screenshot 1" />&nbsp;
   <img src="./metadata/en-US/images/phoneScreenshots/002.phone-locked.png" width="275px" alt="Phone Screenshot 2"/>&nbsp;
-  <img src="./metadata/en-US/images/phoneScreenshots/003.phone-page-blocked.png" width="275px" alt="Phone Screenshot 3" />&nbsp;
-  <img src="./metadata/en-US/images/phoneScreenshots/004.phone-settings.png" width="275px" alt="Phone Screenshot 4" />
+  <img src="./metadata/en-US/images/phoneScreenshots/003.phone-kiosk-control-panel.png" width="275px" alt="Phone Screenshot 3" />&nbsp;
+  <img src="./metadata/en-US/images/phoneScreenshots/004.phone-page-blocked.png" width="275px" alt="Phone Screenshot 4" />&nbsp;
+  <img src="./metadata/en-US/images/phoneScreenshots/005.phone-settings.png" width="275px" alt="Phone Screenshot 5" />&nbsp;
+  <img src="./metadata/en-US/images/phoneScreenshots/006.phone-settings-mqtt.png" width="275px" alt="Phone Screenshot 6" />
 </div>
