@@ -1,0 +1,5 @@
+{
+  "title": "MQTT",
+  "defaultOpen": true,
+  "pages": ["connection", "topics", "will", "restrictions"]
+}

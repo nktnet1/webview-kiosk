@@ -1,0 +1,418 @@
+---
+title: Command
+description: Subscribe to control commands (actions)
+---
+
+import { APP_NAME } from '@/config/app';
+
+## 1. Settings
+
+### 1.1. Topic Name
+
+All [global variables](/docs/settings/mqtt/#3-global-variables) are supported.
+For example,
+
+```js
+wk/${USERNAME}/${APP_INSTANCE_ID}/command
+```
+
+**Default:**
+
+```js
+wk/command
+```
+
+### 1.2. Quality of Service (QoS)
+
+Quality of Service (QoS) ensures different message delivery guarantees
+in case of connection failures.
+
+**Default:** At Most Once (0)
+
+### 1.3. Retain Handling
+
+Control whether {APP_NAME} should receive existing
+retained messages when subscribing.
+
+**Default:** Do Not Send (2)
+
+### 1.4. Retain as Published
+
+Controls whether retained messages from the broker keep their original
+retained flag when delivered to the subscriber.
+
+**Default:** false
+
+## 2. Payloads
+
+In addition to the
+[Shared Subscribe Payload Properties](/docs/settings/mqtt/topics/#3-shared-subscribe-payload-properties),
+the following properties exists for all commands:
+
+| Property | Type | Description |
+|-|-|-|
+| `command` | string | The command to execute, e.g. `clear_history`. |
+| `interact` | boolean *(optional)* | Whether a user interaction should be triggered. For example, this will restore brightness if `Web Lifecycle -> Dim Screen on Inactivity (seconds)` is configured. <br />**Default:** `true`|
+
+### 2.1. Go Back
+
+Navigates one page back in history.
+
+Example payload:
+
+```json tab="Minimal"
+{
+  "command": "go_back"
+}
+```
+
+```json tab="Full"
+{
+  "command": "go_back",
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": false
+}
+```
+
+### 2.2. Go Forward
+
+Navigates one page forward in history.
+
+Example payload:
+
+```json tab="Minimal"
+{
+  "command": "go_forward"
+}
+```
+
+```json tab="Full"
+{
+  "command": "go_forward",
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": false
+}
+```
+
+### 2.3. Go Home
+
+Navigates to your configured home page.
+
+Example payload:
+
+```json tab="Minimal"
+{
+  "command": "go_home"
+}
+```
+
+```json tab="Full"
+{
+  "command": "go_home",
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": false
+}
+```
+
+### 2.4. Refresh
+
+Refresh the current webview page.
+
+Example payload:
+
+```json tab="Minimal"
+{
+  "command": "refresh"
+}
+```
+
+```json tab="Full"
+{
+  "command": "refresh",
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": false
+}
+```
+
+### 2.5. Go to URL
+
+Navigates to a specific URL.
+
+Example Payload:
+
+```json tab="Minimal"
+{
+  "command": "go_to_url",
+  "data": {
+    "url": "https://webviewkiosk.nktnet.uk"
+  }
+}
+```
+
+```json tab="Full"
+{
+  "command": "go_to_url",
+  "data": {
+    "url": "https://webviewkiosk.nktnet.uk"
+  },
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": false
+}
+```
+
+### 2.6. Search
+
+Perform a query search using the selected search engine. This
+is the same as using {APP_NAME}'s address bar.
+
+Example Payload:
+
+```json tab="Minimal"
+{
+  "command": "search",
+  "data": {
+    "query": "How to Train Your Dragon"
+  }
+}
+```
+
+```json tab="Full"
+{
+  "command": "search",
+  "data": {
+    "query": "How to Train Your Dragon"
+  },
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": false
+}
+```
+
+### 2.7. Clear History
+
+Removes the navigation history, leaving the current URL
+as the only entry in the stack.
+
+Example Payload:
+
+```json tab="Minimal"
+{
+  "command": "clear_history"
+}
+```
+
+```json tab="Full"
+{
+  "command": "clear_history",
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": false
+}
+```
+
+### 2.8. Toast
+
+Shows a short toast message.
+
+If the message is empty or only contains white space, no toast will be shown.
+This is still helpful in triggering a user interaction with the `interact` property.
+
+Example Payload:
+
+```json tab="Minimal"
+{
+  "command": "toast",
+  "data": {
+    "message": "Welcome!"
+  }
+}
+```
+
+```json tab="Full"
+{
+  "command": "toast",
+  "data": {
+    "message": "Welcome!"
+  },
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": true
+}
+```
+
+### 2.9. Lock
+
+Start lock task mode (or screen pinning) depending on whether {APP_NAME} has
+device owner permissions.
+
+Please note that for screen pinning, the user will be prompted to confirm the
+action, which needs to be done on the device.
+
+If possible, we recommend to always enable lock task packages for {APP_NAME} -
+more details in the [security](/docs/security) section.
+
+Example Payload:
+
+```json tab="Minimal"
+{
+  "command": "lock"
+}
+```
+
+```json tab="Full"
+{
+  "command": "lock",
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": false
+}
+```
+
+### 2.10. Unlock
+
+Stop lock task mode (or screen pinning) depending on whether {APP_NAME} has
+device owner permissions.
+
+Example Payload:
+
+```json tab="Minimal"
+{
+  "command": "unlock"
+}
+```
+
+```json tab="Full"
+{
+  "command": "unlock",
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": false
+}
+```
+
+### 2.11. Reconnect
+
+Disconnect, then reconnect and resubscribe to all MQTT topics.
+
+This is helpful if you have updated any MQTT-related settings, which
+requires a reconnection to apply.
+
+Example Payload:
+
+```json tab="Minimal"
+{
+  "command": "reconnect"
+}
+```
+
+```json tab="Full"
+{
+  "command": "reconnect",
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": false
+}
+```
+
+### 2.12. Lock Device
+
+Turns the device screen off. Note that this will also stop
+the MQTT connection.
+
+Example Payload:
+
+```json tab="Minimal"
+{
+  "command": "lock_device"
+}
+```
+
+```json tab="Full"
+{
+  "command": "lock_device",
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": false
+}
+```
+
+### 2.13. Page Up
+
+Scrolls the contents of this WebView up by half the view size.
+
+You can also specify `absolute: true` in the payload's data property
+to scroll fully up the page.
+
+This command uses the
+[Webview#pageDown](https://developer.android.com/reference/android/webkit/WebView#pageDown(boolean))
+API.
+
+Example Payload:
+
+```json tab="Minimal"
+{
+  "command": "page_up"
+}
+```
+
+```json tab="Full"
+{
+  "command": "page_up",
+  "data": {
+    "absolute": true
+  },
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": false
+}
+```
+
+### 2.14. Page Down
+
+Scrolls the contents of this WebView down by half the page size.
+
+You can also specify `absolute: true` in the payload's data property
+to scroll fully down the page.
+
+This command uses the
+[Webview#pageUp](https://developer.android.com/reference/android/webkit/WebView#pageUp(boolean))
+API.
+
+Example Payload:
+
+```json tab="Minimal"
+{
+  "command": "page_down"
+}
+```
+
+```json tab="Full"
+{
+  "command": "page_down",
+  "data": {
+    "absolute": true
+  },
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": false
+}
+```

@@ -113,4 +113,83 @@ object UserSettingsKeys {
         const val CUSTOM_SCRIPT_ON_PAGE_START = "js_scripts.custom_script_on_page_start"
         const val CUSTOM_SCRIPT_ON_PAGE_FINISH = "js_scripts.custom_script_on_page_finish"
     }
+
+    object Mqtt {
+        const val ENABLED = "mqtt.enabled"
+
+        object Connection {
+            const val SERVER_HOST = "mqtt.connection.server_host"
+            const val SERVER_PORT = "mqtt.connection.server_port"
+            const val CLIENT_ID = "mqtt.connection.client_id"
+            const val USE_TLS = "mqtt.connection.use_tls"
+            const val USERNAME = "mqtt.connection.username"
+            const val PASSWORD = "mqtt.connection.password"
+            const val CLEAN_START = "mqtt.connection.clean_start"
+            const val KEEP_ALIVE = "mqtt.connection.keep_alive"
+            const val CONNECT_TIMEOUT = "mqtt.connection.connect_timeout"
+            const val SOCKET_CONNECT_TIMEOUT = "mqtt.connection.socket_connect_timeout"
+            const val AUTOMATIC_RECONNECT = "mqtt.connection.automatic_reconnect"
+
+            const val USE_WEBSOCKET = "mqtt.connection.use_websocket"
+            const val WEBSOCKET_SERVER_PATH = "mqtt.connection.websocket_server_path"
+        }
+
+        object Topics {
+            object Publish {
+                object Event {
+                    const val TOPIC = "mqtt.publish.event.topic"
+                    const val QOS = "mqtt.publish.event.qos"
+                    const val RETAIN = "mqtt.publish.event.retain"
+                }
+                object Response {
+                    const val TOPIC = "mqtt.publish.response.topic"
+                    const val QOS = "mqtt.publish.response.qos"
+                    const val RETAIN = "mqtt.publish.response.retain"
+                }
+            }
+
+            object Subscribe {
+                object Command {
+                    const val TOPIC = "mqtt.subscribe.command.topic"
+                    const val QOS = "mqtt.subscribe.command.qos"
+                    const val RETAIN_HANDLING = "mqtt.subscribe.command.retain_handling"
+                    const val RETAIN_AS_PUBLISHED = "mqtt.subscribe.command.retain_as_published"
+                }
+
+                object Settings {
+                    const val TOPIC = "mqtt.subscribe.settings.topic"
+                    const val QOS = "mqtt.subscribe.settings.qos"
+                    const val RETAIN_HANDLING = "mqtt.subscribe.settings.retain_handling"
+                    const val RETAIN_AS_PUBLISHED = "mqtt.subscribe.settings.retain_as_published"
+                }
+
+                object Request {
+                    const val TOPIC = "mqtt.subscribe.request.topic"
+                    const val QOS = "mqtt.subscribe.request.qos"
+                    const val RETAIN_HANDLING = "mqtt.subscribe.request.retain_handling"
+                    const val RETAIN_AS_PUBLISHED = "mqtt.subscribe.request.retain_as_published"
+                }
+            }
+        }
+
+        object Will {
+            const val TOPIC = "mqtt.will.topic"
+            const val QOS = "mqtt.will.qos"
+            const val PAYLOAD = "mqtt.will.payload"
+            const val RETAIN = "mqtt.will.retain"
+            const val MESSAGE_EXPIRY_INTERVAL = "mqtt.will.message_expiry_interval"
+            const val DELAY_INTERVAL = "mqtt.will.delay_interval"
+        }
+
+        object Restrictions {
+            const val RECEIVE_MAXIMUM = "mqtt.restrictions.receive_maximum"
+            const val SEND_MAXIMUM = "mqtt.restrictions.send_maximum"
+            const val MAXIMUM_PACKET_SIZE = "mqtt.restrictions.maximum_packet_size"
+            const val SEND_MAXIMUM_PACKET_SIZE = "mqtt.restrictions.send_maximum_packet_size"
+            const val TOPIC_ALIAS_MAXIMUM = "mqtt.restrictions.topic_alias_maximum"
+            const val SEND_TOPIC_ALIAS_MAXIMUM = "mqtt.restrictions.send_topic_alias_maximum"
+            const val REQUEST_PROBLEM_INFORMATION = "mqtt.restrictions.request_problem_information"
+            const val REQUEST_RESPONSE_INFORMATION = "mqtt.restrictions.request_response_information"
+        }
+    }
 }

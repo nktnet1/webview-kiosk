@@ -95,6 +95,7 @@ fun tryLockTask(activity: Activity?): Boolean {
         Activity::startLockTask,
         onSuccess = {
             AuthenticationManager.resetAuthentication()
+            // Handled MQTT publish in LockStateSingleton
         },
         onFailed = { ToastManager.show(activity, "Failed to lock: $it") }
     )
@@ -107,8 +108,12 @@ fun tryUnlockTask(activity: Activity?): Boolean {
     return tryLockAction(
         activity,
         Activity::stopLockTask,
-        onSuccess = {},
-        onFailed = { ToastManager.show(activity, "Failed to unlock: $it") }
+        onSuccess = {
+            // Handled MQTT publish in LockStateSingleton
+        },
+        onFailed = {
+            ToastManager.show(activity, "Failed to unlock: $it")
+        }
     )
 }
 

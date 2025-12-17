@@ -1,0 +1,154 @@
+---
+title: Topics
+description: Publish and subscribe topics
+---
+
+import { APP_NAME } from '@/config/app';
+
+<Callout title="Tip" type="info">
+
+To understand MQTT's publish and subscribe architecture, refer to
+
+* [EMQX — MQTT 5: Introduction to the Publish/Subscribe Model](https://www.emqx.com/en/blog/mqtt-5-introduction-to-publish-subscribe-model)
+* [HiveMQ — MQTT Essentials Part 2: Publish & Subscribe](https://www.hivemq.com/blog/mqtt-essentials-part2-publish-subscribe)
+
+</Callout>
+
+## 1. Common Settings
+
+### 1.1. Quality of Service (QoS)
+
+All topics in {APP_NAME} will allow the Quality of Service to be configured using one of:
+
+| QoS | Description |
+|-----|-------------|
+| At most once (0) | The message is delivered at most once, with no acknowledgment. Delivery is not guaranteed. |
+| At least once (1) | The message is delivered at least once. It may be delivered multiple times if acknowledgment is lost. |
+| Exactly once (2) | The message is guaranteed to be delivered exactly once by using a two-step handshake between sender and receiver. |
+
+The default is `At most once (0)`.
+
+For more information, see:
+
+- [EMQX QoS Guide](https://www.emqx.com/en/blog/introduction-to-mqtt-qos)
+- [HiveMQ QoS Guide](https://www.hivemq.com/blog/mqtt-essentials-part-6-mqtt-quality-of-service-levels)
+
+### 1.2. Retained Messages
+
+For publish topics, the `retain` property (type boolean) can be configured (default: false)
+
+For subscribe topics, the `retain as published` property (type boolean, default false) can be configured,
+as well as `retain handling`, which can be:
+
+| Retain Handling | Description |
+|-----------------|-------------|
+| Send (0) | The broker sends the retained message to the subscriber when it subscribes. |
+| Send if Subscription Does not Exist (1) | The broker sends the retained message only if the subscription is new and didn't exist before. |
+| Do Not Send (2) | The broker does not send any retained messages when the subscription is made. |
+
+The default `retain handling` is `Do Not Send (2)`.
+
+For more information, see:
+
+- [EMQX Retained Messages Guide](https://www.emqx.com/en/blog/mqtt5-features-retain-message)
+- [HiveMQ Retained Messages Guide](https://www.hivemq.com/blog/mqtt-essentials-part-8-retained-messages/)
+
+## 2. Shared Publish Payload Properties
+
+### 2.1. Message ID
+
+For **published topics**, a
+[UUID](https://developer.mozilla.org/en-US/docs/Glossary/UUID)
+will be generated for all messages.
+
+Example in Payload:
+
+```json
+{
+  "messageId": "e5e7cb82-cff4-11f0-a32b-5a93ec0e6f92"
+}
+```
+
+### 2.2. App Instance ID
+
+For **published topics**, the `appInstanceId`, which you can find
+in the [Settings -> About](/docs/settings/about) screen, will be included
+in each message, both in the payload and as a
+[user property](https://www.emqx.com/en/blog/mqtt5-user-properties).
+
+Example in Payload:
+
+```json
+{
+  "appInstanceId": "c345e39c-accd-11f0-9ea0-5a93ec0e6f91"
+}
+```
+
+### 2.3. Username
+
+For **published topics**, the MQTT connection `username` will be included
+in each message, both in the payload and as a
+[user property](https://www.emqx.com/en/blog/mqtt5-user-properties).
+
+Example in Payload:
+
+```json
+{
+  "username": "test-user-001"
+}
+```
+
+## 3. Shared Subscribe Payload Properties
+
+### 3.1. Message ID
+
+For **subscribed topics**, the `messageId` can be optionally specified, which
+will be displayed and highlighted in the debug logs
+
+For request-response, the response payload will include a `requestMessageId`
+property with the value you've provided when making the request.
+
+```json
+{
+  "messageId": "example-001"
+}
+```
+
+### 3.2. Target Instances & Target Usernames
+
+<Callout title="Warning" type="warning">
+
+These properties are intended for convenience and testing purposes,
+with all messages being received and filtered client-side.
+
+It is better practice subscribe only to topics that the client
+needs, e.g. by modifying the default topic names and making use
+of the global variables.
+
+</Callout>
+
+For **subscribed topics**, the `targetInstances` and `targetUsernames` (**type:** string array)
+can be optionally provided.
+
+{APP_NAME} will ignore messages that contain these properties if neither
+of its `appInstanceId` or `username` were specified in the array.
+
+When the arrays are empty (or `null`/`undefined`), all messages will be processed.
+
+```json tab="Target Instances"
+{
+  "targetInstances": [
+    "4f79ca9c-d0c6-11f0-953d-5a93ec0e6f90",
+    "55ebdc6c-d0c6-11f0-8fcc-5a93ec0e6f90"
+  ]
+}
+```
+
+```json tab="Target Usernames"
+{
+  "targetUsernames": [
+    "user-001",
+    "user-002"
+  ]
+}
+```

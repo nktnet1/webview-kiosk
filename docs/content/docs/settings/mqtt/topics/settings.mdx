@@ -1,0 +1,95 @@
+---
+title: Settings
+description: Subscribe to setting (configuration) changes
+---
+
+import { APP_NAME } from '@/config/app';
+
+## 1. Settings
+
+### 1.1. Topic Name
+
+All [global variables](/docs/settings/mqtt/#3-global-variables) are supported,
+in addition to `EVENT_TYPE`. For example,
+
+```js
+wk/${USERNAME}/${APP_INSTANCE_ID}/settings
+```
+
+**Default:**
+
+```js
+wk/settings
+```
+
+### 1.2. Quality of Service (QoS)
+
+Quality of Service (QoS) ensures different message delivery guarantees
+in case of connection failures.
+
+**Default:** At Most Once (0)
+
+### 1.3. Retain Handling
+
+Control whether {APP_NAME} should receive existing
+retained messages when subscribing.
+
+**Default:** Do Not Send (2)
+
+### 1.4. Retain as Published
+
+Controls whether retained messages from the broker keep their original
+retained flag when delivered to the subscriber.
+
+**Default:** false
+
+## 2. Payloads
+
+In addition to the
+[Shared Subscribe Payload Properties](/docs/settings/mqtt/topics/#3-shared-subscribe-payload-properties),
+the following properties can be specified:
+
+| Property | Type | Description |
+|-|-|-|
+| `showToast` | boolean *(optional)* | Whether a toast message should be displayed.<br />**Default:** `true` |
+| `reloadActivity` | boolean *(optional)* | Whether the activity should be reloaded, which is necessary for some settings to take effect (e.g. `device.rotation`).<br />**Default:** `true`     |
+
+For a list of available setting keys, refer to
+[./app/src/main/res/xml/app_restrictions.xml](https://github.com/nktnet1/webview-kiosk/blob/main/app/src/main/res/xml/app_restrictions.xml).
+
+Example Payloads:
+
+```json tab="Minimal"
+{
+  "data": {
+    "settings": {
+      "appearance.theme": "LIGHT"
+    }
+  }
+}
+```
+
+```json tab="Advanced"
+{
+  "data": {
+    "settings": {
+      "web_browsing.allow_refresh": false,
+      "web_browsing.address_bar_actions": [
+        "GO_BACK",
+        "GO_FORWARD",
+        "REFRESH"
+      ],
+      "appearance.theme": "LIGHT",
+      "appearance.address_bar_position": "BOTTOM"
+    }
+  },
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "showToast": false,
+  "reloadActivity": false
+}
+```
+
+If a key is specified, but its value is invalid (e.g. wrong type), the default
+value for the key (which may differ from the current value) will be used.

@@ -55,6 +55,11 @@ fun SettingsListScreen(
             Screen.SettingsJsScript.route
         ),
         Triple(
+            "MQTT",
+            "Remote management and monitoring of your kiosk device",
+            Screen.SettingsMqtt.route
+        ),
+        Triple(
             stringResource(id = R.string.settings_about_title),
             stringResource(id = R.string.settings_about_description),
             Screen.SettingsAbout.route
@@ -87,7 +92,6 @@ fun SettingsListScreen(
                     },
                 )
             }
-
             Spacer(modifier = Modifier.height(12.dp))
         }
     }

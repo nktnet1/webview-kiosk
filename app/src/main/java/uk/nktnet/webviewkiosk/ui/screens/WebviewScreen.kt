@@ -21,7 +21,9 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -34,6 +36,19 @@ import uk.nktnet.webviewkiosk.handlers.DimScreenOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.ResetOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.KioskControlPanel
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoBackCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoForwardCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoHomeCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoToUrlCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttPageDownCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttPageUpCommand
+import uk.nktnet.webviewkiosk.managers.MqttManager
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttRefreshCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttUnlockCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSearchCommand
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
 import uk.nktnet.webviewkiosk.ui.components.webview.FloatingToolbar
@@ -53,6 +68,7 @@ import uk.nktnet.webviewkiosk.utils.getMimeType
 import uk.nktnet.webviewkiosk.utils.isSupportedFileURLMimeType
 import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
+import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
@@ -74,6 +90,7 @@ fun WebviewScreen(navController: NavController) {
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
     val isLocked by LockStateSingleton.isLocked
+    val scope = rememberCoroutineScope()
 
     val lastVisitedUrl = systemSettings.currentUrl.takeIf { it.isNotEmpty() } ?: userSettings.homeUrl
     var urlBarText by remember {
@@ -83,6 +100,9 @@ fun WebviewScreen(navController: NavController) {
             )
         )
     }
+
+    var mqttLastPublishedUrlJob: Job? = null
+    var mqttLastPublishedUrl by remember { mutableStateOf(lastVisitedUrl) }
 
     var isOpenBookmarkDialog by remember { mutableStateOf(false) }
     var isOpenHistoryDialog by remember { mutableStateOf(false) }
@@ -178,6 +198,17 @@ fun WebviewScreen(navController: NavController) {
     fun updateAddressBarAndHistory(url: String, originalUrl: String?) {
         if (!addressBarHasFocus) {
             urlBarText = urlBarText.copy(text = url)
+        }
+        if (
+            userSettings.mqttEnabled
+            && url.trimEnd('/') != mqttLastPublishedUrl.trimEnd('/')
+        ) {
+            mqttLastPublishedUrlJob?.cancel()
+            mqttLastPublishedUrlJob = scope.launch {
+                delay(1000)
+                MqttManager.publishUrlChangedEvent(url)
+                mqttLastPublishedUrl = url
+            }
         }
         WebViewNavigation.appendWebviewHistory(
             systemSettings,
@@ -486,6 +517,30 @@ fun WebviewScreen(navController: NavController) {
         onDismiss = { linkToOpen = null },
         onOpenLink = { url -> customLoadUrl(url) },
     )
+
+    LaunchedEffect(Unit) {
+        MqttManager.commands.collect { command ->
+            when (command) {
+                is MqttGoBackCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)
+                is MqttGoForwardCommand -> WebViewNavigation.goForward(::customLoadUrl, systemSettings)
+                is MqttGoHomeCommand -> WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings)
+                is MqttRefreshCommand -> WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
+                is MqttGoToUrlCommand -> customLoadUrl(command.data.url)
+                is MqttSearchCommand -> addressBarSearch(command.data.query)
+                is MqttLockCommand -> tryLockTask(activity)
+                is MqttUnlockCommand -> tryUnlockTask(activity)
+                is MqttPageUpCommand -> { webView.pageUp(command.data.absolute) }
+                is MqttPageDownCommand -> { webView.pageDown(command.data.absolute) }
+                is MqttErrorCommand -> {
+                    ToastManager.show(
+                        context,
+                        "Received invalid MQTT command. See debug logs in MQTT settings."
+                    )
+                }
+                else -> Unit
+            }
+        }
+    }
 
     HistoryDialog(
         isOpenHistoryDialog,

@@ -6,6 +6,9 @@ import android.content.SharedPreferences
 import android.util.Base64
 import org.json.JSONArray
 import org.json.JSONObject
+import uk.nktnet.webviewkiosk.config.mqtt.MqttQosOption
+import uk.nktnet.webviewkiosk.config.mqtt.MqttRetainHandlingOption
+import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
 import uk.nktnet.webviewkiosk.config.option.*
 import uk.nktnet.webviewkiosk.utils.booleanPref
 import uk.nktnet.webviewkiosk.utils.enumListPref
@@ -550,6 +553,315 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH
     )
 
+    // MQTT
+    var mqttEnabled by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.ENABLED,
+        false
+    )
+    var mqttServerHost by stringPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Connection.SERVER_HOST,
+        "127.0.0.1"
+    )
+    var mqttServerPort by intPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Connection.SERVER_PORT,
+        1883
+    )
+    var mqttClientId by stringPrefOptional(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Connection.CLIENT_ID,
+    )
+    var mqttUseTls by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Connection.USE_TLS,
+        false
+    )
+    var mqttUsername by stringPrefOptional(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Connection.USERNAME
+    )
+    var mqttPassword by stringPrefOptional(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Connection.PASSWORD
+    )
+    var mqttCleanStart by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Connection.CLEAN_START,
+        true
+    )
+    var mqttKeepAlive by intPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Connection.KEEP_ALIVE,
+        60
+    )
+    var mqttConnectTimeout by intPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT,
+        30
+    )
+    var mqttSocketConnectTimeout by intPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Connection.SOCKET_CONNECT_TIMEOUT,
+        5
+    )
+    var mqttAutomaticReconnect by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Connection.CLEAN_START,
+        true
+    )
+    var mqttUseWebSocket by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Connection.USE_WEBSOCKET,
+        false
+    )
+    var mqttWebSocketServerPath by stringPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Connection.WEBSOCKET_SERVER_PATH,
+        "/mqtt"
+    )
+
+    var mqttPublishEventTopic by stringPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC,
+        $$"wk/event/${$${MqttVariableName.EVENT_TYPE.name}}"
+    )
+    var mqttPublishEventQos by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS,
+        MqttQosOption.AT_MOST_ONCE.name,
+        fromString = MqttQosOption::fromString
+    )
+    var mqttPublishEventRetain by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN,
+        false,
+    )
+    var mqttPublishResponseTopic by stringPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Publish.Response.TOPIC,
+        $$"wk/response/${$${MqttVariableName.RESPONSE_TYPE.name}}"
+    )
+    var mqttPublishResponseQos by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Publish.Response.QOS,
+        MqttQosOption.AT_MOST_ONCE.name,
+        fromString = MqttQosOption::fromString
+    )
+    var mqttPublishResponseRetain by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Publish.Response.RETAIN,
+        false
+    )
+    var mqttSubscribeCommandTopic by stringPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC,
+        "wk/command"
+    )
+    var mqttSubscribeCommandQos by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS,
+        MqttQosOption.AT_MOST_ONCE.name,
+        fromString = MqttQosOption::fromString
+    )
+    var mqttSubscribeCommandRetainHandling by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING,
+        MqttRetainHandlingOption.DO_NOT_SEND.name,
+        fromString = MqttRetainHandlingOption::fromString
+    )
+    var mqttSubscribeCommandRetainAsPublished by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_AS_PUBLISHED,
+        false,
+    )
+    var mqttSubscribeSettingsTopic by stringPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.TOPIC,
+        "wk/settings"
+    )
+    var mqttSubscribeSettingsQos by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.QOS,
+        MqttQosOption.AT_MOST_ONCE.name,
+        fromString = MqttQosOption::fromString
+    )
+    var mqttSubscribeSettingsRetainHandling by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING,
+        MqttRetainHandlingOption.DO_NOT_SEND.name,
+        fromString = MqttRetainHandlingOption::fromString
+    )
+
+    var mqttSubscribeSettingsRetainAsPublished by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_AS_PUBLISHED,
+        false,
+    )
+    var mqttSubscribeRequestTopic by stringPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Request.TOPIC,
+        "wk/request"
+    )
+    var mqttSubscribeRequestQos by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Request.QOS,
+        MqttQosOption.AT_MOST_ONCE.name,
+        fromString = MqttQosOption::fromString
+    )
+    var mqttSubscribeRequestRetainHandling by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_HANDLING,
+        MqttRetainHandlingOption.DO_NOT_SEND.name,
+        fromString = MqttRetainHandlingOption::fromString
+    )
+    var mqttSubscribeRequestRetainAsPublished by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_AS_PUBLISHED,
+        false,
+    )
+
+    var mqttWillTopic by stringPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Will.TOPIC,
+        "wk/will"
+    )
+    var mqttWillQos by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Will.QOS,
+        MqttQosOption.AT_MOST_ONCE.name,
+        fromString = MqttQosOption::fromString
+    )
+    var mqttWillPayload by stringPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Will.PAYLOAD,
+        $$"""
+            {
+              "message": "Client has disconnected.",
+              "username": "${USERNAME}",
+              "appInstanceId": "${APP_INSTANCE_ID}"
+            }
+        """.trimIndent(),
+    )
+    var mqttWillRetain by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Will.RETAIN,
+        false
+    )
+    var mqttWillMessageExpiryInterval by intPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Will.MESSAGE_EXPIRY_INTERVAL,
+        0,
+        min = 0,
+        max = Int.MAX_VALUE
+    )
+    var mqttWillDelayInterval by intPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Will.DELAY_INTERVAL,
+        0,
+        min = 0,
+        max = Int.MAX_VALUE
+    )
+    var mqttRestrictionsReceiveMaximum by intPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Restrictions.RECEIVE_MAXIMUM,
+        65_535,
+        min = 0,
+        max = 65_535,
+    )
+    var mqttRestrictionsSendMaximum by intPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Restrictions.SEND_MAXIMUM,
+        65_535,
+        min = 0,
+        max = 65_535,
+    )
+    var mqttRestrictionsMaximumPacketSize by intPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Restrictions.MAXIMUM_PACKET_SIZE,
+        268_435_460,
+        min = 0,
+        max = 268_435_460,
+    )
+    var mqttRestrictionsSendMaximumPacketSize by intPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Restrictions.SEND_MAXIMUM_PACKET_SIZE,
+        268_435_460,
+        min = 0,
+        max = 268_435_460,
+    )
+    var mqttRestrictionsTopicAliasMaximum by intPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Restrictions.TOPIC_ALIAS_MAXIMUM,
+        0,
+        min = 0,
+        max = 65_535,
+    )
+    var mqttRestrictionsSendTopicAliasMaximum by intPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Restrictions.SEND_TOPIC_ALIAS_MAXIMUM,
+        16,
+        min = 0,
+        max = 65_535,
+    )
+    var mqttRestrictionsRequestProblemInformation by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Restrictions.REQUEST_PROBLEM_INFORMATION,
+        true
+    )
+    var mqttRestrictionsRequestResponseInformation by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Restrictions.REQUEST_RESPONSE_INFORMATION,
+        false
+    )
+
     fun exportJson(): JSONObject {
         val json = JSONObject().apply {
             put(UserSettingsKeys.WebContent.HOME_URL, homeUrl)
@@ -641,6 +953,54 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API, enableBrightnessApi)
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
+
+            put(UserSettingsKeys.Mqtt.ENABLED, mqttEnabled)
+            put(UserSettingsKeys.Mqtt.Connection.SERVER_HOST, mqttServerHost)
+            put(UserSettingsKeys.Mqtt.Connection.SERVER_PORT, mqttServerPort)
+            put(UserSettingsKeys.Mqtt.Connection.CLIENT_ID, mqttClientId)
+            put(UserSettingsKeys.Mqtt.Connection.USE_TLS, mqttUseTls)
+            put(UserSettingsKeys.Mqtt.Connection.USERNAME, mqttUsername)
+            // put(UserSettingsKeys.Mqtt.Connection.PASSWORD, mqttPassword)
+            put(UserSettingsKeys.Mqtt.Connection.CLEAN_START, mqttCleanStart)
+            put(UserSettingsKeys.Mqtt.Connection.KEEP_ALIVE, mqttKeepAlive)
+            put(UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT, mqttConnectTimeout)
+            put(UserSettingsKeys.Mqtt.Connection.SOCKET_CONNECT_TIMEOUT, mqttSocketConnectTimeout)
+            put(UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT, mqttAutomaticReconnect)
+            put(UserSettingsKeys.Mqtt.Connection.USE_WEBSOCKET, mqttUseWebSocket)
+            put(UserSettingsKeys.Mqtt.Connection.WEBSOCKET_SERVER_PATH, mqttWebSocketServerPath)
+
+            put(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.code)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN, mqttPublishEventRetain)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.Response.TOPIC, mqttPublishResponseTopic)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.Response.QOS, mqttPublishResponseQos.code)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.Response.RETAIN, mqttPublishResponseRetain)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC, mqttSubscribeCommandTopic)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS, mqttSubscribeCommandQos.code)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING, mqttSubscribeCommandRetainHandling.code)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_AS_PUBLISHED, mqttSubscribeCommandRetainAsPublished)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.TOPIC, mqttSubscribeSettingsTopic)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.QOS, mqttSubscribeSettingsQos.code)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_HANDLING, mqttSubscribeSettingsRetainHandling.code)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_AS_PUBLISHED, mqttSubscribeSettingsRetainAsPublished)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.TOPIC, mqttSubscribeRequestTopic)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.QOS, mqttSubscribeRequestQos.code)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_HANDLING, mqttSubscribeRequestRetainHandling.code)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_AS_PUBLISHED, mqttSubscribeRequestRetainAsPublished)
+            put(UserSettingsKeys.Mqtt.Will.TOPIC, mqttWillTopic)
+            put(UserSettingsKeys.Mqtt.Will.QOS, mqttWillQos.code)
+            put(UserSettingsKeys.Mqtt.Will.PAYLOAD, mqttWillPayload)
+            put(UserSettingsKeys.Mqtt.Will.RETAIN, mqttWillRetain)
+            put(UserSettingsKeys.Mqtt.Will.MESSAGE_EXPIRY_INTERVAL, mqttWillMessageExpiryInterval)
+            put(UserSettingsKeys.Mqtt.Will.DELAY_INTERVAL, mqttWillDelayInterval)
+            put(UserSettingsKeys.Mqtt.Restrictions.RECEIVE_MAXIMUM, mqttRestrictionsReceiveMaximum)
+            put(UserSettingsKeys.Mqtt.Restrictions.SEND_MAXIMUM, mqttRestrictionsSendMaximum)
+            put(UserSettingsKeys.Mqtt.Restrictions.MAXIMUM_PACKET_SIZE, mqttRestrictionsMaximumPacketSize)
+            put(UserSettingsKeys.Mqtt.Restrictions.SEND_MAXIMUM_PACKET_SIZE, mqttRestrictionsSendMaximumPacketSize)
+            put(UserSettingsKeys.Mqtt.Restrictions.TOPIC_ALIAS_MAXIMUM, mqttRestrictionsTopicAliasMaximum)
+            put(UserSettingsKeys.Mqtt.Restrictions.SEND_TOPIC_ALIAS_MAXIMUM, mqttRestrictionsSendTopicAliasMaximum)
+            put(UserSettingsKeys.Mqtt.Restrictions.REQUEST_PROBLEM_INFORMATION, mqttRestrictionsRequestProblemInformation)
+            put(UserSettingsKeys.Mqtt.Restrictions.REQUEST_RESPONSE_INFORMATION, mqttRestrictionsRequestResponseInformation)
         }
         return json
     }
@@ -764,6 +1124,73 @@ class UserSettings(val context: Context) {
             enableBrightnessApi = json.optBoolean(UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API, enableBrightnessApi)
             customScriptOnPageStart = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             customScriptOnPageFinish = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
+
+            mqttEnabled = json.optBoolean(UserSettingsKeys.Mqtt.ENABLED, mqttEnabled)
+            mqttServerHost = json.optString(UserSettingsKeys.Mqtt.Connection.SERVER_HOST, mqttServerHost)
+            mqttServerPort = json.optInt(UserSettingsKeys.Mqtt.Connection.SERVER_PORT, mqttServerPort)
+            mqttClientId = json.optString(UserSettingsKeys.Mqtt.Connection.CLIENT_ID, mqttClientId)
+            mqttUseTls = json.optBoolean(UserSettingsKeys.Mqtt.Connection.USE_TLS, mqttUseTls)
+            mqttUsername = json.optString(UserSettingsKeys.Mqtt.Connection.USERNAME, mqttUsername)
+            mqttPassword = json.optString(UserSettingsKeys.Mqtt.Connection.PASSWORD, mqttPassword)
+            mqttCleanStart = json.optBoolean(UserSettingsKeys.Mqtt.Connection.CLEAN_START, mqttCleanStart)
+            mqttKeepAlive = json.optInt(UserSettingsKeys.Mqtt.Connection.KEEP_ALIVE, mqttKeepAlive)
+            mqttConnectTimeout = json.optInt(UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT, mqttConnectTimeout)
+            mqttSocketConnectTimeout = json.optInt(UserSettingsKeys.Mqtt.Connection.SOCKET_CONNECT_TIMEOUT, mqttSocketConnectTimeout)
+            mqttAutomaticReconnect = json.optBoolean(UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT, mqttAutomaticReconnect)
+
+            mqttUseWebSocket = json.optBoolean(UserSettingsKeys.Mqtt.Connection.USE_WEBSOCKET, mqttUseWebSocket)
+            mqttWebSocketServerPath = json.optString(UserSettingsKeys.Mqtt.Connection.WEBSOCKET_SERVER_PATH, mqttServerHost)
+
+            mqttPublishEventTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
+            mqttPublishEventQos = MqttQosOption.fromString(
+                json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.name)
+            )
+            mqttPublishEventRetain = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN, mqttPublishEventRetain)
+            mqttPublishResponseTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Response.TOPIC, mqttPublishResponseTopic)
+            mqttPublishResponseQos = MqttQosOption.fromString(
+                json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Response.QOS, mqttPublishResponseQos.name)
+            )
+            mqttPublishResponseRetain = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Publish.Response.RETAIN, mqttPublishResponseRetain)
+            mqttSubscribeCommandTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC, mqttSubscribeCommandTopic)
+            mqttSubscribeCommandQos = MqttQosOption.fromString(
+                json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS, mqttSubscribeCommandQos.name)
+            )
+            mqttSubscribeCommandRetainHandling = MqttRetainHandlingOption.fromString(
+                json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING, mqttSubscribeCommandRetainHandling.name)
+            )
+            mqttSubscribeCommandRetainAsPublished = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_AS_PUBLISHED, mqttSubscribeCommandRetainAsPublished)
+            mqttSubscribeSettingsTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.TOPIC, mqttSubscribeSettingsTopic)
+            mqttSubscribeSettingsQos = MqttQosOption.fromString(
+                json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.QOS, mqttSubscribeSettingsQos.name)
+            )
+            mqttSubscribeSettingsRetainHandling = MqttRetainHandlingOption.fromString(
+                json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_HANDLING, mqttSubscribeSettingsRetainHandling.name)
+            )
+            mqttSubscribeSettingsRetainAsPublished = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_AS_PUBLISHED, mqttSubscribeSettingsRetainAsPublished)
+            mqttSubscribeRequestTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.TOPIC, mqttSubscribeRequestTopic)
+            mqttSubscribeRequestQos = MqttQosOption.fromString(
+                json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.QOS, mqttSubscribeRequestQos.name)
+            )
+            mqttSubscribeRequestRetainHandling = MqttRetainHandlingOption.fromString(
+                json.optString(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_HANDLING, mqttSubscribeRequestRetainHandling.name)
+            )
+            mqttSubscribeRequestRetainAsPublished = json.optBoolean(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_AS_PUBLISHED, mqttSubscribeRequestRetainAsPublished)
+            mqttWillTopic = json.optString(UserSettingsKeys.Mqtt.Will.TOPIC, mqttWillTopic)
+            mqttWillQos = MqttQosOption.fromString(
+                json.optString(UserSettingsKeys.Mqtt.Will.QOS, mqttWillQos.name)
+            )
+            mqttWillPayload = json.optString(UserSettingsKeys.Mqtt.Will.PAYLOAD, mqttWillPayload)
+            mqttWillRetain = json.optBoolean(UserSettingsKeys.Mqtt.Will.RETAIN, mqttWillRetain)
+            mqttWillMessageExpiryInterval = json.optInt(UserSettingsKeys.Mqtt.Will.MESSAGE_EXPIRY_INTERVAL, mqttWillMessageExpiryInterval)
+            mqttWillDelayInterval = json.optInt(UserSettingsKeys.Mqtt.Will.DELAY_INTERVAL, mqttWillDelayInterval)
+            mqttRestrictionsReceiveMaximum = json.optInt(UserSettingsKeys.Mqtt.Restrictions.RECEIVE_MAXIMUM, mqttRestrictionsReceiveMaximum)
+            mqttRestrictionsSendMaximum = json.optInt(UserSettingsKeys.Mqtt.Restrictions.SEND_MAXIMUM, mqttRestrictionsSendMaximum)
+            mqttRestrictionsMaximumPacketSize = json.optInt(UserSettingsKeys.Mqtt.Restrictions.MAXIMUM_PACKET_SIZE, mqttRestrictionsMaximumPacketSize)
+            mqttRestrictionsSendMaximumPacketSize = json.optInt(UserSettingsKeys.Mqtt.Restrictions.SEND_MAXIMUM_PACKET_SIZE, mqttRestrictionsSendMaximumPacketSize)
+            mqttRestrictionsTopicAliasMaximum = json.optInt(UserSettingsKeys.Mqtt.Restrictions.TOPIC_ALIAS_MAXIMUM, mqttRestrictionsTopicAliasMaximum)
+            mqttRestrictionsSendTopicAliasMaximum = json.optInt(UserSettingsKeys.Mqtt.Restrictions.SEND_TOPIC_ALIAS_MAXIMUM, mqttRestrictionsSendTopicAliasMaximum)
+            mqttRestrictionsRequestProblemInformation = json.optBoolean(UserSettingsKeys.Mqtt.Restrictions.REQUEST_PROBLEM_INFORMATION, mqttRestrictionsRequestProblemInformation)
+            mqttRestrictionsRequestResponseInformation = json.optBoolean(UserSettingsKeys.Mqtt.Restrictions.REQUEST_RESPONSE_INFORMATION, mqttRestrictionsRequestResponseInformation)
             true
         } catch (e: Exception) {
             e.printStackTrace()

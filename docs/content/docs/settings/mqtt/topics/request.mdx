@@ -1,0 +1,261 @@
+---
+title: Request
+description: Subscribe to requests for information
+---
+
+import { APP_NAME } from '@/config/app';
+
+<Callout title="Tip" type="info">
+
+{APP_NAME} also utilises the request-response pattern for manual query
+of device information states.<br/>
+This pattern is explained in:
+
+- [EMQX — MQTT 5: Request–Response](https://www.emqx.com/en/blog/mqtt5-request-response)
+- [HiveMQ — MQTT 5 Essentials Part 9: Request–Response Pattern](https://www.hivemq.com/blog/mqtt5-essentials-part9-request-response-pattern/)
+
+</Callout>
+
+## 1. Settings
+
+### 1.1. Topic Name
+
+All [global variables](/docs/settings/mqtt/#3-global-variables) are supported.
+For example,
+
+```js
+wk/${USERNAME}/${APP_INSTANCE_ID}/request
+```
+
+**Default:**
+
+```js
+wk/request
+```
+
+### 1.2. Quality of Service (QoS)
+
+Quality of Service (QoS) ensures different message delivery guarantees
+in case of connection failures.
+
+**Default:** At Most Once (0)
+
+### 1.3. Retain Handling
+
+Control whether {APP_NAME} should receive existing
+retained messages when subscribing.
+
+**Default:** Do Not Send (2)
+
+### 1.4. Retain as Published
+
+Controls whether retained messages from the broker keep their original
+retained flag when delivered to the subscriber.
+
+**Default:** false
+
+## 2. Payloads
+
+In addition to the
+[Shared Subscribe Payload Properties](/docs/settings/mqtt/topics/#3-shared-subscribe-payload-properties),
+the following properties can be provided for all requests:
+
+<table>
+  <thead>
+    <tr>
+      <th>Property</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>responseTopic</code></td>
+      <td>string <i>(optional)</i></td>
+      <td>
+        Topic the server should publish responses to. Global variables are supported.
+
+        If empty, the response will be published to the configured *response
+        topic name* in settings
+        (default: <code>wk/response/\$\{RESPONSE_NAME\}</code>).
+
+        This is provided as a fallback, and will be overridden by MQTT's V5 metadata
+        (<a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901066" className="underline text-blue-600" >3.1.3.2.6. Response Topic</a>)
+        if both are provided.
+      </td>
+    </tr>
+    <tr>
+      <td><code>correlationData</code></td>
+      <td>string <i>(optional)</i></td>
+      <td>
+        Data to correlate the response with the request. In {APP_NAME}
+
+        This is provided as a fallback, and will be overridden by MQTT V5 metadata
+        (<a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/os/mqtt-v5.0-os.html#_Toc3901067">3.1.3.2.7. Correlation Data</a>)
+        if both are provided.
+
+        In {APP_NAME}, the correlation data must be a `UTF-8` string.
+      </td>
+    </tr>
+  </tbody>
+</table>
+
+### 2.1. Get Status
+
+Retrieves device and app states.
+
+Example payload:
+
+```json tab="Minimal"
+{
+  "requestType": "get_status"
+}
+```
+
+```jsonc tab="Full"
+{
+  "requestType": "get_status",
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+
+  // NOTE: these can be specified as metadata in MQTT v5
+  "responseTopic": "wk/${APP_INSTANCE_ID}/${RESPONSE_TYPE}",
+  "correlationData": "arbitrary-data-12345"
+}
+```
+
+### 2.2. Get Settings
+
+Retrieves configured user settings of your choosing by providing an array of
+setting keys inside the payload data. This array could look like:
+
+```json
+[
+  "device.rotation",
+  "appearance.theme"
+]
+```
+
+The values for the following settings will not be returned for security reasons:
+
+- `device.custom_auth_password`
+- `mqtt.connection.password`
+
+If no setting keys are provided, all valid settings will be returned.
+
+#### 2.2.1. Parse as Array
+
+For the the following setting keys, which are stored as strings and delimited
+by a new line (`\n`):
+
+1. `web_content.website_blacklist`
+1. `web_content.website_whitelist`
+1. `web_content.website_bookmarks`
+
+You can optionally use the object notation below with the `parseAsArray` property:
+
+```jsonc
+[
+  // Before
+  "web_content.website_blacklist",
+
+  // After
+  {
+    "key": "web_content.website_blacklist",
+    "parseAsArray": true
+  }
+]
+```
+
+which will return them as an array of strings split by new lines.
+
+#### 2.2.2. Evaluate Variables
+
+For the following setting keys:
+
+1. `mqtt.connection.client_id`
+1. `mqtt.publish.event.topic`
+1. `mqtt.publish.response.topic`
+1. `mqtt.subscribe.command.topic`
+1. `mqtt.subscribe.settings.topic`
+1. `mqtt.will.topic`
+1. `mqtt.will.payload`
+
+You can optionally use the object notation below with the `evaluateVariables` property:
+
+```jsonc
+[
+  // Before
+  "mqtt.connection.client_id",
+
+  // After
+  {
+    "key": "mqtt.connection.client_id",
+    "evaluateVariables": true
+  }
+]
+```
+
+which will interpolates global variables with static values such as `APP_INSTANCE_ID` or `USERNAME`.
+
+#### 2.2.3. Example payload
+
+```json tab="Minimal"
+{
+  "requestType": "get_settings"
+}
+```
+
+```jsonc tab="Advanced"
+{
+  "requestType": "get_settings",
+  "data": {
+    "settings": [
+      "device.rotation",
+      "appearance.theme",
+      {
+        "key": "web_content.website_blacklist",
+        "parseAsArray": true
+      },
+      {
+        "key": "mqtt.connection.client_id",
+        "evaluateVariables": true
+      },
+      "web_browsing.allow_refresh"
+    ]
+  },
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+
+  // NOTE: these can be specified as metadata in MQTT v5
+  "responseTopic": "wk/${APP_INSTANCE_ID}/${RESPONSE_TYPE}",
+  "correlationData": "arbitrary-data-12345"
+}
+```
+
+### 2.3. Get System Info
+
+Retrieves device and app system information.
+
+Example payload:
+
+```json tab="Minimal"
+{
+  "requestType": "get_system_info"
+}
+```
+
+```jsonc tab="Full"
+{
+  "requestType": "get_system_info",
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+
+  // NOTE: these can be specified as metadata in MQTT v5
+  "responseTopic": "wk/${APP_INSTANCE_ID}/${RESPONSE_TYPE}",
+  "correlationData": "arbitrary-data-12345"
+}
+```

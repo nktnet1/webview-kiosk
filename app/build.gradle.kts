@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.android.retrofix)
 }
 
 android {
@@ -25,6 +26,15 @@ android {
         // https://gitlab.com/fdroid/fdroiddata/-/issues/3330
         includeInApk = false
         includeInBundle = false
+    }
+
+    packaging {
+        resources {
+            excludes += listOf(
+                "META-INF/INDEX.LIST",
+                "META-INF/io.netty.versions.properties"
+            )
+        }
     }
 
     defaultConfig {
@@ -104,6 +114,10 @@ dependencies {
     implementation(libs.androidx.webkit)
     implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.hivemq.mqtt.client)
+    implementation(platform(libs.hivemq.mqtt.client.websocket))
+    retrofix(libs.android.retrostreams)
+    retrofix(libs.android.retrofuture)
     implementation(libs.dhizuku.api)
     implementation(libs.hiddenapibypass)
     implementation(libs.reorderable)

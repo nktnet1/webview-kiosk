@@ -1,0 +1,12 @@
+{
+  "defaultOpen": false,
+  "pages": [
+    "---Publish---",
+    "event",
+    "response",
+    "---Subscribe---",
+    "command",
+    "settings",
+    "request"
+  ]
+}

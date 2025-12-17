@@ -1,0 +1,110 @@
+---
+title: Overview
+description: Remote management and monitoring of your kiosk device
+---
+
+import { APP_NAME } from '@/config/app';
+
+<Callout title="Tip" type="info">
+
+New to MQTT? see the resources below:
+
+- [EMQX — Getting Started with MQTT](https://www.emqx.com/en/blog/the-easiest-guide-to-getting-started-with-mqtt)
+- [HiveMQ — MQTT Essentials](https://www.hivemq.com/mqtt/)
+- [AWS — What Is MQTT?](https://aws.amazon.com/what-is/mqtt/)
+
+To understand MQTT's publish and subscribe architecture, refer to
+
+* [EMQX — MQTT 5: Introduction to the Publish/Subscribe Model](https://www.emqx.com/en/blog/mqtt-5-introduction-to-publish-subscribe-model)
+* [HiveMQ — MQTT Essentials Part 2: Publish & Subscribe](https://www.hivemq.com/blog/mqtt-essentials-part2-publish-subscribe)
+
+</Callout>
+
+### 1. Introduction
+
+Message Queueing Telemetry Transport ([MQTT](https://mqtt.org)) is a
+lightweight messaging protocol for devices with limited resources. MQTT is
+built on top of TCP/IP and is ideal for machine-to-machine communication and
+the Internet of Things (IoT).
+
+{APP_NAME} utilises the MQTT protocol to enable you to remotely
+
+- receive events
+- update app settings
+- perform actions via commands
+- request information
+
+### 2. MQTT Broker
+
+To communicate with {APP_NAME}, you will need an
+[MQTT Broker](https://www.emqx.com/en/blog/the-ultimate-guide-to-mqtt-broker-comparison).
+The broker acts as an intermediary entity (central hub) that routes messages
+between devices and applications.
+
+Our recommendation for open source, self-hostable brokers (server) and clients
+(to send messages to {APP_NAME}) are:
+
+1. [EMQX](https://github.com/emqx/emqx) and [MQTTX](https://github.com/emqx/MQTTX) (or [MQTTX Web](https://github.com/emqx/MQTTX/tree/main/web))
+1. [Eclipse Mosquitto](https://github.com/eclipse-mosquitto/mosquitto) and
+   [Home Assistant](https://github.com/home-assistant) - see the
+   [Integration Guide](https://www.home-assistant.io/integrations/mqtt)
+
+There are also public brokers you can use for testing purposes, such as
+- HiveMQ: https://www.mqtt-dashboard.com
+- Mosquitto: https://test.mosquitto.org
+- EMQX: https://www.emqx.com/en/mqtt/public-mqtt5-broker
+
+### 3. Global Variables
+
+The following variables will be string-interpolated for supported settings,
+such as topic names and will payload:
+
+| Variable Name   | Description                             |
+| --------------- | --------------------------------------- |
+| APP_INSTANCE_ID | Unique identifier for the app instance. |
+| USERNAME        | MQTT username used for authentication.  |
+
+To use variables in your settings, use the syntax `${YOUR_VARIABLE}`, e.g.
+
+```js
+wk/${USERNAME}/${APP_INSTANCE_ID}/command
+```
+
+which may evaluate to a string such as
+
+```txt
+// [!code word:kiosk_user_01]
+// [!code word:b8378168-ca69-11f0-af20-5a93ec0e6f90]
+wk/kiosk_user_01/b8378168-ca69-11f0-af20-5a93ec0e6f90/command
+```
+
+Some settings will support additional variables.
+
+### 4. Enabling MQTT
+
+On the MQTT settings page, change the value of the `Enabled` property
+to `true`. This will take effect for new app launches.
+
+If you are currently in a disconnected state, you will need to manually click
+the `Connect` button after enabling this option (or simply restart the app).
+
+Updated MQTT settings do not get applied immediately if you are already
+connected. Instead, you will need to reconnect by:
+- clicking the restart button in MQTT settings
+- manually restarting the application
+- send a `Reconnect` command
+
+**Default:** false
+
+### 5. Debug Logs
+
+MQTT operations are recorded in the debug logs, which can be accessed from any
+MQTT settings screens. This includes:
+
+- connecting/connected/disconnect
+- subscribes
+- messages received or published
+- errors
+
+A maximum of 100 messages will be stored for the duration of the app activity
+lifecycle. The logs will not persist between app restarts.
