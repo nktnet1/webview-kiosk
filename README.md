@@ -50,12 +50,12 @@ and standalone Kiosk solution.
 - <b>Message Queuing Telemetry Transport (MQTT)</b>
   - Monitor events, update settings, execute commands and build custom
     automations using the API
-  - Requires an MQTT broker (e.g., Mosquitto, EMQX, HiveMQ)
+  - Requires an MQTT broker (e.g. Mosquitto, EMQX or HiveMQ)
 - <b>Managed Configurations (App Restrictions)</b>
   - For fully-managed (company-owned) devices, settings can be remotely
-    configured via an MDM/EMM provider.
+    configured via an MDM/EMM provider
   - Advanced users using a device policy controller (e.g. Test DPC or OwnDroid)
-    can also enforce configurations locally.
+    can also enforce configurations locally
 
 ## Additional Permissions
 
