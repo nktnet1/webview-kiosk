@@ -18,6 +18,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ExportSettingsDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ImportSettingsDialog
 import uk.nktnet.webviewkiosk.utils.openDefaultLauncherSettings
 import uk.nktnet.webviewkiosk.utils.openSettings
+import uk.nktnet.webviewkiosk.utils.safeStartActivity
 
 @Composable
 fun SettingsHeaderMenu(
@@ -130,7 +131,7 @@ fun SettingsHeaderMenu(
                             onClick = {
                                 showMenu = false
                                 val intent = Intent(Intent.ACTION_VIEW, Constants.WEBSITE_URL.toUri())
-                                context.startActivity(intent)
+                                safeStartActivity(context, intent)
                             },
                             leadingIcon = {
                                 Icon(

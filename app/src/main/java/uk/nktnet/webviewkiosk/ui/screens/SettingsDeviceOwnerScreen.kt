@@ -67,6 +67,10 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
     var showAdminReceiverListDialog by remember { mutableStateOf(false) }
     var showLockTaskPackagesDialog by remember { mutableStateOf(false) }
 
+    LaunchedEffect(isDeviceOwner) {
+        DeviceOwnerManager.init(context)
+    }
+
     LaunchedEffect(Unit) {
         while (true) {
             delay(1000)

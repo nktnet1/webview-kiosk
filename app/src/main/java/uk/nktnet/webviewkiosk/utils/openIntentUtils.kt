@@ -9,14 +9,22 @@ import android.provider.Settings
 import androidx.annotation.RequiresApi
 import uk.nktnet.webviewkiosk.managers.ToastManager
 
-private fun safeStartActivity(context: Context, intent: Intent) {
-    if (intent.resolveActivity(context.packageManager) != null) {
-        context.startActivity(intent)
-    } else {
-        val shortName = intent.action?.substringAfterLast('.') ?: "Unknown"
+fun safeStartActivity(context: Context, intent: Intent) {
+    try {
+        if (intent.resolveActivity(context.packageManager) != null) {
+            context.startActivity(intent)
+        } else {
+            val shortName = intent.action?.substringAfterLast('.') ?: "Unknown"
+            ToastManager.show(
+                context,
+                "No activity for intent: $shortName"
+            )
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
         ToastManager.show(
             context,
-            "No activity for intent: $shortName"
+            "Error: ${e.message}"
         )
     }
 }
@@ -67,7 +75,7 @@ fun openPackage(context: Context, packageName: String, activityName: String? = n
 
         if (intent != null) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            context.startActivity(intent)
+            safeStartActivity(context, intent)
         } else {
             ToastManager.show(context, "Error: $packageName cannot be opened.")
         }
