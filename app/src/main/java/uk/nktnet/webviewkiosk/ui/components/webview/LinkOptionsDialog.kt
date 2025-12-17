@@ -24,6 +24,7 @@ import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.launch
 import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
+import uk.nktnet.webviewkiosk.utils.safeStartActivity
 
 @Composable
 fun LinkOptionsDialog(
@@ -84,7 +85,7 @@ fun LinkOptionsDialog(
                         Button(
                             onClick = {
                                 val intent = Intent(Intent.ACTION_VIEW, link.toUri())
-                                context.startActivity(intent)
+                                safeStartActivity(context, intent)
                                 onDismiss()
                             },
                             modifier = Modifier.fillMaxWidth()
