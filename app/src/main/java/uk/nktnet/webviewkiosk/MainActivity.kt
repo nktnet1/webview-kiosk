@@ -336,7 +336,7 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         if (!isChangingConfigurations) {
             AuthenticationManager.resetAuthentication()
-            if (MqttManager.getState().isConnected) {
+            if (MqttManager.isConnected()) {
                 MqttManager.disconnect(
                     cause = MqttDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_STOPPED
                 )

@@ -760,7 +760,7 @@ object MqttManager {
         retainAsPublished: Boolean,
         onMessage: (publish: Mqtt5Publish, payloadStr: String) -> Unit
     ) {
-        val c = client ?: return
+        val c = getReadyClient() ?: return
         val subscribeTopic = mqttVariableReplacement(topic)
         if (!isValidMqttSubscribeTopic(subscribeTopic)) {
             addDebugLog("subscribe failed", "topic: $subscribeTopic\nerror: Invalid topic name")
@@ -795,6 +795,8 @@ object MqttManager {
             e.printStackTrace()
         }
     }
+
+    fun isConnected(): Boolean = client?.state?.isConnected ?: false
 
     fun isConnectedOrReconnect(): Boolean = client?.state?.isConnectedOrReconnect ?: false
 

@@ -35,7 +35,7 @@ object LockStateSingleton {
             while (true) {
                 previousIsLocked = _isLocked.value
                 _isLocked.value = getIsLocked(activityManager)
-                if (previousIsLocked != _isLocked.value) {
+                if (MqttManager.isConnected() && previousIsLocked != _isLocked.value) {
                     if (_isLocked.value) {
                         val state = LockStateType.fromActivityManager(activityManager)
                         MqttManager.publishLockEvent(state)
