@@ -344,6 +344,7 @@ object MqttManager {
                 if (throwable == null) {
                     onConnected?.invoke()
                     publishEventMessage(
+                        c,
                         MqttConnectedEvent(
                             messageId = UUID.randomUUID().toString(),
                             username = config.username,
@@ -360,35 +361,39 @@ object MqttManager {
     }
 
     fun publishUrlChangedEvent(url: String) {
+        val c = getReadyClient() ?: return
         val event = MqttUrlChangedEvent(
             messageId = UUID.randomUUID().toString(),
             username = config.username,
             appInstanceId = config.appInstanceId,
             data = MqttUrlChangedEvent.UrlData(url),
         )
-        publishEventMessage(event)
+        publishEventMessage(c, event)
     }
 
     fun publishLockEvent(lockStateType: LockStateType) {
+        val c = getReadyClient() ?: return
         val event = MqttLockEvent(
             messageId = UUID.randomUUID().toString(),
             username = config.username,
             appInstanceId = config.appInstanceId,
             data = MqttLockEvent.LockStateData(lockStateType)
         )
-        publishEventMessage(event)
+        publishEventMessage(c, event)
     }
 
     fun publishUnlockEvent() {
+        val c = getReadyClient() ?: return
         val event = MqttUnlockEvent(
             messageId = UUID.randomUUID().toString(),
             username = config.username,
             appInstanceId = config.appInstanceId,
         )
-        publishEventMessage(event)
+        publishEventMessage(c, event)
     }
 
     private fun publishEventMessage(
+        c: Mqtt5AsyncClient,
         event: MqttEventMessage,
         whenComplete: ((Mqtt5PublishResult?, Throwable?) -> Unit)? = null
     ) {
@@ -400,6 +405,7 @@ object MqttManager {
             )
         )
         publishToMqtt(
+            c,
             topic,
             payload,
             config.publishEventQos,
@@ -410,6 +416,7 @@ object MqttManager {
     }
 
     fun publishStatusResponse(statusRequest: MqttStatusRequest, status: WebviewKioskStatus) {
+        val c = getReadyClient() ?: return
         val statusMessage = MqttStatusResponse(
             messageId = UUID.randomUUID().toString(),
             username = config.username,
@@ -419,12 +426,14 @@ object MqttManager {
             data = status,
         )
         publishResponseMessage(
+            c,
             statusMessage,
             statusRequest,
         )
     }
 
     fun publishSettingsResponse(settingsRequest: MqttSettingsRequest, settings: JSONObject) {
+        val c = getReadyClient() ?: return
         val settingsMessage = MqttSettingsResponse(
             messageId = UUID.randomUUID().toString(),
             username = config.username,
@@ -436,6 +445,7 @@ object MqttManager {
             ),
         )
         publishResponseMessage(
+            c,
             settingsMessage,
             settingsRequest
         )
@@ -445,6 +455,7 @@ object MqttManager {
         systemInfoRequest: MqttSystemInfoRequest,
         systemInfo: SystemInfo
     ) {
+        val c = getReadyClient() ?: return
         val statusMessage = MqttSystemInfoResponse(
             messageId = UUID.randomUUID().toString(),
             username = config.username,
@@ -454,6 +465,7 @@ object MqttManager {
             data = systemInfo,
         )
         publishResponseMessage(
+            c,
             statusMessage,
             systemInfoRequest,
         )
@@ -462,6 +474,7 @@ object MqttManager {
     fun publishErrorResponse(
         errorRequest: MqttErrorRequest,
     ) {
+        val c = getReadyClient() ?: return
         val errorMessage = MqttErrorResponse(
             messageId = UUID.randomUUID().toString(),
             username = config.username,
@@ -472,12 +485,14 @@ object MqttManager {
             errorMessage = errorRequest.error,
         )
         publishResponseMessage(
+            c,
             errorMessage,
             errorRequest,
         )
     }
 
     private fun publishResponseMessage(
+        c: Mqtt5AsyncClient,
         responseMessage: MqttResponseMessage,
         requestMessage: MqttRequestMessage,
     ) {
@@ -490,6 +505,7 @@ object MqttManager {
 
         val payload = MqttResponseJsonParser.encodeToString(responseMessage)
         publishToMqtt(
+            c,
             topic,
             payload,
             config.publishResponseQos,
@@ -500,6 +516,7 @@ object MqttManager {
     }
 
     private fun publishToMqtt(
+        c: Mqtt5AsyncClient,
         topic: String,
         payload: String,
         qos: MqttQosOption,
@@ -508,8 +525,6 @@ object MqttManager {
         messageId: String? = null,
         whenComplete: ((Mqtt5PublishResult?, Throwable?) -> Unit)? = null
     ) {
-        val c = client ?: return
-        if (!config.enabled || !c.state.isConnected) return
         if (!isValidMqttPublishTopic(topic)) {
             addDebugLog(
                 "publish failed",
@@ -725,6 +740,19 @@ object MqttManager {
         }.getOrNull()
     }
 
+    private fun getReadyClient(): Mqtt5AsyncClient? {
+        val c = client
+        if (
+            c != null
+            && ::config.isInitialized
+            && config.enabled
+            && c.state.isConnected
+        ) {
+            return c
+        }
+        return null
+    }
+
     private fun subscribeTopic(
         topic: String,
         qos: MqttQosOption,
@@ -800,6 +828,7 @@ object MqttManager {
         }
 
         publishEventMessage(
+            c,
             MqttDisconnectingEvent(
                 messageId = UUID.randomUUID().toString(),
                 username = config.username,
