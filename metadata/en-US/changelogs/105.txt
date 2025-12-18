@@ -1,0 +1,12 @@
+## MQTT
+
+Adds support for Message Queuing Telemetry Transport (MQTT), which can be used to remotely:
+- monitor events (e.g. url change, kiosk lock/unlock)
+- update settings & configurations
+- execute commands (e.g. refresh, go home, search)
+- build automations using the API
+
+To use this feature, you will need an MQTT broker, e.g. Mosquitto, EMQX or HiveMQ.
+
+For more information, see the documentations:
+- https://webviewkiosk.nktnet.uk/docs/settings/mqtt/
