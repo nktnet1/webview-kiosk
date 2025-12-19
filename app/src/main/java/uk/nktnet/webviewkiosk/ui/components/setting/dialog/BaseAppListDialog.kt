@@ -27,6 +27,7 @@ fun <T : AppInfo> BaseAppListDialog(
     getKey: (T) -> String = { it.packageName },
     onSelectApp: (T) -> Unit,
     extraContent: @Composable (() -> Unit)? = null,
+    emptyContent: @Composable (() -> Unit) = { Text("No apps available.") },
 ) {
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
@@ -94,7 +95,9 @@ fun <T : AppInfo> BaseAppListDialog(
                     Box(
                         modifier = Modifier.weight(1f).fillMaxWidth().padding(top = 32.dp),
                         contentAlignment = Alignment.TopCenter
-                    ) { Text("No apps available.") }
+                    ) {
+                        emptyContent.invoke()
+                    }
                 } else {
                     AppList(
                         apps = filteredApps,

@@ -21,6 +21,7 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.apps.AppIcon
 import uk.nktnet.webviewkiosk.utils.getIsLocked
+import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 import uk.nktnet.webviewkiosk.utils.openPackage
 
 @Composable
@@ -113,6 +114,29 @@ fun AppLauncherDialog(
                         )
                     }
                 }
+            }
+        },
+        emptyContent = {
+            if (isLocked) {
+                Text(
+                    normaliseInfoText("""
+                        No apps available.
+
+                        In kiosk/locked mode, you can only launch apps that have been added to
+                        the lock task permitted list (under device owner settings).
+
+                        For user devices that utilise screen pinning, you will not be able to
+                        launch other apps.
+
+                        Refer to the documentations for how device owner can be obtained - this
+                        requires one of: ADB, Shizuku or Dhizuku.
+
+                        - ${Constants.WEBSITE_URL}
+                    """.trimIndent()),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            } else {
+                Text("No apps available.")
             }
         }
     )
