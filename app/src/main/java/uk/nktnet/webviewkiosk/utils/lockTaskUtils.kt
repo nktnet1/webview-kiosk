@@ -107,7 +107,38 @@ fun tryUnlockTask(activity: Activity?): Boolean {
     }
     return tryLockAction(
         activity,
-        Activity::stopLockTask,
+        action = {
+            activity.stopLockTask()
+            if (
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                && DeviceOwnerManager.hasOwnerPermission(activity)
+            ) {
+                val savedPackages = DeviceOwnerManager.DPM.getLockTaskPackages(
+                    DeviceOwnerManager.DAR
+                )
+                val savedFeatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                    DeviceOwnerManager.DPM.getLockTaskFeatures(
+                        DeviceOwnerManager.DAR
+                    )
+                } else {
+                    null
+                }
+                DeviceOwnerManager.DPM.setLockTaskPackages(
+                    DeviceOwnerManager.DAR,
+                    emptyArray()
+                )
+                DeviceOwnerManager.DPM.setLockTaskPackages(
+                    DeviceOwnerManager.DAR,
+                    savedPackages,
+                )
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && savedFeatures != null) {
+                    DeviceOwnerManager.DPM.setLockTaskFeatures(
+                        DeviceOwnerManager.DAR,
+                        savedFeatures,
+                    )
+                }
+            }
+        },
         onSuccess = {
             // Handled MQTT publish in LockStateSingleton
         },
