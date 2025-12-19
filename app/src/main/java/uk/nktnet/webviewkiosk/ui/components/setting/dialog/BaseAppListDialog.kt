@@ -26,7 +26,7 @@ fun <T : AppInfo> BaseAppListDialog(
     getDescription: (T) -> String = { it.packageName },
     getKey: (T) -> String = { it.packageName },
     onSelectApp: (T) -> Unit,
-    actionContent: @Composable (() -> Unit)? = null,
+    extraContent: @Composable (() -> Unit)? = null,
 ) {
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
@@ -88,7 +88,7 @@ fun <T : AppInfo> BaseAppListDialog(
                     Spacer(Modifier.height(8.dp))
                 }
 
-                actionContent?.invoke()
+                extraContent?.invoke()
 
                 if (filteredApps.isEmpty() && progress == 1f) {
                     Box(

@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.utils
 
 import android.app.ActivityOptions
+import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -75,6 +76,16 @@ fun openPackage(
 ) {
     val userSettings = UserSettings(context)
     if (lockTask) {
+        val dpm = context.getSystemService(
+            Context.DEVICE_POLICY_SERVICE
+        ) as DevicePolicyManager
+        if (!dpm.isLockTaskPermitted(context.packageName)) {
+            ToastManager.show(
+                context,
+                "Error: ${context.packageName} must be lock task permitted to launch apps."
+            )
+            return
+        }
         if (!userSettings.lockTaskFeatureHome) {
             ToastManager.show(
                 context,

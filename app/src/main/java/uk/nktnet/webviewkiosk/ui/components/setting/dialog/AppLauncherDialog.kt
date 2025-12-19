@@ -1,6 +1,8 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
 import android.app.ActivityManager
+import android.app.admin.DevicePolicyManager
+import android.content.Context
 import android.content.Context.ACTIVITY_SERVICE
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
@@ -10,6 +12,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
+import uk.nktnet.webviewkiosk.config.Constants
+import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.data.LaunchableAppInfo
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
@@ -28,9 +33,11 @@ fun AppLauncherDialog(
     }
 
     val context = LocalContext.current
+    val userSettings = remember { UserSettings(context) }
     val activityManager = context.getSystemService(ACTIVITY_SERVICE) as ActivityManager
 
     var activityDialogApp by remember { mutableStateOf<LaunchableAppInfo?>(null) }
+    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
 
     var apps by remember { mutableStateOf<List<LaunchableAppInfo>>(emptyList()) }
     var progress by remember { mutableFloatStateOf(0f) }
@@ -84,6 +91,29 @@ fun AppLauncherDialog(
                     ToastManager.show(context, "Error: no activities for app.")
                 }
             }
+        },
+        extraContent = {
+            if (isLocked) {
+                Column (
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (!userSettings.lockTaskFeatureHome) {
+                        Text(
+                            text = "Error: please enable ${UserSettingsKeys.Device.Owner.LockTaskFeature.HOME}",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    if (!dpm.isLockTaskPermitted(context.packageName)) {
+                        Text(
+                            text = "Error: ${context.packageName} must be lock task permitted to launch apps.",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+            }
         }
     )
 
@@ -128,7 +158,7 @@ fun AppLauncherDialog(
                 TextButton(onClick = { activityDialogApp = null }) {
                     Text("Close")
                 }
-            }
+            },
         )
     }
 }

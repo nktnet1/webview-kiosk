@@ -245,7 +245,7 @@ object DeviceOwnerManager {
         val pm = context.packageManager
         val packagesList = try {
             DPM.getLockTaskPackages(DAR)
-        } catch (e: SecurityException) {
+        } catch (e: Exception) {
             e.printStackTrace()
             ToastManager.show(
                 context,
