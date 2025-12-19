@@ -20,7 +20,8 @@ class LaunchableAppInfo(
     packageName: String,
     name: String,
     icon: Drawable,
-    val activities: List<Activity>
+    val activities: List<Activity>,
+    val isLockTaskPermitted: Boolean,
 ) : AppInfo(packageName, name, icon) {
     data class Activity(
         val label: String,

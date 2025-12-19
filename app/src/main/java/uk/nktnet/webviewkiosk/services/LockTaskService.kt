@@ -35,7 +35,6 @@ class LockTaskService: Service() {
         }
     }
 
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         ContextCompat.registerReceiver(
             this,

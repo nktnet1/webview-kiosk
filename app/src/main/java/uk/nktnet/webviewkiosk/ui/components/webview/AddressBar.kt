@@ -402,10 +402,10 @@ fun AddressBar(
                     AddressBarActionOption.HISTORY -> userSettings.allowHistoryAccess
                     AddressBarActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
                     AddressBarActionOption.FILES -> userSettings.allowLocalFiles
-                    AddressBarActionOption.APPS -> !isLocked
                     AddressBarActionOption.SETTINGS -> !isLocked
                     AddressBarActionOption.LOCK -> !isLocked
                     AddressBarActionOption.UNLOCK -> isLocked
+                    AddressBarActionOption.APPS,
                     AddressBarActionOption.FIND,
                     AddressBarActionOption.SCROLL_TOP,
                     AddressBarActionOption.SCROLL_BOT-> true

@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.annotation.RequiresApi
+import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.services.LockTaskService
 import uk.nktnet.webviewkiosk.managers.ToastManager
 
@@ -69,9 +70,21 @@ fun openSettings(context: Context) {
 fun openPackage(
     context: Context,
     packageName: String,
+    lockTask: Boolean,
     activityName: String? = null,
-    lockTask: Boolean = true,
 ) {
+    val userSettings = UserSettings(context)
+    if (lockTask) {
+        if (!userSettings.lockTaskFeatureHome) {
+            ToastManager.show(
+                context,
+                "Error: lock task feature HOME (under device owner) is required."
+            )
+            return
+        }
+        applyLockTaskFeatures(context)
+    }
+
     try {
         val intent = if (activityName != null) {
             Intent().apply {

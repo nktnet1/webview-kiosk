@@ -55,7 +55,7 @@ fun <T : AppInfo> BaseAppListDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            modifier = Modifier.fillMaxSize().padding(4.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp, vertical = 12.dp),
             color = MaterialTheme.colorScheme.background,
             shape = MaterialTheme.shapes.medium
         ) {

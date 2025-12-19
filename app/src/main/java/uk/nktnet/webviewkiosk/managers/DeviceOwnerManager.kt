@@ -150,6 +150,7 @@ object DeviceOwnerManager {
         var processed = 0
 
         val current = mutableListOf<LaunchableAppInfo>()
+        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
 
         for ((pkg, list) in resolved) {
             val appInfo = pm.getApplicationInfo(pkg, 0)
@@ -163,7 +164,8 @@ object DeviceOwnerManager {
                             label = it.loadLabel(pm).toString(),
                             name = it.activityInfo.name
                         )
-                    }
+                    },
+                    isLockTaskPermitted = dpm.isLockTaskPermitted(pkg)
                 )
             )
 

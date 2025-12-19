@@ -1,8 +1,11 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
+import android.app.ActivityManager
+import android.content.Context.ACTIVITY_SERVICE
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -10,7 +13,9 @@ import androidx.compose.ui.platform.LocalContext
 import uk.nktnet.webviewkiosk.config.data.LaunchableAppInfo
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
+import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.apps.AppIcon
+import uk.nktnet.webviewkiosk.utils.getIsLocked
 import uk.nktnet.webviewkiosk.utils.openPackage
 
 @Composable
@@ -23,10 +28,14 @@ fun AppLauncherDialog(
     }
 
     val context = LocalContext.current
+    val activityManager = context.getSystemService(ACTIVITY_SERVICE) as ActivityManager
+
     var activityDialogApp by remember { mutableStateOf<LaunchableAppInfo?>(null) }
 
     var apps by remember { mutableStateOf<List<LaunchableAppInfo>>(emptyList()) }
     var progress by remember { mutableFloatStateOf(0f) }
+
+    val isLocked by LockStateSingleton.isLocked
 
     LaunchedEffect(Unit) {
         DeviceOwnerManager.getLaunchableAppsFlow(context).collect { state ->
@@ -52,6 +61,10 @@ fun AppLauncherDialog(
                 || app.packageName.contains(query, ignoreCase = true)
             ) && (
                 app.packageName != context.packageName
+            ) && (
+                !isLocked || (
+                    app.isLockTaskPermitted
+                )
             )
         },
         progress = progress,
@@ -60,7 +73,8 @@ fun AppLauncherDialog(
                 app.activities.size == 1 -> {
                     openPackage(
                         context, app.packageName,
-                        app.activities.first().name
+                        getIsLocked(activityManager),
+                        app.activities.first().name,
                     )
                 }
                 app.activities.size >= 2 -> {
@@ -92,7 +106,12 @@ fun AppLauncherDialog(
                     app.activities.forEach { activity ->
                         Button(
                             onClick = {
-                                openPackage(context, app.packageName, activity.name)
+                                openPackage(
+                                    context
+                                    , app.packageName,
+                                    getIsLocked(activityManager),
+                                    activity.name
+                                )
                                 activityDialogApp = null
                             },
                             modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp)

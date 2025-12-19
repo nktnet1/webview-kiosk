@@ -8,6 +8,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.config.Constants
 
 object CustomNotificationType {
     const val LOCK_TASK_MODE = 1001
@@ -31,8 +32,8 @@ object NotificationManager {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CustomNotificationChannel.LockTaskMode.ID,
-                "Lock Task Mode",
-                SysNotificationManager.IMPORTANCE_HIGH,
+                appContext.getString(R.string.notification_lock_task_title),
+                SysNotificationManager.IMPORTANCE_LOW,
             )
             NotificationManagerCompat
                 .from(appContext)
@@ -45,10 +46,15 @@ object NotificationManager {
             appContext,
             CustomNotificationChannel.LockTaskMode.ID,
         )
-            .setContentTitle("Lock Task Mode Active")
-            .setContentText("Tap to return")
+            .setContentTitle(appContext.getString(R.string.notification_lock_task_title))
+            .setContentText(
+                appContext.getString(
+                    R.string.notification_lock_task_text,
+                    Constants.APP_NAME)
+            )
             .setSmallIcon(R.drawable.baseline_lock_24)
             .setContentIntent(contentIntent)
+            .setSilent(true)
             .setOngoing(true)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
             .build()
