@@ -41,7 +41,7 @@ fun SearchProviderUrlSetting() {
 
     val searchProviders = listOf(
         "Google" to "https://google.com/search?q=",
-        "DuckDuckGo" to "https://duckduckgo.com/?q=",
+        "DuckDuckGo" to "https://duckduckgo.com?q=",
         "Bing" to "https://bing.com/search?q=",
         "Yahoo" to "https://search.yahoo.com/search?p=",
         "Start page" to "https://startpage.com/do/search?q=",

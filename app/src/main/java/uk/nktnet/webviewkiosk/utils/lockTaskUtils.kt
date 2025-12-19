@@ -186,6 +186,7 @@ fun setupLockTaskPackage(context: Context): Boolean {
         return false
     }
 }
+
 fun getIsLocked(activityManager: ActivityManager): Boolean {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         return activityManager.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
@@ -206,9 +207,7 @@ fun requireAuthForUnlock(context: Context, userSettings: UserSettings): Boolean 
     return dpm.isLockTaskPermitted(context.packageName)
 }
 
-fun unlockWithAuthIfRequired(
-    activity: Activity,
-) {
+fun unlockWithAuthIfRequired(activity: Activity) {
     val userSettings = UserSettings(activity)
 
     if (requireAuthForUnlock(activity, userSettings)) {
