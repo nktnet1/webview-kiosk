@@ -420,6 +420,12 @@
         android:description="@string/device_allow_location_description"
     />
     <restriction
+        android:key="device.allow_notifications"
+        android:restrictionType="bool"
+        android:title="@string/device_allow_notifications_title"
+        android:description="@string/device_allow_notifications_description"
+    />
+    <restriction
         android:key="device.back_button_hold_action"
         android:restrictionType="choice"
         android:entries="@array/entries_back_button_hold_action_option"

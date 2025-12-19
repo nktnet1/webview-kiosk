@@ -430,6 +430,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Device.ALLOW_LOCATION,
         false
     )
+    var allowNotifications by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.ALLOW_NOTIFICATIONS,
+        false
+    )
     var backButtonHoldAction by stringEnumPref(
         getRestrictions,
         prefs,
@@ -931,6 +937,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Device.ALLOW_CAMERA, allowCamera)
             put(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             put(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
+            put(UserSettingsKeys.Device.ALLOW_NOTIFICATIONS, allowNotifications)
             put(UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION, backButtonHoldAction.name)
             put(UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
             // put(UserSettingsKeys.Device.CUSTOM_AUTH_PASSWORD, customAuthPassword)
@@ -1098,6 +1105,7 @@ class UserSettings(val context: Context) {
             allowCamera = json.optBoolean(UserSettingsKeys.Device.ALLOW_CAMERA, allowCamera)
             allowMicrophone = json.optBoolean(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             allowLocation = json.optBoolean(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
+            allowNotifications = json.optBoolean(UserSettingsKeys.Device.ALLOW_NOTIFICATIONS, allowNotifications)
             backButtonHoldAction = BackButtonHoldActionOption.fromString(
                 json.optString(UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION, backButtonHoldAction.name)
             )
