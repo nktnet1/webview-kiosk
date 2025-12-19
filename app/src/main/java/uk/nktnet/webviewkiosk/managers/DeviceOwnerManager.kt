@@ -243,8 +243,16 @@ object DeviceOwnerManager {
         chunkSize: Int = 5
     ): Flow<AppLoadState<AppInfo>> = flow {
         val pm = context.packageManager
-        val packagesList = DPM.getLockTaskPackages(DAR)
-
+        val packagesList = try {
+            DPM.getLockTaskPackages(DAR)
+        } catch (e: SecurityException) {
+            e.printStackTrace()
+            ToastManager.show(
+                context,
+                "Failed to fetch packages (mode: ${status.value.mode})"
+            )
+            emptyArray()
+        }
         val total = packagesList.size
         if (total == 0) {
             emit(AppLoadState(emptyList(), 1f))

@@ -115,28 +115,36 @@ fun tryUnlockTask(activity: Activity?): Boolean {
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                 && DeviceOwnerManager.hasOwnerPermission(activity)
             ) {
-                val savedPackages = DeviceOwnerManager.DPM.getLockTaskPackages(
-                    DeviceOwnerManager.DAR
-                )
-                val savedFeatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                    DeviceOwnerManager.DPM.getLockTaskFeatures(
+                try {
+                    val savedPackages = DeviceOwnerManager.DPM.getLockTaskPackages(
                         DeviceOwnerManager.DAR
                     )
-                } else {
-                    null
-                }
-                DeviceOwnerManager.DPM.setLockTaskPackages(
-                    DeviceOwnerManager.DAR,
-                    arrayOf(activity.packageName)
-                )
-                DeviceOwnerManager.DPM.setLockTaskPackages(
-                    DeviceOwnerManager.DAR,
-                    savedPackages,
-                )
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && savedFeatures != null) {
-                    DeviceOwnerManager.DPM.setLockTaskFeatures(
+                    val savedFeatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        DeviceOwnerManager.DPM.getLockTaskFeatures(
+                            DeviceOwnerManager.DAR
+                        )
+                    } else {
+                        null
+                    }
+                    DeviceOwnerManager.DPM.setLockTaskPackages(
                         DeviceOwnerManager.DAR,
-                        savedFeatures,
+                        arrayOf(activity.packageName)
+                    )
+                    DeviceOwnerManager.DPM.setLockTaskPackages(
+                        DeviceOwnerManager.DAR,
+                        savedPackages,
+                    )
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && savedFeatures != null) {
+                        DeviceOwnerManager.DPM.setLockTaskFeatures(
+                            DeviceOwnerManager.DAR,
+                            savedFeatures,
+                        )
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    ToastManager.show(
+                        activity,
+                        "DPM ${DeviceOwnerManager.status.value.mode}) error: ${e.message}"
                     )
                 }
             }

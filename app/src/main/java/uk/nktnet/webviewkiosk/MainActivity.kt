@@ -178,7 +178,15 @@ class MainActivity : AppCompatActivity() {
                         }
                         is MqttLockDeviceCommand -> {
                             if (DeviceOwnerManager.hasOwnerPermission(context)) {
-                                DeviceOwnerManager.DPM.lockNow()
+                                try {
+                                    DeviceOwnerManager.DPM.lockNow()
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    ToastManager.show(
+                                        context,
+                                        "Failed to lock device: ${e.message}"
+                                    )
+                                }
                             }
                         }
                         else -> Unit
