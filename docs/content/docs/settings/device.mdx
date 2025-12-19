@@ -78,7 +78,19 @@ required for the WebView's
 
 **Default:** false
 
-## 7. Back Button Hold Action
+## 7. Allow Notifications
+
+Set to true to allow notifications, e.g. for
+- lock task mode, when launching other apps
+- MQTT
+
+You will need to grant the
+[POST_NOTIFICATIONS](https://developer.android.com/reference/android/Manifest.permission#POST_NOTIFICATIONS)
+permission.
+
+**Default:** false
+
+## 8. Back Button Hold Action
 
 Customise the behaviour when the back button is held down (long pressed).
 
@@ -90,7 +102,7 @@ Customise the behaviour when the back button is held down (long pressed).
 
 **Default:** Open Kiosk Control Panel
 
-## 8. Custom Unlock Shortcut
+## 9. Custom Unlock Shortcut
 
 Provide a custom keyboard shortcut using a modifier key (CTRL/SHIFT/ALT/META)
 in combination with another standard key to unlock/unpin the application.
@@ -102,7 +114,7 @@ has a physical keyboard connected.
 
 **Default:** *(blank)*
 
-## 9. Custom Auth Password
+## 10. Custom Auth Password
 
 Specify a custom password to protect your settings or when unlocking from
 the kiosk state.
@@ -118,7 +130,7 @@ Leave this setting blank to use your device's biometrics or credentials.
 
 **Default:** *(blank)*
 
-## 10. Unlock Auth Requirement
+## 11. Unlock Auth Requirement
 
 This setting only applies to in-app unlock methods, e.g. when unlocking
 using `Kiosk Control Panel` or `Custom Unlock Shortcut`.
@@ -134,7 +146,7 @@ unpinning, which is outside the control of {APP_NAME}.
 
 **Default:** Default
 
-## 11. Block Screen Capture
+## 12. Block Screen Capture
 
 Prevent screenshots, screen recording and content previews in Recent Apps.
 This is done by setting the FLAG_SECURE window flag.
@@ -144,7 +156,7 @@ For more information, see
 
 **Default:** false
 
-## 12. Block Volume Keys
+## 13. Block Volume Keys
 
 Disable the volume control buttons, specifically:
 
@@ -154,11 +166,11 @@ Disable the volume control buttons, specifically:
 
 **Default:** false
 
-## 13. Device Owner
+## 14. Device Owner
 
 For more information about `Device Owner`, see the [Security](/docs/security) documentation.
 
-### 13.1. Lock Task Features
+### 14.1. Lock Task Features
 
 {APP_NAME} The settings below are extracted from the official documentations:
 - [Lock Task Mode -> Customise UI](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode#customize-ui)
@@ -276,7 +288,7 @@ For more information about `Device Owner`, see the [Security](/docs/security) do
   </tbody>
 </table>
 
-### 13.2. Dhizuku Request Permission on Launch
+### 14.2. Dhizuku Request Permission on Launch
 
 When enabled, if [Dhizuku](https://github.com/iamr0s/Dhizuku) is installed and
 has not granted {APP_NAME} access through the
