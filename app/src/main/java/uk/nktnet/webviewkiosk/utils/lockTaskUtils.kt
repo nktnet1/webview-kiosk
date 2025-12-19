@@ -122,7 +122,6 @@ fun setupLockTaskPackage(context: Context): Boolean {
         if (!DeviceOwnerManager.hasOwnerPermission(context)){
             return false
         }
-
         val packages =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val current = DeviceOwnerManager.DPM.getLockTaskPackages(
