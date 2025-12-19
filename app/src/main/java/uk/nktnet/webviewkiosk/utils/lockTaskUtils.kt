@@ -26,12 +26,15 @@ private fun tryLockAction(
         onSuccess()
         true
     } catch (e: SecurityException) {
+        e.printStackTrace()
         onFailed("[SecurityException] ${e.message}")
         false
     } catch (e: IllegalArgumentException) {
+        e.printStackTrace()
         onFailed("[IllegalArgumentException] ${e.message}")
         false
     } catch (e: Exception) {
+        e.printStackTrace()
         onFailed("[UnknownException] ${e.message}")
         false
     }
@@ -108,7 +111,6 @@ fun tryUnlockTask(activity: Activity?): Boolean {
     return tryLockAction(
         activity,
         action = {
-            activity.stopLockTask()
             if (
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                 && DeviceOwnerManager.hasOwnerPermission(activity)
@@ -125,7 +127,7 @@ fun tryUnlockTask(activity: Activity?): Boolean {
                 }
                 DeviceOwnerManager.DPM.setLockTaskPackages(
                     DeviceOwnerManager.DAR,
-                    emptyArray()
+                    arrayOf(activity.packageName)
                 )
                 DeviceOwnerManager.DPM.setLockTaskPackages(
                     DeviceOwnerManager.DAR,
@@ -138,6 +140,7 @@ fun tryUnlockTask(activity: Activity?): Boolean {
                     )
                 }
             }
+            activity.stopLockTask()
         },
         onSuccess = {
             // Handled MQTT publish in LockStateSingleton
