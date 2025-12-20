@@ -85,7 +85,6 @@ fun AppLauncherDialog(
                 app.activities.size == 1 -> {
                     openPackage(
                         context, app.packageName,
-                        getIsLocked(activityManager),
                         app.activities.first().name,
                     )
                 }
@@ -174,7 +173,6 @@ fun AppLauncherDialog(
                                 openPackage(
                                     context
                                     , app.packageName,
-                                    getIsLocked(activityManager),
                                     activity.name
                                 )
                                 activityDialogApp = null

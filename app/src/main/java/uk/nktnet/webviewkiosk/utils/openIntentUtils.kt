@@ -75,15 +75,16 @@ fun openSettings(context: Context) {
 fun openPackage(
     context: Context,
     packageName: String,
-    lockTask: Boolean,
     activityName: String? = null,
     intent: Intent? = null,
 ) {
+    val activityManager = context.getSystemService(ACTIVITY_SERVICE) as ActivityManager
     val userSettings = UserSettings(context)
     var options: ActivityOptions? = null
     var intentFlags = Intent.FLAG_ACTIVITY_NEW_TASK
+    val isLocked = getIsLocked(activityManager)
 
-    if (lockTask) {
+    if (isLocked) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
             ToastManager.show(
                 context,
@@ -130,7 +131,7 @@ fun openPackage(
         }
 
         if (launchIntent != null) {
-            if (lockTask) {
+            if (isLocked) {
                 context.startForegroundService(
                     Intent(
                         context,
@@ -153,7 +154,6 @@ fun openPackage(
 }
 
 fun handleExternalSchemeUrl(context: Context, url: String) {
-    val activityManager = context.getSystemService(ACTIVITY_SERVICE) as ActivityManager
     try {
         val uri = url.toUri()
         val intent = if (uri.scheme == "intent") {
@@ -179,7 +179,6 @@ fun handleExternalSchemeUrl(context: Context, url: String) {
         openPackage(
             context = context,
             packageName = packageName,
-            lockTask = getIsLocked(activityManager),
             activityName = resolveInfo.activityInfo.name,
             intent = intent,
         )
