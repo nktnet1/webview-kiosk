@@ -41,6 +41,7 @@ import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttToastCommand
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.BackButtonManager
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
+import uk.nktnet.webviewkiosk.managers.NotificationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.screens.SetupNavHost
 import uk.nktnet.webviewkiosk.utils.handleMainIntent
@@ -71,6 +72,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var systemSettings: SystemSettings
     private lateinit var backButtonService: BackButtonManager
 
+    private var lastVisibleTime = 0L
+
     val restrictionsReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (intent.action == Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED) {
@@ -91,6 +94,7 @@ class MainActivity : AppCompatActivity() {
         userSettings = UserSettings(this)
         systemSettings = SystemSettings(this)
         DeviceOwnerManager.init(this)
+        NotificationManager.init(applicationContext)
 
         if (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.DeviceOwner) {
             setupLockTaskPackage(this)
@@ -174,7 +178,15 @@ class MainActivity : AppCompatActivity() {
                         }
                         is MqttLockDeviceCommand -> {
                             if (DeviceOwnerManager.hasOwnerPermission(context)) {
-                                DeviceOwnerManager.DPM.lockNow()
+                                try {
+                                    DeviceOwnerManager.DPM.lockNow()
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    ToastManager.show(
+                                        context,
+                                        "Failed to lock device: ${e.message}"
+                                    )
+                                }
                             }
                         }
                         else -> Unit
@@ -314,6 +326,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
+        lastVisibleTime = System.currentTimeMillis()
         if (userSettings.mqttEnabled && !MqttManager.isConnectedOrReconnect()) {
             MqttManager.connect(this)
         }
@@ -350,7 +363,8 @@ class MainActivity : AppCompatActivity() {
             return
         }
         if (
-            intent.action == Intent.ACTION_MAIN
+            System.currentTimeMillis() - lastVisibleTime > 300L
+            && intent.action == Intent.ACTION_MAIN
             && intent.hasCategory(Intent.CATEGORY_HOME)
             && userSettings.allowGoHome
         ) {

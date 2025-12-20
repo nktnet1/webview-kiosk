@@ -81,6 +81,7 @@ object UserSettingsKeys {
         const val ALLOW_CAMERA = "device.allow_camera"
         const val ALLOW_MICROPHONE = "device.allow_microphone"
         const val ALLOW_LOCATION = "device.allow_location"
+        const val ALLOW_NOTIFICATIONS = "device.allow_notifications"
         const val BACK_BUTTON_HOLD_ACTION = "device.back_button_hold_action"
         const val CUSTOM_UNLOCK_SHORTCUT = "device.custom_unlock_shortcut"
         const val CUSTOM_AUTH_PASSWORD = "device.custom_auth_password"

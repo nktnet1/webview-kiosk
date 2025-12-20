@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.os.Build
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -17,6 +18,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowCameraSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowLocationSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowMicrophoneSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowNotificationsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.BackButtonHoldActionSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.BlockVolumeKeysSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.BrightnessSetting
@@ -52,6 +54,9 @@ fun SettingsDeviceScreen(navController: NavController) {
             AllowCameraSetting()
             AllowMicrophoneSetting()
             AllowLocationSetting()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                AllowNotificationsSetting()
+            }
             BackButtonHoldActionSetting()
             CustomUnlockShortcutSetting()
             CustomAuthPasswordSetting()

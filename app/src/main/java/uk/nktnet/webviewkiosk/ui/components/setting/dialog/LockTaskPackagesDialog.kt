@@ -72,7 +72,7 @@ fun LockTaskPackagesDialog(
             app.name.contains(query, ignoreCase = true)
             || app.packageName.contains(query, ignoreCase = true)
         },
-        actionContent = {
+        extraContent = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End

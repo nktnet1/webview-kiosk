@@ -1,16 +1,27 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
+import android.app.ActivityManager
+import android.app.admin.DevicePolicyManager
+import android.content.Context
+import android.content.Context.ACTIVITY_SERVICE
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalContext
+import uk.nktnet.webviewkiosk.config.Constants
+import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.data.LaunchableAppInfo
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
+import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.apps.AppIcon
+import uk.nktnet.webviewkiosk.utils.getIsLocked
+import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 import uk.nktnet.webviewkiosk.utils.openPackage
 
 @Composable
@@ -23,10 +34,16 @@ fun AppLauncherDialog(
     }
 
     val context = LocalContext.current
+    val userSettings = remember { UserSettings(context) }
+    val activityManager = context.getSystemService(ACTIVITY_SERVICE) as ActivityManager
+
     var activityDialogApp by remember { mutableStateOf<LaunchableAppInfo?>(null) }
+    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
 
     var apps by remember { mutableStateOf<List<LaunchableAppInfo>>(emptyList()) }
     var progress by remember { mutableFloatStateOf(0f) }
+
+    val isLocked by LockStateSingleton.isLocked
 
     LaunchedEffect(Unit) {
         DeviceOwnerManager.getLaunchableAppsFlow(context).collect { state ->
@@ -52,6 +69,8 @@ fun AppLauncherDialog(
                 || app.packageName.contains(query, ignoreCase = true)
             ) && (
                 app.packageName != context.packageName
+            ) && (
+                !isLocked || app.isLockTaskPermitted
             )
         },
         progress = progress,
@@ -60,7 +79,8 @@ fun AppLauncherDialog(
                 app.activities.size == 1 -> {
                     openPackage(
                         context, app.packageName,
-                        app.activities.first().name
+                        getIsLocked(activityManager),
+                        app.activities.first().name,
                     )
                 }
                 app.activities.size >= 2 -> {
@@ -69,6 +89,52 @@ fun AppLauncherDialog(
                 else -> {
                     ToastManager.show(context, "Error: no activities for app.")
                 }
+            }
+        },
+        extraContent = {
+            if (isLocked) {
+                Column (
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (!userSettings.lockTaskFeatureHome) {
+                        Text(
+                            text = "Error: please enable ${UserSettingsKeys.Device.Owner.LockTaskFeature.HOME}",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    if (!dpm.isLockTaskPermitted(context.packageName)) {
+                        Text(
+                            text = "Error: ${context.packageName} must be lock task permitted to launch apps.",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+            }
+        },
+        emptyContent = {
+            if (isLocked) {
+                Text(
+                    normaliseInfoText("""
+                        No apps available.
+
+                        In kiosk/locked mode, you can only launch apps that have been added to
+                        the lock task permitted list (under device owner settings).
+
+                        For user devices that utilise screen pinning, you will not be able to
+                        launch other apps.
+
+                        Refer to the documentations for how device owner can be obtained - this
+                        requires one of: ADB, Shizuku or Dhizuku.
+
+                        - ${Constants.WEBSITE_URL}
+                    """.trimIndent()),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            } else {
+                Text("No apps available.")
             }
         }
     )
@@ -92,7 +158,12 @@ fun AppLauncherDialog(
                     app.activities.forEach { activity ->
                         Button(
                             onClick = {
-                                openPackage(context, app.packageName, activity.name)
+                                openPackage(
+                                    context
+                                    , app.packageName,
+                                    getIsLocked(activityManager),
+                                    activity.name
+                                )
                                 activityDialogApp = null
                             },
                             modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp)
@@ -109,7 +180,7 @@ fun AppLauncherDialog(
                 TextButton(onClick = { activityDialogApp = null }) {
                     Text("Close")
                 }
-            }
+            },
         )
     }
 }

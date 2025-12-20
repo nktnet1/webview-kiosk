@@ -1,18 +1,23 @@
 package uk.nktnet.webviewkiosk.utils
 
+import android.app.ActivityOptions
+import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.provider.Settings
 import androidx.annotation.RequiresApi
+import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.services.LockTaskService
 import uk.nktnet.webviewkiosk.managers.ToastManager
 
-fun safeStartActivity(context: Context, intent: Intent) {
+fun safeStartActivity(context: Context, intent: Intent, bundle: Bundle? = null) {
     try {
         if (intent.resolveActivity(context.packageManager) != null) {
-            context.startActivity(intent)
+            context.startActivity(intent, bundle)
         } else {
             val shortName = intent.action?.substringAfterLast('.') ?: "Unknown"
             ToastManager.show(
@@ -63,7 +68,34 @@ fun openSettings(context: Context) {
     safeStartActivity(context, intent)
 }
 
-fun openPackage(context: Context, packageName: String, activityName: String? = null) {
+fun openPackage(
+    context: Context,
+    packageName: String,
+    lockTask: Boolean,
+    activityName: String? = null,
+) {
+    val userSettings = UserSettings(context)
+    if (lockTask) {
+        val dpm = context.getSystemService(
+            Context.DEVICE_POLICY_SERVICE
+        ) as DevicePolicyManager
+        if (!dpm.isLockTaskPermitted(context.packageName)) {
+            ToastManager.show(
+                context,
+                "Error: ${context.packageName} must be lock task permitted to launch apps."
+            )
+            return
+        }
+        if (!userSettings.lockTaskFeatureHome) {
+            ToastManager.show(
+                context,
+                "Error: lock task feature HOME (under device owner) is required."
+            )
+            return
+        }
+        applyLockTaskFeatures(context)
+    }
+
     try {
         val intent = if (activityName != null) {
             Intent().apply {
@@ -74,8 +106,29 @@ fun openPackage(context: Context, packageName: String, activityName: String? = n
         }
 
         if (intent != null) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            safeStartActivity(context, intent)
+            intent.addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK
+                or if (lockTask) Intent.FLAG_ACTIVITY_CLEAR_TASK else 0
+            )
+            val options = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && lockTask) {
+                ActivityOptions.makeBasic().setLockTaskEnabled(true)
+            } else {
+                null
+            }
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && lockTask) {
+                context.startForegroundService(
+                    Intent(
+                        context,
+                        LockTaskService::class.java
+                    )
+                )
+            }
+            safeStartActivity(
+                context,
+                intent,
+                options?.toBundle()
+            )
         } else {
             ToastManager.show(context, "Error: $packageName cannot be opened.")
         }

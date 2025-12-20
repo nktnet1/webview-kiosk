@@ -521,10 +521,10 @@ fun KioskControlPanel(
                                 KioskControlPanelActionOption.HISTORY -> userSettings.allowHistoryAccess
                                 KioskControlPanelActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
                                 KioskControlPanelActionOption.FILES -> userSettings.allowLocalFiles
-                                KioskControlPanelActionOption.APPS -> !isLocked
                                 KioskControlPanelActionOption.SETTINGS -> !isLocked
                                 KioskControlPanelActionOption.LOCK -> !isLocked
                                 KioskControlPanelActionOption.UNLOCK -> isLocked
+                                KioskControlPanelActionOption.APPS,
                                 KioskControlPanelActionOption.FIND,
                                 KioskControlPanelActionOption.SCROLL_TOP,
                                 KioskControlPanelActionOption.SCROLL_BOT -> true

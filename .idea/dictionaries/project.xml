@@ -6,9 +6,11 @@
       <w>amarok</w>
       <w>autosizing</w>
       <w>bitwarden</w>
+      <w>darkred</w>
       <w>densitydpi</w>
       <w>deps</w>
       <w>dhizuku</w>
+      <w>droidify</w>
       <w>ecosia</w>
       <w>emqx</w>
       <w>fdroid</w>
@@ -21,6 +23,7 @@
       <w>nktnet</w>
       <w>obtainium</w>
       <w>oklch</w>
+      <w>packageinstaller</w>
       <w>playstore</w>
       <w>shizuku</w>
       <w>tailwindcss</w>

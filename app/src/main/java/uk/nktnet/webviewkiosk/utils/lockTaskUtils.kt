@@ -26,12 +26,15 @@ private fun tryLockAction(
         onSuccess()
         true
     } catch (e: SecurityException) {
+        e.printStackTrace()
         onFailed("[SecurityException] ${e.message}")
         false
     } catch (e: IllegalArgumentException) {
+        e.printStackTrace()
         onFailed("[IllegalArgumentException] ${e.message}")
         false
     } catch (e: Exception) {
+        e.printStackTrace()
         onFailed("[UnknownException] ${e.message}")
         false
     }
@@ -107,7 +110,46 @@ fun tryUnlockTask(activity: Activity?): Boolean {
     }
     return tryLockAction(
         activity,
-        Activity::stopLockTask,
+        action = {
+            if (
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                && DeviceOwnerManager.hasOwnerPermission(activity)
+            ) {
+                try {
+                    val savedPackages = DeviceOwnerManager.DPM.getLockTaskPackages(
+                        DeviceOwnerManager.DAR
+                    )
+                    val savedFeatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                        DeviceOwnerManager.DPM.getLockTaskFeatures(
+                            DeviceOwnerManager.DAR
+                        )
+                    } else {
+                        null
+                    }
+                    DeviceOwnerManager.DPM.setLockTaskPackages(
+                        DeviceOwnerManager.DAR,
+                        arrayOf(activity.packageName)
+                    )
+                    DeviceOwnerManager.DPM.setLockTaskPackages(
+                        DeviceOwnerManager.DAR,
+                        savedPackages,
+                    )
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && savedFeatures != null) {
+                        DeviceOwnerManager.DPM.setLockTaskFeatures(
+                            DeviceOwnerManager.DAR,
+                            savedFeatures,
+                        )
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    ToastManager.show(
+                        activity,
+                        "DPM ${DeviceOwnerManager.status.value.mode}) error: ${e.message}"
+                    )
+                }
+            }
+            activity.stopLockTask()
+        },
         onSuccess = {
             // Handled MQTT publish in LockStateSingleton
         },
@@ -122,7 +164,6 @@ fun setupLockTaskPackage(context: Context): Boolean {
         if (!DeviceOwnerManager.hasOwnerPermission(context)){
             return false
         }
-
         val packages =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 val current = DeviceOwnerManager.DPM.getLockTaskPackages(

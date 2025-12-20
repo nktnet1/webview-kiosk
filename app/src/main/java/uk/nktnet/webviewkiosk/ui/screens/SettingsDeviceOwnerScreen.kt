@@ -1,8 +1,10 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.app.ActivityManager
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.Context.ACTIVITY_SERVICE
 import android.os.Build
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -41,6 +43,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.lock
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureNotificationsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureOverviewSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.locktaskfeature.LockTaskFeatureSystemInfoSetting
+import uk.nktnet.webviewkiosk.utils.getIsLocked
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 import uk.nktnet.webviewkiosk.utils.openPackage
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
@@ -48,6 +51,8 @@ import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 @Composable
 fun SettingsDeviceOwnerScreen(navController: NavController) {
     val context = LocalContext.current
+    val activityManager = context.getSystemService(ACTIVITY_SERVICE) as ActivityManager
+
     val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
     val adminComponent = ComponentName(
         context.packageName,
@@ -214,6 +219,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                         openPackage(
                             context,
                             DhizukuVariables.OFFICIAL_PACKAGE_NAME,
+                            getIsLocked(activityManager),
                         )
                     },
                     modifier = Modifier

@@ -26,7 +26,8 @@ fun <T : AppInfo> BaseAppListDialog(
     getDescription: (T) -> String = { it.packageName },
     getKey: (T) -> String = { it.packageName },
     onSelectApp: (T) -> Unit,
-    actionContent: @Composable (() -> Unit)? = null,
+    extraContent: @Composable (() -> Unit)? = null,
+    emptyContent: @Composable (() -> Unit) = { Text("No apps available.") },
 ) {
     val scope = rememberCoroutineScope()
     val listState = rememberLazyListState()
@@ -55,7 +56,7 @@ fun <T : AppInfo> BaseAppListDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            modifier = Modifier.fillMaxSize().padding(4.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp, vertical = 12.dp),
             color = MaterialTheme.colorScheme.background,
             shape = MaterialTheme.shapes.medium
         ) {
@@ -88,13 +89,15 @@ fun <T : AppInfo> BaseAppListDialog(
                     Spacer(Modifier.height(8.dp))
                 }
 
-                actionContent?.invoke()
+                extraContent?.invoke()
 
                 if (filteredApps.isEmpty() && progress == 1f) {
                     Box(
                         modifier = Modifier.weight(1f).fillMaxWidth().padding(top = 32.dp),
                         contentAlignment = Alignment.TopCenter
-                    ) { Text("No apps available.") }
+                    ) {
+                        emptyContent.invoke()
+                    }
                 } else {
                     AppList(
                         apps = filteredApps,

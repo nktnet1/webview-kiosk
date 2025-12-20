@@ -150,6 +150,7 @@ object DeviceOwnerManager {
         var processed = 0
 
         val current = mutableListOf<LaunchableAppInfo>()
+        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
 
         for ((pkg, list) in resolved) {
             val appInfo = pm.getApplicationInfo(pkg, 0)
@@ -163,7 +164,8 @@ object DeviceOwnerManager {
                             label = it.loadLabel(pm).toString(),
                             name = it.activityInfo.name
                         )
-                    }
+                    },
+                    isLockTaskPermitted = dpm.isLockTaskPermitted(pkg)
                 )
             )
 
@@ -241,8 +243,16 @@ object DeviceOwnerManager {
         chunkSize: Int = 5
     ): Flow<AppLoadState<AppInfo>> = flow {
         val pm = context.packageManager
-        val packagesList = DPM.getLockTaskPackages(DAR)
-
+        val packagesList = try {
+            DPM.getLockTaskPackages(DAR)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            ToastManager.show(
+                context,
+                "Failed to fetch packages (mode: ${status.value.mode})"
+            )
+            emptyArray()
+        }
         val total = packagesList.size
         if (total == 0) {
             emit(AppLoadState(emptyList(), 1f))
