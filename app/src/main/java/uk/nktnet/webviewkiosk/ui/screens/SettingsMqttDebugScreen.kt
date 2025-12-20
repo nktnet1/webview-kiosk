@@ -73,8 +73,9 @@ fun SettingsMqttDebugScreen(navController: NavController) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeContent)
-            .padding(horizontal = 16.dp)
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(top = 4.dp)
+            .padding(horizontal = 16.dp),
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             SettingLabel(navController = navController, label = "Debug Log")

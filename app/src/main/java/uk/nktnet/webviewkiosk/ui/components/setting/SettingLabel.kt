@@ -38,7 +38,6 @@ fun SettingLabel(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .height(55.dp)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             if (showBackIcon) {

@@ -23,8 +23,9 @@ fun SettingsWebBrowsingScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeContent)
-            .padding(horizontal = 16.dp)
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(top = 4.dp)
+            .padding(horizontal = 16.dp),
     ) {
         SettingLabel(
             navController = navController,

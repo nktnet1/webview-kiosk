@@ -38,7 +38,8 @@ fun AdminRestrictionsChangedScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.safeContent)
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(top = 4.dp)
                 .padding(horizontal = 4.dp),
             verticalArrangement = Arrangement.Top,
             horizontalAlignment = Alignment.CenterHorizontally

@@ -69,7 +69,8 @@ fun SettingsListScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeContent)
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(top = 4.dp)
             .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.Top
     ) {

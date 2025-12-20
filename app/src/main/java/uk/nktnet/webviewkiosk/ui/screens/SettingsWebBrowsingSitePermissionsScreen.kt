@@ -16,8 +16,9 @@ fun SettingsWebBrowsingSitePermissionsScreen(navController: NavController) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
-            .windowInsetsPadding(WindowInsets.safeContent)
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(top = 4.dp)
+            .padding(horizontal = 16.dp),
     ) {
         SettingLabel(
             navController = navController,
