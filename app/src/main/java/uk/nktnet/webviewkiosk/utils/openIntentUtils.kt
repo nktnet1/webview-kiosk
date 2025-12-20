@@ -89,6 +89,13 @@ fun openPackage(
             )
             return
         }
+        if (!dpm.isLockTaskPermitted(packageName)) {
+            ToastManager.show(
+                context,
+                "Error: $packageName is not lock task permitted in settings."
+            )
+            return
+        }
         if (!userSettings.lockTaskFeatureHome) {
             ToastManager.show(
                 context,
