@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
@@ -39,29 +40,32 @@ fun GenericSettingFieldDialog(
         AlertDialog(
             onDismissRequest = { showInfoDialog = false },
             title = {
-                Column {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.titleMedium,
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        settingKey,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-                    HorizontalDivider()
+                SelectionContainer {
+                    Column {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.titleMedium,
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            settingKey,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        HorizontalDivider()
+                    }
                 }
-
             },
             text = {
                 Column(
                     modifier = Modifier.verticalScroll(rememberScrollState()),
                 ) {
-                    Text(
-                        normaliseInfoText(infoText)
-                    )
+                    SelectionContainer {
+                        Text(
+                            normaliseInfoText(infoText)
+                        )
+                    }
                 }
             },
             confirmButton = {

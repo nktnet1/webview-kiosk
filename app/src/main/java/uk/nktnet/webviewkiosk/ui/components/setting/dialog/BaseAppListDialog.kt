@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -93,10 +94,15 @@ fun <T : AppInfo> BaseAppListDialog(
 
                 if (filteredApps.isEmpty() && progress == 1f) {
                     Box(
-                        modifier = Modifier.weight(1f).fillMaxWidth().padding(top = 32.dp),
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .padding(top = 24.dp, start = 8.dp, end = 8.dp),
                         contentAlignment = Alignment.TopCenter
                     ) {
-                        emptyContent.invoke()
+                        SelectionContainer {
+                            emptyContent.invoke()
+                        }
                     }
                 } else {
                     AppList(
