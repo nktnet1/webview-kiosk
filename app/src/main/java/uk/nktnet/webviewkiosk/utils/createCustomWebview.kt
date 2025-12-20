@@ -30,7 +30,6 @@ import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
-import uk.nktnet.webviewkiosk.utils.webview.handlers.handleExternalScheme
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOverrideScript
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
@@ -184,7 +183,7 @@ fun createCustomWebview(
                         }
                     } else if (schemeType == SchemeType.OTHER) {
                         if (userSettings.allowOtherUrlSchemes) {
-                            handleExternalScheme(context, requestUrl)
+                            handleExternalSchemeUrl(context, requestUrl)
                         }
                         return true
                     }
