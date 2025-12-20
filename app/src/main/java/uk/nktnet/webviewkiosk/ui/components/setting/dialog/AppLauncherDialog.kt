@@ -4,6 +4,7 @@ import android.app.ActivityManager
 import android.app.admin.DevicePolicyManager
 import android.content.Context
 import android.content.Context.ACTIVITY_SERVICE
+import android.os.Build
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -107,6 +108,13 @@ fun AppLauncherDialog(
                     if (!dpm.isLockTaskPermitted(context.packageName)) {
                         Text(
                             text = "Error: ${context.packageName} must be lock task permitted to launch apps.",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+                        Text(
+                            text = "Error: kiosk launch requires Android API ${Build.VERSION_CODES.P}+ (current: ${Build.VERSION.SDK_INT}).",
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodySmall,
                         )

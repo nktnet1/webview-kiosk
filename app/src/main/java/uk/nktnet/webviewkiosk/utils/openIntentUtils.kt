@@ -75,6 +75,9 @@ fun openPackage(
     activityName: String? = null,
 ) {
     val userSettings = UserSettings(context)
+    var options: ActivityOptions? = null
+    var intentFlags = Intent.FLAG_ACTIVITY_NEW_TASK
+
     if (lockTask) {
         val dpm = context.getSystemService(
             Context.DEVICE_POLICY_SERVICE
@@ -93,7 +96,16 @@ fun openPackage(
             )
             return
         }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+            ToastManager.show(
+                context,
+                "Error: kiosk launch requires Android API ${Build.VERSION_CODES.P}+ (current: ${Build.VERSION.SDK_INT})."
+            )
+            return
+        }
         applyLockTaskFeatures(context)
+        options = ActivityOptions.makeBasic().setLockTaskEnabled(true)
+        intentFlags = intentFlags or Intent.FLAG_ACTIVITY_CLEAR_TASK
     }
 
     try {
@@ -106,17 +118,8 @@ fun openPackage(
         }
 
         if (intent != null) {
-            intent.addFlags(
-                Intent.FLAG_ACTIVITY_NEW_TASK
-                or if (lockTask) Intent.FLAG_ACTIVITY_CLEAR_TASK else 0
-            )
-            val options = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && lockTask) {
-                ActivityOptions.makeBasic().setLockTaskEnabled(true)
-            } else {
-                null
-            }
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && lockTask) {
+            intent.addFlags(intentFlags)
+            if (lockTask) {
                 context.startForegroundService(
                     Intent(
                         context,
