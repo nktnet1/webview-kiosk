@@ -37,10 +37,12 @@ For more details, visit the official documentation:
 - <b>ACCESS_FINE_LOCATION</b>: (optional) for web apps that needs precise geolocation
 - <b>ACCESS_COARSE_LOCATION</b>: (optional) for web apps that needs approximate geolocation
 - <b>QUERY_ALL_PACKAGES</b>: to find launchable apps, device owners and lock task packages
-- <b>API (Dhizuku)</b>: to request shared device owner privileges
 - <b>POST_NOTIFICATIONS</b>: (optional) for lock task mode (kiosk) launches and MQTT
 - <b>FOREGROUND_SERVICE</b>: for persistent notification and management with lock task and MQTT
 - <b>FOREGROUND_SERVICE_SPECIAL_USE</b>: provides a return mechanism for opening apps in kiosk
+- <b>USE_BIOMETRIC</b>: replaces USE_FINGERPRINT from Android 9 onwards
+- <b>USE_FINGERPRINT</b>: use fingerprint hardware when accessing settings or unlocking kiosk
+- <b>API (Dhizuku)</b>: to request shared device owner privileges
 
 ### Contact
 
