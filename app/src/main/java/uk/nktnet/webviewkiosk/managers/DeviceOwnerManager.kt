@@ -129,17 +129,22 @@ object DeviceOwnerManager {
 
     fun getLaunchableAppsFlow(
         context: Context,
-        chunkSize: Int = 10
+        chunkSize: Int = 10,
+        filterLockTaskPermitted: Boolean = false,
     ): Flow<AppLoadState<LaunchableAppInfo>> = flow {
         val pm = context.packageManager
+        val dpm = context.getSystemService(
+            Context.DEVICE_POLICY_SERVICE
+        ) as DevicePolicyManager
 
         val resolved = pm.queryIntentActivities(
-            Intent(Intent.ACTION_MAIN)
-                .addCategory(Intent.CATEGORY_LAUNCHER),
-            0,
-        ).groupBy {
-            it.activityInfo.packageName
-        }
+            Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),
+            0
+        ).groupBy { it.activityInfo.packageName }
+            .mapValues { (pkg, list) ->
+                list to dpm.isLockTaskPermitted(pkg)
+            }
+            .filter { !filterLockTaskPermitted || it.value.second }
 
         if (resolved.isEmpty()) {
             emit(AppLoadState<LaunchableAppInfo>(emptyList(), 1f))
@@ -150,10 +155,10 @@ object DeviceOwnerManager {
         var processed = 0
 
         val current = mutableListOf<LaunchableAppInfo>()
-        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
 
-        for ((pkg, list) in resolved) {
+        for ((pkg, pair) in resolved) {
             val appInfo = pm.getApplicationInfo(pkg, 0)
+            val (list, lockTaskPermitted) = pair
             current.add(
                 LaunchableAppInfo(
                     packageName = pkg,
@@ -165,7 +170,7 @@ object DeviceOwnerManager {
                             name = it.activityInfo.name
                         )
                     },
-                    isLockTaskPermitted = dpm.isLockTaskPermitted(pkg)
+                    isLockTaskPermitted = lockTaskPermitted
                 )
             )
 

@@ -47,10 +47,15 @@ fun AppLauncherDialog(
     val isLocked by LockStateSingleton.isLocked
 
     LaunchedEffect(Unit) {
-        DeviceOwnerManager.getLaunchableAppsFlow(context).collect { state ->
-            apps = apps + state.apps
-            progress = state.progress
-        }
+        DeviceOwnerManager
+            .getLaunchableAppsFlow(
+                context,
+                filterLockTaskPermitted = getIsLocked(activityManager)
+            )
+            .collect { state ->
+                apps = apps + state.apps
+                progress = state.progress
+            }
     }
 
     BaseAppListDialog(
