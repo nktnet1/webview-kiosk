@@ -70,7 +70,7 @@ supported methods are currently:
    a method of that sending key combinations, e.g. `CTRL+1`)
 
 There are also standalone applications that, when set as the device owner, can
-perform the duties of a DPC. Below are instructions for two common solutions:
+perform the duties of a DPC. Below are instructions for two popular applications:
 1. Google's [Test DPC](https://github.com/googlesamples/android-testdpc)
 
    - Go to `Lock Task -> Manage lock task list` and enable {APP_NAME}.
@@ -102,29 +102,60 @@ For more information, see
 When set as the device owner, {APP_NAME} can act as a DPC and automatically adds itself to the
 [allowlist for lock task packages](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode).
 
-You can set or remove {APP_NAME} as the device owner using Android Debug Bridge (ADB) on a PC.
+The easiest way is to factory reset your device and start fresh, but if this isn't possible,
+you can try the following:
+
+<Steps>
+
+<Step>
+Remove all
+[additional users](https://source.android.com/docs/devices/admin/multi-user)
+on your device.
+</Step>
+
+<Step>
+Find all
+[accounts](https://source.android.com/docs/automotive/users_accounts/accounts)
+on your device, e.g. in your device settings or using an application like
+[AndroidAccounts](https://github.com/iamr0s/AndroidAccounts).
+</Step>
+
+<Step>
+Freeze all applications that uses accounts, e.g. Whatsapp. You can do this using [Hail](https://github.com/aistra0528/Hail/blob/master/README_EN.md).
+</Step>
+
+<Step>
+Remove all accounts.
+</Step>
+
+<Step>
+
+Set {APP_NAME} as the device owner using Android Debug Bridge (ADB) on a computer:
 
 ```sh
-# Set Webview Kiosk as Device Owner
 adb shell dpm set-device-owner uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver
-
-# Set Webview Kiosk as Device Owner
-adb shell dpm remove-active-admin uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver
 ```
 
-Alternatively, you can use [Shizuku](https://github.com/RikkaApps/Shizuku) and
-[Termux](https://github.com/termux/termux-app) to obtain direct ADB access on
-your android device (thus skipping the PC requirement). Refer to
+Alternatively, you can use [Shizuku](https://github.com/RikkaApps/Shizuku) with
+wireless debugging and [Termux](https://github.com/termux/termux-app) to gain
+ADB access (thus skipping the PC requirement).
+
+Refer to
 [GitHub Discussion #33](https://github.com/nktnet1/webview-kiosk/discussions/33#discussioncomment-14672999)
 for a video demonstration.
 
-{APP_NAME} also supports [Dhizuku](https://github.com/iamr0s/Dhizuku), a tool
-that can share device owner permissions. If Dhizuku is installed, you will be
-prompted to grant permission when the app launches. Please note that Dhizuku
-will need to be set as the device owner as per the
-[official instructions](https://github.com/iamr0s/Dhizuku/discussions/19).
+</Step>
 
-## 4. Managed App Configurations
+</Steps>
+
+{APP_NAME} also supports [Dhizuku](https://github.com/iamr0s/Dhizuku), a
+tool that can share device owner permissions.
+
+If you encounter any troubles with the setup, it is worth taking a look at the
+[Dhizuku activation guide](https://github.com/iamr0s/Dhizuku/discussions/19),
+which includes helpful debugging steps when setting up a device owner application.
+
+## 4. Managed Configurations (App Restrictions)
 
 For fully managed (company-owned) devices, you can use
 [managed configurations](https://developer.android.com/work/managed-configurations)
@@ -133,7 +164,7 @@ to restrict and remotely modify {APP_NAME} settings through your MDM/EMM.
 It is also possible to set app restrictions using [OwnDroid](https://github.com/BinTianqi/OwnDroid)
 or [Test DPC](https://github.com/googlesamples/android-testdpc).
 
-For a list of available app restrictions, refer to
+For a list of available settings, refer to
 [./app/src/main/res/xml/app_restrictions.xml](https://github.com/nktnet1/webview-kiosk/blob/main/app/src/main/res/xml/app_restrictions.xml).
 
 Below are instructions for a few popular MDM/EMM providers:
@@ -144,3 +175,7 @@ Below are instructions for a few popular MDM/EMM providers:
 - [Manage Engine](https://www.manageengine.com/mobile-device-management/managed-app-configuration.html)
 - [Scale Fusion](https://help.scalefusion.com/v1/docs/application-configurations-for-android-applications)
 - [Hexnode](https://www.hexnode.com/mobile-device-management/help/set-up-permissions-and-configurations-for-an-app-using-hexnode-mdm)
+
+At the time of writing, [Headwind MDM](https://h-mdm.com) (an open-source
+platform to manage android device) does not yet support managed configurations,
+but this is [on their roadmap for the future](https://github.com/h-mdm/hmdm-server/issues/49#issuecomment-3574073134).
