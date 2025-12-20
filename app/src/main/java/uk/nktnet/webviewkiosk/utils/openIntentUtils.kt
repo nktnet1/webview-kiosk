@@ -1,15 +1,19 @@
 package uk.nktnet.webviewkiosk.utils
 
+import android.app.ActivityManager
 import android.app.ActivityOptions
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.Context.ACTIVITY_SERVICE
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.annotation.RequiresApi
+import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.services.LockTaskService
 import uk.nktnet.webviewkiosk.managers.ToastManager
@@ -73,12 +77,20 @@ fun openPackage(
     packageName: String,
     lockTask: Boolean,
     activityName: String? = null,
+    intent: Intent? = null,
 ) {
     val userSettings = UserSettings(context)
     var options: ActivityOptions? = null
     var intentFlags = Intent.FLAG_ACTIVITY_NEW_TASK
 
     if (lockTask) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+            ToastManager.show(
+                context,
+                "Error: kiosk launch requires Android API ${Build.VERSION_CODES.P}+ (current: ${Build.VERSION.SDK_INT})."
+            )
+            return
+        }
         val dpm = context.getSystemService(
             Context.DEVICE_POLICY_SERVICE
         ) as DevicePolicyManager
@@ -103,20 +115,13 @@ fun openPackage(
             )
             return
         }
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-            ToastManager.show(
-                context,
-                "Error: kiosk launch requires Android API ${Build.VERSION_CODES.P}+ (current: ${Build.VERSION.SDK_INT})."
-            )
-            return
-        }
         applyLockTaskFeatures(context)
         options = ActivityOptions.makeBasic().setLockTaskEnabled(true)
         intentFlags = intentFlags or Intent.FLAG_ACTIVITY_CLEAR_TASK
     }
 
     try {
-        val intent = if (activityName != null) {
+        val launchIntent = intent ?: if (activityName != null) {
             Intent().apply {
                 component = ComponentName(packageName, activityName)
             }
@@ -124,8 +129,7 @@ fun openPackage(
             context.packageManager.getLaunchIntentForPackage(packageName)
         }
 
-        if (intent != null) {
-            intent.addFlags(intentFlags)
+        if (launchIntent != null) {
             if (lockTask) {
                 context.startForegroundService(
                     Intent(
@@ -134,9 +138,10 @@ fun openPackage(
                     )
                 )
             }
+            launchIntent.addFlags(intentFlags)
             safeStartActivity(
                 context,
-                intent,
+                launchIntent,
                 options?.toBundle()
             )
         } else {
@@ -144,5 +149,41 @@ fun openPackage(
         }
     } catch (e: Exception) {
         ToastManager.show(context, "Error: $e")
+    }
+}
+
+fun handleExternalSchemeUrl(context: Context, url: String) {
+    val activityManager = context.getSystemService(ACTIVITY_SERVICE) as ActivityManager
+    try {
+        val uri = url.toUri()
+        val intent = if (uri.scheme == "intent") {
+            Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
+        } else {
+            Intent(Intent.ACTION_VIEW, url.toUri())
+        }
+
+        val resolveInfo = context.packageManager.resolveActivity(
+            intent,
+            PackageManager.MATCH_DEFAULT_ONLY
+        )
+        val packageName = resolveInfo?.activityInfo?.packageName
+
+        if (packageName == null) {
+            ToastManager.show(
+                context,
+                "Error handling intent: no package available for $url"
+            )
+            return
+        }
+
+        openPackage(
+            context = context,
+            packageName = packageName,
+            lockTask = getIsLocked(activityManager),
+            activityName = resolveInfo.activityInfo.name,
+            intent = intent,
+        )
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
 }

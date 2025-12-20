@@ -165,17 +165,16 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            if (hasOwnerPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                Button(
-                    onClick = {
-                        showLockTaskPackagesDialog = true
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 1.dp),
-                ) {
-                    Text("Manage Lock Task Packages")
-                }
+            Button(
+                enabled = hasOwnerPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O,
+                onClick = {
+                    showLockTaskPackagesDialog = true
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 1.dp),
+            ) {
+                Text("Manage Lock Task Packages")
             }
 
             Spacer(modifier = Modifier.height(32.dp))
