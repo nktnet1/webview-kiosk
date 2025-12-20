@@ -252,10 +252,6 @@ object DeviceOwnerManager {
             DPM.getLockTaskPackages(DAR)
         } catch (e: Exception) {
             e.printStackTrace()
-            ToastManager.show(
-                context,
-                "Failed to fetch packages (mode: ${status.value.mode})"
-            )
             emptyArray()
         }
         val total = packagesList.size

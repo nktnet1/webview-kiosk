@@ -7,13 +7,17 @@ object ToastManager {
     private var toastRef: Toast? = null
 
     fun show(context: Context, text: String, duration: Int = Toast.LENGTH_SHORT) {
-        toastRef?.cancel()
-        toastRef = Toast.makeText(
-            context,
-            text,
-            duration,
-        ).apply {
-            show()
+        try {
+            toastRef?.cancel()
+            toastRef = Toast.makeText(
+                context,
+                text,
+                duration,
+            ).apply {
+                show()
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 
