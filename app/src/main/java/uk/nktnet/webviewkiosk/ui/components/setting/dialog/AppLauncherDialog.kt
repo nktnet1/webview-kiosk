@@ -70,9 +70,7 @@ fun AppLauncherDialog(
             ) && (
                 app.packageName != context.packageName
             ) && (
-                !isLocked || (
-                    app.isLockTaskPermitted
-                )
+                !isLocked || app.isLockTaskPermitted
             )
         },
         progress = progress,
