@@ -21,11 +21,12 @@
         android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="PackageVisibilityPolicy, QueryAllPackagesPermission"
     />
-    <uses-permission android:name="com.rosan.dhizuku.permission.API" />
 
-    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+
+    <uses-permission android:name="com.rosan.dhizuku.permission.API" />
 
     <application
         android:allowBackup="true"
@@ -37,7 +38,6 @@
         android:supportsRtl="true"
         android:taskAffinity="uk.nktnet.webviewkiosk.BROWSER"
         android:theme="@style/Theme.AppCompat"
-
         tools:targetApi="24"
         android:lockTaskMode="if_whitelisted"
         android:networkSecurityConfig="@xml/network_security_config"
@@ -50,7 +50,6 @@
             android:exported="true"
             android:theme="@style/Theme.WebviewKiosk"
             android:configChanges="orientation|screenSize"
-
             tools:targetApi="33"
             android:enableOnBackInvokedCallback="@bool/enableOnBackInvokedCallback"
         >

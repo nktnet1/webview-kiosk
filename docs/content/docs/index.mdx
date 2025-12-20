@@ -38,23 +38,19 @@ and standalone Kiosk solution.
   - Advanced users using a device policy controller (e.g. Test DPC or OwnDroid)
     can also enforce configurations locally
 
-## 2. Additional Permissions
+## 2. Permissions
 
-The Android permissions below are <b>optional</b> and their corresponding features
-are <b>disabled in the app settings by default</b>:
-
-- CAMERA
-- RECORD_AUDIO
-- ACCESS_FINE_LOCATION
-- ACCESS_COARSE_LOCATION
-
-Only enable them if they are needed by your website or web application.
-These permissions will not be used for any other purpose.
-
-In addition, the <b>QUERY_ALL_PACKAGES</b> permission is used for:
-
-1. Launching other apps, which can be helpful if {APP_NAME} set as the default launcher
-2. Transferring device ownership to another admin receiver (e.g. [OwnDroid](https://github.com/BinTianqi/OwnDroid) or [Dhizuku](https://github.com/iamr0s/Dhizuku))
+- <b>INTERNET</b>: for general web browsing
+- <b>CAMERA</b>: (optional) for use with web apps that requires photo/video capture
+- <b>RECORD_AUDIO</b>: (optional) for use with web apps that requires audio capture
+- <b>MODIFY_AUDIO_SETTINGS</b>: for routing audio (microphone will not work without this)
+- <b>ACCESS_FINE_LOCATION</b>: (optional) for web apps that needs precise geolocation
+- <b>ACCESS_COARSE_LOCATION</b>: (optional) for web apps that needs approximate geolocation
+- <b>QUERY_ALL_PACKAGES</b>: to find launchable apps, device owners and lock task packages
+- <b>API (Dhizuku)</b>: to request shared device owner privileges
+- <b>POST_NOTIFICATIONS</b>: (optional) for lock task mode (kiosk) launches and MQTT
+- <b>FOREGROUND_SERVICE</b>: for persistent notification and management with lock task and MQTT
+- <b>FOREGROUND_SERVICE_SPECIAL_USE</b>: provides a return mechanism for opening apps in kiosk
 
 ## 3. Contact
 
