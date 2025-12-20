@@ -72,7 +72,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var systemSettings: SystemSettings
     private lateinit var backButtonService: BackButtonManager
 
-    private var lastVisibleTime = 0L
+    private var lastOnStartTime = 0L
 
     val restrictionsReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -326,7 +326,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        lastVisibleTime = System.currentTimeMillis()
+        lastOnStartTime = System.currentTimeMillis()
         if (userSettings.mqttEnabled && !MqttManager.isConnectedOrReconnect()) {
             MqttManager.connect(this)
         }
@@ -363,7 +363,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
         if (
-            System.currentTimeMillis() - lastVisibleTime > 300L
+            System.currentTimeMillis() - lastOnStartTime > 100L
             && intent.action == Intent.ACTION_MAIN
             && intent.hasCategory(Intent.CATEGORY_HOME)
             && userSettings.allowGoHome
