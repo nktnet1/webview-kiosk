@@ -1,0 +1,7 @@
+## Changes
+
+- feat: launch other apps in lock task mode (requires Android 9.0+/SDK 28+)
+- fix: inset padding by safe drawing instead of safe content
+- fix: home intent ignore before buffer (when returning to default launcher)
+- fix: use duckduckgo as the default search provider url for new installs
+- fix: dhizuku and toast, handle all errors gracefully
