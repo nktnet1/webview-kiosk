@@ -15,6 +15,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -35,12 +36,14 @@ fun AllowNotificationsSetting() {
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.device_allow_notifications_title),
         infoText = """
-            Set to true to allow notifications, e.g. for
-            - lock task mode, when launching other apps
-            - MQTT
+            Set to true to allow webview kiosk to send notifications.
 
-            You will need to grant the POST_NOTIFICATIONS permission
-            for notifications to be shown.
+            You will need to grant the POST_NOTIFICATIONS permission.
+
+            Please note that for foreground services, e.g. when using lock task mode
+            kiosk-launch or MQTT, the notification will always be created irrespective
+            of this ${Constants.APP_NAME} setting. You will need to disable notifications
+            at the device level if you do not want them.
         """.trimIndent(),
         initialValue = userSettings.allowNotifications,
         settingKey = settingKey,
