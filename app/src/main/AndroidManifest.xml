@@ -124,6 +124,7 @@
             android:name=".services.LockTaskService"
             android:foregroundServiceType="specialUse"
             android:exported="false"
+            tools:targetApi="28"
         />
     </application>
 </manifest>
