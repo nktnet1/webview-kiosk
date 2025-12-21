@@ -74,7 +74,8 @@ The cause of disconnection will be one of:
 - `USER_INITIATED_DISCONNECT`
 - `USER_INITIATED_RESTART`
 - `USER_INITIATED_SETTINGS_DISABLED`
-- `SYSTEM_ACTIVITY_STOPPED,`
+- `SYSTEM_ACTIVITY_STOPPED` (only when not using foreground service)
+- `SYSTEM_ACTIVITY_DESTROYED` (only when using foreground service)
 - `MQTT_RECONNECT_COMMAND_RECEIVED`
 
 Example payload:

@@ -63,6 +63,7 @@ import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
+import uk.nktnet.webviewkiosk.utils.wakeScreen
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 class MainActivity : AppCompatActivity() {
@@ -228,6 +229,7 @@ class MainActivity : AppCompatActivity() {
                 MqttManager.requests.collect { request ->
                     when (request) {
                         is MqttStatusRequest -> {
+                            wakeScreen(context)
                             MqttManager.publishStatusResponse(
                                 request, getStatus(context)
                             )
@@ -400,6 +402,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         unregisterReceiver(restrictionsReceiver)
+        if (
+            userSettings.mqttUseForegroundService
+            && MqttManager.isConnected()
+        ) {
+            MqttManager.disconnect(
+                cause = MqttDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_DESTROYED
+            )
+        }
         super.onDestroy()
     }
 
