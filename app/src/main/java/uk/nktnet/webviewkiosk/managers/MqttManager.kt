@@ -49,11 +49,14 @@ import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttRequestJsonParser
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttRequestMessage
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttResponseJsonParser
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttResponseMessage
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttScreenOffEvent
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttScreenOnEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSettingsResponse
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttStatusResponse
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSystemInfoResponse
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttUnlockEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttUrlChangedEvent
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttUserPresentEvent
 import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
 import uk.nktnet.webviewkiosk.utils.filterSettingsJson
 import uk.nktnet.webviewkiosk.utils.getStatus
@@ -385,6 +388,36 @@ object MqttManager {
     fun publishUnlockEvent() {
         val c = getReadyClient() ?: return
         val event = MqttUnlockEvent(
+            messageId = UUID.randomUUID().toString(),
+            username = config.username,
+            appInstanceId = config.appInstanceId,
+        )
+        publishEventMessage(c, event)
+    }
+
+    fun publishScreenOnEvent() {
+        val c = getReadyClient() ?: return
+        val event = MqttScreenOnEvent(
+            messageId = UUID.randomUUID().toString(),
+            username = config.username,
+            appInstanceId = config.appInstanceId,
+        )
+        publishEventMessage(c, event)
+    }
+
+    fun publishScreenOffEvent() {
+        val c = getReadyClient() ?: return
+        val event = MqttScreenOffEvent(
+            messageId = UUID.randomUUID().toString(),
+            username = config.username,
+            appInstanceId = config.appInstanceId,
+        )
+        publishEventMessage(c, event)
+    }
+
+    fun publishUserPresentEvent() {
+        val c = getReadyClient() ?: return
+        val event = MqttUserPresentEvent(
             messageId = UUID.randomUUID().toString(),
             username = config.username,
             appInstanceId = config.appInstanceId,

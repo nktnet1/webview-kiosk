@@ -92,6 +92,36 @@ data class MqttUnlockEvent(
     override fun getEventType(): String = "unlock"
 }
 
+@Serializable
+@SerialName("screen_on")
+data class MqttScreenOnEvent(
+    override val messageId: String,
+    override val username: String,
+    override val appInstanceId: String,
+) : MqttEventMessage {
+    override fun getEventType(): String = "screen_on"
+}
+
+@Serializable
+@SerialName("screen_off")
+data class MqttScreenOffEvent(
+    override val messageId: String,
+    override val username: String,
+    override val appInstanceId: String,
+) : MqttEventMessage {
+    override fun getEventType(): String = "screen_off"
+}
+
+@Serializable
+@SerialName("user_present")
+data class MqttUserPresentEvent(
+    override val messageId: String,
+    override val username: String,
+    override val appInstanceId: String,
+) : MqttEventMessage {
+    override fun getEventType(): String = "user_present"
+}
+
 val MqttEventJsonParser = Json(BaseJson) {
     classDiscriminator = "eventType"
 }

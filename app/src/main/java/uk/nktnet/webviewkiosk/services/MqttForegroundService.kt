@@ -2,7 +2,10 @@ package uk.nktnet.webviewkiosk.services
 
 import android.app.PendingIntent
 import android.app.Service
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
@@ -25,8 +28,30 @@ class MqttForegroundService : Service() {
     private var updateJob: Job? = null
     private var lastStatus: MqttClientState? = null
 
+    private val screenReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.action) {
+                Intent.ACTION_SCREEN_ON -> {
+                    MqttManager.publishScreenOnEvent()
+                }
+                Intent.ACTION_SCREEN_OFF -> {
+                    MqttManager.publishScreenOffEvent()
+                }
+                Intent.ACTION_USER_PRESENT -> {
+                    MqttManager.publishUserPresentEvent()
+                }
+            }
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_SCREEN_OFF)
+            addAction(Intent.ACTION_USER_PRESENT)
+        }
+        registerReceiver(screenReceiver, filter)
         startForegroundService()
     }
 
@@ -52,6 +77,7 @@ class MqttForegroundService : Service() {
 
     override fun onDestroy() {
         stopForegroundService()
+        unregisterReceiver(screenReceiver)
         super.onDestroy()
     }
 
