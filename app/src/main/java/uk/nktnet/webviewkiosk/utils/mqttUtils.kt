@@ -1,5 +1,7 @@
 package uk.nktnet.webviewkiosk.utils
 
+import android.content.Context
+import android.content.Intent
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -10,6 +12,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONObject
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.MqttManager
+import uk.nktnet.webviewkiosk.services.MqttForegroundService
 
 fun isValidMqttPublishTopic(topic: String): Boolean {
     return topic.matches(Regex("^[^\\u0000+#]+$"))
@@ -117,5 +120,17 @@ fun filterSettingsJson(
                 put(keyStr, getJsonValue(value))
             }
         }
+    }
+}
+
+fun initMqttForegroundService(context: Context, start: Boolean) {
+    val intent = Intent(
+        context,
+        MqttForegroundService::class.java
+    )
+    if (start) {
+        context.startService(intent)
+    } else {
+        context.stopService(intent)
     }
 }

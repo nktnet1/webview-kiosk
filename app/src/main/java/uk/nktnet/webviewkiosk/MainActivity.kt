@@ -333,24 +333,18 @@ class MainActivity : AppCompatActivity() {
         super.onStart()
         lastOnStartTime = System.currentTimeMillis()
         AuthenticationManager.init(this)
-
+        DeviceOwnerManager.init(this)
+        updateDeviceSettings(this)
         if (
             userSettings.mqttEnabled
             && !MqttManager.isConnectedOrReconnect()
         ) {
             MqttManager.connect(applicationContext)
         }
-        if (userSettings.mqttUseForegroundService) {
-            startService(
-                Intent(this, MqttForegroundService::class.java)
-            )
-        }
     }
 
     override fun onResume() {
         super.onResume()
-        DeviceOwnerManager.init(this)
-        updateDeviceSettings(this)
         backButtonService.onBackPressedCallback.isEnabled = true
     }
 
