@@ -153,3 +153,136 @@ Example Payload:
   "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1"
 }
 ```
+
+### 2.6. Screen On
+
+The `screen_on` event is published when the device screen is turned on.
+
+This requires `Settings -> MQTT -> Use Foreground Service`.
+
+Example payload:
+
+```json
+{
+  "eventType": "screen_on",
+  "messageId": "a0095065-0221-49dc-9030-04dc703ca430",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1"
+}
+```
+
+### 2.7. Screen Off
+
+The `screen_off` event is published when the device screen is turned off.
+
+This requires `Settings -> MQTT -> Use Foreground Service`.
+
+Example payload:
+
+```json
+{
+  "eventType": "screen_off",
+  "messageId": "347cff66-4625-41f0-9a8e-75f20e012727",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1"
+}
+```
+
+### 2.8. User Present
+
+The `user_present` event is published when the user unlocks the device.
+
+This requires `Settings -> MQTT -> Use Foreground Service`.
+
+Example payload:
+
+```json
+{
+  "eventType": "user_present",
+  "messageId": "af281acb-2ac7-4686-a129-51faa2f7d516",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1"
+}
+```
+
+### 2.9. App Background
+
+The `app_background` event is published when the kiosk app moves to the background.
+
+This requires `Settings -> MQTT -> Use Foreground Service`.
+
+Example payload:
+
+```json
+{
+  "eventType": "app_background",
+  "messageId": "d59755c1-bac5-4a88-8cb6-3c7f4f59c281",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1"
+}
+```
+
+### 2.10. App Foreground
+
+The `app_foreground` event is published when the kiosk app moves to the foreground.
+
+This requires `Settings -> MQTT -> Use Foreground Service`.
+
+Example payload:
+
+```json
+{
+  "eventType": "app_foreground",
+  "messageId": "5ce42a8d-605c-48c4-9b06-ea84606980c5",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1"
+}
+```
+
+### 2.11. Power Plugged
+
+The `power_plugged` event is published when the device is connected
+to a power source.
+
+Example payload:
+
+```json
+{
+  "eventType": "power_plugged",
+  "messageId": "d1e2f3g4-8901-2cde-f123-4567890abcde",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1",
+}
+```
+
+### 2.12. Power Unplugged
+
+The `power_unplugged` event is published when the device is disconnected from a
+power source.
+
+Example payload:
+
+```json
+{
+  "eventType": "power_unplugged",
+  "messageId": "9b3ea5f2-e43b-44d0-83f3-e2d97dfff065",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1"
+}
+```
+
+### 2.13. Admin Restrictions Changed
+
+The `application_restrictions_changed` event is published when device admin
+restrictions are updated.
+
+Example payload:
+
+```json
+{
+  "eventType": "application_restrictions_changed",
+  "messageId": "f4ba1dbd-dc5d-4ea8-8693-0f6c81b67248",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1"
+}
+```
