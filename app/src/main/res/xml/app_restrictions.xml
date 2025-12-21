@@ -561,6 +561,12 @@
         android:title="@string/mqtt_enabled_title"
         android:description="@string/mqtt_enabled_description"
     />
+    <restriction
+        android:key="mqtt.use_foreground_service"
+        android:restrictionType="bool"
+        android:title="@string/mqtt_enabled_title"
+        android:description="@string/mqtt_enabled_description"
+    />
 
     <!-- MQTT Connection -->
     <restriction

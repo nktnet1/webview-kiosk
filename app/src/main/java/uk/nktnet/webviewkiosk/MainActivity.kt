@@ -327,7 +327,11 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         lastOnStartTime = System.currentTimeMillis()
-        if (userSettings.mqttEnabled && !MqttManager.isConnectedOrReconnect()) {
+        if (
+            userSettings.mqttEnabled
+            && !userSettings.mqttUseForegroundService
+            && !MqttManager.isConnectedOrReconnect()
+        ) {
             MqttManager.connect(this)
         }
         AuthenticationManager.init(this)
@@ -349,7 +353,10 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         if (!isChangingConfigurations) {
             AuthenticationManager.resetAuthentication()
-            if (MqttManager.isConnected()) {
+            if (
+                !userSettings.mqttUseForegroundService
+                && MqttManager.isConnected()
+            ) {
                 MqttManager.disconnect(
                     cause = MqttDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_STOPPED
                 )

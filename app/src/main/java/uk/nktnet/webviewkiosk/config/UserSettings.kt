@@ -566,6 +566,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Mqtt.ENABLED,
         false
     )
+    var mqttUseForegroundService by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.USE_FOREGROUND_SERVICE,
+        false
+    )
     var mqttServerHost by stringPref(
         getRestrictions,
         prefs,
@@ -962,6 +968,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
 
             put(UserSettingsKeys.Mqtt.ENABLED, mqttEnabled)
+            put(UserSettingsKeys.Mqtt.USE_FOREGROUND_SERVICE, mqttUseForegroundService)
             put(UserSettingsKeys.Mqtt.Connection.SERVER_HOST, mqttServerHost)
             put(UserSettingsKeys.Mqtt.Connection.SERVER_PORT, mqttServerPort)
             put(UserSettingsKeys.Mqtt.Connection.CLIENT_ID, mqttClientId)
@@ -1134,6 +1141,7 @@ class UserSettings(val context: Context) {
             customScriptOnPageFinish = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
 
             mqttEnabled = json.optBoolean(UserSettingsKeys.Mqtt.ENABLED, mqttEnabled)
+            mqttUseForegroundService = json.optBoolean(UserSettingsKeys.Mqtt.USE_FOREGROUND_SERVICE, mqttUseForegroundService)
             mqttServerHost = json.optString(UserSettingsKeys.Mqtt.Connection.SERVER_HOST, mqttServerHost)
             mqttServerPort = json.optInt(UserSettingsKeys.Mqtt.Connection.SERVER_PORT, mqttServerPort)
             mqttClientId = json.optString(UserSettingsKeys.Mqtt.Connection.CLIENT_ID, mqttClientId)
