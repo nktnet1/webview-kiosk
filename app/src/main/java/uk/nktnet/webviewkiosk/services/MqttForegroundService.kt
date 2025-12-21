@@ -33,7 +33,12 @@ class MqttForegroundService : Service() {
         if (updateJob?.isActive != true) {
             updateJob = scope.launch {
                 while (true) {
-                    updateNotification()
+                    val status = MqttManager.getState()
+                    if (lastStatus != null && status == lastStatus) {
+                        continue
+                    }
+                    lastStatus = status
+                    updateNotification(status)
                     delay(1000L)
                 }
             }
@@ -71,13 +76,7 @@ class MqttForegroundService : Service() {
         )
     }
 
-    private fun updateNotification() {
-        val status = MqttManager.getState()
-        if (lastStatus != null && status == lastStatus) {
-            return
-        }
-        lastStatus = status
-
+    private fun updateNotification(newStatus: MqttClientState) {
         val contentIntent = PendingIntent.getActivity(
             this,
             0,
@@ -87,7 +86,7 @@ class MqttForegroundService : Service() {
 
         val notification = CustomNotificationManager.buildMqttNotification(
             contentIntent,
-            "Status: $status",
+            "Status: $newStatus",
         )
         CustomNotificationManager.updateNotification(
             this,

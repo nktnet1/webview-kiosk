@@ -125,11 +125,21 @@
             android:foregroundServiceType="specialUse"
             android:exported="false"
             tools:targetApi="28"
-        />
+        >
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Provides a return mechanism when launching other apps in Lock Task Mode."
+            />
+        </service>
         <service
             android:name=".services.MqttForegroundService"
             android:foregroundServiceType="specialUse"
             android:exported="false"
-        />
+        >
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Maintain the MQTT connection in the background (opt-in by user)."
+            />
+        </service>
     </application>
 </manifest>
