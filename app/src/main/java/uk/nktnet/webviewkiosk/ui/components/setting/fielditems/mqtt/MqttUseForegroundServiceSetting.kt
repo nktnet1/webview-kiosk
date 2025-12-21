@@ -21,11 +21,9 @@ fun MqttUseForegroundServiceSetting() {
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_use_foreground_service_title),
         infoText = """
-            When enabled, ${Constants.APP_NAME} will run the MQTT connection
-            as a foreground service,
-
-            This will keep the connection alive even when the application goes
-            to the background or the screen is turned off.
+            When enabled, ${Constants.APP_NAME} will start a foreground service
+            to keep the MQTT connection alive. even when the application goes
+            to the background or the device screen is turned off.
         """.trimIndent(),
         initialValue = userSettings.mqttUseForegroundService,
         settingKey = settingKey,
@@ -34,14 +32,14 @@ fun MqttUseForegroundServiceSetting() {
             val isChanged = isEnabled != userSettings.mqttUseForegroundService
             if (isChanged) {
                 userSettings.mqttUseForegroundService = isEnabled
+                val intent = Intent(
+                    context,
+                    MqttForegroundService::class.java
+                )
                 if (isEnabled) {
-                    context.startService(
-                        Intent(context, MqttForegroundService::class.java)
-                    )
+                    context.startService(intent)
                 } else {
-                    context.stopService(
-                        Intent(context, MqttForegroundService::class.java)
-                    )
+                    context.stopService(intent)
                 }
             }
         }
