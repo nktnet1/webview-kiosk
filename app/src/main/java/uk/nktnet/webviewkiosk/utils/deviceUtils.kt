@@ -14,6 +14,7 @@ import androidx.core.content.pm.PackageInfoCompat
 import androidx.webkit.WebViewCompat
 import android.app.admin.DevicePolicyManager
 import android.content.pm.PackageManager
+import android.os.PowerManager
 import uk.nktnet.webviewkiosk.BuildConfig
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -219,4 +220,25 @@ fun getSystemInfo(context: Context): SystemInfo {
         app = getAppInfo(context),
         device = getDeviceInfo(context)
     )
+}
+
+/**
+ * Modelled after Home Assistant COMMAND_SCREEN_ON implementation:
+ * https://github.com/home-assistant/android/blob/875b2d948823616cbb73da819255ab7f34f23f16/app/src/main/kotlin/io/homeassistant/companion/android/notifications/MessagingManager.kt#L780-L796
+ */
+fun wakeScreen(context: Context) {
+    try {
+        val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        @Suppress("DEPRECATION")
+        val wakeLock = pm.newWakeLock(
+            PowerManager.FULL_WAKE_LOCK
+                or PowerManager.ACQUIRE_CAUSES_WAKEUP
+                or PowerManager.ON_AFTER_RELEASE,
+            "${context.packageName}::WakeScreen"
+        )
+        wakeLock.acquire(30_000L)
+        wakeLock.release()
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
 }

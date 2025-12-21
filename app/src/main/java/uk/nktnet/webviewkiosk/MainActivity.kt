@@ -160,6 +160,9 @@ class MainActivity : AppCompatActivity() {
                     if (commandMessage.interact) {
                         UserInteractionStateSingleton.onUserInteraction()
                     }
+                    if (commandMessage.wakeScreen) {
+                        wakeScreen(context)
+                    }
                     when (commandMessage) {
                         is MqttReconnectCommand -> {
                             MqttManager.disconnect (

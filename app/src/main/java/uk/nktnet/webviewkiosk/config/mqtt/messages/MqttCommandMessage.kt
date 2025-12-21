@@ -11,6 +11,7 @@ sealed interface MqttCommandMessage {
     val targetInstances: Set<String>?
     val targetUsernames: Set<String>?
     val interact: Boolean
+    val wakeScreen: Boolean
 }
 
 @Serializable
@@ -20,7 +21,8 @@ data class MqttGoBackCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
-) : MqttCommandMessage {
+    override val wakeScreen: Boolean = false,
+    ) : MqttCommandMessage {
     override fun toString() = "go_back"
 }
 
@@ -31,6 +33,7 @@ data class MqttGoForwardCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
+    override val wakeScreen: Boolean = false,
 ) : MqttCommandMessage {
     override fun toString() = "go_forward"
 }
@@ -42,6 +45,7 @@ data class MqttGoHomeCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
+    override val wakeScreen: Boolean = false,
 ) : MqttCommandMessage {
     override fun toString() = "go_home"
 }
@@ -53,6 +57,7 @@ data class MqttRefreshCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
+    override val wakeScreen: Boolean = false,
 ) : MqttCommandMessage {
     override fun toString() = "refresh"
 }
@@ -64,6 +69,7 @@ data class MqttGoToUrlCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
+    override val wakeScreen: Boolean = false,
     val data: UrlData,
 ) : MqttCommandMessage {
     @Serializable
@@ -80,6 +86,7 @@ data class MqttSearchCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
+    override val wakeScreen: Boolean = false,
     val data: QueryData,
 ) : MqttCommandMessage {
     @Serializable
@@ -96,7 +103,8 @@ data class MqttClearHistoryCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
-) : MqttCommandMessage {
+    override val wakeScreen: Boolean = false,
+    ) : MqttCommandMessage {
     override fun toString() = "clear_history"
 }
 
@@ -107,6 +115,7 @@ data class MqttToastCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
+    override val wakeScreen: Boolean = false,
     val data: ToastData
 ) : MqttCommandMessage {
     @Serializable
@@ -123,7 +132,8 @@ data class MqttLockCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
-) : MqttCommandMessage {
+    override val wakeScreen: Boolean = false,
+    ) : MqttCommandMessage {
     override fun toString() = "lock"
 }
 
@@ -134,7 +144,8 @@ data class MqttUnlockCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
-) : MqttCommandMessage {
+    override val wakeScreen: Boolean = false,
+    ) : MqttCommandMessage {
     override fun toString() = "unlock"
 }
 
@@ -145,7 +156,8 @@ data class MqttReconnectCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
-) : MqttCommandMessage {
+    override val wakeScreen: Boolean = false,
+    ) : MqttCommandMessage {
     override fun toString() = "reconnect"
 }
 
@@ -156,7 +168,8 @@ data class MqttLockDeviceCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
-) : MqttCommandMessage {
+    override val wakeScreen: Boolean = false,
+    ) : MqttCommandMessage {
     override fun toString() = "lock_device"
 }
 
@@ -167,6 +180,7 @@ data class MqttPageUpCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
+    override val wakeScreen: Boolean = false,
     val data: PageUpData,
 ) : MqttCommandMessage {
     @Serializable
@@ -183,6 +197,7 @@ data class MqttPageDownCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
+    override val wakeScreen: Boolean = false,
     val data: PageDownData,
 ) : MqttCommandMessage {
     @Serializable
@@ -199,6 +214,7 @@ data class MqttErrorCommand(
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
+    override val wakeScreen: Boolean = false,
     val error: String = "unknown command",
 ) : MqttCommandMessage {
     override fun toString() = "error"
