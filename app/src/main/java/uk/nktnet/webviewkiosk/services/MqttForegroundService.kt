@@ -20,6 +20,7 @@ import uk.nktnet.webviewkiosk.managers.CustomNotificationType
 import uk.nktnet.webviewkiosk.managers.MqttManager
 
 class MqttForegroundService : Service() {
+    private var isServiceActive = true
     private val scope = CoroutineScope(Dispatchers.IO)
     private var updateJob: Job? = null
     private var lastStatus: MqttClientState? = null
@@ -30,9 +31,10 @@ class MqttForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        isServiceActive = true
         if (updateJob?.isActive != true) {
             updateJob = scope.launch {
-                while (true) {
+                while (isServiceActive) {
                     val status = MqttManager.getState()
                     if (lastStatus != null && status == lastStatus) {
                         continue
@@ -55,9 +57,9 @@ class MqttForegroundService : Service() {
 
     private fun stopForegroundService() {
         try {
+            isServiceActive = false
             updateJob?.cancel()
             scope.cancel()
-            stopSelf()
         } catch (e: Exception) {
             e.printStackTrace()
         }

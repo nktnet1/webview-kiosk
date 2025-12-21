@@ -77,11 +77,6 @@ class LockTaskService: Service() {
         return START_STICKY
     }
 
-    override fun onDestroy() {
-        stopLockTaskService()
-        super.onDestroy()
-    }
-
     private fun stopLockTaskService() {
         try {
             updateJob?.cancel()
