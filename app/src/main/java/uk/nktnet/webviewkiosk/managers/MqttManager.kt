@@ -32,6 +32,9 @@ import uk.nktnet.webviewkiosk.config.mqtt.MqttQosOption
 import uk.nktnet.webviewkiosk.config.mqtt.MqttRetainHandlingOption
 import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
 import uk.nktnet.webviewkiosk.config.mqtt.MqttConfig
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttAppBackgroundEvent
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttAppForegroundEvent
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttApplicationRestrictionsChangedEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttCommandJsonParser
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttCommandMessage
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttConnectedEvent
@@ -45,6 +48,8 @@ import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSystemInfoRequest
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorCommand
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorRequest
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttPowerPluggedEvent
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttPowerUnpluggedEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttRequestJsonParser
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttRequestMessage
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttResponseJsonParser
@@ -395,6 +400,26 @@ object MqttManager {
         publishEventMessage(c, event)
     }
 
+    fun publishAppForegroundEvent() {
+        val c = getReadyClient() ?: return
+        val event = MqttAppForegroundEvent(
+            messageId = UUID.randomUUID().toString(),
+            username = config.username,
+            appInstanceId = config.appInstanceId,
+        )
+        publishEventMessage(c, event)
+    }
+
+    fun publishAppBackgroundEvent() {
+        val c = getReadyClient() ?: return
+        val event = MqttAppBackgroundEvent(
+            messageId = UUID.randomUUID().toString(),
+            username = config.username,
+            appInstanceId = config.appInstanceId,
+        )
+        publishEventMessage(c, event)
+    }
+
     fun publishScreenOnEvent() {
         val c = getReadyClient() ?: return
         val event = MqttScreenOnEvent(
@@ -418,6 +443,36 @@ object MqttManager {
     fun publishUserPresentEvent() {
         val c = getReadyClient() ?: return
         val event = MqttUserPresentEvent(
+            messageId = UUID.randomUUID().toString(),
+            username = config.username,
+            appInstanceId = config.appInstanceId,
+        )
+        publishEventMessage(c, event)
+    }
+
+    fun publishPowerPluggedEvent() {
+        val c = getReadyClient() ?: return
+        val event = MqttPowerPluggedEvent(
+            messageId = UUID.randomUUID().toString(),
+            username = config.username,
+            appInstanceId = config.appInstanceId,
+        )
+        publishEventMessage(c, event)
+    }
+
+    fun publishPowerUnpluggedEvent() {
+        val c = getReadyClient() ?: return
+        val event = MqttPowerUnpluggedEvent(
+            messageId = UUID.randomUUID().toString(),
+            username = config.username,
+            appInstanceId = config.appInstanceId
+        )
+        publishEventMessage(c, event)
+    }
+
+    fun publishApplicationRestrictionsChangedEvent() {
+        val c = getReadyClient() ?: return
+        val event = MqttApplicationRestrictionsChangedEvent(
             messageId = UUID.randomUUID().toString(),
             username = config.username,
             appInstanceId = config.appInstanceId,

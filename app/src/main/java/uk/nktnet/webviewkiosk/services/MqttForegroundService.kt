@@ -28,7 +28,7 @@ class MqttForegroundService : Service() {
     private var updateJob: Job? = null
     private var lastStatus: MqttClientState? = null
 
-    private val screenReceiver = object : BroadcastReceiver() {
+    private val systemReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
                 Intent.ACTION_SCREEN_ON -> {
@@ -40,6 +40,7 @@ class MqttForegroundService : Service() {
                 Intent.ACTION_USER_PRESENT -> {
                     MqttManager.publishUserPresentEvent()
                 }
+                else -> Unit
             }
         }
     }
@@ -51,7 +52,7 @@ class MqttForegroundService : Service() {
             addAction(Intent.ACTION_SCREEN_OFF)
             addAction(Intent.ACTION_USER_PRESENT)
         }
-        registerReceiver(screenReceiver, filter)
+        registerReceiver(systemReceiver, filter)
         startForegroundService()
     }
 
@@ -77,7 +78,7 @@ class MqttForegroundService : Service() {
 
     override fun onDestroy() {
         stopForegroundService()
-        unregisterReceiver(screenReceiver)
+        unregisterReceiver(systemReceiver)
         super.onDestroy()
     }
 
