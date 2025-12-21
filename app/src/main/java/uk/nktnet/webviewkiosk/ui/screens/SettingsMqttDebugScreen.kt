@@ -264,7 +264,7 @@ fun SettingsMqttDebugScreen(navController: NavController) {
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .padding(bottom = 12.dp)
+                .padding(bottom = 10.dp)
         ) {
             Icon(
                 painter = painterResource(R.drawable.baseline_clear_24),

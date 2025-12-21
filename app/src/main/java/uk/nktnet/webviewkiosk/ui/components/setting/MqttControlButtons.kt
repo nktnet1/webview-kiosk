@@ -48,7 +48,7 @@ fun MqttControlButtons() {
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 4.dp)
+                    .padding(bottom = 4.dp)
                     .border(
                         width = 1.dp,
                         color = statusColor,
