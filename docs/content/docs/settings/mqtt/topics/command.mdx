@@ -53,6 +53,7 @@ the following properties exists for all commands:
 |-|-|-|
 | `command` | string | The command to execute, e.g. `clear_history`. |
 | `interact` | boolean *(optional)* | Whether a user interaction should be triggered. For example, this will restore brightness if `Web Lifecycle -> Dim Screen on Inactivity (seconds)` is configured. <br />**Default:** `true`|
+| `wakeScreen` | boolean *(optional)* | Whether to wake the screen if it is turned off. This will require `Settings -> MQTT -> Use Foreground Service` to be true. <br />**Default:** `false`|
 
 ### 2.1. Go Back
 
@@ -72,7 +73,8 @@ Example payload:
   "messageId": "example-001",
   "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
   "targetUsernames": ["user-001"],
-  "interact": false
+  "interact": false,
+  "wakeScreen": true
 }
 ```
 
@@ -94,7 +96,8 @@ Example payload:
   "messageId": "example-001",
   "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
   "targetUsernames": ["user-001"],
-  "interact": false
+  "interact": false,
+  "wakeScreen": true
 }
 ```
 
@@ -116,7 +119,8 @@ Example payload:
   "messageId": "example-001",
   "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
   "targetUsernames": ["user-001"],
-  "interact": false
+  "interact": false,
+  "wakeScreen": true
 }
 ```
 
@@ -138,7 +142,8 @@ Example payload:
   "messageId": "example-001",
   "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
   "targetUsernames": ["user-001"],
-  "interact": false
+  "interact": false,
+  "wakeScreen": true
 }
 ```
 
@@ -166,7 +171,8 @@ Example Payload:
   "messageId": "example-001",
   "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
   "targetUsernames": ["user-001"],
-  "interact": false
+  "interact": false,
+  "wakeScreen": true
 }
 ```
 
@@ -195,7 +201,8 @@ Example Payload:
   "messageId": "example-001",
   "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
   "targetUsernames": ["user-001"],
-  "interact": false
+  "interact": false,
+  "wakeScreen": true
 }
 ```
 
@@ -218,7 +225,8 @@ Example Payload:
   "messageId": "example-001",
   "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
   "targetUsernames": ["user-001"],
-  "interact": false
+  "interact": false,
+  "wakeScreen": true
 }
 ```
 
@@ -227,7 +235,9 @@ Example Payload:
 Shows a short toast message.
 
 If the message is empty or only contains white space, no toast will be shown.
-This is still helpful in triggering a user interaction with the `interact` property.
+This is still helpful if you need a dummy command to:
+- trigger a user interaction with the `interact` property
+- turn the screen on with the `wakeScreen` property
 
 Example Payload:
 
@@ -249,7 +259,8 @@ Example Payload:
   "messageId": "example-001",
   "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
   "targetUsernames": ["user-001"],
-  "interact": true
+  "interact": false,
+  "wakeScreen": true
 }
 ```
 
@@ -278,7 +289,8 @@ Example Payload:
   "messageId": "example-001",
   "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
   "targetUsernames": ["user-001"],
-  "interact": false
+  "interact": false,
+  "wakeScreen": true
 }
 ```
 
@@ -301,7 +313,8 @@ Example Payload:
   "messageId": "example-001",
   "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
   "targetUsernames": ["user-001"],
-  "interact": false
+  "interact": false,
+  "wakeScreen": true
 }
 ```
 
@@ -326,7 +339,8 @@ Example Payload:
   "messageId": "example-001",
   "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
   "targetUsernames": ["user-001"],
-  "interact": false
+  "interact": false,
+  "wakeScreen": true
 }
 ```
 
@@ -349,7 +363,8 @@ Example Payload:
   "messageId": "example-001",
   "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
   "targetUsernames": ["user-001"],
-  "interact": false
+  "interact": false,
+  "wakeScreen": true
 }
 ```
 
@@ -381,7 +396,8 @@ Example Payload:
   "messageId": "example-001",
   "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
   "targetUsernames": ["user-001"],
-  "interact": false
+  "interact": false,
+  "wakeScreen": true
 }
 ```
 
@@ -413,6 +429,7 @@ Example Payload:
   "messageId": "example-001",
   "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
   "targetUsernames": ["user-001"],
-  "interact": false
+  "interact": false,
+  "wakeScreen": true
 }
 ```
