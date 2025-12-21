@@ -412,6 +412,9 @@ class MainActivity : AppCompatActivity() {
                 cause = MqttDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_DESTROYED
             )
         }
+        stopService(
+            Intent(this, MqttForegroundService::class.java)
+        )
         super.onDestroy()
     }
 

@@ -20,6 +20,7 @@ import uk.nktnet.webviewkiosk.managers.CustomNotificationType
 import uk.nktnet.webviewkiosk.managers.MqttManager
 
 class MqttForegroundService : Service() {
+    private var isServiceActive = true
     private val scope = CoroutineScope(Dispatchers.IO)
     private var updateJob: Job? = null
     private var lastStatus: MqttClientState? = null
@@ -30,9 +31,10 @@ class MqttForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        isServiceActive = true
         if (updateJob?.isActive != true) {
             updateJob = scope.launch {
-                while (true) {
+                while (isServiceActive) {
                     val status = MqttManager.getState()
                     if (lastStatus != null && status == lastStatus) {
                         continue
@@ -49,8 +51,18 @@ class MqttForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        scope.cancel()
+        stopForegroundService()
         super.onDestroy()
+    }
+
+    private fun stopForegroundService() {
+        try {
+            isServiceActive = false
+            updateJob?.cancel()
+            scope.cancel()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun startForegroundService() {
@@ -66,7 +78,7 @@ class MqttForegroundService : Service() {
             CustomNotificationType.MQTT,
             CustomNotificationManager.buildMqttNotification(
                 contentIntent,
-                MqttManager.getState().name
+                "Status: ${MqttManager.getState().name}"
             ),
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MANIFEST
