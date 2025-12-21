@@ -32,7 +32,6 @@ class LockTaskService: Service() {
 
     private val returnReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            scope.cancel()
             stopLockTaskService()
         }
     }
@@ -78,11 +77,20 @@ class LockTaskService: Service() {
         return START_STICKY
     }
 
+    override fun onDestroy() {
+        stopLockTaskService()
+        super.onDestroy()
+    }
+
     private fun stopLockTaskService() {
         try {
+            updateJob?.cancel()
+            scope.cancel()
             unregisterReceiver(returnReceiver)
-        } catch (_: Exception) {}
-        stopSelf()
+            stopSelf()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     companion object {

@@ -49,8 +49,18 @@ class MqttForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        scope.cancel()
+        stopForegroundService()
         super.onDestroy()
+    }
+
+    private fun stopForegroundService() {
+        try {
+            updateJob?.cancel()
+            scope.cancel()
+            stopSelf()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun startForegroundService() {
@@ -66,7 +76,7 @@ class MqttForegroundService : Service() {
             CustomNotificationType.MQTT,
             CustomNotificationManager.buildMqttNotification(
                 contentIntent,
-                MqttManager.getState().name
+                "Status: ${MqttManager.getState().name}"
             ),
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MANIFEST
