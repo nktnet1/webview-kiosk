@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.os.Build
+import androidx.annotation.DrawableRes
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import uk.nktnet.webviewkiosk.R
@@ -45,12 +46,17 @@ object CustomNotificationManager {
             NotificationChannel(
                 CustomNotificationChannel.Mqtt.ID,
                 appContext.getString(R.string.notification_mqtt_title),
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_LOW,
             )
         )
 
         val nm = NotificationManagerCompat.from(appContext)
-        channels.forEach { nm.createNotificationChannel(it) }
+        channels.forEach {
+            it.setShowBadge(false)
+            nm.createNotificationChannel(
+                it
+            )
+        }
     }
 
     fun buildLockTaskNotification(contentIntent: PendingIntent) =
@@ -58,7 +64,8 @@ object CustomNotificationManager {
             contentIntent,
             CustomNotificationChannel.LockTaskMode.ID,
             R.string.notification_lock_task_title,
-            appContext.getString(R.string.notification_lock_task_text)
+            appContext.getString(R.string.notification_lock_task_text),
+            R.drawable.baseline_lock_24,
         )
 
     fun buildMqttNotification(
@@ -68,18 +75,20 @@ object CustomNotificationManager {
         contentIntent,
         CustomNotificationChannel.Mqtt.ID,
         R.string.notification_mqtt_title,
-        content
+        content,
+        R.drawable.mqtt_24,
     )
 
     private fun buildBaseNotification(
         contentIntent: PendingIntent,
         channelId: String,
         titleRes: Int,
-        text: String
+        text: String,
+        @DrawableRes smallIcon: Int,
     ) = NotificationCompat.Builder(appContext, channelId)
         .setContentTitle(appContext.getString(titleRes))
         .setContentText(text)
-        .setSmallIcon(R.drawable.baseline_lock_24)
+        .setSmallIcon(smallIcon)
         .setContentIntent(contentIntent)
         .setSilent(true)
         .setOngoing(true)
