@@ -77,7 +77,5 @@ fun SettingsMqttScreen(navController: NavController) {
         }
 
         MqttDebugLogsButton(navController)
-
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
