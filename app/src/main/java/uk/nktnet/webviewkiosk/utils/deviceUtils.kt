@@ -81,12 +81,8 @@ fun updateDeviceSettings(context: Context) {
     setDeviceRotation(context, userSettings.rotation)
     setWindowBrightness(context, userSettings.brightness)
     applyBlockScreenCapture(context, userSettings.blockScreenCapture)
-
-    /**
-     * We might already be locked task mode (e.g. from MQTT), so this
-     * needs to be applied again.
-     */
     applyLockTaskFeatures(context)
+    initMqttForegroundService(context, userSettings.mqttUseForegroundService)
 }
 
 fun getAppInfo(context: Context): SystemAppInfo {

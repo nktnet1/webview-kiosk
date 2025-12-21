@@ -9,8 +9,7 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
-import android.content.Intent
-import uk.nktnet.webviewkiosk.services.MqttForegroundService
+import uk.nktnet.webviewkiosk.utils.initMqttForegroundService
 
 @Composable
 fun MqttUseForegroundServiceSetting() {
@@ -32,15 +31,7 @@ fun MqttUseForegroundServiceSetting() {
             val isChanged = isEnabled != userSettings.mqttUseForegroundService
             if (isChanged) {
                 userSettings.mqttUseForegroundService = isEnabled
-                val intent = Intent(
-                    context,
-                    MqttForegroundService::class.java
-                )
-                if (isEnabled) {
-                    context.startService(intent)
-                } else {
-                    context.stopService(intent)
-                }
+                initMqttForegroundService(context, isEnabled)
             }
         }
     )
