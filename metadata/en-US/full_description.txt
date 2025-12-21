@@ -13,7 +13,7 @@ Designed for small businesses and device owners who are looking for a simple and
 - <b>URL Filtering:</b> use regular expressions to control web access through a URL blacklist and whitelist
 - <b>Export/Import:</b> backup and restore user settings in Base64 or JSON format
 - <b>Local files:</b> display an image, audio, video, or HTML file in kiosk mode from your device
-- <b>Default Launcher:</b> functions as a home app that and can launch other apps
+- <b>Default Launcher:</b> use as the home app and launch other apps in lock task mode (kiosk)
 
 #### Remote Management / Enterprise
 
