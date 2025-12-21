@@ -117,6 +117,7 @@ object UserSettingsKeys {
 
     object Mqtt {
         const val ENABLED = "mqtt.enabled"
+        const val USE_FOREGROUND_SERVICE = "mqtt.use_foreground_service"
 
         object Connection {
             const val SERVER_HOST = "mqtt.connection.server_host"

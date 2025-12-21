@@ -259,8 +259,11 @@
     <string name="js_scripts_custom_script_on_page_finish_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
     <!-- MQTT -->
-    <string name="mqtt_enabled_title">MQTT Enabled</string>
+    <string name="mqtt_enabled_title">Enabled</string>
     <string name="mqtt_enabled_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/</string>
+
+    <string name="mqtt_use_foreground_service_title">Use Foreground Service</string>
+    <string name="mqtt_use_foreground_service_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/</string>
 
     <!-- MQTT Connection -->
     <string name="mqtt_connection_server_host_title">Server Host</string>
