@@ -54,9 +54,7 @@ class LockTaskService: Service() {
         ServiceCompat.startForeground(
             this,
             CustomNotificationType.LOCK_TASK_MODE,
-            NotificationManager.buildNotification(
-                contentIntent,
-            ),
+            NotificationManager.buildLockTaskNotification(contentIntent),
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MANIFEST
             } else {
