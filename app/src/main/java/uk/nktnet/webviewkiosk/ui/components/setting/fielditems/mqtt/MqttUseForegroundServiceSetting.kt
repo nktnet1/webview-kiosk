@@ -10,7 +10,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 import android.content.Intent
-import uk.nktnet.webviewkiosk.managers.MqttForegroundService
+import uk.nktnet.webviewkiosk.services.MqttForegroundService
 
 @Composable
 fun MqttUseForegroundServiceSetting() {
@@ -23,7 +23,7 @@ fun MqttUseForegroundServiceSetting() {
         infoText = """
             When enabled, ${Constants.APP_NAME} will run the MQTT connection
             as a foreground service,
-            
+
             This will keep the connection alive even when the application goes
             to the background or the screen is turned off.
         """.trimIndent(),

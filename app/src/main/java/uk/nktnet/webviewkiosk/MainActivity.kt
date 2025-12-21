@@ -41,8 +41,9 @@ import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttToastCommand
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.BackButtonManager
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
-import uk.nktnet.webviewkiosk.managers.NotificationManager
+import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
+import uk.nktnet.webviewkiosk.services.MqttForegroundService
 import uk.nktnet.webviewkiosk.ui.screens.SetupNavHost
 import uk.nktnet.webviewkiosk.utils.handleMainIntent
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
@@ -94,7 +95,7 @@ class MainActivity : AppCompatActivity() {
         userSettings = UserSettings(this)
         systemSettings = SystemSettings(this)
         DeviceOwnerManager.init(this)
-        NotificationManager.init(applicationContext)
+        CustomNotificationManager.init(applicationContext)
 
         if (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.DeviceOwner) {
             setupLockTaskPackage(this)
@@ -164,7 +165,7 @@ class MainActivity : AppCompatActivity() {
                             MqttManager.disconnect (
                                 cause = MqttDisconnectingEvent.DisconnectCause.MQTT_RECONNECT_COMMAND_RECEIVED,
                                 onDisconnected = {
-                                    MqttManager.connect(context)
+                                    MqttManager.connect(applicationContext)
                                 }
                             )
                         }
@@ -327,14 +328,19 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         lastOnStartTime = System.currentTimeMillis()
+        AuthenticationManager.init(this)
+
         if (
             userSettings.mqttEnabled
-            && !userSettings.mqttUseForegroundService
             && !MqttManager.isConnectedOrReconnect()
         ) {
-            MqttManager.connect(this)
+            MqttManager.connect(applicationContext)
         }
-        AuthenticationManager.init(this)
+        if (userSettings.mqttUseForegroundService) {
+            startService(
+                Intent(this, MqttForegroundService::class.java)
+            )
+        }
     }
 
     override fun onResume() {

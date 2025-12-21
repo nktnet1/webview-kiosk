@@ -15,23 +15,25 @@ import androidx.core.content.ContextCompat
 import androidx.core.app.ServiceCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.BuildConfig
 import uk.nktnet.webviewkiosk.managers.CustomNotificationType
-import uk.nktnet.webviewkiosk.managers.NotificationManager
+import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 
 @RequiresApi(28)
 class LockTaskService: Service() {
-    val scope = CoroutineScope(Dispatchers.IO)
+    private val scope = CoroutineScope(Dispatchers.IO)
+    private var updateJob: Job? = null
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     private val returnReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             scope.cancel()
-            stop()
+            stopLockTaskService()
         }
     }
 
@@ -54,7 +56,7 @@ class LockTaskService: Service() {
         ServiceCompat.startForeground(
             this,
             CustomNotificationType.LOCK_TASK_MODE,
-            NotificationManager.buildLockTaskNotification(contentIntent),
+            CustomNotificationManager.buildLockTaskNotification(contentIntent),
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MANIFEST
             } else {
@@ -62,19 +64,21 @@ class LockTaskService: Service() {
             }
         )
 
-        scope.launch {
-            val am = getSystemService(ActivityManager::class.java)
-            delay(3000)
-            while (am.lockTaskModeState == ActivityManager.LOCK_TASK_MODE_LOCKED) {
-                delay(1000)
+        if (updateJob?.isActive != true) {
+            updateJob = scope.launch {
+                val am = getSystemService(ActivityManager::class.java)
+                delay(3000)
+                while (am.lockTaskModeState == ActivityManager.LOCK_TASK_MODE_LOCKED) {
+                    delay(1000)
+                }
+                stopLockTaskService()
             }
-            stop()
         }
 
         return START_NOT_STICKY
     }
 
-    fun stop() {
+    private fun stopLockTaskService() {
         try {
             unregisterReceiver(returnReceiver)
         } catch (_: Exception) {}

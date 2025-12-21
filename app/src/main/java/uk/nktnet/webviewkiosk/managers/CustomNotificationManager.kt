@@ -1,14 +1,15 @@
 package uk.nktnet.webviewkiosk.managers
 
+import android.app.Notification
 import android.app.NotificationChannel
-import android.app.NotificationManager as SysNotificationManager
+import android.app.NotificationManager
 import android.app.PendingIntent
+import android.app.Service
 import android.content.Context
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.Constants
 
 object CustomNotificationType {
     const val LOCK_TASK_MODE = 1001
@@ -20,11 +21,11 @@ object CustomNotificationChannel {
         const val ID = "lock_task_mode_channel"
     }
     object Mqtt {
-        const val ID = "mqtt_channel"
+        const val ID = "mqtt_service_channel"
     }
 }
 
-object NotificationManager {
+object CustomNotificationManager {
     private lateinit var appContext: Context
 
     fun init(context: Context) {
@@ -39,12 +40,12 @@ object NotificationManager {
             NotificationChannel(
                 CustomNotificationChannel.LockTaskMode.ID,
                 appContext.getString(R.string.notification_lock_task_title),
-                SysNotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_LOW
             ),
             NotificationChannel(
                 CustomNotificationChannel.Mqtt.ID,
                 appContext.getString(R.string.notification_mqtt_title),
-                SysNotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_LOW
             )
         )
 
@@ -57,29 +58,35 @@ object NotificationManager {
             contentIntent,
             CustomNotificationChannel.LockTaskMode.ID,
             R.string.notification_lock_task_title,
-            R.string.notification_lock_task_text
+            appContext.getString(R.string.notification_lock_task_text)
         )
 
-    fun buildMqttNotification(contentIntent: PendingIntent) =
-        buildBaseNotification(
-            contentIntent,
-            CustomNotificationChannel.Mqtt.ID,
-            R.string.notification_mqtt_title,
-            R.string.notification_mqtt_text
-        )
+    fun buildMqttNotification(
+        contentIntent: PendingIntent,
+        content: String
+    ) = buildBaseNotification(
+        contentIntent,
+        CustomNotificationChannel.Mqtt.ID,
+        R.string.notification_mqtt_title,
+        content
+    )
 
     private fun buildBaseNotification(
         contentIntent: PendingIntent,
         channelId: String,
         titleRes: Int,
-        textRes: Int
+        text: String
     ) = NotificationCompat.Builder(appContext, channelId)
         .setContentTitle(appContext.getString(titleRes))
-        .setContentText(appContext.getString(textRes, Constants.APP_NAME))
+        .setContentText(text)
         .setSmallIcon(R.drawable.baseline_lock_24)
         .setContentIntent(contentIntent)
         .setSilent(true)
         .setOngoing(true)
         .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
         .build()
+
+    fun updateNotification(service: Service, id: Int, notification: Notification) {
+        NotificationManagerCompat.from(service).notify(id, notification)
+    }
 }

@@ -14,6 +14,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingListItem
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttEnabledSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.MqttUseForegroundServiceSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsButton
 
 @Composable
@@ -60,6 +61,7 @@ fun SettingsMqttScreen(navController: NavController) {
             HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
 
             MqttEnabledSetting()
+            MqttUseForegroundServiceSetting()
 
             Spacer(modifier = Modifier.height(8.dp))
 

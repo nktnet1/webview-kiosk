@@ -4,5 +4,5 @@
     <string name="notification_lock_task_text">Tap to return to %1$s</string>
 
     <string name="notification_mqtt_title">MQTT Service</string>
-    <string name="notification_mqtt_text">%1$s is running</string>
+    <string name="notification_mqtt_text">Connection: %1$s | %2$s</string>
 </resources>
