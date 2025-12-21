@@ -75,7 +75,7 @@ class LockTaskService: Service() {
             }
         }
 
-        return START_NOT_STICKY
+        return START_STICKY
     }
 
     private fun stopLockTaskService() {
