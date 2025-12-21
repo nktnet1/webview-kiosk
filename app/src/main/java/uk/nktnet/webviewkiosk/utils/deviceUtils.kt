@@ -83,7 +83,10 @@ fun updateDeviceSettings(context: Context) {
     setWindowBrightness(context, userSettings.brightness)
     applyBlockScreenCapture(context, userSettings.blockScreenCapture)
     applyLockTaskFeatures(context)
-    initMqttForegroundService(context, userSettings.mqttUseForegroundService)
+    initMqttForegroundService(
+        context,
+        userSettings.mqttEnabled && userSettings.mqttUseForegroundService,
+    )
 }
 
 fun getAppInfo(context: Context): SystemAppInfo {

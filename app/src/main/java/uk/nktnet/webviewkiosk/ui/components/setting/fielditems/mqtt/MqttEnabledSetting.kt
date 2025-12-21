@@ -12,6 +12,7 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttDisconnectingEvent
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import uk.nktnet.webviewkiosk.utils.initMqttForegroundService
 
 @Composable
 fun MqttEnabledSetting() {
@@ -44,6 +45,10 @@ fun MqttEnabledSetting() {
                     )
                     MqttManager.updateConfig(systemSettings, userSettings, false)
                 }
+                initMqttForegroundService(
+                    context,
+                    isEnabled && userSettings.mqttUseForegroundService
+                )
             }
         }
     )

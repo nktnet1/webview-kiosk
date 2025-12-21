@@ -33,7 +33,10 @@ fun MqttUseForegroundServiceSetting() {
             val isChanged = isEnabled != userSettings.mqttUseForegroundService
             if (isChanged) {
                 userSettings.mqttUseForegroundService = isEnabled
-                initMqttForegroundService(context, isEnabled)
+                initMqttForegroundService(
+                    context,
+                    userSettings.mqttEnabled && isEnabled,
+                )
             }
         }
     )
