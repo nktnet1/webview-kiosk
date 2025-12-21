@@ -42,6 +42,11 @@
         android:lockTaskMode="if_whitelisted"
         android:networkSecurityConfig="@xml/network_security_config"
     >
+        <meta-data
+            android:name="android.content.APP_RESTRICTIONS"
+            android:resource="@xml/app_restrictions"
+        />
+
         <activity
             android:name="uk.nktnet.webviewkiosk.MainActivity"
             android:windowSoftInputMode="adjustResize"
@@ -115,11 +120,6 @@
             </intent-filter>
         </receiver>
 
-        <meta-data
-            android:name="android.content.APP_RESTRICTIONS"
-            android:resource="@xml/app_restrictions"
-        />
-
         <service
             android:name=".services.LockTaskService"
             android:foregroundServiceType="specialUse"
@@ -131,6 +131,7 @@
                 android:value="Provides a return mechanism when launching other apps in Lock Task Mode."
             />
         </service>
+
         <service
             android:name=".services.MqttForegroundService"
             android:foregroundServiceType="specialUse"
@@ -138,7 +139,7 @@
         >
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Maintain the MQTT connection in the background (opt-in by user)."
+                android:value="Maintains the MQTT connection even when the app is in the background (opt-in)."
             />
         </service>
     </application>
