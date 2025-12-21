@@ -79,23 +79,25 @@ object CustomNotificationManager {
         R.drawable.mqtt_24,
     )
 
+    fun updateNotification(service: Service, id: Int, notification: Notification) {
+        NotificationManagerCompat.from(service).notify(id, notification)
+    }
+
     private fun buildBaseNotification(
         contentIntent: PendingIntent,
         channelId: String,
         titleRes: Int,
         text: String,
         @DrawableRes smallIcon: Int,
-    ) = NotificationCompat.Builder(appContext, channelId)
-        .setContentTitle(appContext.getString(titleRes))
-        .setContentText(text)
-        .setSmallIcon(smallIcon)
-        .setContentIntent(contentIntent)
-        .setSilent(true)
-        .setOngoing(true)
-        .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
-        .build()
-
-    fun updateNotification(service: Service, id: Int, notification: Notification) {
-        NotificationManagerCompat.from(service).notify(id, notification)
+    ): Notification {
+        return NotificationCompat.Builder(appContext, channelId)
+            .setContentTitle(appContext.getString(titleRes))
+            .setContentText(text)
+            .setSmallIcon(smallIcon)
+            .setContentIntent(contentIntent)
+            .setSilent(true)
+            .setOngoing(true)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+            .build()
     }
 }
