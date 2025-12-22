@@ -37,7 +37,7 @@ object CustomNotificationManager {
     private val lastMqttMessages = ArrayDeque<String>(5)
 
     fun init(context: Context) {
-        createChannels(context)
+        createChannels(context.applicationContext)
     }
 
     private fun createChannels(context: Context) {
