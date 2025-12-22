@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions or Feature Requests
+    url: https://github.com/nktnet1/webview-kiosk/discussions
+    about: For any issues that are not actionable bug reports, please use the discussion instead.
