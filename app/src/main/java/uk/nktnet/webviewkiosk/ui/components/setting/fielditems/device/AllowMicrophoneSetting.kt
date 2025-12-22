@@ -51,9 +51,15 @@ fun AllowMicrophoneSetting() {
                 onClick = requestPermission
             ) {
                 val buttonText = when {
-                    permissionState.granted -> "Disable in App Info"
-                    !permissionState.granted && !permissionState.shouldShowRationale -> "Request Microphone Permission"
-                    else -> "Enable in App Info"
+                    permissionState.granted -> {
+                        "Disable in App Info"
+                    }
+                    !permissionState.granted && !permissionState.shouldShowRationale -> {
+                        "Request Microphone Permission"
+                    }
+                    else -> {
+                        "Enable in App Info"
+                    }
                 }
                 Text(
                     text = buttonText,
