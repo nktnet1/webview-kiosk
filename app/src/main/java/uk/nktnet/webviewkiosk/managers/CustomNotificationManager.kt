@@ -11,7 +11,6 @@ import android.os.Build
 import androidx.annotation.DrawableRes
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import androidx.core.app.Person
 import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttNotifyCommand
@@ -36,7 +35,7 @@ object CustomNotificationChannel {
 
 object CustomNotificationManager {
     private lateinit var appContext: Context
-    private val lastMqttMessages = ArrayDeque<NotificationCompat.MessagingStyle.Message>(5)
+    private val lastMqttMessages = ArrayDeque<String>(5)
 
     fun init(context: Context) {
         appContext = context.applicationContext
@@ -68,14 +67,13 @@ object CustomNotificationManager {
 
         val nm = NotificationManagerCompat.from(appContext)
         channels.forEach {
-            it.setShowBadge(false)
             nm.createNotificationChannel(
                 it
             )
         }
     }
 
-    private fun buildBaseNotification(
+    private fun buildBaseServiceNotification(
         contentIntent: PendingIntent,
         channelId: String,
         titleRes: Int,
@@ -94,7 +92,7 @@ object CustomNotificationManager {
     }
 
     fun buildLockTaskNotification(contentIntent: PendingIntent) =
-        buildBaseNotification(
+        buildBaseServiceNotification(
             contentIntent,
             CustomNotificationChannel.LockTaskMode.ID,
             R.string.notification_lock_task_title,
@@ -105,7 +103,7 @@ object CustomNotificationManager {
     fun buildMqttServiceNotification(
         contentIntent: PendingIntent,
         content: String
-    ) = buildBaseNotification(
+    ) = buildBaseServiceNotification(
         contentIntent,
         CustomNotificationChannel.MqttService.ID,
         R.string.notification_mqtt_service_title,
@@ -121,23 +119,14 @@ object CustomNotificationManager {
         context: Context,
         notifyCommand: MqttNotifyCommand
     ) {
-        val now = System.currentTimeMillis()
-        if (lastMqttMessages.size == 5) {
+        if (lastMqttMessages.size >= 5) {
             lastMqttMessages.removeFirst()
         }
-        val mqttPerson = Person.Builder().setName("MQTT").build()
-        lastMqttMessages.addLast(
-            NotificationCompat.MessagingStyle.Message(
-                notifyCommand.data.message,
-                now,
-                mqttPerson
-            )
-        )
+        lastMqttMessages.addLast(notifyCommand.data.contentText)
 
-        val user = Person.Builder().setName("MQTT").build()
-        val messagingStyle = NotificationCompat.MessagingStyle(user)
+        val inboxStyle = NotificationCompat.InboxStyle()
         lastMqttMessages.forEach { msg ->
-            messagingStyle.addMessage(msg)
+            inboxStyle.addLine(msg)
         }
 
         val intent = Intent(context, MainActivity::class.java)
@@ -153,11 +142,15 @@ object CustomNotificationManager {
             CustomNotificationChannel.MqttNotifyCommand.ID
         )
             .setSmallIcon(R.drawable.outline_circle_notifications_24)
-            .setStyle(messagingStyle)
+            .setStyle(inboxStyle)
             .setContentIntent(pendingIntent)
             .setSilent(notifyCommand.data.silent)
             .setOngoing(notifyCommand.data.onGoing)
             .setPriority(notifyCommand.data.priority.androidValue)
+            .setTimeoutAfter(notifyCommand.data.timeout)
+            .setAutoCancel(notifyCommand.data.autoCancel)
+            .setContentTitle(notifyCommand.data.contentTitle)
+            .setContentText(notifyCommand.data.contentText)
             .build()
 
         NotificationManagerCompat.from(context).notify(
