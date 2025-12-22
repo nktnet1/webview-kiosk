@@ -5,6 +5,7 @@ import android.app.Application
 import android.content.Context
 import android.os.BatteryManager
 import android.os.Build
+import android.os.PowerManager
 import android.provider.Settings
 import kotlinx.serialization.Serializable
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -20,10 +21,12 @@ data class WebviewKioskStatus(
     val batteryPercentage: Int,
     val appBrightnessPercentage: Int,
     val systemBrightness: Int,
+    val isDeviceInteractive: Boolean,
 )
 
 fun getStatus(context: Context): WebviewKioskStatus {
     val systemSettings = SystemSettings(context)
+    val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
 
     val bm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
         context.getSystemService(BatteryManager::class.java)
@@ -50,5 +53,6 @@ fun getStatus(context: Context): WebviewKioskStatus {
         batteryPercentage = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY).coerceIn(0, 100),
         appBrightnessPercentage = getWindowBrightness(context),
         systemBrightness = systemBrightness,
+        isDeviceInteractive = pm.isInteractive,
     )
 }

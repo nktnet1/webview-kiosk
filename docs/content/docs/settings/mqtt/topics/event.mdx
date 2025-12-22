@@ -46,6 +46,8 @@ mentioned previously, as well as an additional `eventType` property.
 The `connected` event is published when {APP_NAME} has successfully connected
 to your configured MQTT Broker.
 
+The payload data is identical to the `get_status` request/response.
+
 Example payload:
 
 ```json
@@ -60,7 +62,8 @@ Example payload:
     "isLocked": false,
     "batteryPercentage": 62,
     "appBrightnessPercentage": -1,
-    "systemBrightness": 255
+    "systemBrightness": 255,
+    "isDeviceInteractive": true
   }
 }
 ```
