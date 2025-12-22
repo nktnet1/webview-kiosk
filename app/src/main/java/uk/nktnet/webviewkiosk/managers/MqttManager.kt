@@ -671,12 +671,6 @@ object MqttManager {
             onMessage = { publish, payloadStr ->
                 try {
                     val command = MqttCommandJsonParser.decodeFromString<MqttCommandMessage>(payloadStr)
-                    addDebugLog(
-                        "command received",
-                        "topic: ${publish.topic}\ncommand: $command",
-                        command.messageId
-                    )
-
                     val targetInstances = command.targetInstances
                     val targetUsernames = command.targetUsernames
                     if (
