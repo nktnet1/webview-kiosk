@@ -53,7 +53,6 @@ class MqttForegroundService : Service() {
             addAction(Intent.ACTION_USER_PRESENT)
         }
         registerReceiver(systemReceiver, filter)
-        startForegroundService()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -71,28 +70,6 @@ class MqttForegroundService : Service() {
                 }
             }
         }
-        return START_STICKY
-    }
-
-    override fun onBind(intent: Intent?): IBinder? = null
-
-    override fun onDestroy() {
-        stopForegroundService()
-        unregisterReceiver(systemReceiver)
-        super.onDestroy()
-    }
-
-    private fun stopForegroundService() {
-        try {
-            isServiceActive = false
-            updateJob?.cancel()
-            scope.cancel()
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-
-    private fun startForegroundService() {
         val contentIntent = PendingIntent.getActivity(
             this,
             0,
@@ -113,6 +90,25 @@ class MqttForegroundService : Service() {
                 0
             }
         )
+        return START_STICKY
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onDestroy() {
+        stopForegroundService()
+        unregisterReceiver(systemReceiver)
+        super.onDestroy()
+    }
+
+    private fun stopForegroundService() {
+        try {
+            isServiceActive = false
+            updateJob?.cancel()
+            scope.cancel()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 
     private fun updateNotification(newStatus: MqttClientState) {
