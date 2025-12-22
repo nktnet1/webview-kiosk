@@ -407,6 +407,7 @@ class MainActivity : AppCompatActivity() {
             && intent.hasCategory(Intent.CATEGORY_HOME)
             && userSettings.allowGoHome
         ) {
+            UserInteractionStateSingleton.onUserInteraction()
             systemSettings.intentUrl = userSettings.homeUrl
             navigateToWebViewScreen(navController)
             return
