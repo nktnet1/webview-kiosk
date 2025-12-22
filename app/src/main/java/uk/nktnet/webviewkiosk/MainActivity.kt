@@ -33,6 +33,7 @@ import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttClearHistoryCommand
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttDisconnectingEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorRequest
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockDeviceCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttNotifyCommand
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttReconnectCommand
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSettingsRequest
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttStatusRequest
@@ -171,14 +172,14 @@ class MainActivity : AppCompatActivity() {
             val activity = LocalActivity.current
 
             LaunchedEffect(Unit) {
-                MqttManager.commands.collect { commandMessage ->
-                    if (commandMessage.interact) {
+                MqttManager.commands.collect { command ->
+                    if (command.interact) {
                         UserInteractionStateSingleton.onUserInteraction()
                     }
-                    if (commandMessage.wakeScreen) {
+                    if (command.wakeScreen) {
                         wakeScreen(context)
                     }
-                    when (commandMessage) {
+                    when (command) {
                         is MqttReconnectCommand -> {
                             MqttManager.disconnect (
                                 cause = MqttDisconnectingEvent.DisconnectCause.MQTT_RECONNECT_COMMAND_RECEIVED,
@@ -191,8 +192,8 @@ class MainActivity : AppCompatActivity() {
                             WebViewNavigation.clearHistory(systemSettings)
                         }
                         is MqttToastCommand -> {
-                            if (!commandMessage.data?.message.isNullOrEmpty()) {
-                                ToastManager.show(context, commandMessage.data.message)
+                            if (!command.data?.message.isNullOrEmpty()) {
+                                ToastManager.show(context, command.data.message)
                             }
                         }
                         is MqttLockDeviceCommand -> {
@@ -207,6 +208,12 @@ class MainActivity : AppCompatActivity() {
                                     )
                                 }
                             }
+                        }
+                        is MqttNotifyCommand -> {
+                            CustomNotificationManager.sendMqttNotifyCommandNotification(
+                                context,
+                                command,
+                            )
                         }
                         else -> Unit
                     }

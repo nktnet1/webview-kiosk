@@ -102,8 +102,8 @@ class MqttForegroundService : Service() {
 
         ServiceCompat.startForeground(
             this,
-            CustomNotificationType.MQTT,
-            CustomNotificationManager.buildMqttNotification(
+            CustomNotificationType.MQTT_SERVICE,
+            CustomNotificationManager.buildMqttServiceNotification(
                 contentIntent,
                 "Status: ${MqttManager.getState().name}"
             ),
@@ -123,13 +123,13 @@ class MqttForegroundService : Service() {
             PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = CustomNotificationManager.buildMqttNotification(
+        val notification = CustomNotificationManager.buildMqttServiceNotification(
             contentIntent,
             "Status: $newStatus",
         )
-        CustomNotificationManager.updateNotification(
+        CustomNotificationManager.updateServiceNotification(
             this,
-            CustomNotificationType.MQTT,
+            CustomNotificationType.MQTT_SERVICE,
             notification
         )
     }
