@@ -478,7 +478,18 @@ Example Payload:
 Shows a notification on the device. Only the 5 most recent notifications will
 be displayed.
 
-The following parameters can be configured in the data value:
+This feature requires:
+
+- Android `POST_NOITIFICATIONS` permission
+- `Settings -> Device -> Allow Notifications`
+
+Additionally, when in kiosk/locked mode, the following are required:
+
+- Device owner or Dhizuku privileges
+- `Settings -> Device -> Device Owner -> Home`
+- `Settings -> Device -> Device Owner -> Notifications`
+
+Your payload data value can have the following properties:
 
 | Property        | Type     | Default   | Description                                                        |
 |-----------------|----------|-----------|--------------------------------------------------------------------|
