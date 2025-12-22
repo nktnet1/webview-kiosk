@@ -81,8 +81,9 @@ class MqttForegroundService : Service() {
             this,
             CustomNotificationType.MQTT_SERVICE,
             CustomNotificationManager.buildMqttServiceNotification(
+                this,
                 contentIntent,
-                "Status: ${MqttManager.getState().name}"
+                "Status: ${MqttManager.getState().name}",
             ),
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MANIFEST
@@ -120,6 +121,7 @@ class MqttForegroundService : Service() {
         )
 
         val notification = CustomNotificationManager.buildMqttServiceNotification(
+            this,
             contentIntent,
             "Status: $newStatus",
         )

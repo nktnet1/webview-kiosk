@@ -34,15 +34,13 @@ object CustomNotificationChannel {
 }
 
 object CustomNotificationManager {
-    private lateinit var appContext: Context
     private val lastMqttMessages = ArrayDeque<String>(5)
 
     fun init(context: Context) {
-        appContext = context.applicationContext
-        createChannels()
+        createChannels(context)
     }
 
-    private fun createChannels() {
+    private fun createChannels(context: Context) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             return
         }
@@ -50,22 +48,22 @@ object CustomNotificationManager {
         val channels = listOf(
             NotificationChannel(
                 CustomNotificationChannel.LockTaskMode.ID,
-                appContext.getString(R.string.notification_lock_task_title),
+                context.getString(R.string.notification_lock_task_title),
                 NotificationManager.IMPORTANCE_LOW
             ),
             NotificationChannel(
                 CustomNotificationChannel.MqttService.ID,
-                appContext.getString(R.string.notification_mqtt_service_title),
+                context.getString(R.string.notification_mqtt_service_title),
                 NotificationManager.IMPORTANCE_LOW,
             ),
             NotificationChannel(
                 CustomNotificationChannel.MqttNotifyCommand.ID,
-                appContext.getString(R.string.notification_mqtt_notify_command_title),
+                context.getString(R.string.notification_mqtt_notify_command_title),
                 NotificationManager.IMPORTANCE_DEFAULT,
             )
         )
 
-        val nm = NotificationManagerCompat.from(appContext)
+        val nm = NotificationManagerCompat.from(context)
         channels.forEach {
             nm.createNotificationChannel(
                 it
@@ -74,14 +72,15 @@ object CustomNotificationManager {
     }
 
     private fun buildBaseServiceNotification(
+        context: Context,
         contentIntent: PendingIntent,
         channelId: String,
         titleRes: Int,
         text: String,
         @DrawableRes smallIcon: Int,
     ): Notification {
-        return NotificationCompat.Builder(appContext, channelId)
-            .setContentTitle(appContext.getString(titleRes))
+        return NotificationCompat.Builder(context, channelId)
+            .setContentTitle(context.getString(titleRes))
             .setContentText(text)
             .setSmallIcon(smallIcon)
             .setContentIntent(contentIntent)
@@ -91,19 +90,22 @@ object CustomNotificationManager {
             .build()
     }
 
-    fun buildLockTaskNotification(contentIntent: PendingIntent) =
+    fun buildLockTaskNotification(context: Context, contentIntent: PendingIntent) =
         buildBaseServiceNotification(
+            context,
             contentIntent,
             CustomNotificationChannel.LockTaskMode.ID,
             R.string.notification_lock_task_title,
-            appContext.getString(R.string.notification_lock_task_text),
+            context.getString(R.string.notification_lock_task_text),
             R.drawable.baseline_lock_24,
         )
 
     fun buildMqttServiceNotification(
+        context: Context,
         contentIntent: PendingIntent,
         content: String
     ) = buildBaseServiceNotification(
+        context,
         contentIntent,
         CustomNotificationChannel.MqttService.ID,
         R.string.notification_mqtt_service_title,
