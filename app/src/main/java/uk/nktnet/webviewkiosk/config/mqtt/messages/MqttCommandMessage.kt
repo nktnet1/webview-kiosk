@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.config.mqtt.messages
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import uk.nktnet.webviewkiosk.config.mqtt.MqttNotifyPriority
 import uk.nktnet.webviewkiosk.utils.BaseJson
 
 @Serializable
@@ -205,6 +206,29 @@ data class MqttPageDownCommand(
         val absolute: Boolean
     )
     override fun toString() = "page_down"
+}
+
+@Serializable
+@SerialName("notify")
+data class MqttNotifyCommand(
+    override val messageId: String? = null,
+    override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
+    override val interact: Boolean = true,
+    override val wakeScreen: Boolean = false,
+    val data: NotifyData,
+) : MqttCommandMessage {
+    @Serializable
+    data class NotifyData(
+        val contentTitle: String = "MQTT",
+        val contentText: String,
+        val silent: Boolean = false,
+        val onGoing: Boolean = false,
+        val priority: MqttNotifyPriority = MqttNotifyPriority.DEFAULT,
+        val timeout: Long = 0,
+        val autoCancel: Boolean = true,
+    )
+    override fun toString() = "notify"
 }
 
 @Serializable

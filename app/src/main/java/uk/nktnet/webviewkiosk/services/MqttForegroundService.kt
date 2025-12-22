@@ -53,7 +53,6 @@ class MqttForegroundService : Service() {
             addAction(Intent.ACTION_USER_PRESENT)
         }
         registerReceiver(systemReceiver, filter)
-        startForegroundService()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -71,6 +70,27 @@ class MqttForegroundService : Service() {
                 }
             }
         }
+        val contentIntent = PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE
+        )
+
+        ServiceCompat.startForeground(
+            this,
+            CustomNotificationType.MQTT_SERVICE,
+            CustomNotificationManager.buildMqttServiceNotification(
+                this,
+                contentIntent,
+                "Status: ${MqttManager.getState().name}",
+            ),
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_MANIFEST
+            } else {
+                0
+            }
+        )
         return START_STICKY
     }
 
@@ -92,29 +112,6 @@ class MqttForegroundService : Service() {
         }
     }
 
-    private fun startForegroundService() {
-        val contentIntent = PendingIntent.getActivity(
-            this,
-            0,
-            Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE
-        )
-
-        ServiceCompat.startForeground(
-            this,
-            CustomNotificationType.MQTT,
-            CustomNotificationManager.buildMqttNotification(
-                contentIntent,
-                "Status: ${MqttManager.getState().name}"
-            ),
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MANIFEST
-            } else {
-                0
-            }
-        )
-    }
-
     private fun updateNotification(newStatus: MqttClientState) {
         val contentIntent = PendingIntent.getActivity(
             this,
@@ -123,13 +120,14 @@ class MqttForegroundService : Service() {
             PendingIntent.FLAG_IMMUTABLE
         )
 
-        val notification = CustomNotificationManager.buildMqttNotification(
+        val notification = CustomNotificationManager.buildMqttServiceNotification(
+            this,
             contentIntent,
             "Status: $newStatus",
         )
-        CustomNotificationManager.updateNotification(
+        CustomNotificationManager.updateServiceNotification(
             this,
-            CustomNotificationType.MQTT,
+            CustomNotificationType.MQTT_SERVICE,
             notification
         )
     }

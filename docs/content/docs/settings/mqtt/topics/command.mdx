@@ -472,3 +472,62 @@ Example Payload:
   "wakeScreen": true
 }
 ```
+
+### 2.15. Notify
+
+Shows a notification on the device. Only the 5 most recent notifications will
+be displayed.
+
+This feature requires:
+
+- Android `POST_NOITIFICATIONS` permission
+- `Settings -> Device -> Allow Notifications`
+
+Additionally, when in kiosk/locked mode, the following are required:
+
+- Device owner or Dhizuku privileges
+- `Settings -> Device -> Device Owner -> Home`
+- `Settings -> Device -> Device Owner -> Notifications`
+
+Your payload data value can have the following properties:
+
+| Property        | Type     | Default   | Description                                                        |
+|-----------------|----------|-----------|--------------------------------------------------------------------|
+| `contentTitle`  | string?  | `MQTT`    | The title of the notification.                                     |
+| `contentText`   | string   | —         | **(required)** The content body of the notification.               |
+| `silent`        | boolean? | `false`   | If `true`, the notification will not make sound or vibration.      |
+| `onGoing`       | boolean? | `false`   | See [NotificationCompat.Builder#setOngoing(boolean)](https://developer.android.com/reference/androidx/core/app/NotificationCompat.Builder#setOngoing(boolean)). |
+| `priority`      | string?  | `DEFAULT` | Notification priority: `MIN`, `LOW`, `DEFAULT`, `HIGH`, or `MAX`.  |
+| `timeout`       | long?    | `0`       | Time in milliseconds before auto-dismiss (0 = no timeout).         |
+| `autoCancel`    | boolean? | `true`    | Dismiss the notification when the user taps it.                    |
+
+Example payload:
+
+```json tab="Minimal"
+{
+  "command": "notify",
+  "data": {
+    "contentText": "Hello, World!"
+  }
+}
+```
+
+```json tab="Full"
+{
+  "command": "notify",
+  "data": {
+    "contentTitle": "MQTT",
+    "contentText": "Hello, World!",
+    "silent": true,
+    "onGoing": false,
+    "priority": "DEFAULT",
+    "timeout": 5000,
+    "autoCancel": true
+  },
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": true,
+  "wakeScreen": false
+}
+```
