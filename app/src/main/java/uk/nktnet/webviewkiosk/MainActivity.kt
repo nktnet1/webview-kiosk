@@ -76,16 +76,26 @@ class MainActivity : AppCompatActivity() {
 
     private var lastOnStartTime = 0L
 
-    val restrictionsReceiver = object : BroadcastReceiver() {
+    val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
-            if (intent.action == Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED) {
-                val currentRoute = navController.currentBackStackEntry?.destination?.route
-                if (currentRoute != Screen.AdminRestrictionsChanged.route) {
-                    navController.navigate(Screen.AdminRestrictionsChanged.route)
+            when (intent.action) {
+                Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED -> {
+                    val currentRoute = navController.currentBackStackEntry?.destination?.route
+                    if (currentRoute != Screen.AdminRestrictionsChanged.route) {
+                        navController.navigate(Screen.AdminRestrictionsChanged.route)
+                    }
+                    updateDeviceSettings(context)
+                    AuthenticationManager.resetAuthentication()
+                    AuthenticationManager.hideCustomAuthPrompt()
+                    MqttManager.publishApplicationRestrictionsChangedEvent()
                 }
-                updateDeviceSettings(context)
-                AuthenticationManager.resetAuthentication()
-                AuthenticationManager.hideCustomAuthPrompt()
+                Intent.ACTION_POWER_CONNECTED -> {
+                    MqttManager.publishPowerPluggedEvent()
+                }
+                Intent.ACTION_POWER_DISCONNECTED -> {
+                    MqttManager.publishPowerUnpluggedEvent()
+                }
+                else -> Unit
             }
         }
     }
@@ -125,8 +135,12 @@ class MainActivity : AppCompatActivity() {
         )
 
         registerReceiver(
-            restrictionsReceiver,
-            IntentFilter(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED)
+            broadcastReceiver,
+            IntentFilter().apply {
+                addAction(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED)
+                addAction(Intent.ACTION_POWER_CONNECTED)
+                addAction(Intent.ACTION_POWER_DISCONNECTED)
+            }
         )
 
         MqttManager.updateConfig(systemSettings, userSettings)
@@ -337,9 +351,13 @@ class MainActivity : AppCompatActivity() {
         updateDeviceSettings(this)
         if (
             userSettings.mqttEnabled
-            && !MqttManager.isConnectedOrReconnect()
         ) {
-            MqttManager.connect(applicationContext)
+            if (!MqttManager.isConnectedOrReconnect()) {
+                MqttManager.connect(applicationContext)
+            }
+            if (userSettings.mqttUseForegroundService && MqttManager.isConnected()) {
+                MqttManager.publishAppForegroundEvent()
+            }
         }
     }
 
@@ -357,13 +375,14 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         if (!isChangingConfigurations) {
             AuthenticationManager.resetAuthentication()
-            if (
-                !userSettings.mqttUseForegroundService
-                && MqttManager.isConnected()
-            ) {
-                MqttManager.disconnect(
-                    cause = MqttDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_STOPPED
-                )
+            if (MqttManager.isConnected()) {
+                if (userSettings.mqttUseForegroundService) {
+                    MqttManager.publishAppBackgroundEvent()
+                } else {
+                    MqttManager.disconnect(
+                        cause = MqttDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_STOPPED
+                    )
+                }
             }
         }
     }
@@ -397,7 +416,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        unregisterReceiver(restrictionsReceiver)
+        unregisterReceiver(broadcastReceiver)
         if (
             userSettings.mqttUseForegroundService
             && MqttManager.isConnected()
