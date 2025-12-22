@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="notification_lock_task_title">Lock Task Mode</string>
+    <string name="notification_lock_task_title">Lock Task Mode Service</string>
     <string name="notification_lock_task_text">Tap to return to %1$s</string>
 
     <string name="notification_mqtt_service_title">MQTT Service</string>
