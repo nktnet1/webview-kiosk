@@ -116,7 +116,7 @@ data class MqttToastCommand(
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-    val data: ToastData
+    val data: ToastData? = null
 ) : MqttCommandMessage {
     @Serializable
     data class ToastData(

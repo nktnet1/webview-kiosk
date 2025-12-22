@@ -191,7 +191,7 @@ class MainActivity : AppCompatActivity() {
                             WebViewNavigation.clearHistory(systemSettings)
                         }
                         is MqttToastCommand -> {
-                            if (commandMessage.data.message.isNotBlank()) {
+                            if (!commandMessage.data?.message.isNullOrEmpty()) {
                                 ToastManager.show(context, commandMessage.data.message)
                             }
                         }
