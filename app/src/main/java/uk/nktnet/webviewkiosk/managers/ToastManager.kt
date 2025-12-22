@@ -8,8 +8,8 @@ object ToastManager {
     private var toastRef: Toast? = null
 
     fun show(context: Context, text: String, duration: Int = Toast.LENGTH_SHORT) {
-        try {
-            Handler(context.mainLooper).post {
+        Handler(context.mainLooper).post {
+            try {
                 toastRef?.cancel()
                 toastRef = Toast.makeText(
                     context,
@@ -18,9 +18,9 @@ object ToastManager {
                 ).apply {
                     show()
                 }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 
