@@ -632,7 +632,7 @@ class UserSettings(val context: Context) {
     var mqttAutomaticReconnect by booleanPref(
         getRestrictions,
         prefs,
-        UserSettingsKeys.Mqtt.Connection.CLEAN_START,
+        UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT,
         true
     )
     var mqttUseWebSocket by booleanPref(
@@ -728,7 +728,7 @@ class UserSettings(val context: Context) {
     var mqttSubscribeSettingsRetainHandling by stringEnumPref(
         getRestrictions,
         prefs,
-        UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_HANDLING,
         MqttRetainHandlingOption.DO_NOT_SEND.name,
         fromString = MqttRetainHandlingOption::fromString
     )
@@ -984,25 +984,25 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.Connection.WEBSOCKET_SERVER_PATH, mqttWebSocketServerPath)
 
             put(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
-            put(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.code)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.Event.QOS, mqttPublishEventQos.name)
             put(UserSettingsKeys.Mqtt.Topics.Publish.Event.RETAIN, mqttPublishEventRetain)
             put(UserSettingsKeys.Mqtt.Topics.Publish.Response.TOPIC, mqttPublishResponseTopic)
-            put(UserSettingsKeys.Mqtt.Topics.Publish.Response.QOS, mqttPublishResponseQos.code)
+            put(UserSettingsKeys.Mqtt.Topics.Publish.Response.QOS, mqttPublishResponseQos.name)
             put(UserSettingsKeys.Mqtt.Topics.Publish.Response.RETAIN, mqttPublishResponseRetain)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC, mqttSubscribeCommandTopic)
-            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS, mqttSubscribeCommandQos.code)
-            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING, mqttSubscribeCommandRetainHandling.code)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.QOS, mqttSubscribeCommandQos.name)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_HANDLING, mqttSubscribeCommandRetainHandling.name)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_AS_PUBLISHED, mqttSubscribeCommandRetainAsPublished)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.TOPIC, mqttSubscribeSettingsTopic)
-            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.QOS, mqttSubscribeSettingsQos.code)
-            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_HANDLING, mqttSubscribeSettingsRetainHandling.code)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.QOS, mqttSubscribeSettingsQos.name)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_HANDLING, mqttSubscribeSettingsRetainHandling.name)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.RETAIN_AS_PUBLISHED, mqttSubscribeSettingsRetainAsPublished)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.TOPIC, mqttSubscribeRequestTopic)
-            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.QOS, mqttSubscribeRequestQos.code)
-            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_HANDLING, mqttSubscribeRequestRetainHandling.code)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.QOS, mqttSubscribeRequestQos.name)
+            put(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_HANDLING, mqttSubscribeRequestRetainHandling.name)
             put(UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_AS_PUBLISHED, mqttSubscribeRequestRetainAsPublished)
             put(UserSettingsKeys.Mqtt.Will.TOPIC, mqttWillTopic)
-            put(UserSettingsKeys.Mqtt.Will.QOS, mqttWillQos.code)
+            put(UserSettingsKeys.Mqtt.Will.QOS, mqttWillQos.name)
             put(UserSettingsKeys.Mqtt.Will.PAYLOAD, mqttWillPayload)
             put(UserSettingsKeys.Mqtt.Will.RETAIN, mqttWillRetain)
             put(UserSettingsKeys.Mqtt.Will.MESSAGE_EXPIRY_INTERVAL, mqttWillMessageExpiryInterval)
@@ -1155,7 +1155,7 @@ class UserSettings(val context: Context) {
             mqttAutomaticReconnect = json.optBoolean(UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT, mqttAutomaticReconnect)
 
             mqttUseWebSocket = json.optBoolean(UserSettingsKeys.Mqtt.Connection.USE_WEBSOCKET, mqttUseWebSocket)
-            mqttWebSocketServerPath = json.optString(UserSettingsKeys.Mqtt.Connection.WEBSOCKET_SERVER_PATH, mqttServerHost)
+            mqttWebSocketServerPath = json.optString(UserSettingsKeys.Mqtt.Connection.WEBSOCKET_SERVER_PATH, mqttWebSocketServerPath)
 
             mqttPublishEventTopic = json.optString(UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC, mqttPublishEventTopic)
             mqttPublishEventQos = MqttQosOption.fromString(
