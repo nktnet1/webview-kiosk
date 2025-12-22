@@ -210,10 +210,12 @@ class MainActivity : AppCompatActivity() {
                             }
                         }
                         is MqttNotifyCommand -> {
-                            CustomNotificationManager.sendMqttNotifyCommandNotification(
-                                context,
-                                command,
-                            )
+                            if (userSettings.allowNotifications) {
+                                CustomNotificationManager.sendMqttNotifyCommandNotification(
+                                    context,
+                                    command,
+                                )
+                            }
                         }
                         else -> Unit
                     }
