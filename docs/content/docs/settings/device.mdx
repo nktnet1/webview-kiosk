@@ -80,18 +80,17 @@ required for the WebView's
 
 ## 7. Allow Notifications
 
-Set to true to allow notifications, e.g. for
-- lock task mode, when launching other apps
-- MQTT
+Set to true to allow webview kiosk to send notifications. For example, this
+will allow the MQTT notify command to create alerts.
 
 You will need to grant the
 [POST_NOTIFICATIONS](https://developer.android.com/reference/android/Manifest.permission#POST_NOTIFICATIONS)
-permission.
+android permission.
 
 Please note that for foreground services, e.g. when using lock task mode
-kiosk-launch or MQTT, the notification will always be created irrespective of
-this {APP_NAME} setting. You will need to disable notifications at the device
-level if you do not want them.
+kiosk-launch or MQTT, the notification will always be created irrespective
+of this setting. You can disable notifications at the device level if you
+do not want them.
 
 **Default:** false
 
