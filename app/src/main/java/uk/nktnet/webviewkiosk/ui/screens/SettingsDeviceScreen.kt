@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
-import android.os.Build
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -55,9 +54,7 @@ fun SettingsDeviceScreen(navController: NavController) {
             AllowCameraSetting()
             AllowMicrophoneSetting()
             AllowLocationSetting()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                AllowNotificationsSetting()
-            }
+            AllowNotificationsSetting()
             BackButtonHoldActionSetting()
             CustomUnlockShortcutSetting()
             CustomAuthPasswordSetting()

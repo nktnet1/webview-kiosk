@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.utils
 
+import android.content.Context
 import android.content.pm.PackageManager
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -18,7 +19,10 @@ data class PermissionState(
 )
 
 @Composable
-fun rememberPermissionState(permission: String): Pair<PermissionState, () -> Unit> {
+fun rememberPermissionState(
+    permission: String,
+    customOpenAction: (context: Context) -> Unit = ::openAppDetailsSettings
+): Pair<PermissionState, () -> Unit> {
     val context = LocalContext.current
     val activity = LocalActivity.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -43,7 +47,10 @@ fun rememberPermissionState(permission: String): Pair<PermissionState, () -> Uni
                     permission
                 ) == PackageManager.PERMISSION_GRANTED
                 shouldShowRationale = activity?.let {
-                    ActivityCompat.shouldShowRequestPermissionRationale(it, permission)
+                    ActivityCompat.shouldShowRequestPermissionRationale(
+                        it,
+                        permission
+                    )
                 } ?: false
             }
         }
@@ -55,7 +62,7 @@ fun rememberPermissionState(permission: String): Pair<PermissionState, () -> Uni
         if (!granted && !shouldShowRationale) {
             launcher.launch(permission)
         } else {
-            openAppDetailsSettings(context)
+            customOpenAction(context)
         }
     }
 

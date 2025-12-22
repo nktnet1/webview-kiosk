@@ -45,6 +45,17 @@ fun openAppDetailsSettings(context: Context) {
     safeStartActivity(context, intent)
 }
 
+fun openAppNotificationsSettings(context: Context) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+        }
+        safeStartActivity(context, intent)
+    } else {
+        openAppDetailsSettings(context)
+    }
+}
+
 fun openDefaultLauncherSettings(context: Context) {
     val intent = Intent(Settings.ACTION_HOME_SETTINGS)
     safeStartActivity(context, intent)

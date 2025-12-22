@@ -2,7 +2,6 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device
 
 import android.Manifest
 import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -19,9 +18,10 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import uk.nktnet.webviewkiosk.utils.PermissionState
+import uk.nktnet.webviewkiosk.utils.openAppNotificationsSettings
 import uk.nktnet.webviewkiosk.utils.rememberPermissionState
 
-@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun AllowNotificationsSetting() {
     val context = LocalContext.current
@@ -31,7 +31,19 @@ fun AllowNotificationsSetting() {
     val (
         permissionState,
         requestPermission
-    ) = rememberPermissionState(Manifest.permission.POST_NOTIFICATIONS)
+    ) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        rememberPermissionState(
+            Manifest.permission.POST_NOTIFICATIONS,
+            customOpenAction = ::openAppNotificationsSettings
+        )
+    } else {
+        PermissionState(
+            granted = false,
+            shouldShowRationale = false,
+        ) to {
+            openAppNotificationsSettings(context)
+        }
+    }
 
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.device_allow_notifications_title),
@@ -59,9 +71,15 @@ fun AllowNotificationsSetting() {
                 onClick = requestPermission
             ) {
                 val buttonText = when {
-                    permissionState.granted -> "Disable in App Info"
-                    !permissionState.granted && !permissionState.shouldShowRationale -> "Request Notification Permission"
-                    else -> "Enable in App Info"
+                    permissionState.granted -> {
+                        "Disable in App Info"
+                    }
+                    !permissionState.granted && !permissionState.shouldShowRationale -> {
+                        "Request Notification Permission"
+                    }
+                    else -> {
+                        "Enable in App Info"
+                    }
                 }
                 Text(
                     text = buttonText,
