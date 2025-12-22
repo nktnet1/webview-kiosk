@@ -243,6 +243,7 @@ object MqttManager {
 
         return builder
             .addConnectedListener { connectedListener ->
+                pendingCancelConnect.set(false)
                 addDebugLog(
                     "connect success",
                     "Client ID: ${connectedListener.clientConfig.clientIdentifier.getOrNull()}"
