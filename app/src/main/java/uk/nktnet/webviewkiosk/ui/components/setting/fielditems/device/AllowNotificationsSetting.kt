@@ -14,6 +14,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -47,8 +48,8 @@ fun AllowNotificationsSetting() {
     BooleanSettingFieldItem(
         label = stringResource(id = R.string.device_allow_notifications_title),
         infoText = """
-            Set to true to allow webview kiosk to send notifications. For example, this
-            will allow the MQTT notify command to create alerts.
+            Set to true to allow ${Constants.APP_NAME} to send notifications.
+            For example, this will allow the MQTT notify command to create alerts.
 
             You will need to grant the POST_NOTIFICATIONS android permission.
 

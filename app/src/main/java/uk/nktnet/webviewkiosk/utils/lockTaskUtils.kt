@@ -8,6 +8,7 @@ import android.os.Build
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
@@ -214,7 +215,7 @@ fun unlockWithAuthIfRequired(activity: Activity) {
         WaitingForUnlockStateSingleton.startWaiting()
         AuthenticationManager.showAuthenticationPrompt(
             title = "Authentication Required",
-            description = "Please authenticate to unlock Webview Kiosk"
+            description = "Please authenticate to unlock ${Constants.APP_NAME}"
         )
     } else {
         tryUnlockTask(activity)
