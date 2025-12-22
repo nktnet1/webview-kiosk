@@ -23,7 +23,15 @@ fun MqttControlButtons() {
     val userSettings = remember { UserSettings(context) }
     var mqttClientState by remember { mutableStateOf(MqttManager.getState()) }
 
-    LaunchedEffect(Unit) {
+    var isConnecting by remember { mutableStateOf(false) }
+    var isDisconnecting by remember { mutableStateOf(false) }
+    var isRestarting by remember { mutableStateOf(false) }
+
+    LaunchedEffect(
+        isConnecting,
+        isDisconnecting,
+        isRestarting,
+    ) {
         while (true) {
             mqttClientState = MqttManager.getState()
             delay(500)
@@ -74,42 +82,51 @@ fun MqttControlButtons() {
             if (state.isConnected) {
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     Button(
+                        enabled = !isDisconnecting,
                         onClick = {
+                            isDisconnecting = true
                             MqttManager.disconnect(
-                                cause = MqttDisconnectingEvent.DisconnectCause.USER_INITIATED_DISCONNECT
-                            ) {
-                                mqttClientState = MqttManager.getState()
-                                ToastManager.show(context, "MQTT disconnected successfully")
-                            }
+                                cause = MqttDisconnectingEvent.DisconnectCause.USER_INITIATED_DISCONNECT,
+                                onDisconnected = {
+                                    isDisconnecting = false
+                                    ToastManager.show(context, "MQTT disconnected successfully")
+                                },
+                                onError = { err ->
+                                    isDisconnecting = false
+                                    ToastManager.show(context, "MQTT disconnected failed: $err")
+                                },
+                            )
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.errorContainer,
                             contentColor = MaterialTheme.colorScheme.onErrorContainer
                         )
-                    ) { Text("Disconnect") }
+                    ) {
+                        Text("Disconnect")
+                    }
 
                     Button(
+                        enabled = !isRestarting,
                         onClick = {
-                            mqttClientState = MqttClientState.CONNECTING
+                            isRestarting = true
                             MqttManager.disconnect(
                                 cause = MqttDisconnectingEvent.DisconnectCause.USER_INITIATED_RESTART,
                                 onDisconnected = {
-                                    mqttClientState = MqttManager.getState()
                                     MqttManager.connect(
                                         context.applicationContext,
                                         onConnected = {
-                                            mqttClientState = MqttManager.getState()
-                                            ToastManager.show(context, "Restart successfully.")
+                                            isRestarting = false
+                                            ToastManager.show(context, "Restarted successfully.")
                                         },
                                         onError = {
-                                            mqttClientState = MqttManager.getState()
-                                            ToastManager.show(context, "Error restarting: $it")
+                                            isRestarting = false
+                                            ToastManager.show(context, "Error connecting: $it")
                                         }
                                     )
                                 },
                                 onError = {
-                                    mqttClientState = MqttManager.getState()
+                                    isRestarting = false
                                     ToastManager.show(context, "Error disconnecting: $it")
                                 }
                             )
@@ -146,19 +163,22 @@ fun MqttControlButtons() {
                         contentColor = MaterialTheme.colorScheme.onSecondaryContainer
                     ),
                     modifier = Modifier.fillMaxWidth()
-                ) { Text("Cancel Connection") }
+                ) {
+                    Text("Cancel Connection")
+                }
             } else {
                 Button(
+                    enabled = !isConnecting,
                     onClick = {
-                        mqttClientState = MqttClientState.CONNECTING
+                        isConnecting = true
                         MqttManager.connect(
                             context.applicationContext,
                             onConnected = {
-                                mqttClientState = MqttManager.getState()
+                                isConnecting = false
                                 ToastManager.show(context, "MQTT connected successfully.")
                             },
                             onError = {
-                                mqttClientState = MqttManager.getState()
+                                isConnecting = false
                                 ToastManager.show(context, "MQTT connection failed: $it")
                             }
                         )
