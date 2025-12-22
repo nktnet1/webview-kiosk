@@ -49,11 +49,50 @@ In addition to the
 [Shared Subscribe Payload Properties](/docs/settings/mqtt/topics/#3-shared-subscribe-payload-properties),
 the following properties exists for all commands:
 
-| Property | Type | Description |
-|-|-|-|
-| `command` | string | The command to execute, e.g. `clear_history`. |
-| `interact` | boolean *(optional)* | Whether a user interaction should be triggered. For example, this will restore brightness if `Web Lifecycle -> Dim Screen on Inactivity (seconds)` is configured. <br />**Default:** `true`|
-| `wakeScreen` | boolean *(optional)* | Whether to wake the screen if it is turned off. This will require `Settings -> MQTT -> Use Foreground Service` to be true. <br />**Default:** `false`|
+<table>
+  <thead>
+    <tr>
+      <th>Property</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>command</code></td>
+      <td>string</td>
+      <td>The command to execute, e.g. <code>clear_history</code>.</td>
+    </tr>
+    <tr>
+      <td><code>interact</code></td>
+      <td>boolean <em>(optional)</em></td>
+      <td>
+        Whether a user interaction should be triggered.
+
+        For example, this will restore brightness if <code>Web Lifecycle → Dim Screen on Inactivity (seconds)</code> is configured.
+
+        <strong>Default:</strong> true
+      </td>
+    </tr>
+    <tr>
+      <td><code>wakeScreen</code></td>
+      <td>boolean <em>(optional)</em></td>
+      <td>
+        Whether to wake the screen if it is turned off.
+
+        This requires <code>Settings → MQTT → Use Foreground Service</code>.
+
+        It is highly recommended that you disable battery optimisation for
+        {APP_NAME}, which will help keep its foreground service alive.
+
+        For more details, visit
+        - https://dontkillmyapp.com
+
+        <strong>Default:</strong> false
+      </td>
+    </tr>
+  </tbody>
+</table>
 
 ### 2.1. Go Back
 

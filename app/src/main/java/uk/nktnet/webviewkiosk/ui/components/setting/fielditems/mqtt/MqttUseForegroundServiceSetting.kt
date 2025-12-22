@@ -20,11 +20,17 @@ fun MqttUseForegroundServiceSetting() {
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_use_foreground_service_title),
         infoText = """
-            When enabled, a foreground service will be started to keep the MQTT
-            connection alive.
+            Start a foreground service to keep the MQTT connection alive.
 
             This will maintain the connection even when ${Constants.APP_NAME} goes
-            to the background or the device screen is turned off.
+            to the background (e.g. another app is opened) or the device screen is
+            turned off.
+
+            It is highly recommended that you disable battery optimisation for
+            ${Constants.APP_NAME}.
+
+            For more details, visit:
+            - https://dontkillmyapp.com
         """.trimIndent(),
         initialValue = userSettings.mqttUseForegroundService,
         settingKey = settingKey,
