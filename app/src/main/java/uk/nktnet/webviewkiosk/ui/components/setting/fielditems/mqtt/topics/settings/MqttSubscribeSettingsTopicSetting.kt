@@ -7,6 +7,7 @@ import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
 import uk.nktnet.webviewkiosk.managers.MqttManager.mqttVariableReplacement
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.isValidMqttSubscribeTopic
@@ -19,10 +20,17 @@ fun MqttSubscribeSettingsTopicSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_subscribe_settings_topic_title),
-        infoText = """
-            The MQTT topic to subscribe for settings messages.
+        infoText = $$"""
+            The MQTT topic name to receive commands.
+
+            Supported variables:
+            - $${MqttVariableName.APP_INSTANCE_ID.name}
+            - $${MqttVariableName.USERNAME.name}
+
+            Example:
+            - wk/${$${MqttVariableName.APP_INSTANCE_ID.name}}/settings
         """.trimIndent(),
-        placeholder = "e.g. devices/+/settings",
+        placeholder = "e.g. wk/settings",
         initialValue = userSettings.mqttSubscribeSettingsTopic,
         validator = { it.isEmpty() || isValidMqttSubscribeTopic(it) },
         descriptionFormatter = {
