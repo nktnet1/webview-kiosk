@@ -13,6 +13,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttNotifyCommand
 
 object CustomNotificationType {
@@ -96,7 +97,10 @@ object CustomNotificationManager {
             contentIntent,
             CustomNotificationChannel.LockTaskMode.ID,
             R.string.notification_lock_task_title,
-            context.getString(R.string.notification_lock_task_text),
+            context.getString(
+                R.string.notification_lock_task_text,
+                Constants.APP_NAME,
+            ),
             R.drawable.baseline_lock_24,
         )
 
