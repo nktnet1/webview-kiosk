@@ -108,7 +108,7 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                             supportedMimeTypesArray
                         )
                     },
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
+                    modifier = Modifier.fillMaxWidth(),
                     enabled = !uploading
                 ) {
                     Text("Upload")

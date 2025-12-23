@@ -60,7 +60,7 @@ fun SettingsWebBrowsingScreen(
 
             Button(
                 onClick = { navController.navigate(Screen.SettingsWebBrowsingSitePermissions.route) },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("Manage Site Permissions")
             }

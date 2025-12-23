@@ -89,9 +89,7 @@ fun SettingsAboutScreen(navController: NavController) {
                 .fillMaxSize()
         ) {
             Button(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
+                modifier = Modifier.fillMaxWidth(),
                 onClick = { openAppDetailsSettings(context) }
             ) {
                 Text(
@@ -101,11 +99,13 @@ fun SettingsAboutScreen(navController: NavController) {
                 )
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
             Text(
                 text = stringResource(R.string.about_section_app),
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = 24.dp, bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 8.dp)
             )
             HorizontalDivider(
                 modifier = Modifier,
@@ -159,13 +159,13 @@ fun SettingsAboutScreen(navController: NavController) {
                 value = systemInfo.app.instanceId
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             Text(
                 text = stringResource(R.string.about_section_device),
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 8.dp)
             )
             HorizontalDivider(
                 modifier = Modifier,
