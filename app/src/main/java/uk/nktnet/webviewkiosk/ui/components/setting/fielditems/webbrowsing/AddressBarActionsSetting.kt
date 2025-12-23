@@ -7,7 +7,7 @@ import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.config.option.AddressBarActionOption
+import uk.nktnet.webviewkiosk.config.option.WebviewControlActionOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.EnumListSettingFieldItem
 
 @Composable
@@ -23,9 +23,9 @@ fun AddressBarActionsSetting() {
 
             Use the drag handle at the end to reorder the items.
         """.trimIndent(),
-        entries = AddressBarActionOption.entries,
+        entries = WebviewControlActionOption.entries,
         getLabel = { it.label },
-        getDefault = { AddressBarActionOption.getDefault() },
+        getDefault = { WebviewControlActionOption.getDefaultAddressBarOptions() },
         initialValue = userSettings.addressBarActions,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

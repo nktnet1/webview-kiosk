@@ -32,7 +32,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.AddressBarActionOption
+import uk.nktnet.webviewkiosk.config.option.WebviewControlActionOption
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
@@ -43,7 +43,7 @@ import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
 private fun AddressBarMenuItem(
-    action: AddressBarActionOption,
+    action: WebviewControlActionOption,
     enabled: Boolean = true,
     onClick: () -> Unit,
     iconRes: Int,
@@ -109,7 +109,7 @@ fun AddressBar(
         }
     }
 
-    val menuItems: Map<AddressBarActionOption, @Composable () -> Unit> = remember(
+    val menuItems: Map<WebviewControlActionOption, @Composable () -> Unit> = remember(
         isLocked,
         systemSettings.historyIndex,
         systemSettings.historyStack.size,
@@ -118,7 +118,7 @@ fun AddressBar(
         val canGoBack = systemSettings.historyIndex > 0
 
         mapOf(
-            AddressBarActionOption.NAVIGATION to {
+            WebviewControlActionOption.NAVIGATION to {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -141,7 +141,7 @@ fun AddressBar(
                         Icon(
                             modifier = Modifier.padding(start = 8.dp),
                             painter = painterResource(R.drawable.baseline_arrow_back_24),
-                            contentDescription = AddressBarActionOption.BACK.label
+                            contentDescription = WebviewControlActionOption.BACK.label
                         )
                     }
 
@@ -159,14 +159,14 @@ fun AddressBar(
                         Icon(
                             modifier = Modifier.padding(end = 8.dp),
                             painter = painterResource(R.drawable.baseline_arrow_forward_24),
-                            contentDescription = AddressBarActionOption.FORWARD.label
+                            contentDescription = WebviewControlActionOption.FORWARD.label
                         )
                     }
                 }
             },
-            AddressBarActionOption.BACK to {
+            WebviewControlActionOption.BACK to {
                 AddressBarMenuItem(
-                    action = AddressBarActionOption.BACK,
+                    action = WebviewControlActionOption.BACK,
                     enabled = canGoBack,
                     onClick = {
                         WebViewNavigation.goBack(customLoadUrl, systemSettings)
@@ -175,9 +175,9 @@ fun AddressBar(
                     iconRes = R.drawable.baseline_arrow_back_24,
                 )
             },
-            AddressBarActionOption.FORWARD to {
+            WebviewControlActionOption.FORWARD to {
                 AddressBarMenuItem(
-                    action = AddressBarActionOption.FORWARD,
+                    action = WebviewControlActionOption.FORWARD,
                     enabled = canGoForward,
                     onClick = {
                         WebViewNavigation.goForward(customLoadUrl, systemSettings)
@@ -186,9 +186,9 @@ fun AddressBar(
                     iconRes = R.drawable.baseline_arrow_forward_24,
                 )
             },
-            AddressBarActionOption.REFRESH to {
+            WebviewControlActionOption.REFRESH to {
                 AddressBarMenuItem(
-                    action = AddressBarActionOption.REFRESH,
+                    action = WebviewControlActionOption.REFRESH,
                     onClick = {
                         WebViewNavigation.refresh(customLoadUrl, systemSettings, userSettings)
                         menuExpanded = false
@@ -196,9 +196,9 @@ fun AddressBar(
                     iconRes = R.drawable.baseline_refresh_24,
                 )
             },
-            AddressBarActionOption.HOME to {
+            WebviewControlActionOption.HOME to {
                 AddressBarMenuItem(
-                    action = AddressBarActionOption.HOME,
+                    action = WebviewControlActionOption.HOME,
                     onClick = {
                         WebViewNavigation.goHome(customLoadUrl, systemSettings, userSettings)
                         menuExpanded = false
@@ -206,9 +206,9 @@ fun AddressBar(
                     iconRes = R.drawable.baseline_home_24,
                 )
             },
-            AddressBarActionOption.HISTORY to {
+            WebviewControlActionOption.HISTORY to {
                 AddressBarMenuItem(
-                    action = AddressBarActionOption.HISTORY,
+                    action = WebviewControlActionOption.HISTORY,
                     onClick = {
                         showHistoryDialog()
                         menuExpanded = false
@@ -216,9 +216,9 @@ fun AddressBar(
                     iconRes = R.drawable.outline_history_24,
                 )
             },
-            AddressBarActionOption.BOOKMARK to {
+            WebviewControlActionOption.BOOKMARK to {
                 AddressBarMenuItem(
-                    action = AddressBarActionOption.BOOKMARK,
+                    action = WebviewControlActionOption.BOOKMARK,
                     onClick = {
                         showBookmarkDialog()
                         menuExpanded = false
@@ -226,9 +226,9 @@ fun AddressBar(
                     iconRes = R.drawable.outline_bookmark_24,
                 )
             },
-            AddressBarActionOption.FILES to {
+            WebviewControlActionOption.FILES to {
                 AddressBarMenuItem(
-                    action = AddressBarActionOption.FILES,
+                    action = WebviewControlActionOption.FILES,
                     onClick = {
                         showFilesDialog()
                         menuExpanded = false
@@ -236,9 +236,9 @@ fun AddressBar(
                     iconRes = R.drawable.outline_folder_24,
                 )
             },
-            AddressBarActionOption.FIND to {
+            WebviewControlActionOption.FIND to {
                 AddressBarMenuItem(
-                    action = AddressBarActionOption.FIND,
+                    action = WebviewControlActionOption.FIND,
                     onClick = {
                         showFindInPage()
                         menuExpanded = false
@@ -246,9 +246,9 @@ fun AddressBar(
                     iconRes = R.drawable.find_in_page_24,
                 )
             },
-            AddressBarActionOption.APPS to {
+            WebviewControlActionOption.APPS to {
                 AddressBarMenuItem(
-                    action = AddressBarActionOption.APPS,
+                    action = WebviewControlActionOption.APPS,
                     onClick = {
                         showAppsDialog()
                         menuExpanded = false
@@ -256,9 +256,9 @@ fun AddressBar(
                     iconRes = R.drawable.apps_24px,
                 )
             },
-            AddressBarActionOption.SCROLL_TOP to {
+            WebviewControlActionOption.SCROLL_TOP to {
                 AddressBarMenuItem(
-                    action = AddressBarActionOption.SCROLL_TOP,
+                    action = WebviewControlActionOption.SCROLL_TOP,
                     onClick = {
                         webView.pageUp(true)
                         menuExpanded = false
@@ -266,9 +266,9 @@ fun AddressBar(
                     iconRes = R.drawable.keyboard_double_arrow_up_24,
                 )
             },
-            AddressBarActionOption.SCROLL_BOT to {
+            WebviewControlActionOption.SCROLL_BOT to {
                 AddressBarMenuItem(
-                    action = AddressBarActionOption.SCROLL_BOT,
+                    action = WebviewControlActionOption.SCROLL_BOT,
                     onClick = {
                         webView.pageDown(true)
                         menuExpanded = false
@@ -276,9 +276,9 @@ fun AddressBar(
                     iconRes = R.drawable.keyboard_double_arrow_down_24,
                 )
             },
-            AddressBarActionOption.SETTINGS to {
+            WebviewControlActionOption.SETTINGS to {
                 AddressBarMenuItem(
-                    action = AddressBarActionOption.SETTINGS,
+                    action = WebviewControlActionOption.SETTINGS,
                     onClick = {
                         navController.navigate(Screen.Settings.route)
                         menuExpanded = false
@@ -286,9 +286,9 @@ fun AddressBar(
                     iconRes = R.drawable.baseline_settings_24,
                 )
             },
-            AddressBarActionOption.LOCK to {
+            WebviewControlActionOption.LOCK to {
                 AddressBarMenuItem(
-                    action = AddressBarActionOption.LOCK,
+                    action = WebviewControlActionOption.LOCK,
                     onClick = {
                         tryLockTask(activity)
                         menuExpanded = false
@@ -296,9 +296,9 @@ fun AddressBar(
                     iconRes = R.drawable.baseline_lock_24,
                 )
             },
-            AddressBarActionOption.UNLOCK to {
+            WebviewControlActionOption.UNLOCK to {
                 AddressBarMenuItem(
-                    action = AddressBarActionOption.UNLOCK,
+                    action = WebviewControlActionOption.UNLOCK,
                     onClick = {
                         activity?.let {
                             unlockWithAuthIfRequired(activity)
@@ -394,21 +394,21 @@ fun AddressBar(
         val enabledActions = remember(userSettings, isLocked) {
             userSettings.addressBarActions.filter { action ->
                 when (action) {
-                    AddressBarActionOption.NAVIGATION -> userSettings.allowBackwardsNavigation
-                    AddressBarActionOption.BACK -> userSettings.allowBackwardsNavigation
-                    AddressBarActionOption.FORWARD -> userSettings.allowBackwardsNavigation
-                    AddressBarActionOption.REFRESH -> userSettings.allowRefresh
-                    AddressBarActionOption.HOME -> userSettings.allowGoHome
-                    AddressBarActionOption.HISTORY -> userSettings.allowHistoryAccess
-                    AddressBarActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
-                    AddressBarActionOption.FILES -> userSettings.allowLocalFiles
-                    AddressBarActionOption.SETTINGS -> !isLocked
-                    AddressBarActionOption.LOCK -> !isLocked
-                    AddressBarActionOption.UNLOCK -> isLocked
-                    AddressBarActionOption.APPS,
-                    AddressBarActionOption.FIND,
-                    AddressBarActionOption.SCROLL_TOP,
-                    AddressBarActionOption.SCROLL_BOT-> true
+                    WebviewControlActionOption.NAVIGATION -> userSettings.allowBackwardsNavigation
+                    WebviewControlActionOption.BACK -> userSettings.allowBackwardsNavigation
+                    WebviewControlActionOption.FORWARD -> userSettings.allowBackwardsNavigation
+                    WebviewControlActionOption.REFRESH -> userSettings.allowRefresh
+                    WebviewControlActionOption.HOME -> userSettings.allowGoHome
+                    WebviewControlActionOption.HISTORY -> userSettings.allowHistoryAccess
+                    WebviewControlActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
+                    WebviewControlActionOption.FILES -> userSettings.allowLocalFiles
+                    WebviewControlActionOption.SETTINGS -> !isLocked
+                    WebviewControlActionOption.LOCK -> !isLocked
+                    WebviewControlActionOption.UNLOCK -> isLocked
+                    WebviewControlActionOption.APPS,
+                    WebviewControlActionOption.FIND,
+                    WebviewControlActionOption.SCROLL_TOP,
+                    WebviewControlActionOption.SCROLL_BOT-> true
                 }
             }
         }
