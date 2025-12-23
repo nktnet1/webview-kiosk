@@ -27,7 +27,7 @@ fun MqttConnectTimeoutSetting() {
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         min = 0,
-        max = 300,
+        max = Int.MAX_VALUE,
         onSave = { userSettings.mqttConnectTimeout = it }
     )
 }
