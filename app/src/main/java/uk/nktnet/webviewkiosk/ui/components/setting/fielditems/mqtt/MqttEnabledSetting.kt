@@ -6,7 +6,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.MqttManager
@@ -18,7 +17,6 @@ import uk.nktnet.webviewkiosk.utils.initMqttForegroundService
 fun MqttEnabledSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-    val systemSettings = remember { SystemSettings(context) }
     val settingKey = UserSettingsKeys.Mqtt.ENABLED
 
     BooleanSettingFieldItem(
@@ -43,7 +41,7 @@ fun MqttEnabledSetting() {
                     MqttManager.disconnect(
                         cause = MqttDisconnectingEvent.DisconnectCause.USER_INITIATED_SETTINGS_DISABLED
                     )
-                    MqttManager.updateConfig(systemSettings, userSettings, false)
+                    MqttManager.updateConfig(context, false)
                 }
                 initMqttForegroundService(
                     context,

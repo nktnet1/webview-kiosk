@@ -115,10 +115,12 @@ object MqttManager {
         get() = synchronized(logHistory) { logHistory.toList() }
 
     fun updateConfig(
-        systemSettings: SystemSettings,
-        userSettings: UserSettings,
+        context: Context,
         rebuildClient: Boolean = true
     ) {
+        val systemSettings = SystemSettings(context)
+        val userSettings =  UserSettings(context)
+
         config = MqttConfig(
             appInstanceId = systemSettings.appInstanceId,
 
@@ -177,11 +179,11 @@ object MqttManager {
             restrictionsRequestResponseInformation = userSettings.mqttRestrictionsRequestResponseInformation
         )
         if (rebuildClient) {
-            client = buildClient()
+            client = buildClient(context)
         }
     }
 
-    private fun buildClient(): Mqtt5AsyncClient {
+    private fun buildClient(context: Context): Mqtt5AsyncClient {
         var builder = MqttClient.builder()
             .useMqttVersion5()
             .serverHost(config.serverHost)
@@ -242,23 +244,34 @@ object MqttManager {
             .applyWillPublish()
 
         return builder
-            .addConnectedListener { connectedListener ->
+            .addConnectedListener { connectedContext ->
                 pendingCancelConnect.set(false)
+                val c = client ?: return@addConnectedListener
                 addDebugLog(
                     "connect success",
-                    "Client ID: ${connectedListener.clientConfig.clientIdentifier.getOrNull()}"
+                    "Client ID: ${connectedContext.clientConfig.clientIdentifier.getOrNull()}"
                 )
+
                 subscribeToTopics()
+                publishEventMessage(
+                    c,
+                    MqttConnectedEvent(
+                        messageId = UUID.randomUUID().toString(),
+                        username = config.username,
+                        appInstanceId = config.appInstanceId,
+                        data = getStatus(context),
+                    )
+                )
             }
-            .addDisconnectedListener { context ->
+            .addDisconnectedListener { disconnectedContext ->
                 if (pendingCancelConnect.get()) {
-                    context.reconnector.reconnect(false)
+                    disconnectedContext.reconnector.reconnect(false)
                     pendingCancelConnect.set(false)
                     return@addDisconnectedListener
                 }
                 if (config.enabled && config.automaticReconnect) {
-                    context.reconnector
-                        .reconnect(context.source != MqttDisconnectSource.USER)
+                    disconnectedContext.reconnector
+                        .reconnect(disconnectedContext.source != MqttDisconnectSource.USER)
                         .delay(
                             Constants.MQTT_AUTO_RECONNECT_INTERVAL_SECONDS.toLong(),
                             TimeUnit.SECONDS
@@ -266,7 +279,11 @@ object MqttManager {
                 }
                 addDebugLog(
                     "disconnected",
-                    "source: ${context.source}\nreconnect: ${context.reconnector.isReconnect}\ncause: ${context.cause}"
+                    """
+                    source: ${disconnectedContext.source}
+                    reconnect: ${disconnectedContext.reconnector.isReconnect}
+                    cause: ${disconnectedContext.cause}
+                    """.trimIndent()
                 )
             }
             .transportConfig()
@@ -281,9 +298,7 @@ object MqttManager {
         onConnected: (() -> Unit)? = null,
         onError: ((String?) -> Unit)? = null
     ) {
-        val userSettings = UserSettings(context)
-        val systemSettings = SystemSettings(context)
-        updateConfig(systemSettings, userSettings)
+        updateConfig(context)
 
         if (!config.enabled) {
             onError?.invoke("MQTT is not enabled in app settings.")
@@ -352,15 +367,6 @@ object MqttManager {
             .whenComplete { _, throwable ->
                 if (throwable == null) {
                     onConnected?.invoke()
-                    publishEventMessage(
-                        c,
-                        MqttConnectedEvent(
-                            messageId = UUID.randomUUID().toString(),
-                            username = config.username,
-                            appInstanceId = config.appInstanceId,
-                            data = getStatus(context),
-                        )
-                    )
                 } else {
                     addDebugLog("connect failed", throwable.message)
                     throwable.printStackTrace()

@@ -144,7 +144,7 @@ class MainActivity : AppCompatActivity() {
             }
         )
 
-        MqttManager.updateConfig(systemSettings, userSettings)
+        MqttManager.updateConfig(this)
 
         val webContentDir = getWebContentFilesDir(this)
 
