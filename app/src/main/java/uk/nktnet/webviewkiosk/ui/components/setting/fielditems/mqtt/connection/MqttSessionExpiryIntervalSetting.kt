@@ -18,11 +18,11 @@ fun MqttSessionExpiryIntervalSetting() {
     NumberSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_session_expiry_interval_title),
         infoText = """
-            The session expiry interval in seconds for the MQTT connection.
+            Specify the maximum time a session is retained on the server after
+            disconnecting from the network.
 
-            Use 0 for immediate expiry on disconnect.
-
-            The max value is ${Int.MAX_VALUE} seconds.
+            The server will discard the corresponding session state when the
+            expiration time is reached.
         """.trimIndent(),
         placeholder = "e.g. 60",
         initialValue = userSettings.mqttSessionExpiryInterval,
