@@ -251,7 +251,6 @@ object MqttManager {
                     "connect success",
                     "Client ID: ${connectedContext.clientConfig.clientIdentifier.getOrNull()}"
                 )
-                subscribeToTopics()
                 publishEventMessage(
                     c,
                     MqttConnectedEvent(
@@ -365,6 +364,7 @@ object MqttManager {
             .send()
             .whenComplete { _, throwable ->
                 if (throwable == null) {
+                    subscribeToTopics()
                     onConnected?.invoke()
                 } else {
                     addDebugLog("connect failed", throwable.message)
