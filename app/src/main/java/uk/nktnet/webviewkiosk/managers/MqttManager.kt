@@ -246,12 +246,11 @@ object MqttManager {
         return builder
             .addConnectedListener { connectedContext ->
                 pendingCancelConnect.set(false)
-                val c = client ?: return@addConnectedListener
+                val c = getReadyClient() ?: return@addConnectedListener
                 addDebugLog(
                     "connect success",
                     "Client ID: ${connectedContext.clientConfig.clientIdentifier.getOrNull()}"
                 )
-
                 subscribeToTopics()
                 publishEventMessage(
                     c,
