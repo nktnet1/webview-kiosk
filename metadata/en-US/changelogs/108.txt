@@ -1,0 +1,7 @@
+## Changes
+
+- feat: add isDeviceInteractive to MQTT connected event and get_status response
+- feat: add MQTT notify command to send notifications
+- fix: disable mqtt control buttons until action completes
+- fix: text font size, padding, spacing, button height
+- fix: inconsistent user settings + import/export
