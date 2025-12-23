@@ -138,10 +138,10 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs = prefs,
         key = UserSettingsKeys.WebBrowsing.ADDRESS_BAR_ACTIONS,
-        default = AddressBarActionOption.getDefault(),
+        default = WebviewControlActionOption.getDefaultAddressBarOptions(),
         itemFromString = {
-            AddressBarActionOption.itemFromString(it)
-                ?: AddressBarActionOption.BACK
+            WebviewControlActionOption.itemFromString(it)
+                ?: WebviewControlActionOption.BACK
         }
     )
     var kioskControlPanelRegion by stringEnumPref(
@@ -155,10 +155,10 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs = prefs,
         key = UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_ACTIONS,
-        default = KioskControlPanelActionOption.getDefault(),
+        default = WebviewControlActionOption.getDefaultKioskControlPanelOptions(),
         itemFromString = {
-            KioskControlPanelActionOption.itemFromString(it)
-                ?: KioskControlPanelActionOption.HISTORY
+            WebviewControlActionOption.itemFromString(it)
+                ?: WebviewControlActionOption.HISTORY
         }
     )
     var searchProviderUrl by stringPref(
@@ -1057,13 +1057,13 @@ class UserSettings(val context: Context) {
                 json.optString(UserSettingsKeys.WebBrowsing.OVERRIDE_URL_LOADING_BLOCK_ACTION, overrideUrlLoadingBlockAction.name)
             )
             json.optJSONArray(UserSettingsKeys.WebBrowsing.ADDRESS_BAR_ACTIONS)?.let { arr ->
-                addressBarActions = AddressBarActionOption.parseFromJsonArray(arr)
+                addressBarActions = WebviewControlActionOption.parseFromJsonArray(arr)
             }
             kioskControlPanelRegion = KioskControlPanelRegionOption.fromString(
                 json.optString(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION, kioskControlPanelRegion.name)
             )
             json.optJSONArray(UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_ACTIONS)?.let { arr ->
-                kioskControlPanelActions = KioskControlPanelActionOption.parseFromJsonArray(arr)
+                kioskControlPanelActions = WebviewControlActionOption.parseFromJsonArray(arr)
             }
             searchProviderUrl = json.optString(UserSettingsKeys.WebBrowsing.SEARCH_PROVIDER_URL, searchProviderUrl)
             searchSuggestionEngine = SearchSuggestionEngineOption.fromString(

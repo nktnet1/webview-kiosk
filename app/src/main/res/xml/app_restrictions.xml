@@ -110,8 +110,8 @@
     <restriction
         android:key="web_browsing.address_bar_actions"
         android:restrictionType="multi-select"
-        android:entries="@array/entries_address_bar_action_option"
-        android:entryValues="@array/entry_values_address_bar_action_option"
+        android:entries="@array/entries_webview_control_action_option"
+        android:entryValues="@array/entry_values_webview_control_action_option"
         android:title="@string/web_browsing_address_bar_actions_title"
         android:description="@string/web_browsing_address_bar_actions_description"
     />
@@ -126,8 +126,8 @@
     <restriction
         android:key="web_browsing.kiosk_control_panel_actions"
         android:restrictionType="multi-select"
-        android:entries="@array/entries_kiosk_control_panel_action_option"
-        android:entryValues="@array/entry_values_kiosk_control_panel_action_option"
+        android:entries="@array/entries_webview_control_action_option"
+        android:entryValues="@array/entry_values_webview_control_action_option"
         android:title="@string/web_browsing_kiosk_control_panel_actions_title"
         android:description="@string/web_browsing_kiosk_control_panel_actions_description"
     />

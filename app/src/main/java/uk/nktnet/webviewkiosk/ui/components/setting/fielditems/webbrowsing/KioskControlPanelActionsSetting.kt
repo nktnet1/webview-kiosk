@@ -7,7 +7,7 @@ import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.config.option.KioskControlPanelActionOption
+import uk.nktnet.webviewkiosk.config.option.WebviewControlActionOption
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.EnumListSettingFieldItem
 
 @Composable
@@ -30,9 +30,9 @@ fun KioskControlPanelActionsSetting() {
             set to Hidden, the "SETTINGS" action will be appended to the end
             if not configured.
         """.trimIndent(),
-        entries = KioskControlPanelActionOption.entries,
+        entries = WebviewControlActionOption.entries,
         getLabel = { it.label },
-        getDefault = { KioskControlPanelActionOption.getDefault() },
+        getDefault = { WebviewControlActionOption.getDefaultKioskControlPanelOptions() },
         initialValue = userSettings.kioskControlPanelActions,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

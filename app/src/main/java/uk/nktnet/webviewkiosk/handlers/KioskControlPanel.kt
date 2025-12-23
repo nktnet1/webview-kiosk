@@ -56,7 +56,7 @@ import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
 import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
-import uk.nktnet.webviewkiosk.config.option.KioskControlPanelActionOption
+import uk.nktnet.webviewkiosk.config.option.WebviewControlActionOption
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
@@ -71,7 +71,7 @@ import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 @Composable
 private fun ActionButton(
-    action: KioskControlPanelActionOption,
+    action: WebviewControlActionOption,
     enabled: Boolean,
     onClick: () -> Unit,
     iconRes: Int,
@@ -239,7 +239,7 @@ fun KioskControlPanel(
         }
     }
 
-    val menuItems: Map<KioskControlPanelActionOption, @Composable () -> Unit> = remember(
+    val menuItems: Map<WebviewControlActionOption, @Composable () -> Unit> = remember(
         isSticky,
         isLocked,
         systemSettings.historyIndex,
@@ -249,7 +249,7 @@ fun KioskControlPanel(
         val canGoBack = systemSettings.historyIndex > 0
 
         mapOf(
-            KioskControlPanelActionOption.NAVIGATION to {
+            WebviewControlActionOption.NAVIGATION to {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
@@ -295,9 +295,9 @@ fun KioskControlPanel(
                     }
                 }
             },
-            KioskControlPanelActionOption.BACK to {
+            WebviewControlActionOption.BACK to {
                 ActionButton(
-                    action = KioskControlPanelActionOption.BACK,
+                    action = WebviewControlActionOption.BACK,
                     enabled = enableInteraction && canGoBack,
                     onClick = {
                         WebViewNavigation.goBack(customLoadUrl, systemSettings)
@@ -306,9 +306,9 @@ fun KioskControlPanel(
                     iconRes = R.drawable.baseline_arrow_back_24
                 )
             },
-            KioskControlPanelActionOption.FORWARD to {
+            WebviewControlActionOption.FORWARD to {
                 ActionButton(
-                    action = KioskControlPanelActionOption.FORWARD,
+                    action = WebviewControlActionOption.FORWARD,
                     enabled = enableInteraction && canGoForward,
                     onClick = {
                         WebViewNavigation.goForward(customLoadUrl, systemSettings)
@@ -317,9 +317,9 @@ fun KioskControlPanel(
                     iconRes = R.drawable.baseline_arrow_forward_24
                 )
             },
-            KioskControlPanelActionOption.HOME to {
+            WebviewControlActionOption.HOME to {
                 ActionButton(
-                    action = KioskControlPanelActionOption.HOME,
+                    action = WebviewControlActionOption.HOME,
                     enabled = enableInteraction,
                     onClick = {
                         WebViewNavigation.goHome(customLoadUrl, systemSettings, userSettings)
@@ -328,9 +328,9 @@ fun KioskControlPanel(
                     iconRes = R.drawable.baseline_home_24
                 )
             },
-            KioskControlPanelActionOption.REFRESH to {
+            WebviewControlActionOption.REFRESH to {
                 ActionButton(
-                    action = KioskControlPanelActionOption.REFRESH,
+                    action = WebviewControlActionOption.REFRESH,
                     enabled = enableInteraction,
                     onClick = {
                         WebViewNavigation.refresh(customLoadUrl, systemSettings, userSettings)
@@ -339,9 +339,9 @@ fun KioskControlPanel(
                     iconRes = R.drawable.baseline_refresh_24
                 )
             },
-            KioskControlPanelActionOption.HISTORY to {
+            WebviewControlActionOption.HISTORY to {
                 ActionButton(
-                    action = KioskControlPanelActionOption.HISTORY,
+                    action = WebviewControlActionOption.HISTORY,
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = isSticky
@@ -350,9 +350,9 @@ fun KioskControlPanel(
                     iconRes = R.drawable.outline_history_24
                 )
             },
-            KioskControlPanelActionOption.BOOKMARK to {
+            WebviewControlActionOption.BOOKMARK to {
                 ActionButton(
-                    action = KioskControlPanelActionOption.BOOKMARK,
+                    action = WebviewControlActionOption.BOOKMARK,
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = isSticky
@@ -361,9 +361,9 @@ fun KioskControlPanel(
                     iconRes = R.drawable.outline_bookmark_24
                 )
             },
-            KioskControlPanelActionOption.FILES to {
+            WebviewControlActionOption.FILES to {
                 ActionButton(
-                    action = KioskControlPanelActionOption.FILES,
+                    action = WebviewControlActionOption.FILES,
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = isSticky
@@ -372,9 +372,9 @@ fun KioskControlPanel(
                     iconRes = R.drawable.outline_folder_24
                 )
             },
-            KioskControlPanelActionOption.FIND to {
+            WebviewControlActionOption.FIND to {
                 ActionButton(
-                    action = KioskControlPanelActionOption.FIND,
+                    action = WebviewControlActionOption.FIND,
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = isSticky
@@ -383,9 +383,9 @@ fun KioskControlPanel(
                     iconRes = R.drawable.find_in_page_24
                 )
             },
-            KioskControlPanelActionOption.SCROLL_TOP to {
+            WebviewControlActionOption.SCROLL_TOP to {
                 ActionButton(
-                    action = KioskControlPanelActionOption.SCROLL_TOP,
+                    action = WebviewControlActionOption.SCROLL_TOP,
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = isSticky
@@ -394,9 +394,9 @@ fun KioskControlPanel(
                     iconRes = R.drawable.keyboard_double_arrow_up_24
                 )
             },
-            KioskControlPanelActionOption.SCROLL_BOT to {
+            WebviewControlActionOption.SCROLL_BOT to {
                 ActionButton(
-                    action = KioskControlPanelActionOption.SCROLL_BOT,
+                    action = WebviewControlActionOption.SCROLL_BOT,
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = isSticky
@@ -405,9 +405,9 @@ fun KioskControlPanel(
                     iconRes = R.drawable.keyboard_double_arrow_down_24
                 )
             },
-            KioskControlPanelActionOption.APPS to {
+            WebviewControlActionOption.APPS to {
                 ActionButton(
-                    action = KioskControlPanelActionOption.APPS,
+                    action = WebviewControlActionOption.APPS,
                     enabled = enableInteraction,
                     onClick = {
                         showAppsDialog()
@@ -415,9 +415,9 @@ fun KioskControlPanel(
                     iconRes = R.drawable.apps_24px
                 )
             },
-            KioskControlPanelActionOption.SETTINGS to {
+            WebviewControlActionOption.SETTINGS to {
                 ActionButton(
-                    action = KioskControlPanelActionOption.SETTINGS,
+                    action = WebviewControlActionOption.SETTINGS,
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = false
@@ -426,9 +426,9 @@ fun KioskControlPanel(
                     iconRes = R.drawable.baseline_settings_24
                 )
             },
-            KioskControlPanelActionOption.LOCK to {
+            WebviewControlActionOption.LOCK to {
                 ActionButton(
-                    action = KioskControlPanelActionOption.LOCK,
+                    action = WebviewControlActionOption.LOCK,
                     enabled = enableInteraction,
                     onClick = {
                         showDialog = isSticky
@@ -437,9 +437,9 @@ fun KioskControlPanel(
                     iconRes = R.drawable.baseline_lock_24
                 )
             },
-            KioskControlPanelActionOption.UNLOCK to {
+            WebviewControlActionOption.UNLOCK to {
                 ActionButton(
-                    action = KioskControlPanelActionOption.UNLOCK,
+                    action = WebviewControlActionOption.UNLOCK,
                     enabled = enableInteraction,
                     onClick = {
                         activity?.let {
@@ -507,35 +507,35 @@ fun KioskControlPanel(
                     Spacer(modifier = Modifier.height(10.dp))
 
                     val enabledActions = remember(userSettings, isLocked) {
-                        val result = mutableListOf<KioskControlPanelActionOption>()
+                        val result = mutableListOf<WebviewControlActionOption>()
                         var hasSettings = false
                         var hasUnlock = false
 
                         userSettings.kioskControlPanelActions.forEach { action ->
                             val include = when (action) {
-                                KioskControlPanelActionOption.NAVIGATION -> userSettings.allowBackwardsNavigation
-                                KioskControlPanelActionOption.BACK -> userSettings.allowBackwardsNavigation
-                                KioskControlPanelActionOption.FORWARD -> userSettings.allowBackwardsNavigation
-                                KioskControlPanelActionOption.HOME -> userSettings.allowGoHome
-                                KioskControlPanelActionOption.REFRESH -> userSettings.allowRefresh
-                                KioskControlPanelActionOption.HISTORY -> userSettings.allowHistoryAccess
-                                KioskControlPanelActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
-                                KioskControlPanelActionOption.FILES -> userSettings.allowLocalFiles
-                                KioskControlPanelActionOption.SETTINGS -> !isLocked
-                                KioskControlPanelActionOption.LOCK -> !isLocked
-                                KioskControlPanelActionOption.UNLOCK -> isLocked
-                                KioskControlPanelActionOption.APPS,
-                                KioskControlPanelActionOption.FIND,
-                                KioskControlPanelActionOption.SCROLL_TOP,
-                                KioskControlPanelActionOption.SCROLL_BOT -> true
+                                WebviewControlActionOption.NAVIGATION -> userSettings.allowBackwardsNavigation
+                                WebviewControlActionOption.BACK -> userSettings.allowBackwardsNavigation
+                                WebviewControlActionOption.FORWARD -> userSettings.allowBackwardsNavigation
+                                WebviewControlActionOption.HOME -> userSettings.allowGoHome
+                                WebviewControlActionOption.REFRESH -> userSettings.allowRefresh
+                                WebviewControlActionOption.HISTORY -> userSettings.allowHistoryAccess
+                                WebviewControlActionOption.BOOKMARK -> userSettings.allowBookmarkAccess
+                                WebviewControlActionOption.FILES -> userSettings.allowLocalFiles
+                                WebviewControlActionOption.SETTINGS -> !isLocked
+                                WebviewControlActionOption.LOCK -> !isLocked
+                                WebviewControlActionOption.UNLOCK -> isLocked
+                                WebviewControlActionOption.APPS,
+                                WebviewControlActionOption.FIND,
+                                WebviewControlActionOption.SCROLL_TOP,
+                                WebviewControlActionOption.SCROLL_BOT -> true
                             }
 
                             if (include) {
                                 result.add(action)
-                                if (action == KioskControlPanelActionOption.SETTINGS) {
+                                if (action == WebviewControlActionOption.SETTINGS) {
                                     hasSettings = true
                                 }
-                                if (action == KioskControlPanelActionOption.UNLOCK) {
+                                if (action == WebviewControlActionOption.UNLOCK) {
                                     hasUnlock = true
                                 }
                             }
@@ -545,10 +545,10 @@ fun KioskControlPanel(
                             && !hasSettings
                             && userSettings.floatingToolbarMode == FloatingToolbarModeOption.HIDDEN
                         ) {
-                            result.add(KioskControlPanelActionOption.SETTINGS)
+                            result.add(WebviewControlActionOption.SETTINGS)
                         }
                         if (isLocked && !hasUnlock) {
-                            result.add(KioskControlPanelActionOption.UNLOCK)
+                            result.add(WebviewControlActionOption.UNLOCK)
                         }
                         result
                     }
