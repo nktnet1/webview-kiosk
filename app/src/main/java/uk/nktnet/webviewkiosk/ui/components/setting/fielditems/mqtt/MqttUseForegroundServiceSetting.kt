@@ -26,10 +26,13 @@ fun MqttUseForegroundServiceSetting() {
             to the background (e.g. another app is opened) or the device screen is
             turned off.
 
-            It is highly recommended that you disable battery optimisation for
-            ${Constants.APP_NAME}.
+            Turn on notifications to see the current MQTT status being updated
+            by the foreground service every second.
 
-            For more details, visit:
+            Also, It is highly recommended that you disable battery optimisation
+            for ${Constants.APP_NAME} to stop the service from being killed.
+
+            For more information, visit:
             - https://dontkillmyapp.com
         """.trimIndent(),
         initialValue = userSettings.mqttUseForegroundService,
