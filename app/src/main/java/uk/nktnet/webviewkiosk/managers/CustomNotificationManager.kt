@@ -118,7 +118,11 @@ object CustomNotificationManager {
     )
 
     fun updateServiceNotification(service: Service, id: Int, notification: Notification) {
-        NotificationManagerCompat.from(service).notify(id, notification)
+        try {
+            NotificationManagerCompat.from(service).notify(id, notification)
+        } catch (e: SecurityException) {
+            e.printStackTrace()
+        }
     }
 
     fun sendMqttNotifyCommandNotification(
@@ -159,9 +163,13 @@ object CustomNotificationManager {
             .setContentText(notifyCommand.data.contentText)
             .build()
 
-        NotificationManagerCompat.from(context).notify(
-            CustomNotificationType.MQTT_NOTIFY_COMMAND,
-            notification
-        )
+        try {
+            NotificationManagerCompat.from(context).notify(
+                CustomNotificationType.MQTT_NOTIFY_COMMAND,
+                notification
+            )
+        } catch (e: SecurityException) {
+            e.printStackTrace()
+        }
     }
 }
