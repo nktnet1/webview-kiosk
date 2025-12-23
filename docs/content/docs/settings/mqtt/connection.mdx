@@ -5,7 +5,7 @@ description: Specify how to connect to the broker server
 
 import { APP_NAME } from '@/config/app';
 
-The settings below are modeled after HiveMQ client library's documentation for
+The settings below are modelled after HiveMQ client library's documentation for
 [client configurations](https://hivemq.github.io/hivemq-mqtt-client/docs/client-configuration)
 and
 [mqtt operations -> connect](https://hivemq.github.io/hivemq-mqtt-client/docs/mqtt-operations/connect/#connect).
@@ -108,7 +108,17 @@ In {APP_NAME}, this is implemented linearly at a fixed 3-second interval.
 
 **Default:** true
 
-### 12. Use WebSocket
+### 12. Session Expiry Interval (seconds)
+
+Specify the maximum time a session is retained on the server after
+disconnecting from the network.
+
+The server will discard the corresponding session state when the
+expiration time is reached.
+
+**Default:** 0 (immediate expiry)
+
+### 13. Use WebSocket
 
 When enabled, the client will connect securely to the broker using TLS.
 Ensure the broker supports TLS on the configured port, e.g.
@@ -122,7 +132,7 @@ with a firewall that blocks non-standard ports like 8883.
 
 **Default:** false
 
-### 12. WebSocket Server Path
+### 14. WebSocket Server Path
 
 The path the MQTT broker WebSocket server listens on.
 

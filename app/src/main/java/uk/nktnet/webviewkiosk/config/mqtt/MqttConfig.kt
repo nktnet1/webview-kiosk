@@ -10,11 +10,12 @@ data class MqttConfig(
     val username: String,
     val password: String,
     val useTls: Boolean,
-    val automaticReconnect: Boolean,
     val cleanStart: Boolean,
     val keepAlive: Int,
     val mqttConnectTimeout: Int,
     val socketConnectTimeout: Int,
+    val automaticReconnect: Boolean,
+    val sessionExpiryInterval: Int,
     val useWebSocket: Boolean,
     val webSocketServerPath: String,
 

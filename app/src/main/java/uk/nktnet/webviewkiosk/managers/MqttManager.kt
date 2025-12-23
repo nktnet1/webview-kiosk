@@ -131,11 +131,12 @@ object MqttManager {
             username = userSettings.mqttUsername,
             password = userSettings.mqttPassword,
             useTls = userSettings.mqttUseTls,
-            automaticReconnect = userSettings.mqttAutomaticReconnect,
             cleanStart = userSettings.mqttCleanStart,
             keepAlive = userSettings.mqttKeepAlive,
             mqttConnectTimeout = userSettings.mqttConnectTimeout,
             socketConnectTimeout = userSettings.mqttSocketConnectTimeout,
+            automaticReconnect = userSettings.mqttAutomaticReconnect,
+            sessionExpiryInterval = userSettings.mqttSessionExpiryInterval,
             useWebSocket = userSettings.mqttUseWebSocket,
             webSocketServerPath = userSettings.mqttWebSocketServerPath,
 
@@ -329,6 +330,7 @@ object MqttManager {
         var connection = c.connectWith()
             .cleanStart(config.cleanStart)
             .keepAlive(config.keepAlive)
+            .sessionExpiryInterval(config.sessionExpiryInterval.toLong())
             .userProperties()
                 .add("username", config.username)
                 .add("appInstanceId", config.appInstanceId)

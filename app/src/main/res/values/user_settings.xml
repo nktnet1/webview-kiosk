@@ -299,6 +299,9 @@
     <string name="mqtt_connection_automatic_reconnect_title">Automatic Reconnect</string>
     <string name="mqtt_connection_automatic_reconnect_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 
+    <string name="mqtt_connection_session_expiry_interval_title">Session Expiry Interval (seconds)</string>
+    <string name="mqtt_connection_session_expiry_interval_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
+
     <string name="mqtt_connection_use_websocket_title">Use WebSocket</string>
     <string name="mqtt_connection_use_websocket_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/connection/</string>
 

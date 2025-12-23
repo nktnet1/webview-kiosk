@@ -621,19 +621,31 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT,
-        30
+        30,
+        min = 0,
+        max = Int.MAX_VALUE
     )
     var mqttSocketConnectTimeout by intPref(
         getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.SOCKET_CONNECT_TIMEOUT,
-        5
+        5,
+        min = 0,
+        max = Int.MAX_VALUE
     )
     var mqttAutomaticReconnect by booleanPref(
         getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT,
         true
+    )
+    var mqttSessionExpiryInterval by intPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Mqtt.Connection.SESSION_EXPIRY_INTERVAL,
+        0,
+        min = 0,
+        max = Int.MAX_VALUE
     )
     var mqttUseWebSocket by booleanPref(
         getRestrictions,
@@ -980,6 +992,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT, mqttConnectTimeout)
             put(UserSettingsKeys.Mqtt.Connection.SOCKET_CONNECT_TIMEOUT, mqttSocketConnectTimeout)
             put(UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT, mqttAutomaticReconnect)
+            put(UserSettingsKeys.Mqtt.Connection.SESSION_EXPIRY_INTERVAL, mqttSessionExpiryInterval)
             put(UserSettingsKeys.Mqtt.Connection.USE_WEBSOCKET, mqttUseWebSocket)
             put(UserSettingsKeys.Mqtt.Connection.WEBSOCKET_SERVER_PATH, mqttWebSocketServerPath)
 
@@ -1153,7 +1166,7 @@ class UserSettings(val context: Context) {
             mqttConnectTimeout = json.optInt(UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT, mqttConnectTimeout)
             mqttSocketConnectTimeout = json.optInt(UserSettingsKeys.Mqtt.Connection.SOCKET_CONNECT_TIMEOUT, mqttSocketConnectTimeout)
             mqttAutomaticReconnect = json.optBoolean(UserSettingsKeys.Mqtt.Connection.AUTOMATIC_RECONNECT, mqttAutomaticReconnect)
-
+            mqttSessionExpiryInterval = json.optInt(UserSettingsKeys.Mqtt.Connection.SESSION_EXPIRY_INTERVAL, mqttSessionExpiryInterval)
             mqttUseWebSocket = json.optBoolean(UserSettingsKeys.Mqtt.Connection.USE_WEBSOCKET, mqttUseWebSocket)
             mqttWebSocketServerPath = json.optString(UserSettingsKeys.Mqtt.Connection.WEBSOCKET_SERVER_PATH, mqttWebSocketServerPath)
 

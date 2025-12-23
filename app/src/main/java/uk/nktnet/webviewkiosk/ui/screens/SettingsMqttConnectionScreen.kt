@@ -19,6 +19,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.M
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttPasswordSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttServerHostSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttServerPortSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttSessionExpiryIntervalSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttWebSocketServerPathSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttUseTlsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttUsernameSetting
@@ -58,7 +59,7 @@ fun SettingsMqttConnectionScreen(navController: NavController) {
             MqttConnectTimeoutSetting()
             MqttSocketConnectTimeoutSetting()
             MqttAutomaticReconnectSetting()
-
+            MqttSessionExpiryIntervalSetting()
             MqttUseWebSocketSetting()
             MqttWebSocketServerPathSetting()
 

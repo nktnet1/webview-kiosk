@@ -10,24 +10,33 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldItem
 
 @Composable
-fun MqttSocketConnectTimeoutSetting() {
+fun MqttSessionExpiryIntervalSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-    val settingKey = UserSettingsKeys.Mqtt.Connection.SOCKET_CONNECT_TIMEOUT
+    val settingKey = UserSettingsKeys.Mqtt.Connection.SESSION_EXPIRY_INTERVAL
 
     NumberSettingFieldItem(
-        label = stringResource(R.string.mqtt_connection_socket_connect_timeout_title),
+        label = stringResource(R.string.mqtt_connection_session_expiry_interval_title),
         infoText = """
-            The timeout for connecting the socket to the server.
+            Specify the maximum time a session is retained on the server after
+            disconnecting from the network.
 
-            Use 0 to disable the timeout.
+            The server will discard the corresponding session state when the
+            expiration time is reached.
         """.trimIndent(),
-        placeholder = "e.g. 5",
-        initialValue = userSettings.mqttSocketConnectTimeout,
+        placeholder = "e.g. 60",
+        initialValue = userSettings.mqttSessionExpiryInterval,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         min = 0,
         max = Int.MAX_VALUE,
-        onSave = { userSettings.mqttSocketConnectTimeout = it }
+        descriptionFormatter = { value ->
+            if (value == "0") {
+                "0 (immediate expiry)"
+            } else {
+                value
+            }
+        },
+        onSave = { userSettings.mqttSessionExpiryInterval = it }
     )
 }
