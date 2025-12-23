@@ -77,7 +77,7 @@ fun createCustomWebview(
                 userAgentString = userSettings.userAgent.takeIf { it.isNotBlank() }
                     ?: settings.userAgentString
                 layoutAlgorithm = userSettings.layoutAlgorithm.algorithm
-                useWideViewPort = userSettings.useWideViewPort
+                useWideViewPort = userSettings.useWideViewport
                 loadWithOverviewMode = userSettings.loadWithOverviewMode
 
                 setGeolocationEnabled(userSettings.allowLocation)

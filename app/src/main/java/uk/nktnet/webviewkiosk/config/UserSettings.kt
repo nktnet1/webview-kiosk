@@ -215,7 +215,7 @@ class UserSettings(val context: Context) {
         fromString = LayoutAlgorithmOption::fromString
     )
     var userAgent by stringPrefOptional(getRestrictions, prefs, UserSettingsKeys.WebEngine.USER_AGENT)
-    var useWideViewPort by booleanPref(
+    var useWideViewport by booleanPref(
         getRestrictions,
         prefs,
         UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT,
@@ -907,7 +907,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebEngine.CACHE_MODE, cacheMode.name)
             put(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM, layoutAlgorithm.algorithm.name)
             put(UserSettingsKeys.WebEngine.USER_AGENT, userAgent)
-            put(UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT, useWideViewPort)
+            put(UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT, useWideViewport)
             put(UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE, loadWithOverviewMode)
             put(UserSettingsKeys.WebEngine.SUPPORT_ZOOM, supportZoom)
             put(UserSettingsKeys.WebEngine.BUILT_IN_ZOOM_CONTROLS, builtInZoomControls)
@@ -1068,7 +1068,7 @@ class UserSettings(val context: Context) {
                 json.optString(UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM, layoutAlgorithm.algorithm.name)
             )
             userAgent = json.optString(UserSettingsKeys.WebEngine.USER_AGENT, userAgent)
-            useWideViewPort = json.optBoolean(UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT, useWideViewPort)
+            useWideViewport = json.optBoolean(UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT, useWideViewport)
             loadWithOverviewMode = json.optBoolean(UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE, loadWithOverviewMode)
             supportZoom = json.optBoolean(UserSettingsKeys.WebEngine.SUPPORT_ZOOM, supportZoom)
             builtInZoomControls = json.optBoolean(UserSettingsKeys.WebEngine.BUILT_IN_ZOOM_CONTROLS, builtInZoomControls)
