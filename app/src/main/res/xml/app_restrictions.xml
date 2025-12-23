@@ -636,6 +636,12 @@
         android:description="@string/mqtt_connection_automatic_reconnect_description"
     />
     <restriction
+        android:key="mqtt.connection.session_expiry_interval"
+        android:restrictionType="integer"
+        android:title="@string/mqtt_connection_session_expiry_interval_title"
+        android:description="@string/mqtt_connection_session_expiry_interval_description"
+    />
+    <restriction
         android:key="mqtt.connection.use_websocket"
         android:restrictionType="bool"
         android:title="@string/mqtt_connection_use_websocket_title"

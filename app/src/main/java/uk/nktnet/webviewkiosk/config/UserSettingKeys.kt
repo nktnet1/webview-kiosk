@@ -131,7 +131,7 @@ object UserSettingsKeys {
             const val CONNECT_TIMEOUT = "mqtt.connection.connect_timeout"
             const val SOCKET_CONNECT_TIMEOUT = "mqtt.connection.socket_connect_timeout"
             const val AUTOMATIC_RECONNECT = "mqtt.connection.automatic_reconnect"
-
+            const val SESSION_EXPIRY_INTERVAL = "mqtt.connection.session_expiry_interval"
             const val USE_WEBSOCKET = "mqtt.connection.use_websocket"
             const val WEBSOCKET_SERVER_PATH = "mqtt.connection.websocket_server_path"
         }
