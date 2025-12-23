@@ -143,25 +143,8 @@ This setting is only controlling the UI aspect of the Address Bar.
 
 Access will still need to be enabled using the dependent settings.
 
-The following actions are available to be configured (remove or rearrange):
-
-| Action     | Description |
-|------------|-------------|
-| Navigation | Combination of `Back` and `Forward` buttons side-by-side |
-| Back       | Navigates one page backwards in history.<br />Requires: `Web Browsing -> Allow Backwards Navigation` |
-| Forward    | Navigates one page forward in history.<br />Requires: `Web Browsing -> Allow Backwards Navigation` |
-| Refresh    | Perform a reload on the current webpage.<br />Requires: `Web Browsing -> Allow Refresh` |
-| Home       | Navigates to the home page.<br />Requires: `Web Browsing -> Allow Go Home` |
-| History    | Opens the history dialog.<br />Requires: `Web Browsing -> Allow History Access` |
-| Bookmark   | Opens the bookmark dialog.<br />Requires: `Web Browsing -> Allow Bookmark Access` |
-| Files      | Opens the local files dialog.<br />Requires: `Web Content -> Allow Local Files` |
-| Find       | Opens a search bar to find matching text on the web page. |
-| Scroll Top | Scrolls to the top of the web page. |
-| Scroll Bot | Scrolls to the bottom of the web page. |
-| Apps       | Opens a dialog allowing you to launch other apps. When in locked/kiosk mode, only apps configured as `Lock Task Packages` under the Device Owner settings will be available. |
-| Settings   | Opens the settings page (only visible when unlocked, requires authentication). |
-| Lock       | Opens the settings page (only visible when unlocked). |
-| Unlock     | Opens the settings page (only visible when locked, requires authentication). |
+See the `Settings Web Browsing -> Kiosk Control Panel Actions` for a list of
+available actions.
 
 ## 14. Kiosk Control Panel Region
 
@@ -362,8 +345,30 @@ The following actions are available to be configured (remove or rearrange):
       <td>
         Opens a dialog allowing you to launch other apps.
 
-        When in locked/kiosk mode, only apps configured as <code>Lock Task Packages</code>
-        under the Device Owner settings will be available.
+        When in lock task mode (kiosk), the following are required to launch apps:
+        <ol>
+          <li>Your device is on Android 9+ (SDK/API level 28+)</li>
+          <li>{APP_NAME} is lock task permitted</li>
+          <li>The target app is lock task permitted</li>
+          <li><code>Lock Task Feature -> HOME</code> is enabled</li>
+        </ol>
+
+        The last condition helps avoid being trapped in lock task mode. It
+        enables the use of the home button to open your default launcher
+        (which *may* show an error that you can safely dismiss).
+        From the launcher, you can find and open {APP_NAME} to unlock the kiosk.
+
+        You may want to also consider:
+
+        <ol>
+          <li>Granting notifications permission to {APP_NAME}</li>
+          <li>Enabling <code>Lock Task Feature -> NOTIFICATIONS</code></li>
+          <li>Setting {APP_NAME} as the default launcher</li>
+        </ol>
+
+        The first two suggestions is to display the foreground service
+        notification in lock task mode. Tapping on the notification will
+        return you to {APP_NAME}.
       </td>
     </tr>
     <tr>
