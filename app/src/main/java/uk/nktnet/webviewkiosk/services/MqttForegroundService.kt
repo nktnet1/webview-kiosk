@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.services
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.app.Service
 import android.content.BroadcastReceiver
@@ -9,6 +10,7 @@ import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.os.PowerManager
 import androidx.core.app.ServiceCompat
 import com.hivemq.client.mqtt.MqttClientState
 import kotlinx.coroutines.CoroutineScope
@@ -27,6 +29,7 @@ class MqttForegroundService : Service() {
     private val scope = CoroutineScope(Dispatchers.IO)
     private var updateJob: Job? = null
     private var lastStatus: MqttClientState? = null
+    private lateinit var wakeLock: PowerManager.WakeLock
 
     private val systemReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -53,6 +56,16 @@ class MqttForegroundService : Service() {
             addAction(Intent.ACTION_USER_PRESENT)
         }
         registerReceiver(systemReceiver, filter)
+
+        val pm = getSystemService(POWER_SERVICE) as PowerManager
+        wakeLock = pm.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "${MqttForegroundService::class.java.name}:partial-wakelock"
+        )
+        wakeLock.setReferenceCounted(false)
+
+        @SuppressLint("WakelockTimeout")
+        wakeLock.acquire()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -99,6 +112,9 @@ class MqttForegroundService : Service() {
     override fun onDestroy() {
         stopForegroundService()
         unregisterReceiver(systemReceiver)
+        if (::wakeLock.isInitialized && wakeLock.isHeld) {
+            wakeLock.release()
+        }
         super.onDestroy()
     }
 
