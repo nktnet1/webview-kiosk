@@ -223,7 +223,7 @@ data class MqttNotifyCommand(
     @Serializable
     data class NotifyData(
         val contentTitle: String = "MQTT",
-        val contentText: String,
+        val contentText: String = "Notify",
         val silent: Boolean = false,
         val onGoing: Boolean = false,
         val priority: MqttNotifyPriority = MqttNotifyPriority.DEFAULT,
