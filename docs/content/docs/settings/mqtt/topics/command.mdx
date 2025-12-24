@@ -496,7 +496,7 @@ Your payload data value can have the following properties:
 | Property        | Type     | Default   | Description                                                        |
 |-----------------|----------|-----------|--------------------------------------------------------------------|
 | `contentTitle`  | string?  | `MQTT`    | The title of the notification.                                     |
-| `contentText`   | string   | —         | **(required)** The content body of the notification.               |
+| `contentText`   | string   | `Notify`  | The content body of the notification.                              |
 | `silent`        | boolean? | `false`   | If `true`, the notification will not make sound or vibration.      |
 | `onGoing`       | boolean? | `false`   | See [NotificationCompat.Builder#setOngoing(boolean)](https://developer.android.com/reference/androidx/core/app/NotificationCompat.Builder#setOngoing(boolean)). |
 | `priority`      | string?  | `DEFAULT` | Notification priority: `MIN`, `LOW`, `DEFAULT`, `HIGH`, or `MAX`.  |

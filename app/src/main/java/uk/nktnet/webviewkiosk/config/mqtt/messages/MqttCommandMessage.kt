@@ -182,7 +182,7 @@ data class MqttPageUpCommand(
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-    val data: PageUpData,
+    val data: PageUpData = PageUpData(false),
 ) : MqttCommandMessage {
     @Serializable
     data class PageUpData(
@@ -199,7 +199,7 @@ data class MqttPageDownCommand(
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-    val data: PageDownData,
+    val data: PageDownData = PageDownData(false),
 ) : MqttCommandMessage {
     @Serializable
     data class PageDownData(
@@ -216,7 +216,9 @@ data class MqttNotifyCommand(
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-    val data: NotifyData,
+    val data: NotifyData = NotifyData(
+        contentText = "Notify"
+    ),
 ) : MqttCommandMessage {
     @Serializable
     data class NotifyData(
