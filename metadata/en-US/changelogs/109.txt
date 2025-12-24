@@ -1,0 +1,7 @@
+## Changes
+
+- feat(mqtt): connection -> session expiry interval
+- fix(mqtt): default data for page up, page down and notify commands
+- fix(mqtt): foreground service acquire partial wakelock
+- fix(mqtt): subscribe only on initial connect - avoid duplicated callbacks
+- fix(mqtt): publish connect event when reconnecting
