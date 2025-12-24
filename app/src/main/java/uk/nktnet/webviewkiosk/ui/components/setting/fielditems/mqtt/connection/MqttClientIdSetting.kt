@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection
+package com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.connection
 
 import android.content.ClipData
 import androidx.compose.foundation.layout.Column
@@ -23,13 +23,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
-import uk.nktnet.webviewkiosk.managers.MqttManager
-import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.UserSettingsKeys
+import com.nktnet.webview_kiosk.config.mqtt.MqttVariableName
+import com.nktnet.webview_kiosk.managers.MqttManager
+import com.nktnet.webview_kiosk.ui.components.setting.fields.TextSettingFieldItem
 
 @Composable
 fun MqttClientIdSetting() {

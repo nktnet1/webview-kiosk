@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.managers
+package com.nktnet.webview_kiosk.managers
 
 import android.content.Context
 import android.os.Handler

@@ -1,13 +1,13 @@
-package uk.nktnet.webviewkiosk.ui.screens
+package com.nktnet.webview_kiosk.ui.screens
 
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.restrictions.MqttRestrictionsMaximumPacketSizeSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.restrictions.MqttRestrictionsReceiveMaximumSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.restrictions.MqttRestrictionsRequestProblemInformationSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.restrictions.MqttRestrictionsRequestResponseInformationSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.restrictions.MqttRestrictionsSendMaximumPacketSizeSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.restrictions.MqttRestrictionsSendMaximumSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.restrictions.MqttRestrictionsSendTopicAliasMaximumSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.restrictions.MqttRestrictionsTopicAliasMaximumSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.restrictions.MqttRestrictionsMaximumPacketSizeSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.restrictions.MqttRestrictionsReceiveMaximumSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.restrictions.MqttRestrictionsRequestProblemInformationSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.restrictions.MqttRestrictionsRequestResponseInformationSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.restrictions.MqttRestrictionsSendMaximumPacketSizeSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.restrictions.MqttRestrictionsSendMaximumSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.restrictions.MqttRestrictionsSendTopicAliasMaximumSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.restrictions.MqttRestrictionsTopicAliasMaximumSetting
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -16,10 +16,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.ui.components.setting.MqttControlButtons
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsButton
+import com.nktnet.webview_kiosk.ui.components.setting.MqttControlButtons
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
+import com.nktnet.webview_kiosk.ui.components.setting.permissions.MqttDebugLogsButton
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.windowInsetsPadding
 

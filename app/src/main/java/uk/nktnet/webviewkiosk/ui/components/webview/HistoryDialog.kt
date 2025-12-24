@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.webview
+package com.nktnet.webview_kiosk.ui.components.webview
 
 import android.content.Context
 import android.text.format.DateFormat
@@ -22,14 +22,14 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.delay
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.managers.MqttManager
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttClearHistoryCommand
-import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
-import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
-import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.managers.MqttManager
+import com.nktnet.webview_kiosk.config.mqtt.messages.MqttClearHistoryCommand
+import com.nktnet.webview_kiosk.utils.handleUserKeyEvent
+import com.nktnet.webview_kiosk.utils.handleUserTouchEvent
+import com.nktnet.webview_kiosk.utils.webview.WebViewNavigation
 import java.util.Date
 import java.util.concurrent.TimeUnit
 

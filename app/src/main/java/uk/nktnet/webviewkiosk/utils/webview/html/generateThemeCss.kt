@@ -1,6 +1,6 @@
-package uk.nktnet.webviewkiosk.utils.webview.html
+package com.nktnet.webview_kiosk.utils.webview.html
 
-import uk.nktnet.webviewkiosk.config.option.ThemeOption
+import com.nktnet.webview_kiosk.config.option.ThemeOption
 
 private const val DARK_CSS = """
     body {

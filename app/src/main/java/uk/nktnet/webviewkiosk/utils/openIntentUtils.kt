@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import android.app.ActivityManager
 import android.app.ActivityOptions
@@ -14,9 +14,9 @@ import android.os.Bundle
 import android.provider.Settings
 import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.services.LockTaskService
-import uk.nktnet.webviewkiosk.managers.ToastManager
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.services.LockTaskService
+import com.nktnet.webview_kiosk.managers.ToastManager
 
 fun safeStartActivity(context: Context, intent: Intent, bundle: Bundle? = null) {
     try {

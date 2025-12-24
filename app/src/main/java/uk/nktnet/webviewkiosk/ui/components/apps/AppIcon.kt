@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.apps
+package com.nktnet.webview_kiosk.ui.components.apps
 
 import android.graphics.Canvas
 import android.graphics.drawable.Drawable

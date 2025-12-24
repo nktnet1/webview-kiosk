@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import android.app.Activity
 import android.app.ActivityManager
@@ -8,13 +8,13 @@ import android.os.Build
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.managers.AuthenticationManager
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
-import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
-import uk.nktnet.webviewkiosk.managers.ToastManager
-import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.managers.AuthenticationManager
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.option.UnlockAuthRequirementOption
+import com.nktnet.webview_kiosk.managers.DeviceOwnerManager
+import com.nktnet.webview_kiosk.managers.ToastManager
+import com.nktnet.webview_kiosk.states.WaitingForUnlockStateSingleton
 
 private fun tryLockAction(
     activity: Activity,

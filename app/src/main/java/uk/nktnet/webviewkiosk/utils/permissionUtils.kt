@@ -1,11 +1,11 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
 import android.webkit.PermissionRequest
 import androidx.core.content.ContextCompat
-import uk.nktnet.webviewkiosk.config.Constants
+import com.nktnet.webview_kiosk.config.Constants
 
 fun getPermissionDisplay(resource: String): String = when (resource) {
     PermissionRequest.RESOURCE_AUDIO_CAPTURE -> "Microphone"

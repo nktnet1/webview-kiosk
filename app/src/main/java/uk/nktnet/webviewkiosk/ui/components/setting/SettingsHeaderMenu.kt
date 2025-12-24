@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting
+package com.nktnet.webview_kiosk.ui.components.setting
 
 import android.content.Intent
 import androidx.compose.foundation.layout.*
@@ -10,15 +10,15 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.R
+import com.nktnet.webview_kiosk.R
 import androidx.core.net.toUri
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.Screen
-import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ExportSettingsDialog
-import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ImportSettingsDialog
-import uk.nktnet.webviewkiosk.utils.openDefaultLauncherSettings
-import uk.nktnet.webviewkiosk.utils.openSettings
-import uk.nktnet.webviewkiosk.utils.safeStartActivity
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.Screen
+import com.nktnet.webview_kiosk.ui.components.setting.dialog.ExportSettingsDialog
+import com.nktnet.webview_kiosk.ui.components.setting.dialog.ImportSettingsDialog
+import com.nktnet.webview_kiosk.utils.openDefaultLauncherSettings
+import com.nktnet.webview_kiosk.utils.openSettings
+import com.nktnet.webview_kiosk.utils.safeStartActivity
 
 @Composable
 fun SettingsHeaderMenu(

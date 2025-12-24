@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.screens
+package com.nktnet.webview_kiosk.ui.screens
 
 import android.webkit.CookieManager
 import android.webkit.HttpAuthHandler
@@ -25,60 +25,60 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.AddressBarModeOption
-import uk.nktnet.webviewkiosk.config.option.AddressBarPositionOption
-import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
-import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
-import uk.nktnet.webviewkiosk.handlers.DimScreenOnInactivityTimeoutHandler
-import uk.nktnet.webviewkiosk.handlers.BackPressHandler
-import uk.nktnet.webviewkiosk.handlers.ResetOnInactivityTimeoutHandler
-import uk.nktnet.webviewkiosk.handlers.KioskControlPanel
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoBackCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoForwardCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoHomeCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoToUrlCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttPageDownCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttPageUpCommand
-import uk.nktnet.webviewkiosk.managers.MqttManager
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttRefreshCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttUnlockCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSearchCommand
-import uk.nktnet.webviewkiosk.managers.ToastManager
-import uk.nktnet.webviewkiosk.states.LockStateSingleton
-import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
-import uk.nktnet.webviewkiosk.ui.components.webview.FloatingToolbar
-import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
-import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
-import uk.nktnet.webviewkiosk.ui.components.setting.dialog.AppLauncherDialog
-import uk.nktnet.webviewkiosk.ui.components.webview.AddressBarSearchSuggestions
-import uk.nktnet.webviewkiosk.ui.components.webview.BookmarksDialog
-import uk.nktnet.webviewkiosk.ui.components.webview.HistoryDialog
-import uk.nktnet.webviewkiosk.ui.components.webview.LinkOptionsDialog
-import uk.nktnet.webviewkiosk.ui.components.webview.LocalFilesDialog
-import uk.nktnet.webviewkiosk.ui.components.webview.WebViewFindBar
-import uk.nktnet.webviewkiosk.utils.createCustomWebview
-import uk.nktnet.webviewkiosk.utils.enterImmersiveMode
-import uk.nktnet.webviewkiosk.utils.exitImmersiveMode
-import uk.nktnet.webviewkiosk.utils.getMimeType
-import uk.nktnet.webviewkiosk.utils.isSupportedFileURLMimeType
-import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
-import uk.nktnet.webviewkiosk.utils.tryLockTask
-import uk.nktnet.webviewkiosk.utils.tryUnlockTask
-import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
-import uk.nktnet.webviewkiosk.utils.webview.SchemeType
-import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
-import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
-import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
-import uk.nktnet.webviewkiosk.utils.webview.html.generateFileMissingPage
-import uk.nktnet.webviewkiosk.utils.webview.html.generateUnsupportedMimeTypePage
-import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
-import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
-import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.option.AddressBarModeOption
+import com.nktnet.webview_kiosk.config.option.AddressBarPositionOption
+import com.nktnet.webview_kiosk.config.option.FloatingToolbarModeOption
+import com.nktnet.webview_kiosk.config.option.SearchSuggestionEngineOption
+import com.nktnet.webview_kiosk.handlers.DimScreenOnInactivityTimeoutHandler
+import com.nktnet.webview_kiosk.handlers.BackPressHandler
+import com.nktnet.webview_kiosk.handlers.ResetOnInactivityTimeoutHandler
+import com.nktnet.webview_kiosk.handlers.KioskControlPanel
+import com.nktnet.webview_kiosk.config.mqtt.messages.MqttErrorCommand
+import com.nktnet.webview_kiosk.config.mqtt.messages.MqttGoBackCommand
+import com.nktnet.webview_kiosk.config.mqtt.messages.MqttGoForwardCommand
+import com.nktnet.webview_kiosk.config.mqtt.messages.MqttLockCommand
+import com.nktnet.webview_kiosk.config.mqtt.messages.MqttGoHomeCommand
+import com.nktnet.webview_kiosk.config.mqtt.messages.MqttGoToUrlCommand
+import com.nktnet.webview_kiosk.config.mqtt.messages.MqttPageDownCommand
+import com.nktnet.webview_kiosk.config.mqtt.messages.MqttPageUpCommand
+import com.nktnet.webview_kiosk.managers.MqttManager
+import com.nktnet.webview_kiosk.config.mqtt.messages.MqttRefreshCommand
+import com.nktnet.webview_kiosk.config.mqtt.messages.MqttUnlockCommand
+import com.nktnet.webview_kiosk.config.mqtt.messages.MqttSearchCommand
+import com.nktnet.webview_kiosk.managers.ToastManager
+import com.nktnet.webview_kiosk.states.LockStateSingleton
+import com.nktnet.webview_kiosk.ui.components.webview.AddressBar
+import com.nktnet.webview_kiosk.ui.components.webview.FloatingToolbar
+import com.nktnet.webview_kiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
+import com.nktnet.webview_kiosk.ui.components.setting.BasicAuthDialog
+import com.nktnet.webview_kiosk.ui.components.setting.dialog.AppLauncherDialog
+import com.nktnet.webview_kiosk.ui.components.webview.AddressBarSearchSuggestions
+import com.nktnet.webview_kiosk.ui.components.webview.BookmarksDialog
+import com.nktnet.webview_kiosk.ui.components.webview.HistoryDialog
+import com.nktnet.webview_kiosk.ui.components.webview.LinkOptionsDialog
+import com.nktnet.webview_kiosk.ui.components.webview.LocalFilesDialog
+import com.nktnet.webview_kiosk.ui.components.webview.WebViewFindBar
+import com.nktnet.webview_kiosk.utils.createCustomWebview
+import com.nktnet.webview_kiosk.utils.enterImmersiveMode
+import com.nktnet.webview_kiosk.utils.exitImmersiveMode
+import com.nktnet.webview_kiosk.utils.getMimeType
+import com.nktnet.webview_kiosk.utils.isSupportedFileURLMimeType
+import com.nktnet.webview_kiosk.utils.shouldBeImmersed
+import com.nktnet.webview_kiosk.utils.tryLockTask
+import com.nktnet.webview_kiosk.utils.tryUnlockTask
+import com.nktnet.webview_kiosk.utils.unlockWithAuthIfRequired
+import com.nktnet.webview_kiosk.utils.webview.SchemeType
+import com.nktnet.webview_kiosk.utils.webview.SearchSuggestionEngine
+import com.nktnet.webview_kiosk.utils.webview.WebViewNavigation
+import com.nktnet.webview_kiosk.utils.webview.getBlockInfo
+import com.nktnet.webview_kiosk.utils.webview.html.generateFileMissingPage
+import com.nktnet.webview_kiosk.utils.webview.html.generateUnsupportedMimeTypePage
+import com.nktnet.webview_kiosk.utils.webview.isCustomBlockPageUrl
+import com.nktnet.webview_kiosk.utils.webview.loadBlockedPage
+import com.nktnet.webview_kiosk.utils.webview.resolveUrlOrSearch
 import java.io.File
 
 @Composable
@@ -220,7 +220,7 @@ fun WebviewScreen(navController: NavController) {
 
     val webView = createCustomWebview(
         context = context,
-        config = uk.nktnet.webviewkiosk.utils.WebViewConfig(
+        config = com.nktnet.webview_kiosk.utils.WebViewConfig(
             systemSettings = systemSettings,
             userSettings = userSettings,
             blacklistRegexes = blacklistRegexes,

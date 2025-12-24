@@ -1,12 +1,12 @@
-package uk.nktnet.webviewkiosk.config.mqtt.messages
+package com.nktnet.webview_kiosk.config.mqtt.messages
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
-import uk.nktnet.webviewkiosk.config.data.SystemInfo
-import uk.nktnet.webviewkiosk.utils.BaseJson
-import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
+import com.nktnet.webview_kiosk.config.data.SystemInfo
+import com.nktnet.webview_kiosk.utils.BaseJson
+import com.nktnet.webview_kiosk.utils.WebviewKioskStatus
 
 @Serializable
 sealed interface MqttResponseMessage {

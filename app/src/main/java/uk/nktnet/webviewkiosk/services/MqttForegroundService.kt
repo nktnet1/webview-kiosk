@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.services
+package com.nktnet.webview_kiosk.services
 
 import android.annotation.SuppressLint
 import android.app.PendingIntent
@@ -19,10 +19,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.MainActivity
-import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
-import uk.nktnet.webviewkiosk.managers.CustomNotificationType
-import uk.nktnet.webviewkiosk.managers.MqttManager
+import com.nktnet.webview_kiosk.MainActivity
+import com.nktnet.webview_kiosk.managers.CustomNotificationManager
+import com.nktnet.webview_kiosk.managers.CustomNotificationType
+import com.nktnet.webview_kiosk.managers.MqttManager
 
 class MqttForegroundService : Service() {
     private var isServiceActive = true

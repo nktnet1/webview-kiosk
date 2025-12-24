@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.screens
+package com.nktnet.webview_kiosk.ui.screens
 
 import android.os.Build
 import android.webkit.CookieManager
@@ -16,20 +16,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.Screen
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.managers.ToastManager
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.ui.components.setting.dialog.AppLauncherDialog
-import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
-import uk.nktnet.webviewkiosk.utils.openDataUsageSettings
-import uk.nktnet.webviewkiosk.utils.openDefaultAppsSettings
-import uk.nktnet.webviewkiosk.utils.openDefaultLauncherSettings
-import uk.nktnet.webviewkiosk.utils.openSettings
-import uk.nktnet.webviewkiosk.utils.openWifiSettings
-import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.config.Screen
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.managers.ToastManager
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
+import com.nktnet.webview_kiosk.ui.components.setting.dialog.AppLauncherDialog
+import com.nktnet.webview_kiosk.utils.openAppDetailsSettings
+import com.nktnet.webview_kiosk.utils.openDataUsageSettings
+import com.nktnet.webview_kiosk.utils.openDefaultAppsSettings
+import com.nktnet.webview_kiosk.utils.openDefaultLauncherSettings
+import com.nktnet.webview_kiosk.utils.openSettings
+import com.nktnet.webview_kiosk.utils.openWifiSettings
+import com.nktnet.webview_kiosk.utils.webview.WebViewNavigation
 
 @Composable
 fun SettingsMoreActionsScreen(navController: NavController) {

@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent
+package com.nktnet.webview_kiosk.ui.components.setting.fielditems.webcontent
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,13 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
-import uk.nktnet.webviewkiosk.utils.validateUrl
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.UserSettingsKeys
+import com.nktnet.webview_kiosk.ui.components.setting.fields.TextSettingFieldItem
+import com.nktnet.webview_kiosk.utils.validateUrl
 
 @Composable
 fun HomeUrlSetting() {

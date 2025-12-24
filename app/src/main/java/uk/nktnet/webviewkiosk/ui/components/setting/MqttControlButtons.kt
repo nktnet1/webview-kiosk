@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting
+package com.nktnet.webview_kiosk.ui.components.setting
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -10,11 +10,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.managers.MqttManager
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.managers.MqttManager
 import com.hivemq.client.mqtt.MqttClientState
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttDisconnectingEvent
-import uk.nktnet.webviewkiosk.managers.ToastManager
+import com.nktnet.webview_kiosk.config.mqtt.messages.MqttDisconnectingEvent
+import com.nktnet.webview_kiosk.managers.ToastManager
 import kotlin.math.max
 
 @Composable

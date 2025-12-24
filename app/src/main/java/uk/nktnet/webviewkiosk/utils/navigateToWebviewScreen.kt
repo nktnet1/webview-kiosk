@@ -1,7 +1,7 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.config.Screen
+import com.nktnet.webview_kiosk.config.Screen
 
 fun navigateToWebViewScreen(navController: NavController) {
     navController.navigate(Screen.WebView.route) {

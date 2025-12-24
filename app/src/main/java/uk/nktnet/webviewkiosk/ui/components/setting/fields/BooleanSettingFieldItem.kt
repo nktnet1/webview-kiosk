@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fields
+package com.nktnet.webview_kiosk.ui.components.setting.fields
 
 import androidx.compose.runtime.*
 

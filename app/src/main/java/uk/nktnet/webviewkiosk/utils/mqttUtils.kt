@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import android.content.Context
 import android.content.Intent
@@ -10,9 +10,9 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONObject
-import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.managers.MqttManager
-import uk.nktnet.webviewkiosk.services.MqttForegroundService
+import com.nktnet.webview_kiosk.config.UserSettingsKeys
+import com.nktnet.webview_kiosk.managers.MqttManager
+import com.nktnet.webview_kiosk.services.MqttForegroundService
 
 fun isValidMqttPublishTopic(topic: String): Boolean {
     return topic.matches(Regex("^[^\\u0000+#]+$"))

@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.webview
+package com.nktnet.webview_kiosk.ui.components.webview
 
 import android.content.ClipData
 import android.content.Intent
@@ -23,8 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.launch
 import androidx.core.net.toUri
-import uk.nktnet.webviewkiosk.states.LockStateSingleton
-import uk.nktnet.webviewkiosk.utils.safeStartActivity
+import com.nktnet.webview_kiosk.states.LockStateSingleton
+import com.nktnet.webview_kiosk.utils.safeStartActivity
 
 @Composable
 fun LinkOptionsDialog(

@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.auth
+package com.nktnet.webview_kiosk.ui.components.auth
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,9 +8,9 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.managers.AuthenticationManager
-import uk.nktnet.webviewkiosk.ui.components.common.LoadingIndicator
-import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
+import com.nktnet.webview_kiosk.managers.AuthenticationManager
+import com.nktnet.webview_kiosk.ui.components.common.LoadingIndicator
+import com.nktnet.webview_kiosk.utils.navigateToWebViewScreen
 
 private fun showAuthPrompt() {
     AuthenticationManager.showAuthenticationPrompt(

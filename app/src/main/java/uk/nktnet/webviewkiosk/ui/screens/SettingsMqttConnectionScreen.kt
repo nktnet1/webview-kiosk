@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.screens
+package com.nktnet.webview_kiosk.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -8,24 +8,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.ui.components.setting.MqttControlButtons
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttAutomaticReconnectSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttCleanStartSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttClientIdSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttConnectTimeoutSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttKeepAliveSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttPasswordSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttServerHostSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttServerPortSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttSessionExpiryIntervalSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttWebSocketServerPathSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttUseTlsSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttUsernameSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttSocketConnectTimeoutSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttUseWebSocketSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsButton
+import com.nktnet.webview_kiosk.ui.components.setting.MqttControlButtons
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.connection.MqttAutomaticReconnectSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.connection.MqttCleanStartSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.connection.MqttClientIdSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.connection.MqttConnectTimeoutSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.connection.MqttKeepAliveSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.connection.MqttPasswordSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.connection.MqttServerHostSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.connection.MqttServerPortSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.connection.MqttSessionExpiryIntervalSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.connection.MqttWebSocketServerPathSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.connection.MqttUseTlsSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.connection.MqttUsernameSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.connection.MqttSocketConnectTimeoutSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.connection.MqttUseWebSocketSetting
+import com.nktnet.webview_kiosk.ui.components.setting.permissions.MqttDebugLogsButton
 
 @Composable
 fun SettingsMqttConnectionScreen(navController: NavController) {

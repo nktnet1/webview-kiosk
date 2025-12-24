@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.dialog
+package com.nktnet.webview_kiosk.ui.components.setting.dialog
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -11,11 +11,11 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.config.data.AppInfo
-import uk.nktnet.webviewkiosk.ui.components.apps.AppList
-import uk.nktnet.webviewkiosk.ui.components.apps.AppSearchBar
+import com.nktnet.webview_kiosk.config.data.AppInfo
+import com.nktnet.webview_kiosk.ui.components.apps.AppList
+import com.nktnet.webview_kiosk.ui.components.apps.AppSearchBar
 import androidx.compose.ui.res.painterResource
-import uk.nktnet.webviewkiosk.R
+import com.nktnet.webview_kiosk.R
 
 @Composable
 fun <T : AppInfo> BaseAppListDialog(

@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import android.app.ActivityManager
 import android.app.Application
@@ -8,9 +8,9 @@ import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
 import kotlinx.serialization.Serializable
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.option.LockStateType
-import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.config.option.LockStateType
+import com.nktnet.webview_kiosk.states.UserInteractionStateSingleton
 
 @Serializable
 data class WebviewKioskStatus(

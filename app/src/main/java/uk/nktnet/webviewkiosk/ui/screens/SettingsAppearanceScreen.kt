@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.screens
+package com.nktnet.webview_kiosk.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -8,18 +8,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.AddressBarModeSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.BlockedMessageSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.ThemeSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.WebViewInsetSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.AddressBarPositionSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.AddressBarSizeSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.CustomBlockPageHtmlSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.FloatingToolbarModeSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.appearance.ImmersiveModeSetting
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.appearance.AddressBarModeSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.appearance.BlockedMessageSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.appearance.ThemeSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.appearance.WebViewInsetSetting
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.appearance.AddressBarPositionSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.appearance.AddressBarSizeSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.appearance.CustomBlockPageHtmlSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.appearance.FloatingToolbarModeSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.appearance.ImmersiveModeSetting
 
 @Composable
 fun SettingsAppearanceScreen(

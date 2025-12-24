@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.managers
+package com.nktnet.webview_kiosk.managers
 
 import android.app.KeyguardManager
 import android.content.Context
@@ -14,8 +14,8 @@ import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.UserSettings
 
 object AuthenticationManager {
     private var activity: AppCompatActivity? = null

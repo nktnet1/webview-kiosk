@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.managers
+package com.nktnet.webview_kiosk.managers
 
 import android.app.Notification
 import android.app.NotificationChannel
@@ -11,10 +11,10 @@ import android.os.Build
 import androidx.annotation.DrawableRes
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
-import uk.nktnet.webviewkiosk.MainActivity
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttNotifyCommand
+import com.nktnet.webview_kiosk.MainActivity
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.mqtt.messages.MqttNotifyCommand
 
 object CustomNotificationType {
     const val LOCK_TASK_MODE = 1001

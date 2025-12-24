@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config.mqtt
+package com.nktnet.webview_kiosk.config.mqtt
 
 enum class MqttVariableName {
     APP_INSTANCE_ID,

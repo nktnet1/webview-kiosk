@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.services
+package com.nktnet.webview_kiosk.services
 
 import android.app.ActivityManager
 import android.app.PendingIntent
@@ -19,9 +19,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.BuildConfig
-import uk.nktnet.webviewkiosk.managers.CustomNotificationType
-import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
+import com.nktnet.webview_kiosk.BuildConfig
+import com.nktnet.webview_kiosk.managers.CustomNotificationType
+import com.nktnet.webview_kiosk.managers.CustomNotificationManager
 
 @RequiresApi(28)
 class LockTaskService: Service() {

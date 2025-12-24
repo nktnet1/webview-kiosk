@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device
+package com.nktnet.webview_kiosk.ui.components.setting.fielditems.device
 
 import android.Manifest
 import androidx.compose.foundation.layout.*
@@ -12,11 +12,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.ui.res.stringResource
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
-import uk.nktnet.webviewkiosk.utils.rememberPermissionState
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.UserSettingsKeys
+import com.nktnet.webview_kiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import com.nktnet.webview_kiosk.utils.rememberPermissionState
 
 @Composable
 fun AllowLocationSetting() {

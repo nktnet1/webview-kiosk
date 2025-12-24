@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config.mqtt
+package com.nktnet.webview_kiosk.config.mqtt
 
 data class MqttConfig(
     val appInstanceId: String,

@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config
+package com.nktnet.webview_kiosk.config
 
 import android.content.Context
 import android.content.RestrictionsManager
@@ -6,16 +6,16 @@ import android.content.SharedPreferences
 import android.util.Base64
 import org.json.JSONArray
 import org.json.JSONObject
-import uk.nktnet.webviewkiosk.config.mqtt.MqttQosOption
-import uk.nktnet.webviewkiosk.config.mqtt.MqttRetainHandlingOption
-import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
-import uk.nktnet.webviewkiosk.config.option.*
-import uk.nktnet.webviewkiosk.utils.booleanPref
-import uk.nktnet.webviewkiosk.utils.enumListPref
-import uk.nktnet.webviewkiosk.utils.stringEnumPref
-import uk.nktnet.webviewkiosk.utils.intPref
-import uk.nktnet.webviewkiosk.utils.stringPref
-import uk.nktnet.webviewkiosk.utils.stringPrefOptional
+import com.nktnet.webview_kiosk.config.mqtt.MqttQosOption
+import com.nktnet.webview_kiosk.config.mqtt.MqttRetainHandlingOption
+import com.nktnet.webview_kiosk.config.mqtt.MqttVariableName
+import com.nktnet.webview_kiosk.config.option.*
+import com.nktnet.webview_kiosk.utils.booleanPref
+import com.nktnet.webview_kiosk.utils.enumListPref
+import com.nktnet.webview_kiosk.utils.stringEnumPref
+import com.nktnet.webview_kiosk.utils.intPref
+import com.nktnet.webview_kiosk.utils.stringPref
+import com.nktnet.webview_kiosk.utils.stringPrefOptional
 
 class UserSettings(val context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(

@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.screens
+package com.nktnet.webview_kiosk.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -11,12 +11,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.config.Screen
-import uk.nktnet.webviewkiosk.ui.components.setting.MqttControlButtons
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingListItem
-import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsButton
+import com.nktnet.webview_kiosk.config.Screen
+import com.nktnet.webview_kiosk.ui.components.setting.MqttControlButtons
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
+import com.nktnet.webview_kiosk.ui.components.setting.SettingListItem
+import com.nktnet.webview_kiosk.ui.components.setting.permissions.MqttDebugLogsButton
 
 @Composable
 fun SettingsMqttTopicsScreen(navController: NavController) {

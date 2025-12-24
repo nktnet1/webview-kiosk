@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fields
+package com.nktnet.webview_kiosk.ui.components.setting.fields
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -8,7 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextOverflow
-import uk.nktnet.webviewkiosk.ui.components.setting.dialog.GenericSettingFieldDialog
+import com.nktnet.webview_kiosk.ui.components.setting.dialog.GenericSettingFieldDialog
 
 @Composable
 fun CustomSettingFieldItem(

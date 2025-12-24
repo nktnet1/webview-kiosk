@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.dialog
+package com.nktnet.webview_kiosk.ui.components.setting.dialog
 
 import android.app.admin.DevicePolicyManager
 import android.content.Context
@@ -14,10 +14,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.font.FontWeight
-import uk.nktnet.webviewkiosk.config.data.AdminAppInfo
-import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
-import uk.nktnet.webviewkiosk.managers.ToastManager
-import uk.nktnet.webviewkiosk.ui.components.apps.AppIcon
+import com.nktnet.webview_kiosk.config.data.AdminAppInfo
+import com.nktnet.webview_kiosk.managers.DeviceOwnerManager
+import com.nktnet.webview_kiosk.managers.ToastManager
+import com.nktnet.webview_kiosk.ui.components.apps.AppIcon
 
 @RequiresApi(Build.VERSION_CODES.P)
 @Composable

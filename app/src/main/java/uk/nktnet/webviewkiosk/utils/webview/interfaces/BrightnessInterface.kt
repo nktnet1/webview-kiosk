@@ -1,10 +1,10 @@
-package uk.nktnet.webviewkiosk.utils.webview.interfaces
+package com.nktnet.webview_kiosk.utils.webview.interfaces
 
 import android.app.Activity
 import android.content.Context
 import android.webkit.JavascriptInterface
-import uk.nktnet.webviewkiosk.utils.getWindowBrightness
-import uk.nktnet.webviewkiosk.utils.setWindowBrightness
+import com.nktnet.webview_kiosk.utils.getWindowBrightness
+import com.nktnet.webview_kiosk.utils.setWindowBrightness
 
 class BrightnessInterface(private val context: Context) {
     val name = "WebviewKioskBrightnessInterface"

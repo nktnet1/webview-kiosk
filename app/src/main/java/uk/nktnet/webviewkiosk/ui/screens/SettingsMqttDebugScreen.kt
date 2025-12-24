@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.screens
+package com.nktnet.webview_kiosk.ui.screens
 
 import android.content.ClipData
 import androidx.compose.foundation.border
@@ -26,12 +26,12 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.managers.MqttManager
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.managers.MqttLogEntry
-import uk.nktnet.webviewkiosk.managers.ToastManager
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.managers.MqttManager
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
+import com.nktnet.webview_kiosk.managers.MqttLogEntry
+import com.nktnet.webview_kiosk.managers.ToastManager
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
 import java.text.SimpleDateFormat
 import java.util.Locale
 

@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.apps
+package com.nktnet.webview_kiosk.ui.components.apps
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -7,7 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import uk.nktnet.webviewkiosk.config.data.AppInfo
+import com.nktnet.webview_kiosk.config.data.AppInfo
 
 @Composable
 fun <T : AppInfo> AppList(

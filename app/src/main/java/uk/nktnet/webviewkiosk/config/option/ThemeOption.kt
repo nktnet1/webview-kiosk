@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config.option
+package com.nktnet.webview_kiosk.config.option
 
 enum class ThemeOption(val label: String) {
     SYSTEM("System"),

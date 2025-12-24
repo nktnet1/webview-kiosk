@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.dialog
+package com.nktnet.webview_kiosk.ui.components.setting.dialog
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -13,10 +13,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.managers.ToastManager
-import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.managers.ToastManager
+import com.nktnet.webview_kiosk.utils.updateDeviceSettings
 
 enum class ImportTab {
     Base64,

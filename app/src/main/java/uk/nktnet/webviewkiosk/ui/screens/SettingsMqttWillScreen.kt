@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.screens
+package com.nktnet.webview_kiosk.ui.screens
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -8,16 +8,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.ui.components.setting.MqttControlButtons
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
-import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWillDelayIntervalSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWillMessageExpiryIntervalSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWillPayloadSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWillQosSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWillRetainSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWillTopicSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsButton
+import com.nktnet.webview_kiosk.ui.components.setting.MqttControlButtons
+import com.nktnet.webview_kiosk.ui.components.setting.SettingDivider
+import com.nktnet.webview_kiosk.ui.components.setting.SettingLabel
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.will.MqttWillDelayIntervalSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.will.MqttWillMessageExpiryIntervalSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.will.MqttWillPayloadSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.will.MqttWillQosSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.will.MqttWillRetainSetting
+import com.nktnet.webview_kiosk.ui.components.setting.fielditems.mqtt.will.MqttWillTopicSetting
+import com.nktnet.webview_kiosk.ui.components.setting.permissions.MqttDebugLogsButton
 
 @Composable
 fun SettingsMqttWillScreen(navController: NavController) {

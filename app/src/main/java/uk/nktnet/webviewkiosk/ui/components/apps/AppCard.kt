@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.apps
+package com.nktnet.webview_kiosk.ui.components.apps
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -15,7 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import uk.nktnet.webviewkiosk.config.data.AppInfo
+import com.nktnet.webview_kiosk.config.data.AppInfo
 
 @Composable
 fun AppCard(

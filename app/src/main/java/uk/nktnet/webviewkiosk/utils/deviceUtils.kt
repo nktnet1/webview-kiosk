@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import android.app.Activity
 import android.app.ActivityManager
@@ -15,17 +15,17 @@ import androidx.webkit.WebViewCompat
 import android.app.admin.DevicePolicyManager
 import android.content.pm.PackageManager
 import android.os.PowerManager
-import uk.nktnet.webviewkiosk.BuildConfig
-import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.data.SystemAppInfo
-import uk.nktnet.webviewkiosk.config.data.SystemDeviceInfo
-import uk.nktnet.webviewkiosk.config.data.SystemInfo
-import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
-import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
-import uk.nktnet.webviewkiosk.states.KeepScreenOnStateSingleton
-import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
+import com.nktnet.webview_kiosk.BuildConfig
+import com.nktnet.webview_kiosk.config.data.DeviceOwnerMode
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.data.SystemAppInfo
+import com.nktnet.webview_kiosk.config.data.SystemDeviceInfo
+import com.nktnet.webview_kiosk.config.data.SystemInfo
+import com.nktnet.webview_kiosk.config.option.DeviceRotationOption
+import com.nktnet.webview_kiosk.managers.DeviceOwnerManager
+import com.nktnet.webview_kiosk.states.KeepScreenOnStateSingleton
+import com.nktnet.webview_kiosk.states.ThemeStateSingleton
 import java.util.TimeZone
 
 fun getWindowBrightness(context: Context): Int {

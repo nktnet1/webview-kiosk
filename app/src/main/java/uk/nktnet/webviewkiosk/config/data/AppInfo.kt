@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config.data
+package com.nktnet.webview_kiosk.config.data
 
 import android.content.ComponentName
 import android.graphics.drawable.Drawable

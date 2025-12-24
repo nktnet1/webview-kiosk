@@ -1,11 +1,11 @@
-package uk.nktnet.webviewkiosk.utils.webview
+package com.nktnet.webview_kiosk.utils.webview
 
 import android.net.Uri
 import android.webkit.WebView
 import androidx.core.net.toUri
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.utils.webview.html.BlockCause
-import uk.nktnet.webviewkiosk.utils.webview.html.generateBlockedPageHtml
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.utils.webview.html.BlockCause
+import com.nktnet.webview_kiosk.utils.webview.html.generateBlockedPageHtml
 import java.net.URLEncoder
 import kotlin.collections.contains
 

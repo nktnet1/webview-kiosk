@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.utils
+package com.nktnet.webview_kiosk.utils
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -21,25 +21,25 @@ import android.widget.FrameLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.core.net.toUri
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
-import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
-import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.managers.ToastManager
-import uk.nktnet.webviewkiosk.utils.webview.SchemeType
-import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
-import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScript
-import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOverrideScript
-import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
-import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
-import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorPromptRequest
-import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
-import uk.nktnet.webviewkiosk.utils.webview.interfaces.BatteryInterface
-import uk.nktnet.webviewkiosk.utils.webview.interfaces.BrightnessInterface
-import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
-import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
+import com.nktnet.webview_kiosk.config.Constants
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.config.UserSettings
+import com.nktnet.webview_kiosk.config.option.OverrideUrlLoadingBlockActionOption
+import com.nktnet.webview_kiosk.config.option.SslErrorModeOption
+import com.nktnet.webview_kiosk.config.option.ThemeOption
+import com.nktnet.webview_kiosk.managers.ToastManager
+import com.nktnet.webview_kiosk.utils.webview.SchemeType
+import com.nktnet.webview_kiosk.utils.webview.getBlockInfo
+import com.nktnet.webview_kiosk.utils.webview.scripts.generateDesktopViewportScript
+import com.nktnet.webview_kiosk.utils.webview.scripts.generatePrefersColorSchemeOverrideScript
+import com.nktnet.webview_kiosk.utils.webview.handlers.handleGeolocationRequest
+import com.nktnet.webview_kiosk.utils.webview.handlers.handlePermissionRequest
+import com.nktnet.webview_kiosk.utils.webview.handlers.handleSslErrorPromptRequest
+import com.nktnet.webview_kiosk.utils.webview.wrapJsInIIFE
+import com.nktnet.webview_kiosk.utils.webview.interfaces.BatteryInterface
+import com.nktnet.webview_kiosk.utils.webview.interfaces.BrightnessInterface
+import com.nktnet.webview_kiosk.utils.webview.isCustomBlockPageUrl
+import com.nktnet.webview_kiosk.utils.webview.loadBlockedPage
 
 data class WebViewConfig(
     val systemSettings: SystemSettings,

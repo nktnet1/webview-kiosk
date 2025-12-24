@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.dialog
+package com.nktnet.webview_kiosk.ui.components.setting.dialog
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -21,8 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.utils.normaliseInfoText
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.utils.normaliseInfoText
 
 @Composable
 fun GenericSettingFieldDialog(

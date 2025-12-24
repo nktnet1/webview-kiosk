@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.files
+package com.nktnet.webview_kiosk.ui.components.setting.files
 
 import android.content.ClipData
 import androidx.compose.foundation.layout.*
@@ -18,14 +18,14 @@ import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavController
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.managers.ToastManager
-import uk.nktnet.webviewkiosk.utils.getDisplayName
-import uk.nktnet.webviewkiosk.utils.getLocalUrl
-import uk.nktnet.webviewkiosk.utils.getUUID
-import uk.nktnet.webviewkiosk.utils.humanReadableSize
-import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
+import com.nktnet.webview_kiosk.R
+import com.nktnet.webview_kiosk.config.SystemSettings
+import com.nktnet.webview_kiosk.managers.ToastManager
+import com.nktnet.webview_kiosk.utils.getDisplayName
+import com.nktnet.webview_kiosk.utils.getLocalUrl
+import com.nktnet.webview_kiosk.utils.getUUID
+import com.nktnet.webview_kiosk.utils.humanReadableSize
+import com.nktnet.webview_kiosk.utils.navigateToWebViewScreen
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
