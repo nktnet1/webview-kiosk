@@ -113,10 +113,13 @@ connected. Instead, you will need to reconnect by:
 
 ### 5.2. Use Foreground Service
 
-Start a foreground service will be started to keep the MQTT connection alive.
+Start a
+[Foreground Service](https://developer.android.com/develop/background-work/services/fgs)
+to keep the MQTT connection alive.
 
 This will maintain the connection even when {APP_NAME} goes to the background
-(e.g. another app is opened) or the device screen is turned off.
+(e.g. another app is opened) or the device screen is turned off (by using
+[PowerManager.PARTIAL_WAKE_LOCK](https://developer.android.com/reference/android/os/PowerManager.html#PARTIAL_WAKE_LOCK)).
 
 Turn on notifications to see the current MQTT status being updated by the
 foreground service every second.
