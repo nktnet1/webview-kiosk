@@ -1,6 +1,14 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DividerDefaults
@@ -9,8 +17,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.setting.MqttControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
@@ -22,31 +32,31 @@ import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsBut
 fun SettingsMqttTopicsScreen(navController: NavController) {
     val publishTopics = listOf(
         Triple(
-            "Event",
-            "Publish device and webview state changes",
+            stringResource(R.string.settings_mqtt_topics_publish_event_title),
+            stringResource(R.string.settings_mqtt_topics_publish_event_description),
             Screen.SettingsMqttTopicsPublishEvent.route
         ),
         Triple(
-            "Response",
-            "Publish replies to information requests",
+            stringResource(R.string.settings_mqtt_topics_publish_response_title),
+            stringResource(R.string.settings_mqtt_topics_publish_response_description),
             Screen.SettingsMqttTopicsPublishResponse.route
         ),
     )
 
     val subscribeTopics = listOf(
         Triple(
-            "Command",
-            "Subscribe to control commands (actions)",
+            stringResource(R.string.settings_mqtt_topics_subscribe_command_title),
+            stringResource(R.string.settings_mqtt_topics_subscribe_command_description),
             Screen.SettingsMqttTopicsSubscribeCommand.route
         ),
         Triple(
-            "Settings",
-            "Subscribe to setting (configuration) changes",
+            stringResource(R.string.settings_mqtt_topics_subscribe_settings_title),
+            stringResource(R.string.settings_mqtt_topics_subscribe_settings_description),
             Screen.SettingsMqttTopicsSubscribeSettings.route
         ),
         Triple(
-            "Request",
-            "Subscribe to requests for information",
+            stringResource(R.string.settings_mqtt_topics_subscribe_request_title),
+            stringResource(R.string.settings_mqtt_topics_subscribe_request_description),
             Screen.SettingsMqttTopicsSubscribeRequest.route
         ),
     )
@@ -58,7 +68,10 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
             .padding(top = 4.dp)
             .padding(horizontal = 16.dp),
     ) {
-        SettingLabel(navController = navController, label = "Topics")
+        SettingLabel(
+            navController = navController,
+            label = stringResource(R.string.settings_mqtt_topics_title),
+        )
         SettingDivider()
 
         Column(
@@ -69,7 +82,7 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
             MqttControlButtons()
 
             Text(
-                text = "Publish",
+                text = stringResource(R.string.settings_mqtt_topics_publish_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
@@ -88,7 +101,7 @@ fun SettingsMqttTopicsScreen(navController: NavController) {
             }
 
             Text(
-                text = "Subscribe",
+                text = stringResource(R.string.settings_mqtt_topics_subscribe_title),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(top = 18.dp, bottom = 4.dp)
