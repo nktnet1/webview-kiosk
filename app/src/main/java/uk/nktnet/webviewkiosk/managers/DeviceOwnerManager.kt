@@ -13,7 +13,6 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.RemoteException
 import androidx.annotation.RequiresApi
-import org.lsposed.hiddenapibypass.HiddenApiBypass
 import com.rosan.dhizuku.api.Dhizuku
 import com.rosan.dhizuku.api.DhizukuBinderWrapper
 import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
@@ -22,6 +21,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import org.lsposed.hiddenapibypass.HiddenApiBypass
+import org.unifiedpush.android.connector.UnifiedPush
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.data.AdminAppInfo
 import uk.nktnet.webviewkiosk.config.data.AppInfo
@@ -246,15 +247,41 @@ object DeviceOwnerManager {
     fun getLockTaskAppsFlow(
         context: Context,
         chunkSize: Int = 5
-    ): Flow<AppLoadState<AppInfo>> = flow {
-        val pm = context.packageManager
+    ): Flow<AppLoadState<AppInfo>> {
         val packagesList = try {
             DPM.getLockTaskPackages(DAR)
         } catch (e: Exception) {
             e.printStackTrace()
-            emptyArray()
+            emptyArray<String>()
         }
+        return getAppsFlowFromPackageList(context, packagesList.toList(), chunkSize)
+    }
+
+    fun getUnifiedPushAppsFlow(
+        context: Context,
+        chunkSize: Int = 5
+    ): Flow<AppLoadState<AppInfo>> {
+        val packagesList = try {
+            UnifiedPush.getDistributors(context)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+        return getAppsFlowFromPackageList(context, packagesList, chunkSize)
+    }
+
+    private fun updateStatus(mode: DeviceOwnerMode) {
+        status.value = Status(mode)
+    }
+
+    private fun getAppsFlowFromPackageList(
+        context: Context,
+        packagesList: List<String>,
+        chunkSize: Int = 5
+    ): Flow<AppLoadState<AppInfo>> = flow {
+        val pm = context.packageManager
         val total = packagesList.size
+
         if (total == 0) {
             emit(AppLoadState(emptyList(), 1f))
             return@flow
@@ -290,10 +317,6 @@ object DeviceOwnerManager {
             }
         }
     }.flowOn(Dispatchers.IO)
-
-    private fun updateStatus(mode: DeviceOwnerMode) {
-        status.value = Status(mode)
-    }
 
     @SuppressLint("PrivateApi")
     private fun binderWrapperDevicePolicyManager(appContext: Context): DevicePolicyManager? {
