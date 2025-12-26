@@ -29,6 +29,41 @@
     <string name="settings_js_scripts_title">JS Scripts</string>
     <string name="settings_js_scripts_description">Apply theme, desktop viewport, custom scripts</string>
 
+    <string name="settings_mqtt_title">MQTT</string>
+    <string name="settings_mqtt_description">Remote management and monitoring of your kiosk device</string>
+
+    <string name="settings_mqtt_connection_title">Connection</string>
+    <string name="settings_mqtt_connection_description">Specify how to connect to the broker server</string>
+
+    <string name="settings_mqtt_topics_title">Topics</string>
+    <string name="settings_mqtt_topics_description">Publish and subscribe topic configurations</string>
+
+    <string name="settings_mqtt_will_title">Will (LWT)</string>
+    <string name="settings_mqtt_will_description">Custom message for unexpected disconnections</string>
+
+    <string name="settings_mqtt_restrictions_title">Restrictions</string>
+    <string name="settings_mqtt_restrictions_description">Broker and client restrictions and limitations</string>
+
+    <string name="settings_mqtt_topics_publish_title">Publish</string>
+    <string name="settings_mqtt_topics_subscribe_title">Subscribe</string>
+
+    <string name="settings_mqtt_topics_publish_event_title">Event</string>
+    <string name="settings_mqtt_topics_publish_event_description">Publish device and webview state changes</string>
+
+    <string name="settings_mqtt_topics_publish_response_title">Response</string>
+    <string name="settings_mqtt_topics_publish_response_description">Publish replies to information requests</string>
+
+    <string name="settings_mqtt_topics_subscribe_command_title">Command</string>
+    <string name="settings_mqtt_topics_subscribe_command_description">Subscribe to control commands (actions)</string>
+
+    <string name="settings_mqtt_topics_subscribe_settings_title">Settings</string>
+    <string name="settings_mqtt_topics_subscribe_settings_description">Subscribe to setting (configuration) changes</string>
+
+    <string name="settings_mqtt_topics_subscribe_request_title">Request</string>
+    <string name="settings_mqtt_topics_subscribe_request_description">Subscribe to requests for information</string>
+
+    <string name="settings_mqtt_debug_log_title">Debug Log</string>
+
     <string name="settings_about_title">About</string>
     <string name="settings_about_description">Package name, app version, debug build, installer</string>
 </resources>
