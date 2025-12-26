@@ -1,6 +1,6 @@
 ## Changes
 
-- fix: remove sql - non standard type
+- fix: remove text/sql - non-standard type
 - fix: display message for files that cannot be rendered by WebView
 - docs: simplify lock task mode feature description
 - docs: updated description with permission section

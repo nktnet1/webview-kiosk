@@ -2,5 +2,5 @@
 
 - feat: added back and home button for built-in block page when URL matches blacklist
   - visibility depends on "Allow Backward Navigation" and "Allow Go Home" respectively
-- feat: new setting, appearance -> custom block page html
+- feat: new setting, appearance -> custom block page HTML
 - fix: ensure valid original url before replacing history

@@ -7,7 +7,7 @@ Action to take when a URL navigation (via shouldOverrideUrlLoading) matches the 
 Typically, this is from clicking links (`<a>` tags) on a webpage's HTML.
 
 Actions are:
-- Show Block Page (display a HTML block page)
+- Show Block Page (display an HTML block page)
 - Prevent Navigation (does nothing when links are clicked)
 - Show Toast (shows a toast with your custom block message)
 

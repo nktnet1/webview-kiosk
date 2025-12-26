@@ -14,4 +14,4 @@
     - defaults to BLOCK - set to PROCEED with caution (dangerous)
 - fix: allow kiosk control panel to be scrollable
 - fix: avoid webview reload on ssl cert error cancellation
-- fix: address bar unfocusable on launch (avoid auto-focus on Android 5.0)
+- fix: address bar unfocusable on launch (avoid autofocus on Android 5.0)

@@ -4,7 +4,7 @@
 - feat: appearance -> address bar size (small/medium/large + extras)
 - feat: more action buttons for Address Bar and Kiosk Control Panel
 - feat: find text in page (i.e. webview text search)
-- feat: import/export user settings as json
+- feat: import/export user settings as JSON
 - feat: web engine -> request focus on page start
 
 - fix: apply desktop viewport width restriction type, bool -> integer

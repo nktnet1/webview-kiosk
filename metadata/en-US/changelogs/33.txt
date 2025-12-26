@@ -1,7 +1,7 @@
 - feat: history refactored with datetime and stable list IDs
 - fix: history index display and text wrap using zero-width characters
 - fix(ui): placeholder text new lines
-- chore: updated gradle
+- chore: updated Gradle
 - fix: set italic & font size medium for text placeholder
 - chore: gradle-wrapper.properties, added distributionSha256Sum
 - docs: added metadata for fdroid

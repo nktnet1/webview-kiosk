@@ -1,7 +1,7 @@
 ## Webview Kiosk Documentation
 
 This is the documentation site for Webview Kiosk, built using
-[Fumadocs](https://fumadocs.dev) and [NextJS](https://nextjs.org).
+[Fumadocs](https://fumadocs.dev) and [Next.js](https://nextjs.org).
 
 To run the site locally, use the commands:
 

@@ -3,7 +3,7 @@
 - feat: prevent screenshots, screen recordings, recents app preview (device -> prevent screen capture)
 - feat: launch other apps (configurable as an action in the address bar or kiosk control panel)
 - feat: ability to transfer device owner
-- feat: more setting actions - shortcuts (e.g. to WiFi, Data, Default Apps)
+- feat: more setting actions - shortcuts (e.g. to Wi-Fi, Data, Default Apps)
 
 ## New Permission
 
