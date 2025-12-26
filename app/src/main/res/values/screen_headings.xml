@@ -64,6 +64,9 @@
 
     <string name="settings_mqtt_debug_log_title">Debug Log</string>
 
+    <string name="settings_unifiedpush_title">UnifiedPush</string>
+    <string name="settings_unifiedpush_description">Control kiosk devices via push notifications</string>
+
     <string name="settings_about_title">About</string>
     <string name="settings_about_description">Package name, app version, debug build, installer</string>
 </resources>
