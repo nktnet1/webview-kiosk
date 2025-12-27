@@ -47,17 +47,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.navigation.NavController
-import uk.nktnet.webviewkiosk.config.UserSettings
-import kotlin.math.max
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
+import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
 import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
-import uk.nktnet.webviewkiosk.config.option.WebviewControlActionOption
 import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
+import uk.nktnet.webviewkiosk.config.option.WebviewControlActionOption
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
@@ -68,6 +67,7 @@ import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+import kotlin.math.max
 
 @Composable
 private fun ActionButton(
@@ -184,7 +184,6 @@ fun KioskControlPanel(
                             KioskControlPanelRegionOption.TOP -> motionEvent.y < screenHeightPx / 2f
                             KioskControlPanelRegionOption.BOTTOM -> motionEvent.y >= screenHeightPx / 2f
                             KioskControlPanelRegionOption.FULL -> true
-                            else -> false
                         }
 
                         if (inRegion) {
@@ -225,7 +224,6 @@ fun KioskControlPanel(
                     KioskControlPanelRegionOption.TOP -> Triple(1f, 0.5f, Alignment.TopCenter)
                     KioskControlPanelRegionOption.BOTTOM -> Triple(1f, 0.5f, Alignment.BottomCenter)
                     KioskControlPanelRegionOption.FULL -> Triple(1f, 1f, Alignment.Center)
-                    else -> Triple(0f, 0f, Alignment.TopStart)
                 }
                 Box(
                     Modifier

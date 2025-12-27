@@ -11,7 +11,6 @@ fun generatePrefersColorSchemeOverrideScript(theme: ThemeOption): String {
     val mediaValue = when (theme) {
         ThemeOption.DARK -> "dark"
         ThemeOption.LIGHT -> "light"
-        else -> error("Unhandled theme: $theme")
     }
 
     val innerScript = """
