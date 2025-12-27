@@ -9,11 +9,29 @@ import org.json.JSONObject
 import uk.nktnet.webviewkiosk.config.mqtt.MqttQosOption
 import uk.nktnet.webviewkiosk.config.mqtt.MqttRetainHandlingOption
 import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
-import uk.nktnet.webviewkiosk.config.option.*
+import uk.nktnet.webviewkiosk.config.option.AddressBarModeOption
+import uk.nktnet.webviewkiosk.config.option.AddressBarPositionOption
+import uk.nktnet.webviewkiosk.config.option.AddressBarSizeOption
+import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
+import uk.nktnet.webviewkiosk.config.option.CacheModeOption
+import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
+import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
+import uk.nktnet.webviewkiosk.config.option.ImmersiveModeOption
+import uk.nktnet.webviewkiosk.config.option.KioskControlPanelRegionOption
+import uk.nktnet.webviewkiosk.config.option.LayoutAlgorithmOption
+import uk.nktnet.webviewkiosk.config.option.MixedContentModeOption
+import uk.nktnet.webviewkiosk.config.option.OverScrollModeOption
+import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
+import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
+import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
+import uk.nktnet.webviewkiosk.config.option.ThemeOption
+import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
+import uk.nktnet.webviewkiosk.config.option.WebViewInsetOption
+import uk.nktnet.webviewkiosk.config.option.WebviewControlActionOption
 import uk.nktnet.webviewkiosk.utils.booleanPref
 import uk.nktnet.webviewkiosk.utils.enumListPref
-import uk.nktnet.webviewkiosk.utils.stringEnumPref
 import uk.nktnet.webviewkiosk.utils.intPref
+import uk.nktnet.webviewkiosk.utils.stringEnumPref
 import uk.nktnet.webviewkiosk.utils.stringPref
 import uk.nktnet.webviewkiosk.utils.stringPrefOptional
 
@@ -886,6 +904,14 @@ class UserSettings(val context: Context) {
         false
     )
 
+    // UnifiedPush
+    var unifiedPushEnabled by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.UnifiedPush.ENABLED,
+        false
+    )
+
     fun exportJson(): JSONObject {
         val json = JSONObject().apply {
             put(UserSettingsKeys.WebContent.HOME_URL, homeUrl)
@@ -1028,6 +1054,8 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.Restrictions.SEND_TOPIC_ALIAS_MAXIMUM, mqttRestrictionsSendTopicAliasMaximum)
             put(UserSettingsKeys.Mqtt.Restrictions.REQUEST_PROBLEM_INFORMATION, mqttRestrictionsRequestProblemInformation)
             put(UserSettingsKeys.Mqtt.Restrictions.REQUEST_RESPONSE_INFORMATION, mqttRestrictionsRequestResponseInformation)
+
+            put(UserSettingsKeys.UnifiedPush.ENABLED, unifiedPushEnabled)
         }
         return json
     }
@@ -1220,6 +1248,9 @@ class UserSettings(val context: Context) {
             mqttRestrictionsSendTopicAliasMaximum = json.optInt(UserSettingsKeys.Mqtt.Restrictions.SEND_TOPIC_ALIAS_MAXIMUM, mqttRestrictionsSendTopicAliasMaximum)
             mqttRestrictionsRequestProblemInformation = json.optBoolean(UserSettingsKeys.Mqtt.Restrictions.REQUEST_PROBLEM_INFORMATION, mqttRestrictionsRequestProblemInformation)
             mqttRestrictionsRequestResponseInformation = json.optBoolean(UserSettingsKeys.Mqtt.Restrictions.REQUEST_RESPONSE_INFORMATION, mqttRestrictionsRequestResponseInformation)
+
+            unifiedPushEnabled = json.optBoolean(UserSettingsKeys.UnifiedPush.ENABLED, unifiedPushEnabled)
+
             true
         } catch (e: Exception) {
             e.printStackTrace()

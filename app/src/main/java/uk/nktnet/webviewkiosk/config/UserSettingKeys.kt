@@ -22,8 +22,10 @@ object UserSettingsKeys {
         const val ALLOW_BOOKMARK_ACCESS = "web_browsing.allow_bookmark_access"
         const val ALLOW_OTHER_URL_SCHEMES = "web_browsing.allow_other_url_schemes"
         const val ALLOW_DEFAULT_LONG_PRESS = "web_browsing.allow_default_long_press"
-        const val ALLOW_LINK_LONG_PRESS_CONTEXT_MENU = "web_browsing.allow_link_long_press_context_menu"
-        const val OVERRIDE_URL_LOADING_BLOCK_ACTION = "web_browsing.override_url_loading_block_action"
+        const val ALLOW_LINK_LONG_PRESS_CONTEXT_MENU =
+            "web_browsing.allow_link_long_press_context_menu"
+        const val OVERRIDE_URL_LOADING_BLOCK_ACTION =
+            "web_browsing.override_url_loading_block_action"
         const val ADDRESS_BAR_ACTIONS = "web_browsing.address_bar_actions"
         const val KIOSK_CONTROL_PANEL_REGION = "web_browsing.kiosk_control_panel_region"
         const val KIOSK_CONTROL_PANEL_ACTIONS = "web_browsing.kiosk_control_panel_actions"
@@ -46,8 +48,10 @@ object UserSettingsKeys {
         const val DISPLAY_ZOOM_CONTROLS = "web_engine.display_zoom_controls"
         const val INITIAL_SCALE = "web_engine.initial_scale"
         const val ALLOW_FILE_ACCESS_FROM_FILE_URLS = "web_engine.allow_file_access_from_file_urls"
-        const val ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS = "web_engine.allow_universal_access_from_file_urls"
-        const val MEDIA_PLAYBACK_REQUIRES_USER_GESTURE = "web_engine.media_playback_requires_user_gesture"
+        const val ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS =
+            "web_engine.allow_universal_access_from_file_urls"
+        const val MEDIA_PLAYBACK_REQUIRES_USER_GESTURE =
+            "web_engine.media_playback_requires_user_gesture"
         const val SSL_ERROR_MODE = "web_engine.ssl_error_mode"
         const val MIXED_CONTENT_MODE = "web_engine.mixed_content_mode"
         const val OVER_SCROLL_MODE = "web_engine.over_scroll_mode"
@@ -58,8 +62,10 @@ object UserSettingsKeys {
         const val LOCK_ON_LAUNCH = "web_lifecycle.lock_on_launch"
         const val RESET_ON_LAUNCH = "web_lifecycle.reset_on_launch"
         const val RESET_ON_INACTIVITY_SECONDS = "web_lifecycle.reset_on_inactivity_seconds"
-        const val DIM_SCREEN_ON_INACTIVITY_SECONDS = "web_lifecycle.dim_screen_on_inactivity_seconds"
-        const val REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS = "web_lifecycle.refresh_on_loading_error_interval_seconds"
+        const val DIM_SCREEN_ON_INACTIVITY_SECONDS =
+            "web_lifecycle.dim_screen_on_inactivity_seconds"
+        const val REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS =
+            "web_lifecycle.refresh_on_loading_error_interval_seconds"
     }
 
     object Appearance {
@@ -97,11 +103,13 @@ object UserSettingsKeys {
                 const val NOTIFICATIONS = "device.owner.lock_task_feature.notifications"
                 const val SYSTEM_INFO = "device.owner.lock_task_feature.system_info"
                 const val KEYGUARD = "device.owner.lock_task_feature.keyguard"
-                const val BLOCK_ACTIVITY_START_IN_TASK = "device.owner.lock_task_feature.block_activity_start_in_task"
+                const val BLOCK_ACTIVITY_START_IN_TASK =
+                    "device.owner.lock_task_feature.block_activity_start_in_task"
             }
 
             object Dhizuku {
-                const val REQUEST_PERMISSION_ON_LAUNCH = "device.owner.dhizuku.request_permission_on_launch"
+                const val REQUEST_PERMISSION_ON_LAUNCH =
+                    "device.owner.dhizuku.request_permission_on_launch"
             }
         }
     }
@@ -143,6 +151,7 @@ object UserSettingsKeys {
                     const val QOS = "mqtt.publish.event.qos"
                     const val RETAIN = "mqtt.publish.event.retain"
                 }
+
                 object Response {
                     const val TOPIC = "mqtt.publish.response.topic"
                     const val QOS = "mqtt.publish.response.qos"
@@ -191,7 +200,12 @@ object UserSettingsKeys {
             const val TOPIC_ALIAS_MAXIMUM = "mqtt.restrictions.topic_alias_maximum"
             const val SEND_TOPIC_ALIAS_MAXIMUM = "mqtt.restrictions.send_topic_alias_maximum"
             const val REQUEST_PROBLEM_INFORMATION = "mqtt.restrictions.request_problem_information"
-            const val REQUEST_RESPONSE_INFORMATION = "mqtt.restrictions.request_response_information"
+            const val REQUEST_RESPONSE_INFORMATION =
+                "mqtt.restrictions.request_response_information"
         }
+    }
+
+    object UnifiedPush {
+        const val ENABLED = "unifiedpush.enabled"
     }
 }
