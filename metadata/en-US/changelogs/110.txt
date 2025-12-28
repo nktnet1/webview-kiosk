@@ -1,0 +1,7 @@
+## Changes
+
+- feat(mqtt): allow packages to be launched via commands
+- feat(mqtt): allow requesting launchable and lock task permitted packages
+- feat(about): add source code url to system app info
+- fix(mqtt): wk/command notify - default content text value
+- fix(mqtt): string resource
