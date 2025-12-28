@@ -232,6 +232,23 @@ data class MqttNotifyCommand(
 }
 
 @Serializable
+@SerialName("launch_package")
+data class MqttLaunchPackageCommand(
+    override val messageId: String? = null,
+    override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
+    override val interact: Boolean = true,
+    override val wakeScreen: Boolean = false,
+    val data: Data,
+) : MqttCommandMessage {
+    @Serializable
+    data class Data(
+        val packageName: String,
+    )
+    override fun toString() = "launch_package"
+}
+
+@Serializable
 @SerialName("error")
 data class MqttErrorCommand(
     override val messageId: String? = null,
