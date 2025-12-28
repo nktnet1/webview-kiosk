@@ -17,6 +17,7 @@
     <string name="about_app_lock_task_permitted">Lock Task Permitted</string>
     <string name="about_app_dhizuku_permission_granted">Dhizuku Permission Granted</string>
     <string name="about_app_instance_id">Instance ID</string>
+    <string name="about_source_code_url">Source Code URL</string>
 
     <!-- Device Info Labels -->
     <string name="about_device_android_version">Android Version</string>

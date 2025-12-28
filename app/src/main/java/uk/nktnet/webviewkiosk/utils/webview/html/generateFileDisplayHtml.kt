@@ -93,7 +93,7 @@ fun generateUnsupportedMimeTypePage(
                     <br><br>
                     You can try renaming the file extension if you think the detected mime type
                     is incorrect. Otherwise, if you believe this to be a bug, please create an
-                    <a href="${Constants.GITHUB_URL}/issues">issue on GitHub</a>.
+                    <a href="${Constants.SOURCE_CODE_URL}/issues">issue on GitHub</a>.
                 </i>
             </p>
             <hr />

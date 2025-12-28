@@ -3,7 +3,7 @@ package uk.nktnet.webviewkiosk.config
 object Constants {
     const val APP_NAME = "Webview Kiosk"
     const val WEBSITE_URL = "https://webviewkiosk.nktnet.uk"
-    const val GITHUB_URL = "https://github.com/nktnet1/webview-kiosk"
+    const val SOURCE_CODE_URL = "https://github.com/nktnet1/webview-kiosk"
     const val DEFAULT_SEARCH_PROVIDER_URL = "https://duckduckgo.com?q="
 
     const val MIN_INACTIVITY_TIMEOUT_SECONDS = 10

@@ -158,6 +158,10 @@ fun SettingsAboutScreen(navController: NavController) {
                 label = stringResource(R.string.about_app_instance_id),
                 value = systemInfo.app.instanceId
             )
+            InfoItem(
+                label = stringResource(R.string.about_source_code_url),
+                value = systemInfo.app.sourceCodeUrl
+            )
 
             Spacer(modifier = Modifier.height(20.dp))
 

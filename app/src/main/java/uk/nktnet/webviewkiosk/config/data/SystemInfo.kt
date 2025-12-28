@@ -15,7 +15,8 @@ data class SystemAppInfo(
     val isDeviceOwner: Boolean,
     val isLockTaskPermitted: Boolean,
     val dhizukuPermissionGranted: Boolean,
-    val instanceId: String
+    val instanceId: String,
+    val sourceCodeUrl: String,
 )
 
 @Serializable
@@ -44,11 +45,11 @@ data class SystemDeviceInfo(
     val supportedAbis: List<String>,
     val supported32BitAbis: List<String>,
     val supported64BitAbis: List<String>,
-    val buildFingerprint: String
+    val buildFingerprint: String,
 )
 
 @Serializable
 data class SystemInfo(
     val app: SystemAppInfo,
-    val device: SystemDeviceInfo
+    val device: SystemDeviceInfo,
 )

@@ -16,6 +16,7 @@ import android.app.admin.DevicePolicyManager
 import android.content.pm.PackageManager
 import android.os.PowerManager
 import uk.nktnet.webviewkiosk.BuildConfig
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -148,7 +149,8 @@ fun getAppInfo(context: Context): SystemAppInfo {
         isDeviceOwner = dpm.isDeviceOwnerApp(packageName),
         isLockTaskPermitted = dpm.isLockTaskPermitted(packageName),
         dhizukuPermissionGranted = dhizukuPermissionGranted,
-        instanceId = systemSettings.appInstanceId
+        instanceId = systemSettings.appInstanceId,
+        sourceCodeUrl = Constants.SOURCE_CODE_URL,
     )
 }
 

@@ -25,7 +25,7 @@ fun WebsiteBookmarksSetting() {
         placeholder = """
             e.g.
             ${Constants.WEBSITE_URL}
-            ${Constants.GITHUB_URL}
+            ${Constants.SOURCE_CODE_URL}
         """.trimIndent(),
         initialValue = userSettings.websiteBookmarks,
         settingKey = settingKey,
