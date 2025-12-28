@@ -259,3 +259,66 @@ Example payload:
   "correlationData": "arbitrary-data-12345"
 }
 ```
+
+### 2.3. Get Launchable Packages
+
+Retrieves a list of package names corresponding to applications that
+can be opened on the device.
+
+In the `data` property, you can optionally specify:
+- `filterLockTaskPermitted`: (boolean) if true, only return launchable packages that are
+  permitted for [Lock Task Mode](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode)
+
+Example payload:
+
+```json tab="Minimal"
+{
+  "requestType": "get_launchable_packages"
+}
+```
+
+```jsonc tab="Full"
+{
+  "requestType": "get_launchable_packages",
+  "data": {
+    "filterLockTaskPermitted": true
+  },
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+
+  // NOTE: these can be specified as metadata in MQTT v5
+  "responseTopic": "wk/${APP_INSTANCE_ID}/${RESPONSE_TYPE}",
+  "correlationData": "arbitrary-data-12345"
+}
+```
+
+### 2.4. Get Lock Task Packages
+
+Retrieves the list of lock task packages using
+[DevicePolicyManager#getLockTaskPackages](https://developer.android.com/reference/android/app/admin/DevicePolicyManager#getLockTaskPackages(android.content.ComponentName)).
+
+This list is not limited to only launchable packages.
+
+If neither Device Owner nor Dhizuku privileges were granted to {APP_NAME}, an empty list will be returned.
+
+Example payload:
+
+```json tab="Minimal"
+{
+  "requestType": "get_lock_task_packages"
+}
+```
+
+```jsonc tab="Full"
+{
+  "requestType": "get_lock_task_packages",
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+
+  // NOTE: these can be specified as metadata in MQTT v5
+  "responseTopic": "wk/${APP_INSTANCE_ID}/${RESPONSE_TYPE}",
+  "correlationData": "arbitrary-data-12345"
+}
+```

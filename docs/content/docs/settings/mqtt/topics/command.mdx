@@ -533,3 +533,45 @@ Example payload:
   "wakeScreen": false
 }
 ```
+
+### 2.16. Launch Package
+
+Open an application based on its package name, e.g. `com.afwsamples.testdpc`.
+
+In Lock Task Mode, the same restrictions outlined in [Web Browsing](/docs/settings/web-browsing)
+under `Kiosk Control Panel Actions -> Apps` applies.
+
+Additionally, packages can only be launched when {APP_NAME} is in the foreground, unless
+direct Device Owner permission has been granted. Dhizuku is insufficient.
+
+In the payload `data`, you can optionally specify the `activityName`. For example, this can
+be any of the following:
+- `com.afwsamples.testdpc.PolicyManagementActivity`
+- `.PolicyManagementActivity`
+- `PolicyManagementActivity`
+
+Example Payload:
+
+```json tab="Minimal"
+{
+  "command": "launch_package",
+  "data": {
+    "packageName": "com.afwsamples.testdpc"
+  }
+}
+```
+
+```json tab="Full"
+{
+  "command": "launch_package",
+  "data": {
+    "packageName": "com.afwsamples.testdpc",
+    "activityName": ".PolicyManagementActivity"
+  },
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": false,
+  "wakeScreen": true
+}
+```

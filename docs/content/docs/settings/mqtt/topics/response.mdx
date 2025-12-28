@@ -179,7 +179,62 @@ This response is published when a `get_system_info` request is received.
 }
 ```
 
-### 2.4. Error
+### 2.4. Get Launchable Packages
+
+This response is published when a `get_launchable_packages` request is received.
+
+Example Payload:
+
+```json
+{
+  "responseType": "get_launchable_packages",
+  "messageId": "69569438-c6c7-488f-bce4-f9b348e3baad",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1",
+  "requestMessageId": null,
+  "correlationData": null,
+  "data": {
+    "packages": [
+      "com.afwsamples.testdpc",
+      "com.android.vending",
+      "com.bintianqi.owndroid",
+      "com.google.android.calendar",
+      "com.google.android.deskclock",
+      "com.looker.droidify"
+      "com.rosan.dhizuku",
+      "com.termux",
+      "moe.shizuku.privileged.api"
+      "uk.nktnet.webviewkiosk"
+    ]
+  }
+}
+```
+
+### 2.5. Get Lock Task Packages
+
+This response is published when a `get_lock_task_packages` request is received.
+
+Example Payload:
+
+```json
+{
+  "responseType": "get_lock_task_packages",
+  "messageId": "aa92ece1-4daf-4a44-83ad-cbfc5317f8c0",
+  "username": "medium-phone-api-35",
+  "appInstanceId": "42188f0c-6784-4a52-95b6-8569f0f4d2f1",
+  "requestMessageId": null,
+  "correlationData": null,
+  "data": {
+    "packages": [
+      "com.google.android.calendar",
+      "com.google.android.deskclock",
+      "uk.nktnet.webviewkiosk"
+    ]
+  }
+}
+```
+
+### 2.6. Error
 
 This response is published whenever an error occurs with processing a request.
 
