@@ -35,7 +35,7 @@ import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
 import uk.nktnet.webviewkiosk.handlers.DimScreenOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.ResetOnInactivityTimeoutHandler
-import uk.nktnet.webviewkiosk.handlers.KioskControlPanel
+import uk.nktnet.webviewkiosk.ui.components.webview.KioskControlPanel
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorCommand
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoBackCommand
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoForwardCommand
