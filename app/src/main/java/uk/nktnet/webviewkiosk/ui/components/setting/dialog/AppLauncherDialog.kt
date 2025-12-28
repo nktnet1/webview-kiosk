@@ -47,8 +47,7 @@ fun AppLauncherDialog(
     val isLocked by LockStateSingleton.isLocked
 
     LaunchedEffect(Unit) {
-        AppFlowManager
-            .getLaunchableAppsFlow(
+        AppFlowManager.getLaunchableAppsFlow(
             context,
             filterLockTaskPermitted = getIsLocked(activityManager)
         )
