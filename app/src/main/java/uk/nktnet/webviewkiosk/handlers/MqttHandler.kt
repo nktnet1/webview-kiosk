@@ -87,6 +87,10 @@ object MqttHandler {
                 openPackage(
                     context,
                     command.data.packageName,
+                    normaliseActivityName(
+                        command.data.packageName,
+                        command.data.activityName,
+                    ),
                 )
             }
             else -> Unit
@@ -142,5 +146,16 @@ object MqttHandler {
                 MqttManager.publishErrorResponse(request)
             }
         }
+    }
+}
+
+fun normaliseActivityName(packageName: String, activityName: String?): String? {
+    if (activityName.isNullOrBlank()) {
+        return null
+    }
+    return when {
+        activityName.startsWith(packageName) -> activityName
+        activityName.startsWith(".") -> packageName + activityName
+        else -> "$packageName.$activityName"
     }
 }

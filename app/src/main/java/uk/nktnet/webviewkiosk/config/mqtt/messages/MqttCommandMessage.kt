@@ -244,6 +244,7 @@ data class MqttLaunchPackageCommand(
     @Serializable
     data class Data(
         val packageName: String,
+        val activityName: String? = null,
     )
     override fun toString() = "launch_package"
 }
