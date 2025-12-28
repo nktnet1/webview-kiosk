@@ -17,7 +17,7 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.data.LaunchableAppInfo
-import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
+import uk.nktnet.webviewkiosk.managers.AppFlowManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.apps.AppIcon
@@ -47,15 +47,15 @@ fun AppLauncherDialog(
     val isLocked by LockStateSingleton.isLocked
 
     LaunchedEffect(Unit) {
-        DeviceOwnerManager
+        AppFlowManager
             .getLaunchableAppsFlow(
-                context,
-                filterLockTaskPermitted = getIsLocked(activityManager)
-            )
-            .collect { state ->
-                apps = apps + state.apps
-                progress = state.progress
-            }
+            context,
+            filterLockTaskPermitted = getIsLocked(activityManager)
+        )
+        .collect { state ->
+            apps = apps + state.apps
+            progress = state.progress
+        }
     }
 
     BaseAppListDialog(

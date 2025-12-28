@@ -48,6 +48,10 @@ import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSystemInfoRequest
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorCommand
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorRequest
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLaunchablePackagesRequest
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLaunchablePackagesResponse
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockTaskPackagesRequest
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockTaskPackagesResponse
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttPowerPluggedEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttPowerUnpluggedEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttRequestJsonParser
@@ -564,6 +568,46 @@ object MqttManager {
             c,
             statusMessage,
             systemInfoRequest,
+        )
+    }
+
+    fun publishLaunchablePackagesResponse(
+        request: MqttLaunchablePackagesRequest,
+        packages: List<String>
+    ) {
+        val c = getReadyClient() ?: return
+        val message = MqttLaunchablePackagesResponse(
+            messageId = UUID.randomUUID().toString(),
+            username = config.username,
+            appInstanceId = config.appInstanceId,
+            requestMessageId = request.messageId,
+            correlationData = request.correlationData,
+            data = MqttLaunchablePackagesResponse.Data(packages),
+        )
+        publishResponseMessage(
+            c,
+            message,
+            request,
+        )
+    }
+
+    fun publishLockTaskPermittedPackagesResponse(
+        request: MqttLockTaskPackagesRequest,
+        packages: List<String>
+    ) {
+        val c = getReadyClient() ?: return
+        val message = MqttLockTaskPackagesResponse(
+            messageId = UUID.randomUUID().toString(),
+            username = config.username,
+            appInstanceId = config.appInstanceId,
+            requestMessageId = request.messageId,
+            correlationData = request.correlationData,
+            data = MqttLockTaskPackagesResponse.Data(packages),
+        )
+        publishResponseMessage(
+            c,
+            message,
+            request,
         )
     }
 
