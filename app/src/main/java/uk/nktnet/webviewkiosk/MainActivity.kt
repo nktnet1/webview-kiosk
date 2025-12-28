@@ -36,21 +36,9 @@ import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttClearHistoryCommand
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttDisconnectingEvent
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorRequest
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLaunchPackageCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLaunchablePackagesRequest
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockDeviceCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockTaskPackagesRequest
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttNotifyCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttReconnectCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSettingsRequest
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttStatusRequest
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSystemInfoRequest
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttToastCommand
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.managers.AppFlowManager
+import uk.nktnet.webviewkiosk.handlers.MqttHandler
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.BackButtonManager
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
@@ -68,19 +56,14 @@ import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
 import uk.nktnet.webviewkiosk.ui.screens.SetupNavHost
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
 import uk.nktnet.webviewkiosk.utils.getLocalUrl
-import uk.nktnet.webviewkiosk.utils.getStatus
-import uk.nktnet.webviewkiosk.utils.getSystemInfo
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handleKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleMainIntent
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
-import uk.nktnet.webviewkiosk.utils.openPackage
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
-import uk.nktnet.webviewkiosk.utils.wakeScreen
-import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavHostController
@@ -188,57 +171,16 @@ class MainActivity : AppCompatActivity() {
 
             LaunchedEffect(Unit) {
                 MqttManager.commands.collect { command ->
-                    if (command.interact) {
-                        UserInteractionStateSingleton.onUserInteraction()
+                    if (!userSettings.mqttUseForegroundService) {
+                        MqttHandler.handleMqttCommand(context, command)
                     }
-                    if (command.wakeScreen) {
-                        wakeScreen(context)
-                    }
-                    when (command) {
-                        is MqttReconnectCommand -> {
-                            MqttManager.disconnect (
-                                cause = MqttDisconnectingEvent.DisconnectCause.MQTT_RECONNECT_COMMAND_RECEIVED,
-                                onDisconnected = {
-                                    MqttManager.connect(applicationContext)
-                                }
-                            )
-                        }
-                        is MqttClearHistoryCommand -> {
-                            WebViewNavigation.clearHistory(systemSettings)
-                        }
-                        is MqttToastCommand -> {
-                            if (!command.data?.message.isNullOrEmpty()) {
-                                ToastManager.show(context, command.data.message)
-                            }
-                        }
-                        is MqttLockDeviceCommand -> {
-                            if (DeviceOwnerManager.hasOwnerPermission(context)) {
-                                try {
-                                    DeviceOwnerManager.DPM.lockNow()
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                    ToastManager.show(
-                                        context,
-                                        "Failed to lock device: ${e.message}"
-                                    )
-                                }
-                            }
-                        }
-                        is MqttNotifyCommand -> {
-                            if (userSettings.allowNotifications) {
-                                CustomNotificationManager.sendMqttNotifyCommandNotification(
-                                    context,
-                                    command,
-                                )
-                            }
-                        }
-                        is MqttLaunchPackageCommand -> {
-                            openPackage(
-                                context,
-                                command.data.packageName,
-                            )
-                        }
-                        else -> Unit
+                }
+            }
+
+            LaunchedEffect(Unit) {
+                MqttManager.requests.collect { request ->
+                    if (!userSettings.mqttUseForegroundService) {
+                        MqttHandler.handleMqttRequest(context, request)
                     }
                 }
             }
@@ -266,56 +208,6 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         if (settingsMessage.showToast) {
                             ToastManager.show(context, "MQTT: settings received.")
-                        }
-                    }
-
-                }
-            }
-
-            LaunchedEffect(Unit) {
-                MqttManager.requests.collect { request ->
-                    when (request) {
-                        is MqttStatusRequest -> {
-                            MqttManager.publishStatusResponse(
-                                request, getStatus(context)
-                            )
-                        }
-                        is MqttSettingsRequest -> {
-                            val settings = userSettings.exportJson()
-                            MqttManager.publishSettingsResponse(request, settings)
-                        }
-                        is MqttSystemInfoRequest -> {
-                            MqttManager.publishSystemInfoResponse(
-                                request,
-                                getSystemInfo(context),
-                            )
-                        }
-                        is MqttLaunchablePackagesRequest -> {
-                            MqttManager.publishLaunchablePackagesResponse(
-                                request,
-                                AppFlowManager
-                                    .getLaunchablePackageNames(
-                                        context,
-                                        request.data.filterLockTaskPermitted
-                                    ).sorted(),
-                            )
-                        }
-                        is MqttLockTaskPackagesRequest -> {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                MqttManager.publishLockTaskPermittedPackagesResponse(
-                                    request,
-                                    AppFlowManager.getLockTaskPackageNames(
-                                        context,
-                                    ).sorted(),
-                                )
-                            }
-                        }
-                        is MqttErrorRequest -> {
-                            ToastManager.show(
-                                context,
-                                "MQTT: invalid request. See debug logs."
-                            )
-                            MqttManager.publishErrorResponse(request)
                         }
                     }
                 }
