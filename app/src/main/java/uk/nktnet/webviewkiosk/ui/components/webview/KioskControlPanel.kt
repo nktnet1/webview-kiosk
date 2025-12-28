@@ -1,5 +1,6 @@
-package uk.nktnet.webviewkiosk.handlers
+package uk.nktnet.webviewkiosk.ui.components.webview
 
+import android.view.MotionEvent
 import android.webkit.WebView
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
@@ -173,7 +174,7 @@ fun KioskControlPanel(
             Modifier
                 .fillMaxSize()
                 .pointerInteropFilter { motionEvent ->
-                    if (motionEvent.action == android.view.MotionEvent.ACTION_DOWN) {
+                    if (motionEvent.action == MotionEvent.ACTION_DOWN) {
                         val now = System.currentTimeMillis()
 
                         val inRegion = when (kioskControlPanelRegion) {

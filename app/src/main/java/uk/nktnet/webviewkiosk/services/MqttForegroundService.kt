@@ -20,6 +20,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.MainActivity
+import uk.nktnet.webviewkiosk.handlers.MqttHandler
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.CustomNotificationType
 import uk.nktnet.webviewkiosk.managers.MqttManager
@@ -27,7 +28,9 @@ import uk.nktnet.webviewkiosk.managers.MqttManager
 class MqttForegroundService : Service() {
     private var isServiceActive = true
     private val scope = CoroutineScope(Dispatchers.IO)
-    private var updateJob: Job? = null
+    private var pollLockTaskModeJob: Job? = null
+    private var mqttCommandJob: Job? = null
+    private var mqttRequestJob: Job? = null
     private var lastStatus: MqttClientState? = null
     private lateinit var wakeLock: PowerManager.WakeLock
 
@@ -66,12 +69,29 @@ class MqttForegroundService : Service() {
 
         @SuppressLint("WakelockTimeout")
         wakeLock.acquire()
+
+        mqttCommandJob = scope.launch {
+            MqttManager.commands.collect { command ->
+                MqttHandler.handleMqttCommand(
+                    this@MqttForegroundService,
+                    command
+                )
+            }
+        }
+        mqttRequestJob = scope.launch {
+            MqttManager.requests.collect { request ->
+                MqttHandler.handleMqttRequest(
+                    this@MqttForegroundService,
+                    request
+                )
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         isServiceActive = true
-        if (updateJob?.isActive != true) {
-            updateJob = scope.launch {
+        if (pollLockTaskModeJob?.isActive != true) {
+            pollLockTaskModeJob = scope.launch {
                 while (isServiceActive) {
                     val status = MqttManager.getState()
                     if (lastStatus != null && status == lastStatus) {
@@ -121,7 +141,9 @@ class MqttForegroundService : Service() {
     private fun stopForegroundService() {
         try {
             isServiceActive = false
-            updateJob?.cancel()
+            pollLockTaskModeJob?.cancel()
+            mqttCommandJob?.cancel()
+            mqttRequestJob?.cancel()
             scope.cancel()
         } catch (e: Exception) {
             e.printStackTrace()

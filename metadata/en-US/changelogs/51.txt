@@ -1,6 +1,6 @@
 ## Changes
 
 - fix: missing handler for sharing plain URLs instead of files
-- fix: added application/txt to intent for file opening/sharing
+- fix: added application/txt to <intent> for file opening/sharing
 - fix: app details -> app info label
 - feat: added Media Playback Requires User Gesture under web engine

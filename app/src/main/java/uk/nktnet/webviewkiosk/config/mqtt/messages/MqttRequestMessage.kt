@@ -24,7 +24,7 @@ data class MqttStatusRequest(
     override var responseTopic: String? = null,
     override var correlationData: String? = null,
 ) : MqttRequestMessage {
-    override fun toString() = "Get Status"
+    override fun toString() = "get_status"
 }
 
 @Serializable
@@ -62,7 +62,36 @@ data class MqttSystemInfoRequest(
     override var responseTopic: String? = null,
     override var correlationData: String? = null,
 ) : MqttRequestMessage {
-    override fun toString() = "Get System Info"
+    override fun toString() = "get_system_info"
+}
+
+@Serializable
+@SerialName("get_launchable_packages")
+data class MqttLaunchablePackagesRequest(
+    override val messageId: String? = null,
+    override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
+    override var responseTopic: String? = null,
+    override var correlationData: String? = null,
+    val data: Data = Data()
+) : MqttRequestMessage {
+    override fun toString() = "get_launchable_packages"
+    @Serializable
+    data class Data(
+        val filterLockTaskPermitted: Boolean = false,
+    )
+}
+
+@Serializable
+@SerialName("get_lock_task_packages")
+data class MqttLockTaskPackagesRequest(
+    override val messageId: String? = null,
+    override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
+    override var responseTopic: String? = null,
+    override var correlationData: String? = null,
+) : MqttRequestMessage {
+    override fun toString() = "get_lock_task_packages"
 }
 
 @Serializable

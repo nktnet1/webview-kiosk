@@ -62,6 +62,40 @@ data class MqttSystemInfoResponse(
 }
 
 @Serializable
+@SerialName("get_launchable_packages")
+data class MqttLaunchablePackagesResponse(
+    override var messageId: String,
+    override val username: String,
+    override val appInstanceId: String,
+    override val requestMessageId: String?,
+    override val correlationData: String?,
+    val data: Data,
+) : MqttResponseMessage {
+    override fun getType(): String = "get_launchable_packages"
+    @Serializable
+    data class Data(
+        val packages: List<String>,
+    )
+}
+
+@Serializable
+@SerialName("get_lock_task_packages")
+data class MqttLockTaskPackagesResponse(
+    override var messageId: String,
+    override val username: String,
+    override val appInstanceId: String,
+    override val requestMessageId: String?,
+    override val correlationData: String?,
+    val data: Data,
+) : MqttResponseMessage {
+    override fun getType(): String = "get_lock_task_packages"
+    @Serializable
+    data class Data(
+        val packages: List<String>,
+    )
+}
+
+@Serializable
 @SerialName("error")
 data class MqttErrorResponse(
     override var messageId: String,

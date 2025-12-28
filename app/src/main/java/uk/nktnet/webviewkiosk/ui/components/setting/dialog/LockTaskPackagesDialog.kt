@@ -13,8 +13,19 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.data.AppInfo
 import uk.nktnet.webviewkiosk.config.data.LaunchableAppInfo
+import uk.nktnet.webviewkiosk.managers.AppFlowManager
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.apps.AppIcon
@@ -49,7 +61,7 @@ fun LockTaskPackagesDialog(
     var progress by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(Unit) {
-        DeviceOwnerManager.getLockTaskAppsFlow(context).collect { state ->
+        AppFlowManager.getLockTaskAppsFlow(context).collect { state ->
             apps = apps + state.apps
             progress = state.progress
         }
@@ -225,7 +237,7 @@ fun AddLockTaskPackagesDialog(
     var progress by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(Unit) {
-        DeviceOwnerManager.getLaunchableAppsFlow(context).collect { state ->
+        AppFlowManager.getLaunchableAppsFlow(context).collect { state ->
             apps = apps + state.apps
             progress = state.progress
         }
