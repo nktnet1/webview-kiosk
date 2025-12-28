@@ -32,6 +32,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -44,7 +45,6 @@ import uk.nktnet.webviewkiosk.managers.BackButtonManager
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.MqttManager
-import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.services.MqttForegroundService
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
@@ -186,11 +186,9 @@ class MainActivity : AppCompatActivity() {
             }
 
             LaunchedEffect(Unit) {
-                MqttManager.settings.collect { settingsMessage ->
-                    userSettings.importJson(settingsMessage.data.settings)
-
-                    if (settingsMessage.reloadActivity) {
-                        updateDeviceSettings(context)
+                MqttManager.settings.collect { settings ->
+                    if (!userSettings.mqttUseForegroundService) {
+                        MqttHandler.handleMqttSettings(context, settings)
                     }
 
                     // Counterintuitive, but this acts as a "Refresh" of the webview screen,
@@ -198,17 +196,10 @@ class MainActivity : AppCompatActivity() {
                     // If we're on another screen though (e.g. settings), then let the user
                     // decide when to navigate back.
                     if (
-                        settingsMessage.reloadActivity
+                        settings.reloadActivity
                         && navController.currentDestination?.route == Screen.WebView.route
                     ) {
                         navigateToWebViewScreen(navController)
-                        if (settingsMessage.showToast) {
-                            ToastManager.show(context, "MQTT: settings applied.")
-                        }
-                    } else {
-                        if (settingsMessage.showToast) {
-                            ToastManager.show(context, "MQTT: settings received.")
-                        }
                     }
                 }
             }
@@ -336,6 +327,17 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (!this::navController.isInitialized) {
+            return
+        }
+        if (
+            intent.getBooleanExtra(
+                Constants.INTENT_NAVIGATE_TO_WEBVIEW_SCREEN,
+                false
+            )
+        ) {
+            if (callingPackage == packageName) {
+                navigateToWebViewScreen(navController)
+            }
             return
         }
         if (

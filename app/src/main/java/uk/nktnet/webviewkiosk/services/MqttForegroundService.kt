@@ -30,6 +30,7 @@ class MqttForegroundService : Service() {
     private val scope = CoroutineScope(Dispatchers.IO)
     private var pollLockTaskModeJob: Job? = null
     private var mqttCommandJob: Job? = null
+    private var mqttSettingsJob: Job? = null
     private var mqttRequestJob: Job? = null
     private var lastStatus: MqttClientState? = null
     private lateinit var wakeLock: PowerManager.WakeLock
@@ -75,6 +76,14 @@ class MqttForegroundService : Service() {
                 MqttHandler.handleMqttCommand(
                     this@MqttForegroundService,
                     command
+                )
+            }
+        }
+        mqttSettingsJob = scope.launch {
+            MqttManager.settings.collect { settings ->
+                MqttHandler.handleMqttSettings(
+                    this@MqttForegroundService,
+                    settings
                 )
             }
         }
@@ -143,6 +152,7 @@ class MqttForegroundService : Service() {
             isServiceActive = false
             pollLockTaskModeJob?.cancel()
             mqttCommandJob?.cancel()
+            mqttSettingsJob?.cancel()
             mqttRequestJob?.cancel()
             scope.cancel()
         } catch (e: Exception) {

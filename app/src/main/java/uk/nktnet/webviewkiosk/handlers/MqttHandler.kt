@@ -15,6 +15,7 @@ import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockTaskPackagesRequest
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttNotifyCommand
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttReconnectCommand
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttRequestMessage
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSettingsMessage
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSettingsRequest
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttStatusRequest
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSystemInfoRequest
@@ -28,6 +29,7 @@ import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.utils.getStatus
 import uk.nktnet.webviewkiosk.utils.getSystemInfo
 import uk.nktnet.webviewkiosk.utils.openPackage
+import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
 import uk.nktnet.webviewkiosk.utils.wakeScreen
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
@@ -94,6 +96,30 @@ object MqttHandler {
                 )
             }
             else -> Unit
+        }
+    }
+
+    fun handleMqttSettings(
+        context: Context,
+        settings: MqttSettingsMessage,
+    ) {
+        val userSettings = UserSettings(context)
+        userSettings.importJson(settings.data.settings)
+
+        if (settings.reloadActivity) {
+            updateDeviceSettings(context)
+        }
+
+        if (settings.showToast) {
+            /**
+             * NOTE: reload action will be handled in main activity
+             */
+            val action = if (settings.reloadActivity) {
+                "applied"
+            } else {
+                "received"
+            }
+            ToastManager.show(context, "MQTT: settings $action.")
         }
     }
 
