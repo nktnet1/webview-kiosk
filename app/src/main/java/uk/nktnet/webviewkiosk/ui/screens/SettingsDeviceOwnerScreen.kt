@@ -26,7 +26,6 @@ import com.rosan.dhizuku.shared.DhizukuVariables
 import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
-import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
@@ -101,7 +100,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
             if (!hasOwnerPermission) {
                 Text(
                     text = """
-                        ${Constants.APP_NAME} is not set as the device owner.
+                        ${stringResource(id = R.string.app_name)} is not set as the device owner.
                         The settings below will not take effect.
                     """.trimIndent(),
                     color = MaterialTheme.colorScheme.error,
@@ -243,8 +242,8 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
             text = {
                 Text(
                     normaliseInfoText("""
-                        Are you sure you want to unset ${Constants.APP_NAME} as the
-                        device owner?
+                        Are you sure you want to unset ${stringResource(id = R.string.app_name)}
+                        as the device owner?
 
                         This means Lock Task Mode will no longer be available, meaning
                         the kiosk lock feature will utilise Screen Pinning instead.

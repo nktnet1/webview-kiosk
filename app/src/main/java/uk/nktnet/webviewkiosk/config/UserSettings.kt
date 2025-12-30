@@ -6,6 +6,7 @@ import android.content.SharedPreferences
 import android.util.Base64
 import org.json.JSONArray
 import org.json.JSONObject
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.mqtt.MqttQosOption
 import uk.nktnet.webviewkiosk.config.mqtt.MqttRetainHandlingOption
 import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
@@ -366,7 +367,7 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.Appearance.BLOCKED_MESSAGE,
-        "This site is blocked by ${Constants.APP_NAME}."
+        "This site is blocked by ${context.getString(R.string.app_name)}."
     )
     var customBlockPageHtml by stringPrefOptional(
         getRestrictions,

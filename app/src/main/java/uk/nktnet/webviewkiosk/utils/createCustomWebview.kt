@@ -21,6 +21,7 @@ import android.widget.FrameLayout
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.core.net.toUri
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -401,7 +402,7 @@ fun createCustomWebview(
             setDownloadListener { _, _, _, _, _ ->
                 ToastManager.show(
                     context,
-                    "Downloading files is not supported in ${Constants.APP_NAME}."
+                    "Downloading files is not supported in ${context.getString(R.string.app_name)}."
                 )
             }
         }

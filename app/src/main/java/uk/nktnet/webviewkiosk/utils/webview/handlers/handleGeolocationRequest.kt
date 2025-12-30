@@ -6,6 +6,7 @@ import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.webkit.GeolocationPermissions
 import androidx.appcompat.app.AlertDialog
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -33,7 +34,7 @@ fun handleGeolocationRequest(
                 $origin requested access to your location.
 
                 However, location permission is either disabled in settings or
-                not yet granted to ${Constants.APP_NAME}.
+                not yet granted to ${context.getString(R.string.app_name)}.
                 """.trimIndent()
             )
             .setPositiveButton("Close") { _, _ -> callback?.invoke(origin, false, false) }

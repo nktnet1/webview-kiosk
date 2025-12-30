@@ -24,7 +24,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
@@ -49,7 +48,7 @@ fun MqttClientIdSetting() {
             A unique identifier for this client when connecting to the MQTT broker.
 
             Leave this field blank if you want the broker server to generate a
-            client ID for ${Constants.APP_NAME}.
+            client ID for ${stringResource(id = R.string.app_name)}.
 
             Supports global variables such as APP_INSTANCE_ID and USERNAME, which
             you can use like:

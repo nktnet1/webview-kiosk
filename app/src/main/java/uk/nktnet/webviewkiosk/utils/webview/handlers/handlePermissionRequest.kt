@@ -6,7 +6,7 @@ import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.webkit.PermissionRequest
 import androidx.appcompat.app.AlertDialog
-import uk.nktnet.webviewkiosk.config.Constants
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
@@ -82,7 +82,9 @@ fun handlePermissionRequest(
             }
             appendLine()
             appendLine()
-            append("However, these permissions are either disabled in settings or not yet granted to ${Constants.APP_NAME}.")
+            append(
+                "However, these permissions are either disabled in settings or not yet granted to ${context.getString(R.string.app_name)}."
+            )
         }
     } else {
         title = "Permission request"

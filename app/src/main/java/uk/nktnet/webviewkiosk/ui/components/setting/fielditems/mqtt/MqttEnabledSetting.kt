@@ -5,7 +5,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.MqttManager
@@ -22,8 +21,8 @@ fun MqttEnabledSetting() {
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_enabled_title),
         infoText = """
-            When enabled, ${Constants.APP_NAME} will connect to your configured
-            MQTT broker and subscribe/publish to the defined topics.
+            When enabled, ${stringResource(id = R.string.app_name)} will connect to your
+            configured MQTT broker and subscribe/publish to the defined topics.
 
             This will take effect for new app launches.
 
