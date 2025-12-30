@@ -3,15 +3,17 @@ title: JS Scripts
 description: Apply theme, desktop viewport, custom scripts
 ---
 
+import { APP_NAME } from '@/config/app'
+
 ## 1. Apply App Theme
 
 This option injects JavaScript that sets `prefers-color-scheme` according to
-your selected Webview Kiosk theme.
-It keeps the webpage theme consistent with the app's theme.
+your selected {APP_NAME} theme, which will keeps the webpage theme consistent
+with the app.
 
-This script runs immediately **on page start**.
+The script runs immediately **on page start**.
 
-If the theme is the default **System**, this script is a no-op (does nothing).
+If **System** is used, this script is a no-op (does nothing).
 
 **Default:** true
 
