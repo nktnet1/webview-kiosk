@@ -9,8 +9,17 @@ plugins {
 }
 
 android {
-    namespace = "uk.nktnet.webviewkiosk"
     compileSdk = 36
+    namespace = "uk.nktnet.webviewkiosk"
+
+    defaultConfig {
+        applicationId = "uk.nktnet.webviewkiosk"
+        minSdk = 21
+        targetSdk = 36
+        versionCode = 110
+        versionName = "0.25.5"
+        buildConfigField("int", "MIN_SDK_VERSION", "$minSdk")
+    }
 
     buildFeatures {
         buildConfig = true
@@ -35,15 +44,6 @@ android {
                 "META-INF/io.netty.versions.properties"
             )
         }
-    }
-
-    defaultConfig {
-        applicationId = "uk.nktnet.webviewkiosk"
-        minSdk = 21
-        targetSdk = 36
-        versionCode = 110
-        versionName = "0.25.5"
-        buildConfigField("int", "MIN_SDK_VERSION", "$minSdk")
     }
 
     base {
