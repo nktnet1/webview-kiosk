@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.utils.webview.html
 
 import android.content.Context
 import android.text.Html
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.utils.getDisplayName
@@ -87,7 +88,8 @@ fun generateUnsupportedMimeTypePage(
 
             <p style="font-size:0.8rem; text-align:center; white-space:normal; margin-bottom:25px">
                 <i>
-                    This page is displayed because ${Constants.APP_NAME} cannot render this file.
+                    This page is displayed because ${context.getString(R.string.app_name)}
+                    cannot render this file.
                     This is because the mime type, detected from the file extension, does not
                     indicate a HTML, image, audio or video file. PDF files are not supported.
                     <br><br>

@@ -5,7 +5,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
@@ -33,7 +32,7 @@ fun UnlockAuthRequirementSetting() {
               - REQUIRE: Prompt for biometrics or device credentials when unlocking
 
             For user-owned devices without lock task mode, the device will auto-lock when
-            unpinning, which is outside the control of ${Constants.APP_NAME}.
+            unpinning, which is outside the control of ${stringResource(id = R.string.app_name)}.
         """.trimIndent(),
         options = UnlockAuthRequirementOption.entries,
         initialValue = userSettings.unlockAuthRequirement,

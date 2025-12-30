@@ -5,7 +5,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -20,8 +19,9 @@ fun ApplyAppThemeSetting() {
         label = stringResource(id = R.string.js_scripts_apply_app_theme_title),
         infoText = """
             This script injects JavaScript code that will set prefers-color-scheme
-            according to your selected theme in ${Constants.APP_NAME} Appearance settings,
-            thus keeping the Webpage's theme consistent with the App's theme.
+            according to your selected theme in ${stringResource(id = R.string.app_name)}
+            Appearance settings, thus keeping the Webpage's theme consistent with the
+            App's theme.
 
             This script will run immediately "on page start".
 

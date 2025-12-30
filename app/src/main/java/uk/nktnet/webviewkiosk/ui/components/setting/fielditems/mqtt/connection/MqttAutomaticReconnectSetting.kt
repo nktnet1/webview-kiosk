@@ -19,11 +19,11 @@ fun MqttAutomaticReconnectSetting() {
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_automatic_reconnect_title),
         infoText = """
-            When enabled, attempt to automatically reconnect to the MQTT broker
-            after an unexpected disconnect.
+            When enabled, attempt to automatically reconnect to the MQTT broker after
+            an unexpected disconnect.
 
-            In ${Constants.APP_NAME}, this is implemented linearly at a fixed
-            ${Constants.MQTT_AUTO_RECONNECT_INTERVAL_SECONDS}-second interval.
+            In ${stringResource(id = R.string.app_name)}, this is implemented linearly
+            at a fixed ${Constants.MQTT_AUTO_RECONNECT_INTERVAL_SECONDS}-second interval.
         """.trimIndent(),
         initialValue = userSettings.mqttAutomaticReconnect,
         settingKey = settingKey,

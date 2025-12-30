@@ -2,7 +2,8 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.dhi
 
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
-import uk.nktnet.webviewkiosk.config.Constants
+import androidx.compose.ui.res.stringResource
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
@@ -16,8 +17,9 @@ fun DhizukuRequestPermissionOnLaunchSetting() {
     BooleanSettingFieldItem(
         label = "Request Permission on Launch",
         infoText = """
-            When enabled, if Dhizuku is installed and has not granted ${Constants.APP_NAME}
-            access to Device Owner privileges, prompt the user for permission.
+            When enabled, if Dhizuku is installed and has not granted
+            ${stringResource(id = R.string.app_name)} access to Device
+            Owner privileges, prompt the user for permission.
         """.trimIndent(),
         initialValue = userSettings.dhizukuRequestPermissionOnLaunch,
         settingKey = settingKey,
