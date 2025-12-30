@@ -17,7 +17,7 @@ fun WebsiteWhitelistSetting() {
     val settingKey = UserSettingsKeys.WebContent.WEBSITE_WHITELIST
 
     TextSettingFieldItem(
-        label = stringResource(id = R.string.web_content_website_whitelist_title),
+        label = stringResource(R.string.web_content_website_whitelist_title),
         infoText = """
             Specify regular expressions (regex), one per line.
 

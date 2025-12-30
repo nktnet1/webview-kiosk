@@ -17,7 +17,7 @@ fun RefreshOnLoadingErrorIntervalSecondsSetting() {
     val settingKey = UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS
 
     NumberSettingFieldItem(
-        label = stringResource(id = R.string.web_lifecycle_refresh_on_loading_error_interval_seconds_title),
+        label = stringResource(R.string.web_lifecycle_refresh_on_loading_error_interval_seconds_title),
         infoText = """
             Interval in seconds between automatic refresh attempts when a page fails
             to load. This usually indicate the inability to connect to the server,

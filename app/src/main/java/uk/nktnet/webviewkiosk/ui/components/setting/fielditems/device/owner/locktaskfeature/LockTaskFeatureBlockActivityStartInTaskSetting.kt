@@ -15,7 +15,7 @@ fun LockTaskFeatureBlockActivityStartInTaskSetting() {
     val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.BLOCK_ACTIVITY_START_IN_TASK
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.device_owner_lock_task_feature_block_activity_start_in_task_title),
+        label = stringResource(R.string.device_owner_lock_task_feature_block_activity_start_in_task_title),
         infoText = """
             Enable blocking of non-allowlisted activities from being started
             into a locked task.

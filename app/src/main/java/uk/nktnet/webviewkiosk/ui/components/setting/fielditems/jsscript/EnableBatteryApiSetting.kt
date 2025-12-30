@@ -15,7 +15,7 @@ fun EnableBatteryApiSetting() {
     val settingKey = UserSettingsKeys.JsScripts.ENABLE_BATTERY_API
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.js_scripts_enable_battery_api_title),
+        label = stringResource(R.string.js_scripts_enable_battery_api_title),
         infoText = """
             Allow web pages to access device battery status through a JavaScript
             interface. Web pages can use:

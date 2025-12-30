@@ -17,7 +17,7 @@ fun SearchSuggestionEngineSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.SEARCH_SUGGESTION_ENGINE
 
     DropdownSettingFieldItem(
-        label = stringResource(id = R.string.web_browsing_search_suggestion_engine_title),
+        label = stringResource(R.string.web_browsing_search_suggestion_engine_title),
         infoText = """
             Configure the search engine for text suggestions (autocomplete/hints)
             when typing in the address bar.

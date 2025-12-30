@@ -21,7 +21,7 @@ fun MqttEnabledSetting() {
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_enabled_title),
         infoText = """
-            When enabled, ${stringResource(id = R.string.app_name)} will connect to your
+            When enabled, ${stringResource(R.string.app_name)} will connect to your
             configured MQTT broker and subscribe/publish to the defined topics.
 
             This will take effect for new app launches.

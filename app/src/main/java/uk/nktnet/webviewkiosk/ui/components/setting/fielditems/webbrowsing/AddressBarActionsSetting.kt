@@ -17,7 +17,7 @@ fun AddressBarActionsSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.ADDRESS_BAR_ACTIONS
 
     EnumListSettingFieldItem(
-        label = stringResource(id = R.string.web_browsing_address_bar_actions_title),
+        label = stringResource(R.string.web_browsing_address_bar_actions_title),
         infoText = """
             Manage visible actions in the address bar.
 

@@ -17,7 +17,7 @@ fun FloatingToolbarModeSetting() {
     val settingKey = UserSettingsKeys.Appearance.FLOATING_TOOLBAR_MODE
 
     DropdownSettingFieldItem(
-        label = stringResource(id = R.string.appearance_floating_toolbar_mode_title),
+        label = stringResource(R.string.appearance_floating_toolbar_mode_title),
         infoText = """
             Control the visibility and behaviour of the floating toolbar menu button.
 

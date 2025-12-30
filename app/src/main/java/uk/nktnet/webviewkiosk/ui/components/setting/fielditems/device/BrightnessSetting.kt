@@ -24,7 +24,7 @@ fun BrightnessSetting() {
     val settingKey = UserSettingsKeys.Device.BRIGHTNESS
 
     NumberSettingFieldItem(
-        label = stringResource(id = R.string.device_brightness_title),
+        label = stringResource(R.string.device_brightness_title),
         infoText = """
             Set the app window brightness from 0 (very dim) to 100 (very dark).
 

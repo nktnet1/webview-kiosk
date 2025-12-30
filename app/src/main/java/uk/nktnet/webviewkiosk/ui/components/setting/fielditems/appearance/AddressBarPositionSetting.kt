@@ -17,7 +17,7 @@ fun AddressBarPositionSetting() {
     val settingKey = UserSettingsKeys.Appearance.ADDRESS_BAR_POSITION
 
     DropdownSettingFieldItem(
-        label = stringResource(id = R.string.appearance_address_bar_position_title),
+        label = stringResource(R.string.appearance_address_bar_position_title),
         infoText = """
             Customise the position of the address bar - either top or bottom.
         """.trimIndent(),

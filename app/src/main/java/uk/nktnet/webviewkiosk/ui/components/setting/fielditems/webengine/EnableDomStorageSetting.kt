@@ -15,7 +15,7 @@ fun EnableDomStorageSetting() {
     val settingKey = UserSettingsKeys.WebEngine.ENABLE_DOM_STORAGE
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_engine_enable_dom_storage_title),
+        label = stringResource(R.string.web_engine_enable_dom_storage_title),
         infoText = "Allow web pages to use DOM storage APIs like local storage and session storage.",
         initialValue = userSettings.enableDomStorage,
         settingKey = settingKey,

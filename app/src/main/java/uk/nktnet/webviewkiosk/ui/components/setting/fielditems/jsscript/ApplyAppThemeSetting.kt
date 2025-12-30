@@ -16,10 +16,10 @@ fun ApplyAppThemeSetting() {
     val settingKey = UserSettingsKeys.JsScripts.APPLY_APP_THEME
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.js_scripts_apply_app_theme_title),
+        label = stringResource(R.string.js_scripts_apply_app_theme_title),
         infoText = """
             This script injects JavaScript code that will set prefers-color-scheme
-            according to your selected theme in ${stringResource(id = R.string.app_name)}
+            according to your selected theme in ${stringResource(R.string.app_name)}
             Appearance settings, thus keeping the Webpage's theme consistent with the
             App's theme.
 

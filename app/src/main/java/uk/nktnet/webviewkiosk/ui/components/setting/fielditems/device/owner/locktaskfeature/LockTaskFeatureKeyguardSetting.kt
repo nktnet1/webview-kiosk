@@ -15,7 +15,7 @@ fun LockTaskFeatureKeyguardSetting() {
     val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.KEYGUARD
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.device_owner_lock_task_feature_keyguard_title),
+        label = stringResource(R.string.device_owner_lock_task_feature_keyguard_title),
         infoText = """
             Enables any lock screen that might be set on the device.
             Typically not suitable for devices with public users such as kiosks or digital signage.

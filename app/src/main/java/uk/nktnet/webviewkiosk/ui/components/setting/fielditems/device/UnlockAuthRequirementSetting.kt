@@ -17,7 +17,7 @@ fun UnlockAuthRequirementSetting() {
     val settingKey = UserSettingsKeys.Device.UNLOCK_AUTH_REQUIREMENT
 
     DropdownSettingFieldItem(
-        label = stringResource(id = R.string.device_unlock_auth_requirement_title),
+        label = stringResource(R.string.device_unlock_auth_requirement_title),
         infoText = """
             This setting only applies to in-app unlock methods, e.g. when unlocking
             using Kiosk Control Panel or Custom Unlock Shortcut.
@@ -32,7 +32,7 @@ fun UnlockAuthRequirementSetting() {
               - REQUIRE: Prompt for biometrics or device credentials when unlocking
 
             For user-owned devices without lock task mode, the device will auto-lock when
-            unpinning, which is outside the control of ${stringResource(id = R.string.app_name)}.
+            unpinning, which is outside the control of ${stringResource(R.string.app_name)}.
         """.trimIndent(),
         options = UnlockAuthRequirementOption.entries,
         initialValue = userSettings.unlockAuthRequirement,

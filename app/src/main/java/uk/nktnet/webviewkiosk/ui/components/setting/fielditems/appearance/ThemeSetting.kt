@@ -18,7 +18,7 @@ fun ThemeSetting() {
     val settingKey = UserSettingsKeys.Appearance.THEME
 
     DropdownSettingFieldItem(
-        label = stringResource(id = R.string.appearance_theme_title),
+        label = stringResource(R.string.appearance_theme_title),
         infoText = """
             Select the app theme: System (default), Dark or Light.
 

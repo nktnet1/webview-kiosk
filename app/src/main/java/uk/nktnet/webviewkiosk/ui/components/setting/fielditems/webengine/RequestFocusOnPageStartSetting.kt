@@ -15,7 +15,7 @@ fun RequestFocusOnPageStartSetting() {
     val settingKey = UserSettingsKeys.WebEngine.REQUEST_FOCUS_ON_PAGE_START
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_engine_request_focus_on_page_start_title),
+        label = stringResource(R.string.web_engine_request_focus_on_page_start_title),
         infoText = """
             Sets whether the WebView should request focus when a page starts loading.
         """.trimIndent(),

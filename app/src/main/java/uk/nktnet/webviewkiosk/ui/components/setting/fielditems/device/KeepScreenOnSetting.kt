@@ -17,7 +17,7 @@ fun KeepScreenOnSetting() {
     val settingKey = UserSettingsKeys.Device.KEEP_SCREEN_ON
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.device_keep_screen_on_title),
+        label = stringResource(R.string.device_keep_screen_on_title),
         infoText = "Enable this option to keep your device awake (no screen timeout).",
         initialValue = userSettings.keepScreenOn,
         settingKey = settingKey,

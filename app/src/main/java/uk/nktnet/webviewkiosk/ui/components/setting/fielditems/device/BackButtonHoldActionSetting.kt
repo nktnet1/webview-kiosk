@@ -17,7 +17,7 @@ fun BackButtonHoldActionSetting() {
     val settingKey = UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION
 
     DropdownSettingFieldItem(
-        label = stringResource(id = R.string.device_back_button_hold_action_title),
+        label = stringResource(R.string.device_back_button_hold_action_title),
         infoText = """
             Customise the behaviour when the back button is held down (long pressed).
         """.trimIndent(),

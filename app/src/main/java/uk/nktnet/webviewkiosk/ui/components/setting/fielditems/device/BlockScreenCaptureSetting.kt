@@ -17,7 +17,7 @@ fun BlockScreenCaptureSetting() {
     val settingKey = UserSettingsKeys.Device.BLOCK_SCREEN_CAPTURE
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.device_block_screen_capture_title),
+        label = stringResource(R.string.device_block_screen_capture_title),
         infoText = """
             Prevent screenshots, screen recording and content previews in Recent Apps.
             This is done by setting the FLAG_SECURE window flag.

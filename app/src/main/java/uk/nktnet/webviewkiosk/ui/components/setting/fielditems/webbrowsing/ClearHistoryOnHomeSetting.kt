@@ -16,7 +16,7 @@ fun ClearHistoryOnHomeSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.CLEAR_HISTORY_ON_HOME
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_browsing_clear_history_on_home_title),
+        label = stringResource(R.string.web_browsing_clear_history_on_home_title),
         infoText = "Clear the browser history whenever the user triggers an action to return home.",
         initialValue = userSettings.clearHistoryOnHome,
         settingKey = settingKey,

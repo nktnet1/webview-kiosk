@@ -45,9 +45,9 @@ fun AllowNotificationsSetting() {
     }
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.device_allow_notifications_title),
+        label = stringResource(R.string.device_allow_notifications_title),
         infoText = """
-            Set to true to allow ${stringResource(id = R.string.app_name)} to send notifications.
+            Set to true to allow ${stringResource(R.string.app_name)} to send notifications.
             For example, this will allow the MQTT notify command to create alerts.
 
             You will need to grant the POST_NOTIFICATIONS android permission.

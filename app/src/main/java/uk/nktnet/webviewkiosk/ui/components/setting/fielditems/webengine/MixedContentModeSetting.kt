@@ -17,7 +17,7 @@ fun MixedContentModeSetting() {
     val settingKey = UserSettingsKeys.WebEngine.MIXED_CONTENT_MODE
 
     DropdownSettingFieldItem(
-        label = stringResource(id = R.string.web_engine_mixed_content_mode_title),
+        label = stringResource(R.string.web_engine_mixed_content_mode_title),
         infoText = """
             Configures the WebView's behavior when a secure origin attempts to load
             a resource from an insecure origin.

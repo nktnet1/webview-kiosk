@@ -16,7 +16,7 @@ fun LockOnLaunchSetting() {
     val settingKey = UserSettingsKeys.WebLifecycle.LOCK_ON_LAUNCH
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_lifecycle_lock_on_launch_title),
+        label = stringResource(R.string.web_lifecycle_lock_on_launch_title),
         infoText = """
             When enabled, the app will immediately enter locked/pinned mode on startup,
             preventing exit until unpinned.

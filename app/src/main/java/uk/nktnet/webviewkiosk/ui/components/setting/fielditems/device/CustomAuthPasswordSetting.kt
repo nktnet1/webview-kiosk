@@ -19,7 +19,7 @@ fun CustomAuthPasswordSetting() {
     val maxCharacters = 128
 
     TextSettingFieldItem(
-        label = stringResource(id = R.string.device_custom_auth_password_title),
+        label = stringResource(R.string.device_custom_auth_password_title),
         infoText = """
             Specify a custom password to protect your settings or when unlocking from
             the kiosk state.

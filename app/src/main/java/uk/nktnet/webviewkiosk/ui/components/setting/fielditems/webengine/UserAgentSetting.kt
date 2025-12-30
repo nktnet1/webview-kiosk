@@ -36,7 +36,7 @@ fun UserAgentSetting() {
     val restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE)
 
     TextSettingFieldItem(
-        label = stringResource(id = R.string.web_engine_user_agent_title),
+        label = stringResource(R.string.web_engine_user_agent_title),
         infoText = """
             The User Agent string controls how the web engine identifies itself
             to websites. Some sites may behave differently depending on this value.

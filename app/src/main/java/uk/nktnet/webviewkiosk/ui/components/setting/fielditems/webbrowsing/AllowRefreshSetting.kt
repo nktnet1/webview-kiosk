@@ -16,7 +16,7 @@ fun AllowRefreshSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.ALLOW_REFRESH
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_browsing_allow_refresh_title),
+        label = stringResource(R.string.web_browsing_allow_refresh_title),
         infoText = """
             Set to true to allow the user to refresh the page, e.g. using the
             - address bar actions

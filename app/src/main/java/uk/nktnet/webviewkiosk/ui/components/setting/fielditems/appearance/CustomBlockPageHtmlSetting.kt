@@ -16,7 +16,7 @@ fun CustomBlockPageHtmlSetting() {
     val settingKey = UserSettingsKeys.Appearance.CUSTOM_BLOCK_PAGE_HTML
 
     TextSettingFieldItem(
-        label = stringResource(id = R.string.appearance_custom_block_page_html_title),
+        label = stringResource(R.string.appearance_custom_block_page_html_title),
         infoText = """
             Define the custom HTML content to show when a page is blocked.
 

@@ -15,7 +15,7 @@ fun MediaPlaybackRequiresUserGestureSetting() {
     val settingKey = UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_engine_media_playback_requires_user_gesture_title),
+        label = stringResource(R.string.web_engine_media_playback_requires_user_gesture_title),
         infoText = """
             Sets whether the WebView requires a user gesture (e.g. tap) to play media.
         """.trimIndent(),

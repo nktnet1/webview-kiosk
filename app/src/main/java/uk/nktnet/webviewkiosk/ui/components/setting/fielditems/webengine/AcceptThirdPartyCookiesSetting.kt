@@ -16,7 +16,7 @@ fun AcceptThirdPartyCookiesSetting() {
     val settingKey = UserSettingsKeys.WebEngine.ACCEPT_THIRD_PARTY_COOKIES
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_engine_accept_third_party_cookies_title),
+        label = stringResource(R.string.web_engine_accept_third_party_cookies_title),
         infoText = "Allow third-party websites to set cookies in this WebView.",
         initialValue = userSettings.acceptThirdPartyCookies,
         settingKey = settingKey,

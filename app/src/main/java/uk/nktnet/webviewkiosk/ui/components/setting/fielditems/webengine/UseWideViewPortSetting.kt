@@ -15,7 +15,7 @@ fun UseWideViewPortSetting() {
     val settingKey = UserSettingsKeys.WebEngine.USE_WIDE_VIEWPORT
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_engine_use_wide_viewport_title),
+        label = stringResource(R.string.web_engine_use_wide_viewport_title),
         infoText = "Enable wide viewport support in the WebView for responsive pages.",
         initialValue = userSettings.useWideViewport,
         settingKey = settingKey,

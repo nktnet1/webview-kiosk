@@ -17,7 +17,7 @@ fun AddressBarSizeSetting() {
     val settingKey = UserSettingsKeys.Appearance.ADDRESS_BAR_SIZE
 
     DropdownSettingFieldItem(
-        label = stringResource(id = R.string.appearance_address_bar_size_title),
+        label = stringResource(R.string.appearance_address_bar_size_title),
         infoText = """
             Customise the size of the address bar, which will determine the
             height, font size, padding and icon size.

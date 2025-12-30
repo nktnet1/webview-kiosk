@@ -17,7 +17,7 @@ fun CacheModeSetting() {
     val settingKey = UserSettingsKeys.WebEngine.CACHE_MODE
 
     DropdownSettingFieldItem(
-        label = stringResource(id = R.string.web_engine_cache_mode_title),
+        label = stringResource(R.string.web_engine_cache_mode_title),
         infoText = "Control how the WebView uses its cache when loading pages.",
         options = CacheModeOption.entries,
         initialValue = userSettings.cacheMode,

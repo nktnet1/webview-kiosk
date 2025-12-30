@@ -17,7 +17,7 @@ fun SslErrorModeSetting() {
     val settingKey = UserSettingsKeys.WebEngine.SSL_ERROR_MODE
 
     DropdownSettingFieldItem(
-        label = stringResource(id = R.string.web_engine_ssl_error_mode_title),
+        label = stringResource(R.string.web_engine_ssl_error_mode_title),
         infoText = """
             Controls how the WebView handles SSL errors when loading pages.
 

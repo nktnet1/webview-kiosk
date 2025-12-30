@@ -43,7 +43,7 @@ fun AllowLocationSetting() {
     }
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.device_allow_location_title),
+        label = stringResource(R.string.device_allow_location_title),
         infoText = """
             When enabled, websites can request the device's location.
 

@@ -49,7 +49,7 @@ fun SettingsHeaderMenu(
     ) {
         SettingLabel(
             navController = navController,
-            label = stringResource(id = R.string.settings_title),
+            label = stringResource(R.string.settings_title),
             endIcon = {
                 Box(
                     modifier = Modifier.align(Alignment.Bottom)

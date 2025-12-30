@@ -100,7 +100,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
             if (!hasOwnerPermission) {
                 Text(
                     text = """
-                        ${stringResource(id = R.string.app_name)} is not set as the device owner.
+                        ${stringResource(R.string.app_name)} is not set as the device owner.
                         The settings below will not take effect.
                     """.trimIndent(),
                     color = MaterialTheme.colorScheme.error,
@@ -242,7 +242,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
             text = {
                 Text(
                     normaliseInfoText("""
-                        Are you sure you want to unset ${stringResource(id = R.string.app_name)}
+                        Are you sure you want to unset ${stringResource(R.string.app_name)}
                         as the device owner?
 
                         This means Lock Task Mode will no longer be available, meaning

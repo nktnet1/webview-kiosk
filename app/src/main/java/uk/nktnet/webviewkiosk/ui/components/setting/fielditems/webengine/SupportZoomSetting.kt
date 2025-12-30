@@ -15,7 +15,7 @@ fun SupportZoomSetting() {
     val settingKey = UserSettingsKeys.WebEngine.SUPPORT_ZOOM
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_engine_support_zoom_title),
+        label = stringResource(R.string.web_engine_support_zoom_title),
         infoText = """
             Sets whether the WebView should support zooming using its on-screen
             zoom controls and gestures.

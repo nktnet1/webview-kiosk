@@ -192,7 +192,7 @@ fun FloatingToolbar(
                 Icon(
                     painter = painterResource(R.drawable.baseline_build_24),
                     contentDescription = stringResource(
-                        id = R.string.floating_toolbar_icon_content_description
+                        R.string.floating_toolbar_icon_content_description
                     ),
                     tint = MaterialTheme.colorScheme.onPrimary,
                     modifier = Modifier.size(36.dp)
@@ -207,7 +207,7 @@ fun FloatingToolbar(
                     .handleUserKeyEvent(context, menuExpanded)
             ) {
                 MenuItem(
-                    stringResource(id = R.string.floating_toolbar_menu_home),
+                    stringResource(R.string.floating_toolbar_menu_home),
                     R.drawable.baseline_home_24,
                     tintColor
                 ) {
@@ -216,7 +216,7 @@ fun FloatingToolbar(
                 }
                 if (isLocked) {
                     MenuItem(
-                        stringResource(id = R.string.floating_toolbar_menu_unlock),
+                        stringResource(R.string.floating_toolbar_menu_unlock),
                         R.drawable.baseline_lock_open_24,
                         tintColor
                     ) {
@@ -225,7 +225,7 @@ fun FloatingToolbar(
                     }
                 } else {
                     MenuItem(
-                        stringResource(id = R.string.floating_toolbar_menu_lock),
+                        stringResource(R.string.floating_toolbar_menu_lock),
                         R.drawable.baseline_lock_24,
                         tintColor
                     ) {
@@ -233,7 +233,7 @@ fun FloatingToolbar(
                         onLockClick()
                     }
                     MenuItem(
-                        stringResource(id = R.string.floating_toolbar_menu_settings),
+                        stringResource(R.string.floating_toolbar_menu_settings),
                         R.drawable.baseline_settings_24,
                         tintColor
                     ) {

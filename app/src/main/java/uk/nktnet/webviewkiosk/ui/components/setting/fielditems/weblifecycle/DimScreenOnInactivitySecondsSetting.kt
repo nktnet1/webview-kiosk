@@ -17,7 +17,7 @@ fun DimScreenOnInactivitySecondsSetting() {
     val settingKey = UserSettingsKeys.WebLifecycle.DIM_SCREEN_ON_INACTIVITY_SECONDS
 
     NumberSettingFieldItem(
-        label = stringResource(id = R.string.web_lifecycle_dim_screen_on_inactivity_seconds_title),
+        label = stringResource(R.string.web_lifecycle_dim_screen_on_inactivity_seconds_title),
         infoText = """
             Number of seconds of inactivity before the screen is dimmed.
 

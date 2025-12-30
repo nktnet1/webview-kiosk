@@ -16,7 +16,7 @@ fun AllowGoHomeSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.ALLOW_GO_HOME
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_browsing_allow_go_home_title),
+        label = stringResource(R.string.web_browsing_allow_go_home_title),
         infoText = "Whether the user can return to the configured home page.",
         initialValue = userSettings.allowGoHome,
         settingKey = settingKey,

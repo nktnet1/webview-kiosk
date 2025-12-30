@@ -17,7 +17,7 @@ fun LayoutAlgorithmSetting() {
     val settingKey = UserSettingsKeys.WebEngine.LAYOUT_ALGORITHM
 
     DropdownSettingFieldItem(
-        label = stringResource(id = R.string.web_engine_layout_algorithm_title),
+        label = stringResource(R.string.web_engine_layout_algorithm_title),
         infoText = """
             - NORMAL: no rendering changes
 

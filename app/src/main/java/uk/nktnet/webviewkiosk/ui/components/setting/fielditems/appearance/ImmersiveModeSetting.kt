@@ -17,7 +17,7 @@ fun ImmersiveModeSetting() {
     val settingKey = UserSettingsKeys.Appearance.IMMERSIVE_MODE
 
     DropdownSettingFieldItem(
-        label = stringResource(id = R.string.appearance_immersive_mode_title),
+        label = stringResource(R.string.appearance_immersive_mode_title),
         infoText = """
             In immersive mode, your system bars (status and navigation) are hidden.
 

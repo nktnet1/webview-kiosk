@@ -17,7 +17,7 @@ fun ApplyDesktopViewportWidthSetting() {
     val settingKey = UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH
 
     NumberSettingFieldItem(
-        label = stringResource(id = R.string.js_scripts_apply_desktop_viewport_width_title),
+        label = stringResource(R.string.js_scripts_apply_desktop_viewport_width_title),
         infoText = """
             This script injects JavaScript code that sets
             document.meta.content to 'width=YOUR_WIDTH_VALUE',

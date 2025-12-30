@@ -15,7 +15,7 @@ fun LockTaskFeatureHomeSetting() {
     val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.HOME
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.device_owner_lock_task_feature_home_title),
+        label = stringResource(R.string.device_owner_lock_task_feature_home_title),
         infoText = """
             Shows the Home button.
 

@@ -17,7 +17,7 @@ fun AddressBarModeSetting() {
     val settingKey = UserSettingsKeys.Appearance.ADDRESS_BAR_MODE
 
     DropdownSettingFieldItem(
-        label = stringResource(id = R.string.appearance_address_bar_mode_title),
+        label = stringResource(R.string.appearance_address_bar_mode_title),
         infoText = "Customise the visibility of the address bar.",
         options = AddressBarModeOption.entries,
         settingKey = settingKey,

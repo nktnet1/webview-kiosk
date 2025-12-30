@@ -16,7 +16,7 @@ fun BlockVolumeKeysSetting() {
     val settingKey = UserSettingsKeys.Device.BLOCK_VOLUME_KEYS
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.device_block_volume_keys_title),
+        label = stringResource(R.string.device_block_volume_keys_title),
         infoText = """
             Prevent users from changing the device volume using hardware keys while in the kiosk app.
         """.trimIndent(),

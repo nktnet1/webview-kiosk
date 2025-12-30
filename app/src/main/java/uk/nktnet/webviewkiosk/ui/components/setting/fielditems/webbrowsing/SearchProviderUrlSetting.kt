@@ -51,7 +51,7 @@ fun SearchProviderUrlSetting() {
     )
 
     TextSettingFieldItem(
-        label = stringResource(id = R.string.web_browsing_search_provider_url_title),
+        label = stringResource(R.string.web_browsing_search_provider_url_title),
         infoText = """
             The URL used for search queries in the address bar.
 

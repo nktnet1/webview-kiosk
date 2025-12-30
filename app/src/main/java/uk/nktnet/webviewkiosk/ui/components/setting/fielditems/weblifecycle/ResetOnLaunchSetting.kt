@@ -16,7 +16,7 @@ fun ResetOnLaunchSetting() {
     val settingKey = UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_lifecycle_reset_on_launch_title),
+        label = stringResource(R.string.web_lifecycle_reset_on_launch_title),
         infoText = """
              When enabled, the app will always start fresh at the Home URL when
              closed and re-opened, as opposed to the last visited URL.

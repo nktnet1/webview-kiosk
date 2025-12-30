@@ -18,7 +18,7 @@ fun KioskControlPanelRegionSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION
 
     DropdownSettingFieldItem(
-        label = stringResource(id = R.string.web_browsing_kiosk_control_panel_region_title),
+        label = stringResource(R.string.web_browsing_kiosk_control_panel_region_title),
         infoText = """
             Controls which part of the screen can be multi-tapped 10 times in quick
             succession to show the Kiosk Control Panel.

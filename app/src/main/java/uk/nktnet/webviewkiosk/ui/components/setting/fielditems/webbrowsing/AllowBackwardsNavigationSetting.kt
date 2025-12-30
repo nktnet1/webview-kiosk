@@ -16,7 +16,7 @@ fun AllowBackwardsNavigationSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.ALLOW_BACKWARDS_NAVIGATION
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_browsing_allow_backwards_navigation_title),
+        label = stringResource(R.string.web_browsing_allow_backwards_navigation_title),
         infoText = "Whether the user can use the device 'back' button to go back one page in history.",
         initialValue = userSettings.allowBackwardsNavigation,
         settingKey = settingKey,

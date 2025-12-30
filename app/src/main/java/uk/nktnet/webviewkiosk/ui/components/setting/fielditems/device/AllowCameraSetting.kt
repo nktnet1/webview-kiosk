@@ -30,7 +30,7 @@ fun AllowCameraSetting() {
     ) = rememberPermissionState(Manifest.permission.CAMERA)
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.device_allow_camera_title),
+        label = stringResource(R.string.device_allow_camera_title),
         infoText = """
             Set to true to give WebView access to your device's camera.
 

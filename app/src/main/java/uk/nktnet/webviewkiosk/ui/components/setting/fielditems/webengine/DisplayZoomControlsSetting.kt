@@ -15,7 +15,7 @@ fun DisplayZoomControlsSetting() {
     val settingKey = UserSettingsKeys.WebEngine.DISPLAY_ZOOM_CONTROLS
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_engine_display_zoom_controls_title),
+        label = stringResource(R.string.web_engine_display_zoom_controls_title),
         infoText = """
             Sets whether the WebView should display on-screen zoom controls
             when using the built-in zoom mechanisms.

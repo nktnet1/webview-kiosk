@@ -16,7 +16,7 @@ fun InitialScaleSetting() {
     val settingKey = UserSettingsKeys.WebEngine.INITIAL_SCALE
 
     NumberSettingFieldItem(
-        label = stringResource(id = R.string.web_engine_initial_scale_title),
+        label = stringResource(R.string.web_engine_initial_scale_title),
         infoText = """
             Sets the initial scale for this WebView as a percentage. 0 means default.
 

@@ -16,7 +16,7 @@ fun CustomScriptOnPageStartSetting() {
     val settingKey = UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START
 
     TextSettingFieldItem(
-        label = stringResource(id = R.string.js_scripts_custom_script_on_page_start_title),
+        label = stringResource(R.string.js_scripts_custom_script_on_page_start_title),
         infoText = """
             JavaScript to run immediately when the page starts loading.
             You can use this for early DOM manipulation or overriding functions.

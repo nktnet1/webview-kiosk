@@ -17,7 +17,7 @@ fun WebViewInsetSetting() {
     val settingKey = UserSettingsKeys.Appearance.WEBVIEW_INSET
 
     DropdownSettingFieldItem(
-        label = stringResource(id = R.string.appearance_webview_inset_title),
+        label = stringResource(R.string.appearance_webview_inset_title),
         infoText = "Select which WindowInsets the WebView should respect for padding.",
         options = WebViewInsetOption.entries,
         initialValue = userSettings.webViewInset,

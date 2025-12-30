@@ -16,7 +16,7 @@ fun AllowDefaultLongPressSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.ALLOW_DEFAULT_LONG_PRESS
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_browsing_allow_default_long_press_title),
+        label = stringResource(R.string.web_browsing_allow_default_long_press_title),
         infoText = """
             When enabled, long-pressing areas in the WebView will trigger the native
             WebView behaviour, e.g. text selection.

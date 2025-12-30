@@ -20,48 +20,48 @@ fun SettingsListScreen(
 ) {
     val settingsItems = listOf(
         Triple(
-            stringResource(id = R.string.settings_web_content_title),
-            stringResource(id = R.string.settings_web_content_description),
+            stringResource(R.string.settings_web_content_title),
+            stringResource(R.string.settings_web_content_description),
             Screen.SettingsWebContent.route
         ),
         Triple(
-            stringResource(id = R.string.settings_web_browsing_title),
-            stringResource(id = R.string.settings_web_browsing_description),
+            stringResource(R.string.settings_web_browsing_title),
+            stringResource(R.string.settings_web_browsing_description),
             Screen.SettingsWebBrowsing.route
         ),
         Triple(
-            stringResource(id = R.string.settings_web_engine_title),
-            stringResource(id = R.string.settings_web_engine_description),
+            stringResource(R.string.settings_web_engine_title),
+            stringResource(R.string.settings_web_engine_description),
             Screen.SettingsWebEngine.route
         ),
         Triple(
-            stringResource(id = R.string.settings_web_lifecycle_title),
-            stringResource(id = R.string.settings_web_lifecycle_description),
+            stringResource(R.string.settings_web_lifecycle_title),
+            stringResource(R.string.settings_web_lifecycle_description),
             Screen.SettingsWebLifecycle.route
         ),
         Triple(
-            stringResource(id = R.string.settings_appearance_title),
-            stringResource(id = R.string.settings_appearance_description),
+            stringResource(R.string.settings_appearance_title),
+            stringResource(R.string.settings_appearance_description),
             Screen.SettingsAppearance.route
         ),
         Triple(
-            stringResource(id = R.string.settings_device_title),
-            stringResource(id = R.string.settings_device_description),
+            stringResource(R.string.settings_device_title),
+            stringResource(R.string.settings_device_description),
             Screen.SettingsDevice.route
         ),
         Triple(
-            stringResource(id = R.string.settings_js_scripts_title),
-            stringResource(id = R.string.settings_js_scripts_description),
+            stringResource(R.string.settings_js_scripts_title),
+            stringResource(R.string.settings_js_scripts_description),
             Screen.SettingsJsScript.route
         ),
         Triple(
-            stringResource(id = R.string.settings_mqtt_title),
-            stringResource(id = R.string.settings_mqtt_description),
+            stringResource(R.string.settings_mqtt_title),
+            stringResource(R.string.settings_mqtt_description),
             Screen.SettingsMqtt.route
         ),
         Triple(
-            stringResource(id = R.string.settings_about_title),
-            stringResource(id = R.string.settings_about_description),
+            stringResource(R.string.settings_about_title),
+            stringResource(R.string.settings_about_description),
             Screen.SettingsAbout.route
         ),
     )

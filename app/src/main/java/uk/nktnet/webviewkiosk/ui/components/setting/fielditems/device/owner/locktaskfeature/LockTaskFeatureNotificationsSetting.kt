@@ -15,7 +15,7 @@ fun LockTaskFeatureNotificationsSetting() {
     val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.NOTIFICATIONS
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.device_owner_lock_task_feature_notifications_title),
+        label = stringResource(R.string.device_owner_lock_task_feature_notifications_title),
         infoText = """
             Enables notifications for all apps.
 

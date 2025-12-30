@@ -15,7 +15,7 @@ fun LockTaskFeatureGlobalActionsSetting() {
     val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.GLOBAL_ACTIONS
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.device_owner_lock_task_feature_global_actions_title),
+        label = stringResource(R.string.device_owner_lock_task_feature_global_actions_title),
         infoText = """
             Enables the global actions dialog that shows when long-pressing the power button.
 

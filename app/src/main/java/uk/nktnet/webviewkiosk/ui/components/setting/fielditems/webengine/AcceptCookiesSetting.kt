@@ -16,7 +16,7 @@ fun AcceptCookiesSetting() {
     val settingKey = UserSettingsKeys.WebEngine.ACCEPT_COOKIES
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_engine_accept_cookies_title),
+        label = stringResource(R.string.web_engine_accept_cookies_title),
         infoText = "Allow websites to store and read cookies.",
         initialValue = userSettings.acceptCookies,
         settingKey = settingKey,

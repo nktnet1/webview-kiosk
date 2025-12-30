@@ -17,7 +17,7 @@ fun OverrideUrlLoadingBlockActionSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.OVERRIDE_URL_LOADING_BLOCK_ACTION
 
     DropdownSettingFieldItem(
-        label = stringResource(id = R.string.web_browsing_override_url_loading_block_action_title),
+        label = stringResource(R.string.web_browsing_override_url_loading_block_action_title),
         infoText = """
             Action to take when a URL navigation (via shouldOverrideUrlLoading)
             matches the blacklist regex.

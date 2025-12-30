@@ -18,7 +18,7 @@ fun DhizukuRequestPermissionOnLaunchSetting() {
         label = "Request Permission on Launch",
         infoText = """
             When enabled, if Dhizuku is installed and has not granted
-            ${stringResource(id = R.string.app_name)} access to Device
+            ${stringResource(R.string.app_name)} access to Device
             Owner privileges, prompt the user for permission.
         """.trimIndent(),
         initialValue = userSettings.dhizukuRequestPermissionOnLaunch,

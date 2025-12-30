@@ -16,7 +16,7 @@ fun AllowFileAccessFromFileURLsSetting() {
     val settingKey = UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_engine_allow_file_access_from_file_urls_title),
+        label = stringResource(R.string.web_engine_allow_file_access_from_file_urls_title),
         infoText = """
             This method was deprecated in API level 30 (Android 11).
 

@@ -21,7 +21,7 @@ fun MqttUseForegroundServiceSetting() {
         infoText = """
             Start a Foreground Service to keep the MQTT connection alive.
 
-            This will maintain the connection even when ${stringResource(id = R.string.app_name)}
+            This will maintain the connection even when ${stringResource(R.string.app_name)}
             goes to the background (e.g. another app is opened) or the device screen is
             turned off (by using PowerManager.PARTIAL_WAKE_LOCK).
 
@@ -29,7 +29,7 @@ fun MqttUseForegroundServiceSetting() {
             by the foreground service every second.
 
             Also, It is highly recommended that you disable battery optimisation
-            for ${stringResource(id = R.string.app_name)} to stop the service from
+            for ${stringResource(R.string.app_name)} to stop the service from
             being killed.
 
             For more information, visit:

@@ -15,7 +15,7 @@ fun EnableBrightnessApiSetting() {
     val settingKey = UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.js_scripts_enable_brightness_api_title),
+        label = stringResource(R.string.js_scripts_enable_brightness_api_title),
         infoText = """
             Allow web pages to use:
 

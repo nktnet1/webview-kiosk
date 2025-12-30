@@ -16,7 +16,7 @@ fun AllowPullToRefreshSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.ALLOW_PULL_TO_REFRESH
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_browsing_allow_pull_to_refresh_title),
+        label = stringResource(R.string.web_browsing_allow_pull_to_refresh_title),
         infoText = """
             Set to true to allow the user to refresh the page by pulling down
             from the top 1/4 of the screen.

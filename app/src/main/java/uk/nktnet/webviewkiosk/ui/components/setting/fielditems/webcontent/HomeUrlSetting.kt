@@ -35,7 +35,7 @@ fun HomeUrlSetting() {
     val restricted = userSettings.isRestricted(settingKey)
 
     TextSettingFieldItem(
-        label = stringResource(id = R.string.web_content_home_url_title),
+        label = stringResource(R.string.web_content_home_url_title),
         infoText = """
             The URL that can be returned to by:
               1. tapping the screen 10 times in quick succession

@@ -15,7 +15,7 @@ fun BuiltInZoomControlsSetting() {
     val settingKey = UserSettingsKeys.WebEngine.BUILT_IN_ZOOM_CONTROLS
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_engine_built_in_zoom_controls_title),
+        label = stringResource(R.string.web_engine_built_in_zoom_controls_title),
         infoText = """
            Sets whether the WebView should use its built-in zoom mechanisms.
 

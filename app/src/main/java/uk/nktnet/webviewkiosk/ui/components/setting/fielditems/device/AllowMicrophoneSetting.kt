@@ -30,7 +30,7 @@ fun AllowMicrophoneSetting() {
     ) = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.device_allow_microphone_title),
+        label = stringResource(R.string.device_allow_microphone_title),
         infoText = """
             Set to true to give WebView access to your device's microphone.
 

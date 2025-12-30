@@ -115,7 +115,7 @@ fun AppSearchBar(
                 )
         ) {
             Icon(
-                painter = painterResource(id = R.drawable.baseline_sort_24),
+                painter = painterResource(R.drawable.baseline_sort_24),
                 contentDescription = "Sort Order",
                 modifier = Modifier
                     .size(22.dp)

@@ -16,7 +16,7 @@ fun CustomScriptOnPageFinishSetting() {
     val settingKey = UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH
 
     TextSettingFieldItem(
-        label = stringResource(id = R.string.js_scripts_custom_script_on_page_finish_title),
+        label = stringResource(R.string.js_scripts_custom_script_on_page_finish_title),
         infoText = """
             JavaScript to run after the page has fully loaded.
             Useful for DOM updates, styling, or injecting behavior.

@@ -16,7 +16,7 @@ fun AllowLinkLongPressContextMenuSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.ALLOW_LINK_LONG_PRESS_CONTEXT_MENU
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_browsing_allow_link_long_press_context_menu_title),
+        label = stringResource(R.string.web_browsing_allow_link_long_press_context_menu_title),
         infoText = """
             When enabled, long-pressing links in the WebView will trigger
             a custom context menu.

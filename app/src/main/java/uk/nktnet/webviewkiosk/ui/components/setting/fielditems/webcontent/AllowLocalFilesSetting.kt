@@ -16,7 +16,7 @@ fun AllowLocalFilesSetting() {
     val settingKey = UserSettingsKeys.WebContent.ALLOW_LOCAL_FILES
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_content_allow_local_files_title),
+        label = stringResource(R.string.web_content_allow_local_files_title),
         infoText = """
             Set to true to allow the user to load a local HTML file into the WebView.
 

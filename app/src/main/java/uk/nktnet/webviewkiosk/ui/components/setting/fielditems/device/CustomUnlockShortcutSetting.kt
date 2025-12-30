@@ -77,7 +77,7 @@ fun CustomUnlockShortcutSetting() {
     }
 
     CustomSettingFieldItem(
-        label = stringResource(id = R.string.device_custom_unlock_shortcut_title),
+        label = stringResource(R.string.device_custom_unlock_shortcut_title),
         infoText = """
             Provide a custom keyboard shortcut using a modifier key (CTRL/SHIFT/ALT/META)
             in combination with another standard key to unlock/unpin the application.

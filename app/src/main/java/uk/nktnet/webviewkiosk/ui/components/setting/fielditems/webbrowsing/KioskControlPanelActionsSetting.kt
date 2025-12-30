@@ -17,7 +17,7 @@ fun KioskControlPanelActionsSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_ACTIONS
 
     EnumListSettingFieldItem(
-        label = stringResource(id = R.string.web_browsing_kiosk_control_panel_actions_title),
+        label = stringResource(R.string.web_browsing_kiosk_control_panel_actions_title),
         infoText = """
             Manage visible actions in the kiosk control panel.
 

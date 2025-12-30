@@ -16,7 +16,7 @@ fun MqttServerHostSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Connection.SERVER_HOST
 
     TextSettingFieldItem(
-        label = stringResource(id = R.string.mqtt_connection_server_host_title),
+        label = stringResource(R.string.mqtt_connection_server_host_title),
         infoText = """
             The hostname or IP address of the MQTT broker the app should connect to.
 

@@ -17,7 +17,7 @@ fun OverScrollModeSetting() {
     val settingKey = UserSettingsKeys.WebEngine.OVER_SCROLL_MODE
 
     DropdownSettingFieldItem(
-        label = stringResource(id = R.string.web_engine_over_scroll_mode_title),
+        label = stringResource(R.string.web_engine_over_scroll_mode_title),
         infoText = """
             Configures the WebView's overscroll behavior.
 

@@ -48,7 +48,7 @@ fun MqttClientIdSetting() {
             A unique identifier for this client when connecting to the MQTT broker.
 
             Leave this field blank if you want the broker server to generate a
-            client ID for ${stringResource(id = R.string.app_name)}.
+            client ID for ${stringResource(R.string.app_name)}.
 
             Supports global variables such as APP_INSTANCE_ID and USERNAME, which
             you can use like:

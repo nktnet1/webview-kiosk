@@ -16,7 +16,7 @@ fun BlockedMessageSetting() {
     val settingKey = UserSettingsKeys.Appearance.BLOCKED_MESSAGE
 
     TextSettingFieldItem(
-        label = stringResource(id = R.string.appearance_blocked_message_title),
+        label = stringResource(R.string.appearance_blocked_message_title),
         infoText = "Custom message shown on blocked pages.",
         placeholder = "e.g. This site is blocked by <Company Name>",
         settingKey = settingKey,

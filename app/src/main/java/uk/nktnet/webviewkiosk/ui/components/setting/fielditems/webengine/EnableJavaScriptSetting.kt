@@ -15,7 +15,7 @@ fun EnableJavaScriptSetting() {
     val settingKey = UserSettingsKeys.WebEngine.ENABLE_JAVASCRIPT
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_engine_enable_javascript_title),
+        label = stringResource(R.string.web_engine_enable_javascript_title),
         infoText = "Allow the execution of JavaScript in web pages.",
         initialValue = userSettings.enableJavaScript,
         settingKey = settingKey,

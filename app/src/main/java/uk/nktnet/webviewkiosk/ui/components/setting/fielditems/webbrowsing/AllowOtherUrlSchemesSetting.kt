@@ -16,7 +16,7 @@ fun AllowOtherUrlSchemesSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.ALLOW_OTHER_URL_SCHEMES
 
     BooleanSettingFieldItem(
-        label = stringResource(id = R.string.web_browsing_allow_other_url_schemes_title),
+        label = stringResource(R.string.web_browsing_allow_other_url_schemes_title),
         infoText = """
             Allow opening of non-http/https URL schemes such as
             'mailto:', 'sms:', 'tel:', 'intent:', 'spotify:', 'whatsapp:',

@@ -17,7 +17,7 @@ fun ResetOnInactivitySecondsSetting() {
     val settingKey = UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS
 
     NumberSettingFieldItem(
-        label = stringResource(id = R.string.web_lifecycle_reset_on_inactivity_seconds_title),
+        label = stringResource(R.string.web_lifecycle_reset_on_inactivity_seconds_title),
         infoText = """
             Number of seconds of inactivity before the app resets to the home URL.
 

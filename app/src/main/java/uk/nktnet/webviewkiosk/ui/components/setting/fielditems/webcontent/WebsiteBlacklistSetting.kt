@@ -17,7 +17,7 @@ fun WebsiteBlacklistSetting() {
     val settingKey = UserSettingsKeys.WebContent.WEBSITE_BLACKLIST
 
     TextSettingFieldItem(
-        label = stringResource(id = R.string.web_content_website_blacklist_title),
+        label = stringResource(R.string.web_content_website_blacklist_title),
         infoText = """
             Specify regular expressions (regex), one per line.
 
