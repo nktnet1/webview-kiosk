@@ -19,7 +19,7 @@ fun MqttSubscribeSettingsRetainHandlingSetting() {
     DropdownSettingFieldItem(
         label = stringResource(R.string.mqtt_subscribe_settings_retain_handling_title),
         infoText = """
-            Control whether ${stringResource(id = R.string.app_name)}} should receive existing
+            Control whether ${stringResource(id = R.string.app_name)} should receive existing
             retained messages when subscribing.
         """.trimIndent(),
         options = MqttRetainHandlingOption.entries,
