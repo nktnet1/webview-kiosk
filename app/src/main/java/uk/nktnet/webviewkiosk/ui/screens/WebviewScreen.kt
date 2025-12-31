@@ -5,10 +5,22 @@ import android.webkit.HttpAuthHandler
 import android.webkit.URLUtil.isValidUrl
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -28,39 +40,41 @@ import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.data.WebViewCreation
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoBackCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoForwardCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoHomeCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoToUrlCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttPageDownCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttPageUpCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttRefreshCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSearchCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttUnlockCommand
 import uk.nktnet.webviewkiosk.config.option.AddressBarModeOption
 import uk.nktnet.webviewkiosk.config.option.AddressBarPositionOption
 import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
 import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
-import uk.nktnet.webviewkiosk.handlers.DimScreenOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.BackPressHandler
+import uk.nktnet.webviewkiosk.handlers.DimScreenOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.ResetOnInactivityTimeoutHandler
-import uk.nktnet.webviewkiosk.ui.components.webview.KioskControlPanel
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoBackCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoForwardCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoHomeCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoToUrlCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttPageDownCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttPageUpCommand
 import uk.nktnet.webviewkiosk.managers.MqttManager
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttRefreshCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttUnlockCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSearchCommand
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
-import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
-import uk.nktnet.webviewkiosk.ui.components.webview.FloatingToolbar
-import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
 import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.AppLauncherDialog
+import uk.nktnet.webviewkiosk.ui.components.webview.AddressBar
 import uk.nktnet.webviewkiosk.ui.components.webview.AddressBarSearchSuggestions
 import uk.nktnet.webviewkiosk.ui.components.webview.BookmarksDialog
+import uk.nktnet.webviewkiosk.ui.components.webview.FloatingToolbar
 import uk.nktnet.webviewkiosk.ui.components.webview.HistoryDialog
+import uk.nktnet.webviewkiosk.ui.components.webview.KioskControlPanel
 import uk.nktnet.webviewkiosk.ui.components.webview.LinkOptionsDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.LocalFilesDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.WebViewFindBar
+import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
+import uk.nktnet.webviewkiosk.ui.placeholders.WebViewUnavailable
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
 import uk.nktnet.webviewkiosk.utils.enterImmersiveMode
 import uk.nktnet.webviewkiosk.utils.exitImmersiveMode
@@ -218,7 +232,7 @@ fun WebviewScreen(navController: NavController) {
         )
     }
 
-    val webView = createCustomWebview(
+    val webViewCreation = createCustomWebview(
         context = context,
         config = uk.nktnet.webviewkiosk.utils.WebViewConfig(
             systemSettings = systemSettings,
@@ -243,6 +257,16 @@ fun WebviewScreen(navController: NavController) {
             },
         )
     )
+
+    val (webView, webViewError) = when (webViewCreation) {
+        is WebViewCreation.Success -> webViewCreation.webView to null
+        is WebViewCreation.Failure -> null to webViewCreation.error
+    }
+
+    if (webView == null) {
+        WebViewUnavailable(navController, webViewError)
+        return
+    }
 
     DisposableEffect(webView) {
         onDispose {
