@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting
+package uk.nktnet.webviewkiosk.ui.components.setting.mqtt
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement

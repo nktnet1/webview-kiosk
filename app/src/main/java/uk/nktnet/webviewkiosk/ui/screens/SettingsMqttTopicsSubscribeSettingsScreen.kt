@@ -17,14 +17,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.ui.components.setting.MqttControlButtons
+import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.settings.MqttSubscribeSettingsQosSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.settings.MqttSubscribeSettingsRetainAsPublishedSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.settings.MqttSubscribeSettingsRetainHandlingSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.settings.MqttSubscribeSettingsTopicSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsButton
+import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogsButton
 
 @Composable
 fun SettingsMqttTopicsSubscribeSettingsScreen(navController: NavController) {

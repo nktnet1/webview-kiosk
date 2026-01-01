@@ -21,6 +21,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.UnifiedPushControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.unifiedpush.UnifiedPushDistributorSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.unifiedpush.UnifiedPushEnabledSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.unifiedpush.UnifiedPushDebugLogsButton
 
 @Composable
 fun SettingsUnifiedPushScreen(navController: NavController) {
@@ -49,5 +50,7 @@ fun SettingsUnifiedPushScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(8.dp))
         }
+
+        UnifiedPushDebugLogsButton(navController)
     }
 }

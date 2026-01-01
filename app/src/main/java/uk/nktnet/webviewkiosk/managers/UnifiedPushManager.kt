@@ -24,7 +24,7 @@ object UnifiedPushManager {
     private val _debugLog = MutableSharedFlow<UnifiedPushLogEntry>(extraBufferCapacity = 100)
     val debugLog: SharedFlow<UnifiedPushLogEntry> get() = _debugLog
 
-    private fun addDebugLog(tag: String, message: String? = null) {
+    fun addDebugLog(tag: String, message: String? = null) {
         val logEntry = UnifiedPushLogEntry(Date(), tag, message)
         synchronized(logHistory) {
             if (logHistory.size >= 100) {
@@ -70,13 +70,28 @@ object UnifiedPushManager {
         messageForDistributor: String? = null,
         vapid: String? = null
     ) {
-        addDebugLog(
-            "register",
-            normaliseInfoText("""
-                instance=$instance
-                messageForDistributor=$messageForDistributor
-            """.trimIndent())
-        )
-        UnifiedPush.register(context, instance, messageForDistributor, vapid)
+        try {
+            UnifiedPush.register(context, instance, messageForDistributor, vapid)
+            addDebugLog(
+                "register attempted",
+                normaliseInfoText(
+                    """
+                    instance=$instance
+                    messageForDistributor=$messageForDistributor
+                    """.trimIndent()
+                )
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+            addDebugLog(
+                "register error",
+                normaliseInfoText(
+                    """
+                    instance=$instance
+                    messageForDistributor=$messageForDistributor
+                    """.trimIndent()
+                )
+            )
+        }
     }
 }

@@ -33,6 +33,7 @@ sealed class Screen(val route: String) {
     object SettingsMqttTopicsSubscribeRequest : Screen("settings/mqtt/topics/subscribe/request")
 
     object SettingsUnifiedPush : Screen("settings/unifiedpush")
+    object SettingsUnifiedPushDebug : Screen("settings/unifiedpush/debug")
 
     object SettingsAbout : Screen("settings/about")
 }

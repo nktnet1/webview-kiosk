@@ -51,6 +51,9 @@ fun SetupNavHost(
         Screen.SettingsUnifiedPush.route to {
             SettingsUnifiedPushScreen(navController)
         },
+        Screen.SettingsUnifiedPushDebug.route to {
+            SettingsUnifiedPushDebugScreen(navController)
+        },
         Screen.SettingsAbout.route to {
             SettingsAboutScreen(navController)
         }
