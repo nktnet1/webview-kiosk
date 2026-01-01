@@ -8,11 +8,11 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.edit
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import java.util.*
 import uk.nktnet.webviewkiosk.utils.booleanPref
 import uk.nktnet.webviewkiosk.utils.floatPref
 import uk.nktnet.webviewkiosk.utils.intPref
 import uk.nktnet.webviewkiosk.utils.stringPrefOptional
+import java.util.UUID
 
 @Serializable
 data class HistoryEntry(

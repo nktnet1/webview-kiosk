@@ -1,6 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.fields
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 
 @Composable
 fun BooleanSettingFieldItem(

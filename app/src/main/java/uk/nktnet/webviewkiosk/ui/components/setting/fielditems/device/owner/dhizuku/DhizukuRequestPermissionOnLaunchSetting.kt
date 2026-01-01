@@ -1,6 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.dhizuku
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R

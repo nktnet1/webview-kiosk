@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent
 
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R

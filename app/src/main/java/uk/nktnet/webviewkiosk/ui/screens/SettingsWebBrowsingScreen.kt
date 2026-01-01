@@ -1,6 +1,14 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -14,7 +22,23 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.*
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.AddressBarActionsSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.AllowBackwardsNavigationSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.AllowBookmarkAccessSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.AllowDefaultLongPressSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.AllowGoHomeSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.AllowHistoryAccessSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.AllowLinkLongPressContextMenuSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.AllowOtherUrlSchemesSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.AllowPullToRefreshSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.AllowRefreshSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.ClearHistoryOnHomeSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.KioskControlPanelActionsSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.KioskControlPanelRegionSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.OverrideUrlLoadingBlockActionSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.ReplaceHistoryUrlOnRedirectSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.SearchProviderUrlSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.SearchSuggestionEngineSetting
 
 @Composable
 fun SettingsWebBrowsingScreen(

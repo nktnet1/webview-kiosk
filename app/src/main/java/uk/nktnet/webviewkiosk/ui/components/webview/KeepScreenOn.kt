@@ -2,7 +2,8 @@ package uk.nktnet.webviewkiosk.ui.components.webview
 
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
