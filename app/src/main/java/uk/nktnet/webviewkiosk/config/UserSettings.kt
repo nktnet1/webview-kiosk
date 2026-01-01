@@ -905,6 +905,14 @@ class UserSettings(val context: Context) {
         false
     )
 
+    // UnifiedPush
+    var unifiedPushEnabled by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.UnifiedPush.ENABLED,
+        false
+    )
+
     fun exportJson(): JSONObject {
         val json = JSONObject().apply {
             put(UserSettingsKeys.WebContent.HOME_URL, homeUrl)
@@ -1047,6 +1055,8 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.Restrictions.SEND_TOPIC_ALIAS_MAXIMUM, mqttRestrictionsSendTopicAliasMaximum)
             put(UserSettingsKeys.Mqtt.Restrictions.REQUEST_PROBLEM_INFORMATION, mqttRestrictionsRequestProblemInformation)
             put(UserSettingsKeys.Mqtt.Restrictions.REQUEST_RESPONSE_INFORMATION, mqttRestrictionsRequestResponseInformation)
+
+            put(UserSettingsKeys.UnifiedPush.ENABLED, unifiedPushEnabled)
         }
         return json
     }
@@ -1239,6 +1249,9 @@ class UserSettings(val context: Context) {
             mqttRestrictionsSendTopicAliasMaximum = json.optInt(UserSettingsKeys.Mqtt.Restrictions.SEND_TOPIC_ALIAS_MAXIMUM, mqttRestrictionsSendTopicAliasMaximum)
             mqttRestrictionsRequestProblemInformation = json.optBoolean(UserSettingsKeys.Mqtt.Restrictions.REQUEST_PROBLEM_INFORMATION, mqttRestrictionsRequestProblemInformation)
             mqttRestrictionsRequestResponseInformation = json.optBoolean(UserSettingsKeys.Mqtt.Restrictions.REQUEST_RESPONSE_INFORMATION, mqttRestrictionsRequestResponseInformation)
+
+            unifiedPushEnabled = json.optBoolean(UserSettingsKeys.UnifiedPush.ENABLED, unifiedPushEnabled)
+
             true
         } catch (e: Exception) {
             e.printStackTrace()

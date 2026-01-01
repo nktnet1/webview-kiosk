@@ -115,6 +115,7 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.hivemq.mqtt.client)
     implementation(platform(libs.hivemq.mqtt.client.websocket))
+    implementation(libs.connector)
     retrofix(libs.android.retrostreams)
     retrofix(libs.android.retrofuture)
     implementation(libs.dhizuku.api)

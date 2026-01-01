@@ -48,7 +48,12 @@ fun SetupNavHost(
         Screen.SettingsMqttTopicsSubscribeRequest.route to {
             SettingsMqttTopicsSubscribeRequestScreen(navController)
         },
-        Screen.SettingsAbout.route to { SettingsAboutScreen(navController) }
+        Screen.SettingsUnifiedPush.route to {
+            SettingsUnifiedPushScreen(navController)
+        },
+        Screen.SettingsAbout.route to {
+            SettingsAboutScreen(navController)
+        }
     )
 
     NavHost(navController, startDestination = Screen.WebView.route) {

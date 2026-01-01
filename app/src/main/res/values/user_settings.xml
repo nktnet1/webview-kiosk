@@ -412,4 +412,7 @@
     <string name="mqtt_subscribe_request_retain_as_published_title">Retain As Published</string>
     <string name="mqtt_subscribe_request_retain_as_published_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/request/</string>
 
+    <!-- UnifiedPush -->
+    <string name="unifiedpush_enabled_title">Enabled</string>
+    <string name="unifiedpush_enabled_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
 </resources>

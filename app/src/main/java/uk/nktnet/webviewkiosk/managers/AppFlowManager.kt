@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import org.unifiedpush.android.connector.UnifiedPush
 import uk.nktnet.webviewkiosk.config.data.AdminAppInfo
 import uk.nktnet.webviewkiosk.config.data.AppInfo
 import uk.nktnet.webviewkiosk.config.data.AppLoadState
@@ -39,6 +40,50 @@ object AppFlowManager {
             }
             .filter { !filterLockTaskPermitted || it.value.second }
     }
+
+    private fun getAppsFlowFromPackageList(
+        context: Context,
+        packagesList: List<String>,
+        chunkSize: Int = 5
+    ): Flow<AppLoadState<AppInfo>> = flow {
+        val pm = context.packageManager
+        val total = packagesList.size
+
+        if (total == 0) {
+            emit(AppLoadState(emptyList(), 1f))
+            return@flow
+        }
+
+        val currentChunk = mutableListOf<AppInfo>()
+
+        packagesList.forEachIndexed { index, pkg ->
+            try {
+                val appInfo = pm.getApplicationInfo(pkg, 0)
+                val label = pm.getApplicationLabel(appInfo).toString()
+                val icon = pm.getApplicationIcon(appInfo)
+
+                currentChunk.add(
+                    AppInfo(
+                        packageName = pkg,
+                        name = label,
+                        icon = icon
+                    )
+                )
+            } catch (_: Exception) {
+                // skip invalid packages
+            }
+
+            if (currentChunk.size == chunkSize || index == total - 1) {
+                emit(
+                    AppLoadState(
+                        currentChunk.toList(),
+                        (index + 1).toFloat() / total
+                    )
+                )
+                currentChunk.clear()
+            }
+        }
+    }.flowOn(Dispatchers.IO)
 
     fun getLaunchablePackageNames(
         context: Context,
@@ -173,44 +218,24 @@ object AppFlowManager {
     fun getLockTaskAppsFlow(
         context: Context,
         chunkSize: Int = 5
-    ): Flow<AppLoadState<AppInfo>> = flow {
-        val pm = context.packageManager
-        val packagesList = getLockTaskPackageNames(context)
+    ): Flow<AppLoadState<AppInfo>> {
+        return getAppsFlowFromPackageList(
+            context,
+            getLockTaskPackageNames(context),
+            chunkSize
+        )
+    }
 
-        val total = packagesList.size
-        if (total == 0) {
-            emit(AppLoadState(emptyList(), 1f))
-            return@flow
+    fun getUnifiedPushAppsFlow(
+        context: Context,
+        chunkSize: Int = 5
+    ): Flow<AppLoadState<AppInfo>> {
+        val packagesList = try {
+            UnifiedPush.getDistributors(context)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
         }
-
-        val currentChunk = mutableListOf<AppInfo>()
-
-        packagesList.forEachIndexed { index, pkg ->
-            try {
-                val appInfo = pm.getApplicationInfo(pkg, 0)
-                val label = pm.getApplicationLabel(appInfo).toString()
-                val icon = pm.getApplicationIcon(appInfo)
-
-                currentChunk.add(
-                    AppInfo(
-                        packageName = pkg,
-                        name = label,
-                        icon = icon
-                    )
-                )
-            } catch (_: Exception) {
-                // skip invalid packages
-            }
-
-            if (currentChunk.size == chunkSize || index == total - 1) {
-                emit(
-                    AppLoadState(
-                        currentChunk.toList(),
-                        (index + 1).toFloat() / total
-                    )
-                )
-                currentChunk.clear()
-            }
-        }
-    }.flowOn(Dispatchers.IO)
+        return getAppsFlowFromPackageList(context, packagesList, chunkSize)
+    }
 }

@@ -195,4 +195,8 @@ object UserSettingsKeys {
             const val REQUEST_RESPONSE_INFORMATION = "mqtt.restrictions.request_response_information"
         }
     }
+
+    object UnifiedPush {
+        const val ENABLED = "unifiedpush.enabled"
+    }
 }
