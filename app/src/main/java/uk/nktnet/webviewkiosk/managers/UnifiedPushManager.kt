@@ -10,6 +10,7 @@ import org.unifiedpush.android.connector.INSTANCE_DEFAULT
 import org.unifiedpush.android.connector.UnifiedPush
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.utils.isPackageInstalled
 import java.util.ArrayDeque
 import java.util.Date
 
@@ -71,11 +72,22 @@ object UnifiedPushManager {
         messageForDistributor: String? = null,
         vapid: String? = null
     ) {
+        val userSettings = UserSettings(context)
+
+        if (!isPackageInstalled(context, userSettings.unifiedPushDistributor)) {
+            addDebugLog(
+                "register error",
+                """
+                instance=$instance
+                messageForDistributor=$messageForDistributor
+                error: distributor is not installed (${userSettings.unifiedPushDistributor})
+                """.trimIndent()
+            )
+            return
+        }
+
         try {
-            if (getSavedDistributor(context) == null) {
-                val userSettings = UserSettings(context)
-                saveDistributor(context, userSettings.unifiedPushDistributor)
-            }
+            saveDistributor(context, userSettings.unifiedPushDistributor)
             UnifiedPush.register(context, instance, messageForDistributor, vapid)
             addDebugLog(
                 "registered",

@@ -19,9 +19,9 @@ import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.managers.UnifiedPushManager
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.UnifiedPushSelectorDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
+import uk.nktnet.webviewkiosk.utils.isPackageInstalled
 
 @Composable
 fun UnifiedPushDistributorSetting() {
@@ -43,9 +43,12 @@ fun UnifiedPushDistributorSetting() {
         settingKey = settingKey,
         restricted = restricted,
         isMultiline = false,
+        validator = {
+            isPackageInstalled(context, it)
+        },
+        validationMessage = "Package is not installed.",
         onSave = {
             userSettings.unifiedPushDistributor = it
-            UnifiedPushManager.saveDistributor(context, it)
         },
         extraContent = { setValue: (String) -> Unit ->
             if (restricted) {

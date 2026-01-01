@@ -10,16 +10,19 @@ import uk.nktnet.webviewkiosk.managers.UnifiedPushManager
 
 class UnifiedPushService : PushService() {
     override fun onMessage(message: PushMessage, instance: String) {
-        ToastManager.show(this, "$instance: ${message.content}")
+        ToastManager.show(this, "UnifiedPush: message received.")
         UnifiedPushManager.addDebugLog(
-            "message",
+            "message received",
             """
             instance: $instance
+            message decrypted: ${message.decrypted}
+            message content: ${message.content}
             """.trimIndent()
         )
     }
 
     override fun onNewEndpoint(endpoint: PushEndpoint, instance: String) {
+        ToastManager.show(this, "UnifiedPush: new endpoint.")
         if (!endpoint.temporary) {
             val systemSettings = SystemSettings(this)
             systemSettings.unifiedpushEndpointUrl = endpoint.url
@@ -35,6 +38,7 @@ class UnifiedPushService : PushService() {
     }
 
     override fun onUnregistered(instance: String) {
+        ToastManager.show(this, "UnifiedPush: unregistered called.")
         UnifiedPushManager.addDebugLog(
             "unregistered",
             "instance: $instance"
@@ -42,6 +46,7 @@ class UnifiedPushService : PushService() {
     }
 
     override fun onTempUnavailable(instance: String) {
+        ToastManager.show(this, "UnifiedPush: temporarily unavailable.")
         UnifiedPushManager.addDebugLog(
             "temp unavailable",
             "instance: $instance"
@@ -49,6 +54,7 @@ class UnifiedPushService : PushService() {
     }
 
     override fun onRegistrationFailed(reason: FailedReason, instance: String) {
+        ToastManager.show(this, "UnifiedPush: registration failed.")
         UnifiedPushManager.addDebugLog(
             "register failed",
             """

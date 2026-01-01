@@ -38,13 +38,13 @@ fun SettingsUnifiedPushScreen(navController: NavController) {
         )
         SettingDivider()
 
-        UnifiedPushControlButtons()
-
         Column(
             modifier = Modifier
                 .weight(1f)
                 .verticalScroll(rememberScrollState())
         ) {
+            UnifiedPushControlButtons()
+
             UnifiedPushEnabledSetting()
             UnifiedPushDistributorSetting()
 
