@@ -22,6 +22,7 @@ fun BrightnessSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
     val settingKey = UserSettingsKeys.Device.BRIGHTNESS
+    val restricted = userSettings.isRestricted(settingKey)
 
     NumberSettingFieldItem(
         label = stringResource(R.string.device_brightness_title),
@@ -32,7 +33,7 @@ fun BrightnessSetting() {
         """.trimIndent(),
         initialValue = userSettings.brightness,
         settingKey = settingKey,
-        restricted = userSettings.isRestricted(settingKey),
+        restricted = restricted,
         min = -1,
         max = 100,
         placeholder = "e.g. 20",
@@ -48,6 +49,9 @@ fun BrightnessSetting() {
             setWindowBrightness(context, value)
         },
         extraContent = { draftValue, setValue ->
+            if (restricted) {
+                return@NumberSettingFieldItem
+            }
             Column {
                 Slider(
                     value = draftValue.toFloatOrNull() ?: -1f,
