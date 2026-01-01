@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.permissions
+package uk.nktnet.webviewkiosk.ui.components.setting
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -10,16 +10,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.Screen
 
 @Composable
-fun MqttDebugLogsButton (navController: NavController) {
+fun DebugLogsButton(onClick: () -> Unit) {
     Button(
-        onClick = {
-            navController.navigate(Screen.SettingsMqttDebug.route)
-        },
+        onClick = onClick,
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.tertiaryContainer,
             contentColor = MaterialTheme.colorScheme.onTertiaryContainer

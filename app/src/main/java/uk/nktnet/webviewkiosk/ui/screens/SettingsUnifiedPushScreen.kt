@@ -18,6 +18,7 @@ import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.ui.components.setting.UnifiedPushControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.unifiedpush.UnifiedPushDistributorSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.unifiedpush.UnifiedPushEnabledSetting
 
@@ -35,6 +36,8 @@ fun SettingsUnifiedPushScreen(navController: NavController) {
             label = stringResource(R.string.settings_unifiedpush_title)
         )
         SettingDivider()
+
+        UnifiedPushControlButtons()
 
         Column(
             modifier = Modifier
