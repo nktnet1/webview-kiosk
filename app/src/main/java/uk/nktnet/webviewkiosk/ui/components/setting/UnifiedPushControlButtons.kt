@@ -23,22 +23,29 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
-import uk.nktnet.webviewkiosk.managers.ToastManager
+import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.managers.UnifiedPushManager
 
 @Composable
 fun UnifiedPushControlButtons() {
     val context = LocalContext.current
-    var isProcessing by remember { mutableStateOf(false) }
-    var savedDistributor by remember { mutableStateOf(UnifiedPushManager.getSavedDistributor(context)) }
-    var ackDistributor by remember { mutableStateOf(UnifiedPushManager.getAckDistributor(context)) }
+    val systemSettings = remember { SystemSettings(context) }
+    var savedDistributor by remember {
+        mutableStateOf(UnifiedPushManager.getSavedDistributor(context))
+    }
+    var ackDistributor by remember {
+        mutableStateOf(UnifiedPushManager.getAckDistributor(context))
+    }
+    var endpointUrl by remember {
+        mutableStateOf(systemSettings.unifiedpushEndpointUrl)
+    }
 
     LaunchedEffect(Unit) {
         while (true) {
-            delay(2000)
+            delay(1000)
             savedDistributor = UnifiedPushManager.getSavedDistributor(context)
             ackDistributor = UnifiedPushManager.getAckDistributor(context)
-            println("[DEBUG] $savedDistributor | $ackDistributor")
+            endpointUrl = systemSettings.unifiedpushEndpointUrl
         }
     }
 
@@ -85,12 +92,23 @@ fun UnifiedPushControlButtons() {
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
+                Row {
+                    Text(
+                        text = "Endpoint URL: ",
+                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Text(
+                        text = endpointUrl.takeIf { it.isNotBlank() } ?: "None",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Button(
-                enabled = !isProcessing,
                 onClick = {
                     UnifiedPushManager.register(context)
                 },
@@ -104,8 +122,9 @@ fun UnifiedPushControlButtons() {
             }
 
             Button(
-                enabled = !isProcessing,
-                onClick = { /* unregister logic */ },
+                onClick = {
+                    UnifiedPushManager.unregister(context)
+                },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
@@ -114,21 +133,6 @@ fun UnifiedPushControlButtons() {
             ) {
                 Text("Unregister")
             }
-        }
-
-        Button(
-            enabled = !isProcessing,
-            onClick = {
-                ToastManager.show(
-                    context,
-                    "Saved Distributor: ${savedDistributor ?: "None"}, Ack Distributor: ${ackDistributor ?: "None"}"
-                )
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 4.dp)
-        ) {
-            Text("Check Distributors")
         }
     }
 }

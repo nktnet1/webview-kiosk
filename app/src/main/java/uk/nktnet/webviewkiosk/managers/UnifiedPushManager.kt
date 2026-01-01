@@ -8,7 +8,8 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import org.unifiedpush.android.connector.INSTANCE_DEFAULT
 import org.unifiedpush.android.connector.UnifiedPush
-import uk.nktnet.webviewkiosk.utils.normaliseInfoText
+import uk.nktnet.webviewkiosk.config.SystemSettings
+import uk.nktnet.webviewkiosk.config.UserSettings
 import java.util.ArrayDeque
 import java.util.Date
 
@@ -71,26 +72,46 @@ object UnifiedPushManager {
         vapid: String? = null
     ) {
         try {
+            if (getSavedDistributor(context) == null) {
+                val userSettings = UserSettings(context)
+                saveDistributor(context, userSettings.unifiedPushDistributor)
+            }
             UnifiedPush.register(context, instance, messageForDistributor, vapid)
             addDebugLog(
-                "register attempted",
-                normaliseInfoText(
-                    """
-                    instance=$instance
-                    messageForDistributor=$messageForDistributor
-                    """.trimIndent()
-                )
+                "registered",
+                """
+                instance=$instance
+                messageForDistributor=$messageForDistributor
+                """.trimIndent()
+
             )
         } catch (e: Exception) {
             e.printStackTrace()
             addDebugLog(
                 "register error",
-                normaliseInfoText(
-                    """
-                    instance=$instance
-                    messageForDistributor=$messageForDistributor
-                    """.trimIndent()
-                )
+                """
+                instance=$instance
+                messageForDistributor=$messageForDistributor
+                error: $e
+                """.trimIndent()
+            )
+        }
+    }
+
+    fun unregister(context: Context) {
+        try {
+            UnifiedPush.unregister(context)
+            val systemSettings = SystemSettings(context)
+            systemSettings.unifiedpushEndpointUrl = ""
+            addDebugLog(
+                "unregistered",
+            )
+        } catch (e: Exception) {
+            addDebugLog(
+                "unregister error",
+                """
+                error: $e
+                """.trimIndent()
             )
         }
     }

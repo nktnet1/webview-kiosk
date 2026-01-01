@@ -77,6 +77,8 @@ class SystemSettings(val context: Context) {
         }
 
     var intentUrl by stringPrefOptional(prefs = prefs, key = INTENT_URL)
+    var unifiedpushEndpointUrl by stringPrefOptional(prefs = prefs, key = UNIFIEDPUSH_ENDPOINT_URL)
+
     var isFreshLaunch by mutableStateOf(true)
 
     var urlBeforeNavigation by mutableStateOf("")
@@ -92,6 +94,7 @@ class SystemSettings(val context: Context) {
         private const val APP_INSTANCE_ID = "app_instance_id"
         private const val SITE_PERMISSIONS = "site_permissions"
         private const val INTENT_URL = "intent_url"
+        private const val UNIFIEDPUSH_ENDPOINT_URL = "unifiedpush_endpoint_url"
     }
 
     fun clearHistory() {
