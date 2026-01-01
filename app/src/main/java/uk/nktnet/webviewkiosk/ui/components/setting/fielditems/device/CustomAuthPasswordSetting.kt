@@ -29,7 +29,7 @@ fun CustomAuthPasswordSetting() {
 
             Device-level unpin methods (e.g. gestures/holding overview + back button
             simultaneously) will bypass this setting. To enhance security, please
-            see: ${Constants.WEBSITE_URL}/docs/security
+            see: ${Constants.DOCUMENTATION_URL}/security
 
             Leave this setting blank to use your device's biometrics or credentials.
         """.trimIndent(),

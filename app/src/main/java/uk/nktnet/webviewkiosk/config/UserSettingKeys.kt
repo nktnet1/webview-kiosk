@@ -143,6 +143,7 @@ object UserSettingsKeys {
                     const val QOS = "mqtt.publish.event.qos"
                     const val RETAIN = "mqtt.publish.event.retain"
                 }
+
                 object Response {
                     const val TOPIC = "mqtt.publish.response.topic"
                     const val QOS = "mqtt.publish.response.qos"

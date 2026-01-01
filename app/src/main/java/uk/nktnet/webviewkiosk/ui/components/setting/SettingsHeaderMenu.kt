@@ -1,17 +1,29 @@
 package uk.nktnet.webviewkiosk.ui.components.setting
 
 import android.content.Intent
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.core.net.toUri
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
-import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.ExportSettingsDialog
@@ -130,7 +142,7 @@ fun SettingsHeaderMenu(
                             text = { Text("Help", color = tintColor) },
                             onClick = {
                                 showMenu = false
-                                val intent = Intent(Intent.ACTION_VIEW, Constants.WEBSITE_URL.toUri())
+                                val intent = Intent(Intent.ACTION_VIEW, Constants.DOCUMENTATION_URL.toUri())
                                 safeStartActivity(context, intent)
                             },
                             leadingIcon = {
