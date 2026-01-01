@@ -912,6 +912,11 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.UnifiedPush.ENABLED,
         false
     )
+    var unifiedPushDistributor by stringPrefOptional(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.UnifiedPush.DISTRIBUTOR,
+    )
 
     fun exportJson(): JSONObject {
         val json = JSONObject().apply {
@@ -1057,6 +1062,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.Restrictions.REQUEST_RESPONSE_INFORMATION, mqttRestrictionsRequestResponseInformation)
 
             put(UserSettingsKeys.UnifiedPush.ENABLED, unifiedPushEnabled)
+            put(UserSettingsKeys.UnifiedPush.DISTRIBUTOR, unifiedPushDistributor)
         }
         return json
     }
@@ -1251,7 +1257,7 @@ class UserSettings(val context: Context) {
             mqttRestrictionsRequestResponseInformation = json.optBoolean(UserSettingsKeys.Mqtt.Restrictions.REQUEST_RESPONSE_INFORMATION, mqttRestrictionsRequestResponseInformation)
 
             unifiedPushEnabled = json.optBoolean(UserSettingsKeys.UnifiedPush.ENABLED, unifiedPushEnabled)
-
+            unifiedPushDistributor = json.optString(UserSettingsKeys.UnifiedPush.DISTRIBUTOR, unifiedPushDistributor)
             true
         } catch (e: Exception) {
             e.printStackTrace()

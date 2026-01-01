@@ -415,4 +415,7 @@
     <!-- UnifiedPush -->
     <string name="unifiedpush_enabled_title">Enabled</string>
     <string name="unifiedpush_enabled_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
+
+    <string name="unifiedpush_distributor_title">Distributor</string>
+    <string name="unifiedpush_distributor_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
 </resources>

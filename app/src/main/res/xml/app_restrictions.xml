@@ -877,4 +877,18 @@
         android:title="@string/mqtt_subscribe_request_retain_as_published_title"
         android:description="@string/mqtt_subscribe_request_retain_as_published_description"
     />
+
+    <!-- UnifiedPush -->
+    <restriction
+        android:key="unifiedpush.enabled"
+        android:restrictionType="bool"
+        android:title="@string/unifiedpush_enabled_title"
+        android:description="@string/unifiedpush_enabled_description"
+    />
+    <restriction
+        android:key="unifiedpush.distributor"
+        android:restrictionType="string"
+        android:title="@string/unifiedpush_distributor_title"
+        android:description="@string/unifiedpush_distributor_description"
+    />
 </restrictions>

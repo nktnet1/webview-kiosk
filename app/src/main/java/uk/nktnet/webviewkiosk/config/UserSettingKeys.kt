@@ -198,5 +198,6 @@ object UserSettingsKeys {
 
     object UnifiedPush {
         const val ENABLED = "unifiedpush.enabled"
+        const val DISTRIBUTOR = "unifiedpush.distributor"
     }
 }

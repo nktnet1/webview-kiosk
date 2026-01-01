@@ -16,11 +16,13 @@
       <w>fdroid</w>
       <w>fumadocs</w>
       <w>hashchange</w>
+      <w>heckel</w>
       <w>khtml</w>
       <w>lucide</w>
       <w>mqtts</w>
       <w>mqttx</w>
       <w>nktnet</w>
+      <w>ntfy</w>
       <w>obtainium</w>
       <w>oklch</w>
       <w>packageinstaller</w>
@@ -33,6 +35,7 @@
       <w>thead</w>
       <w>unduck</w>
       <w>unduckified</w>
+      <w>unifiedpush</w>
       <w>webviewkiosk</w>
     </words>
   </dictionary>

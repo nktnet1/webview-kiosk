@@ -14,14 +14,14 @@ import uk.nktnet.webviewkiosk.managers.AppFlowManager
 @Composable
 fun UnifiedPushSelectorDialog(
     showDialog: Boolean,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onSelectedApp: (app: AppInfo) -> Unit,
 ) {
     if (!showDialog) {
         return
     }
 
     val context = LocalContext.current
-    var selectedApp by remember { mutableStateOf<AppInfo?>(null) }
     var apps by remember { mutableStateOf<List<AppInfo>>(emptyList()) }
     var progress by remember { mutableFloatStateOf(0f) }
 
@@ -37,7 +37,7 @@ fun UnifiedPushSelectorDialog(
         title = "UnifiedPush Distributors",
         apps = apps,
         progress = progress,
-        onSelectApp = { selectedApp = it },
+        onSelectApp = onSelectedApp,
         appFilter = { app, query ->
             app.name.contains(query, ignoreCase = true)
             || app.packageName.contains(query, ignoreCase = true)
