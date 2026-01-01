@@ -17,7 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.ui.components.setting.MqttControlButtons
+import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttAutomaticReconnectSetting
@@ -34,7 +34,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.M
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttUseWebSocketSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttUsernameSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.connection.MqttWebSocketServerPathSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsButton
+import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogsButton
 
 @Composable
 fun SettingsMqttConnectionScreen(navController: NavController) {

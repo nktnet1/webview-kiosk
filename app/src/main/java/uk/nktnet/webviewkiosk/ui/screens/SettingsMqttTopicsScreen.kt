@@ -22,11 +22,11 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
-import uk.nktnet.webviewkiosk.ui.components.setting.MqttControlButtons
+import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingListItem
-import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsButton
+import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogsButton
 
 @Composable
 fun SettingsMqttTopicsScreen(navController: NavController) {

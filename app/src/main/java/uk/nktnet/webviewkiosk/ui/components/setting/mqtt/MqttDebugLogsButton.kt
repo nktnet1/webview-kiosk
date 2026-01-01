@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.permissions
+package uk.nktnet.webviewkiosk.ui.components.setting.mqtt
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -15,7 +15,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 
 @Composable
-fun MqttDebugLogsButton (navController: NavController) {
+fun MqttDebugLogsButton(navController: NavController) {
     Button(
         onClick = {
             navController.navigate(Screen.SettingsMqttDebug.route)

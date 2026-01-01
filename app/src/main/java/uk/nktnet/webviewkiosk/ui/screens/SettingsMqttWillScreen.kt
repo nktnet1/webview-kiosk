@@ -17,7 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.ui.components.setting.MqttControlButtons
+import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWillDelayIntervalSetting
@@ -26,7 +26,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWil
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWillQosSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWillRetainSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.will.MqttWillTopicSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.permissions.MqttDebugLogsButton
+import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogsButton
 
 @Composable
 fun SettingsMqttWillScreen(navController: NavController) {
