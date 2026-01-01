@@ -13,7 +13,8 @@ object Constants {
 
     const val WEB_CONTENT_FILES_DIR = "web-content-files"
 
-    const val GEOLOCATION_RESOURCE = "webviewkiosk.custom-permission.geolocation"
+    const val APP_SCHEME = "webviewkiosk"
+    const val GEOLOCATION_RESOURCE = "${APP_SCHEME}.custom-permission.geolocation"
 
     const val INTENT_NAVIGATE_TO_WEBVIEW_SCREEN = "intent_navigate_to_webview_screen"
 

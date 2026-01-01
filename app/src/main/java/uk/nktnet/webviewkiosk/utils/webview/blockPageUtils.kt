@@ -3,11 +3,11 @@ package uk.nktnet.webviewkiosk.utils.webview
 import android.net.Uri
 import android.webkit.WebView
 import androidx.core.net.toUri
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.utils.webview.html.BlockCause
 import uk.nktnet.webviewkiosk.utils.webview.html.generateBlockedPageHtml
 import java.net.URLEncoder
-import kotlin.collections.contains
 
 const val BLOCK_HOST = "block"
 
@@ -43,7 +43,7 @@ fun getBlockInfo(
         "file" -> SchemeType.FILE
         "http", "https" -> SchemeType.WEB
         "data" -> SchemeType.DATA
-        "webviewkiosk" -> SchemeType.WEBVIEW_KIOSK
+        Constants.APP_SCHEME -> SchemeType.WEBVIEW_KIOSK
         else -> SchemeType.OTHER
     }
 
@@ -62,7 +62,7 @@ fun loadBlockedPage(
     blockCause: BlockCause,
 ) {
     val baseUrl = if ( url.toUri().scheme !in setOf("http", "https", "file")) {
-        "webviewkiosk://${BLOCK_HOST}?cause=${blockCause.name}&url=${URLEncoder.encode(url, "UTF-8")}"
+        "${Constants.APP_SCHEME}://${BLOCK_HOST}?cause=${blockCause.name}&url=${URLEncoder.encode(url, "UTF-8")}"
     } else {
         url
     }
