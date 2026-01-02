@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.managers
 
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSettingsMessage
 import android.annotation.SuppressLint
 import android.content.Context
 import com.hivemq.client.mqtt.MqttClient
@@ -27,11 +26,10 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.data.SystemInfo
-import uk.nktnet.webviewkiosk.config.option.LockStateType
+import uk.nktnet.webviewkiosk.config.mqtt.MqttConfig
 import uk.nktnet.webviewkiosk.config.mqtt.MqttQosOption
 import uk.nktnet.webviewkiosk.config.mqtt.MqttRetainHandlingOption
 import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
-import uk.nktnet.webviewkiosk.config.mqtt.MqttConfig
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttAppBackgroundEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttAppForegroundEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttApplicationRestrictionsChangedEvent
@@ -39,17 +37,14 @@ import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttCommandJsonParser
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttCommandMessage
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttConnectedEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttDisconnectingEvent
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorRequest
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorResponse
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttEventJsonParser
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttEventMessage
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSettingsRequest
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttStatusRequest
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSystemInfoRequest
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockEvent
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorRequest
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLaunchablePackagesRequest
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLaunchablePackagesResponse
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockTaskPackagesRequest
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockTaskPackagesResponse
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttPowerPluggedEvent
@@ -60,17 +55,23 @@ import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttResponseJsonParser
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttResponseMessage
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttScreenOffEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttScreenOnEvent
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSettingsMessage
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSettingsRequest
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSettingsResponse
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttStatusRequest
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttStatusResponse
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSystemInfoRequest
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSystemInfoResponse
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttUnlockEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttUrlChangedEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttUserPresentEvent
+import uk.nktnet.webviewkiosk.config.option.LockStateType
 import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
 import uk.nktnet.webviewkiosk.utils.filterSettingsJson
 import uk.nktnet.webviewkiosk.utils.getStatus
 import uk.nktnet.webviewkiosk.utils.isValidMqttPublishTopic
 import uk.nktnet.webviewkiosk.utils.isValidMqttSubscribeTopic
+import uk.nktnet.webviewkiosk.utils.replaceVariables
 import java.util.Date
 import java.util.UUID
 import java.util.concurrent.TimeUnit
@@ -1001,16 +1002,13 @@ object MqttManager {
 
     fun mqttVariableReplacement(
         value: String,
-        additionalReplacementMap: Map<String, String> = emptyMap(),
+        additionalReplacementMap: Map<String, String> = emptyMap()
     ): String {
         val variableReplacementMap = mapOf(
             MqttVariableName.APP_INSTANCE_ID.name to config.appInstanceId,
             MqttVariableName.USERNAME.name to config.username,
         ) + additionalReplacementMap
-        val regex = "\\$\\{([^}]+)\\}".toRegex()
-        return regex.replace(value) { matchResult ->
-            val key = matchResult.groupValues[1]
-            variableReplacementMap[key] ?: matchResult.value
-        }.trim()
+
+        return replaceVariables(value, variableReplacementMap)
     }
 }
