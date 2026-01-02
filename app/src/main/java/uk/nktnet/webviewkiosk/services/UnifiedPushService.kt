@@ -38,6 +38,8 @@ class UnifiedPushService : PushService() {
     }
 
     override fun onUnregistered(instance: String) {
+        val systemSettings = SystemSettings(this)
+        systemSettings.unifiedpushEndpointUrl = ""
         ToastManager.show(this, "UnifiedPush: unregistered called.")
         UnifiedPushManager.addDebugLog(
             "unregistered",

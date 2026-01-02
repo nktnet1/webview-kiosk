@@ -917,6 +917,16 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.UnifiedPush.DISTRIBUTOR,
     )
+    var unifiedPushMessageForDistributor by stringPrefOptional(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.UnifiedPush.MESSAGE_FOR_DISTRIBUTOR,
+    )
+    var unifiedPushVapidPublicKey by stringPrefOptional(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.UnifiedPush.VAPID_PUBLIC_KEY,
+    )
 
     fun exportJson(): JSONObject {
         val json = JSONObject().apply {
@@ -1063,6 +1073,8 @@ class UserSettings(val context: Context) {
 
             put(UserSettingsKeys.UnifiedPush.ENABLED, unifiedPushEnabled)
             put(UserSettingsKeys.UnifiedPush.DISTRIBUTOR, unifiedPushDistributor)
+            put(UserSettingsKeys.UnifiedPush.MESSAGE_FOR_DISTRIBUTOR, unifiedPushMessageForDistributor)
+            put(UserSettingsKeys.UnifiedPush.VAPID_PUBLIC_KEY, unifiedPushVapidPublicKey)
         }
         return json
     }
@@ -1258,6 +1270,8 @@ class UserSettings(val context: Context) {
 
             unifiedPushEnabled = json.optBoolean(UserSettingsKeys.UnifiedPush.ENABLED, unifiedPushEnabled)
             unifiedPushDistributor = json.optString(UserSettingsKeys.UnifiedPush.DISTRIBUTOR, unifiedPushDistributor)
+            unifiedPushMessageForDistributor = json.optString(UserSettingsKeys.UnifiedPush.MESSAGE_FOR_DISTRIBUTOR, unifiedPushMessageForDistributor)
+            unifiedPushVapidPublicKey = json.optString(UserSettingsKeys.UnifiedPush.VAPID_PUBLIC_KEY, unifiedPushVapidPublicKey)
             true
         } catch (e: Exception) {
             e.printStackTrace()

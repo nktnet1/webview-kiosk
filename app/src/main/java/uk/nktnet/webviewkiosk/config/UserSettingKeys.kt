@@ -199,5 +199,7 @@ object UserSettingsKeys {
     object UnifiedPush {
         const val ENABLED = "unifiedpush.enabled"
         const val DISTRIBUTOR = "unifiedpush.distributor"
+        const val MESSAGE_FOR_DISTRIBUTOR = "unifiedpush.message_for_distributor"
+        const val VAPID_PUBLIC_KEY = "unifiedpush.vapid_public_key"
     }
 }

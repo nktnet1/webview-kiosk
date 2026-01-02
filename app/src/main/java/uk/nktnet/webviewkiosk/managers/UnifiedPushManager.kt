@@ -11,6 +11,7 @@ import org.unifiedpush.android.connector.UnifiedPush
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.utils.isPackageInstalled
+import uk.nktnet.webviewkiosk.utils.isValidVapidPublicKey
 import java.util.ArrayDeque
 import java.util.Date
 
@@ -69,8 +70,6 @@ object UnifiedPushManager {
     fun register(
         context: Context,
         instance: String = INSTANCE_DEFAULT,
-        messageForDistributor: String? = null,
-        vapid: String? = null
     ) {
         val userSettings = UserSettings(context)
 
@@ -79,21 +78,46 @@ object UnifiedPushManager {
                 "register error",
                 """
                 instance=$instance
-                messageForDistributor=$messageForDistributor
+                messageForDistributor=${userSettings.unifiedPushMessageForDistributor}
                 error: distributor is not installed (${userSettings.unifiedPushDistributor})
                 """.trimIndent()
             )
+            ToastManager.show(context, "Error: distributor is not installed")
+            return
+        }
+        if (
+            userSettings.unifiedPushVapidPublicKey.isNotEmpty()
+            && !isValidVapidPublicKey(userSettings.unifiedPushVapidPublicKey)
+        ) {
+            addDebugLog(
+                "register error",
+                """
+                instance=$instance
+                messageForDistributor=${userSettings.unifiedPushMessageForDistributor}
+                error: distributor is not installed (${userSettings.unifiedPushDistributor})
+                """.trimIndent()
+            )
+            ToastManager.show(context, "Error: invalid VAPID public key")
             return
         }
 
         try {
             saveDistributor(context, userSettings.unifiedPushDistributor)
-            UnifiedPush.register(context, instance, messageForDistributor, vapid)
+            UnifiedPush.register(
+                context,
+                instance,
+                userSettings.unifiedPushMessageForDistributor.takeIf {
+                    it.isNotBlank()
+                },
+                userSettings.unifiedPushVapidPublicKey.takeIf {
+                    it.isNotBlank()
+                }
+            )
             addDebugLog(
                 "registered",
                 """
                 instance=$instance
-                messageForDistributor=$messageForDistributor
+                messageForDistributor=${userSettings.unifiedPushMessageForDistributor}
                 """.trimIndent()
 
             )
@@ -103,7 +127,7 @@ object UnifiedPushManager {
                 "register error",
                 """
                 instance=$instance
-                messageForDistributor=$messageForDistributor
+                messageForDistributor=${userSettings.unifiedPushMessageForDistributor}
                 error: $e
                 """.trimIndent()
             )

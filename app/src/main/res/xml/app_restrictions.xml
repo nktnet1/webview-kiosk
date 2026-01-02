@@ -891,4 +891,16 @@
         android:title="@string/unifiedpush_distributor_title"
         android:description="@string/unifiedpush_distributor_description"
     />
+    <restriction
+        android:key="unifiedpush.message_for_distributor"
+        android:restrictionType="string"
+        android:title="@string/unifiedpush_message_for_distributor_title"
+        android:description="@string/unifiedpush_message_for_distributor_description"
+    />
+    <restriction
+        android:key="unifiedpush.vapid_public_key"
+        android:restrictionType="string"
+        android:title="@string/unifiedpush_vapid_public_key_title"
+        android:description="@string/unifiedpush_vapid_public_key_description"
+    />
 </restrictions>

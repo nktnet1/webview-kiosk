@@ -59,7 +59,12 @@ fun UnifiedPushControlButtons() {
             delay(1000)
             savedDistributor = UnifiedPushManager.getSavedDistributor(context)
             ackDistributor = UnifiedPushManager.getAckDistributor(context)
-            endpointUrl = systemSettings.unifiedpushEndpointUrl
+            if (ackDistributor.isNullOrBlank()) {
+                endpointUrl = ""
+                systemSettings.unifiedpushEndpointUrl = ""
+            } else {
+                endpointUrl = systemSettings.unifiedpushEndpointUrl
+            }
         }
     }
 
@@ -100,7 +105,9 @@ fun UnifiedPushControlButtons() {
 
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Button(
-                onClick = { UnifiedPushManager.register(context) },
+                onClick = {
+                    UnifiedPushManager.register(context)
+                },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,

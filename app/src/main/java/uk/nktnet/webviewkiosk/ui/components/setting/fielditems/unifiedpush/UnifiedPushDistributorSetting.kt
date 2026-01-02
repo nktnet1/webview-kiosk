@@ -44,7 +44,7 @@ fun UnifiedPushDistributorSetting() {
         restricted = restricted,
         isMultiline = false,
         validator = {
-            isPackageInstalled(context, it)
+            it.isEmpty() || isPackageInstalled(context, it)
         },
         validationMessage = "Package is not installed.",
         onSave = {
