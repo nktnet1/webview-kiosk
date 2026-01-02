@@ -10,8 +10,10 @@ import org.unifiedpush.android.connector.INSTANCE_DEFAULT
 import org.unifiedpush.android.connector.UnifiedPush
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushVariableName
 import uk.nktnet.webviewkiosk.utils.isPackageInstalled
 import uk.nktnet.webviewkiosk.utils.isValidVapidPublicKey
+import uk.nktnet.webviewkiosk.utils.webview.replaceVariables
 import java.util.ArrayDeque
 import java.util.Date
 
@@ -68,10 +70,10 @@ object UnifiedPushManager {
     }
 
     fun register(
-        context: Context,
-        instance: String = INSTANCE_DEFAULT,
+        context: Context
     ) {
         val userSettings = UserSettings(context)
+        val instance = getInstance(context)
 
         if (!isPackageInstalled(context, userSettings.unifiedPushDistributor)) {
             addDebugLog(
@@ -135,20 +137,41 @@ object UnifiedPushManager {
     }
 
     fun unregister(context: Context) {
+        val instance = getInstance(context)
         try {
-            UnifiedPush.unregister(context)
+            UnifiedPush.unregister(context, instance)
             val systemSettings = SystemSettings(context)
             systemSettings.unifiedpushEndpointUrl = ""
             addDebugLog(
                 "unregistered",
+                """
+                instance: $instance
+                """.trimIndent()
             )
         } catch (e: Exception) {
             addDebugLog(
                 "unregister error",
                 """
+                instance: $instance
                 error: $e
                 """.trimIndent()
             )
         }
+    }
+
+    private fun getInstance(context: Context): String {
+        val userSettings = UserSettings(context)
+        val systemSettings = SystemSettings(context)
+        val instance = if (userSettings.unifiedPushInstance.isNotEmpty()) {
+            replaceVariables(
+                userSettings.unifiedPushInstance,
+                mapOf(
+                    UnifiedPushVariableName.APP_INSTANCE_ID.name to systemSettings.appInstanceId
+                )
+            )
+        } else {
+            INSTANCE_DEFAULT
+        }
+        return instance
     }
 }

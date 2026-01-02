@@ -419,6 +419,9 @@
     <string name="unifiedpush_distributor_title">Distributor</string>
     <string name="unifiedpush_distributor_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
 
+    <string name="unifiedpush_instance_title">Instance</string>
+    <string name="unifiedpush_instance_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
+
     <string name="unifiedpush_message_for_distributor_title">Message for Distributor</string>
     <string name="unifiedpush_message_for_distributor_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
 

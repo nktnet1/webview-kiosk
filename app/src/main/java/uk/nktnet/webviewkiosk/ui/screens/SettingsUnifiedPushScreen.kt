@@ -21,6 +21,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.UnifiedPushControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.unifiedpush.UnifiedPushDistributorSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.unifiedpush.UnifiedPushEnabledSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.unifiedpush.UnifiedPushInstanceSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.unifiedpush.UnifiedPushMessageForDistributorSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.unifiedpush.UnifiedPushVapidPublicKeySetting
 import uk.nktnet.webviewkiosk.ui.components.setting.unifiedpush.UnifiedPushDebugLogsButton
@@ -49,6 +50,7 @@ fun SettingsUnifiedPushScreen(navController: NavController) {
 
             UnifiedPushEnabledSetting()
             UnifiedPushDistributorSetting()
+            UnifiedPushInstanceSetting()
             UnifiedPushMessageForDistributorSetting()
             UnifiedPushVapidPublicKeySetting()
 

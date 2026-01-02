@@ -917,6 +917,11 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.UnifiedPush.DISTRIBUTOR,
     )
+    var unifiedPushInstance by stringPrefOptional(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.UnifiedPush.INSTANCE,
+    )
     var unifiedPushMessageForDistributor by stringPrefOptional(
         getRestrictions,
         prefs,
@@ -1073,6 +1078,7 @@ class UserSettings(val context: Context) {
 
             put(UserSettingsKeys.UnifiedPush.ENABLED, unifiedPushEnabled)
             put(UserSettingsKeys.UnifiedPush.DISTRIBUTOR, unifiedPushDistributor)
+            put(UserSettingsKeys.UnifiedPush.INSTANCE, unifiedPushInstance)
             put(UserSettingsKeys.UnifiedPush.MESSAGE_FOR_DISTRIBUTOR, unifiedPushMessageForDistributor)
             put(UserSettingsKeys.UnifiedPush.VAPID_PUBLIC_KEY, unifiedPushVapidPublicKey)
         }
@@ -1270,6 +1276,7 @@ class UserSettings(val context: Context) {
 
             unifiedPushEnabled = json.optBoolean(UserSettingsKeys.UnifiedPush.ENABLED, unifiedPushEnabled)
             unifiedPushDistributor = json.optString(UserSettingsKeys.UnifiedPush.DISTRIBUTOR, unifiedPushDistributor)
+            unifiedPushInstance = json.optString(UserSettingsKeys.UnifiedPush.INSTANCE, unifiedPushInstance)
             unifiedPushMessageForDistributor = json.optString(UserSettingsKeys.UnifiedPush.MESSAGE_FOR_DISTRIBUTOR, unifiedPushMessageForDistributor)
             unifiedPushVapidPublicKey = json.optString(UserSettingsKeys.UnifiedPush.VAPID_PUBLIC_KEY, unifiedPushVapidPublicKey)
             true

@@ -892,6 +892,12 @@
         android:description="@string/unifiedpush_distributor_description"
     />
     <restriction
+        android:key="unifiedpush.instance"
+        android:restrictionType="string"
+        android:title="@string/unifiedpush_instance_title"
+        android:description="@string/unifiedpush_instance_description"
+    />
+    <restriction
         android:key="unifiedpush.message_for_distributor"
         android:restrictionType="string"
         android:title="@string/unifiedpush_message_for_distributor_title"

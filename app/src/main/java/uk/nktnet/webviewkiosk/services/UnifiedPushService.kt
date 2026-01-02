@@ -7,10 +7,12 @@ import org.unifiedpush.android.connector.data.PushMessage
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.managers.UnifiedPushManager
+import uk.nktnet.webviewkiosk.utils.wakeScreen
 
 class UnifiedPushService : PushService() {
     override fun onMessage(message: PushMessage, instance: String) {
         ToastManager.show(this, "UnifiedPush: message received.")
+        wakeScreen(this)
         UnifiedPushManager.addDebugLog(
             "message received",
             """
