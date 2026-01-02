@@ -1,14 +1,18 @@
 package uk.nktnet.webviewkiosk.ui.components.setting
 
+import android.content.ClipData
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -17,14 +21,21 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.toClipEntry
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.managers.UnifiedPushManager
 
@@ -69,16 +80,17 @@ fun UnifiedPushControlButtons() {
                 modifier = Modifier.padding(12.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
+                val status = if (savedDistributor.isNullOrBlank()) {
+                    ""
+                } else if (savedDistributor != ackDistributor) {
+                    " (pending)"
+                } else {
+                    " (ready)"
+                }
                 InfoRow(
-                    label = "Saved distributor",
+                    label = "Distributor${status}",
                     value = savedDistributor
                 )
-
-                InfoRow(
-                    label = "Ack distributor",
-                    value = ackDistributor
-                )
-
                 InfoRow(
                     label = "Endpoint URL",
                     value = endpointUrl
@@ -117,24 +129,54 @@ private fun InfoRow(
     label: String,
     value: String?
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+    val clipboard = LocalClipboard.current
+    val scope = rememberCoroutineScope()
+    val displayValue = value?.takeIf { it.isNotBlank() } ?: "None"
 
-        SelectionContainer {
-            Text(
-                text = value?.takeIf { it.isNotBlank() } ?: "None",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Normal
-                ),
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 3,
-                overflow = TextOverflow.Ellipsis
-            )
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f).padding(end = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                SelectionContainer {
+                    Text(
+                        text = displayValue,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = FontFamily.Monospace,
+                            fontWeight = FontWeight.Normal
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            IconButton(
+                enabled = !value.isNullOrBlank(),
+                modifier = Modifier.size(24.dp),
+                onClick = {
+                    scope.launch {
+                        val clipData = ClipData.newPlainText(label, value)
+                        clipboard.setClipEntry(clipData.toClipEntry())
+                    }
+                }
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.baseline_content_copy_24),
+                    contentDescription = null
+                )
+            }
         }
     }
 }
