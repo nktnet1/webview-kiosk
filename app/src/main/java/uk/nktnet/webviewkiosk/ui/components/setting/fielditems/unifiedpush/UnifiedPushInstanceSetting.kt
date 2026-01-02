@@ -29,7 +29,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushVariableName
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
-import uk.nktnet.webviewkiosk.utils.webview.replaceVariables
+import uk.nktnet.webviewkiosk.utils.replaceVariables
 
 @Composable
 fun UnifiedPushInstanceSetting() {

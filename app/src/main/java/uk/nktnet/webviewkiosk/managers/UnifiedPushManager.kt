@@ -13,7 +13,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushVariableName
 import uk.nktnet.webviewkiosk.utils.isPackageInstalled
 import uk.nktnet.webviewkiosk.utils.isValidVapidPublicKey
-import uk.nktnet.webviewkiosk.utils.webview.replaceVariables
+import uk.nktnet.webviewkiosk.utils.replaceVariables
 import java.util.ArrayDeque
 import java.util.Date
 
