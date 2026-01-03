@@ -81,7 +81,9 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                 } catch (e: Exception) {
                     if (e is CancellationException) {
                         // Ignore cancellation caused by leaving the UI
+                        e.printStackTrace()
                     } else {
+                        e.printStackTrace()
                         ToastManager.show(context, "Upload failed: ${e.message}")
                     }
                 } finally {
