@@ -575,3 +575,26 @@ Example Payload:
   "wakeScreen": true
 }
 ```
+
+### 2.17. Clear Cache
+
+Clears webview cache.  This is equivalent to [Clear Cache Action](/docs/setting-actions/#43-clear-actions).
+
+Example Payload:
+
+```json tab="Minimal"
+{
+  "command": "clear_cache"
+}
+```
+
+```json tab="Full"
+{
+  "command": "clear_cache",
+  "messageId": "example-001",
+  "targetInstances": ["070219ea-d0cb-11f0-9e76-5a93ec0e6f90"],
+  "targetUsernames": ["user-001"],
+  "interact": false,
+  "wakeScreen": true
+}
+```

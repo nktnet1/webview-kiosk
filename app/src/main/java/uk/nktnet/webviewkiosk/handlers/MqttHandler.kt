@@ -2,9 +2,14 @@ package uk.nktnet.webviewkiosk.handlers
 
 import android.content.Context
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.webkit.WebView
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttClearHistoryCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttClearCacheCommand
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttCommandMessage
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttDisconnectingEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorRequest
@@ -58,6 +63,19 @@ object MqttHandler {
             }
             is MqttClearHistoryCommand -> {
                 WebViewNavigation.clearHistory(systemSettings)
+            }
+            is MqttClearCacheCommand -> {
+                Handler(Looper.getMainLooper()).post {
+                    try {
+                        WebView(context).clearCache(true)
+                    } catch (e: Exception) {
+                        ToastManager.show(
+                            context,
+                            context.getString(R.string.settings_more_action_toast_cache_clear_failed)
+                        )
+                        e.printStackTrace()
+                    }
+                }
             }
             is MqttToastCommand -> {
                 if (!command.data?.message.isNullOrEmpty()) {
