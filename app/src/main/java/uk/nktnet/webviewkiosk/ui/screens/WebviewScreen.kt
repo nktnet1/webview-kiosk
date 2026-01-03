@@ -75,6 +75,7 @@ import uk.nktnet.webviewkiosk.ui.components.webview.LocalFilesDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.WebViewFindBar
 import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
 import uk.nktnet.webviewkiosk.ui.placeholders.WebViewUnavailable
+import uk.nktnet.webviewkiosk.utils.WebViewConfig
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
 import uk.nktnet.webviewkiosk.utils.enterImmersiveMode
 import uk.nktnet.webviewkiosk.utils.exitImmersiveMode
@@ -195,7 +196,7 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
-    DisposableEffect( activity, isLocked) {
+    DisposableEffect(activity, isLocked) {
         if (activity != null) {
             val shouldImmerse = shouldBeImmersed(activity, userSettings)
             if (shouldImmerse) {
@@ -234,7 +235,7 @@ fun WebviewScreen(navController: NavController) {
 
     val webViewCreation = createCustomWebview(
         context = context,
-        config = uk.nktnet.webviewkiosk.utils.WebViewConfig(
+        config = WebViewConfig(
             systemSettings = systemSettings,
             userSettings = userSettings,
             blacklistRegexes = blacklistRegexes,
