@@ -74,7 +74,7 @@ fun ImportSettingsDialog(
                         importText = stream.bufferedReader().use { it.readText() }
                         importError = false
                     }
-                    ToastManager.show(context, "Imported file successfully.")
+                    ToastManager.show(context, "Loaded file successfully.")
                 } catch (e: Exception) {
                     e.printStackTrace()
                     ToastManager.show(context, "Failed to read file: ${e.message}")
