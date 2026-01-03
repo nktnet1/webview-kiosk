@@ -31,6 +31,7 @@
     <!-- Toast Messages -->
     <string name="settings_more_action_toast_cookies_cleared">Cookies cleared.</string>
     <string name="settings_more_action_toast_cache_cleared">Cache cleared.</string>
+    <string name="settings_more_action_toast_cache_clear_failed">Cache clear failed.</string>
     <string name="settings_more_action_toast_form_data_cleared">Form data cleared.</string>
     <string name="settings_more_action_toast_history_cleared">History cleared.</string>
     <string name="settings_more_action_toast_ssl_preferences_cleared">SSL preferences cleared.</string>

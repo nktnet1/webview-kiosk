@@ -68,11 +68,11 @@ object MqttHandler {
                 Handler(Looper.getMainLooper()).post {
                     try {
                         WebView(context).clearCache(true)
+                    } catch (e: Exception) {
                         ToastManager.show(
                             context,
-                            context.getString(R.string.settings_more_action_toast_cache_cleared)
+                            context.getString(R.string.settings_more_action_toast_cache_clear_failed)
                         )
-                    } catch (e: Exception) {
                         e.printStackTrace()
                     }
                 }
