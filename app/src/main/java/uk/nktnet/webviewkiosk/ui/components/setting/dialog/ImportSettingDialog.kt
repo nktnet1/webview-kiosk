@@ -1,5 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -61,6 +63,25 @@ fun ImportSettingsDialog(
     var importText by remember { mutableStateOf("") }
     var selectedTab by remember { mutableStateOf(ImportTab.Base64) }
     val tabs = ImportTab.entries.toTypedArray()
+
+    val fileLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                try {
+                    context.contentResolver.openInputStream(uri)?.use { stream ->
+                        importText = stream.bufferedReader().use { it.readText() }
+                        importError = false
+                    }
+                    ToastManager.show(context, "Loaded file successfully.")
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    ToastManager.show(context, "Failed to read file: ${e.message}")
+                }
+            }
+        }
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -140,7 +161,8 @@ fun ImportSettingsDialog(
                         IconButton(onClick = {
                             scope.launch {
                                 val clipEntry = clipboard.getClipEntry()
-                                importText = clipEntry?.clipData?.getItemAt(0)?.text?.toString() ?: ""
+                                importText =
+                                    clipEntry?.clipData?.getItemAt(0)?.text?.toString() ?: ""
                             }
                         }) {
                             Icon(
@@ -156,43 +178,58 @@ fun ImportSettingsDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     TextButton(
-                        onClick = onDismiss,
+                        onClick = {
+                            fileLauncher.launch(
+                                arrayOf("text/plain", "application/json")
+                            )
+                        },
                         colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
+                            contentColor = MaterialTheme.colorScheme.tertiary
+                        ),
                     ) {
-                        Text("Cancel")
+                        Text("From File")
                     }
 
-                    Spacer(Modifier.width(8.dp))
-
-                    TextButton(onClick = {
-                        val success = if (selectedTab == ImportTab.Base64) {
-                            userSettings.importBase64(importText)
-                        } else {
-                            userSettings.importJson(importText)
+                    Row {
+                        TextButton(
+                            onClick = onDismiss,
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
+                        ) {
+                            Text("Cancel")
                         }
 
-                        if (success) {
-                            updateDeviceSettings(context)
-                            ToastManager.show(context, "Imported settings successfully")
-                            onDismiss()
-                        } else {
-                            importError = true
-                            ToastManager.show(
-                                context,
-                                if (selectedTab == ImportTab.Base64) {
-                                    "Failed to import Base64."
-                                } else {
-                                    "Failed to import JSON."
-                                }
-                            )
+                        Spacer(Modifier.width(8.dp))
+
+                        TextButton(onClick = {
+                            val success = if (selectedTab == ImportTab.Base64) {
+                                userSettings.importBase64(importText)
+                            } else {
+                                userSettings.importJson(importText)
+                            }
+
+                            if (success) {
+                                updateDeviceSettings(context)
+                                ToastManager.show(context, "Imported settings successfully")
+                                onDismiss()
+                            } else {
+                                importError = true
+                                ToastManager.show(
+                                    context,
+                                    if (selectedTab == ImportTab.Base64) {
+                                        "Failed to import Base64. You may need to switch tabs."
+                                    } else {
+                                        "Failed to import JSON. You may need to switch tabs."
+                                    }
+                                )
+                            }
+                        }) {
+                            Text("Import")
                         }
-                    }) {
-                        Text("Import")
                     }
                 }
             }
