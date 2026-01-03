@@ -107,6 +107,15 @@ class MainActivity : AppCompatActivity() {
         systemSettings = SystemSettings(this)
         DeviceOwnerManager.init(this)
 
+        /**
+         * This also triggers a side effect, creating a directory such as:
+         * /storage/emulated/0/Android/data/uk.nktnet.webviewkiosk/files
+         *
+         * Which allows for the mapping of the following:
+         * /sdcard/Android/data/uk.nktnet.webviewkiosk/files
+         */
+        getExternalFilesDir(null)
+
         if (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.DeviceOwner) {
             setupLockTaskPackage(this)
         } else if (
