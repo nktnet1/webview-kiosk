@@ -12,13 +12,14 @@ import uk.nktnet.webviewkiosk.utils.wakeScreen
 class UnifiedPushService : PushService() {
     override fun onMessage(message: PushMessage, instance: String) {
         ToastManager.show(this, "UnifiedPush: message received.")
+        val contentString = message.content.toString(Charsets.UTF_8)
         wakeScreen(this)
         UnifiedPushManager.addDebugLog(
             "message received",
             """
             instance: $instance
             message decrypted: ${message.decrypted}
-            message content: ${message.content}
+            message content: $contentString
             """.trimIndent()
         )
     }
