@@ -1,6 +1,8 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
 import android.content.ClipData
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.managers.ToastManager
 
 enum class ExportTab {
     Base64,
@@ -60,10 +63,48 @@ fun ExportSettingsDialog(
     val rawJson = remember { userSettings.exportJson() }
 
     var prettyJson by remember { mutableStateOf(true) }
-    val jsonText by remember { derivedStateOf { if (prettyJson) rawJson.toString(2) else rawJson.toString() } }
+    val jsonText by remember {
+        derivedStateOf {
+            if (prettyJson) {
+                rawJson.toString(2)
+            } else {
+                rawJson.toString()
+            }
+        }
+    }
 
     var selectedTab by remember { mutableStateOf(ExportTab.Base64) }
     val tabs = ExportTab.entries.toTypedArray()
+    val textDisplay = if (selectedTab == ExportTab.Base64) {
+        base64Text
+    } else {
+        jsonText
+    }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument(
+            if (selectedTab == ExportTab.Base64) {
+                "text/plain"
+            } else {
+                "application/json"
+            }
+        )
+    ) { uri ->
+        if (uri != null) {
+            scope.launch {
+                try {
+                    context.contentResolver.openOutputStream(uri)?.use {
+                        it.write(textDisplay.toByteArray())
+                        println("[DEBUG] $textDisplay")
+                        ToastManager.show(context, "Exported to $uri")
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    ToastManager.show(context, "Export Error: ${e.message}")
+                }
+            }
+        }
+    }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -104,7 +145,7 @@ fun ExportSettingsDialog(
                         .verticalScroll(rememberScrollState())
                 ) {
                     Text(
-                        text = if (selectedTab == ExportTab.Base64) base64Text else jsonText,
+                        text = textDisplay,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -134,28 +175,45 @@ fun ExportSettingsDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    TextButton(
-                        onClick = onDismiss,
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Text("Cancel")
-                    }
-                    Spacer(Modifier.width(8.dp))
                     TextButton(
                         onClick = {
                             scope.launch {
-                                val textToCopy = if (selectedTab == ExportTab.Base64) base64Text else jsonText
-                                val clipData = ClipData.newPlainText("Exported Data", textToCopy)
-                                clipboard.setClipEntry(clipData.toClipEntry())
-                                onDismiss()
+                                exportLauncher.launch("wk_user_settings")
                             }
-                        }
+                        },
+                        colors = ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.tertiary
+                        ),
                     ) {
-                        Text("Copy")
+                        Text("Save File")
+                    }
+
+                    Row {
+                        TextButton(
+                            onClick = onDismiss,
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
+                        ) {
+                            Text("Cancel")
+                        }
+                        Spacer(Modifier.width(8.dp))
+                        TextButton(
+                            onClick = {
+                                scope.launch {
+                                    val clipData = ClipData.newPlainText(
+                                        "Exported Data",
+                                        textDisplay
+                                    )
+                                    clipboard.setClipEntry(clipData.toClipEntry())
+                                    onDismiss()
+                                }
+                            },
+                        ) {
+                            Text("Copy")
+                        }
                     }
                 }
             }
