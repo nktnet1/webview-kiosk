@@ -39,6 +39,7 @@ import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
 
@@ -52,7 +53,9 @@ fun ImportSettingsDialog(
     showDialog: Boolean,
     onDismiss: () -> Unit,
 ) {
-    if (!showDialog) return
+    if (!showDialog) {
+        return
+    }
 
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
@@ -182,9 +185,15 @@ fun ImportSettingsDialog(
                 ) {
                     TextButton(
                         onClick = {
-                            fileLauncher.launch(
-                                arrayOf("text/plain", "application/json")
-                            )
+                            try {
+                                fileLauncher.launch(
+                                    arrayOf("text/plain", "application/json")
+                                )
+                                AuthenticationManager.skipNextAuthResetForWindow()
+                            } catch (e: Exception) {
+                                e.printStackTrace()
+                                ToastManager.show(context, "Error: ${e.message}")
+                            }
                         },
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = MaterialTheme.colorScheme.tertiary
