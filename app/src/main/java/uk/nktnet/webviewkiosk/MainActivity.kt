@@ -106,6 +106,8 @@ class MainActivity : AppCompatActivity() {
         userSettings = UserSettings(this)
         systemSettings = SystemSettings(this)
         DeviceOwnerManager.init(this)
+        // https://github.com/nktnet1/webview-kiosk/pull/195
+        getExternalFilesDir(null)
 
         if (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.DeviceOwner) {
             setupLockTaskPackage(this)

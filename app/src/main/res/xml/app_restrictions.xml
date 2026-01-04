@@ -242,6 +242,12 @@
         android:description="@string/web_engine_allow_universal_access_from_file_urls_description"
     />
     <restriction
+        android:key="web_engine.allow_file_picker"
+        android:restrictionType="bool"
+        android:title="@string/web_engine_allow_file_picker_title"
+        android:description="@string/web_engine_allow_file_picker_description"
+    />
+    <restriction
         android:key="web_engine.media_playback_requires_user_gesture"
         android:restrictionType="bool"
         android:title="@string/web_engine_media_playback_requires_user_gesture_title"

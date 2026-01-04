@@ -115,6 +115,9 @@
     <string name="web_engine_allow_universal_access_from_file_urls_title">Allow Universal Access From File URLs</string>
     <string name="web_engine_allow_universal_access_from_file_urls_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
+    <string name="web_engine_allow_file_picker_title">Allow File Picker</string>
+    <string name="web_engine_allow_file_picker_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+
     <string name="web_engine_media_playback_requires_user_gesture_title">Media Playback Requires User Gesture</string>
     <string name="web_engine_media_playback_requires_user_gesture_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 

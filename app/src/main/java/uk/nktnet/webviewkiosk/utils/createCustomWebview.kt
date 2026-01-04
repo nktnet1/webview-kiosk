@@ -3,7 +3,9 @@ package uk.nktnet.webviewkiosk.utils
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
 import android.net.http.SslError
 import android.os.Build
 import android.view.View
@@ -12,14 +14,20 @@ import android.webkit.GeolocationPermissions
 import android.webkit.HttpAuthHandler
 import android.webkit.PermissionRequest
 import android.webkit.SslErrorHandler
+import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
@@ -53,7 +61,7 @@ data class WebViewConfig(
     val onProgressChanged: (newProgress: Int) -> Unit,
     val updateAddressBarAndHistory: (url: String, originalUrl: String?) -> Unit,
     val onHttpAuthRequest: (handler: HttpAuthHandler?, host: String?, realm: String?) -> Unit,
-    val onLinkLongClick: (url: String) -> Unit
+    val onLinkLongClick: (url: String) -> Unit,
 )
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -64,6 +72,24 @@ fun createCustomWebview(
 ): WebViewCreation {
     val systemSettings = config.systemSettings
     val userSettings = config.userSettings
+
+    var pendingFileChooserCallback by remember {
+        mutableStateOf<ValueCallback<Array<Uri>>?>(null)
+    }
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val uris = result.data?.let { intent ->
+            val clipData = intent.clipData
+            if (clipData != null) {
+                Array(clipData.itemCount) { i -> clipData.getItemAt(i).uri }
+            } else {
+                intent.data?.let { arrayOf(it) }
+            }
+        }
+        pendingFileChooserCallback?.onReceiveValue(uris)
+        pendingFileChooserCallback = null
+    }
 
     val webView = remember {
         try {
@@ -403,6 +429,28 @@ fun createCustomWebview(
                                     exitImmersiveMode(it)
                                 }
                             }
+                        }
+
+                        override fun onShowFileChooser(
+                            webView: WebView,
+                            filePathCallback: ValueCallback<Array<Uri>>,
+                            fileChooserParams: FileChooserParams
+                        ): Boolean {
+                            if (!config.userSettings.allowFilePicker) {
+                                ToastManager.show(
+                                    context,
+                                    "File picker is disabled in ${context.getString(R.string.app_name)}'s Web Engine settings."
+                                )
+                                filePathCallback.onReceiveValue(null)
+                            } else {
+                                pendingFileChooserCallback = filePathCallback
+                                val intent = fileChooserParams.createIntent()
+                                if (fileChooserParams.mode == FileChooserParams.MODE_OPEN_MULTIPLE) {
+                                    intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                                }
+                                filePickerLauncher.launch(intent)
+                            }
+                            return true
                         }
                     }
 

@@ -110,6 +110,18 @@ data class MqttClearHistoryCommand(
 }
 
 @Serializable
+@SerialName("clear_cache")
+data class MqttClearCacheCommand(
+    override val messageId: String? = null,
+    override val targetInstances: Set<String>? = null,
+    override val targetUsernames: Set<String>? = null,
+    override val interact: Boolean = true,
+    override val wakeScreen: Boolean = false,
+) : MqttCommandMessage {
+    override fun toString() = "clear_cache"
+}
+
+@Serializable
 @SerialName("toast")
 data class MqttToastCommand(
     override val messageId: String? = null,
