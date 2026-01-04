@@ -40,6 +40,50 @@ object AppFlowManager {
             .filter { !filterLockTaskPermitted || it.value.second }
     }
 
+    private fun getAppsFlowFromPackageList(
+        context: Context,
+        packagesList: List<String>,
+        chunkSize: Int = 5
+    ): Flow<AppLoadState<AppInfo>> = flow {
+        val pm = context.packageManager
+        val total = packagesList.size
+
+        if (total == 0) {
+            emit(AppLoadState(emptyList(), 1f))
+            return@flow
+        }
+
+        val currentChunk = mutableListOf<AppInfo>()
+
+        packagesList.forEachIndexed { index, pkg ->
+            try {
+                val appInfo = pm.getApplicationInfo(pkg, 0)
+                val label = pm.getApplicationLabel(appInfo).toString()
+                val icon = pm.getApplicationIcon(appInfo)
+
+                currentChunk.add(
+                    AppInfo(
+                        packageName = pkg,
+                        name = label,
+                        icon = icon
+                    )
+                )
+            } catch (_: Exception) {
+                // skip invalid packages
+            }
+
+            if (currentChunk.size == chunkSize || index == total - 1) {
+                emit(
+                    AppLoadState(
+                        currentChunk.toList(),
+                        (index + 1).toFloat() / total
+                    )
+                )
+                currentChunk.clear()
+            }
+        }
+    }.flowOn(Dispatchers.IO)
+
     fun getLaunchablePackageNames(
         context: Context,
         filterLockTaskPermitted: Boolean = false
@@ -129,8 +173,8 @@ object AppFlowManager {
             }
         }.filter {
             it.isVisible
-                    && it.packageName != context.packageName
-                    && it.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0
+            && it.packageName != context.packageName
+            && it.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0
         }.distinctBy {
             it.receiverName
         }
@@ -173,44 +217,11 @@ object AppFlowManager {
     fun getLockTaskAppsFlow(
         context: Context,
         chunkSize: Int = 5
-    ): Flow<AppLoadState<AppInfo>> = flow {
-        val pm = context.packageManager
-        val packagesList = getLockTaskPackageNames(context)
-
-        val total = packagesList.size
-        if (total == 0) {
-            emit(AppLoadState(emptyList(), 1f))
-            return@flow
-        }
-
-        val currentChunk = mutableListOf<AppInfo>()
-
-        packagesList.forEachIndexed { index, pkg ->
-            try {
-                val appInfo = pm.getApplicationInfo(pkg, 0)
-                val label = pm.getApplicationLabel(appInfo).toString()
-                val icon = pm.getApplicationIcon(appInfo)
-
-                currentChunk.add(
-                    AppInfo(
-                        packageName = pkg,
-                        name = label,
-                        icon = icon
-                    )
-                )
-            } catch (_: Exception) {
-                // skip invalid packages
-            }
-
-            if (currentChunk.size == chunkSize || index == total - 1) {
-                emit(
-                    AppLoadState(
-                        currentChunk.toList(),
-                        (index + 1).toFloat() / total
-                    )
-                )
-                currentChunk.clear()
-            }
-        }
-    }.flowOn(Dispatchers.IO)
+    ): Flow<AppLoadState<AppInfo>> {
+        return getAppsFlowFromPackageList(
+            context,
+            getLockTaskPackageNames(context),
+            chunkSize
+        )
+    }
 }
