@@ -15,8 +15,8 @@ import android.provider.Settings
 import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.services.LockTaskService
 import uk.nktnet.webviewkiosk.managers.ToastManager
+import uk.nktnet.webviewkiosk.services.LockTaskService
 
 fun safeStartActivity(context: Context, intent: Intent, bundle: Bundle? = null) {
     try {
@@ -195,5 +195,14 @@ fun handleExternalSchemeUrl(context: Context, url: String) {
         )
     } catch (e: Exception) {
         e.printStackTrace()
+    }
+}
+
+fun isPackageInstalled(context: Context, packageName: String): Boolean {
+    try {
+        context.packageManager.getPackageInfo(packageName, 0)
+        return true
+    } catch (_: PackageManager.NameNotFoundException) {
+        return false
     }
 }

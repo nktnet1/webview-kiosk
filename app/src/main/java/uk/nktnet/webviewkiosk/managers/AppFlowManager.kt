@@ -15,6 +15,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import org.unifiedpush.android.connector.UnifiedPush
 import uk.nktnet.webviewkiosk.config.data.AdminAppInfo
 import uk.nktnet.webviewkiosk.config.data.AppInfo
 import uk.nktnet.webviewkiosk.config.data.AppLoadState
@@ -244,5 +245,18 @@ object AppFlowManager {
             .map { it.packageName }
 
         return getAppsFlowFromPackageList(context, packageNames, chunkSize)
+    }
+
+    fun getUnifiedPushAppsFlow(
+        context: Context,
+        chunkSize: Int = 5
+    ): Flow<AppLoadState<AppInfo>> {
+        val packagesList = try {
+            UnifiedPush.getDistributors(context)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+        return getAppsFlowFromPackageList(context, packagesList, chunkSize)
     }
 }
