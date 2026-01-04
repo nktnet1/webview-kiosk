@@ -28,8 +28,10 @@ object AuthenticationManager {
     val showCustomAuth: MutableState<Boolean> = mutableStateOf(false)
 
     private var lastAuthTime = 0L
-    private const val AUTH_TIMEOUT_MS = 5 * 60 * 1000L
+    private var skipResetUntil: Long = 0L
 
+    private const val AUTH_TIMEOUT_MS = 5 * 60 * 1000L
+    private const val SKIP_RESET_WINDOW_MS = 5000L
     fun init(activity: AppCompatActivity) {
         this.activity = activity
     }
@@ -40,11 +42,22 @@ object AuthenticationManager {
         if (isValid) {
             lastAuthTime = now
         }
+        skipResetUntil = 0L
         return isValid
     }
 
     fun resetAuthentication() {
+        val now = System.currentTimeMillis()
+        if (now <= skipResetUntil) {
+            skipResetUntil = 0L
+            return
+        }
         lastAuthTime = 0
+    }
+
+    fun skipNextAuthResetForWindow() {
+        skipResetUntil = System.currentTimeMillis() + SKIP_RESET_WINDOW_MS
+        lastAuthTime = System.currentTimeMillis()
     }
 
     fun showAuthenticationPrompt(
