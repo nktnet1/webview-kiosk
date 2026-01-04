@@ -18,8 +18,7 @@ fun AllowFilePickerSetting() {
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_engine_allow_file_picker_title),
         infoText = """
-            Allow websites loaded in the WebView to open the system
-            file picker, e.g. for uploading files.
+            Allow websites to open the system file picker, e.g. for uploading files.
         """.trimIndent(),
         initialValue = userSettings.allowFilePicker,
         settingKey = settingKey,
