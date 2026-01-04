@@ -106,13 +106,7 @@ class MainActivity : AppCompatActivity() {
         userSettings = UserSettings(this)
         systemSettings = SystemSettings(this)
         DeviceOwnerManager.init(this)
-
-        /**
-         * This triggers a side effect, creating a directory such as:
-         *     /storage/emulated/0/Android/data/uk.nktnet.webviewkiosk/files
-         * which may also be aliased as:
-         *     /sdcard/Android/data/uk.nktnet.webviewkiosk/files
-         */
+        // https://github.com/nktnet1/webview-kiosk/pull/195
         getExternalFilesDir(null)
 
         if (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.DeviceOwner) {
