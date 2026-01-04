@@ -128,9 +128,7 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                 Button(
                     onClick = {
                         try {
-                            fileUploadLauncher.launch(
-                                supportedMimeTypesArray
-                            )
+                            fileUploadLauncher.launch(supportedMimeTypesArray)
                             AuthenticationManager.skipNextAuthResetForWindow()
                         } catch (e: Exception) {
                             e.printStackTrace()

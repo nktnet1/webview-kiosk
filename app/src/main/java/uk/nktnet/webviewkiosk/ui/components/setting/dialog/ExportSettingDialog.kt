@@ -98,7 +98,6 @@ fun ExportSettingsDialog(
                 try {
                     context.contentResolver.openOutputStream(uri)?.use {
                         it.write(textDisplay.toByteArray())
-                        println("[DEBUG] $textDisplay")
                         ToastManager.show(context, "Exported to $uri")
                     }
                 } catch (e: Exception) {
