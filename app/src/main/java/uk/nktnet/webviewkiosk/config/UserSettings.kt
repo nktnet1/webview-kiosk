@@ -283,6 +283,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS,
         false
     )
+    var allowFilePicker by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.ALLOW_FILE_PICKER,
+        false
+    )
     var mediaPlaybackRequiresUserGesture by booleanPref(
         getRestrictions,
         prefs,
@@ -946,6 +952,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebEngine.INITIAL_SCALE, initialScale)
             put(UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS, allowFileAccessFromFileURLs)
             put(UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, allowUniversalAccessFromFileURLs)
+            put(UserSettingsKeys.WebEngine.ALLOW_FILE_PICKER, allowFilePicker)
             put(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
             put(UserSettingsKeys.WebEngine.SSL_ERROR_MODE, sslErrorMode.name)
             put(UserSettingsKeys.WebEngine.MIXED_CONTENT_MODE, mixedContentMode.name)
@@ -1108,6 +1115,7 @@ class UserSettings(val context: Context) {
             initialScale = json.optInt(UserSettingsKeys.WebEngine.INITIAL_SCALE, initialScale)
             allowFileAccessFromFileURLs = json.optBoolean(UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS, allowFileAccessFromFileURLs)
             allowUniversalAccessFromFileURLs = json.optBoolean(UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS, allowUniversalAccessFromFileURLs)
+            allowFilePicker = json.optBoolean(UserSettingsKeys.WebEngine.ALLOW_FILE_PICKER, allowFilePicker)
             mediaPlaybackRequiresUserGesture = json.optBoolean(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
             sslErrorMode = SslErrorModeOption.fromString(
                 json.optString(UserSettingsKeys.WebEngine.SSL_ERROR_MODE, sslErrorMode.name)

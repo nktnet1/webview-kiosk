@@ -47,6 +47,7 @@ object UserSettingsKeys {
         const val INITIAL_SCALE = "web_engine.initial_scale"
         const val ALLOW_FILE_ACCESS_FROM_FILE_URLS = "web_engine.allow_file_access_from_file_urls"
         const val ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS = "web_engine.allow_universal_access_from_file_urls"
+        const val ALLOW_FILE_PICKER = "web_engine.allow_file_picker"
         const val MEDIA_PLAYBACK_REQUIRES_USER_GESTURE = "web_engine.media_playback_requires_user_gesture"
         const val SSL_ERROR_MODE = "web_engine.ssl_error_mode"
         const val MIXED_CONTENT_MODE = "web_engine.mixed_content_mode"
