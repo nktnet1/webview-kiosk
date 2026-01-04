@@ -18,6 +18,9 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 
 object AuthenticationManager {
+    private const val AUTH_TIMEOUT_MS = 5 * 60 * 1000L
+    private const val SKIP_RESET_WINDOW_MS = 5000L
+
     private var activity: AppCompatActivity? = null
 
     private val _resultState = MutableStateFlow<AuthenticationResult>(
@@ -30,8 +33,6 @@ object AuthenticationManager {
     private var lastAuthTime = 0L
     private var skipResetUntil: Long = 0L
 
-    private const val AUTH_TIMEOUT_MS = 5 * 60 * 1000L
-    private const val SKIP_RESET_WINDOW_MS = 5000L
     fun init(activity: AppCompatActivity) {
         this.activity = activity
     }
