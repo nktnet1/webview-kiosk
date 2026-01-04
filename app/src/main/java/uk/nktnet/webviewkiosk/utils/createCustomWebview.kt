@@ -436,12 +436,20 @@ fun createCustomWebview(
                             filePathCallback: ValueCallback<Array<Uri>>,
                             fileChooserParams: FileChooserParams
                         ): Boolean {
-                            pendingFileChooserCallback = filePathCallback
-                            val intent = fileChooserParams.createIntent()
-                            if (fileChooserParams.mode == FileChooserParams.MODE_OPEN_MULTIPLE) {
-                                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                            if (!config.userSettings.allowFilePicker) {
+                                ToastManager.show(
+                                    context,
+                                    "File picker is disabled in ${context.getString(R.string.app_name)}'s Web Engine settings."
+                                )
+                                filePathCallback.onReceiveValue(null)
+                            } else {
+                                pendingFileChooserCallback = filePathCallback
+                                val intent = fileChooserParams.createIntent()
+                                if (fileChooserParams.mode == FileChooserParams.MODE_OPEN_MULTIPLE) {
+                                    intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                                }
+                                filePickerLauncher.launch(intent)
                             }
-                            filePickerLauncher.launch(intent)
                             return true
                         }
                     }
