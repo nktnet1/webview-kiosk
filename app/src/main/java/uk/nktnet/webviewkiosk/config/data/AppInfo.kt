@@ -33,3 +33,9 @@ data class AppLoadState<T : AppInfo>(
     val apps: List<T>,
     val progress: Float
 )
+
+enum class AppType(val label: String) {
+    USER_APPS("User apps"),
+    SYSTEM_APPS("System apps"),
+    ALL_APPS("All apps")
+}

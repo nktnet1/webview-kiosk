@@ -18,11 +18,13 @@ fun AllowOtherUrlSchemesSetting() {
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_browsing_allow_other_url_schemes_title),
         infoText = """
-            Allow opening of non-http/https URL schemes such as
-            'mailto:', 'sms:', 'tel:', 'intent:', 'spotify:', 'whatsapp:',
+            Allow the handling of non-http/https URL schemes (i.e. intents)
+            such as intent:, mailto:, sms:, tel:, spotify:, whatsapp:, unifiedpush:,
             etc in other apps.
 
-            NOTE: This only works when in unlocked/unpinned mode.
+            When in Lock Task Mode, the apps responsible for handling these
+            intents needs to be present in the Lock Task Permitted list under
+            the device owner settings to function.
         """.trimIndent(),
         initialValue = userSettings.allowOtherUrlSchemes,
         settingKey = settingKey,

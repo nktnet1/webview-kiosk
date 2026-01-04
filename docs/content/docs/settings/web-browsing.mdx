@@ -81,11 +81,13 @@ on the right of the address bar (top-right corner of screen) and selecting `Book
 
 ## 9. Allow Other URL Schemes
 
-This option only works when the application is not in locked (pinned) mode.
+Allow the handling of non-http/https URL schemes (i.e. intents) such as
+`intent:`, `mailto:`, `sms:`, `tel`:, `spotify:`, `whatsapp:`, `unifiedpush:`,
+etc in other apps.
 
-When enabled, clicking on URLs with schemes like `mailto:`, `sms`, `tel`,
-`intent:`, `spotify:`, `whatsapp:`, etc will prompt the user to select an
-appropriate application to handle.
+When in Lock Task Mode, the apps responsible for handling these intents needs
+to be present in the Lock Task Permitted list under the device owner settings
+to function.
 
 **Default:** false
 

@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.flowOn
 import uk.nktnet.webviewkiosk.config.data.AdminAppInfo
 import uk.nktnet.webviewkiosk.config.data.AppInfo
 import uk.nktnet.webviewkiosk.config.data.AppLoadState
+import uk.nktnet.webviewkiosk.config.data.AppType
 import uk.nktnet.webviewkiosk.config.data.LaunchableAppInfo
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager.DAR
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager.DPM
@@ -223,5 +224,25 @@ object AppFlowManager {
             getLockTaskPackageNames(context),
             chunkSize
         )
+    }
+
+    fun getInstalledAppsFlow(
+        context: Context,
+        appType: AppType,
+        chunkSize: Int = 10
+    ): Flow<AppLoadState<AppInfo>> {
+        val pm = context.packageManager
+        val packageNames = pm.getInstalledApplications(0)
+            .filter { appInfo ->
+                val isSystem = appInfo.flags and ApplicationInfo.FLAG_SYSTEM != 0
+                when (appType) {
+                    AppType.USER_APPS -> !isSystem
+                    AppType.SYSTEM_APPS -> isSystem
+                    AppType.ALL_APPS -> true
+                }
+            }
+            .map { it.packageName }
+
+        return getAppsFlowFromPackageList(context, packageNames, chunkSize)
     }
 }
