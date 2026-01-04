@@ -1,0 +1,9 @@
+## Changes
+
+- feat: allow system apps to be added to lock task packages
+- feat: web engine -> allow file picker setting
+- feat: allow file export/import (to and from device storage)
+- feat: clear_cache command (MQTT)
+- feat: gracefully handle missing android system webview (avoid crash)
+- fix: external app storage creation for android TVs
+- fix: hide slider when device brightness is restricted

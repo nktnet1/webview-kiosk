@@ -40,6 +40,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
@@ -126,9 +127,13 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Button(
                     onClick = {
-                        fileUploadLauncher.launch(
-                            supportedMimeTypesArray
-                        )
+                        try {
+                            fileUploadLauncher.launch(supportedMimeTypesArray)
+                            AuthenticationManager.skipNextAuthResetForWindow()
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                            ToastManager.show(context, "Error: ${e.message}")
+                        }
                     },
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !uploading
