@@ -49,6 +49,7 @@ fun <T : AppInfo> BaseAppListDialog(
     getDescription: (T) -> String = { it.packageName },
     getKey: (T) -> String = { it.packageName },
     onSelectApp: (T) -> Unit,
+    extraFilters: @Composable (() -> Unit)? = null,
     extraContent: @Composable (() -> Unit)? = null,
     emptyContent: @Composable (() -> Unit) = { Text("No apps available.") },
 ) {
@@ -96,6 +97,8 @@ fun <T : AppInfo> BaseAppListDialog(
                     filteredAppCount = filteredApps.size,
                     ascending = ascending,
                 )
+
+                extraFilters?.invoke()
 
                 if (progress < 1f) {
                     LinearProgressIndicator(
