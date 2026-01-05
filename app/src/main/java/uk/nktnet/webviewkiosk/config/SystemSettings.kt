@@ -84,7 +84,19 @@ class SystemSettings(val context: Context) {
         get() {
             val json = prefs.getString(UNIFIEDPUSH_ENDPOINT, null)
             return json?.let {
-                Json.decodeFromString(UnifiedPushEndpoint.serializer(), it)
+                try {
+                    Json.decodeFromString(UnifiedPushEndpoint.serializer(), it)
+                } catch (e: Exception) {
+                    Log.e(
+                        javaClass.simpleName,
+                        "Failed to decode unifiedpush endpoint",
+                        e
+                    )
+                    prefs.edit {
+                        putString(UNIFIEDPUSH_ENDPOINT, null)
+                    }
+                    null
+                }
             }
         }
         set(value) {

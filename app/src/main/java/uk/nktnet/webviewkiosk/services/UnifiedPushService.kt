@@ -49,7 +49,7 @@ class UnifiedPushService : PushService() {
                 "message received (ignored)",
                 """
                 instance: $instance
-                message decrypted: ${message.decrypted}
+                message decrypted: ${false}
                 message content: $contentString
 
                 Reason:
@@ -72,10 +72,20 @@ class UnifiedPushService : PushService() {
 
     override fun onNewEndpoint(endpoint: PushEndpoint, instance: String) {
         ToastManager.show(this, "UnifiedPush: new endpoint.")
-        if (!endpoint.temporary) {
-            val systemSettings = SystemSettings(this)
-            systemSettings.unifiedpushEndpoint = UnifiedPushEndpoint.fromPushEndpoint(endpoint)
-        }
+        val systemSettings = SystemSettings(this)
+        val userSettings = UserSettings(this)
+        systemSettings.unifiedpushEndpoint = if (
+                userSettings.unifiedPushRedactEndpointOnRegister
+            ) {
+                UnifiedPushEndpoint.createRedactEndpoint(
+                    endpoint.temporary,
+                )
+            } else {
+                UnifiedPushEndpoint.fromPushEndpoint(
+                    endpoint,
+                    redacted = false,
+                )
+            }
         UnifiedPushManager.addDebugLog(
             "new endpoint",
             """

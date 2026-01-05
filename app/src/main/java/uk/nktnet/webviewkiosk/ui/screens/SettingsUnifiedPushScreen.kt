@@ -24,6 +24,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.unifiedpush.Unifi
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.unifiedpush.UnifiedPushInstanceSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.unifiedpush.UnifiedPushMessageForDistributorSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.unifiedpush.UnifiedPushProcessUnencryptedMessagesSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.unifiedpush.UnifiedPushRedactEndpointOnRegisterSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.unifiedpush.UnifiedPushVapidPublicKeySetting
 import uk.nktnet.webviewkiosk.ui.components.setting.unifiedpush.UnifiedPushDebugLogsButton
 
@@ -55,6 +56,7 @@ fun SettingsUnifiedPushScreen(navController: NavController) {
             UnifiedPushMessageForDistributorSetting()
             UnifiedPushVapidPublicKeySetting()
             UnifiedPushProcessUnencryptedMessagesSetting()
+            UnifiedPushRedactEndpointOnRegisterSetting()
 
             Spacer(modifier = Modifier.height(8.dp))
         }

@@ -921,4 +921,10 @@
         android:title="@string/unifiedpush_process_unencrypted_messages_title"
         android:description="@string/unifiedpush_process_unencrypted_messages_description"
     />
+    <restriction
+        android:key="unifiedpush.redact_endpoint_on_register"
+        android:restrictionType="bool"
+        android:title="@string/unifiedpush_redact_endpoint_on_register_title"
+        android:description="@string/unifiedpush_redact_endpoint_on_register_description"
+    />
 </restrictions>

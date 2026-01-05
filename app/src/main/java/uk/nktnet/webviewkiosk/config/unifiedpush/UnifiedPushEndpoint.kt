@@ -14,15 +14,20 @@ data class UnifiedPushEndpoint(
     val pubKeySet: UnifiedPushPublicKeySet?,
     val url: String,
     val temporary: Boolean,
+    val redacted: Boolean,
 ) {
     companion object {
-        fun fromPushEndpoint(endpoint: PushEndpoint): UnifiedPushEndpoint {
+        fun fromPushEndpoint(
+            endpoint: PushEndpoint,
+            redacted: Boolean,
+        ): UnifiedPushEndpoint {
             return UnifiedPushEndpoint(
                 pubKeySet = endpoint.pubKeySet?.let {
                     UnifiedPushPublicKeySet(it.auth, it.pubKey)
                 },
                 url = endpoint.url,
-                temporary = endpoint.temporary
+                temporary = endpoint.temporary,
+                redacted = redacted,
             )
         }
 
@@ -31,7 +36,8 @@ data class UnifiedPushEndpoint(
             return UnifiedPushEndpoint(
                 pubKeySet = UnifiedPushPublicKeySet(text, text),
                 url = text,
-                temporary = temporary
+                temporary = temporary,
+                redacted = true,
             )
         }
     }

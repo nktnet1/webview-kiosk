@@ -945,6 +945,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.UnifiedPush.PROCESS_UNENCRYPTED_MESSAGES,
         false
     )
+    var unifiedPushRedactEndpointOnRegister by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.UnifiedPush.REDACT_ENDPOINT_ON_REGISTER,
+        false
+    )
 
     fun exportJson(): JSONObject {
         val json = JSONObject().apply {
@@ -1096,6 +1102,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.UnifiedPush.MESSAGE_FOR_DISTRIBUTOR, unifiedPushMessageForDistributor)
             put(UserSettingsKeys.UnifiedPush.VAPID_PUBLIC_KEY, unifiedPushVapidPublicKey)
             put(UserSettingsKeys.UnifiedPush.PROCESS_UNENCRYPTED_MESSAGES, unifiedPushProcessUnencryptedMessages)
+            put(UserSettingsKeys.UnifiedPush.REDACT_ENDPOINT_ON_REGISTER, unifiedPushRedactEndpointOnRegister)
         }
         return json
     }
@@ -1296,6 +1303,7 @@ class UserSettings(val context: Context) {
             unifiedPushMessageForDistributor = json.optString(UserSettingsKeys.UnifiedPush.MESSAGE_FOR_DISTRIBUTOR, unifiedPushMessageForDistributor)
             unifiedPushVapidPublicKey = json.optString(UserSettingsKeys.UnifiedPush.VAPID_PUBLIC_KEY, unifiedPushVapidPublicKey)
             unifiedPushProcessUnencryptedMessages = json.optBoolean(UserSettingsKeys.UnifiedPush.PROCESS_UNENCRYPTED_MESSAGES, unifiedPushProcessUnencryptedMessages)
+            unifiedPushRedactEndpointOnRegister = json.optBoolean(UserSettingsKeys.UnifiedPush.REDACT_ENDPOINT_ON_REGISTER, unifiedPushRedactEndpointOnRegister)
             true
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, "Failed to import JSON", e)

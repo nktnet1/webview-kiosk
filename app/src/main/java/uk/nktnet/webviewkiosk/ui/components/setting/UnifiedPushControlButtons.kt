@@ -63,7 +63,10 @@ fun UnifiedPushControlButtons() {
         mutableStateOf(systemSettings.unifiedpushEndpoint)
     }
     var expanded by remember { mutableStateOf(false) }
-    var showValues by remember { mutableStateOf(false) }
+    var showValuesCheckbox by remember { mutableStateOf(false) }
+
+    val isRedacted = endpoint?.redacted == true
+    val showValues = isRedacted || showValuesCheckbox
 
     LaunchedEffect(Unit) {
         while (true) {
@@ -180,7 +183,10 @@ fun UnifiedPushControlButtons() {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             TextButton(
-                                enabled = endpoint != null,
+                                enabled = endpoint != null && !isRedacted,
+                                colors = ButtonDefaults.textButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error,
+                                ),
                                 onClick = {
                                     val redactedEndpoint = UnifiedPushEndpoint.createRedactEndpoint(
                                         endpoint?.temporary ?: false
@@ -191,15 +197,15 @@ fun UnifiedPushControlButtons() {
                             ) {
                                 Text(
                                     text = "Redact",
-                                    color = MaterialTheme.colorScheme.error
                                 )
                             }
 
                             Spacer(modifier = Modifier.weight(1f))
 
                             Checkbox(
-                                checked = showValues,
-                                onCheckedChange = { showValues = it }
+                                enabled = !isRedacted,
+                                checked = isRedacted || showValuesCheckbox,
+                                onCheckedChange = { showValuesCheckbox = it }
                             )
                             Text(
                                 text = "Show Values",
@@ -209,7 +215,9 @@ fun UnifiedPushControlButtons() {
                                         indication = null,
                                         interactionSource = remember { MutableInteractionSource() }
                                     ) {
-                                        showValues = !showValues
+                                        if (!isRedacted) {
+                                            showValuesCheckbox = !showValuesCheckbox
+                                        }
                                     }
                             )
                         }
