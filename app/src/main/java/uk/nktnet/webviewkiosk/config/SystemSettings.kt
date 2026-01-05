@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.edit
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushEndpoint
 import uk.nktnet.webviewkiosk.utils.booleanPref
 import uk.nktnet.webviewkiosk.utils.floatPref
 import uk.nktnet.webviewkiosk.utils.intPref
@@ -78,7 +79,22 @@ class SystemSettings(val context: Context) {
         }
 
     var intentUrl by stringPrefOptional(prefs = prefs, key = INTENT_URL)
-    var unifiedpushEndpointUrl by stringPrefOptional(prefs = prefs, key = UNIFIEDPUSH_ENDPOINT_URL)
+
+    var unifiedpushEndpoint: UnifiedPushEndpoint?
+        get() {
+            val json = prefs.getString(UNIFIEDPUSH_ENDPOINT, null)
+            return json?.let {
+                Json.decodeFromString(UnifiedPushEndpoint.serializer(), it)
+            }
+        }
+        set(value) {
+            val json = value?.let {
+                Json.encodeToString(UnifiedPushEndpoint.serializer(), it)
+            }
+            prefs.edit {
+                putString(UNIFIEDPUSH_ENDPOINT, json)
+            }
+        }
 
     var isFreshLaunch by mutableStateOf(true)
 
@@ -95,7 +111,7 @@ class SystemSettings(val context: Context) {
         private const val APP_INSTANCE_ID = "app_instance_id"
         private const val SITE_PERMISSIONS = "site_permissions"
         private const val INTENT_URL = "intent_url"
-        private const val UNIFIEDPUSH_ENDPOINT_URL = "unifiedpush_endpoint_url"
+        private const val UNIFIEDPUSH_ENDPOINT = "unifiedpush_endpoint"
     }
 
     fun clearHistory() {

@@ -142,7 +142,7 @@ object UnifiedPushManager {
         try {
             UnifiedPush.unregister(context, instance)
             val systemSettings = SystemSettings(context)
-            systemSettings.unifiedpushEndpointUrl = ""
+            systemSettings.unifiedpushEndpoint = null
             addDebugLog(
                 "unregistered",
                 """

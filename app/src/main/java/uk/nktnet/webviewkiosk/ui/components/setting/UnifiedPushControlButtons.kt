@@ -50,8 +50,8 @@ fun UnifiedPushControlButtons() {
     var ackDistributor by remember {
         mutableStateOf(UnifiedPushManager.getAckDistributor(context))
     }
-    var endpointUrl by remember {
-        mutableStateOf(systemSettings.unifiedpushEndpointUrl)
+    var endpoint by remember {
+        mutableStateOf(systemSettings.unifiedpushEndpoint)
     }
 
     LaunchedEffect(Unit) {
@@ -60,10 +60,10 @@ fun UnifiedPushControlButtons() {
             savedDistributor = UnifiedPushManager.getSavedDistributor(context)
             ackDistributor = UnifiedPushManager.getAckDistributor(context)
             if (ackDistributor.isNullOrBlank()) {
-                endpointUrl = ""
-                systemSettings.unifiedpushEndpointUrl = ""
+                endpoint = null
+                systemSettings.unifiedpushEndpoint = null
             } else {
-                endpointUrl = systemSettings.unifiedpushEndpointUrl
+                endpoint = systemSettings.unifiedpushEndpoint
             }
         }
     }
@@ -98,7 +98,15 @@ fun UnifiedPushControlButtons() {
                 )
                 InfoRow(
                     label = "Endpoint URL",
-                    value = endpointUrl
+                    value = endpoint?.url
+                )
+                InfoRow(
+                    label = "Endpoint Public Key",
+                    value = endpoint?.pubKeySet?.pubKey
+                )
+                InfoRow(
+                    label = "Endpoint Auth",
+                    value = endpoint?.pubKeySet?.auth
                 )
             }
         }

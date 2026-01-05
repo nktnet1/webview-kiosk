@@ -6,6 +6,7 @@ import org.unifiedpush.android.connector.data.PushEndpoint
 import org.unifiedpush.android.connector.data.PushMessage
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushEndpoint
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.managers.UnifiedPushManager
 import uk.nktnet.webviewkiosk.utils.wakeScreen
@@ -73,7 +74,7 @@ class UnifiedPushService : PushService() {
         ToastManager.show(this, "UnifiedPush: new endpoint.")
         if (!endpoint.temporary) {
             val systemSettings = SystemSettings(this)
-            systemSettings.unifiedpushEndpointUrl = endpoint.url
+            systemSettings.unifiedpushEndpoint = UnifiedPushEndpoint.fromPushEndpoint(endpoint)
         }
         UnifiedPushManager.addDebugLog(
             "new endpoint",
@@ -87,7 +88,7 @@ class UnifiedPushService : PushService() {
 
     override fun onUnregistered(instance: String) {
         val systemSettings = SystemSettings(this)
-        systemSettings.unifiedpushEndpointUrl = ""
+        systemSettings.unifiedpushEndpoint = null
         ToastManager.show(this, "UnifiedPush: unregistered called.")
         UnifiedPushManager.addDebugLog(
             "unregistered",
