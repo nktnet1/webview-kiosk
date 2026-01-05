@@ -10,9 +10,10 @@ import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.core.content.ContextCompat
 import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -20,8 +21,8 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.BuildConfig
-import uk.nktnet.webviewkiosk.managers.CustomNotificationType
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
+import uk.nktnet.webviewkiosk.managers.CustomNotificationType
 
 @RequiresApi(28)
 class LockTaskService: Service() {
@@ -87,7 +88,7 @@ class LockTaskService: Service() {
             unregisterReceiver(returnReceiver)
             stopSelf()
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(javaClass.simpleName, "Failed to stop lock task service", e)
         }
     }
 

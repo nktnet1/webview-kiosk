@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.RestrictionsManager
 import android.content.SharedPreferences
 import android.util.Base64
+import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import uk.nktnet.webviewkiosk.R
@@ -1249,7 +1250,7 @@ class UserSettings(val context: Context) {
             mqttRestrictionsRequestResponseInformation = json.optBoolean(UserSettingsKeys.Mqtt.Restrictions.REQUEST_RESPONSE_INFORMATION, mqttRestrictionsRequestResponseInformation)
             true
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(javaClass.simpleName, "Failed to import JSON", e)
             false
         }
     }
@@ -1263,7 +1264,7 @@ class UserSettings(val context: Context) {
             val decoded = String(Base64.decode(base64, Base64.NO_WRAP))
             importJson(decoded)
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(javaClass.simpleName, "Failed to import base64", e)
             false
         }
     }

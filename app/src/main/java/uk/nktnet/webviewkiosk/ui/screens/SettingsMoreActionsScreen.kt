@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
 import android.os.Build
+import android.util.Log
 import android.webkit.CookieManager
 import android.webkit.WebStorage
 import android.webkit.WebView
@@ -37,6 +38,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.data.WebViewCreation
@@ -61,7 +63,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
         val creation = try {
             WebViewCreation.Success(WebView(context))
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(Constants.APP_SCHEME, "WebView creation failed", e)
             WebViewCreation.Failure(e)
         }
 

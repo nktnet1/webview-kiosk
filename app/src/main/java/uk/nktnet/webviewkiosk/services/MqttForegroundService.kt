@@ -11,6 +11,7 @@ import android.content.pm.ServiceInfo
 import android.os.Build
 import android.os.IBinder
 import android.os.PowerManager
+import android.util.Log
 import androidx.core.app.ServiceCompat
 import com.hivemq.client.mqtt.MqttClientState
 import kotlinx.coroutines.CoroutineScope
@@ -156,7 +157,7 @@ class MqttForegroundService : Service() {
             mqttRequestJob?.cancel()
             scope.cancel()
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(javaClass.simpleName, "Failed to stop foreground service", e)
         }
     }
 
