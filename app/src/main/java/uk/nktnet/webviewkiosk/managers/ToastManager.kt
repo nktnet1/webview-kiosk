@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.managers
 
 import android.content.Context
 import android.os.Handler
+import android.util.Log
 import android.widget.Toast
 
 object ToastManager {
@@ -19,7 +20,7 @@ object ToastManager {
                     show()
                 }
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e(javaClass.simpleName, "Failed to show toast", e)
             }
         }
     }

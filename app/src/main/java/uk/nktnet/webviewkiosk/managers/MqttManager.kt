@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.managers
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
 import com.hivemq.client.mqtt.MqttClient
 import com.hivemq.client.mqtt.MqttClientState
 import com.hivemq.client.mqtt.MqttWebSocketConfig
@@ -375,7 +376,7 @@ object MqttManager {
                     onConnected?.invoke()
                 } else {
                     addDebugLog("connect failed", throwable.message)
-                    throwable.printStackTrace()
+                    Log.e(javaClass.simpleName, "Failed to subscribe/connect", throwable)
                     onError?.invoke(throwable.message)
                 }
             }
@@ -927,7 +928,11 @@ object MqttManager {
                 }
         } catch (e: Exception) {
             addDebugLog("subscribe failed", "topic: $subscribeTopic\nerror: $e")
-            e.printStackTrace()
+            Log.e(
+                javaClass.simpleName,
+                "Failed to subscribe to topic $subscribeTopic",
+                e
+            )
         }
     }
 

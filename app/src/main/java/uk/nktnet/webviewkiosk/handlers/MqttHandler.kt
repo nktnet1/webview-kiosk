@@ -4,12 +4,13 @@ import android.content.Context
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.webkit.WebView
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttClearHistoryCommand
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttClearCacheCommand
+import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttClearHistoryCommand
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttCommandMessage
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttDisconnectingEvent
 import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorRequest
@@ -73,7 +74,11 @@ object MqttHandler {
                             context,
                             context.getString(R.string.settings_more_action_toast_cache_clear_failed)
                         )
-                        e.printStackTrace()
+                        Log.e(
+                            javaClass.simpleName,
+                            "Failed to clear webView cache",
+                            e
+                        )
                     }
                 }
             }
@@ -87,7 +92,7 @@ object MqttHandler {
                     try {
                         DeviceOwnerManager.DPM.lockNow()
                     } catch (e: Exception) {
-                        e.printStackTrace()
+                        Log.e(javaClass.simpleName, "Failed to lock device", e)
                         ToastManager.show(
                             context,
                             "Failed to lock device: ${e.message}"

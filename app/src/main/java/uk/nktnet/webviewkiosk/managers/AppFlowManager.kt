@@ -10,6 +10,7 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -103,7 +104,7 @@ object AppFlowManager {
         try {
             return DPM.getLockTaskPackages(DAR).toList()
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.w(javaClass.simpleName, "Failed to get lock task packages", e)
             return emptyList()
         }
     }

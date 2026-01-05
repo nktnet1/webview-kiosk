@@ -4,6 +4,7 @@ import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -39,6 +40,7 @@ import com.rosan.dhizuku.shared.DhizukuVariables
 import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
@@ -272,14 +274,22 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                                 @Suppress("DEPRECATION")
                                 dpm.clearProfileOwner(adminComponent)
                             } catch (e: Throwable) {
-                                e.printStackTrace()
+                                Log.w(
+                                    Constants.APP_SCHEME,
+                                    "Failed to clear profile owner",
+                                    e
+                                )
                             }
                         }
                         try {
                             @Suppress("DEPRECATION")
                             dpm.clearDeviceOwnerApp(context.packageName)
                         } catch (e: Throwable) {
-                            e.printStackTrace()
+                            Log.e(
+                                Constants.APP_SCHEME,
+                                "Failed to clear device owner app",
+                                e
+                            )
                         }
                         DeviceOwnerManager.init(context)
                         isDeviceOwner = dpm.isDeviceOwnerApp(context.packageName)

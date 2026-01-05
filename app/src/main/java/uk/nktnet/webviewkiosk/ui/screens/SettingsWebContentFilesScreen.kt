@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -40,6 +41,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
@@ -82,9 +84,9 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                 } catch (e: Exception) {
                     if (e is CancellationException) {
                         // Ignore cancellation caused by leaving the UI
-                        e.printStackTrace()
+                        Log.d(Constants.APP_SCHEME, "File upload cancelled", e)
                     } else {
-                        e.printStackTrace()
+                        Log.e(Constants.APP_SCHEME, "File upload failed", e)
                         ToastManager.show(context, "Upload failed: ${e.message}")
                     }
                 } finally {
@@ -131,7 +133,7 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                             fileUploadLauncher.launch(supportedMimeTypesArray)
                             AuthenticationManager.skipNextAuthResetForWindow()
                         } catch (e: Exception) {
-                            e.printStackTrace()
+                            Log.e(Constants.APP_SCHEME, "File picker failed to launch", e)
                             ToastManager.show(context, "Error: ${e.message}")
                         }
                     },

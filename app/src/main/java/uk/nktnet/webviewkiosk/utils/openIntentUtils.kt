@@ -12,8 +12,10 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.services.LockTaskService
@@ -30,7 +32,7 @@ fun safeStartActivity(context: Context, intent: Intent, bundle: Bundle? = null) 
             )
         }
     } catch (e: Exception) {
-        e.printStackTrace()
+        Log.e(Constants.APP_SCHEME, "Failed to start activity", e)
         ToastManager.show(
             context,
             "Error: ${e.message}"
@@ -194,7 +196,7 @@ fun handleExternalSchemeUrl(context: Context, url: String) {
             intent = intent,
         )
     } catch (e: Exception) {
-        e.printStackTrace()
+        Log.e(Constants.APP_SCHEME, "Failed to handle intent URL scheme", e)
     }
 }
 
