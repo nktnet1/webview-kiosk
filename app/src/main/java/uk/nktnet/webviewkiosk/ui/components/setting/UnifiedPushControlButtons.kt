@@ -127,7 +127,7 @@ fun UnifiedPushControlButtons() {
                         SelectionContainer {
                             Text(
                                 text = savedDistributor ?: "None",
-                                style = MaterialTheme.typography.bodyMedium.copy(
+                                style = MaterialTheme.typography.bodySmall.copy(
                                     fontFamily = FontFamily.Monospace
                                 ),
                                 color = MaterialTheme.colorScheme.onSurface,
@@ -156,7 +156,7 @@ fun UnifiedPushControlButtons() {
                     HorizontalDivider(
                         Modifier.padding(top = 6.dp, bottom = 12.dp),
                     )
-                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
                         InfoRow(
                             label = "Endpoint URL",
                             value = endpoint?.url,
@@ -247,7 +247,7 @@ private fun InfoRow(
     ) {
         Column(
             modifier = Modifier.weight(1f).padding(end = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(5.dp)
         ) {
             Text(
                 text = label,
@@ -257,12 +257,16 @@ private fun InfoRow(
             SelectionContainer {
                 Text(
                     text = displayValue,
-                    style = MaterialTheme.typography.bodyMedium.copy(
+                    style = MaterialTheme.typography.bodySmall.copy(
                         fontFamily = FontFamily.Monospace
                     ),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = if (showValues) {
+                        TextOverflow.Ellipsis
+                    } else {
+                        TextOverflow.Clip
+                    }
                 )
             }
         }
