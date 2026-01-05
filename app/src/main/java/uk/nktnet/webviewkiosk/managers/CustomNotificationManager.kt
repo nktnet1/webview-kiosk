@@ -8,6 +8,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -120,7 +121,11 @@ object CustomNotificationManager {
         try {
             NotificationManagerCompat.from(service).notify(id, notification)
         } catch (e: SecurityException) {
-            e.printStackTrace()
+            Log.e(
+                javaClass.simpleName,
+                "Failed to update service notifications",
+                e
+            )
         }
     }
 
@@ -168,7 +173,7 @@ object CustomNotificationManager {
                 notification
             )
         } catch (e: SecurityException) {
-            e.printStackTrace()
+            Log.e(javaClass.simpleName, "Failed to send notification", e)
         }
     }
 }

@@ -2,24 +2,25 @@ package uk.nktnet.webviewkiosk.utils
 
 import android.app.Activity
 import android.app.ActivityManager
+import android.app.admin.DevicePolicyManager
 import android.content.Context
 import android.content.pm.ActivityInfo
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Environment
+import android.os.PowerManager
 import android.os.StatFs
 import android.os.UserManager
+import android.util.Log
 import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.webkit.WebViewCompat
-import android.app.admin.DevicePolicyManager
-import android.content.pm.PackageManager
-import android.os.PowerManager
 import uk.nktnet.webviewkiosk.BuildConfig
 import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.config.data.SystemAppInfo
 import uk.nktnet.webviewkiosk.config.data.SystemDeviceInfo
 import uk.nktnet.webviewkiosk.config.data.SystemInfo
@@ -240,6 +241,6 @@ fun wakeScreen(context: Context) {
         wakeLock.acquire(30_000L)
         wakeLock.release()
     } catch (e: Exception) {
-        e.printStackTrace()
+        Log.e(Constants.APP_SCHEME, "Failed to wake device screen", e)
     }
 }

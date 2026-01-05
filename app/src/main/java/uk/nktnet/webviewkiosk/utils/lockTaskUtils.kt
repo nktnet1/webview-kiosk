@@ -5,13 +5,15 @@ import android.app.ActivityManager
 import android.app.admin.DevicePolicyManager
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.managers.AuthenticationManager
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.UnlockAuthRequirementOption
+import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
@@ -27,15 +29,15 @@ private fun tryLockAction(
         onSuccess()
         true
     } catch (e: SecurityException) {
-        e.printStackTrace()
+        Log.e(Constants.APP_SCHEME, "Lock action error (security)", e)
         onFailed("[SecurityException] ${e.message}")
         false
     } catch (e: IllegalArgumentException) {
-        e.printStackTrace()
+        Log.e(Constants.APP_SCHEME, "Lock action error (illegal argument)", e)
         onFailed("[IllegalArgumentException] ${e.message}")
         false
     } catch (e: Exception) {
-        e.printStackTrace()
+        Log.e(Constants.APP_SCHEME, "Lock action error (unknown)", e)
         onFailed("[UnknownException] ${e.message}")
         false
     }
@@ -85,7 +87,7 @@ fun applyLockTaskFeatures(context: Context) {
     try {
         DeviceOwnerManager.DPM.setLockTaskFeatures(DeviceOwnerManager.DAR, features)
     } catch (e: Exception) {
-        e.printStackTrace()
+        Log.e(Constants.APP_SCHEME, "Failed to set lock task features", e)
     }
 }
 
@@ -101,7 +103,9 @@ fun tryLockTask(activity: Activity?): Boolean {
             AuthenticationManager.resetAuthentication()
             // Handled MQTT publish in LockStateSingleton
         },
-        onFailed = { ToastManager.show(activity, "Failed to lock: $it") }
+        onFailed = {
+            ToastManager.show(activity, "Failed to lock: $it")
+        }
     )
 }
 
@@ -142,7 +146,11 @@ fun tryUnlockTask(activity: Activity?): Boolean {
                         )
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    Log.w(
+                        Constants.APP_SCHEME,
+                        "Lock task packages or features operation failed",
+                        e
+                    )
                     ToastManager.show(
                         activity,
                         "DPM ${DeviceOwnerManager.status.value.mode}) error: ${e.message}"
@@ -183,7 +191,7 @@ fun setupLockTaskPackage(context: Context): Boolean {
         updateDeviceSettings(context)
         return true
     } catch (e: Exception) {
-        e.printStackTrace()
+        Log.e(Constants.APP_SCHEME, "Failed to setup lock task packages", e)
         return false
     }
 }

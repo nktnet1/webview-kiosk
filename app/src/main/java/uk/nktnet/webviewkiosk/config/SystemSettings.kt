@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.config
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -67,7 +68,7 @@ class SystemSettings(val context: Context) {
             return try {
                 json.decodeFromString(raw)
             } catch (e: Exception) {
-                e.printStackTrace()
+                Log.e(javaClass.simpleName, "Failed to decode site permissions map", e)
                 emptyMap()
             }
         }

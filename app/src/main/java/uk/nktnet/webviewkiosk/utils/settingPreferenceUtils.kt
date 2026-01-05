@@ -2,8 +2,10 @@ package uk.nktnet.webviewkiosk.utils
 
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import androidx.core.content.edit
 import org.json.JSONArray
+import uk.nktnet.webviewkiosk.config.Constants
 import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KProperty
 
@@ -180,7 +182,7 @@ fun <T : Enum<T>> enumListPref(
                     .mapNotNull { itemFromString(it) }
             ).toList()
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(Constants.APP_SCHEME, "Failed to get reference value for $key", e)
             val uniqueDefault = LinkedHashSet(default).toList()
             prefs.edit {
                 putString(key, JSONArray(

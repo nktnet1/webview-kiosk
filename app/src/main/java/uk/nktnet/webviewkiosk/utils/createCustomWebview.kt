@@ -8,6 +8,7 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.net.http.SslError
 import android.os.Build
+import android.util.Log
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.GeolocationPermissions
@@ -474,7 +475,7 @@ fun createCustomWebview(
                 }
             )
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(Constants.APP_SCHEME, "Failed to create WebView", e)
             WebViewCreation.Failure(e)
         }
     }
