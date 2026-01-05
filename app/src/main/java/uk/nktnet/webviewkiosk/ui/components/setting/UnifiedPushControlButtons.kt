@@ -23,6 +23,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,6 +45,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
+import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushEndpoint
 import uk.nktnet.webviewkiosk.managers.UnifiedPushManager
 
 @Composable
@@ -177,7 +179,24 @@ fun UnifiedPushControlButtons() {
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            TextButton(
+                                enabled = endpoint != null,
+                                onClick = {
+                                    val redactedEndpoint = UnifiedPushEndpoint.createRedactEndpoint(
+                                        endpoint?.temporary ?: false
+                                    )
+                                    systemSettings.unifiedpushEndpoint = redactedEndpoint
+                                    endpoint = redactedEndpoint
+                                }
+                            ) {
+                                Text(
+                                    text = "Redact",
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+
                             Spacer(modifier = Modifier.weight(1f))
+
                             Checkbox(
                                 checked = showValues,
                                 onCheckedChange = { showValues = it }

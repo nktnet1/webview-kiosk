@@ -25,5 +25,14 @@ data class UnifiedPushEndpoint(
                 temporary = endpoint.temporary
             )
         }
+
+        fun createRedactEndpoint(temporary: Boolean): UnifiedPushEndpoint {
+            val text = "(redacted)"
+            return UnifiedPushEndpoint(
+                pubKeySet = UnifiedPushPublicKeySet(text, text),
+                url = text,
+                temporary = temporary
+            )
+        }
     }
 }
