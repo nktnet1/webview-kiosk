@@ -201,17 +201,6 @@ fun UnifiedPushControlButtons() {
 
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Button(
-                onClick = { UnifiedPushManager.register(context) },
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            ) {
-                Text("Register")
-            }
-
-            Button(
                 onClick = { UnifiedPushManager.unregister(context) },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
@@ -220,6 +209,16 @@ fun UnifiedPushControlButtons() {
                 )
             ) {
                 Text("Unregister")
+            }
+            Button(
+                onClick = { UnifiedPushManager.register(context) },
+                modifier = Modifier.weight(1f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            ) {
+                Text("Register")
             }
         }
     }
