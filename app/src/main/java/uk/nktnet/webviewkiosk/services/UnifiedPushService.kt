@@ -22,7 +22,7 @@ class UnifiedPushService : PushService() {
                 instance: $instance
                 message decrypted: ${message.decrypted}
                 message content: $contentString
-                
+
                 Reason:
                 - UnifiedPush is not enabled.
                 """.trimIndent()
@@ -36,9 +36,9 @@ class UnifiedPushService : PushService() {
                 instance: $instance
                 message decrypted: ${message.decrypted}
                 message content: $contentString
-                
+
                 Reason:
-                - Instance mismatch: '$instance' instead of ${userSettings.unifiedPushInstance} 
+                - Instance mismatch: '$instance' instead of ${userSettings.unifiedPushInstance}
                 """.trimIndent()
             )
             return
@@ -50,7 +50,7 @@ class UnifiedPushService : PushService() {
                 instance: $instance
                 message decrypted: ${message.decrypted}
                 message content: $contentString
-                
+
                 Reason:
                 - message did not decrypt successfully
                 """.trimIndent()

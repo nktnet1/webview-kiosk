@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.managers
 
 import android.content.Context
+import android.util.Log
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -64,7 +65,7 @@ object UnifiedPushManager {
             UnifiedPush.saveDistributor(context, distributor)
             addDebugLog("saved success", "distributor: $distributor")
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(javaClass.simpleName, "Failed to save distributor", e)
             addDebugLog("saved failed", "distributor: $distributor")
         }
     }
@@ -124,7 +125,7 @@ object UnifiedPushManager {
 
             )
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(javaClass.simpleName, "Failed to register distributor", e)
             addDebugLog(
                 "register error",
                 """

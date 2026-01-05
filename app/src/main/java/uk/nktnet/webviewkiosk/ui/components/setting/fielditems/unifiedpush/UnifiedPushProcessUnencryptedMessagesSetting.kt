@@ -20,7 +20,7 @@ fun UnifiedPushProcessUnencryptedMessagesSetting() {
         infoText = """
             When enabled, ${stringResource(R.string.app_name)} will also handle
             UnifiedPush messages that did not successfully decrypt.
-                   
+
             A valid use case for this would be to enable simple curl requests
             to ntfy.sh without encryption for testing or convenience, although
             this does reduce security.

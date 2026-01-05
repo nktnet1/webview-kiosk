@@ -255,7 +255,11 @@ object AppFlowManager {
         val packagesList = try {
             UnifiedPush.getDistributors(context)
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.w(
+                javaClass.simpleName,
+                "Failed to get UnifiedPush distributors",
+                e
+            )
             emptyList()
         }
         return getAppsFlowFromPackageList(context, packagesList, chunkSize)
