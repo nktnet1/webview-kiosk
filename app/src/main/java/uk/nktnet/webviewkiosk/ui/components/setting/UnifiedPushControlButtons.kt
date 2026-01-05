@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -37,6 +38,7 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -47,6 +49,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushEndpoint
 import uk.nktnet.webviewkiosk.managers.UnifiedPushManager
+import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 
 @Composable
 fun UnifiedPushControlButtons() {
@@ -64,6 +67,9 @@ fun UnifiedPushControlButtons() {
     }
     var expanded by remember { mutableStateOf(false) }
     var showValuesCheckbox by remember { mutableStateOf(false) }
+
+    var showUnregisterConfirm by remember { mutableStateOf(false) }
+    var showRedactConfirm by remember { mutableStateOf(false) }
 
     val isRedacted = endpoint?.redacted == true
     val showValues = isRedacted || showValuesCheckbox
@@ -187,17 +193,9 @@ fun UnifiedPushControlButtons() {
                                 colors = ButtonDefaults.textButtonColors(
                                     contentColor = MaterialTheme.colorScheme.error,
                                 ),
-                                onClick = {
-                                    val redactedEndpoint = UnifiedPushEndpoint.createRedactEndpoint(
-                                        endpoint?.temporary ?: false
-                                    )
-                                    systemSettings.unifiedpushEndpoint = redactedEndpoint
-                                    endpoint = redactedEndpoint
-                                }
+                                onClick = { showRedactConfirm = true }
                             ) {
-                                Text(
-                                    text = "Redact",
-                                )
+                                Text("Redact")
                             }
 
                             Spacer(modifier = Modifier.weight(1f))
@@ -228,7 +226,8 @@ fun UnifiedPushControlButtons() {
 
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Button(
-                onClick = { UnifiedPushManager.unregister(context) },
+                enabled = endpoint != null,
+                onClick = { showUnregisterConfirm = true },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.errorContainer,
@@ -247,6 +246,90 @@ fun UnifiedPushControlButtons() {
             ) {
                 Text("Register")
             }
+        }
+
+        if (showUnregisterConfirm) {
+            AlertDialog(
+                onDismissRequest = { showUnregisterConfirm = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            UnifiedPushManager.unregister(context)
+                            showUnregisterConfirm = false
+                        }
+                    ) {
+                        Text(
+                            "Unregister",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showUnregisterConfirm = false }) {
+                        Text("Cancel")
+                    }
+                },
+                title = {
+                    Text("Unregister")
+                },
+                text = {
+                    Text(normaliseInfoText(
+                        """
+                        Are you sure you want to unregister from UnifiedPush?
+
+                        This action cannot be undone.
+                        """.trimIndent()
+                    ))
+                }
+            )
+        }
+
+        if (showRedactConfirm) {
+            AlertDialog(
+                onDismissRequest = { showRedactConfirm = false },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            val redactedEndpoint = UnifiedPushEndpoint.createRedactEndpoint(
+                                endpoint?.temporary ?: false
+                            )
+                            systemSettings.unifiedpushEndpoint = redactedEndpoint
+                            endpoint = redactedEndpoint
+                            showRedactConfirm = false
+                        }
+                    ) {
+                        Text(
+                            "Redact",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showRedactConfirm = false }) {
+                        Text("Cancel")
+                    }
+                },
+                title = {
+                    Text("Redact")
+                },
+                text = {
+                    Text(normaliseInfoText(
+                        """
+                        Are you sure you want to redact the endpoint?
+                        This action cannot be undone.
+
+                        This will remove the following values stored in ${stringResource(R.string.app_name)}:
+                          - Endpoint URL
+                          - Endpoint Public Key
+                          - Endpoint Auth Secret
+
+                        This will not affect any UnifiedPush functionalities, although it
+                        is recommended that you copy and store these values in a secure
+                        location before redacting them.
+                        """.trimIndent()
+                    ))
+                }
+            )
         }
     }
 }
@@ -288,11 +371,7 @@ private fun InfoRow(
                     ),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
-                    overflow = if (showValues) {
-                        TextOverflow.Ellipsis
-                    } else {
-                        TextOverflow.Clip
-                    }
+                    overflow = if (showValues) TextOverflow.Ellipsis else TextOverflow.Clip
                 )
             }
         }
