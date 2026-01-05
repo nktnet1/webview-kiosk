@@ -20,13 +20,16 @@ fun UnifiedPushRedactEndpointOnRegisterSetting() {
         infoText = """
             When enabled, ${stringResource(R.string.app_name)} will not persist
             the following values:
+
               - Endpoint URL
               - Endpoint Public Key
               - Endpoint Auth Secret
 
-            Ideally, these values should be kept hidden and sent to the application
-            server at the point of registration. However, ${stringResource(R.string.app_name)}
-            does not yet have an application server.
+            Ideally, these values should not be stored at all, and are only sent
+            to the application server at the point of registration.
+
+            However, ${stringResource(R.string.app_name)} does not yet have an
+            application server.
             """.trimIndent(),
         initialValue = userSettings.unifiedPushRedactEndpointOnRegister,
         settingKey = settingKey,
