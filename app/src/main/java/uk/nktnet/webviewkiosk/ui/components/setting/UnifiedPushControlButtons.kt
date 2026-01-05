@@ -91,13 +91,14 @@ fun UnifiedPushControlButtons() {
                     width = 1.dp,
                     color = MaterialTheme.colorScheme.outline,
                     shape = MaterialTheme.shapes.small
-                )
-                .animateContentSize(),
+                ),
             shape = MaterialTheme.shapes.small,
             tonalElevation = 1.dp
         ) {
             Column(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                modifier = Modifier
+                    .animateContentSize()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 val status = when {
