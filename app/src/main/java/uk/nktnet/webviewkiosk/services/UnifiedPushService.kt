@@ -5,14 +5,59 @@ import org.unifiedpush.android.connector.PushService
 import org.unifiedpush.android.connector.data.PushEndpoint
 import org.unifiedpush.android.connector.data.PushMessage
 import uk.nktnet.webviewkiosk.config.SystemSettings
+import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.managers.UnifiedPushManager
 import uk.nktnet.webviewkiosk.utils.wakeScreen
 
 class UnifiedPushService : PushService() {
     override fun onMessage(message: PushMessage, instance: String) {
-        ToastManager.show(this, "UnifiedPush: message received.")
+        val userSettings = UserSettings(this)
         val contentString = message.content.toString(Charsets.UTF_8)
+
+        if (!userSettings.unifiedPushEnabled) {
+            UnifiedPushManager.addDebugLog(
+                "message received (ignored)",
+                """
+                instance: $instance
+                message decrypted: ${message.decrypted}
+                message content: $contentString
+                
+                Reason:
+                - UnifiedPush is not enabled.
+                """.trimIndent()
+            )
+            return
+        }
+        if (instance != userSettings.unifiedPushInstance) {
+            UnifiedPushManager.addDebugLog(
+                "message received (ignored)",
+                """
+                instance: $instance
+                message decrypted: ${message.decrypted}
+                message content: $contentString
+                
+                Reason:
+                - Instance mismatch: '$instance' instead of ${userSettings.unifiedPushInstance} 
+                """.trimIndent()
+            )
+            return
+        }
+        if (!(message.decrypted || userSettings.unifiedPushProcessUnencryptedMessages)) {
+            UnifiedPushManager.addDebugLog(
+                "message received (ignored)",
+                """
+                instance: $instance
+                message decrypted: ${message.decrypted}
+                message content: $contentString
+                
+                Reason:
+                - message did not decrypt successfully
+                """.trimIndent()
+            )
+            return
+        }
+        ToastManager.show(this, "UnifiedPush: message received.")
         wakeScreen(this)
         UnifiedPushManager.addDebugLog(
             "message received",
