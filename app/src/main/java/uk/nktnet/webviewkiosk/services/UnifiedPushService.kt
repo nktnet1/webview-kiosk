@@ -7,13 +7,16 @@ import org.unifiedpush.android.connector.data.PushMessage
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushEndpoint
+import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushVariableName
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.managers.UnifiedPushManager
+import uk.nktnet.webviewkiosk.utils.replaceVariables
 import uk.nktnet.webviewkiosk.utils.wakeScreen
 
 class UnifiedPushService : PushService() {
     override fun onMessage(message: PushMessage, instance: String) {
         val userSettings = UserSettings(this)
+        val systemSettings = SystemSettings(this)
         val contentString = message.content.toString(Charsets.UTF_8)
 
         if (!userSettings.unifiedPushEnabled) {
@@ -21,8 +24,8 @@ class UnifiedPushService : PushService() {
                 "message received (ignored)",
                 """
                 instance: $instance
-                message decrypted: ${message.decrypted}
-                message content: $contentString
+                decrypted: ${message.decrypted}
+                content: $contentString
 
                 Reason:
                 - UnifiedPush is not enabled.
@@ -30,13 +33,19 @@ class UnifiedPushService : PushService() {
             )
             return
         }
-        if (instance != userSettings.unifiedPushInstance) {
+        val expectedInstance = replaceVariables(
+            userSettings.unifiedPushInstance,
+            mapOf(
+                UnifiedPushVariableName.APP_INSTANCE_ID.name to systemSettings.appInstanceId
+            )
+        )
+        if (instance != expectedInstance) {
             UnifiedPushManager.addDebugLog(
                 "message received (ignored)",
                 """
                 instance: $instance
-                message decrypted: ${message.decrypted}
-                message content: $contentString
+                decrypted: ${message.decrypted}
+                content: $contentString
 
                 Reason:
                 - Instance mismatch: '$instance' instead of ${userSettings.unifiedPushInstance}
@@ -49,8 +58,8 @@ class UnifiedPushService : PushService() {
                 "message received (ignored)",
                 """
                 instance: $instance
-                message decrypted: ${false}
-                message content: $contentString
+                decrypted: ${false}
+                content: $contentString
 
                 Reason:
                 - message did not decrypt successfully
@@ -64,8 +73,8 @@ class UnifiedPushService : PushService() {
             "message received",
             """
             instance: $instance
-            message decrypted: ${message.decrypted}
-            message content: $contentString
+            decrypted: ${message.decrypted}
+            content: $contentString
             """.trimIndent()
         )
     }
@@ -90,8 +99,8 @@ class UnifiedPushService : PushService() {
             "new endpoint",
             """
             instance: $instance
-            endpoint.url: ${endpoint.url}
-            endpoint.temporary: ${endpoint.temporary}
+            temporary: ${endpoint.temporary}
+            url: ${endpoint.url}
             """.trimIndent()
         )
     }
