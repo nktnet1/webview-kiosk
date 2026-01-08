@@ -7,16 +7,13 @@ import org.unifiedpush.android.connector.data.PushMessage
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushEndpoint
-import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushVariableName
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.managers.UnifiedPushManager
-import uk.nktnet.webviewkiosk.utils.replaceVariables
 import uk.nktnet.webviewkiosk.utils.wakeScreen
 
 class UnifiedPushService : PushService() {
     override fun onMessage(message: PushMessage, instance: String) {
         val userSettings = UserSettings(this)
-        val systemSettings = SystemSettings(this)
         val contentString = message.content.toString(Charsets.UTF_8)
 
         if (!userSettings.unifiedPushEnabled) {
@@ -33,13 +30,8 @@ class UnifiedPushService : PushService() {
             )
             return
         }
-        val expectedInstance = replaceVariables(
-            userSettings.unifiedPushInstance,
-            mapOf(
-                UnifiedPushVariableName.APP_INSTANCE_ID.name to systemSettings.appInstanceId
-            )
-        )
-        if (instance != expectedInstance) {
+
+        if (instance != UnifiedPushManager.getInstance(this)) {
             UnifiedPushManager.addDebugLog(
                 "message received (ignored)",
                 """

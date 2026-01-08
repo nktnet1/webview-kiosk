@@ -160,7 +160,7 @@ object UnifiedPushManager {
         }
     }
 
-    private fun getInstance(context: Context): String {
+    fun getInstance(context: Context): String {
         val userSettings = UserSettings(context)
         val systemSettings = SystemSettings(context)
         val instance = if (userSettings.unifiedPushInstance.isNotEmpty()) {
