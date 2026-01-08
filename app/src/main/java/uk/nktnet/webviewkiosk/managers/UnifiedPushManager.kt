@@ -7,10 +7,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
+import org.unifiedpush.android.connector.FailedReason
 import org.unifiedpush.android.connector.INSTANCE_DEFAULT
 import org.unifiedpush.android.connector.UnifiedPush
+import org.unifiedpush.android.connector.data.PushEndpoint
+import org.unifiedpush.android.connector.data.PushMessage
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushEndpoint
 import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushVariableName
 import uk.nktnet.webviewkiosk.utils.isPackageInstalled
 import uk.nktnet.webviewkiosk.utils.isValidVapidPublicKey
@@ -174,5 +178,119 @@ object UnifiedPushManager {
             INSTANCE_DEFAULT
         }
         return instance
+    }
+
+    // ===================================================================== //
+
+    fun handleMessage(context: Context, message: PushMessage, instance: String) {
+        val userSettings = UserSettings(context)
+        val contentString = message.content.toString(Charsets.UTF_8)
+
+        if (!userSettings.unifiedPushEnabled) {
+            addDebugLog(
+                "message received (ignored)",
+                """
+                instance: $instance
+                decrypted: ${message.decrypted}
+                content: $contentString
+
+                Reason:
+                - UnifiedPush is not enabled.
+                """.trimIndent()
+            )
+            return
+        }
+
+        if (instance != getInstance(context)) {
+            addDebugLog(
+                "message received (ignored)",
+                """
+                instance: $instance
+                decrypted: ${message.decrypted}
+                content: $contentString
+
+                Reason:
+                - Instance mismatch: '$instance' instead of ${userSettings.unifiedPushInstance}
+                """.trimIndent()
+            )
+            return
+        }
+        if (!(message.decrypted || userSettings.unifiedPushProcessUnencryptedMessages)) {
+            addDebugLog(
+                "message received (ignored)",
+                """
+                instance: $instance
+                decrypted: ${false}
+                content: $contentString
+
+                Reason:
+                - message did not decrypt successfully
+                """.trimIndent()
+            )
+            return
+        }
+        ToastManager.show(context, "UnifiedPush: message received.")
+        addDebugLog(
+            "message received",
+            """
+            instance: $instance
+            decrypted: ${message.decrypted}
+            content: $contentString
+            """.trimIndent()
+        )
+    }
+
+    fun handleNewEndpoint(context: Context, endpoint: PushEndpoint, instance: String) {
+        ToastManager.show(context, "UnifiedPush: new endpoint.")
+        val systemSettings = SystemSettings(context)
+        val userSettings = UserSettings(context)
+        systemSettings.unifiedpushEndpoint = if (
+            userSettings.unifiedPushStoreEndpointCredentials
+        ) {
+            UnifiedPushEndpoint.fromPushEndpoint(
+                endpoint,
+                redacted = false,
+            )
+        } else {
+            UnifiedPushEndpoint.createRedactEndpoint(
+                endpoint.temporary,
+            )
+        }
+        addDebugLog(
+            "new endpoint",
+            """
+            instance: $instance
+            temporary: ${endpoint.temporary}
+            url: ${endpoint.url}
+            """.trimIndent()
+        )
+    }
+    fun handleUnregistered(context: Context, instance: String) {
+        val systemSettings = SystemSettings(context)
+        systemSettings.unifiedpushEndpoint = null
+        ToastManager.show(context, "UnifiedPush: unregistered called.")
+        addDebugLog(
+            "unregistered",
+            "instance: $instance"
+        )
+    }
+
+    fun handleTempUnavailable(context: Context, instance: String) {
+        ToastManager.show(context, "UnifiedPush: temporarily unavailable.")
+        addDebugLog(
+            "temp unavailable",
+            "instance: $instance"
+        )
+    }
+
+    fun handleRegistrationFailed(context: Context, reason: FailedReason, instance: String) {
+        ToastManager.show(context, "UnifiedPush: registration failed.")
+        addDebugLog(
+            "register failed",
+            """
+            instance: $instance
+            reason: $reason
+            """.trimIndent()
+        )
     }
 }

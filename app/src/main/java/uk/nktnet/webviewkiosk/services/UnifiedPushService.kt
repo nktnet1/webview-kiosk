@@ -4,125 +4,27 @@ import org.unifiedpush.android.connector.FailedReason
 import org.unifiedpush.android.connector.PushService
 import org.unifiedpush.android.connector.data.PushEndpoint
 import org.unifiedpush.android.connector.data.PushMessage
-import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushEndpoint
-import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.managers.UnifiedPushManager
-import uk.nktnet.webviewkiosk.utils.wakeScreen
 
 class UnifiedPushService : PushService() {
     override fun onMessage(message: PushMessage, instance: String) {
-        val userSettings = UserSettings(this)
-        val contentString = message.content.toString(Charsets.UTF_8)
-
-        if (!userSettings.unifiedPushEnabled) {
-            UnifiedPushManager.addDebugLog(
-                "message received (ignored)",
-                """
-                instance: $instance
-                decrypted: ${message.decrypted}
-                content: $contentString
-
-                Reason:
-                - UnifiedPush is not enabled.
-                """.trimIndent()
-            )
-            return
-        }
-
-        if (instance != UnifiedPushManager.getInstance(this)) {
-            UnifiedPushManager.addDebugLog(
-                "message received (ignored)",
-                """
-                instance: $instance
-                decrypted: ${message.decrypted}
-                content: $contentString
-
-                Reason:
-                - Instance mismatch: '$instance' instead of ${userSettings.unifiedPushInstance}
-                """.trimIndent()
-            )
-            return
-        }
-        if (!(message.decrypted || userSettings.unifiedPushProcessUnencryptedMessages)) {
-            UnifiedPushManager.addDebugLog(
-                "message received (ignored)",
-                """
-                instance: $instance
-                decrypted: ${false}
-                content: $contentString
-
-                Reason:
-                - message did not decrypt successfully
-                """.trimIndent()
-            )
-            return
-        }
-        ToastManager.show(this, "UnifiedPush: message received.")
-        wakeScreen(this)
-        UnifiedPushManager.addDebugLog(
-            "message received",
-            """
-            instance: $instance
-            decrypted: ${message.decrypted}
-            content: $contentString
-            """.trimIndent()
-        )
+        UnifiedPushManager.handleMessage(this, message, instance)
     }
 
     override fun onNewEndpoint(endpoint: PushEndpoint, instance: String) {
-        ToastManager.show(this, "UnifiedPush: new endpoint.")
-        val systemSettings = SystemSettings(this)
-        val userSettings = UserSettings(this)
-        systemSettings.unifiedpushEndpoint = if (
-                userSettings.unifiedPushStoreEndpointCredentials
-            ) {
-                UnifiedPushEndpoint.fromPushEndpoint(
-                    endpoint,
-                    redacted = false,
-                )
-            } else {
-                UnifiedPushEndpoint.createRedactEndpoint(
-                    endpoint.temporary,
-                )
-            }
-        UnifiedPushManager.addDebugLog(
-            "new endpoint",
-            """
-            instance: $instance
-            temporary: ${endpoint.temporary}
-            url: ${endpoint.url}
-            """.trimIndent()
-        )
+        UnifiedPushManager.handleNewEndpoint(this, endpoint, instance)
     }
 
     override fun onUnregistered(instance: String) {
-        val systemSettings = SystemSettings(this)
-        systemSettings.unifiedpushEndpoint = null
-        ToastManager.show(this, "UnifiedPush: unregistered called.")
-        UnifiedPushManager.addDebugLog(
-            "unregistered",
-            "instance: $instance"
-        )
+        UnifiedPushManager.handleUnregistered(this, instance)
     }
 
     override fun onTempUnavailable(instance: String) {
-        ToastManager.show(this, "UnifiedPush: temporarily unavailable.")
-        UnifiedPushManager.addDebugLog(
-            "temp unavailable",
-            "instance: $instance"
-        )
+        UnifiedPushManager.handleTempUnavailable(this, instance)
+
     }
 
     override fun onRegistrationFailed(reason: FailedReason, instance: String) {
-        ToastManager.show(this, "UnifiedPush: registration failed.")
-        UnifiedPushManager.addDebugLog(
-            "register failed",
-            """
-            instance: $instance
-            reason: $reason
-            """.trimIndent()
-        )
+        UnifiedPushManager.handleRegistrationFailed(this, reason, instance)
     }
 }
