@@ -922,9 +922,9 @@
         android:description="@string/unifiedpush_process_unencrypted_messages_description"
     />
     <restriction
-        android:key="unifiedpush.redact_endpoint_on_register"
+        android:key="unifiedpush.store_endpoint_credentials"
         android:restrictionType="bool"
-        android:title="@string/unifiedpush_redact_endpoint_on_register_title"
-        android:description="@string/unifiedpush_redact_endpoint_on_register_description"
+        android:title="@string/unifiedpush_store_endpoint_credentials_title"
+        android:description="@string/unifiedpush_store_endpoint_credentials_description"
     />
 </restrictions>

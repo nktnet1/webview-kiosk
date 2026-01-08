@@ -10,32 +10,33 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
-fun UnifiedPushRedactEndpointOnRegisterSetting() {
+fun UnifiedPushStoreEndpointCredentialsSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-    val settingKey = UserSettingsKeys.UnifiedPush.REDACT_ENDPOINT_ON_REGISTER
+    val settingKey = UserSettingsKeys.UnifiedPush.STORE_ENDPOINT_CREDENTIALS
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.unifiedpush_redact_endpoint_on_register_title),
+        label = stringResource(R.string.unifiedpush_store_endpoint_credentials_title),
         infoText = """
-            When enabled, ${stringResource(R.string.app_name)} will not persist
+            When enabled, ${stringResource(R.string.app_name)} will persist
             the following values:
 
               - Endpoint URL
               - Endpoint Public Key
               - Endpoint Auth Secret
 
-            Ideally, these values should not be stored at all, and are only sent
-            to the application server at the point of registration.
+            Ideally, these values should not be stored at all, and are instead
+            sent directly to the application server at the point of registration.
 
             However, ${stringResource(R.string.app_name)} does not yet have an
-            application server.
+            application server. These values are thus stored locally in the
+            application so they can be copied, and can be redacted afterwards.
             """.trimIndent(),
-        initialValue = userSettings.unifiedPushRedactEndpointOnRegister,
+        initialValue = userSettings.unifiedPushStoreEndpointCredentials,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = {
-            userSettings.unifiedPushRedactEndpointOnRegister = it
+            userSettings.unifiedPushStoreEndpointCredentials = it
         }
     )
 }

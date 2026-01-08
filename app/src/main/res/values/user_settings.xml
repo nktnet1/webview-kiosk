@@ -434,6 +434,6 @@
     <string name="unifiedpush_process_unencrypted_messages_title">Process Unencrypted Messages</string>
     <string name="unifiedpush_process_unencrypted_messages_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
 
-    <string name="unifiedpush_redact_endpoint_on_register_title">Redact Endpoint on Register</string>
-    <string name="unifiedpush_redact_endpoint_on_register_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
+    <string name="unifiedpush_store_endpoint_credentials_title">Store Endpoint Credentials</string>
+    <string name="unifiedpush_store_endpoint_credentials_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
 </resources>

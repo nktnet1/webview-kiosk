@@ -204,6 +204,6 @@ object UserSettingsKeys {
         const val MESSAGE_FOR_DISTRIBUTOR = "unifiedpush.message_for_distributor"
         const val VAPID_PUBLIC_KEY = "unifiedpush.vapid_public_key"
         const val PROCESS_UNENCRYPTED_MESSAGES = "unifiedpush.process_unencrypted_messages"
-        const val REDACT_ENDPOINT_ON_REGISTER = "unifiedpush.redact_endpoint_on_register"
+        const val STORE_ENDPOINT_CREDENTIALS = "unifiedpush.store_endpoint_credentials"
     }
 }

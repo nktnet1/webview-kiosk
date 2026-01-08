@@ -75,15 +75,15 @@ class UnifiedPushService : PushService() {
         val systemSettings = SystemSettings(this)
         val userSettings = UserSettings(this)
         systemSettings.unifiedpushEndpoint = if (
-                userSettings.unifiedPushRedactEndpointOnRegister
+                userSettings.unifiedPushStoreEndpointCredentials
             ) {
-                UnifiedPushEndpoint.createRedactEndpoint(
-                    endpoint.temporary,
-                )
-            } else {
                 UnifiedPushEndpoint.fromPushEndpoint(
                     endpoint,
                     redacted = false,
+                )
+            } else {
+                UnifiedPushEndpoint.createRedactEndpoint(
+                    endpoint.temporary,
                 )
             }
         UnifiedPushManager.addDebugLog(
