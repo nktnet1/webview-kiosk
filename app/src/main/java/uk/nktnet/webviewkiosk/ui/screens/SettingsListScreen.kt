@@ -68,6 +68,11 @@ fun SettingsListScreen(
             Screen.SettingsMqtt.route
         ),
         Triple(
+            stringResource(R.string.settings_unifiedpush_title),
+            stringResource(R.string.settings_unifiedpush_description),
+            Screen.SettingsUnifiedPush.route
+        ),
+        Triple(
             stringResource(R.string.settings_about_title),
             stringResource(R.string.settings_about_description),
             Screen.SettingsAbout.route

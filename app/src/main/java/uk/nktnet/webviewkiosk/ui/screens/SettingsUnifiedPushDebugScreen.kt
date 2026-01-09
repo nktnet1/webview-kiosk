@@ -56,16 +56,16 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.managers.MqttLogEntry
-import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
+import uk.nktnet.webviewkiosk.managers.UnifiedPushLogEntry
+import uk.nktnet.webviewkiosk.managers.UnifiedPushManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import java.text.SimpleDateFormat
 import java.util.Locale
 
 @Composable
-fun SettingsMqttDebugScreen(navController: NavController) {
+fun SettingsUnifiedPushDebugScreen(navController: NavController) {
     val context = LocalContext.current
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var ascending by remember { mutableStateOf(false) }
@@ -75,13 +75,13 @@ fun SettingsMqttDebugScreen(navController: NavController) {
     val scope = rememberCoroutineScope()
 
     val logs = remember {
-        mutableStateListOf<MqttLogEntry>().apply {
-            addAll(MqttManager.debugLogHistory.asReversed())
+        mutableStateListOf<UnifiedPushLogEntry>().apply {
+            addAll(UnifiedPushManager.debugLogHistory.asReversed())
         }
     }
 
     LaunchedEffect(Unit) {
-        MqttManager.debugLog.collectLatest { entry ->
+        UnifiedPushManager.debugLog.collectLatest { entry ->
             logs.add(0, entry)
         }
     }
@@ -92,7 +92,6 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                 .filter {
                     it.tag.contains(searchQuery.text, ignoreCase = true)
                     || (it.message?.contains(searchQuery.text, ignoreCase = true) == true)
-                    || (it.messageId?.contains(searchQuery.text, ignoreCase = true) == true)
                 }
                 .sortedBy { it.timestamp }
                 .let { if (ascending) it else it.reversed() }
@@ -249,7 +248,7 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                                         }
                                     }
                                 )
-                         ) {
+                        ) {
                             Text(
                                 text = "${dateFormat.format(logEntry.timestamp)} - ${logEntry.tag}",
                                 style = MaterialTheme.typography.bodySmall.copy(
@@ -257,14 +256,6 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                                 ),
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
-                            logEntry.messageId?.let {
-                                Text(
-                                    text = "messageId: $it",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(top = 4.dp)
-                                )
-                            }
                             logEntry.message?.let {
                                 Text(
                                     text = it,
@@ -288,7 +279,7 @@ fun SettingsMqttDebugScreen(navController: NavController) {
 
         OutlinedButton(
             onClick = {
-                MqttManager.clearLogs()
+                UnifiedPushManager.clearLogs()
                 logs.clear()
             },
             shape = RoundedCornerShape(12.dp),

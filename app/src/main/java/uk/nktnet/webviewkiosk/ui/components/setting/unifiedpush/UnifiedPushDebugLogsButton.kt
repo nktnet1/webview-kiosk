@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.mqtt
+package uk.nktnet.webviewkiosk.ui.components.setting.unifiedpush
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -15,10 +15,10 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 
 @Composable
-fun MqttDebugLogsButton(navController: NavController) {
+fun UnifiedPushDebugLogsButton(navController: NavController) {
     Button(
         onClick = {
-            navController.navigate(Screen.SettingsMqttDebug.route)
+            navController.navigate(Screen.SettingsUnifiedPushDebug.route)
         },
         colors = ButtonDefaults.buttonColors(
             containerColor = MaterialTheme.colorScheme.tertiaryContainer,

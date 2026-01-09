@@ -415,4 +415,25 @@
     <string name="mqtt_subscribe_request_retain_as_published_title">Retain As Published</string>
     <string name="mqtt_subscribe_request_retain_as_published_description">https://webviewkiosk.nktnet.uk/docs/settings/mqtt/topics/request/</string>
 
+    <!-- UnifiedPush -->
+    <string name="unifiedpush_enabled_title">Enabled</string>
+    <string name="unifiedpush_enabled_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
+
+    <string name="unifiedpush_distributor_title">Distributor</string>
+    <string name="unifiedpush_distributor_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
+
+    <string name="unifiedpush_instance_title">Instance</string>
+    <string name="unifiedpush_instance_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
+
+    <string name="unifiedpush_message_for_distributor_title">Message for Distributor</string>
+    <string name="unifiedpush_message_for_distributor_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
+
+    <string name="unifiedpush_vapid_public_key_title">VAPID Public Key</string>
+    <string name="unifiedpush_vapid_public_key_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
+
+    <string name="unifiedpush_process_unencrypted_messages_title">Process Unencrypted Messages</string>
+    <string name="unifiedpush_process_unencrypted_messages_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
+
+    <string name="unifiedpush_store_endpoint_credentials_title">Store Endpoint Credentials</string>
+    <string name="unifiedpush_store_endpoint_credentials_description">https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/</string>
 </resources>

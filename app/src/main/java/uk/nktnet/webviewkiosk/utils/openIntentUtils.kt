@@ -199,3 +199,12 @@ fun handleExternalSchemeUrl(context: Context, url: String) {
         Log.e(Constants.APP_SCHEME, "Failed to handle intent URL scheme", e)
     }
 }
+
+fun isPackageInstalled(context: Context, packageName: String): Boolean {
+    try {
+        context.packageManager.getPackageInfo(packageName, 0)
+        return true
+    } catch (_: PackageManager.NameNotFoundException) {
+        return false
+    }
+}
