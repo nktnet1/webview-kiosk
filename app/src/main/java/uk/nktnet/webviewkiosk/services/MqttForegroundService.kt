@@ -74,7 +74,7 @@ class MqttForegroundService : Service() {
 
         mqttCommandJob = scope.launch {
             MqttManager.commands.collect { command ->
-                MqttHandler.handleMqttCommand(
+                MqttHandler.handleInboundCommand(
                     this@MqttForegroundService,
                     command
                 )
@@ -82,7 +82,7 @@ class MqttForegroundService : Service() {
         }
         mqttSettingsJob = scope.launch {
             MqttManager.settings.collect { settings ->
-                MqttHandler.handleMqttSettings(
+                MqttHandler.handleInboundSettings(
                     this@MqttForegroundService,
                     settings
                 )
@@ -90,7 +90,7 @@ class MqttForegroundService : Service() {
         }
         mqttRequestJob = scope.launch {
             MqttManager.requests.collect { request ->
-                MqttHandler.handleMqttRequest(
+                MqttHandler.handleInboundMqttRequest(
                     this@MqttForegroundService,
                     request
                 )

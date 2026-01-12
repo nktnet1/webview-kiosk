@@ -9,23 +9,23 @@ import android.webkit.WebView
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttClearCacheCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttClearHistoryCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttCommandMessage
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttDisconnectingEvent
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorRequest
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLaunchPackageCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLaunchablePackagesRequest
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockDeviceCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockTaskPackagesRequest
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttNotifyCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttReconnectCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttRequestMessage
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSettingsMessage
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSettingsRequest
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttStatusRequest
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSystemInfoRequest
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttToastCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundClearCacheCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundClearHistoryCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundCommandMessage
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundErrorRequest
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundLaunchPackageCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundLaunchablePackagesRequest
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundLockDeviceCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundLockTaskPackagesRequest
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundNotifyCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundReconnectCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundRequestMessage
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSettingsMessage
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSettingsRequest
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundStatusRequest
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSystemInfoRequest
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundToastCommand
+import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundDisconnectingEvent
 import uk.nktnet.webviewkiosk.managers.AppFlowManager
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
@@ -40,9 +40,9 @@ import uk.nktnet.webviewkiosk.utils.wakeScreen
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 object MqttHandler {
-    fun handleMqttCommand(
+    fun handleInboundCommand(
         context: Context,
-        command: MqttCommandMessage,
+        command: InboundCommandMessage,
     ) {
         val userSettings = UserSettings(context)
         val systemSettings = SystemSettings(context)
@@ -54,18 +54,18 @@ object MqttHandler {
             wakeScreen(context)
         }
         when (command) {
-            is MqttReconnectCommand -> {
+            is InboundReconnectCommand -> {
                 MqttManager.disconnect(
-                    cause = MqttDisconnectingEvent.DisconnectCause.MQTT_RECONNECT_COMMAND_RECEIVED,
+                    cause = OutboundDisconnectingEvent.DisconnectCause.MQTT_RECONNECT_COMMAND_RECEIVED,
                     onDisconnected = {
                         MqttManager.connect(context.applicationContext)
                     }
                 )
             }
-            is MqttClearHistoryCommand -> {
+            is InboundClearHistoryCommand -> {
                 WebViewNavigation.clearHistory(systemSettings)
             }
-            is MqttClearCacheCommand -> {
+            is InboundClearCacheCommand -> {
                 Handler(Looper.getMainLooper()).post {
                     try {
                         WebView(context).clearCache(true)
@@ -82,12 +82,12 @@ object MqttHandler {
                     }
                 }
             }
-            is MqttToastCommand -> {
+            is InboundToastCommand -> {
                 if (!command.data?.message.isNullOrEmpty()) {
                     ToastManager.show(context, command.data.message)
                 }
             }
-            is MqttLockDeviceCommand -> {
+            is InboundLockDeviceCommand -> {
                 if (DeviceOwnerManager.hasOwnerPermission(context)) {
                     try {
                         DeviceOwnerManager.DPM.lockNow()
@@ -100,15 +100,15 @@ object MqttHandler {
                     }
                 }
             }
-            is MqttNotifyCommand -> {
+            is InboundNotifyCommand -> {
                 if (userSettings.allowNotifications) {
-                    CustomNotificationManager.sendMqttNotifyCommandNotification(
+                    CustomNotificationManager.sendInboundNotifyCommandNotification(
                         context,
                         command,
                     )
                 }
             }
-            is MqttLaunchPackageCommand -> {
+            is InboundLaunchPackageCommand -> {
                 openPackage(
                     context,
                     command.data.packageName,
@@ -122,9 +122,9 @@ object MqttHandler {
         }
     }
 
-    fun handleMqttSettings(
+    fun handleInboundSettings(
         context: Context,
-        settings: MqttSettingsMessage,
+        settings: InboundSettingsMessage,
     ) {
         val userSettings = UserSettings(context)
         userSettings.importJson(settings.data.settings)
@@ -142,32 +142,32 @@ object MqttHandler {
             } else {
                 "received"
             }
-            ToastManager.show(context, "MQTT: settings $action.")
+            ToastManager.show(context, "Remote: settings $action.")
         }
     }
 
-    fun handleMqttRequest(
+    fun handleInboundMqttRequest(
         context: Context,
-        request: MqttRequestMessage,
+        request: InboundRequestMessage,
     ) {
         val userSettings = UserSettings(context)
         when (request) {
-            is MqttStatusRequest -> {
+            is InboundStatusRequest -> {
                 MqttManager.publishStatusResponse(
                     request, getStatus(context)
                 )
             }
-            is MqttSettingsRequest -> {
+            is InboundSettingsRequest -> {
                 val settings = userSettings.exportJson()
                 MqttManager.publishSettingsResponse(request, settings)
             }
-            is MqttSystemInfoRequest -> {
+            is InboundSystemInfoRequest -> {
                 MqttManager.publishSystemInfoResponse(
                     request,
                     getSystemInfo(context),
                 )
             }
-            is MqttLaunchablePackagesRequest -> {
+            is InboundLaunchablePackagesRequest -> {
                 MqttManager.publishLaunchablePackagesResponse(
                     request,
                     AppFlowManager
@@ -177,7 +177,7 @@ object MqttHandler {
                         ).sorted(),
                 )
             }
-            is MqttLockTaskPackagesRequest -> {
+            is InboundLockTaskPackagesRequest -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     MqttManager.publishLockTaskPermittedPackagesResponse(
                         request,
@@ -187,7 +187,7 @@ object MqttHandler {
                     )
                 }
             }
-            is MqttErrorRequest -> {
+            is InboundErrorRequest -> {
                 ToastManager.show(
                     context,
                     "MQTT: invalid request. See debug logs."

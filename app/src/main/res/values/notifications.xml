@@ -4,5 +4,5 @@
     <string name="notification_lock_task_text">Tap to return to %1$s</string>
 
     <string name="notification_mqtt_service_title">MQTT Service</string>
-    <string name="notification_mqtt_notify_command_title">MQTT Notify</string>
+    <string name="notification_remote_notify_command_title">MQTT Notify</string>
 </resources>

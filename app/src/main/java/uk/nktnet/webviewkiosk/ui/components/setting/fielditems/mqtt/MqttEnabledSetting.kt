@@ -8,7 +8,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.MqttManager
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttDisconnectingEvent
+import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundDisconnectingEvent
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.initMqttForegroundService
 
@@ -38,7 +38,7 @@ fun MqttEnabledSetting() {
                 userSettings.mqttEnabled = isEnabled
                 if (!isEnabled && MqttManager.isConnected()) {
                     MqttManager.disconnect(
-                        cause = MqttDisconnectingEvent.DisconnectCause.USER_INITIATED_SETTINGS_DISABLED
+                        cause = OutboundDisconnectingEvent.DisconnectCause.USER_INITIATED_SETTINGS_DISABLED
                     )
                     MqttManager.updateConfig(context, false)
                 }

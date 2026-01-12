@@ -1,9 +1,9 @@
-package uk.nktnet.webviewkiosk.config.mqtt.messages
+package uk.nktnet.webviewkiosk.config.remote.inbound
 
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class MqttSettingsMessage(
+data class InboundSettingsMessage(
     val messageId: String? = null,
     val targetInstances: Set<String>? = null,
     val targetUsernames: Set<String>? = null,

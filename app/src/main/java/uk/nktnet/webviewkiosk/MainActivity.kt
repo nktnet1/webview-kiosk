@@ -37,7 +37,7 @@ import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttDisconnectingEvent
+import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundDisconnectingEvent
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.handlers.MqttHandler
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
@@ -174,7 +174,7 @@ class MainActivity : AppCompatActivity() {
             LaunchedEffect(Unit) {
                 MqttManager.commands.collect { command ->
                     if (!userSettings.mqttUseForegroundService) {
-                        MqttHandler.handleMqttCommand(context, command)
+                        MqttHandler.handleInboundCommand(context, command)
                     }
                 }
             }
@@ -182,7 +182,7 @@ class MainActivity : AppCompatActivity() {
             LaunchedEffect(Unit) {
                 MqttManager.requests.collect { request ->
                     if (!userSettings.mqttUseForegroundService) {
-                        MqttHandler.handleMqttRequest(context, request)
+                        MqttHandler.handleInboundMqttRequest(context, request)
                     }
                 }
             }
@@ -190,7 +190,7 @@ class MainActivity : AppCompatActivity() {
             LaunchedEffect(Unit) {
                 MqttManager.settings.collect { settings ->
                     if (!userSettings.mqttUseForegroundService) {
-                        MqttHandler.handleMqttSettings(context, settings)
+                        MqttHandler.handleInboundSettings(context, settings)
                     }
 
                     // Counterintuitive, but this acts as a "Refresh" of the webview screen,
@@ -319,7 +319,7 @@ class MainActivity : AppCompatActivity() {
                     MqttManager.publishAppBackgroundEvent()
                 } else {
                     MqttManager.disconnect(
-                        cause = MqttDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_STOPPED
+                        cause = OutboundDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_STOPPED
                     )
                 }
             }
@@ -373,7 +373,7 @@ class MainActivity : AppCompatActivity() {
             && MqttManager.isConnected()
         ) {
             MqttManager.disconnect(
-                cause = MqttDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_DESTROYED
+                cause = OutboundDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_DESTROYED
             )
         }
         stopService(
