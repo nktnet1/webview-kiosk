@@ -43,6 +43,9 @@ For more on Android App Pinning, visit the following resources:
 1. [Google Official Documentation](https://support.google.com/android/answer/9455138)
 1. [Samsung Guide for Unpin Lock](https://www.samsung.com/sg/support/mobile-devices/pin-an-app-to-your-phone-screen-so-that-it-cant-be-closed)
 
+When in screen-pinning mode, you will not be able to launch other applications.
+See the `Device Owner Mode` section for further details.
+
 ### 3.2. Device Policy Controller
 
 If you have access to your
@@ -101,6 +104,8 @@ For more information, see
 
 When set as the device owner, {APP_NAME} can act as a DPC and automatically adds itself to the
 [allowlist for lock task packages](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode).
+It is also possible for {APP_NAME} to add other applications in settings, thus allowing it to
+launch other apps in Lock Task Mode (kiosk).
 
 The easiest way is to factory reset your device and start fresh, but if this isn't possible,
 you can try the following:

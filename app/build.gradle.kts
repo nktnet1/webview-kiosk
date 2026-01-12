@@ -16,8 +16,8 @@ android {
         applicationId = "uk.nktnet.webviewkiosk"
         minSdk = 21
         targetSdk = 36
-        versionCode = 111
-        versionName = "0.25.6"
+        versionCode = 112
+        versionName = "0.25.7"
         buildConfigField("int", "MIN_SDK_VERSION", "$minSdk")
     }
 
@@ -46,21 +46,6 @@ android {
         }
     }
 
-    base {
-        archivesName.set(
-            "${defaultConfig.applicationId}-v${defaultConfig.versionCode}-${defaultConfig.versionName}"
-        )
-    }
-
-    applicationVariants.all {
-        outputs.all {
-            val outputImpl = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            val appIdFormatted = applicationId.replace('.', '_')
-            val apkName = "${appIdFormatted}-v${versionName}.apk"
-            outputImpl.outputFileName = apkName
-        }
-    }
-
     signingConfigs {
         create("release") {
             storeFile = file("keystore.jks")
@@ -79,15 +64,6 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("release")
-        }
-        applicationVariants.all {
-            outputs.all {
-                val outputImpl = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-                val appId = applicationId.replace('.', '_')
-                val versionName = versionName
-                val apkName = "${appId}-v$versionName.apk"
-                outputImpl.outputFileName = apkName
-            }
         }
     }
 }
@@ -122,5 +98,4 @@ dependencies {
     implementation(libs.hiddenapibypass)
     implementation(libs.reorderable)
     debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
 }
