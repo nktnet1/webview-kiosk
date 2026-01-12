@@ -46,21 +46,6 @@ android {
         }
     }
 
-    base {
-        archivesName.set(
-            "${defaultConfig.applicationId}-v${defaultConfig.versionCode}-${defaultConfig.versionName}"
-        )
-    }
-
-    applicationVariants.all {
-        outputs.all {
-            val outputImpl = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-            val appIdFormatted = applicationId.replace('.', '_')
-            val apkName = "${appIdFormatted}-v${versionName}.apk"
-            outputImpl.outputFileName = apkName
-        }
-    }
-
     signingConfigs {
         create("release") {
             storeFile = file("keystore.jks")
@@ -79,15 +64,6 @@ android {
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("release")
-        }
-        applicationVariants.all {
-            outputs.all {
-                val outputImpl = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
-                val appId = applicationId.replace('.', '_')
-                val versionName = versionName
-                val apkName = "${appId}-v$versionName.apk"
-                outputImpl.outputFileName = apkName
-            }
         }
     }
 }
@@ -121,5 +97,4 @@ dependencies {
     implementation(libs.hiddenapibypass)
     implementation(libs.reorderable)
     debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
 }
