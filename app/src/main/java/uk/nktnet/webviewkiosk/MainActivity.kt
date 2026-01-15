@@ -175,23 +175,29 @@ class MainActivity : AppCompatActivity() {
             LaunchedEffect(Unit) {
                 RemoteMessageManager.commands.collect { command ->
                     if (!userSettings.mqttUseForegroundService) {
-                        RemoteInboundHandler.handleInboundCommand(context, command)
+                        RemoteInboundHandler.handleInboundCommand(context, command.message)
                     }
                 }
             }
 
             LaunchedEffect(Unit) {
                 RemoteMessageManager.requests.collect { request ->
-                    if (!userSettings.mqttUseForegroundService) {
-                        RemoteInboundHandler.handleInboundMqttRequest(context, request)
+                    if (
+                        request.source == RemoteMessageManager.RemoteMessage.Source.UNIFIEDPUSH
+                        || !userSettings.mqttUseForegroundService
+                    ) {
+                        RemoteInboundHandler.handleInboundMqttRequest(context, request.message)
                     }
                 }
             }
 
             LaunchedEffect(Unit) {
                 RemoteMessageManager.settings.collect { settings ->
-                    if (!userSettings.mqttUseForegroundService) {
-                        RemoteInboundHandler.handleInboundSettings(context, settings)
+                    if (
+                        settings.source == RemoteMessageManager.RemoteMessage.Source.UNIFIEDPUSH
+                        || !userSettings.mqttUseForegroundService
+                    ) {
+                        RemoteInboundHandler.handleInboundSettings(context, settings.message)
                     }
 
                     // Counterintuitive, but this acts as a "Refresh" of the webview screen,
@@ -199,7 +205,7 @@ class MainActivity : AppCompatActivity() {
                     // If we're on another screen though (e.g. settings), then let the user
                     // decide when to navigate back.
                     if (
-                        settings.reloadActivity
+                        settings.message.reloadActivity
                         && navController.currentDestination?.route == Screen.WebView.route
                     ) {
                         navigateToWebViewScreen(navController)

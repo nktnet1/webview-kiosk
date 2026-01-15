@@ -546,17 +546,17 @@ fun WebviewScreen(navController: NavController) {
 
     LaunchedEffect(Unit) {
         RemoteMessageManager.commands.collect { command ->
-            when (command) {
+            when (command.message) {
                 is InboundGoBackCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)
                 is InboundGoForwardCommand -> WebViewNavigation.goForward(::customLoadUrl, systemSettings)
                 is InboundGoHomeCommand -> WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings)
                 is InboundRefreshCommand -> WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
-                is InboundGoToUrlCommand -> customLoadUrl(command.data.url)
-                is InboundSearchCommand -> addressBarSearch(command.data.query)
+                is InboundGoToUrlCommand -> customLoadUrl(command.message.data.url)
+                is InboundSearchCommand -> addressBarSearch(command.message.data.query)
                 is InboundLockCommand -> tryLockTask(activity)
                 is InboundUnlockCommand -> tryUnlockTask(activity)
-                is InboundPageUpCommand -> { webView.pageUp(command.data.absolute) }
-                is InboundPageDownCommand -> { webView.pageDown(command.data.absolute) }
+                is InboundPageUpCommand -> { webView.pageUp(command.message.data.absolute) }
+                is InboundPageDownCommand -> { webView.pageDown(command.message.data.absolute) }
                 is InboundErrorCommand -> {
                     ToastManager.show(
                         context,

@@ -77,7 +77,7 @@ class MqttForegroundService : Service() {
             RemoteMessageManager.commands.collect { command ->
                 RemoteInboundHandler.handleInboundCommand(
                     this@MqttForegroundService,
-                    command
+                    command.message
                 )
             }
         }
@@ -85,7 +85,7 @@ class MqttForegroundService : Service() {
             RemoteMessageManager.settings.collect { settings ->
                 RemoteInboundHandler.handleInboundSettings(
                     this@MqttForegroundService,
-                    settings
+                    settings.message
                 )
             }
         }
@@ -93,7 +93,7 @@ class MqttForegroundService : Service() {
             RemoteMessageManager.requests.collect { request ->
                 RemoteInboundHandler.handleInboundMqttRequest(
                     this@MqttForegroundService,
-                    request
+                    request.message
                 )
             }
         }

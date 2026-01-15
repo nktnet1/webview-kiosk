@@ -728,7 +728,10 @@ object MqttManager {
                             "topic: ${publish.topic}\ncommand: $command",
                             command.messageId
                         )
-                        RemoteMessageManager.emitCommand(command)
+                        RemoteMessageManager.emitCommand(
+                            command,
+                            RemoteMessageManager.RemoteMessage.Source.MQTT
+                        )
                     } else {
                         addDebugLog(
                             "command received (ignored)",
@@ -738,7 +741,8 @@ object MqttManager {
                     }
                 } catch (e: Exception) {
                     RemoteMessageManager.emitCommand(
-                        InboundErrorCommand(e.message ?: e.toString())
+                        InboundErrorCommand(e.message ?: e.toString()),
+                        RemoteMessageManager.RemoteMessage.Source.MQTT
                     )
                     val messageId = getValueFromPrimitiveJson(payloadStr, "messageId")
                     addDebugLog("command error", e.message, messageId)
@@ -769,7 +773,10 @@ object MqttManager {
                         "topic: ${publish.topic}",
                         messageId = settingsMessage.messageId,
                     )
-                    RemoteMessageManager.emitSettings(settingsMessage)
+                    RemoteMessageManager.emitSettings(
+                        settingsMessage,
+                        RemoteMessageManager.RemoteMessage.Source.MQTT
+                    )
                 } else {
                     addDebugLog(
                         "settings received (ignored)",
@@ -811,7 +818,10 @@ object MqttManager {
                             "topic: ${publish.topic}\nrequest: $request",
                             request.messageId
                         )
-                        RemoteMessageManager.emitRequest(request)
+                        RemoteMessageManager.emitRequest(
+                            request,
+                            RemoteMessageManager.RemoteMessage.Source.MQTT
+                        )
                     } else {
                         addDebugLog(
                             "request received (ignored)",
@@ -835,7 +845,10 @@ object MqttManager {
                         payloadStr = payloadStr,
                         error = e.message ?: e.toString(),
                     )
-                    RemoteMessageManager.emitRequest(errorRequest)
+                    RemoteMessageManager.emitRequest(
+                        errorRequest,
+                        RemoteMessageManager.RemoteMessage.Source.MQTT
+                    )
                     addDebugLog("request error", e.message, messageId)
                 }
             }

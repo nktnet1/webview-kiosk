@@ -236,7 +236,8 @@ object UnifiedPushManager {
                 when (messageType) {
                     "command" -> {
                         RemoteMessageManager.emitCommand(
-                            InboundCommandJsonParser.decodeFromString(contentString)
+                            InboundCommandJsonParser.decodeFromString(contentString),
+                            RemoteMessageManager.RemoteMessage.Source.UNIFIEDPUSH,
                         )
                     }
                     "settings" -> {
@@ -245,7 +246,10 @@ object UnifiedPushManager {
                         }.getOrElse {
                             InboundSettingsMessage()
                         }
-                        RemoteMessageManager.emitSettings(settingsMessage)
+                        RemoteMessageManager.emitSettings(
+                            settingsMessage,
+                            RemoteMessageManager.RemoteMessage.Source.UNIFIEDPUSH,
+                        )
                     }
                     "" -> {
                         ToastManager.show(
