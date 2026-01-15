@@ -1,0 +1,119 @@
+---
+title: UnifiedPush
+description: Control kiosk devices via push messages
+---
+
+import { APP_NAME } from '@/config/app';
+
+## 1. Introduction
+
+UnifiedPush is a decentralised push notification system designed to be
+privacy-friendly, flexible, and open.
+For more information, see the official documentation: https://unifiedpush.org
+
+## 2. Distributor
+
+To use UnifiedPush with {APP_NAME}, you will need to choose a
+[distributor](https://unifiedpush.org/users/distributors)
+application, e.g.
+
+- [ntfy-android](https://github.com/binwiederhier/ntfy-android)
+- [Sunup/android](https://codeberg.org/Sunup/android)
+
+You will also need a push server, e.g. by self-hosting or using the public servers for:
+
+- [ntfy](https://github.com/binwiederhier/ntfy)
+- [autopush-rs](https://github.com/p1gp1g/autopush-rs)
+
+## 3. Debug Logs
+
+UnifiedPush operations are recorded in the debug logs, which can be accessed
+from the UnifiedPush settings screen.
+
+This includes
+
+- register/unregister
+- message received
+- new endpoint
+- errors
+
+A maximum of 100 messages will be stored for the duration of the app activity
+lifecycle. The logs will not persist between app restarts.
+
+## 4. Settings
+
+### 4.1. Enabled
+
+Allow {APP_NAME} to process new push messages or register new endpoints.
+
+**Default:** false
+
+### 4.2. Distributor
+
+The package name of the [distributor](https://unifiedpush.org/users/distributors), e.g.
+
+- io.heckel.ntfy
+- org.unifiedpush.distributor.sunup
+
+The distributor app serves as the middle-man that receives the app notification
+from the push server and forwarding it to {APP_NAME}.
+
+**Default:** (blank)
+
+### 4.3. Instance
+
+Registration instance. Can be used to create multiple registrations.
+
+Supported variables:
+- `APP_INSTANCE_ID`
+
+Example:
+- `wk-${APP_INSTANCE_ID}`
+
+If left blank, `default` will be used.
+
+**Default:** (blank)
+
+### 4.4. Message for Distributor
+
+A customised message that may be shown by the distributor UI to
+identify this registration.
+
+**Default:** (blank)
+
+### 4.5. VAPID Public Key
+
+VAPID public key (RFC8292), base64url, in uncompressed form (87 chars long).
+
+For more details, see:
+- https://www.rfc-editor.org/rfc/rfc8292
+
+**Default:** (blank)
+
+### 4.6. Process Unencrypted Messages
+
+When enabled, {APP_NAME} will also handle UnifiedPush messages that
+did not successfully decrypt.
+
+A valid use case for this would be to for sending simple curl requests
+to `ntfy.sh` without encryption for testing or convenience, although
+this reduces security.
+
+**Default:** false
+
+### 4.7. Store Endpoint Credentials
+
+When enabled, {APP_NAME} will persist the following values:
+
+- Endpoint URL
+- Endpoint Public Key
+- Endpoint Auth Secret
+
+Ideally, these values should not be stored at all, and are instead sent
+directly to the application server at the point of registration.
+
+However, {APP_NAME} does not yet have an application server. These values are
+thus stored locally in the application so they can be copied. They can be
+optionally redacted afterwards through the settings UI.
+
+**Default:** true
