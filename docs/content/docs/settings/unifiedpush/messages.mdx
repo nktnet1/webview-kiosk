@@ -1,0 +1,49 @@
+---
+title: Messages
+description: Data format for push message
+---
+
+import { APP_NAME } from '@/config/app';
+
+{APP_NAME} push message payloads are similar to that of [MQTT](/docs/settings/mqtt).
+However, as there is no concept of *topics*, all messages are sent to a single
+UnifiedPush endpoint.
+
+Thus, a `type` property is used to differentiate between `command` and `settings`.
+
+## 1. Command
+
+For additional options and the full list of supported commands, refer to
+[MQTT -> Topics -> Command](/docs/settings/mqtt/topics/command#2-payloads).
+
+Example Payload
+
+```jsonc
+{
+  // Unique to UnifiedPush
+  "type": "command",
+
+  // Same as MQTT
+  "command": "go_to_url",
+  "data": {
+    "url": "https://webviewkiosk.nktnet.uk"
+  }
+}
+```
+
+## 2. Settings
+
+For additional options, refer to
+[MQTT -> Topics -> Settings](/docs/settings/mqtt/topics/settings#2-payloads).
+
+Example Payload
+
+```jsonc
+{
+  "data": {
+    "settings": {
+      "appearance.theme": "LIGHT"
+    }
+  }
+}
+```

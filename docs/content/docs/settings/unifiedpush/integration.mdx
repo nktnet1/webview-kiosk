@@ -1,0 +1,36 @@
+---
+title: Integration
+description: Examples of sending push messages
+---
+
+import { APP_NAME } from '@/config/app';
+
+## 1. Curl (ntfy)
+
+If you use ntfy as your distributor and push server, it is possible
+to use curl commands to send push messages directly.
+
+Example:
+
+```bash tab="Command"
+curl -X POST 'https://ntfy.sh/upKrWhj3FnOYKf?up=1' \
+  -d '{
+    "type": "command",
+    "command": "go_to_url",
+    "data": {
+      "url": "https://webviewkiosk.nktnet.uk"
+    }
+  }'
+```
+
+```bash tab="Settings"
+curl -X POST 'https://ntfy.sh/upKrWhj3FnOYKf?up=1' \
+  -d '{
+    "type": "settings",
+    "data": {
+      "settings": {
+        "appearance.theme": "LIGHT"
+      }
+    }
+  }'
+```
