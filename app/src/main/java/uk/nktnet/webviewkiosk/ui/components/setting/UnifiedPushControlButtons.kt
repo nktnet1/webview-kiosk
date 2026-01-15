@@ -278,10 +278,10 @@ fun UnifiedPushControlButtons() {
                         normaliseInfoText(
                             """
                             Are you sure you want to unregister from UnifiedPush for:
-                            
+
                             - DISTRIBUTOR: ${userSettings.unifiedPushDistributor}
                             - INSTANCE: ${UnifiedPushManager.getInstance(context)}
-    
+
                             This action cannot be undone.
                             """.trimIndent()
                         )

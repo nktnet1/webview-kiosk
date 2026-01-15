@@ -20,7 +20,10 @@ fun UnifiedPushVapidPublicKeySetting() {
     TextSettingFieldItem(
         label = stringResource(R.string.unifiedpush_vapid_public_key_title),
         infoText = """
-            VAPID public key (RFC8292) base64url encoded of the uncompressed form (87 chars long).
+            VAPID public key (RFC8292), base64url, in uncompressed form (87 chars long).
+
+            For more details, see:
+            - https://www.rfc-editor.org/rfc/rfc8292
         """.trimIndent(),
         placeholder = "",
         validator = {

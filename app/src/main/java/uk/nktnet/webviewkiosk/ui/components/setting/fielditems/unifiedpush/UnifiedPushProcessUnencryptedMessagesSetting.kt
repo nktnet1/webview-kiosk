@@ -23,7 +23,7 @@ fun UnifiedPushProcessUnencryptedMessagesSetting() {
 
             A valid use case for this would be to enable simple curl requests
             to ntfy.sh without encryption for testing or convenience, although
-            this does reduce security.
+            this reduces security.
             """.trimIndent(),
         initialValue = userSettings.unifiedPushProcessUnencryptedMessages,
         settingKey = settingKey,

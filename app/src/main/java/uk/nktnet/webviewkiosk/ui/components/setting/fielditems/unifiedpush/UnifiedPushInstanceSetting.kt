@@ -55,7 +55,7 @@ fun UnifiedPushInstanceSetting() {
 
             Example:
             - $recommendedClientId
-            
+
             If left blank, $INSTANCE_DEFAULT will be used.
         """.trimIndent(),
         placeholder = "e.g. $recommendedClientId",

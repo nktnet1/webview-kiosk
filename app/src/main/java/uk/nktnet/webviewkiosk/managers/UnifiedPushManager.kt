@@ -209,7 +209,6 @@ object UnifiedPushManager {
                 """
                 instance: $instance
                 decrypted: ${message.decrypted}
-                content: $contentString
 
                 Reason:
                 - UnifiedPush is not enabled.
@@ -224,7 +223,6 @@ object UnifiedPushManager {
                 """
                 instance: $instance
                 decrypted: ${false}
-                content: $contentString
 
                 Reason:
                 - message failed to decrypt or was unencrypted
@@ -232,18 +230,10 @@ object UnifiedPushManager {
             )
             return
         }
-        addDebugLog(
-            "message received",
-            """
-            instance: $instance
-            decrypted: ${message.decrypted}
-            content: $contentString
-            """.trimIndent()
-        )
-
         if (contentString.isNotEmpty()) {
             runCatching { JSONObject(contentString) }.onSuccess { json ->
-                when (val type = json.optString("type")) {
+                val messageType = json.optString("type")
+                when (messageType) {
                     "command" -> {
                         RemoteMessageManager.emitCommand(
                             InboundCommandJsonParser.decodeFromString(contentString)
@@ -257,13 +247,27 @@ object UnifiedPushManager {
                         }
                         RemoteMessageManager.emitSettings(settingsMessage)
                     }
+                    "" -> {
+                        ToastManager.show(
+                            context,
+                            "UnifiedPush: type property is empty",
+                        )
+                    }
                     else -> {
                         ToastManager.show(
                             context,
-                            "UnifiedPush: unsupported message type: $type",
+                            "UnifiedPush: unsupported message type: $messageType",
                         )
                     }
                 }
+                addDebugLog(
+                    "message received",
+                    """
+                    instance: $instance
+                    decrypted: ${message.decrypted}
+                    type: $messageType
+                    """.trimIndent()
+                )
             }
         }
     }
