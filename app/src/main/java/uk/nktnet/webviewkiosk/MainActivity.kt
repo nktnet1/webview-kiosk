@@ -174,7 +174,10 @@ class MainActivity : AppCompatActivity() {
 
             LaunchedEffect(Unit) {
                 RemoteMessageManager.commands.collect { command ->
-                    if (!userSettings.mqttUseForegroundService) {
+                    if (
+                        command.source == RemoteMessageManager.RemoteMessage.Source.MQTT
+                        && !userSettings.mqttUseForegroundService
+                    ) {
                         RemoteInboundHandler.handleInboundCommand(context, command.message)
                     }
                 }
@@ -183,8 +186,8 @@ class MainActivity : AppCompatActivity() {
             LaunchedEffect(Unit) {
                 RemoteMessageManager.requests.collect { request ->
                     if (
-                        request.source == RemoteMessageManager.RemoteMessage.Source.UNIFIEDPUSH
-                        || !userSettings.mqttUseForegroundService
+                        request.source == RemoteMessageManager.RemoteMessage.Source.MQTT
+                        && !userSettings.mqttUseForegroundService
                     ) {
                         RemoteInboundHandler.handleInboundMqttRequest(context, request.message)
                     }
@@ -194,8 +197,8 @@ class MainActivity : AppCompatActivity() {
             LaunchedEffect(Unit) {
                 RemoteMessageManager.settings.collect { settings ->
                     if (
-                        settings.source == RemoteMessageManager.RemoteMessage.Source.UNIFIEDPUSH
-                        || !userSettings.mqttUseForegroundService
+                        settings.source == RemoteMessageManager.RemoteMessage.Source.MQTT
+                        && !userSettings.mqttUseForegroundService
                     ) {
                         RemoteInboundHandler.handleInboundSettings(context, settings.message)
                     }

@@ -16,9 +16,11 @@ import org.unifiedpush.android.connector.data.PushMessage
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundCommandJsonParser
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundCommandMessage
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSettingsMessage
 import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushEndpoint
 import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushVariableName
+import uk.nktnet.webviewkiosk.handlers.RemoteInboundHandler
 import uk.nktnet.webviewkiosk.utils.BaseJson
 import uk.nktnet.webviewkiosk.utils.isPackageInstalled
 import uk.nktnet.webviewkiosk.utils.isValidVapidPublicKey
@@ -235,10 +237,13 @@ object UnifiedPushManager {
                 val messageType = json.optString("type")
                 when (messageType) {
                     "command" -> {
+                        val commandMessage = InboundCommandJsonParser
+                            .decodeFromString<InboundCommandMessage>(contentString)
                         RemoteMessageManager.emitCommand(
-                            InboundCommandJsonParser.decodeFromString(contentString),
+                            commandMessage,
                             RemoteMessageManager.RemoteMessage.Source.UNIFIEDPUSH,
                         )
+                        RemoteInboundHandler.handleInboundCommand(context, commandMessage)
                     }
                     "settings" -> {
                         val settingsMessage = runCatching {
@@ -250,6 +255,7 @@ object UnifiedPushManager {
                             settingsMessage,
                             RemoteMessageManager.RemoteMessage.Source.UNIFIEDPUSH,
                         )
+                        RemoteInboundHandler.handleInboundSettings(context, settingsMessage)
                     }
                     "" -> {
                         ToastManager.show(

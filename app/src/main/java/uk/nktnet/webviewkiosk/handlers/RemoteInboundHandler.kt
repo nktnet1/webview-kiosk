@@ -118,6 +118,7 @@ object RemoteInboundHandler {
                     ),
                 )
             }
+            // Webview-related commands are handled in WebviewScreen.kt
             else -> Unit
         }
     }

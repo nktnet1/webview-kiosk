@@ -75,26 +75,32 @@ class MqttForegroundService : Service() {
 
         mqttCommandJob = scope.launch {
             RemoteMessageManager.commands.collect { command ->
-                RemoteInboundHandler.handleInboundCommand(
-                    this@MqttForegroundService,
-                    command.message
-                )
+                if (command.source == RemoteMessageManager.RemoteMessage.Source.MQTT) {
+                    RemoteInboundHandler.handleInboundCommand(
+                        this@MqttForegroundService,
+                        command.message
+                    )
+                }
             }
         }
         mqttSettingsJob = scope.launch {
             RemoteMessageManager.settings.collect { settings ->
-                RemoteInboundHandler.handleInboundSettings(
-                    this@MqttForegroundService,
-                    settings.message
-                )
+                if (settings.source == RemoteMessageManager.RemoteMessage.Source.MQTT) {
+                    RemoteInboundHandler.handleInboundSettings(
+                        this@MqttForegroundService,
+                        settings.message
+                    )
+                }
             }
         }
         mqttRequestJob = scope.launch {
             RemoteMessageManager.requests.collect { request ->
-                RemoteInboundHandler.handleInboundMqttRequest(
-                    this@MqttForegroundService,
-                    request.message
-                )
+                if (request.source == RemoteMessageManager.RemoteMessage.Source.MQTT) {
+                    RemoteInboundHandler.handleInboundMqttRequest(
+                        this@MqttForegroundService,
+                        request.message
+                    )
+                }
             }
         }
     }
