@@ -84,6 +84,19 @@ object UnifiedPushManager {
         val userSettings = UserSettings(context)
         val instance = getInstance(context)
 
+        if (userSettings.unifiedPushDistributor.isBlank()) {
+            addDebugLog(
+                "register error",
+                """
+                instance=$instance
+                messageForDistributor=${userSettings.unifiedPushMessageForDistributor}
+                error: distributor cannot be blank
+                """.trimIndent()
+            )
+            ToastManager.show(context, "Error: distributor cannot be blank")
+            return
+        }
+
         if (!isPackageInstalled(context, userSettings.unifiedPushDistributor)) {
             addDebugLog(
                 "register error",
