@@ -41,6 +41,10 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.data.WebViewCreation
+import uk.nktnet.webviewkiosk.config.option.AddressBarModeOption
+import uk.nktnet.webviewkiosk.config.option.AddressBarPositionOption
+import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
+import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundErrorCommand
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundGoBackCommand
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundGoForwardCommand
@@ -52,14 +56,11 @@ import uk.nktnet.webviewkiosk.config.remote.inbound.InboundPageUpCommand
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundRefreshCommand
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSearchCommand
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundUnlockCommand
-import uk.nktnet.webviewkiosk.config.option.AddressBarModeOption
-import uk.nktnet.webviewkiosk.config.option.AddressBarPositionOption
-import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
-import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
 import uk.nktnet.webviewkiosk.handlers.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.DimScreenOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.ResetOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.managers.MqttManager
+import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
@@ -544,7 +545,7 @@ fun WebviewScreen(navController: NavController) {
     )
 
     LaunchedEffect(Unit) {
-        MqttManager.commands.collect { command ->
+        RemoteMessageManager.commands.collect { command ->
             when (command) {
                 is InboundGoBackCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)
                 is InboundGoForwardCommand -> WebViewNavigation.goForward(::customLoadUrl, systemSettings)

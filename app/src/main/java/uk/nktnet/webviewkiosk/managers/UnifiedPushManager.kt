@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import org.unifiedpush.android.connector.FailedReason
 import org.unifiedpush.android.connector.INSTANCE_DEFAULT
 import org.unifiedpush.android.connector.UnifiedPush
@@ -14,8 +15,11 @@ import org.unifiedpush.android.connector.data.PushEndpoint
 import org.unifiedpush.android.connector.data.PushMessage
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundCommandJsonParser
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSettingsMessage
 import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushEndpoint
 import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushVariableName
+import uk.nktnet.webviewkiosk.utils.BaseJson
 import uk.nktnet.webviewkiosk.utils.isPackageInstalled
 import uk.nktnet.webviewkiosk.utils.isValidVapidPublicKey
 import uk.nktnet.webviewkiosk.utils.replaceVariables
@@ -224,12 +228,11 @@ object UnifiedPushManager {
                 content: $contentString
 
                 Reason:
-                - message did not decrypt successfully
+                - message failed to decrypt or was unencrypted
                 """.trimIndent()
             )
             return
         }
-        ToastManager.show(context, "UnifiedPush: message received.")
         addDebugLog(
             "message received",
             """
@@ -238,6 +241,32 @@ object UnifiedPushManager {
             content: $contentString
             """.trimIndent()
         )
+
+        if (contentString.isNotEmpty()) {
+            runCatching { JSONObject(contentString) }.onSuccess { json ->
+                when (val type = json.optString("type")) {
+                    "command" -> {
+                        RemoteMessageManager.emitCommand(
+                            InboundCommandJsonParser.decodeFromString(contentString)
+                        )
+                    }
+                    "settings" -> {
+                        val settingsMessage = runCatching {
+                            BaseJson.decodeFromString<InboundSettingsMessage>(contentString)
+                        }.getOrElse {
+                            InboundSettingsMessage()
+                        }
+                        RemoteMessageManager.emitSettings(settingsMessage)
+                    }
+                    else -> {
+                        ToastManager.show(
+                            context,
+                            "UnifiedPush: unsupported message type: $type",
+                        )
+                    }
+                }
+            }
+        }
     }
 
     fun handleNewEndpoint(context: Context, endpoint: PushEndpoint, instance: String) {

@@ -37,14 +37,15 @@ import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
-import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundDisconnectingEvent
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.handlers.MqttHandler
+import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundDisconnectingEvent
+import uk.nktnet.webviewkiosk.handlers.RemoteInboundHandler
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.BackButtonManager
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.MqttManager
+import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.services.MqttForegroundService
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
@@ -172,25 +173,25 @@ class MainActivity : AppCompatActivity() {
             val activity = LocalActivity.current
 
             LaunchedEffect(Unit) {
-                MqttManager.commands.collect { command ->
+                RemoteMessageManager.commands.collect { command ->
                     if (!userSettings.mqttUseForegroundService) {
-                        MqttHandler.handleInboundCommand(context, command)
+                        RemoteInboundHandler.handleInboundCommand(context, command)
                     }
                 }
             }
 
             LaunchedEffect(Unit) {
-                MqttManager.requests.collect { request ->
+                RemoteMessageManager.requests.collect { request ->
                     if (!userSettings.mqttUseForegroundService) {
-                        MqttHandler.handleInboundMqttRequest(context, request)
+                        RemoteInboundHandler.handleInboundMqttRequest(context, request)
                     }
                 }
             }
 
             LaunchedEffect(Unit) {
-                MqttManager.settings.collect { settings ->
+                RemoteMessageManager.settings.collect { settings ->
                     if (!userSettings.mqttUseForegroundService) {
-                        MqttHandler.handleInboundSettings(context, settings)
+                        RemoteInboundHandler.handleInboundSettings(context, settings)
                     }
 
                     // Counterintuitive, but this acts as a "Refresh" of the webview screen,

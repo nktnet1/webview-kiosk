@@ -39,7 +39,7 @@ import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
 import uk.nktnet.webviewkiosk.utils.wakeScreen
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
-object MqttHandler {
+object RemoteInboundHandler {
     fun handleInboundCommand(
         context: Context,
         command: InboundCommandMessage,
@@ -127,7 +127,7 @@ object MqttHandler {
         settings: InboundSettingsMessage,
     ) {
         val userSettings = UserSettings(context)
-        userSettings.importJson(settings.data.settings)
+        userSettings.importJson(settings.data.settings.toString())
 
         if (settings.reloadActivity) {
             updateDeviceSettings(context)

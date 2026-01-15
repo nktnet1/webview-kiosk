@@ -17,7 +17,6 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -31,42 +30,43 @@ import uk.nktnet.webviewkiosk.config.mqtt.MqttConfig
 import uk.nktnet.webviewkiosk.config.mqtt.MqttQosOption
 import uk.nktnet.webviewkiosk.config.mqtt.MqttRetainHandlingOption
 import uk.nktnet.webviewkiosk.config.mqtt.MqttVariableName
+import uk.nktnet.webviewkiosk.config.option.LockStateType
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundCommandJsonParser
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundCommandMessage
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundErrorCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundErrorRequest
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundLaunchablePackagesRequest
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundLockTaskPackagesRequest
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundRequestJsonParser
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundRequestMessage
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSettingsMessage
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSettingsRequest
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundStatusRequest
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSystemInfoRequest
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundAppBackgroundEvent
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundAppForegroundEvent
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundApplicationRestrictionsChangedEvent
-import uk.nktnet.webviewkiosk.config.remote.inbound.OutboundCommandJsonParser
-import uk.nktnet.webviewkiosk.config.remote.inbound.InboundCommandMessage
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundConnectedEvent
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundDisconnectingEvent
-import uk.nktnet.webviewkiosk.config.remote.inbound.InboundErrorCommand
-import uk.nktnet.webviewkiosk.config.remote.inbound.InboundErrorRequest
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundErrorResponse
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundEventJsonParser
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundEventMessage
-import uk.nktnet.webviewkiosk.config.remote.inbound.InboundLaunchablePackagesRequest
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundLaunchablePackagesResponse
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundLockEvent
-import uk.nktnet.webviewkiosk.config.remote.inbound.InboundLockTaskPackagesRequest
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundLockTaskPackagesResponse
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundPowerPluggedEvent
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundPowerUnpluggedEvent
-import uk.nktnet.webviewkiosk.config.remote.inbound.OutboundRequestJsonParser
-import uk.nktnet.webviewkiosk.config.remote.inbound.InboundRequestMessage
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundResponseJsonParser
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundResponseMessage
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundScreenOffEvent
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundScreenOnEvent
-import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSettingsMessage
-import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSettingsRequest
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundSettingsResponse
-import uk.nktnet.webviewkiosk.config.remote.inbound.InboundStatusRequest
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundStatusResponse
-import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSystemInfoRequest
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundSystemInfoResponse
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundUnlockEvent
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundUrlChangedEvent
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundUserPresentEvent
-import uk.nktnet.webviewkiosk.config.option.LockStateType
+import uk.nktnet.webviewkiosk.utils.BaseJson
 import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
 import uk.nktnet.webviewkiosk.utils.filterSettingsJson
 import uk.nktnet.webviewkiosk.utils.getStatus
@@ -92,14 +92,6 @@ object MqttManager {
     private lateinit var config: MqttConfig
 
     private val scope = CoroutineScope(Dispatchers.Default)
-    private val _commands = MutableSharedFlow<InboundCommandMessage>(extraBufferCapacity = 100)
-    val commands: SharedFlow<InboundCommandMessage> get() = _commands
-
-    private val _settings = MutableSharedFlow<InboundSettingsMessage>(extraBufferCapacity = 100)
-    val settings: SharedFlow<InboundSettingsMessage> get() = _settings
-
-    private val _requests = MutableSharedFlow<InboundRequestMessage>(extraBufferCapacity = 100)
-    val requests: SharedFlow<InboundRequestMessage> get() = _requests
 
     private val logHistory = ArrayDeque<MqttLogEntry>(100)
     private val _debugLog = MutableSharedFlow<MqttLogEntry>(extraBufferCapacity = 100)
@@ -724,7 +716,7 @@ object MqttManager {
             retainAsPublished = config.subscribeCommandRetainAsPublished,
             onMessage = { publish, payloadStr ->
                 try {
-                    val command = OutboundCommandJsonParser.decodeFromString<InboundCommandMessage>(payloadStr)
+                    val command = InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(payloadStr)
                     val targetInstances = command.targetInstances
                     val targetUsernames = command.targetUsernames
                     if (
@@ -736,7 +728,7 @@ object MqttManager {
                             "topic: ${publish.topic}\ncommand: $command",
                             command.messageId
                         )
-                        scope.launch { _commands.emit(command) }
+                        RemoteMessageManager.emitCommand(command)
                     } else {
                         addDebugLog(
                             "command received (ignored)",
@@ -745,7 +737,9 @@ object MqttManager {
                         )
                     }
                 } catch (e: Exception) {
-                    scope.launch { _commands.emit(InboundErrorCommand(e.message ?: e.toString())) }
+                    RemoteMessageManager.emitCommand(
+                        InboundErrorCommand(e.message ?: e.toString())
+                    )
                     val messageId = getValueFromPrimitiveJson(payloadStr, "messageId")
                     addDebugLog("command error", e.message, messageId)
                 }
@@ -758,29 +752,11 @@ object MqttManager {
             retainHandling = config.subscribeSettingsRetainHandling,
             retainAsPublished = config.subscribeSettingsRetainAsPublished,
             onMessage = { publish, payloadStr ->
-                val json = Json.parseToJsonElement(payloadStr).jsonObject
-                val settingsStr = runCatching {
-                    json["data"]?.jsonObject?.get("settings")?.toString() ?: "{}"
-                }.getOrElse { "{}" }
-
-                val settingsMessage = InboundSettingsMessage(
-                    messageId = getValueFromPrimitiveJson(payloadStr, "messageId"),
-                    targetInstances = runCatching {
-                        json["targetInstances"]?.jsonArray?.mapNotNull {
-                            it.jsonPrimitive.contentOrNull
-                        }?.toSet()
-                    }.getOrNull(),
-                    targetUsernames = runCatching {
-                        json["targetUsernames"]?.jsonArray?.mapNotNull {
-                            it.jsonPrimitive.contentOrNull
-                        }?.toSet()
-                    }.getOrNull(),
-                    showToast = json["showToast"]?.jsonPrimitive?.booleanOrNull ?: true,
-                    reloadActivity = json["reloadActivity"]?.jsonPrimitive?.booleanOrNull ?: true,
-                    data = InboundSettingsMessage.SettingsUpdateData(
-                        settingsStr
-                    )
-                )
+                val settingsMessage = runCatching {
+                    BaseJson.decodeFromString<InboundSettingsMessage>(payloadStr)
+                }.getOrElse {
+                    InboundSettingsMessage()
+                }
 
                 val targetInstances = settingsMessage.targetInstances
                 val targetUsernames = settingsMessage.targetUsernames
@@ -793,7 +769,7 @@ object MqttManager {
                         "topic: ${publish.topic}",
                         messageId = settingsMessage.messageId,
                     )
-                    scope.launch { _settings.emit(settingsMessage) }
+                    RemoteMessageManager.emitSettings(settingsMessage)
                 } else {
                     addDebugLog(
                         "settings received (ignored)",
@@ -819,7 +795,7 @@ object MqttManager {
                 }
 
                 try {
-                    val request = OutboundRequestJsonParser.decodeFromString<InboundRequestMessage>(payloadStr)
+                    val request = InboundRequestJsonParser.decodeFromString<InboundRequestMessage>(payloadStr)
 
                     val targetInstances = request.targetInstances
                     val targetUsernames = request.targetUsernames
@@ -835,7 +811,7 @@ object MqttManager {
                             "topic: ${publish.topic}\nrequest: $request",
                             request.messageId
                         )
-                        scope.launch { _requests.emit(request) }
+                        RemoteMessageManager.emitRequest(request)
                     } else {
                         addDebugLog(
                             "request received (ignored)",
@@ -845,24 +821,21 @@ object MqttManager {
                     }
                 } catch (e: Exception) {
                     val messageId = getValueFromPrimitiveJson(payloadStr, "messageId")
-                    scope.launch {
-                        _requests.emit(
-                            InboundErrorRequest(
-                                messageId = messageId,
-                                responseTopic = responseTopic ?: getValueFromPrimitiveJson(payloadStr, "responseTopic"),
-                                correlationData = correlationData ?: getValueFromPrimitiveJson(payloadStr, "correlationData"),
-                                targetInstances = runCatching {
-                                    Json.parseToJsonElement(payloadStr)
-                                        .jsonObject["targetInstances"]
-                                        ?.jsonArray
-                                        ?.mapNotNull { it.jsonPrimitive.contentOrNull }
-                                        ?.toSet()
-                                    }.getOrNull(),
-                                payloadStr = payloadStr,
-                                error = e.message ?: e.toString(),
-                            )
-                        )
-                    }
+                    val errorRequest = InboundErrorRequest(
+                        messageId = messageId,
+                        responseTopic = responseTopic ?: getValueFromPrimitiveJson(payloadStr, "responseTopic"),
+                        correlationData = correlationData ?: getValueFromPrimitiveJson(payloadStr, "correlationData"),
+                        targetInstances = runCatching {
+                            Json.parseToJsonElement(payloadStr)
+                                .jsonObject["targetInstances"]
+                                ?.jsonArray
+                                ?.mapNotNull { it.jsonPrimitive.contentOrNull }
+                                ?.toSet()
+                        }.getOrNull(),
+                        payloadStr = payloadStr,
+                        error = e.message ?: e.toString(),
+                    )
+                    RemoteMessageManager.emitRequest(errorRequest)
                     addDebugLog("request error", e.message, messageId)
                 }
             }

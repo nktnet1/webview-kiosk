@@ -274,6 +274,6 @@ data class InboundErrorCommand(
     override fun toString() = "error"
 }
 
-val OutboundCommandJsonParser = Json(BaseJson) {
+val InboundCommandJsonParser = Json(BaseJson) {
     classDiscriminator = "command"
 }

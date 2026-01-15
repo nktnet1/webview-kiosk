@@ -21,10 +21,11 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.MainActivity
-import uk.nktnet.webviewkiosk.handlers.MqttHandler
+import uk.nktnet.webviewkiosk.handlers.RemoteInboundHandler
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.CustomNotificationType
 import uk.nktnet.webviewkiosk.managers.MqttManager
+import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 
 class MqttForegroundService : Service() {
     private var isServiceActive = true
@@ -73,24 +74,24 @@ class MqttForegroundService : Service() {
         wakeLock.acquire()
 
         mqttCommandJob = scope.launch {
-            MqttManager.commands.collect { command ->
-                MqttHandler.handleInboundCommand(
+            RemoteMessageManager.commands.collect { command ->
+                RemoteInboundHandler.handleInboundCommand(
                     this@MqttForegroundService,
                     command
                 )
             }
         }
         mqttSettingsJob = scope.launch {
-            MqttManager.settings.collect { settings ->
-                MqttHandler.handleInboundSettings(
+            RemoteMessageManager.settings.collect { settings ->
+                RemoteInboundHandler.handleInboundSettings(
                     this@MqttForegroundService,
                     settings
                 )
             }
         }
         mqttRequestJob = scope.launch {
-            MqttManager.requests.collect { request ->
-                MqttHandler.handleInboundMqttRequest(
+            RemoteMessageManager.requests.collect { request ->
+                RemoteInboundHandler.handleInboundMqttRequest(
                     this@MqttForegroundService,
                     request
                 )

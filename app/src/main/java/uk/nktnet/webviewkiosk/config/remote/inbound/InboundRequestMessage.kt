@@ -108,6 +108,6 @@ data class InboundErrorRequest(
     override fun toString() = "Request Error: $error"
 }
 
-val OutboundRequestJsonParser = Json(BaseJson) {
+val InboundRequestJsonParser = Json(BaseJson) {
     classDiscriminator = "requestType"
 }
