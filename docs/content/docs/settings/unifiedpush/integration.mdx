@@ -8,12 +8,16 @@ import { APP_NAME } from '@/config/app';
 ## 1. Curl (ntfy)
 
 If you use ntfy as your distributor and push server, it is possible
-to use curl commands to send push messages directly.
+to use curl commands to send push messages directly to {APP_NAME}.
+
+As the payload is unencrypted, you will need to enable
+`UnifiedPush -> Process Unecnrypted Messages`.
 
 Example:
 
 ```bash tab="Command"
-curl -X POST 'https://ntfy.sh/upKrWhj3FnOYKf?up=1' \
+# NOTE: Replace the URL with your registered endpoint
+curl 'https://ntfy.sh/upKsJhj5FnOYoT?up=1' \
   -d '{
     "type": "command",
     "command": "go_to_url",
@@ -24,7 +28,8 @@ curl -X POST 'https://ntfy.sh/upKrWhj3FnOYKf?up=1' \
 ```
 
 ```bash tab="Settings"
-curl -X POST 'https://ntfy.sh/upKrWhj3FnOYKf?up=1' \
+# NOTE: Replace the URL with your registered endpoint
+curl 'https://ntfy.sh/upKsJhj5FnOYoT?up=1' \
   -d '{
     "type": "settings",
     "data": {
@@ -34,3 +39,7 @@ curl -X POST 'https://ntfy.sh/upKrWhj3FnOYKf?up=1' \
     }
   }'
 ```
+
+## 2. Webpush (JavaScript/TypeScript)
+
+TODO.
