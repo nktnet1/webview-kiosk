@@ -35,7 +35,9 @@ fun UnifiedPushDistributorSetting() {
     TextSettingFieldItem(
         label = stringResource(R.string.unifiedpush_distributor_title),
         infoText = """
-            A distributor app serves as the middle-man that receives the app notification
+            The package name of the distributor.
+
+            The distributor app serves as the middle-man that receives the app notification
             from the push server and forwarding it to ${stringResource(R.string.app_name)}.
         """.trimIndent(),
         placeholder = "e.g. io.heckel.ntfy",

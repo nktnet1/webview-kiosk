@@ -23,6 +23,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import org.unifiedpush.android.connector.INSTANCE_DEFAULT
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -47,10 +48,15 @@ fun UnifiedPushInstanceSetting() {
     TextSettingFieldItem(
         label = stringResource(R.string.unifiedpush_instance_title),
         infoText = """
-            Registration instance. Can be used to get multiple registrations
+            Registration instance. Can be used to create multiple registrations.
 
-            For example:
+            Supported variables:
+            - ${UnifiedPushVariableName.APP_INSTANCE_ID.name}
+
+            Example:
             - $recommendedClientId
+            
+            If left blank, $INSTANCE_DEFAULT will be used.
         """.trimIndent(),
         placeholder = "e.g. $recommendedClientId",
         initialValue = userSettings.unifiedPushInstance,

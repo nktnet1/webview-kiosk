@@ -218,20 +218,6 @@ object UnifiedPushManager {
             return
         }
 
-        if (instance != getInstance(context)) {
-            addDebugLog(
-                "message received (ignored)",
-                """
-                instance: $instance
-                decrypted: ${message.decrypted}
-                content: $contentString
-
-                Reason:
-                - Instance mismatch: '$instance' instead of ${userSettings.unifiedPushInstance}
-                """.trimIndent()
-            )
-            return
-        }
         if (!(message.decrypted || userSettings.unifiedPushProcessUnencryptedMessages)) {
             addDebugLog(
                 "message received (ignored)",

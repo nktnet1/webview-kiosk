@@ -47,6 +47,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
+import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushEndpoint
 import uk.nktnet.webviewkiosk.managers.UnifiedPushManager
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
@@ -54,6 +55,7 @@ import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 @Composable
 fun UnifiedPushControlButtons() {
     val context = LocalContext.current
+    val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
 
     var savedDistributor by remember {
@@ -226,7 +228,6 @@ fun UnifiedPushControlButtons() {
 
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Button(
-                enabled = endpoint != null,
                 onClick = { showUnregisterConfirm = true },
                 modifier = Modifier.weight(1f),
                 colors = ButtonDefaults.buttonColors(
@@ -273,13 +274,18 @@ fun UnifiedPushControlButtons() {
                     Text("Unregister")
                 },
                 text = {
-                    Text(normaliseInfoText(
-                        """
-                        Are you sure you want to unregister from UnifiedPush?
-
-                        This action cannot be undone.
-                        """.trimIndent()
-                    ))
+                    Text(
+                        normaliseInfoText(
+                            """
+                            Are you sure you want to unregister from UnifiedPush for:
+                            
+                            - DISTRIBUTOR: ${userSettings.unifiedPushDistributor}
+                            - INSTANCE: ${UnifiedPushManager.getInstance(context)}
+    
+                            This action cannot be undone.
+                            """.trimIndent()
+                        )
+                    )
                 }
             )
         }

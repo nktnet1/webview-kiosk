@@ -18,18 +18,14 @@ fun UnifiedPushEnabledSetting() {
     BooleanSettingFieldItem(
         label = stringResource(R.string.unifiedpush_enabled_title),
         infoText = """
-            When enabled, ${stringResource(R.string.app_name)} will connect to your
-            configured UnifiedPush distributor.
+            Allow ${stringResource(R.string.app_name)} to process
+            new push messages or register new endpoints.
         """.trimIndent(),
         initialValue = userSettings.unifiedPushEnabled,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { isEnabled ->
-            val isChanged = isEnabled != userSettings.unifiedPushEnabled
-            if (isChanged) {
-                userSettings.unifiedPushEnabled = isEnabled
-                // TODO: connect to distributor
-            }
+        onSave = {
+            userSettings.unifiedPushEnabled = it
         }
     )
 }
