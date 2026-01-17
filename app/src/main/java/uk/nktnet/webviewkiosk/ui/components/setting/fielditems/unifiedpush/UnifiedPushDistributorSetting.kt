@@ -35,7 +35,10 @@ fun UnifiedPushDistributorSetting() {
     TextSettingFieldItem(
         label = stringResource(R.string.unifiedpush_distributor_title),
         infoText = """
-            The package name of the distributor.
+            The package name of the distributor, e.g.
+
+            - org.unifiedpush.distributor.sunup
+            - io.heckel.ntfy
 
             The distributor app serves as the middle-man that receives the app notification
             from the push server and forwarding it to ${stringResource(R.string.app_name)}.

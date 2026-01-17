@@ -22,13 +22,13 @@ To use UnifiedPush with {APP_NAME}, you will need to choose a
 [distributor](https://unifiedpush.org/users/distributors)
 application, e.g.
 
-- [ntfy-android](https://github.com/binwiederhier/ntfy-android)
-- [Sunup/android](https://codeberg.org/Sunup/android)
+- [sunup](https://codeberg.org/Sunup/android)
+- [ntfy (android)](https://github.com/binwiederhier/ntfy-android)
 
 You will also need a push server, e.g. by self-hosting or using the public servers for:
 
-- [ntfy](https://github.com/binwiederhier/ntfy)
 - [autopush-rs](https://github.com/p1gp1g/autopush-rs)
+- [ntfy (server)](https://github.com/binwiederhier/ntfy)
 
 ## 3. Debug Logs
 
@@ -57,8 +57,8 @@ Allow {APP_NAME} to process new push messages or register new endpoints.
 
 The package name of the [distributor](https://unifiedpush.org/users/distributors), e.g.
 
-- io.heckel.ntfy
 - org.unifiedpush.distributor.sunup
+- io.heckel.ntfy
 
 The distributor app serves as the middle-man that receives the app notification
 from the push server and forwarding it to {APP_NAME}.
