@@ -55,7 +55,7 @@ fun UnifiedPushDistributorSetting() {
         onSave = {
             userSettings.unifiedPushDistributor = it
         },
-        extraContent = { setValue: (String) -> Unit ->
+        extraContent = { _, setValue ->
             if (restricted) {
                 return@TextSettingFieldItem
             }

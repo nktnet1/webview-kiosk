@@ -54,7 +54,7 @@ fun UnifiedPushVapidPublicKeySetting() {
         onSave = {
             userSettings.unifiedPushVapidPublicKey = it
         },
-        extraContent = { setValue: (String) -> Unit ->
+        extraContent = { _, setValue ->
             if (restricted) {
                 return@TextSettingFieldItem
             }

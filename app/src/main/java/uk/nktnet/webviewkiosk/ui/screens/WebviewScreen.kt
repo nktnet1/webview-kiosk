@@ -571,7 +571,13 @@ fun WebviewScreen(navController: NavController) {
     HistoryDialog(
         isOpenHistoryDialog,
         { isOpenHistoryDialog = false },
-        ::customLoadUrl
+        { _, index ->
+            WebViewNavigation.navigateToIndex(
+                ::customLoadUrl,
+                systemSettings,
+                index
+            )
+        }
     )
 
     BookmarksDialog(

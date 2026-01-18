@@ -89,7 +89,7 @@ fun UnifiedPushInstanceSetting() {
             }
         },
         onSave = { userSettings.unifiedPushInstance = it },
-        extraContent = { setValue: (String) -> Unit ->
+        extraContent = { _, setValue ->
             if (restricted) {
                 return@TextSettingFieldItem
             }
