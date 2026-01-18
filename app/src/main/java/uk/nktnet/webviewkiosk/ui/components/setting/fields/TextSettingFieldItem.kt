@@ -50,7 +50,14 @@ fun TextSettingFieldItem(
     readOnly: Boolean = false,
     isPassword: Boolean = false,
     descriptionFormatter: ((String) -> String)? = null,
-    extraContent: (@Composable ((setValue: (String) -> Unit) -> Unit))? = null,
+    extraContent: (
+        @Composable (
+            (
+                draftValue: String,
+                setValue: (String) -> Unit,
+            ) -> Unit
+        )
+    )? = null,
 ) {
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
@@ -223,7 +230,10 @@ fun TextSettingFieldItem(
                             .padding(top = 8.dp)
                     )
                 }
-                extraContent?.invoke { draftValue = it; draftError = !validator(it) }
+                extraContent?.invoke(draftValue) {
+                    draftValue = it
+                    draftError = !validator(it)
+                }
             }
         }
     }

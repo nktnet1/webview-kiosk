@@ -15,7 +15,6 @@ import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
-import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 
 object DeviceOwnerManager {

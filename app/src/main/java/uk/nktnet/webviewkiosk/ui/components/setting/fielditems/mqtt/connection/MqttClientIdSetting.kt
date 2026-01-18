@@ -76,12 +76,12 @@ fun MqttClientIdSetting() {
             }
         },
         onSave = { userSettings.mqttClientId = it },
-        extraContent = { setValue: (String) -> Unit ->
+        extraContent = { _, setDraftValue ->
             if (restricted) {
                 return@TextSettingFieldItem
             }
             Button(
-                onClick = { setValue(recommendedClientId) },
+                onClick = { setDraftValue(recommendedClientId) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 8.dp),
