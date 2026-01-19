@@ -1,0 +1,4 @@
+## Changes
+
+- feat: set home url using history
+- feat: append bookmarks with the current URL or select from history
