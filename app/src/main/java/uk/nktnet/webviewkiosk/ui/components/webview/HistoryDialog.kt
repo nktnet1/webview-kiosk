@@ -76,6 +76,7 @@ fun HistoryDialog(
     onDismiss: () -> Unit,
     onItemClick: (item: HistoryEntry, index: Int) -> Unit,
     disableCurrent: Boolean = true,
+    highlightCurrent: Boolean = true,
 ) {
     if (!showHistoryDialog) {
         return
@@ -172,12 +173,13 @@ fun HistoryDialog(
                                         },
                                         maxLines = 3,
                                         overflow = TextOverflow.Ellipsis,
-                                        style = if (isCurrent)
+                                        style = if (isCurrent && highlightCurrent) {
                                             MaterialTheme.typography.bodyMedium.copy(
                                                 color = MaterialTheme.colorScheme.primary,
                                             )
-                                        else
+                                        } else {
                                             MaterialTheme.typography.bodyMedium
+                                        }
                                     )
                                     Text(
                                         text = formatDatetime(context, item.visitedAt),

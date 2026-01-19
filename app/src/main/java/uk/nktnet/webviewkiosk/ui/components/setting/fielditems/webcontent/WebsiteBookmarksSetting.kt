@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -108,14 +109,14 @@ fun WebsiteBookmarksSetting() {
                 onClick = { isOpenHistoryDialog = true },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp),
+                    .height(50.dp)
+                    .padding(top = 6.dp),
                 shape = RoundedCornerShape(4.dp),
                 colors = ButtonDefaults.buttonColors()
             ) {
                 Text(
                     text = "Select from History",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimary,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -128,7 +129,8 @@ fun WebsiteBookmarksSetting() {
                 { item, _ ->
                     appendBookmark(item.url)
                 },
-                false,
+                disableCurrent = false,
+                highlightCurrent = false,
             )
         }
     )
