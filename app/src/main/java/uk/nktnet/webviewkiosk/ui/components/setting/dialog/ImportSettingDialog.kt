@@ -166,8 +166,12 @@ fun ImportSettingsDialog(
                         IconButton(onClick = {
                             scope.launch {
                                 val clipEntry = clipboard.getClipEntry()
-                                importText =
-                                    clipEntry?.clipData?.getItemAt(0)?.text?.toString() ?: ""
+                                importText = clipEntry
+                                    ?.clipData
+                                    ?.getItemAt(0)
+                                    ?.text
+                                    ?.toString()
+                                    ?: ""
                             }
                         }) {
                             Icon(
