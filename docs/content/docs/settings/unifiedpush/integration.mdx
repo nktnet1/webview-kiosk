@@ -60,7 +60,7 @@ Create an empty project with the following `package.json`:
 
 ```json
 {
-	"type": "module",
+  "type": "module",
   "dependencies": {
     "dotenv": "^17.2.3",
     "valibot": "^1.2.0",
@@ -178,7 +178,7 @@ const WebPushEnvSchema = v.object({
   ENDPOINT_AUTH: v.string(),
 });
 
-const main = async () => {
+const createToast = async () => {
   const env = v.parse(WebPushEnvSchema, process.env);
 
   webPush.setVapidDetails(
@@ -204,15 +204,21 @@ const main = async () => {
       },
     }),
   );
-  console.log("Result:", res);
+  return res;
 };
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  void main().catch((err) => {
+/**
+ * This will create a small pop-up message on Webview Kiosk
+ */
+void createToast()
+  .then((data) => {
+    console.log(data);
+    process.exit(0);
+  })
+  .catch((err) => {
     console.error(err);
     process.exit(1);
-  });
-}
+});
 ```
 
 </Step>

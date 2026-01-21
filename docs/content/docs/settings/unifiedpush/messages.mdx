@@ -1,15 +1,16 @@
 ---
 title: Messages
-description: Data format for push message
+description: Data format for push message payload
 ---
 
 import { APP_NAME } from '@/config/app';
 
 {APP_NAME} push message payloads are similar to that of [MQTT](/docs/settings/mqtt).
-However, as there is no concept of *topics*, all messages are sent to a single
-UnifiedPush endpoint.
+However, all messages are sent to a single UnifiedPush endpoint instead of being
+separated by topics.
 
-Thus, a `type` property is used to differentiate between `command` and `settings`.
+A `type` property is used to differentiate between the different actions such
+as `command` and `settings`.
 
 ## 1. Command
 

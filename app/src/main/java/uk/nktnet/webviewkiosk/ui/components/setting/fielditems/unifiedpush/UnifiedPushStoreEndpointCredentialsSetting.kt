@@ -19,7 +19,7 @@ fun UnifiedPushStoreEndpointCredentialsSetting() {
         label = stringResource(R.string.unifiedpush_store_endpoint_credentials_title),
         infoText = """
             When enabled, ${stringResource(R.string.app_name)} will persist
-            the following values:
+            the following values after registration:
 
             - Endpoint URL
             - Endpoint Public Key
