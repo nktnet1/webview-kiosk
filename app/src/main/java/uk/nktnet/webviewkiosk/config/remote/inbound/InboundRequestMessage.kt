@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config.mqtt.messages
+package uk.nktnet.webviewkiosk.config.remote.inbound
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -7,7 +7,7 @@ import kotlinx.serialization.json.JsonElement
 import uk.nktnet.webviewkiosk.utils.BaseJson
 
 @Serializable
-sealed interface MqttRequestMessage {
+sealed interface InboundRequestMessage {
     val messageId: String?
     val targetInstances: Set<String>?
     val targetUsernames: Set<String>?
@@ -17,26 +17,26 @@ sealed interface MqttRequestMessage {
 
 @Serializable
 @SerialName("get_status")
-data class MqttStatusRequest(
+data class InboundStatusRequest(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override var responseTopic: String? = null,
     override var correlationData: String? = null,
-) : MqttRequestMessage {
+) : InboundRequestMessage {
     override fun toString() = "get_status"
 }
 
 @Serializable
 @SerialName("get_settings")
-data class MqttSettingsRequest(
+data class InboundSettingsRequest(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override var responseTopic: String? = null,
     override var correlationData: String? = null,
     val data: SettingsRequestData = SettingsRequestData(),
-) : MqttRequestMessage {
+) : InboundRequestMessage {
     @Serializable
     data class SettingsRequestData(
         val settings: Array<JsonElement> = emptyArray(),
@@ -55,26 +55,26 @@ data class MqttSettingsRequest(
 
 @Serializable
 @SerialName("get_system_info")
-data class MqttSystemInfoRequest(
+data class InboundSystemInfoRequest(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override var responseTopic: String? = null,
     override var correlationData: String? = null,
-) : MqttRequestMessage {
+) : InboundRequestMessage {
     override fun toString() = "get_system_info"
 }
 
 @Serializable
 @SerialName("get_launchable_packages")
-data class MqttLaunchablePackagesRequest(
+data class InboundLaunchablePackagesRequest(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override var responseTopic: String? = null,
     override var correlationData: String? = null,
     val data: Data = Data()
-) : MqttRequestMessage {
+) : InboundRequestMessage {
     override fun toString() = "get_launchable_packages"
     @Serializable
     data class Data(
@@ -84,19 +84,19 @@ data class MqttLaunchablePackagesRequest(
 
 @Serializable
 @SerialName("get_lock_task_packages")
-data class MqttLockTaskPackagesRequest(
+data class InboundLockTaskPackagesRequest(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override var responseTopic: String? = null,
     override var correlationData: String? = null,
-) : MqttRequestMessage {
+) : InboundRequestMessage {
     override fun toString() = "get_lock_task_packages"
 }
 
 @Serializable
 @SerialName("error")
-data class MqttErrorRequest(
+data class InboundErrorRequest(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
@@ -104,10 +104,10 @@ data class MqttErrorRequest(
     override var correlationData: String? = null,
     val payloadStr: String,
     val error: String,
-) : MqttRequestMessage {
+) : InboundRequestMessage {
     override fun toString() = "Request Error: $error"
 }
 
-val MqttRequestJsonParser = Json(BaseJson) {
+val InboundRequestJsonParser = Json(BaseJson) {
     classDiscriminator = "requestType"
 }

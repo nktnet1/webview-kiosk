@@ -28,6 +28,6 @@ fun MqttDebugLogsButton(navController: NavController) {
             .fillMaxWidth()
             .padding(bottom = 10.dp),
     ) {
-        Text(stringResource(R.string.settings_mqtt_debug_log_title))
+        Text(stringResource(R.string.settings_debug_log_title))
     }
 }

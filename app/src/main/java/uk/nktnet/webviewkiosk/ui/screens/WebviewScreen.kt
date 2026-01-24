@@ -41,25 +41,26 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.data.WebViewCreation
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttErrorCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoBackCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoForwardCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoHomeCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttGoToUrlCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttLockCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttPageDownCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttPageUpCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttRefreshCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttSearchCommand
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttUnlockCommand
 import uk.nktnet.webviewkiosk.config.option.AddressBarModeOption
 import uk.nktnet.webviewkiosk.config.option.AddressBarPositionOption
 import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
 import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundErrorCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundGoBackCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundGoForwardCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundGoHomeCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundGoToUrlCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundLockCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundPageDownCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundPageUpCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundRefreshCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSearchCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundUnlockCommand
 import uk.nktnet.webviewkiosk.handlers.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.DimScreenOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.ResetOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.managers.MqttManager
+import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.setting.BasicAuthDialog
@@ -544,19 +545,19 @@ fun WebviewScreen(navController: NavController) {
     )
 
     LaunchedEffect(Unit) {
-        MqttManager.commands.collect { command ->
-            when (command) {
-                is MqttGoBackCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)
-                is MqttGoForwardCommand -> WebViewNavigation.goForward(::customLoadUrl, systemSettings)
-                is MqttGoHomeCommand -> WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings)
-                is MqttRefreshCommand -> WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
-                is MqttGoToUrlCommand -> customLoadUrl(command.data.url)
-                is MqttSearchCommand -> addressBarSearch(command.data.query)
-                is MqttLockCommand -> tryLockTask(activity)
-                is MqttUnlockCommand -> tryUnlockTask(activity)
-                is MqttPageUpCommand -> { webView.pageUp(command.data.absolute) }
-                is MqttPageDownCommand -> { webView.pageDown(command.data.absolute) }
-                is MqttErrorCommand -> {
+        RemoteMessageManager.commands.collect { command ->
+            when (command.message) {
+                is InboundGoBackCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)
+                is InboundGoForwardCommand -> WebViewNavigation.goForward(::customLoadUrl, systemSettings)
+                is InboundGoHomeCommand -> WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings)
+                is InboundRefreshCommand -> WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
+                is InboundGoToUrlCommand -> customLoadUrl(command.message.data.url)
+                is InboundSearchCommand -> addressBarSearch(command.message.data.query)
+                is InboundLockCommand -> tryLockTask(activity)
+                is InboundUnlockCommand -> tryUnlockTask(activity)
+                is InboundPageUpCommand -> { webView.pageUp(command.message.data.absolute) }
+                is InboundPageDownCommand -> { webView.pageDown(command.message.data.absolute) }
+                is InboundErrorCommand -> {
                     ToastManager.show(
                         context,
                         "Received invalid MQTT command. See debug logs in MQTT settings."

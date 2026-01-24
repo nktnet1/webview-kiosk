@@ -21,10 +21,11 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.MainActivity
-import uk.nktnet.webviewkiosk.handlers.MqttHandler
+import uk.nktnet.webviewkiosk.handlers.RemoteInboundHandler
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.CustomNotificationType
 import uk.nktnet.webviewkiosk.managers.MqttManager
+import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 
 class MqttForegroundService : Service() {
     private var isServiceActive = true
@@ -73,27 +74,33 @@ class MqttForegroundService : Service() {
         wakeLock.acquire()
 
         mqttCommandJob = scope.launch {
-            MqttManager.commands.collect { command ->
-                MqttHandler.handleMqttCommand(
-                    this@MqttForegroundService,
-                    command
-                )
+            RemoteMessageManager.commands.collect { command ->
+                if (command.source == RemoteMessageManager.RemoteMessage.Source.MQTT) {
+                    RemoteInboundHandler.handleInboundCommand(
+                        this@MqttForegroundService,
+                        command.message
+                    )
+                }
             }
         }
         mqttSettingsJob = scope.launch {
-            MqttManager.settings.collect { settings ->
-                MqttHandler.handleMqttSettings(
-                    this@MqttForegroundService,
-                    settings
-                )
+            RemoteMessageManager.settings.collect { settings ->
+                if (settings.source == RemoteMessageManager.RemoteMessage.Source.MQTT) {
+                    RemoteInboundHandler.handleInboundSettings(
+                        this@MqttForegroundService,
+                        settings.message
+                    )
+                }
             }
         }
         mqttRequestJob = scope.launch {
-            MqttManager.requests.collect { request ->
-                MqttHandler.handleMqttRequest(
-                    this@MqttForegroundService,
-                    request
-                )
+            RemoteMessageManager.requests.collect { request ->
+                if (request.source == RemoteMessageManager.RemoteMessage.Source.MQTT) {
+                    RemoteInboundHandler.handleInboundMqttRequest(
+                        this@MqttForegroundService,
+                        request.message
+                    )
+                }
             }
         }
     }

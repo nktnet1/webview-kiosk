@@ -14,12 +14,12 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttNotifyCommand
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundNotifyCommand
 
 object CustomNotificationType {
     const val LOCK_TASK_MODE = 1001
     const val MQTT_SERVICE = 1002
-    const val MQTT_NOTIFY_COMMAND = 1003
+    const val REMOTE_NOTIFY_COMMAND = 1003
 }
 
 object CustomNotificationChannel {
@@ -29,13 +29,13 @@ object CustomNotificationChannel {
     object MqttService {
         const val ID = "mqtt_service_channel"
     }
-    object MqttNotifyCommand {
-        const val ID = "mqtt_notify_command_channel"
+    object RemoteNotifyCommand {
+        const val ID = "remote_notify_command_channel"
     }
 }
 
 object CustomNotificationManager {
-    private val lastMqttMessages = ArrayDeque<String>(5)
+    private val lastNotifications = ArrayDeque<String>(5)
 
     fun init(context: Context) {
         createChannels(context.applicationContext)
@@ -58,8 +58,8 @@ object CustomNotificationManager {
                 NotificationManager.IMPORTANCE_LOW,
             ),
             NotificationChannel(
-                CustomNotificationChannel.MqttNotifyCommand.ID,
-                context.getString(R.string.notification_mqtt_notify_command_title),
+                CustomNotificationChannel.RemoteNotifyCommand.ID,
+                context.getString(R.string.notification_remote_notify_command_title),
                 NotificationManager.IMPORTANCE_DEFAULT,
             )
         )
@@ -129,17 +129,17 @@ object CustomNotificationManager {
         }
     }
 
-    fun sendMqttNotifyCommandNotification(
+    fun sendInboundNotifyCommandNotification(
         context: Context,
-        notifyCommand: MqttNotifyCommand
+        notifyCommand: InboundNotifyCommand
     ) {
-        if (lastMqttMessages.size >= 5) {
-            lastMqttMessages.removeFirst()
+        if (lastNotifications.size >= 5) {
+            lastNotifications.removeFirst()
         }
-        lastMqttMessages.addLast(notifyCommand.data.contentText)
+        lastNotifications.addLast(notifyCommand.data.contentText)
 
         val inboxStyle = NotificationCompat.InboxStyle()
-        lastMqttMessages.forEach { msg ->
+        lastNotifications.forEach { msg ->
             inboxStyle.addLine(msg)
         }
 
@@ -153,7 +153,7 @@ object CustomNotificationManager {
 
         val notification = NotificationCompat.Builder(
             context,
-            CustomNotificationChannel.MqttNotifyCommand.ID
+            CustomNotificationChannel.RemoteNotifyCommand.ID
         )
             .setSmallIcon(R.drawable.outline_circle_notifications_24)
             .setStyle(inboxStyle)
@@ -169,7 +169,7 @@ object CustomNotificationManager {
 
         try {
             NotificationManagerCompat.from(context).notify(
-                CustomNotificationType.MQTT_NOTIFY_COMMAND,
+                CustomNotificationType.REMOTE_NOTIFY_COMMAND,
                 notification
             )
         } catch (e: SecurityException) {

@@ -47,15 +47,29 @@ and standalone Kiosk solution.
 
 ### Remote Management / Enterprise
 
-- <b>Message Queuing Telemetry Transport (MQTT)</b>
-  - Monitor events, update settings, execute commands and build custom
-    automations using the API
-  - Requires an MQTT broker (e.g. Mosquitto, EMQX or HiveMQ)
-- <b>Managed Configurations (App Restrictions)</b>
-  - For fully-managed (company-owned) devices, settings can be remotely
-    configured via an MDM/EMM provider
-  - Advanced users using a device policy controller (e.g. Test DPC or OwnDroid)
-    can also enforce configurations locally
+<ul>
+  <li>
+    <b>MQTT (Message Queuing Telemetry Transport)</b>
+    <ul>
+      <li>Monitor events, update settings, execute commands and build custom automations using the API</li>
+      <li>Requires an MQTT broker (e.g. Mosquitto, EMQX, HiveMQ)</li>
+    </ul>
+  </li>
+  <li>
+    <b>UnifiedPush</b>
+    <ul>
+      <li>Send commands and update settings via a decentralised push notification system</li>
+      <li>Requires a distributor application (e.g. sunup, ntfy)</li>
+    </ul>
+  </li>
+  <li>
+    <b>Managed Configurations (App Restrictions)</b>
+    <ul>
+      <li>For fully-managed (company-owned) devices, settings can be remotely configured via an MDM/EMM provider</li>
+      <li>Advanced users using a device policy controller (e.g. Test DPC or OwnDroid) can also enforce configurations locally</li>
+    </ul>
+  </li>
+</ul>
 
 ## Permissions
 

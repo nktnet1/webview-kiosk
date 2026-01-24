@@ -3,5 +3,5 @@
 - feat: additional details for settings -> about screen
 - fix: support webview fullscreen
 - fix: HTML UI for file not found + blocked page
-- fix: text-align center for file not found display + hint
+- fix: text-align centre for file not found display + hint
 - fix: fillMaxWidth for custom unlock shortcut

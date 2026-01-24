@@ -37,14 +37,15 @@ import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttDisconnectingEvent
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.handlers.MqttHandler
+import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundDisconnectingEvent
+import uk.nktnet.webviewkiosk.handlers.RemoteInboundHandler
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.BackButtonManager
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.MqttManager
+import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.services.MqttForegroundService
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
@@ -172,25 +173,34 @@ class MainActivity : AppCompatActivity() {
             val activity = LocalActivity.current
 
             LaunchedEffect(Unit) {
-                MqttManager.commands.collect { command ->
-                    if (!userSettings.mqttUseForegroundService) {
-                        MqttHandler.handleMqttCommand(context, command)
+                RemoteMessageManager.commands.collect { command ->
+                    if (
+                        command.source == RemoteMessageManager.RemoteMessage.Source.MQTT
+                        && !userSettings.mqttUseForegroundService
+                    ) {
+                        RemoteInboundHandler.handleInboundCommand(context, command.message)
                     }
                 }
             }
 
             LaunchedEffect(Unit) {
-                MqttManager.requests.collect { request ->
-                    if (!userSettings.mqttUseForegroundService) {
-                        MqttHandler.handleMqttRequest(context, request)
+                RemoteMessageManager.requests.collect { request ->
+                    if (
+                        request.source == RemoteMessageManager.RemoteMessage.Source.MQTT
+                        && !userSettings.mqttUseForegroundService
+                    ) {
+                        RemoteInboundHandler.handleInboundMqttRequest(context, request.message)
                     }
                 }
             }
 
             LaunchedEffect(Unit) {
-                MqttManager.settings.collect { settings ->
-                    if (!userSettings.mqttUseForegroundService) {
-                        MqttHandler.handleMqttSettings(context, settings)
+                RemoteMessageManager.settings.collect { settings ->
+                    if (
+                        settings.source == RemoteMessageManager.RemoteMessage.Source.MQTT
+                        && !userSettings.mqttUseForegroundService
+                    ) {
+                        RemoteInboundHandler.handleInboundSettings(context, settings.message)
                     }
 
                     // Counterintuitive, but this acts as a "Refresh" of the webview screen,
@@ -198,7 +208,7 @@ class MainActivity : AppCompatActivity() {
                     // If we're on another screen though (e.g. settings), then let the user
                     // decide when to navigate back.
                     if (
-                        settings.reloadActivity
+                        settings.message.reloadActivity
                         && navController.currentDestination?.route == Screen.WebView.route
                     ) {
                         navigateToWebViewScreen(navController)
@@ -319,7 +329,7 @@ class MainActivity : AppCompatActivity() {
                     MqttManager.publishAppBackgroundEvent()
                 } else {
                     MqttManager.disconnect(
-                        cause = MqttDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_STOPPED
+                        cause = OutboundDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_STOPPED
                     )
                 }
             }
@@ -373,7 +383,7 @@ class MainActivity : AppCompatActivity() {
             && MqttManager.isConnected()
         ) {
             MqttManager.disconnect(
-                cause = MqttDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_DESTROYED
+                cause = OutboundDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_DESTROYED
             )
         }
         stopService(

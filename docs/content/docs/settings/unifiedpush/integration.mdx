@@ -1,0 +1,239 @@
+---
+title: Integration
+description: Examples of sending push messages
+---
+
+import { APP_NAME } from '@/config/app';
+
+## 1. Curl (ntfy)
+
+<Callout title="Warning" type="warning">
+
+This solution is specific to the ntfy server and is less secure than web push.
+
+</Callout>
+
+If you use [ntfy](https://github.com/binwiederhier/ntfy) as your distributor
+and push server, it is possible to send push messages directly to {APP_NAME}
+via an [API client](https://www.postman.com/api-platform/api-client/) such as
+[curl](https://curl.se).
+
+To use this method, you will need to enable the setting
+`UnifiedPush -> Process Unencrypted Messages`.
+
+Example:
+
+```bash tab="Command"
+# NOTE: Replace the URL with your registered endpoint
+curl 'https://ntfy.sh/upKsJhj5FnOYoT?up=1' \
+  -d '{
+    "type": "command",
+    "command": "go_to_url",
+    "data": {
+      "url": "https://webviewkiosk.nktnet.uk"
+    }
+  }'
+```
+
+```bash tab="Settings"
+# NOTE: Replace the URL with your registered endpoint
+curl 'https://ntfy.sh/upKsJhj5FnOYoT?up=1' \
+  -d '{
+    "type": "settings",
+    "data": {
+      "settings": {
+        "appearance.theme": "LIGHT"
+      }
+    }
+  }'
+```
+
+## 2. Web Push
+
+The guide below uses JavaScript (TypeScript).
+
+<Steps>
+
+<Step>
+
+Create an empty project with the following `package.json`:
+
+```json
+{
+  "type": "module",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "valibot": "^1.2.0",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.9",
+    "@types/web-push": "^3.6.4",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
+```
+</Step>
+
+<Step>
+
+Use your preferred package manager to install the dependencies:
+
+```sh
+pnpm install
+```
+
+</Step>
+
+<Step>
+
+Create `src/vapid.ts` with the following content:
+
+```ts
+import webPush from "web-push";
+
+const generateVAPID = () => {
+  const vapidKeys = webPush.generateVAPIDKeys();
+  const vapidSubject = "mailto:admin@example.com";
+
+  console.log("Add the following to your .env file:\n");
+  console.log(`WEBPUSH_VAPID_PUBLIC=${vapidKeys.publicKey}`);
+  console.log(`WEBPUSH_VAPID_PRIVATE=${vapidKeys.privateKey}`);
+  console.log(`WEBPUSH_VAPID_SUBJECT=${vapidSubject}`);
+};
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+  void generateVAPID();
+}
+```
+
+</Step>
+
+<Step>
+
+Generate your VAPID keys:
+
+```sh
+pnpx tsx src/vapid.ts
+```
+
+</Step>
+
+<Step>
+
+Create a new file called `.env` and populate first 3 VAPID values below:
+
+```bash
+# VAPID keys
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=
+
+# UnifiedPush Credentials
+ENDPOINT_URL=
+ENDPOINT_PUBLIC_KEY=
+ENDPOINT_AUTH=
+```
+
+</Step>
+
+<Step>
+
+In {APP_NAME}, under the `Settings -> UnifiedPush` screen,
+
+1. Enable UnifiedPush
+2. Select a distributor (e.g. ntfy or sunup)
+3. Paste in your VAPID public key (generated in a previous step)
+
+</Step>
+
+<Step>
+
+Click the `Register` button, then expand the status box and copy the
+
+- Endpoint URL
+- Endpoint Public Key
+- Endpoint Auth Secret
+
+To your `.env` file.
+
+</Step>
+
+<Step>
+
+Create `src/index.ts` with the following content:
+
+```ts
+import webPush from "web-push";
+import * as v from "valibot";
+import "dotenv/config";
+
+const WebPushEnvSchema = v.object({
+  VAPID_PUBLIC_KEY: v.string(),
+  VAPID_PRIVATE_KEY: v.string(),
+  VAPID_SUBJECT: v.string(),
+  ENDPOINT_URL: v.string(),
+  ENDPOINT_PUBLIC_KEY: v.string(),
+  ENDPOINT_AUTH: v.string(),
+});
+
+const createToast = async () => {
+  const env = v.parse(WebPushEnvSchema, process.env);
+
+  webPush.setVapidDetails(
+    env.VAPID_SUBJECT,
+    env.VAPID_PUBLIC_KEY,
+    env.VAPID_PRIVATE_KEY,
+  );
+
+  const res = await webPush.sendNotification(
+    {
+      endpoint: env.ENDPOINT_URL,
+      keys: {
+        p256dh: env.ENDPOINT_PUBLIC_KEY,
+        auth: env.ENDPOINT_AUTH,
+      },
+    },
+    JSON.stringify({
+      type: "command",
+      command: "toast",
+      wakeScreen: true,
+      data: {
+        message: "Hello from UnifiedPush!",
+      },
+    }),
+  );
+  return res;
+};
+
+/**
+ * This will create a small pop-up message on Webview Kiosk
+ */
+void createToast()
+  .then((data) => {
+    console.log(data);
+    process.exit(0);
+  })
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+});
+```
+
+</Step>
+
+<Step>
+
+Run the script with:
+
+```sh
+pnpx tsx src/index.ts
+```
+
+This will result in {APP_NAME} creating an on-screen message (i.e. toast) on
+your device.
+
+</Step>
+
+</Steps>

@@ -912,6 +912,46 @@ class UserSettings(val context: Context) {
         false
     )
 
+    // UnifiedPush
+    var unifiedPushEnabled by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.UnifiedPush.ENABLED,
+        false
+    )
+    var unifiedPushDistributor by stringPrefOptional(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.UnifiedPush.DISTRIBUTOR,
+    )
+    var unifiedPushInstance by stringPrefOptional(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.UnifiedPush.INSTANCE,
+    )
+    var unifiedPushMessageForDistributor by stringPrefOptional(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.UnifiedPush.MESSAGE_FOR_DISTRIBUTOR,
+    )
+    var unifiedPushVapidPublicKey by stringPrefOptional(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.UnifiedPush.VAPID_PUBLIC_KEY,
+    )
+    var unifiedPushProcessUnencryptedMessages by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.UnifiedPush.PROCESS_UNENCRYPTED_MESSAGES,
+        false
+    )
+    var unifiedPushStoreEndpointCredentials by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.UnifiedPush.STORE_ENDPOINT_CREDENTIALS,
+        true
+    )
+
     fun exportJson(): JSONObject {
         val json = JSONObject().apply {
             put(UserSettingsKeys.WebContent.HOME_URL, homeUrl)
@@ -1055,6 +1095,14 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Mqtt.Restrictions.SEND_TOPIC_ALIAS_MAXIMUM, mqttRestrictionsSendTopicAliasMaximum)
             put(UserSettingsKeys.Mqtt.Restrictions.REQUEST_PROBLEM_INFORMATION, mqttRestrictionsRequestProblemInformation)
             put(UserSettingsKeys.Mqtt.Restrictions.REQUEST_RESPONSE_INFORMATION, mqttRestrictionsRequestResponseInformation)
+
+            put(UserSettingsKeys.UnifiedPush.ENABLED, unifiedPushEnabled)
+            put(UserSettingsKeys.UnifiedPush.DISTRIBUTOR, unifiedPushDistributor)
+            put(UserSettingsKeys.UnifiedPush.INSTANCE, unifiedPushInstance)
+            put(UserSettingsKeys.UnifiedPush.MESSAGE_FOR_DISTRIBUTOR, unifiedPushMessageForDistributor)
+            put(UserSettingsKeys.UnifiedPush.VAPID_PUBLIC_KEY, unifiedPushVapidPublicKey)
+            put(UserSettingsKeys.UnifiedPush.PROCESS_UNENCRYPTED_MESSAGES, unifiedPushProcessUnencryptedMessages)
+            put(UserSettingsKeys.UnifiedPush.STORE_ENDPOINT_CREDENTIALS, unifiedPushStoreEndpointCredentials)
         }
         return json
     }
@@ -1248,6 +1296,14 @@ class UserSettings(val context: Context) {
             mqttRestrictionsSendTopicAliasMaximum = json.optInt(UserSettingsKeys.Mqtt.Restrictions.SEND_TOPIC_ALIAS_MAXIMUM, mqttRestrictionsSendTopicAliasMaximum)
             mqttRestrictionsRequestProblemInformation = json.optBoolean(UserSettingsKeys.Mqtt.Restrictions.REQUEST_PROBLEM_INFORMATION, mqttRestrictionsRequestProblemInformation)
             mqttRestrictionsRequestResponseInformation = json.optBoolean(UserSettingsKeys.Mqtt.Restrictions.REQUEST_RESPONSE_INFORMATION, mqttRestrictionsRequestResponseInformation)
+
+            unifiedPushEnabled = json.optBoolean(UserSettingsKeys.UnifiedPush.ENABLED, unifiedPushEnabled)
+            unifiedPushDistributor = json.optString(UserSettingsKeys.UnifiedPush.DISTRIBUTOR, unifiedPushDistributor)
+            unifiedPushInstance = json.optString(UserSettingsKeys.UnifiedPush.INSTANCE, unifiedPushInstance)
+            unifiedPushMessageForDistributor = json.optString(UserSettingsKeys.UnifiedPush.MESSAGE_FOR_DISTRIBUTOR, unifiedPushMessageForDistributor)
+            unifiedPushVapidPublicKey = json.optString(UserSettingsKeys.UnifiedPush.VAPID_PUBLIC_KEY, unifiedPushVapidPublicKey)
+            unifiedPushProcessUnencryptedMessages = json.optBoolean(UserSettingsKeys.UnifiedPush.PROCESS_UNENCRYPTED_MESSAGES, unifiedPushProcessUnencryptedMessages)
+            unifiedPushStoreEndpointCredentials = json.optBoolean(UserSettingsKeys.UnifiedPush.STORE_ENDPOINT_CREDENTIALS, unifiedPushStoreEndpointCredentials)
             true
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, "Failed to import JSON", e)

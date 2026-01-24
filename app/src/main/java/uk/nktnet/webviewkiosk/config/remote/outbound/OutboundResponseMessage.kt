@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config.mqtt.messages
+package uk.nktnet.webviewkiosk.config.remote.outbound
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -9,7 +9,7 @@ import uk.nktnet.webviewkiosk.utils.BaseJson
 import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
 
 @Serializable
-sealed interface MqttResponseMessage {
+sealed interface OutboundResponseMessage {
     val messageId: String
     val username: String
     val appInstanceId: String
@@ -20,27 +20,27 @@ sealed interface MqttResponseMessage {
 
 @Serializable
 @SerialName("get_status")
-data class MqttStatusResponse(
+data class OutboundStatusResponse(
     override val messageId: String,
     override val username: String,
     override val appInstanceId: String,
     override val requestMessageId: String?,
     override val correlationData: String?,
     val data: WebviewKioskStatus,
-) : MqttResponseMessage {
+) : OutboundResponseMessage {
     override fun getType(): String = "status"
 }
 
 @Serializable
 @SerialName("get_settings")
-data class MqttSettingsResponse(
+data class OutboundSettingsResponse(
     override var messageId: String,
     override val username: String,
     override val appInstanceId: String,
     override val requestMessageId: String?,
     override val correlationData: String?,
     val data: SettingsResponseData,
-) : MqttResponseMessage {
+) : OutboundResponseMessage {
     override fun getType(): String = "settings"
     @Serializable
     data class SettingsResponseData(
@@ -50,27 +50,27 @@ data class MqttSettingsResponse(
 
 @Serializable
 @SerialName("get_system_info")
-data class MqttSystemInfoResponse(
+data class OutboundSystemInfoResponse(
     override var messageId: String,
     override val username: String,
     override val appInstanceId: String,
     override val requestMessageId: String?,
     override val correlationData: String?,
     val data: SystemInfo,
-) : MqttResponseMessage {
+) : OutboundResponseMessage {
     override fun getType(): String = "system_info"
 }
 
 @Serializable
 @SerialName("get_launchable_packages")
-data class MqttLaunchablePackagesResponse(
+data class OutboundLaunchablePackagesResponse(
     override var messageId: String,
     override val username: String,
     override val appInstanceId: String,
     override val requestMessageId: String?,
     override val correlationData: String?,
     val data: Data,
-) : MqttResponseMessage {
+) : OutboundResponseMessage {
     override fun getType(): String = "get_launchable_packages"
     @Serializable
     data class Data(
@@ -80,14 +80,14 @@ data class MqttLaunchablePackagesResponse(
 
 @Serializable
 @SerialName("get_lock_task_packages")
-data class MqttLockTaskPackagesResponse(
+data class OutboundLockTaskPackagesResponse(
     override var messageId: String,
     override val username: String,
     override val appInstanceId: String,
     override val requestMessageId: String?,
     override val correlationData: String?,
     val data: Data,
-) : MqttResponseMessage {
+) : OutboundResponseMessage {
     override fun getType(): String = "get_lock_task_packages"
     @Serializable
     data class Data(
@@ -97,7 +97,7 @@ data class MqttLockTaskPackagesResponse(
 
 @Serializable
 @SerialName("error")
-data class MqttErrorResponse(
+data class OutboundErrorResponse(
     override var messageId: String,
     override val username: String,
     override val appInstanceId: String,
@@ -105,10 +105,10 @@ data class MqttErrorResponse(
     override val correlationData: String?,
     val payloadStr: String,
     val errorMessage: String,
-) : MqttResponseMessage {
+) : OutboundResponseMessage {
     override fun getType(): String = "error"
 }
 
-val MqttResponseJsonParser = Json(BaseJson) {
+val OutboundResponseJsonParser = Json(BaseJson) {
     classDiscriminator = "responseType"
 }

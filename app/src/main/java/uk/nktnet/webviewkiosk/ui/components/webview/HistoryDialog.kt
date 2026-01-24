@@ -45,8 +45,8 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.HistoryEntry
 import uk.nktnet.webviewkiosk.config.SystemSettings
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttClearHistoryCommand
-import uk.nktnet.webviewkiosk.managers.MqttManager
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundClearHistoryCommand
+import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
@@ -106,9 +106,9 @@ fun HistoryDialog(
     }
 
     LaunchedEffect(Unit) {
-        MqttManager.commands.collect { commandMessage ->
-            when (commandMessage) {
-                is MqttClearHistoryCommand -> {
+        RemoteMessageManager.commands.collect { commandMessage ->
+            when (commandMessage.message) {
+                is InboundClearHistoryCommand -> {
                     // The actual history is cleared in main activity
                     delay(100)
                     history = systemSettings.historyStack

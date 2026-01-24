@@ -25,7 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.hivemq.client.mqtt.MqttClientState
 import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.mqtt.messages.MqttDisconnectingEvent
+import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundDisconnectingEvent
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import kotlin.math.max
@@ -99,7 +99,7 @@ fun MqttControlButtons() {
                         onClick = {
                             isDisconnecting = true
                             MqttManager.disconnect(
-                                cause = MqttDisconnectingEvent.DisconnectCause.USER_INITIATED_DISCONNECT,
+                                cause = OutboundDisconnectingEvent.DisconnectCause.USER_INITIATED_DISCONNECT,
                                 onDisconnected = {
                                     isDisconnecting = false
                                     ToastManager.show(context, "MQTT disconnected successfully")
@@ -124,7 +124,7 @@ fun MqttControlButtons() {
                         onClick = {
                             isRestarting = true
                             MqttManager.disconnect(
-                                cause = MqttDisconnectingEvent.DisconnectCause.USER_INITIATED_RESTART,
+                                cause = OutboundDisconnectingEvent.DisconnectCause.USER_INITIATED_RESTART,
                                 onDisconnected = {
                                     MqttManager.connect(
                                         context.applicationContext,

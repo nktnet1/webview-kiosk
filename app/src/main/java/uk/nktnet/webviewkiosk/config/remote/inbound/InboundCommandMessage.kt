@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.config.mqtt.messages
+package uk.nktnet.webviewkiosk.config.remote.inbound
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -7,7 +7,7 @@ import uk.nktnet.webviewkiosk.config.mqtt.MqttNotifyPriority
 import uk.nktnet.webviewkiosk.utils.BaseJson
 
 @Serializable
-sealed interface MqttCommandMessage {
+sealed interface InboundCommandMessage {
     val messageId: String?
     val targetInstances: Set<String>?
     val targetUsernames: Set<String>?
@@ -17,62 +17,62 @@ sealed interface MqttCommandMessage {
 
 @Serializable
 @SerialName("go_back")
-data class MqttGoBackCommand(
+data class InboundGoBackCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-    ) : MqttCommandMessage {
+    ) : InboundCommandMessage {
     override fun toString() = "go_back"
 }
 
 @Serializable
 @SerialName("go_forward")
-data class MqttGoForwardCommand(
+data class InboundGoForwardCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-) : MqttCommandMessage {
+) : InboundCommandMessage {
     override fun toString() = "go_forward"
 }
 
 @Serializable
 @SerialName("go_home")
-data class MqttGoHomeCommand(
+data class InboundGoHomeCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-) : MqttCommandMessage {
+) : InboundCommandMessage {
     override fun toString() = "go_home"
 }
 
 @Serializable
 @SerialName("refresh")
-data class MqttRefreshCommand(
+data class InboundRefreshCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-) : MqttCommandMessage {
+) : InboundCommandMessage {
     override fun toString() = "refresh"
 }
 
 @Serializable
 @SerialName("go_to_url")
-data class MqttGoToUrlCommand(
+data class InboundGoToUrlCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
     val data: UrlData,
-) : MqttCommandMessage {
+) : InboundCommandMessage {
     @Serializable
     data class UrlData(
         val url: String
@@ -82,14 +82,14 @@ data class MqttGoToUrlCommand(
 
 @Serializable
 @SerialName("search")
-data class MqttSearchCommand(
+data class InboundSearchCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
     val data: QueryData,
-) : MqttCommandMessage {
+) : InboundCommandMessage {
     @Serializable
     data class QueryData(
         val query: String
@@ -99,38 +99,38 @@ data class MqttSearchCommand(
 
 @Serializable
 @SerialName("clear_history")
-data class MqttClearHistoryCommand(
+data class InboundClearHistoryCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-    ) : MqttCommandMessage {
+    ) : InboundCommandMessage {
     override fun toString() = "clear_history"
 }
 
 @Serializable
 @SerialName("clear_cache")
-data class MqttClearCacheCommand(
+data class InboundClearCacheCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-) : MqttCommandMessage {
+) : InboundCommandMessage {
     override fun toString() = "clear_cache"
 }
 
 @Serializable
 @SerialName("toast")
-data class MqttToastCommand(
+data class InboundToastCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
     val data: ToastData? = null
-) : MqttCommandMessage {
+) : InboundCommandMessage {
     @Serializable
     data class ToastData(
         val message: String
@@ -140,62 +140,62 @@ data class MqttToastCommand(
 
 @Serializable
 @SerialName("lock")
-data class MqttLockCommand(
+data class InboundLockCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-    ) : MqttCommandMessage {
+    ) : InboundCommandMessage {
     override fun toString() = "lock"
 }
 
 @Serializable
 @SerialName("unlock")
-data class MqttUnlockCommand(
+data class InboundUnlockCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-    ) : MqttCommandMessage {
+    ) : InboundCommandMessage {
     override fun toString() = "unlock"
 }
 
 @Serializable
 @SerialName("reconnect")
-data class MqttReconnectCommand(
+data class InboundReconnectCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-    ) : MqttCommandMessage {
+    ) : InboundCommandMessage {
     override fun toString() = "reconnect"
 }
 
 @Serializable
 @SerialName("lock_device")
-data class MqttLockDeviceCommand(
+data class InboundLockDeviceCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-    ) : MqttCommandMessage {
+    ) : InboundCommandMessage {
     override fun toString() = "lock_device"
 }
 
 @Serializable
 @SerialName("page_up")
-data class MqttPageUpCommand(
+data class InboundPageUpCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
     val data: PageUpData = PageUpData(),
-) : MqttCommandMessage {
+) : InboundCommandMessage {
     @Serializable
     data class PageUpData(
         val absolute: Boolean = false
@@ -205,14 +205,14 @@ data class MqttPageUpCommand(
 
 @Serializable
 @SerialName("page_down")
-data class MqttPageDownCommand(
+data class InboundPageDownCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
     val data: PageDownData = PageDownData(),
-) : MqttCommandMessage {
+) : InboundCommandMessage {
     @Serializable
     data class PageDownData(
         val absolute: Boolean = false
@@ -222,14 +222,14 @@ data class MqttPageDownCommand(
 
 @Serializable
 @SerialName("notify")
-data class MqttNotifyCommand(
+data class InboundNotifyCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
     val data: NotifyData = NotifyData(),
-) : MqttCommandMessage {
+) : InboundCommandMessage {
     @Serializable
     data class NotifyData(
         val contentTitle: String = "MQTT",
@@ -245,14 +245,14 @@ data class MqttNotifyCommand(
 
 @Serializable
 @SerialName("launch_package")
-data class MqttLaunchPackageCommand(
+data class InboundLaunchPackageCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
     val data: Data,
-) : MqttCommandMessage {
+) : InboundCommandMessage {
     @Serializable
     data class Data(
         val packageName: String,
@@ -263,17 +263,17 @@ data class MqttLaunchPackageCommand(
 
 @Serializable
 @SerialName("error")
-data class MqttErrorCommand(
+data class InboundErrorCommand(
     override val messageId: String? = null,
     override val targetInstances: Set<String>? = null,
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
     val error: String = "unknown command",
-) : MqttCommandMessage {
+) : InboundCommandMessage {
     override fun toString() = "error"
 }
 
-val MqttCommandJsonParser = Json(BaseJson) {
+val InboundCommandJsonParser = Json(BaseJson) {
     classDiscriminator = "command"
 }

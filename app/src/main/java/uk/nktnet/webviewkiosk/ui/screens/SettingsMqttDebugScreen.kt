@@ -109,7 +109,7 @@ fun SettingsMqttDebugScreen(navController: NavController) {
         Column(modifier = Modifier.fillMaxSize()) {
             SettingLabel(
                 navController = navController,
-                label = stringResource(R.string.settings_mqtt_debug_log_title)
+                label = stringResource(R.string.settings_debug_log_title)
             )
             SettingDivider()
 
