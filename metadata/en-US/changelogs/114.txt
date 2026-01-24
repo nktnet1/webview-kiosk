@@ -1,0 +1,14 @@
+## UnifiedPush
+
+Adds support for UnifiedPush, a decentralised push notification system designed to be privacy-friendly, flexible, and open.
+
+Similar to MQTT, this can be used to remotely:
+
+- perform actions via commands
+- update the app settings
+
+To use this feature, you will need a distributor application such as sunup or ntfy.
+
+For more details, visit the documentation:
+
+- https://webviewkiosk.nktnet.uk/docs/settings/unifiedpush/
