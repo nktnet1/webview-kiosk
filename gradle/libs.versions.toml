@@ -12,7 +12,7 @@ hiddenapibypass = "6.1"
 kotlin = "2.3.0"
 kotlinSerializationPlugin = "2.3.0"
 kotlinxSerializationJson = "1.10.0"
-navigationCompose = "2.9.6"
+navigationCompose = "2.9.7"
 reorderable = "3.0.0"
 swiperefreshlayout = "1.2.0"
 
