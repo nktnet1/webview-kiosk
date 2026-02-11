@@ -38,12 +38,12 @@ into the item (instead of the toggle/switch) to see additional options.
 This will ensure that users cannot unpin (and thus unlock) the kiosk view without
 the device first locking itself and requiring your biometrics or credentials.
 
-For more on Android App Pinning, visit the following resources:
+For more on Android App Pinning ([screen pinning](https://developer.android.com/about/versions/lollipop/android-5.0#ScreenPinning)), refer to:
 
 1. [Google Official Documentation](https://support.google.com/android/answer/9455138)
 1. [Samsung Guide for Unpin Lock](https://www.samsung.com/sg/support/mobile-devices/pin-an-app-to-your-phone-screen-so-that-it-cant-be-closed)
 
-When in screen-pinning mode, you will not be able to launch other applications.
+When in screen pinning mode, you will not be able to launch other applications.
 See the `Device Owner Mode` section for further details.
 
 ### 3.2. Device Policy Controller
@@ -56,14 +56,18 @@ add {APP_NAME} to the allowlist of apps for lock task packages.
 This has the benefits of:
 
 1. removing warnings and instructions when you "lock" the app (as it is no
-   longer "screen pinning" like in user-owned devices)
+   longer
+   [screen pinning](https://developer.android.com/about/versions/lollipop/android-5.0#ScreenPinning)
+   like in user-owned devices)
 1. stopping users from triggering the "unpin" action using gestures or holding
    the back and overview button, thus removing the side-effect of the device
    getting locked when users attempt to "unpin"
 
-In Lock Task Mode, the only way to unlock {APP_NAME} would be using a methods
-provided in-app, which are always configurable and can be disabled. The
-supported methods are currently:
+In
+[Lock Task Mode](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode),
+the only way to unlock {APP_NAME} would be using a methods provided in-app,
+which are always configurable and can be disabled. The supported methods are
+currently:
 
 1. Opening the Kiosk Control Panel by either
    - holding the back button
