@@ -28,22 +28,53 @@ const LATEST_VERSION = {
 } as const;
 
 const DownloadSource = v.picklist(["GitHub", "F-Droid", "IzzyOnDroid"]);
+const WifiSecurityType = v.picklist(["NONE", "WPA", "WEP", "EAP"]);
 
 const FormSchema = v.object({
   downloadSource: DownloadSource,
   enterpriseName: v.pipe(v.string(), v.minLength(1, "Required")),
+  locale: v.string(),
+  timeZone: v.string(),
+  skipEncryption: v.boolean(),
+  hideWifi: v.boolean(),
+  wifiSSID: v.string(),
+  wifiPassword: v.string(),
+  wifiSecurityType: WifiSecurityType,
+  proxyHost: v.string(),
+  proxyPort: v.string(),
+  proxyBypass: v.string(),
+  pacUrl: v.string(),
+  localTime: v.string(),
+  packageDownloadCookieHeader: v.string(),
+  leaveAllSystemAppsEnabled: v.boolean(),
+  adminExtras: v.string(),
 });
 
 type FormValues = v.InferInput<typeof FormSchema>;
 
 export default function QRCodeForm() {
   const [qrValue, setQrValue] = useState<string | null>(null);
-  const [showJson, setShowJson] = useState(true);
+  const [showJson, setShowJson] = useState(false);
 
   const form = useForm({
     defaultValues: {
       downloadSource: "GitHub",
       enterpriseName: "Webview Kiosk",
+      locale: Intl.DateTimeFormat().resolvedOptions().locale,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      skipEncryption: false,
+      hideWifi: false,
+      wifiSSID: "",
+      wifiPassword: "",
+      wifiSecurityType: "WPA",
+      proxyHost: "",
+      proxyPort: "",
+      proxyBypass: "",
+      pacUrl: "",
+      localTime: "",
+      packageDownloadCookieHeader: "",
+      leaveAllSystemAppsEnabled: true,
+      adminExtras: "",
     } as FormValues,
     validators: {
       onChange: FormSchema,
@@ -58,18 +89,65 @@ export default function QRCodeForm() {
         downloadLocation = `https://apt.izzysoft.de/fdroid/repo/uk.nktnet.webviewkiosk_${LATEST_VERSION.code}.apk`;
       }
 
-      const payload = {
-        "android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME":
-          "uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver",
-        "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION":
-          downloadLocation,
-        "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_CHECKSUM":
-          LATEST_VERSION.checksum,
-        "android.app.extra.PROVISIONING_LEAVE_ALL_SYSTEM_APPS_ENABLED": true,
-        "android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE": {
+      const payload: Record<string, string | boolean | Record<string, string>> =
+        {
+          "android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME":
+            "uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver",
+          "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION":
+            downloadLocation,
+          "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_CHECKSUM":
+            LATEST_VERSION.checksum,
+          "android.app.extra.PROVISIONING_LEAVE_ALL_SYSTEM_APPS_ENABLED":
+            value.leaveAllSystemAppsEnabled,
+          "android.app.extra.PROVISIONING_SKIP_ENCRYPTION":
+            value.skipEncryption,
+          "android.app.extra.PROVISIONING_LOCALE": value.locale,
+          "android.app.extra.PROVISIONING_TIME_ZONE": value.timeZone,
+          "android.app.extra.PROVISIONING_HIDE_WIFI": value.hideWifi,
+        };
+
+      if (value.wifiSSID)
+        payload["android.app.extra.PROVISIONING_WIFI_SSID"] = value.wifiSSID;
+      if (value.wifiPassword)
+        payload["android.app.extra.PROVISIONING_WIFI_PASSWORD"] =
+          value.wifiPassword;
+      if (value.wifiSecurityType)
+        payload["android.app.extra.PROVISIONING_WIFI_SECURITY_TYPE"] =
+          value.wifiSecurityType;
+
+      if (value.proxyHost)
+        payload["android.app.extra.PROVISIONING_WIFI_PROXY_HOST"] =
+          value.proxyHost;
+      if (value.proxyPort)
+        payload["android.app.extra.PROVISIONING_WIFI_PROXY_PORT"] =
+          value.proxyPort;
+      if (value.proxyBypass)
+        payload["android.app.extra.PROVISIONING_WIFI_PROXY_BYPASS"] =
+          value.proxyBypass;
+      if (value.pacUrl)
+        payload["android.app.extra.PROVISIONING_WIFI_PAC_URL"] = value.pacUrl;
+
+      if (value.localTime)
+        payload["android.app.extra.PROVISIONING_LOCAL_TIME"] = value.localTime;
+      if (value.packageDownloadCookieHeader)
+        payload[
+          "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_COOKIE_HEADER"
+        ] = value.packageDownloadCookieHeader;
+
+      if (value.adminExtras) {
+        try {
+          payload["android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE"] =
+            JSON.parse(value.adminExtras);
+        } catch {
+          payload["android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE"] = {
+            error: "Invalid JSON",
+          };
+        }
+      } else {
+        payload["android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE"] = {
           enterpriseName: value.enterpriseName,
-        },
-      };
+        };
+      }
 
       setQrValue(JSON.stringify(payload, null, 2));
     },
@@ -130,6 +208,262 @@ export default function QRCodeForm() {
                 className="mt-2"
               />
               <FormFieldInfo field={field} />
+            </div>
+          )}
+        />
+
+        <form.Field
+          name="locale"
+          children={(field) => (
+            <div className="text-left">
+              <Label htmlFor={field.name}>Locale</Label>
+              <Input
+                id={field.name}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                placeholder="e.g. en-US"
+                className="mt-2"
+              />
+            </div>
+          )}
+        />
+
+        <form.Field
+          name="timeZone"
+          children={(field) => (
+            <div className="text-left">
+              <Label htmlFor={field.name}>Time Zone</Label>
+              <Input
+                id={field.name}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                placeholder="e.g. America/New_York"
+                className="mt-2"
+              />
+            </div>
+          )}
+        />
+
+        <form.Field
+          name="skipEncryption"
+          children={(field) => (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id={field.name}
+                checked={field.state.value}
+                onCheckedChange={(state) => field.handleChange(state === true)}
+              />
+              <Label htmlFor={field.name}>Skip Encryption</Label>
+            </div>
+          )}
+        />
+
+        <form.Field
+          name="hideWifi"
+          children={(field) => (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id={field.name}
+                checked={field.state.value}
+                onCheckedChange={(state) => field.handleChange(state === true)}
+              />
+              <Label htmlFor={field.name}>Hide Wi-Fi</Label>
+            </div>
+          )}
+        />
+
+        <form.Field
+          name="wifiSSID"
+          children={(field) => (
+            <div className="text-left">
+              <Label htmlFor={field.name}>Wi-Fi SSID</Label>
+              <Input
+                id={field.name}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                placeholder="Optional"
+                className="mt-2"
+              />
+            </div>
+          )}
+        />
+
+        <form.Field
+          name="wifiPassword"
+          children={(field) => (
+            <div className="text-left">
+              <Label htmlFor={field.name}>Wi-Fi Password</Label>
+              <Input
+                id={field.name}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                placeholder="Optional"
+                className="mt-2"
+              />
+            </div>
+          )}
+        />
+
+        <form.Field
+          name="wifiSecurityType"
+          children={(field) => (
+            <div className="text-left">
+              <Label htmlFor={field.name}>Wi-Fi Security Type</Label>
+              <Select
+                value={field.state.value}
+                onValueChange={(value) =>
+                  field.handleChange(v.parse(WifiSecurityType, value))
+                }
+              >
+                <SelectTrigger className="mt-2 w-full">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="NONE">NONE</SelectItem>
+                    <SelectItem value="WPA">WPA</SelectItem>
+                    <SelectItem value="WEP">WEP</SelectItem>
+                    <SelectItem value="EAP">EAP</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        />
+
+        <form.Field
+          name="proxyHost"
+          children={(field) => (
+            <div className="text-left">
+              <Label htmlFor={field.name}>Proxy Host</Label>
+              <Input
+                id={field.name}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                placeholder="Optional"
+                className="mt-2"
+              />
+            </div>
+          )}
+        />
+
+        <form.Field
+          name="proxyPort"
+          children={(field) => (
+            <div className="text-left">
+              <Label htmlFor={field.name}>Proxy Port</Label>
+              <Input
+                id={field.name}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                placeholder="Optional"
+                className="mt-2"
+              />
+            </div>
+          )}
+        />
+
+        <form.Field
+          name="proxyBypass"
+          children={(field) => (
+            <div className="text-left">
+              <Label htmlFor={field.name}>Proxy Bypass</Label>
+              <Input
+                id={field.name}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                placeholder="Optional"
+                className="mt-2"
+              />
+            </div>
+          )}
+        />
+
+        <form.Field
+          name="pacUrl"
+          children={(field) => (
+            <div className="text-left">
+              <Label htmlFor={field.name}>PAC URL</Label>
+              <Input
+                id={field.name}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                placeholder="Optional"
+                className="mt-2"
+              />
+            </div>
+          )}
+        />
+
+        <form.Field
+          name="localTime"
+          children={(field) => (
+            <div className="text-left">
+              <Label htmlFor={field.name}>Local Time (ISO)</Label>
+              <Input
+                id={field.name}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                placeholder="Optional, e.g. 2026-02-18T09:00:00Z"
+                className="mt-2"
+              />
+            </div>
+          )}
+        />
+
+        <form.Field
+          name="packageDownloadCookieHeader"
+          children={(field) => (
+            <div className="text-left">
+              <Label htmlFor={field.name}>Package Download Cookie Header</Label>
+              <Input
+                id={field.name}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                placeholder="Optional"
+                className="mt-2"
+              />
+            </div>
+          )}
+        />
+
+        <form.Field
+          name="leaveAllSystemAppsEnabled"
+          children={(field) => (
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id={field.name}
+                checked={field.state.value}
+                onCheckedChange={(state) => field.handleChange(state === true)}
+              />
+              <Label htmlFor={field.name}>Leave All System Apps Enabled</Label>
+            </div>
+          )}
+        />
+
+        <form.Field
+          name="adminExtras"
+          children={(field) => (
+            <div className="text-left">
+              <Label htmlFor={field.name}>Admin Extras (JSON)</Label>
+              <Input
+                id={field.name}
+                value={field.state.value}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                placeholder='{"key":"value"}'
+                className="mt-2"
+              />
             </div>
           )}
         />
