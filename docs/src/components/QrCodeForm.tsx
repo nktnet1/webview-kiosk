@@ -1,11 +1,12 @@
 "use client";
 
 /* eslint-disable react/no-children-prop */
+
 import { useForm } from "@tanstack/react-form";
 import { useState } from "react";
 import QRCode from "react-qr-code";
 import * as v from "valibot";
-
+import { DynamicCodeBlock } from "fumadocs-ui/components/dynamic-codeblock";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +19,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import FormFieldInfo from "@/components/common/FormFieldInfo";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const LATEST_VERSION = {
   code: 114,
@@ -25,10 +27,10 @@ const LATEST_VERSION = {
   checksum: "56c455c3b0fb69ff344e8a2278d865ba80f0e4dad3d1d1e4b777ae637eace769",
 } as const;
 
-const DownloadMethod = v.picklist(["GitHub", "F-Droid", "IzzyOnDroid"]);
+const DownloadSource = v.picklist(["GitHub", "F-Droid", "IzzyOnDroid"]);
 
 const FormSchema = v.object({
-  downloadMethod: DownloadMethod,
+  downloadSource: DownloadSource,
   enterpriseName: v.pipe(v.string(), v.minLength(1, "Required")),
 });
 
@@ -36,10 +38,11 @@ type FormValues = v.InferInput<typeof FormSchema>;
 
 export default function QRCodeForm() {
   const [qrValue, setQrValue] = useState<string | null>(null);
+  const [showJson, setShowJson] = useState(true);
 
   const form = useForm({
     defaultValues: {
-      downloadMethod: "GitHub",
+      downloadSource: "GitHub",
       enterpriseName: "Webview Kiosk",
     } as FormValues,
     validators: {
@@ -47,11 +50,11 @@ export default function QRCodeForm() {
     },
     onSubmit: ({ value }) => {
       let downloadLocation = "";
-      if (value.downloadMethod === "GitHub") {
+      if (value.downloadSource === "GitHub") {
         downloadLocation = `https://github.com/nktnet1/webview-kiosk/releases/download/${LATEST_VERSION.tag}/webview-kiosk.apk`;
-      } else if (value.downloadMethod === "F-Droid") {
+      } else if (value.downloadSource === "F-Droid") {
         downloadLocation = `https://f-droid.org/repo/uk.nktnet.webviewkiosk_${LATEST_VERSION.code}.apk`;
-      } else if (value.downloadMethod === "IzzyOnDroid") {
+      } else if (value.downloadSource === "IzzyOnDroid") {
         downloadLocation = `https://apt.izzysoft.de/fdroid/repo/uk.nktnet.webviewkiosk_${LATEST_VERSION.code}.apk`;
       }
 
@@ -68,18 +71,18 @@ export default function QRCodeForm() {
         },
       };
 
-      setQrValue(JSON.stringify(payload));
+      setQrValue(JSON.stringify(payload, null, 2));
     },
   });
 
   return (
-    <div className="bg-fd-muted rounded-2xl p-6 md:p-16 w-full max-w-xl">
+    <div className="bg-fd-muted rounded-2xl p-6 md:p-16 w-full max-w-7xl flex flex-col items-center justify-center">
       <h1 className="mb-8 text-4xl font-bold tracking-tight">
         Generate QR Code
       </h1>
 
       <form
-        className="flex flex-col gap-4"
+        className="flex flex-col gap-4 w-full max-w-xl"
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -87,14 +90,14 @@ export default function QRCodeForm() {
         }}
       >
         <form.Field
-          name="downloadMethod"
+          name="downloadSource"
           children={(field) => (
             <div className="text-left">
               <Label htmlFor={field.name}>Download Method</Label>
               <Select
                 value={field.state.value}
                 onValueChange={(value) =>
-                  field.handleChange(v.parse(DownloadMethod, value))
+                  field.handleChange(v.parse(DownloadSource, value))
                 }
               >
                 <SelectTrigger className="mt-2 w-full">
@@ -135,18 +138,33 @@ export default function QRCodeForm() {
           selector={(s) => [s.canSubmit, s.isSubmitting]}
           children={([canSubmit]) => (
             <Button type="submit" disabled={!canSubmit} className="h-12 mt-2">
-              Generate QR for {LATEST_VERSION.tag} ({LATEST_VERSION.code})
+              Generate QR code for {LATEST_VERSION.tag} ({LATEST_VERSION.code})
             </Button>
           )}
         />
       </form>
 
       {qrValue && (
-        <div className="mt-10 flex flex-col items-center gap-4">
-          <QRCode value={qrValue} size={256} />
-          <p className="text-sm opacity-70 break-all">
-            Scan during device setup
-          </p>
+        <div className="flex flex-col w-full">
+          <div className="mt-10 flex flex-col items-center gap-4">
+            <QRCode value={qrValue} size={256} />
+            <p className="text-sm opacity-70 break-all">
+              Scan during device setup
+            </p>
+          </div>
+          <div className="flex justify-center mt-5 gap-x-3">
+            <Checkbox
+              id="show-json-checkbox"
+              checked={showJson}
+              onCheckedChange={(state) => setShowJson(state === true)}
+            />
+            <Label htmlFor="show-json-checkbox">Show JSON</Label>
+          </div>
+          {showJson && (
+            <div className="text-left mt-3">
+              <DynamicCodeBlock lang="json" code={qrValue} />
+            </div>
+          )}
         </div>
       )}
     </div>
