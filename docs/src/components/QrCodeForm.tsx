@@ -25,7 +25,7 @@ import { toast } from "sonner";
 const LATEST_VERSION = {
   code: 114,
   tag: "v0.26.0",
-  checksum: "56c455c3b0fb69ff344e8a2278d865ba80f0e4dad3d1d1e4b777ae637eace769",
+  checksum: "VsRVw7D7af80TooieNhluoDw5NrT0dHkt3euY36s52k=",
 } as const;
 
 const DownloadSource = v.picklist(["GitHub", "F-Droid", "IzzyOnDroid"]);
@@ -53,8 +53,13 @@ const FormSchema = v.object({
 
 type FormValues = v.InferInput<typeof FormSchema>;
 
+type QrData = Record<
+  string,
+  string | boolean | number | Record<string, string>
+>;
+
 export default function QRCodeForm() {
-  const [qrValue, setQrValue] = useState<string | null>(null);
+  const [qrValue, setQrValue] = useState<QrData | null>(null);
   const [showJson, setShowJson] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -82,17 +87,14 @@ export default function QRCodeForm() {
     onSubmit: ({ value }) => {
       let downloadLocation = "";
       if (value.downloadSource === "GitHub") {
-        downloadLocation = `https://github.com/nktnet1/webview-kiosk/releases/download/${LATEST_VERSION.tag}/webview-kiosk.apk`;
+        downloadLocation = `https://github.com/nktnet1/webview-kiosk/releases/download/${LATEST_VERSION.tag}/WebviewKiosk_${LATEST_VERSION.tag}.apk`;
       } else if (value.downloadSource === "F-Droid") {
         downloadLocation = `https://f-droid.org/repo/uk.nktnet.webviewkiosk_${LATEST_VERSION.code}.apk`;
       } else if (value.downloadSource === "IzzyOnDroid") {
         downloadLocation = `https://apt.izzysoft.de/fdroid/repo/uk.nktnet.webviewkiosk_${LATEST_VERSION.code}.apk`;
       }
 
-      const payload: Record<
-        string,
-        string | boolean | number | Record<string, string>
-      > = {
+      const payload: QrData = {
         "android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME":
           "uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver",
         "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION":
@@ -150,7 +152,7 @@ export default function QRCodeForm() {
         }
       }
 
-      setQrValue(JSON.stringify(payload, null, 2));
+      setQrValue(payload);
     },
   });
 
@@ -172,7 +174,7 @@ export default function QRCodeForm() {
           name="downloadSource"
           children={(field) => (
             <div className="text-left">
-              <Label htmlFor={field.name}>Download Method</Label>
+              <Label htmlFor={field.name}>Download Source</Label>
               <Select
                 value={field.state.value}
                 onValueChange={(value) =>
@@ -229,7 +231,7 @@ export default function QRCodeForm() {
               <form.Field
                 name="leaveAllSystemAppsEnabled"
                 children={(field) => (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 mt-2">
                     <Checkbox
                       id={field.name}
                       checked={field.state.value}
@@ -279,7 +281,7 @@ export default function QRCodeForm() {
               <form.Field
                 name="locale"
                 children={(field) => (
-                  <div className="text-left">
+                  <div className="text-left mt-3">
                     <Label htmlFor={field.name}>Locale</Label>
                     <Input
                       id={field.name}
@@ -530,7 +532,9 @@ export default function QRCodeForm() {
       {qrValue && (
         <div className="flex flex-col w-full">
           <div className="mt-10 flex flex-col items-center gap-4">
-            <QRCode className="max-w-full" value={qrValue} size={400} />
+            <div className="border-2 border-white">
+              <QRCode className="max-w-full" value={JSON.stringify(qrValue)} />
+            </div>
             <p className="text-sm opacity-70 break-all">
               Scan during device setup
             </p>
@@ -545,7 +549,10 @@ export default function QRCodeForm() {
           </div>
           {showJson && (
             <div className="text-left mt-3">
-              <DynamicCodeBlock lang="json" code={qrValue} />
+              <DynamicCodeBlock
+                lang="json"
+                code={JSON.stringify(qrValue, null, 2)}
+              />
             </div>
           )}
         </div>
