@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import FormFieldInfo from "@/components/common/FormFieldInfo";
 import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
 
 const LATEST_VERSION = {
   code: 114,
@@ -35,19 +36,19 @@ const FormSchema = v.object({
   enterpriseName: v.pipe(v.string(), v.minLength(1, "Required")),
   locale: v.string(),
   timeZone: v.string(),
-  skipEncryption: v.boolean(),
-  hideWifi: v.boolean(),
-  wifiSSID: v.string(),
-  wifiPassword: v.string(),
-  wifiSecurityType: WifiSecurityType,
-  proxyHost: v.string(),
-  proxyPort: v.string(),
-  proxyBypass: v.string(),
-  pacUrl: v.string(),
-  localTime: v.string(),
-  packageDownloadCookieHeader: v.string(),
   leaveAllSystemAppsEnabled: v.boolean(),
-  adminExtras: v.string(),
+  skipEncryption: v.boolean(),
+  wifiHidden: v.boolean(),
+  wifiSSID: v.nullable(v.string()),
+  wifiPassword: v.nullable(v.string()),
+  wifiSecurityType: WifiSecurityType,
+  proxyHost: v.nullable(v.string()),
+  proxyPort: v.nullable(v.string()),
+  proxyBypass: v.nullable(v.string()),
+  pacUrl: v.nullable(v.string()),
+  localTime: v.nullable(v.string()),
+  packageDownloadCookieHeader: v.nullable(v.string()),
+  adminExtras: v.nullable(v.string()),
 });
 
 type FormValues = v.InferInput<typeof FormSchema>;
@@ -55,6 +56,7 @@ type FormValues = v.InferInput<typeof FormSchema>;
 export default function QRCodeForm() {
   const [qrValue, setQrValue] = useState<string | null>(null);
   const [showJson, setShowJson] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const form = useForm({
     defaultValues: {
@@ -63,22 +65,20 @@ export default function QRCodeForm() {
       locale: Intl.DateTimeFormat().resolvedOptions().locale,
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       skipEncryption: false,
-      hideWifi: false,
-      wifiSSID: "",
-      wifiPassword: "",
+      wifiHidden: false,
+      wifiSSID: null,
+      wifiPassword: null,
       wifiSecurityType: "WPA",
-      proxyHost: "",
-      proxyPort: "",
-      proxyBypass: "",
-      pacUrl: "",
-      localTime: "",
-      packageDownloadCookieHeader: "",
-      leaveAllSystemAppsEnabled: true,
-      adminExtras: "",
+      proxyHost: null,
+      proxyPort: null,
+      proxyBypass: null,
+      pacUrl: null,
+      localTime: null,
+      packageDownloadCookieHeader: null,
+      leaveAllSystemAppsEnabled: false,
+      adminExtras: null,
     } as FormValues,
-    validators: {
-      onChange: FormSchema,
-    },
+    validators: { onChange: FormSchema },
     onSubmit: ({ value }) => {
       let downloadLocation = "";
       if (value.downloadSource === "GitHub") {
@@ -101,10 +101,13 @@ export default function QRCodeForm() {
             value.leaveAllSystemAppsEnabled,
           "android.app.extra.PROVISIONING_SKIP_ENCRYPTION":
             value.skipEncryption,
-          "android.app.extra.PROVISIONING_LOCALE": value.locale,
-          "android.app.extra.PROVISIONING_TIME_ZONE": value.timeZone,
-          "android.app.extra.PROVISIONING_HIDE_WIFI": value.hideWifi,
+          "android.app.extra.PROVISIONING_WIFI_HIDDEN": value.wifiHidden,
         };
+
+      if (value.locale)
+        payload["android.app.extra.PROVISIONING_LOCALE"] = value.locale;
+      if (value.timeZone)
+        payload["android.app.extra.PROVISIONING_TIMEZONE"] = value.timeZone;
 
       if (value.wifiSSID)
         payload["android.app.extra.PROVISIONING_WIFI_SSID"] = value.wifiSSID;
@@ -114,7 +117,6 @@ export default function QRCodeForm() {
       if (value.wifiSecurityType)
         payload["android.app.extra.PROVISIONING_WIFI_SECURITY_TYPE"] =
           value.wifiSecurityType;
-
       if (value.proxyHost)
         payload["android.app.extra.PROVISIONING_WIFI_PROXY_HOST"] =
           value.proxyHost;
@@ -126,7 +128,6 @@ export default function QRCodeForm() {
           value.proxyBypass;
       if (value.pacUrl)
         payload["android.app.extra.PROVISIONING_WIFI_PAC_URL"] = value.pacUrl;
-
       if (value.localTime)
         payload["android.app.extra.PROVISIONING_LOCAL_TIME"] = value.localTime;
       if (value.packageDownloadCookieHeader)
@@ -142,11 +143,8 @@ export default function QRCodeForm() {
           payload["android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE"] = {
             error: "Invalid JSON",
           };
+          toast.warning("Invalid admin extras", { duration: 3000 });
         }
-      } else {
-        payload["android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE"] = {
-          enterpriseName: value.enterpriseName,
-        };
       }
 
       setQrValue(JSON.stringify(payload, null, 2));
@@ -183,9 +181,11 @@ export default function QRCodeForm() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    <SelectItem value="GitHub">GitHub</SelectItem>
-                    <SelectItem value="F-Droid">F-Droid</SelectItem>
-                    <SelectItem value="IzzyOnDroid">IzzyOnDroid</SelectItem>
+                    {DownloadSource.options.map((o) => (
+                      <SelectItem key={o} value={o}>
+                        {o}
+                      </SelectItem>
+                    ))}
                   </SelectGroup>
                 </SelectContent>
               </Select>
@@ -212,261 +212,302 @@ export default function QRCodeForm() {
           )}
         />
 
-        <form.Field
-          name="locale"
-          children={(field) => (
-            <div className="text-left">
-              <Label htmlFor={field.name}>Locale</Label>
-              <Input
-                id={field.name}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="e.g. en-US"
-                className="mt-2"
+        <div className="border-y border-dashed py-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+          >
+            {showAdvanced ? "Hide Advanced Options" : "Show Advanced Options"}
+          </Button>
+          {showAdvanced && (
+            <div className="flex flex-col gap-4 mt-4">
+              <form.Field
+                name="leaveAllSystemAppsEnabled"
+                children={(field) => (
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={field.name}
+                      checked={field.state.value}
+                      onCheckedChange={(state) =>
+                        field.handleChange(state === true)
+                      }
+                    />
+                    <Label htmlFor={field.name}>
+                      Leave All System Apps Enabled
+                    </Label>
+                  </div>
+                )}
+              />
+
+              <form.Field
+                name="skipEncryption"
+                children={(field) => (
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={field.name}
+                      checked={field.state.value}
+                      onCheckedChange={(state) =>
+                        field.handleChange(state === true)
+                      }
+                    />
+                    <Label htmlFor={field.name}>Skip Encryption</Label>
+                  </div>
+                )}
+              />
+
+              <form.Field
+                name="wifiHidden"
+                children={(field) => (
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={field.name}
+                      checked={field.state.value}
+                      onCheckedChange={(state) =>
+                        field.handleChange(state === true)
+                      }
+                    />
+                    <Label htmlFor={field.name}>Wi-Fi Hidden</Label>
+                  </div>
+                )}
+              />
+
+              <form.Field
+                name="locale"
+                children={(field) => (
+                  <div className="text-left">
+                    <Label htmlFor={field.name}>Locale</Label>
+                    <Input
+                      id={field.name}
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="e.g. en-US"
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+              />
+
+              <form.Field
+                name="timeZone"
+                children={(field) => (
+                  <div className="text-left">
+                    <Label htmlFor={field.name}>Time Zone</Label>
+                    <Input
+                      id={field.name}
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="e.g. America/New_York"
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+              />
+
+              <form.Field
+                name="wifiSSID"
+                children={(field) => (
+                  <div className="text-left">
+                    <Label htmlFor={field.name}>Wi-Fi SSID</Label>
+                    <Input
+                      id={field.name}
+                      value={field.state.value ?? ""}
+                      onBlur={field.handleBlur}
+                      onChange={(e) =>
+                        field.handleChange(e.target.value || null)
+                      }
+                      placeholder="Optional"
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+              />
+
+              <form.Field
+                name="wifiPassword"
+                children={(field) => (
+                  <div className="text-left">
+                    <Label htmlFor={field.name}>Wi-Fi Password</Label>
+                    <Input
+                      id={field.name}
+                      value={field.state.value ?? ""}
+                      onBlur={field.handleBlur}
+                      onChange={(e) =>
+                        field.handleChange(e.target.value || null)
+                      }
+                      placeholder="Optional"
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+              />
+
+              <form.Field
+                name="wifiSecurityType"
+                children={(field) => (
+                  <div className="text-left">
+                    <Label htmlFor={field.name}>Wi-Fi Security Type</Label>
+                    <Select
+                      value={field.state.value}
+                      onValueChange={(value) =>
+                        field.handleChange(v.parse(WifiSecurityType, value))
+                      }
+                    >
+                      <SelectTrigger className="mt-2 w-full">
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="NONE">NONE</SelectItem>
+                          <SelectItem value="WPA">WPA</SelectItem>
+                          <SelectItem value="WEP">WEP</SelectItem>
+                          <SelectItem value="EAP">EAP</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              />
+
+              <form.Field
+                name="proxyHost"
+                children={(field) => (
+                  <div className="text-left">
+                    <Label htmlFor={field.name}>Proxy Host</Label>
+                    <Input
+                      id={field.name}
+                      value={field.state.value ?? ""}
+                      onBlur={field.handleBlur}
+                      onChange={(e) =>
+                        field.handleChange(e.target.value || null)
+                      }
+                      placeholder="Optional"
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+              />
+
+              <form.Field
+                name="proxyPort"
+                children={(field) => (
+                  <div className="text-left">
+                    <Label htmlFor={field.name}>Proxy Port</Label>
+                    <Input
+                      id={field.name}
+                      value={field.state.value ?? ""}
+                      onBlur={field.handleBlur}
+                      onChange={(e) =>
+                        field.handleChange(e.target.value || null)
+                      }
+                      placeholder="Optional"
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+              />
+
+              <form.Field
+                name="proxyBypass"
+                children={(field) => (
+                  <div className="text-left">
+                    <Label htmlFor={field.name}>Proxy Bypass</Label>
+                    <Input
+                      id={field.name}
+                      value={field.state.value ?? ""}
+                      onBlur={field.handleBlur}
+                      onChange={(e) =>
+                        field.handleChange(e.target.value || null)
+                      }
+                      placeholder="Optional"
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+              />
+
+              <form.Field
+                name="pacUrl"
+                children={(field) => (
+                  <div className="text-left">
+                    <Label htmlFor={field.name}>PAC URL</Label>
+                    <Input
+                      id={field.name}
+                      value={field.state.value ?? ""}
+                      onBlur={field.handleBlur}
+                      onChange={(e) =>
+                        field.handleChange(e.target.value || null)
+                      }
+                      placeholder="Optional"
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+              />
+
+              <form.Field
+                name="localTime"
+                children={(field) => (
+                  <div className="text-left">
+                    <Label htmlFor={field.name}>Local Time (ISO)</Label>
+                    <Input
+                      id={field.name}
+                      value={field.state.value ?? ""}
+                      onBlur={field.handleBlur}
+                      onChange={(e) =>
+                        field.handleChange(e.target.value || null)
+                      }
+                      placeholder="Optional, e.g. 2026-02-18T09:00:00Z"
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+              />
+
+              <form.Field
+                name="packageDownloadCookieHeader"
+                children={(field) => (
+                  <div className="text-left">
+                    <Label htmlFor={field.name}>
+                      Package Download Cookie Header
+                    </Label>
+                    <Input
+                      id={field.name}
+                      value={field.state.value ?? ""}
+                      onBlur={field.handleBlur}
+                      onChange={(e) =>
+                        field.handleChange(e.target.value || null)
+                      }
+                      placeholder="Optional"
+                      className="mt-2"
+                    />
+                  </div>
+                )}
+              />
+
+              <form.Field
+                name="adminExtras"
+                children={(field) => (
+                  <div className="text-left">
+                    <Label htmlFor={field.name}>Admin Extras (JSON)</Label>
+                    <Input
+                      id={field.name}
+                      value={field.state.value ?? ""}
+                      onBlur={field.handleBlur}
+                      onChange={(e) =>
+                        field.handleChange(e.target.value || null)
+                      }
+                      placeholder='{"key":"value"}'
+                      className="mt-2"
+                    />
+                  </div>
+                )}
               />
             </div>
           )}
-        />
-
-        <form.Field
-          name="timeZone"
-          children={(field) => (
-            <div className="text-left">
-              <Label htmlFor={field.name}>Time Zone</Label>
-              <Input
-                id={field.name}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="e.g. America/New_York"
-                className="mt-2"
-              />
-            </div>
-          )}
-        />
-
-        <form.Field
-          name="skipEncryption"
-          children={(field) => (
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id={field.name}
-                checked={field.state.value}
-                onCheckedChange={(state) => field.handleChange(state === true)}
-              />
-              <Label htmlFor={field.name}>Skip Encryption</Label>
-            </div>
-          )}
-        />
-
-        <form.Field
-          name="hideWifi"
-          children={(field) => (
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id={field.name}
-                checked={field.state.value}
-                onCheckedChange={(state) => field.handleChange(state === true)}
-              />
-              <Label htmlFor={field.name}>Hide Wi-Fi</Label>
-            </div>
-          )}
-        />
-
-        <form.Field
-          name="wifiSSID"
-          children={(field) => (
-            <div className="text-left">
-              <Label htmlFor={field.name}>Wi-Fi SSID</Label>
-              <Input
-                id={field.name}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="Optional"
-                className="mt-2"
-              />
-            </div>
-          )}
-        />
-
-        <form.Field
-          name="wifiPassword"
-          children={(field) => (
-            <div className="text-left">
-              <Label htmlFor={field.name}>Wi-Fi Password</Label>
-              <Input
-                id={field.name}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="Optional"
-                className="mt-2"
-              />
-            </div>
-          )}
-        />
-
-        <form.Field
-          name="wifiSecurityType"
-          children={(field) => (
-            <div className="text-left">
-              <Label htmlFor={field.name}>Wi-Fi Security Type</Label>
-              <Select
-                value={field.state.value}
-                onValueChange={(value) =>
-                  field.handleChange(v.parse(WifiSecurityType, value))
-                }
-              >
-                <SelectTrigger className="mt-2 w-full">
-                  <SelectValue placeholder="Select type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="NONE">NONE</SelectItem>
-                    <SelectItem value="WPA">WPA</SelectItem>
-                    <SelectItem value="WEP">WEP</SelectItem>
-                    <SelectItem value="EAP">EAP</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        />
-
-        <form.Field
-          name="proxyHost"
-          children={(field) => (
-            <div className="text-left">
-              <Label htmlFor={field.name}>Proxy Host</Label>
-              <Input
-                id={field.name}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="Optional"
-                className="mt-2"
-              />
-            </div>
-          )}
-        />
-
-        <form.Field
-          name="proxyPort"
-          children={(field) => (
-            <div className="text-left">
-              <Label htmlFor={field.name}>Proxy Port</Label>
-              <Input
-                id={field.name}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="Optional"
-                className="mt-2"
-              />
-            </div>
-          )}
-        />
-
-        <form.Field
-          name="proxyBypass"
-          children={(field) => (
-            <div className="text-left">
-              <Label htmlFor={field.name}>Proxy Bypass</Label>
-              <Input
-                id={field.name}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="Optional"
-                className="mt-2"
-              />
-            </div>
-          )}
-        />
-
-        <form.Field
-          name="pacUrl"
-          children={(field) => (
-            <div className="text-left">
-              <Label htmlFor={field.name}>PAC URL</Label>
-              <Input
-                id={field.name}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="Optional"
-                className="mt-2"
-              />
-            </div>
-          )}
-        />
-
-        <form.Field
-          name="localTime"
-          children={(field) => (
-            <div className="text-left">
-              <Label htmlFor={field.name}>Local Time (ISO)</Label>
-              <Input
-                id={field.name}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="Optional, e.g. 2026-02-18T09:00:00Z"
-                className="mt-2"
-              />
-            </div>
-          )}
-        />
-
-        <form.Field
-          name="packageDownloadCookieHeader"
-          children={(field) => (
-            <div className="text-left">
-              <Label htmlFor={field.name}>Package Download Cookie Header</Label>
-              <Input
-                id={field.name}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="Optional"
-                className="mt-2"
-              />
-            </div>
-          )}
-        />
-
-        <form.Field
-          name="leaveAllSystemAppsEnabled"
-          children={(field) => (
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id={field.name}
-                checked={field.state.value}
-                onCheckedChange={(state) => field.handleChange(state === true)}
-              />
-              <Label htmlFor={field.name}>Leave All System Apps Enabled</Label>
-            </div>
-          )}
-        />
-
-        <form.Field
-          name="adminExtras"
-          children={(field) => (
-            <div className="text-left">
-              <Label htmlFor={field.name}>Admin Extras (JSON)</Label>
-              <Input
-                id={field.name}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder='{"key":"value"}'
-                className="mt-2"
-              />
-            </div>
-          )}
-        />
+        </div>
 
         <form.Subscribe
           selector={(s) => [s.canSubmit, s.isSubmitting]}
@@ -481,7 +522,7 @@ export default function QRCodeForm() {
       {qrValue && (
         <div className="flex flex-col w-full">
           <div className="mt-10 flex flex-col items-center gap-4">
-            <QRCode value={qrValue} size={256} />
+            <QRCode value={qrValue} size={400} />
             <p className="text-sm opacity-70 break-all">
               Scan during device setup
             </p>
