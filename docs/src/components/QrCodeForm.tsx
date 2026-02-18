@@ -152,7 +152,7 @@ export default function QRCodeForm() {
   });
 
   return (
-    <div className="bg-fd-muted rounded-2xl p-6 md:p-16 w-full max-w-7xl flex flex-col items-center justify-center">
+    <div className="bg-fd-muted rounded-2xl p-6 md:p-10 w-full max-w-7xl flex flex-col items-center justify-center">
       <h1 className="mb-8 text-4xl font-bold tracking-tight">
         Generate QR Code
       </h1>
