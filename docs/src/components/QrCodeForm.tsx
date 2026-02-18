@@ -89,20 +89,21 @@ export default function QRCodeForm() {
         downloadLocation = `https://apt.izzysoft.de/fdroid/repo/uk.nktnet.webviewkiosk_${LATEST_VERSION.code}.apk`;
       }
 
-      const payload: Record<string, string | boolean | Record<string, string>> =
-        {
-          "android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME":
-            "uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver",
-          "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION":
-            downloadLocation,
-          "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_CHECKSUM":
-            LATEST_VERSION.checksum,
-          "android.app.extra.PROVISIONING_LEAVE_ALL_SYSTEM_APPS_ENABLED":
-            value.leaveAllSystemAppsEnabled,
-          "android.app.extra.PROVISIONING_SKIP_ENCRYPTION":
-            value.skipEncryption,
-          "android.app.extra.PROVISIONING_WIFI_HIDDEN": value.wifiHidden,
-        };
+      const payload: Record<
+        string,
+        string | boolean | number | Record<string, string>
+      > = {
+        "android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME":
+          "uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver",
+        "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION":
+          downloadLocation,
+        "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_CHECKSUM":
+          LATEST_VERSION.checksum,
+        "android.app.extra.PROVISIONING_LEAVE_ALL_SYSTEM_APPS_ENABLED":
+          value.leaveAllSystemAppsEnabled,
+        "android.app.extra.PROVISIONING_SKIP_ENCRYPTION": value.skipEncryption,
+        "android.app.extra.PROVISIONING_WIFI_HIDDEN": value.wifiHidden,
+      };
 
       if (value.locale)
         payload["android.app.extra.PROVISIONING_LOCALE"] = value.locale;
@@ -129,7 +130,9 @@ export default function QRCodeForm() {
       if (value.pacUrl)
         payload["android.app.extra.PROVISIONING_WIFI_PAC_URL"] = value.pacUrl;
       if (value.localTime)
-        payload["android.app.extra.PROVISIONING_LOCAL_TIME"] = value.localTime;
+        payload["android.app.extra.PROVISIONING_LOCAL_TIME"] = new Date(
+          value.localTime,
+        ).getTime();
       if (value.packageDownloadCookieHeader)
         payload[
           "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_COOKIE_HEADER"
@@ -153,12 +156,12 @@ export default function QRCodeForm() {
 
   return (
     <div className="bg-fd-muted rounded-2xl p-6 md:p-10 w-full max-w-7xl flex flex-col items-center justify-center">
-      <h1 className="mb-8 text-4xl font-bold tracking-tight">
+      <h1 className="text-4xl wrap-break-word font-bold tracking-tight">
         Generate QR Code
       </h1>
 
       <form
-        className="flex flex-col gap-4 w-full max-w-xl"
+        className="flex flex-col mt-8 gap-4 w-full max-w-xl"
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -217,6 +220,7 @@ export default function QRCodeForm() {
             type="button"
             variant="outline"
             onClick={() => setShowAdvanced(!showAdvanced)}
+            className="mt-2 min-h-12 whitespace-normal wrap-break-words"
           >
             {showAdvanced ? "Hide Advanced Options" : "Show Advanced Options"}
           </Button>
@@ -512,7 +516,11 @@ export default function QRCodeForm() {
         <form.Subscribe
           selector={(s) => [s.canSubmit, s.isSubmitting]}
           children={([canSubmit]) => (
-            <Button type="submit" disabled={!canSubmit} className="h-12 mt-2">
+            <Button
+              type="submit"
+              disabled={!canSubmit}
+              className="mt-2 min-h-12 whitespace-normal wrap-break-word"
+            >
               Generate QR code for {LATEST_VERSION.tag} ({LATEST_VERSION.code})
             </Button>
           )}
@@ -522,7 +530,7 @@ export default function QRCodeForm() {
       {qrValue && (
         <div className="flex flex-col w-full">
           <div className="mt-10 flex flex-col items-center gap-4">
-            <QRCode value={qrValue} size={400} />
+            <QRCode className="max-w-full" value={qrValue} size={400} />
             <p className="text-sm opacity-70 break-all">
               Scan during device setup
             </p>
