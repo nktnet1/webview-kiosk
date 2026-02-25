@@ -1,0 +1,3 @@
+## Changes
+
+- fix(mqtt): wk/settings brightness not applying for foreground service
