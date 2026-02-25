@@ -29,7 +29,8 @@ fun MqttServerPortSetting() {
         initialValue = userSettings.mqttServerPort,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        min = 0,
+        min = 1,
+        max = 65535,
         placeholder = "e.g. 1883",
         onSave = { userSettings.mqttServerPort = it }
     )

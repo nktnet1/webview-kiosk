@@ -608,7 +608,9 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.SERVER_PORT,
-        1883
+        1883,
+        min = 1,
+        max = 65535,
     )
     var mqttClientId by stringPrefOptional(
         getRestrictions,
