@@ -133,7 +133,7 @@ VAPID_SUBJECT=
 # UnifiedPush Credentials
 ENDPOINT_URL=
 ENDPOINT_PUBLIC_KEY=
-ENDPOINT_AUTH=
+ENDPOINT_AUTH_SECRET=
 ```
 
 </Step>
@@ -175,7 +175,7 @@ const WebPushEnvSchema = v.object({
   VAPID_SUBJECT: v.string(),
   ENDPOINT_URL: v.string(),
   ENDPOINT_PUBLIC_KEY: v.string(),
-  ENDPOINT_AUTH: v.string(),
+  ENDPOINT_AUTH_SECRET: v.string(),
 });
 
 const createToast = async () => {
@@ -192,7 +192,7 @@ const createToast = async () => {
       endpoint: env.ENDPOINT_URL,
       keys: {
         p256dh: env.ENDPOINT_PUBLIC_KEY,
-        auth: env.ENDPOINT_AUTH,
+        auth: env.ENDPOINT_AUTH_SECRET,
       },
     },
     JSON.stringify({
