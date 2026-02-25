@@ -98,9 +98,9 @@ const generateVAPID = () => {
   const vapidSubject = "mailto:admin@example.com";
 
   console.log("Add the following to your .env file:\n");
-  console.log(`WEBPUSH_VAPID_PUBLIC=${vapidKeys.publicKey}`);
-  console.log(`WEBPUSH_VAPID_PRIVATE=${vapidKeys.privateKey}`);
-  console.log(`WEBPUSH_VAPID_SUBJECT=${vapidSubject}`);
+  console.log(`VAPID_PUBLIC_KEY=${vapidKeys.publicKey}`);
+  console.log(`VAPID_PRIVATE_KEY=${vapidKeys.privateKey}`);
+  console.log(`VAPID_SUBJECT=${vapidSubject}`);
 };
 
 if (import.meta.url === `file://${process.argv[1]}`) {
