@@ -85,7 +85,7 @@ fun intPref(
     key: String,
     default: Int,
     min: Int = 0,
-    max: Int = Int.MAX_VALUE
+    max: Int = Constants.MAX_INT_SETTING,
 ) = object : ReadWriteProperty<Any?, Int> {
     override fun getValue(thisRef: Any?, property: KProperty<*>): Int {
         val raw = if (getRestrictions()?.containsKey(key) == true) {

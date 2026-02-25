@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.GenericSettingFieldDialog
 
 @Composable
@@ -149,8 +150,16 @@ fun TextSettingFieldItem(
                             placeholder,
                             style = MaterialTheme.typography.bodyMedium,
                             fontStyle = FontStyle.Italic,
-                            maxLines = if (isMultiline) Int.MAX_VALUE else 1,
-                            overflow = if (isMultiline) TextOverflow.Visible else TextOverflow.Ellipsis
+                            maxLines = if (isMultiline) {
+                                Constants.MAX_INT_SETTING
+                            } else {
+                                1
+                            },
+                            overflow = if (isMultiline) {
+                                TextOverflow.Visible
+                            } else {
+                                TextOverflow.Ellipsis
+                            }
                         )
                     },
                     singleLine = !isMultiline,

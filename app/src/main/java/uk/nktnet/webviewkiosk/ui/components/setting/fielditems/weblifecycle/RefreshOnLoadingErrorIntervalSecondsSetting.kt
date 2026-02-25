@@ -32,6 +32,7 @@ fun RefreshOnLoadingErrorIntervalSecondsSetting() {
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         min = Constants.MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS,
+        max = Constants.MAX_INT_SETTING,
         onSave = { userSettings.refreshOnLoadingErrorIntervalSeconds = it }
     )
 }

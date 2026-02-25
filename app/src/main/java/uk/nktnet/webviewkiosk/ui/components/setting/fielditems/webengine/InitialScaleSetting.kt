@@ -5,6 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldItem
@@ -39,6 +40,7 @@ fun InitialScaleSetting() {
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         min = 0,
-        onSave = { userSettings.initialScale = it }
+        max = Constants.MAX_INT_SETTING,
+        onSave = { userSettings.initialScale = it },
     )
 }

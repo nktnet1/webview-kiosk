@@ -45,6 +45,7 @@ fun ApplyDesktopViewportWidthSetting() {
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         min = Constants.MIN_DESKTOP_WIDTH,
+        max = Constants.MAX_INT_SETTING,
         placeholder = "e.g. 1024 (or 0 to disable)",
         onSave = { userSettings.applyDesktopViewportWidth = it }
     )
