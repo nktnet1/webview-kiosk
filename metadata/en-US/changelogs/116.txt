@@ -1,0 +1,4 @@
+## Changes
+
+- fix(mqtt): restrict port & other integer fields to avoid crash
+- feat: qr code provisioning - installation method with device owner
