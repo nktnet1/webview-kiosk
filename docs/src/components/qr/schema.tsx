@@ -18,6 +18,7 @@ export const FormSchema = v.object({
   wifiSSID: v.nullable(v.string()),
   wifiPassword: v.nullable(v.string()),
   wifiSecurityType: WifiSecurityType,
+  wifiAnonymousIdentity: v.boolean(),
   proxyHost: v.nullable(v.string()),
   proxyPort: v.nullable(v.string()),
   proxyBypass: v.nullable(v.string()),

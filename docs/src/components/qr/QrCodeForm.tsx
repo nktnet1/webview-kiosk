@@ -47,6 +47,7 @@ export default function QRCodeForm() {
       wifiSSID: null,
       wifiPassword: null,
       wifiSecurityType: "WPA",
+      wifiAnonymousIdentity: false,
       proxyHost: null,
       proxyPort: null,
       proxyBypass: null,
@@ -79,6 +80,8 @@ export default function QRCodeForm() {
           value.leaveAllSystemAppsEnabled,
         "android.app.extra.PROVISIONING_SKIP_ENCRYPTION": value.skipEncryption,
         "android.app.extra.PROVISIONING_WIFI_HIDDEN": value.wifiHidden,
+        "android.app.extra.PROVISIONING_WIFI_ANONYMOUS_IDENTITY":
+          value.wifiAnonymousIdentity,
         "android.app.extra.PROVISIONING_USE_MOBILE_DATA": value.useMobileData,
         "android.app.extra.PROVISIONING_ALLOW_OFFLINE": value.allowOffline,
         "android.app.extra.PROVISIONING_KEEP_SCREEN_ON": value.keepScreenOn,
@@ -191,6 +194,12 @@ export default function QRCodeForm() {
                     label: "Wi-Fi Hidden",
                     docsLink:
                       "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_HIDDEN",
+                  },
+                  {
+                    key: "wifiAnonymousIdentity",
+                    label: "Wi-Fi Anonymous Identity",
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_ANONYMOUS_IDENTITY",
                   },
                   {
                     key: "useMobileData",
