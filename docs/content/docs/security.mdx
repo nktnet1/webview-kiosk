@@ -3,8 +3,8 @@ title: Security
 description: Authentication, launcher, lock task mode/pinning, device owner, DPC and managed configurations
 ---
 
-import { APP_NAME } from '@/config/app';
 import Link from 'fumadocs-core/link';
+import { APP_NAME } from '@/config/app';
 
 ## 1. Settings Authentication Session
 
@@ -21,7 +21,7 @@ the authentication session will be revoked.
 By setting {APP_NAME} as the default launcher (home screen) app, any attempts to
 leave the app will simply re-open it.
 
-To do this, use the `Launcher` option in <Link href="/docs/setting-actions">Setting Actions</Link>.
+To do this, use the `Launcher` option in [Setting Actions](/docs/setting-actions).
 
 ## 3. App Pinning / Lock Task Mode
 
@@ -111,8 +111,10 @@ When set as the device owner, {APP_NAME} can act as a DPC and automatically adds
 It is also possible for {APP_NAME} to add other applications in settings, thus allowing it to
 launch other apps in Lock Task Mode (kiosk).
 
-The easiest way is to factory reset your device and start fresh, but if this isn't possible,
-you can try the following:
+The easiest way is to factory reset your device and use the
+[QR Code installation method](/docs/installation#3-qr-code-provisioning).
+
+However, if this isn't possible, you can try the following:
 
 <Steps>
 

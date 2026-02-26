@@ -21,12 +21,7 @@ import {
 import QrSelectField from "@/components/qr/fields/QrSelectField";
 import QrCheckboxField from "@/components/qr/fields/QrCheckboxField";
 import QrTextField from "@/components/qr/fields/QrTextField";
-
-const LATEST_VERSION = {
-  code: 115,
-  tag: "v0.26.1",
-  adminSignatureChecksum: "L-EN4OxwoH84OoeJLKRWZyFOoTxO7qSjJU86Mxp6axU=",
-} as const;
+import { LATEST_VERSION } from "@/components/qr/version";
 
 export default function QRCodeForm() {
   const [qrValue, setQrValue] = useState<QrData | null>(null);

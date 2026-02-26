@@ -3,6 +3,7 @@ title: Installation
 description: Supported platforms to download the app.
 ---
 
+import Link from 'fumadocs-core/link';
 import urlJoin from 'url-join';
 import { APP_NAME } from '@/config/app'
 import { PLAYSTORE_URL, GITHUB_URL } from '@/config/links'
@@ -133,3 +134,30 @@ that it was generated from the same source code.
 Similar to F-Droid, the
 [IzzyOnDroid reproducible builds](https://android.izzysoft.de/articles/named/iod-rbs-mirrors-clients)
 criteria is also met.
+
+## 3. QR Code Provisioning
+
+This is the recommended installation method for full device owner capabilities.
+
+<Steps>
+
+<Step>
+On a new or factory-reset device, tap the screen 6 times on the same spot.
+</Step>
+
+<Step>
+You may be prompted to connect to a Wi-Fi network on some devices to download a QR scanner.
+</Step>
+
+<Step>
+Go to the <Link href="/provision-device">{APP_NAME} Provision Device</Link> page to generate a QR code.
+</Step>
+
+<Step>
+Scan the QR code with device and follow the setup wizard instructions.
+</Step>
+
+</Steps>
+
+If you do not want to factory reset your device, refer to the
+[security](/docs/security#33-device-owner-mode) guide for a different method.
