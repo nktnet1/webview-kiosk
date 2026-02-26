@@ -31,5 +31,5 @@ export type FormValues = v.InferInput<typeof FormSchema>;
 
 export type QrData = Record<
   string,
-  string | boolean | number | Record<string, string>
+  string | boolean | number | Record<string, string> | Array<number>
 >;

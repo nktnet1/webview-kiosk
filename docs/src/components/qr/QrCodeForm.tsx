@@ -70,6 +70,7 @@ export default function QRCodeForm() {
       const payload: QrData = {
         "android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME":
           "uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver",
+        "android.app.extra.PROVISIONING_ALLOWED_PROVISIONING_MODE": [2],
         "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION":
           downloadLocation,
         "android.app.extra.PROVISIONING_DEVICE_ADMIN_SIGNATURE_CHECKSUM":
@@ -154,6 +155,7 @@ export default function QRCodeForm() {
               field={field}
               label="Download Source"
               options={DownloadSource.options}
+              docsLink="https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION"
             />
           )}
         />
@@ -175,19 +177,50 @@ export default function QRCodeForm() {
                   {
                     key: "leaveAllSystemAppsEnabled",
                     label: "Leave All System Apps Enabled",
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_LEAVE_ALL_SYSTEM_APPS_ENABLED",
                   },
-                  { key: "skipEncryption", label: "Skip Encryption" },
-                  { key: "wifiHidden", label: "Wi-Fi Hidden" },
-                  { key: "useMobileData", label: "Use Mobile Data" },
-                  { key: "allowOffline", label: "Allow Offline" },
-                  { key: "keepScreenOn", label: "Keep Screen On" },
+                  {
+                    key: "skipEncryption",
+                    label: "Skip Encryption",
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_SKIP_ENCRYPTION",
+                  },
+                  {
+                    key: "wifiHidden",
+                    label: "Wi-Fi Hidden",
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_HIDDEN",
+                  },
+                  {
+                    key: "useMobileData",
+                    label: "Use Mobile Data",
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_USE_MOBILE_DATA",
+                  },
+                  {
+                    key: "allowOffline",
+                    label: "Allow Offline",
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_ALLOW_OFFLINE",
+                  },
+                  {
+                    key: "keepScreenOn",
+                    label: "Keep Screen On",
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_KEEP_SCREEN_ON",
+                  },
                 ] as const
-              ).map(({ key, label }) => (
+              ).map(({ key, label, docsLink }) => (
                 <form.Field
                   key={key}
                   name={key}
                   children={(field) => (
-                    <QrCheckboxField field={field} label={label} />
+                    <QrCheckboxField
+                      field={field}
+                      label={label}
+                      docsLink={docsLink}
+                    />
                   )}
                 />
               ))}
@@ -200,60 +233,88 @@ export default function QRCodeForm() {
                     name: "organizationName",
                     label: "Organization Name",
                     placeholder: "e.g. Webview Kiosk",
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_ORGANIZATION_NAME",
                   },
                   {
                     name: "locale",
                     label: "Locale",
                     placeholder: "e.g. en-US",
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_LOCALE",
                   },
                   {
                     name: "timeZone",
                     label: "Time Zone",
                     placeholder: "e.g. America/New_York",
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_TIMEZONE",
                   },
                   {
                     name: "wifiSSID",
                     label: "Wi-Fi SSID",
                     placeholder: "Optional",
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_SSID",
                   },
                   {
                     name: "wifiPassword",
                     label: "Wi-Fi Password",
                     placeholder: "Optional",
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_PASSWORD",
                   },
                   {
                     name: "proxyHost",
                     label: "Proxy Host",
                     placeholder: "Optional",
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_PROXY_HOST",
                   },
                   {
                     name: "proxyPort",
                     label: "Proxy Port",
                     placeholder: "Optional",
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_PROXY_PORT",
                   },
                   {
                     name: "proxyBypass",
                     label: "Proxy Bypass",
                     placeholder: "Optional",
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_PROXY_BYPASS",
                   },
-                  { name: "pacUrl", label: "PAC URL", placeholder: "Optional" },
+                  {
+                    name: "pacUrl",
+                    label: "PAC URL",
+                    placeholder: "Optional",
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_PAC_URL",
+                  },
                   {
                     name: "localTime",
                     label: "Local Time (ISO)",
                     placeholder: "Optional, e.g. 2026-02-18T09:00:00Z",
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_LOCAL_TIME",
                   },
                   {
                     name: "packageDownloadCookieHeader",
                     label: "Package Download Cookie Header",
                     placeholder: "Optional",
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_COOKIE_HEADER",
                   },
                   {
                     name: "adminExtras",
                     label: "Admin Extras (JSON)",
                     placeholder: '{"key":"value"}',
+                    docsLink:
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE",
                   },
                 ] as const
-              ).map(({ name, label, placeholder }) => (
+              ).map(({ name, label, placeholder, docsLink }) => (
                 <form.Field
                   key={name}
                   name={name}
@@ -262,6 +323,7 @@ export default function QRCodeForm() {
                       field={field}
                       label={label}
                       placeholder={placeholder}
+                      docsLink={docsLink}
                     />
                   )}
                 />
@@ -274,6 +336,9 @@ export default function QRCodeForm() {
                     field={field}
                     label="Wi-Fi Security Type"
                     options={WifiSecurityType.options}
+                    docsLink={
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_SECURITY_TYPE"
+                    }
                   />
                 )}
               />

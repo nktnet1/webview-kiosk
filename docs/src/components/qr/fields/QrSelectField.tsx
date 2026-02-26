@@ -8,19 +8,32 @@ import {
   SelectGroup,
   SelectItem,
 } from "@/components/ui/select";
+import { ExternalLink } from "lucide-react";
 
 export default function QrSelectField({
   field,
   label,
   options,
+  docsLink,
 }: {
   field: AnyFieldApi;
   label: string;
   options: string[];
+  docsLink: string;
 }) {
   return (
     <div className="text-left">
-      <Label htmlFor={field.name}>{label}</Label>
+      <Label htmlFor={field.name} className="flex items-center gap-2">
+        {label}
+        <a
+          href={docsLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center hover:opacity-75"
+        >
+          <ExternalLink size={18} />
+        </a>
+      </Label>
       <Select
         value={field.state.value}
         onValueChange={(value) => field.handleChange(value)}
