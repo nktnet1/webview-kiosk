@@ -21,6 +21,7 @@ import {
 import FormFieldInfo from "@/components/common/FormFieldInfo";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { Separator } from "@/components/ui/separator";
 
 const LATEST_VERSION = {
   code: 115,
@@ -33,12 +34,15 @@ const WifiSecurityType = v.picklist(["NONE", "WPA", "WEP", "EAP"]);
 
 const FormSchema = v.object({
   downloadSource: DownloadSource,
-  enterpriseName: v.pipe(v.string(), v.minLength(1, "Required")),
+  organizationName: v.pipe(v.string(), v.minLength(1, "Required")),
   locale: v.string(),
   timeZone: v.string(),
   leaveAllSystemAppsEnabled: v.boolean(),
   skipEncryption: v.boolean(),
   wifiHidden: v.boolean(),
+  useMobileData: v.boolean(),
+  allowOffline: v.boolean(),
+  keepScreenOn: v.boolean(),
   wifiSSID: v.nullable(v.string()),
   wifiPassword: v.nullable(v.string()),
   wifiSecurityType: WifiSecurityType,
@@ -66,11 +70,14 @@ export default function QRCodeForm() {
   const form = useForm({
     defaultValues: {
       downloadSource: "GitHub",
-      enterpriseName: "Webview Kiosk",
+      organizationName: "Webview Kiosk",
       locale: Intl.DateTimeFormat().resolvedOptions().locale,
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       skipEncryption: false,
       wifiHidden: false,
+      useMobileData: false,
+      allowOffline: false,
+      keepScreenOn: false,
       wifiSSID: null,
       wifiPassword: null,
       wifiSecurityType: "WPA",
@@ -105,6 +112,11 @@ export default function QRCodeForm() {
           value.leaveAllSystemAppsEnabled,
         "android.app.extra.PROVISIONING_SKIP_ENCRYPTION": value.skipEncryption,
         "android.app.extra.PROVISIONING_WIFI_HIDDEN": value.wifiHidden,
+        "android.app.extra.PROVISIONING_USE_MOBILE_DATA": value.useMobileData,
+        "android.app.extra.PROVISIONING_ALLOW_OFFLINE": value.allowOffline,
+        "android.app.extra.PROVISIONING_KEEP_SCREEN_ON": value.keepScreenOn,
+        "android.app.extra.PROVISIONING_ORGANIZATION_NAME":
+          value.organizationName,
       };
 
       if (value.locale)
@@ -199,24 +211,6 @@ export default function QRCodeForm() {
           )}
         />
 
-        <form.Field
-          name="enterpriseName"
-          children={(field) => (
-            <div className="text-left">
-              <Label htmlFor={field.name}>Enterprise Name</Label>
-              <Input
-                id={field.name}
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                placeholder="e.g. Webview Kiosk"
-                className="mt-2"
-              />
-              <FormFieldInfo field={field} />
-            </div>
-          )}
-        />
-
         <div className="border-y border-dashed py-4">
           <Button
             type="button"
@@ -279,9 +273,77 @@ export default function QRCodeForm() {
               />
 
               <form.Field
+                name="useMobileData"
+                children={(field) => (
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={field.name}
+                      checked={field.state.value}
+                      onCheckedChange={(state) =>
+                        field.handleChange(state === true)
+                      }
+                    />
+                    <Label htmlFor={field.name}>Use Mobile Data</Label>
+                  </div>
+                )}
+              />
+
+              <form.Field
+                name="allowOffline"
+                children={(field) => (
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={field.name}
+                      checked={field.state.value}
+                      onCheckedChange={(state) =>
+                        field.handleChange(state === true)
+                      }
+                    />
+                    <Label htmlFor={field.name}>Allow Offline</Label>
+                  </div>
+                )}
+              />
+
+              <form.Field
+                name="keepScreenOn"
+                children={(field) => (
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id={field.name}
+                      checked={field.state.value}
+                      onCheckedChange={(state) =>
+                        field.handleChange(state === true)
+                      }
+                    />
+                    <Label htmlFor={field.name}>Keep Screen On</Label>
+                  </div>
+                )}
+              />
+
+              <Separator className="my-2" />
+
+              <form.Field
+                name="organizationName"
+                children={(field) => (
+                  <div className="text-left">
+                    <Label htmlFor={field.name}>Organization Name</Label>
+                    <Input
+                      id={field.name}
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="e.g. Webview Kiosk"
+                      className="mt-2"
+                    />
+                    <FormFieldInfo field={field} />
+                  </div>
+                )}
+              />
+
+              <form.Field
                 name="locale"
                 children={(field) => (
-                  <div className="text-left mt-3">
+                  <div className="text-left">
                     <Label htmlFor={field.name}>Locale</Label>
                     <Input
                       id={field.name}
@@ -291,6 +353,7 @@ export default function QRCodeForm() {
                       placeholder="e.g. en-US"
                       className="mt-2"
                     />
+                    <FormFieldInfo field={field} />
                   </div>
                 )}
               />
