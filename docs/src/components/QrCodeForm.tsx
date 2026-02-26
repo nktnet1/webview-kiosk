@@ -23,9 +23,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 
 const LATEST_VERSION = {
-  code: 114,
-  tag: "v0.26.0",
-  checksum: "VsRVw7D7af80TooieNhluoDw5NrT0dHkt3euY36s52k=",
+  code: 115,
+  tag: "v0.26.1",
+  adminSignatureChecksum: "L-EN4OxwoH84OoeJLKRWZyFOoTxO7qSjJU86Mxp6axU=",
 } as const;
 
 const DownloadSource = v.picklist(["GitHub", "F-Droid", "IzzyOnDroid"]);
@@ -99,8 +99,8 @@ export default function QRCodeForm() {
           "uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver",
         "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION":
           downloadLocation,
-        "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_CHECKSUM":
-          LATEST_VERSION.checksum,
+        "android.app.extra.PROVISIONING_DEVICE_ADMIN_SIGNATURE_CHECKSUM":
+          LATEST_VERSION.adminSignatureChecksum,
         "android.app.extra.PROVISIONING_LEAVE_ALL_SYSTEM_APPS_ENABLED":
           value.leaveAllSystemAppsEnabled,
         "android.app.extra.PROVISIONING_SKIP_ENCRYPTION": value.skipEncryption,
