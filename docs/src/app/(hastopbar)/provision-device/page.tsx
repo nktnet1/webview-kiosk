@@ -1,6 +1,6 @@
 // app/page.tsx
 
-import QRCodeForm from "@/components/QrCodeForm";
+import QRCodeForm from "@/components/qr/QrCodeForm";
 
 export default function ProvisionDevicePage() {
   return (
