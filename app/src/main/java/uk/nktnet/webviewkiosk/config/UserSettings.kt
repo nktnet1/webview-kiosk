@@ -271,6 +271,7 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebEngine.INITIAL_SCALE,
         0,
         min = 0,
+        max = Constants.MAX_INT_SETTING,
     )
     var allowFileAccessFromFileURLs by booleanPref(
         getRestrictions,
@@ -343,6 +344,7 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS,
         0,
         min = 0,
+        max = Constants.MAX_INT_SETTING,
     )
     var dimScreenOnInactivitySeconds by intPref(
         getRestrictions,
@@ -350,6 +352,7 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebLifecycle.DIM_SCREEN_ON_INACTIVITY_SECONDS,
         0,
         min = 0,
+        max = Constants.MAX_INT_SETTING,
     )
     var refreshOnLoadingErrorIntervalSeconds by intPref(
         getRestrictions,
@@ -357,6 +360,7 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS,
         0,
         min = 0,
+        max = Constants.MAX_INT_SETTING,
     )
 
     // Appearance
@@ -561,6 +565,7 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH,
         0,
         min = 0,
+        max = Constants.MAX_INT_SETTING,
     )
     var enableBatteryApi by booleanPref(
         getRestrictions,
@@ -608,7 +613,9 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.SERVER_PORT,
-        1883
+        1883,
+        min = 1,
+        max = 65535,
     )
     var mqttClientId by stringPrefOptional(
         getRestrictions,
@@ -641,7 +648,9 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.Mqtt.Connection.KEEP_ALIVE,
-        60
+        60,
+        min = 0,
+        max = 65535,
     )
     var mqttConnectTimeout by intPref(
         getRestrictions,
@@ -649,7 +658,7 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Mqtt.Connection.CONNECT_TIMEOUT,
         30,
         min = 0,
-        max = Int.MAX_VALUE
+        max = Constants.MAX_INT_SETTING,
     )
     var mqttSocketConnectTimeout by intPref(
         getRestrictions,
@@ -657,7 +666,7 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Mqtt.Connection.SOCKET_CONNECT_TIMEOUT,
         5,
         min = 0,
-        max = Int.MAX_VALUE
+        max = Constants.MAX_INT_SETTING,
     )
     var mqttAutomaticReconnect by booleanPref(
         getRestrictions,
@@ -671,7 +680,7 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Mqtt.Connection.SESSION_EXPIRY_INTERVAL,
         0,
         min = 0,
-        max = Int.MAX_VALUE
+        max = Constants.MAX_INT_SETTING,
     )
     var mqttUseWebSocket by booleanPref(
         getRestrictions,
@@ -841,7 +850,7 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Mqtt.Will.MESSAGE_EXPIRY_INTERVAL,
         0,
         min = 0,
-        max = Int.MAX_VALUE
+        max = Constants.MAX_INT_SETTING,
     )
     var mqttWillDelayInterval by intPref(
         getRestrictions,
@@ -849,7 +858,7 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Mqtt.Will.DELAY_INTERVAL,
         0,
         min = 0,
-        max = Int.MAX_VALUE
+        max = Constants.MAX_INT_SETTING,
     )
     var mqttRestrictionsReceiveMaximum by intPref(
         getRestrictions,

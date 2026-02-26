@@ -42,8 +42,22 @@ fun NumberSettingFieldItem(
     var draftError by remember { mutableStateOf(false) }
 
     fun validateNumber(input: String): Boolean {
-        val number = if (input.isEmpty()) 0 else input.toIntOrNull() ?: 0
-        return number == 0 || ((min == null || number >= min) && (max == null || number <= max))
+        val number = if (input.isEmpty()) {
+            0
+        } else {
+            val parsed = input.toLongOrNull() ?: return false
+            if (parsed > Int.MAX_VALUE || parsed < Int.MIN_VALUE) {
+                return false
+            }
+            parsed.toInt()
+        }
+        return (
+            number == 0
+            || (
+                (min == null || number >= min)
+                && (max == null || number <= max)
+            )
+        )
     }
 
     GenericSettingFieldItem(
@@ -108,7 +122,10 @@ fun NumberSettingFieldItem(
                             return@TextField
                         }
                         IconButton(
-                            onClick = { draftValue = ""; draftError = !validateNumber("") },
+                            onClick = {
+                                draftValue = ""
+                                draftError = !validateNumber("")
+                            },
                             enabled = draftValue.isNotEmpty()
                         ) {
                             Icon(

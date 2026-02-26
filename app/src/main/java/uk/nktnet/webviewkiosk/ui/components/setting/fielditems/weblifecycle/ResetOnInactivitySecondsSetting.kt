@@ -37,6 +37,7 @@ fun ResetOnInactivitySecondsSetting() {
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         min = Constants.MIN_INACTIVITY_TIMEOUT_SECONDS,
+        max = Constants.MAX_INT_SETTING,
         onSave = { userSettings.resetOnInactivitySeconds = it }
     )
 }

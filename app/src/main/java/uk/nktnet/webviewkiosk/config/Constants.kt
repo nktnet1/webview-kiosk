@@ -20,4 +20,6 @@ object Constants {
 
     const val MQTT_AUTO_RECONNECT_INTERVAL_SECONDS = 3
     const val REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL = 9999
+
+    const val MAX_INT_SETTING = 999_999_999
 }

@@ -35,7 +35,6 @@ import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.utils.getStatus
 import uk.nktnet.webviewkiosk.utils.getSystemInfo
 import uk.nktnet.webviewkiosk.utils.openPackage
-import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
 import uk.nktnet.webviewkiosk.utils.wakeScreen
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
@@ -129,10 +128,6 @@ object RemoteInboundHandler {
     ) {
         val userSettings = UserSettings(context)
         userSettings.importJson(settings.data.settings.toString())
-
-        if (settings.reloadActivity) {
-            updateDeviceSettings(context)
-        }
 
         if (settings.showToast) {
             /**

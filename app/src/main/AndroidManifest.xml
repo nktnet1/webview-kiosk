@@ -119,7 +119,7 @@
         </activity>
 
         <activity
-            android:name=".activities.FinalizeActivity"
+            android:name=".activities.FinaliseActivity"
             android:exported="true"
             android:permission="android.permission.BIND_DEVICE_ADMIN">
             <intent-filter>

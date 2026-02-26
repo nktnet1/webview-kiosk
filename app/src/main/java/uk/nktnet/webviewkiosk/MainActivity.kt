@@ -30,6 +30,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.Constants
@@ -203,15 +204,21 @@ class MainActivity : AppCompatActivity() {
                         RemoteInboundHandler.handleInboundSettings(context, settings.message)
                     }
 
-                    // Counterintuitive, but this acts as a "Refresh" of the webview screen,
-                    // which will recreate + apply settings.
-                    // If we're on another screen though (e.g. settings), then let the user
-                    // decide when to navigate back.
-                    if (
-                        settings.message.reloadActivity
-                        && navController.currentDestination?.route == Screen.WebView.route
-                    ) {
-                        navigateToWebViewScreen(navController)
+                    if (settings.message.reloadActivity) {
+                        lifecycleScope.launch(Dispatchers.Main) {
+                            delay(100)
+                            if (settings.message.reloadActivity) {
+                                updateDeviceSettings(context)
+                            }
+                        }
+
+                        // Counterintuitive, but this acts as a "Refresh" of the webview screen,
+                        // which will recreate + apply settings.
+                        // If we're on another screen though (e.g. settings), then let the user
+                        // decide when to navigate back.
+                        if (navController.currentDestination?.route == Screen.WebView.route) {
+                            navigateToWebViewScreen(navController)
+                        }
                     }
                 }
             }
