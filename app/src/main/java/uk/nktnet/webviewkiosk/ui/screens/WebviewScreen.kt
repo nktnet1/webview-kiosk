@@ -401,7 +401,7 @@ fun WebviewScreen(navController: NavController) {
 
                 urlBarText = urlBarText.copy(text = initialUrl)
 
-                WebviewAwareSwipeRefreshLayout(ctx, webView).apply {
+                WebviewAwareSwipeRefreshLayout(ctx, webView, ::customLoadUrl).apply {
                     isEnabled = userSettings.allowRefresh && userSettings.allowPullToRefresh
                     setOnRefreshListener {
                         isSwipeRefreshing = true
