@@ -31,7 +31,6 @@ export default function QRCodeForm() {
   const form = useForm({
     defaultValues: {
       downloadSource: "GitHub",
-      organizationName: "Webview Kiosk",
       locale: Intl.DateTimeFormat().resolvedOptions().locale,
       timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       skipEncryption: false,
@@ -42,7 +41,6 @@ export default function QRCodeForm() {
       wifiSSID: null,
       wifiPassword: null,
       wifiSecurityType: "WPA",
-      wifiAnonymousIdentity: false,
       proxyHost: null,
       proxyPort: null,
       proxyBypass: null,
@@ -66,7 +64,6 @@ export default function QRCodeForm() {
       const payload: QrData = {
         "android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME":
           "uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver",
-        "android.app.extra.PROVISIONING_ALLOWED_PROVISIONING_MODE": [2],
         "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION":
           downloadLocation,
         "android.app.extra.PROVISIONING_DEVICE_ADMIN_SIGNATURE_CHECKSUM":
@@ -75,13 +72,9 @@ export default function QRCodeForm() {
           value.leaveAllSystemAppsEnabled,
         "android.app.extra.PROVISIONING_SKIP_ENCRYPTION": value.skipEncryption,
         "android.app.extra.PROVISIONING_WIFI_HIDDEN": value.wifiHidden,
-        "android.app.extra.PROVISIONING_WIFI_ANONYMOUS_IDENTITY":
-          value.wifiAnonymousIdentity,
         "android.app.extra.PROVISIONING_USE_MOBILE_DATA": value.useMobileData,
         "android.app.extra.PROVISIONING_ALLOW_OFFLINE": value.allowOffline,
         "android.app.extra.PROVISIONING_KEEP_SCREEN_ON": value.keepScreenOn,
-        "android.app.extra.PROVISIONING_ORGANIZATION_NAME":
-          value.organizationName,
       };
 
       if (value.locale)
@@ -191,12 +184,6 @@ export default function QRCodeForm() {
                       "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_HIDDEN",
                   },
                   {
-                    key: "wifiAnonymousIdentity",
-                    label: "Wi-Fi Anonymous Identity",
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_WIFI_ANONYMOUS_IDENTITY",
-                  },
-                  {
                     key: "useMobileData",
                     label: "Use Mobile Data",
                     docsLink:
@@ -233,13 +220,6 @@ export default function QRCodeForm() {
 
               {(
                 [
-                  {
-                    name: "organizationName",
-                    label: "Organization Name",
-                    placeholder: "e.g. Webview Kiosk",
-                    docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_ORGANIZATION_NAME",
-                  },
                   {
                     name: "locale",
                     label: "Locale",
@@ -367,7 +347,7 @@ export default function QRCodeForm() {
       {qrValue && (
         <div className="flex flex-col w-full">
           <div className="mt-10 flex flex-col items-center gap-4">
-            <div className="border-2 border-white">
+            <div className="border-10 border-white">
               <QRCode className="max-w-full" value={JSON.stringify(qrValue)} />
             </div>
             <p className="text-sm opacity-70 break-all">
