@@ -80,7 +80,7 @@ export default function QRCodeForm() {
       if (value.locale)
         payload["android.app.extra.PROVISIONING_LOCALE"] = value.locale;
       if (value.timeZone)
-        payload["android.app.extra.PROVISIONING_TIMEZONE"] = value.timeZone;
+        payload["android.app.extra.PROVISIONING_TIME_ZONE"] = value.timeZone;
       if (value.wifiSSID)
         payload["android.app.extra.PROVISIONING_WIFI_SSID"] = value.wifiSSID;
       if (value.wifiPassword)
@@ -156,7 +156,7 @@ export default function QRCodeForm() {
             type="button"
             variant="outline"
             onClick={() => setShowAdvanced(!showAdvanced)}
-            className="mt-2 min-h-12 whitespace-normal wrap-break-words"
+            className="my-2 min-h-12 whitespace-normal wrap-break-words"
           >
             {showAdvanced ? "Hide Advanced Options" : "Show Advanced Options"}
           </Button>
@@ -232,7 +232,7 @@ export default function QRCodeForm() {
                     label: "Time Zone",
                     placeholder: "e.g. America/New_York",
                     docsLink:
-                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_TIMEZONE",
+                      "https://developer.android.com/reference/android/app/admin/DevicePolicyManager#EXTRA_PROVISIONING_TIME_ZONE",
                   },
                   {
                     name: "wifiSSID",
