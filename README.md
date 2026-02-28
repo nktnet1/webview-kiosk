@@ -47,29 +47,20 @@ and standalone Kiosk solution.
 
 ### Remote Management / Enterprise
 
-<ul>
-  <li>
-    <b>MQTT (Message Queuing Telemetry Transport)</b>
-    <ul>
-      <li>Monitor events, update settings, execute commands and build custom automations using the API</li>
-      <li>Requires an MQTT broker (e.g. Mosquitto, EMQX, HiveMQ)</li>
-    </ul>
-  </li>
-  <li>
-    <b>UnifiedPush</b>
-    <ul>
-      <li>Send commands and update settings via a decentralised push notification system</li>
-      <li>Requires a distributor application (e.g. sunup, ntfy)</li>
-    </ul>
-  </li>
-  <li>
-    <b>Managed Configurations (App Restrictions)</b>
-    <ul>
-      <li>For fully-managed (company-owned) devices, settings can be remotely configured via an MDM/EMM provider</li>
-      <li>Advanced users using a device policy controller (e.g. Test DPC or OwnDroid) can also enforce configurations locally</li>
-    </ul>
-  </li>
-</ul>
+1. MQTT (Message Queuing Telemetry Transport)
+
+    - Monitor events, update settings, execute commands and build custom automations using the API
+    - Requires an MQTT broker (e.g. Mosquitto, EMQX, HiveMQ)
+
+2. UnifiedPush
+
+    - Send commands and update settings via a decentralised push notification system
+    - Requires a distributor application (e.g. sunup, ntfy)
+
+3. Managed Configurations (App Restrictions)
+
+    - For fully-managed (company-owned) devices, settings can be remotely configured via an MDM/EMM provider
+    - Advanced users using a device policy controller (e.g. Test DPC or OwnDroid) can also enforce configurations locally
 
 ## Permissions
 
@@ -118,3 +109,9 @@ See the [LICENSE](./LICENSE) file for details.
   <img src="./metadata/en-US/images/phoneScreenshots/005.phone-settings.png" width="275px" alt="Phone Screenshot 5" />&nbsp;
   <img src="./metadata/en-US/images/phoneScreenshots/006.phone-settings-mqtt.png" width="275px" alt="Phone Screenshot 6" />
 </div>
+
+## Alternatives
+
+- [Fully Kiosk Browser Lockdown](https://www.fully-kiosk.com) (feature-rich, but not a free kiosk solution)
+- [Web-Kiosk](https://github.com/screenlite/web-kiosk) (FOSS, developed by Screenlite)
+- [FreeKiosk](https://github.com/RushB-fr/freekiosk) (FOSS, developed by Rushb-fr)
