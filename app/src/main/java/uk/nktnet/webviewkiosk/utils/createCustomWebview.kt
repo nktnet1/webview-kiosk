@@ -359,23 +359,18 @@ fun createCustomWebview(
                     view: WebView,
                     detail: RenderProcessGoneDetail
                 ): Boolean {
-
                     val parent = view.parent as? ViewGroup
-
                     Log.e(
                         Constants.APP_SCHEME,
                         "WebView renderer gone. crashed=${detail.didCrash()}"
                     )
-
                     parent?.removeView(view)
                     view.destroy()
-
                     if (parent != null) {
                         val newWebView = buildWebView()
                         parent.addView(newWebView)
                         newWebView.loadUrl(systemSettings.currentUrl)
                     }
-
                     return true
                 }
             }
