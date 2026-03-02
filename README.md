@@ -48,19 +48,16 @@ and standalone Kiosk solution.
 ### Remote Management / Enterprise
 
 1. MQTT (Message Queuing Telemetry Transport)
-
-    - Monitor events, update settings, execute commands and build custom automations using the API
-    - Requires an MQTT broker (e.g. Mosquitto, EMQX, HiveMQ)
+   - Monitor events, update settings, execute commands and build custom automations using the API
+   - Requires an MQTT broker (e.g. Mosquitto, EMQX, HiveMQ, or their HomeAssistant integrations)
 
 2. UnifiedPush
-
-    - Send commands and update settings via a decentralised push notification system
-    - Requires a distributor application (e.g. sunup, ntfy)
+   - Send commands and update settings via a decentralised push notification system
+   - Requires a distributor application (e.g. sunup, ntfy, gCompat-UP)
 
 3. Managed Configurations (App Restrictions)
-
-    - For fully-managed (company-owned) devices, settings can be remotely configured via an MDM/EMM provider
-    - Advanced users using a device policy controller (e.g. Test DPC or OwnDroid) can also enforce configurations locally
+   - For fully-managed (company-owned) devices, settings can be remotely configured via an MDM/EMM provider
+   - Advanced users using a device policy controller (e.g. Test DPC or OwnDroid) can also enforce configurations locally
 
 ## Permissions
 
@@ -113,5 +110,5 @@ See the [LICENSE](./LICENSE) file for details.
 ## Alternatives
 
 - [Fully Kiosk Browser Lockdown](https://www.fully-kiosk.com) (feature-rich, but not a free kiosk solution)
-- [Web-Kiosk](https://github.com/screenlite/web-kiosk) (FOSS, developed by Screenlite)
+- [Web Kiosk](https://github.com/screenlite/web-kiosk) (FOSS, developed by Screenlite)
 - [FreeKiosk](https://github.com/RushB-fr/freekiosk) (FOSS, developed by Rushb-fr)
