@@ -35,6 +35,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.data.WebViewCreation
 import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
 import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
@@ -42,6 +43,7 @@ import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
+import uk.nktnet.webviewkiosk.utils.webview.handlers.handleDownloadPrompt
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorPromptRequest
@@ -486,11 +488,21 @@ fun createCustomWebview(
                 userSettings.allowDefaultLongPress.not()
             }
 
-            setDownloadListener { _, _, _, _, _ ->
-                ToastManager.show(
-                    context,
-                    "Downloading files is not supported in ${context.getString(R.string.app_name)}."
-                )
+            setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
+                if (userSettings.allowFileDownload) {
+                    handleDownloadPrompt(
+                        context = context,
+                        url = url,
+                        userAgent = userAgent,
+                        contentDisposition = contentDisposition,
+                        mimeType = mimeType
+                    )
+                } else {
+                    ToastManager.show(
+                        context,
+                        "Download is disabled in settings (${UserSettingsKeys.WebEngine.ALLOW_FILE_DOWNLOAD})"
+                    )
+                }
             }
         }
     }

@@ -74,6 +74,7 @@ and standalone Kiosk solution.
 - <b>USE_BIOMETRIC</b>: replaces USE_FINGERPRINT from Android 9 onwards
 - <b>USE_FINGERPRINT</b>: use fingerprint hardware when accessing settings or unlocking kiosk
 - <b>WAKE_LOCK</b>: to optionally wake the screen when receiving MQTT commands
+- <b>WRITE_EXTERNAL_STORAGE</b>: for downloading files in Android 9.0 (SDK 28) and below
 - <b>API (Dhizuku)</b>: to request shared device owner privileges
 
 ## Installation Notes
