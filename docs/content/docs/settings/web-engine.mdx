@@ -204,6 +204,8 @@ credentials used on arbitrary web sites.
 
 Allow websites to open the system file picker, e.g. for uploading files.
 
+**Android API:** <a href="https://developer.android.com/reference/android/webkit/WebChromeClient#onShowFileChooser(android.webkit.WebView,%20android.webkit.ValueCallback%3Candroid.net.Uri[]%3E,%20android.webkit.WebChromeClient.FileChooserParams)" target="_blank" rel="noopener noreferrer">WebChromeClient#onShowFileChooser</a>
+
 **Default:** false
 
 ## 13. Allow File Download
@@ -213,6 +215,8 @@ download directory, e.g. `/storage/emulated/0/Download/`
 
 For Android 9.0 (SDK 28) and below, the `WRITE_EXTERNAL_STORAGE`
 permission is required.
+
+**Android API:** [WebView#setDownloadListener(android.webkit.DownloadListener)](https://developer.android.com/reference/android/webkit/WebView#setDownloadListener(android.webkit.DownloadListener))
 
 **Default:** false
 
