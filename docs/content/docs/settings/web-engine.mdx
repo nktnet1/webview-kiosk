@@ -206,7 +206,17 @@ Allow websites to open the system file picker, e.g. for uploading files.
 
 **Default:** false
 
-## 13. Media Playback Requires User Gesture
+## 13. Allow File Download
+
+Allow files to be downloaded from websites to the device's default
+download directory, e.g. `/storage/emulated/0/Download/`
+
+For Android 9.0 (SDK 28) and below, the WRITE_EXTERNAL_STORAGE
+permission is required.
+
+**Default:** false
+
+## 14. Media Playback Requires User Gesture
 
 Sets whether the WebView requires a user gesture (e.g. tap) to play media.
 
@@ -214,7 +224,7 @@ Sets whether the WebView requires a user gesture (e.g. tap) to play media.
 
 **Default:** true
 
-## 14. SSL Error Mode
+## 15. SSL Error Mode
 
 Configure the action to take when an SSL Error is received.
 
@@ -226,7 +236,7 @@ Configure the action to take when an SSL Error is received.
 
 **Default:** Block
 
-## 15. Mixed Content Mode
+## 16. Mixed Content Mode
 
 Configures the WebView's behavior when a secure origin attempts to load
 a resource from an insecure origin.
@@ -241,7 +251,7 @@ a resource from an insecure origin.
 
 **Default:** Never Allow
 
-## 16. Over Scroll Mode
+## 17. Over Scroll Mode
 
 Configures the WebView's behavior when the user scrolls beyond the content boundaries.
 
@@ -255,7 +265,7 @@ Configures the WebView's behavior when the user scrolls beyond the content bound
 
 **Default:** If Content Scrolls
 
-## 17. Request Focus On Page Start
+## 18. Request Focus On Page Start
 
 Sets whether the WebView should request focus when a page starts loading.
 
