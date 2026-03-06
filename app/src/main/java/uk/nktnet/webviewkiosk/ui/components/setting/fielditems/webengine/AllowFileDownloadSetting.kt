@@ -24,7 +24,7 @@ fun AllowFileDownloadSetting() {
             Allow files to be downloaded from websites to:
 
             - $downloadLocation
-            
+
             For Android 9.0 (SDK 28) and below, the WRITE_EXTERNAL_STORAGE
             permission is required.
         """.trimIndent(),

@@ -1,0 +1,9 @@
+## Changes
+
+New setting: `Web Engine -> Allow File Download` (boolean, default false).
+
+When enabled, files can be downloaded from websites to the device's default download directory, e.g.
+
+- /storage/emulated/0/Download/
+
+For Android 9.0 (SDK 28) and below, the `WRITE_EXTERNAL_STORAGE` permission is required.
