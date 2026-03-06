@@ -35,6 +35,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.data.WebViewCreation
 import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
 import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
@@ -488,13 +489,20 @@ fun createCustomWebview(
             }
 
             setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
-                handleDownloadPrompt(
-                    context = context,
-                    url = url,
-                    userAgent = userAgent,
-                    contentDisposition = contentDisposition,
-                    mimeType = mimeType
-                )
+                if (userSettings.allowFileDownload) {
+                    handleDownloadPrompt(
+                        context = context,
+                        url = url,
+                        userAgent = userAgent,
+                        contentDisposition = contentDisposition,
+                        mimeType = mimeType
+                    )
+                } else {
+                    ToastManager.show(
+                        context,
+                        "Download is disabled in settings (${UserSettingsKeys.WebEngine.ALLOW_FILE_DOWNLOAD})"
+                    )
+                }
             }
         }
     }

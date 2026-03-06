@@ -4,6 +4,7 @@ import android.content.ContentResolver
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
+import android.os.Environment
 import android.provider.OpenableColumns
 import android.text.format.Formatter
 import android.webkit.MimeTypeMap
@@ -149,4 +150,12 @@ fun File.getDisplayName(): String {
 
 fun File.getLocalUrl(): String {
     return "file://${Uri.encode(this.absolutePath, "/")}"
+}
+
+fun getDownloadLocation(): String {
+    return Environment.getExternalStoragePublicDirectory(
+        Environment.DIRECTORY_DOWNLOADS
+    ).absolutePath.let {
+        if (it.endsWith("/")) it else "$it/"
+    }
 }

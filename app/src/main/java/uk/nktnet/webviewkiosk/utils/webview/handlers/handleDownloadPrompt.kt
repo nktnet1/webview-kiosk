@@ -18,6 +18,7 @@ import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
+import uk.nktnet.webviewkiosk.utils.getDownloadLocation
 import uk.nktnet.webviewkiosk.utils.handleKeyEvent
 
 @SuppressLint("SetTextI18n")
@@ -40,13 +41,8 @@ fun handleDownloadPrompt(
     }
     layout.addView(titleView)
 
-    val downloadsDir = Environment.getExternalStoragePublicDirectory(
-        Environment.DIRECTORY_DOWNLOADS
-    ).absolutePath.let {
-        if (it.endsWith("/")) it else "$it/"
-    }
     val infoText = TextView(context).apply {
-        text = downloadsDir
+        text = getDownloadLocation()
         textSize = 12f
         setTypeface(typeface, Typeface.ITALIC)
         setPadding(10, 10, 10, 0)
@@ -107,9 +103,10 @@ fun handleDownloadPrompt(
             val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
             dm.enqueue(request)
             dialog.dismiss()
+            ToastManager.show(context, "Starting download for $filename")
         } catch (e: Exception) {
-            ToastManager.show(context, "Error: ${e.message}")
             Log.e(Constants.APP_SCHEME, "Download failed", e)
+            ToastManager.show(context, "Error: ${e.message}")
         }
     }
 
