@@ -31,17 +31,9 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.utils.fetchRemoteFileInfo
+import uk.nktnet.webviewkiosk.utils.getMimeType
 import uk.nktnet.webviewkiosk.utils.safeStartActivity
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleDownloadPrompt
-
-fun getMimeType(context: android.content.Context, uri: Uri): String? {
-    return if (ContentResolver.SCHEME_CONTENT == uri.scheme) {
-        context.contentResolver.getType(uri)
-    } else {
-        val extension = MimeTypeMap.getFileExtensionFromUrl(uri.toString())
-        MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension.lowercase())
-    }
-}
 
 @Composable
 fun ImageOptionsDialog(
