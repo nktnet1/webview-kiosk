@@ -481,32 +481,30 @@ fun createCustomWebview(
             setOnLongClickListener {
                 val result = hitTestResult
                 if (
-                    !userSettings.allowLinkLongPressContextMenu
+                    userSettings.allowLinkLongPressContextMenu
                     && (
                         result.type == WebView.HitTestResult.IMAGE_TYPE
                         || result.type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE
                         || result.type == WebView.HitTestResult.SRC_ANCHOR_TYPE
                     )
                 ) {
-                    return@setOnLongClickListener !userSettings.allowDefaultLongPress
-                }
-
-                when (result.type) {
-                    WebView.HitTestResult.IMAGE_TYPE,
-                    WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE -> {
-                        result.extra?.let { imageUrl ->
-                            config.onImageLongClick(imageUrl)
+                    when (result.type) {
+                        WebView.HitTestResult.IMAGE_TYPE,
+                        WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE -> {
+                            result.extra?.let { imageUrl ->
+                                config.onImageLongClick(imageUrl)
+                            }
+                            return@setOnLongClickListener true
                         }
-                        true
-                    }
-                    WebView.HitTestResult.SRC_ANCHOR_TYPE -> {
-                        result.extra?.let { link ->
-                            config.onLinkLongClick(link)
+                        WebView.HitTestResult.SRC_ANCHOR_TYPE -> {
+                            result.extra?.let { link ->
+                                config.onLinkLongClick(link)
+                            }
+                            return@setOnLongClickListener true
                         }
-                        true
                     }
-                    else -> !userSettings.allowDefaultLongPress
                 }
+                !userSettings.allowDefaultLongPress
             }
 
             setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
