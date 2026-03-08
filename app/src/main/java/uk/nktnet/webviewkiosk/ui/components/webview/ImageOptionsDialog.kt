@@ -28,7 +28,9 @@ import androidx.compose.ui.window.Dialog
 import androidx.core.net.toUri
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
+import uk.nktnet.webviewkiosk.utils.fetchRemoteFileInfo
 import uk.nktnet.webviewkiosk.utils.safeStartActivity
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleDownloadPrompt
 
@@ -131,17 +133,35 @@ fun ImageOptionsDialog(
                     if (userSettings.allowFileDownload) {
                         Button(
                             onClick = {
-                                val uri = imageUrl.toUri()
-                                val mimeType = getMimeType(context, uri) ?: "image/*"
+                                scope.launch {
+                                    val uri = imageUrl.toUri()
+                                    var mimeType = getMimeType(context, uri)
+                                    var contentDisposition: String? = null
 
-                                handleDownloadPrompt(
-                                    context = context,
-                                    url = imageUrl,
-                                    userAgent = null,
-                                    contentDisposition = null,
-                                    mimeType = mimeType
-                                )
-                                onDismiss()
+                                    if (mimeType == null) {
+                                        ToastManager.show(
+                                            context,
+                                            "Retrieving image details..."
+                                        )
+                                        fetchRemoteFileInfo(imageUrl)?.let { info ->
+                                            mimeType = info.mimeType
+                                            contentDisposition = info.contentDisposition
+                                        }
+                                    }
+
+                                    if (mimeType == null) {
+                                        mimeType = "image/*"
+                                    }
+
+                                    handleDownloadPrompt(
+                                        context = context,
+                                        url = imageUrl,
+                                        userAgent = null,
+                                        contentDisposition = contentDisposition,
+                                        mimeType = mimeType
+                                    )
+                                    onDismiss()
+                                }
                             },
                             modifier = Modifier.fillMaxWidth()
                         ) {

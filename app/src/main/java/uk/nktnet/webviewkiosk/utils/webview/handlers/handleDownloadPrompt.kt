@@ -5,6 +5,7 @@ import android.app.AlertDialog
 import android.app.DownloadManager
 import android.content.Context
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Environment
 import android.util.Log
 import android.view.Gravity
@@ -22,6 +23,22 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.utils.getDownloadLocation
 import uk.nktnet.webviewkiosk.utils.handleKeyEvent
+
+private fun extractFileNameFromContentDisposition(header: String?): String? {
+    if (header.isNullOrEmpty()) {
+        return null
+    }
+
+    Regex("filename\\*=[^']*'[^']*'([^;]+)").find(header)?.groups?.get(1)?.value?.let {
+        return Uri.decode(it)
+    }
+
+    Regex("filename=\"?([^\";]+)\"?").find(header)?.groups?.get(1)?.value?.let {
+        return it
+    }
+
+    return null
+}
 
 @SuppressLint("SetTextI18n")
 fun handleDownloadPrompt(
@@ -59,7 +76,11 @@ fun handleDownloadPrompt(
     }
     layout.addView(infoText)
 
-    val suggestedName = URLUtil.guessFileName(url, contentDisposition, mimeType)
+    val suggestedName = if (contentDisposition != null) {
+        extractFileNameFromContentDisposition(contentDisposition)
+    } else {
+        URLUtil.guessFileName(url, contentDisposition, mimeType)
+    }
     val editText = EditText(context).apply {
         setText(suggestedName)
         setPadding(10, 10, 10, 35)
