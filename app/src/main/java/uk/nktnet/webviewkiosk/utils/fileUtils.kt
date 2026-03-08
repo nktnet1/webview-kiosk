@@ -189,3 +189,28 @@ suspend fun fetchRemoteFileInfo(url: String): RemoteFileInfo? {
         }
     }
 }
+
+fun extractFileNameFromContentDisposition(contentDisposition: String?): String? {
+    if (contentDisposition.isNullOrEmpty()) {
+        return null
+    }
+    Regex(
+        "filename\\*=[^']*'[^']*'([^;]+)"
+    ).find(contentDisposition)
+        ?.groups
+        ?.get(1)
+        ?.value
+        ?.let {
+            return Uri.decode(it)
+        }
+    Regex(
+        "filename=\"?([^\";]+)\"?"
+    ).find(contentDisposition)
+        ?.groups
+        ?.get(1)
+        ?.value
+        ?.let {
+            return it
+        }
+    return null
+}
