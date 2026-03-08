@@ -479,18 +479,20 @@ fun createCustomWebview(
             }
 
             setOnLongClickListener {
-                if (!userSettings.allowLinkLongPressContextMenu) {
-                    return@setOnLongClickListener false
+                val result = hitTestResult
+                if (
+                    !userSettings.allowLinkLongPressContextMenu
+                    && (
+                        result.type == WebView.HitTestResult.IMAGE_TYPE
+                        || result.type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE
+                        || result.type == WebView.HitTestResult.SRC_ANCHOR_TYPE
+                    )
+                ) {
+                    return@setOnLongClickListener !userSettings.allowDefaultLongPress
                 }
 
-                val result = hitTestResult
                 when (result.type) {
-                    WebView.HitTestResult.IMAGE_TYPE -> {
-                        result.extra?.let { imageUrl ->
-                            config.onImageLongClick(imageUrl)
-                        }
-                        true
-                    }
+                    WebView.HitTestResult.IMAGE_TYPE,
                     WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE -> {
                         result.extra?.let { imageUrl ->
                             config.onImageLongClick(imageUrl)
