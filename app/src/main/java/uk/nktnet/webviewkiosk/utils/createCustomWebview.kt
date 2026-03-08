@@ -66,6 +66,7 @@ data class WebViewConfig(
     val updateAddressBarAndHistory: (url: String, originalUrl: String?) -> Unit,
     val onHttpAuthRequest: (handler: HttpAuthHandler?, host: String?, realm: String?) -> Unit,
     val onLinkLongClick: (url: String) -> Unit,
+    val onImageLongClick: (url: String) -> Unit,
 )
 
 @SuppressLint("SetJavaScriptEnabled")
@@ -478,14 +479,32 @@ fun createCustomWebview(
             }
 
             setOnLongClickListener {
-                if (userSettings.allowLinkLongPressContextMenu) {
-                    val result = hitTestResult
-                    if (result.type == WebView.HitTestResult.SRC_ANCHOR_TYPE) {
-                        result.extra?.let { link -> config.onLinkLongClick(link) }
-                        return@setOnLongClickListener true
-                    }
+                if (!userSettings.allowLinkLongPressContextMenu) {
+                    return@setOnLongClickListener false
                 }
-                userSettings.allowDefaultLongPress.not()
+
+                val result = hitTestResult
+                when (result.type) {
+                    WebView.HitTestResult.IMAGE_TYPE -> {
+                        result.extra?.let { imageUrl ->
+                            config.onImageLongClick(imageUrl)
+                        }
+                        true
+                    }
+                    WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE -> {
+                        result.extra?.let { imageUrl ->
+                            config.onImageLongClick(imageUrl)
+                        }
+                        true
+                    }
+                    WebView.HitTestResult.SRC_ANCHOR_TYPE -> {
+                        result.extra?.let { link ->
+                            config.onLinkLongClick(link)
+                        }
+                        true
+                    }
+                    else -> !userSettings.allowDefaultLongPress
+                }
             }
 
             setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
