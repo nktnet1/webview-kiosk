@@ -103,17 +103,21 @@ by the `Allow Link Long Press Context Menu` setting.
 
 ## 11. Allow Link Long Press Context Menu
 
-When enabled, long-pressing links in the WebView will trigger a custom
-link options dialog.
+When enabled, long-pressing links or images will trigger a custom context menu.
 
 This will take precedence over the `Allow Default Long Press` setting
 (i.e. overrides it).
 
-This actions available in the dialog are:
+For links, the options are:
 
-1. Copy Link
-2. Open Link
-3. Open in Browser (only available when not in locked mode)
+- Copy Link
+- Open Link
+- Open in Browser (when unlocked)
+- Share Link (when unlocked)
+
+For images, there is an additional option:
+
+- Download Image (requires `web_engine.allow_file_download`)
 
 **Default:** true
 

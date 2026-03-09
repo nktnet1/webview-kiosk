@@ -21,8 +21,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import kotlinx.coroutines.launch
 import androidx.core.net.toUri
+import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.utils.safeStartActivity
 
@@ -91,6 +91,21 @@ fun LinkOptionsDialog(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Open in Browser")
+                        }
+
+                        Button(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_SEND).apply {
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, link)
+                                }
+                                val chooser = Intent.createChooser(intent, "Share Link")
+                                safeStartActivity(context, chooser)
+                                onDismiss()
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Share Link")
                         }
                     }
                 }
