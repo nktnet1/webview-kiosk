@@ -70,6 +70,7 @@ import uk.nktnet.webviewkiosk.ui.components.webview.AddressBarSearchSuggestions
 import uk.nktnet.webviewkiosk.ui.components.webview.BookmarksDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.FloatingToolbar
 import uk.nktnet.webviewkiosk.ui.components.webview.HistoryDialog
+import uk.nktnet.webviewkiosk.ui.components.webview.ImageOptionsDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.KioskControlPanel
 import uk.nktnet.webviewkiosk.ui.components.webview.LinkOptionsDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.LocalFilesDialog
@@ -129,6 +130,7 @@ fun WebviewScreen(navController: NavController) {
     var addressBarHasFocus by remember { mutableStateOf(false) }
 
     var linkToOpen by remember { mutableStateOf<String?>(null) }
+    var imageToOpen by remember { mutableStateOf<String?>(null) }
     var progress by remember { mutableIntStateOf(0) }
 
     val showAddressBar = when (userSettings.addressBarMode) {
@@ -256,6 +258,9 @@ fun WebviewScreen(navController: NavController) {
             },
             onLinkLongClick = { link ->
                 linkToOpen = link
+            },
+            onImageLongClick = { image ->
+                imageToOpen = image
             },
         )
     )
@@ -542,6 +547,11 @@ fun WebviewScreen(navController: NavController) {
         link = linkToOpen,
         onDismiss = { linkToOpen = null },
         onOpenLink = { url -> customLoadUrl(url) },
+    )
+    ImageOptionsDialog(
+        imageUrl = imageToOpen,
+        onDismiss = { imageToOpen = null },
+        onOpenImage = { url -> customLoadUrl(url) }
     )
 
     LaunchedEffect(Unit) {

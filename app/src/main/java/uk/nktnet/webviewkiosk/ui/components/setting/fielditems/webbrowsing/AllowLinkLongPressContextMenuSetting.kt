@@ -18,13 +18,20 @@ fun AllowLinkLongPressContextMenuSetting() {
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_browsing_allow_link_long_press_context_menu_title),
         infoText = """
-            When enabled, long-pressing links in the WebView will trigger
-            a custom context menu.
+            When enabled, long-pressing links or images will trigger a
+            custom context menu.
 
             This will take precedence over the "Allow Default Long Press"
             setting (i.e. overrides it).
 
-            This allows actions like opening or copying the link.
+            For links, the options are:
+            - Copy Link
+            - Open Link
+            - Open in Browser (when unlocked)
+            - Share Link (when unlocked)
+
+            For images, there is an additional option:
+            - Download Image (requires ${UserSettingsKeys.WebEngine.ALLOW_FILE_DOWNLOAD})
         """.trimIndent(),
         initialValue = userSettings.allowLinkLongPressContextMenu,
         settingKey = settingKey,

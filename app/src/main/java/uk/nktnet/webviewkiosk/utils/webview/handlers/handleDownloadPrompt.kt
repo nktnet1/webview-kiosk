@@ -16,8 +16,11 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.config.Constants
+import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
+import uk.nktnet.webviewkiosk.utils.extractFileNameFromContentDisposition
 import uk.nktnet.webviewkiosk.utils.getDownloadLocation
 import uk.nktnet.webviewkiosk.utils.handleKeyEvent
 
@@ -29,6 +32,14 @@ fun handleDownloadPrompt(
     contentDisposition: String?,
     mimeType: String?
 ) {
+    val userSettings = UserSettings(context)
+    if (!userSettings.allowFileDownload) {
+        ToastManager.show(
+            context,
+            "Download is disabled in settings (${UserSettingsKeys.WebEngine.ALLOW_FILE_DOWNLOAD})"
+        )
+        return
+    }
     val layout = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         setPadding(60, 60, 60, 30)
@@ -49,7 +60,11 @@ fun handleDownloadPrompt(
     }
     layout.addView(infoText)
 
-    val suggestedName = URLUtil.guessFileName(url, contentDisposition, mimeType)
+    val suggestedName = if (contentDisposition != null) {
+        extractFileNameFromContentDisposition(contentDisposition)
+    } else {
+        URLUtil.guessFileName(url, contentDisposition, mimeType)
+    }
     val editText = EditText(context).apply {
         setText(suggestedName)
         setPadding(10, 10, 10, 35)

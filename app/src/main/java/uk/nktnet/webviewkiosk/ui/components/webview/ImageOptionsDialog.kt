@@ -1,7 +1,10 @@
 package uk.nktnet.webviewkiosk.ui.components.webview
 
 import android.content.ClipData
+import android.content.ContentResolver
 import android.content.Intent
+import android.net.Uri
+import android.webkit.MimeTypeMap
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -14,6 +17,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboard
@@ -23,22 +27,28 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.core.net.toUri
 import kotlinx.coroutines.launch
+import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
+import uk.nktnet.webviewkiosk.utils.fetchRemoteFileInfo
+import uk.nktnet.webviewkiosk.utils.getMimeType
 import uk.nktnet.webviewkiosk.utils.safeStartActivity
+import uk.nktnet.webviewkiosk.utils.webview.handlers.handleDownloadPrompt
 
 @Composable
-fun LinkOptionsDialog(
-    link: String?,
+fun ImageOptionsDialog(
+    imageUrl: String?,
     onDismiss: () -> Unit,
-    onOpenLink: (String) -> Unit,
+    onOpenImage: (String) -> Unit
 ) {
     val context = LocalContext.current
+    val userSettings = remember { UserSettings(context) }
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
 
     val isLocked by LockStateSingleton.isLocked
 
-    if (link != null) {
+    if (imageUrl != null) {
         Dialog(onDismissRequest = onDismiss) {
             Surface(
                 shape = MaterialTheme.shapes.medium,
@@ -51,7 +61,7 @@ fun LinkOptionsDialog(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = link,
+                        text = imageUrl,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -61,7 +71,7 @@ fun LinkOptionsDialog(
                     Button(
                         onClick = {
                             scope.launch {
-                                val clipData = ClipData.newPlainText("Link", link)
+                                val clipData = ClipData.newPlainText("Image URL", imageUrl)
                                 clipboard.setClipEntry(clipData.toClipEntry())
                                 onDismiss()
                             }
@@ -73,31 +83,34 @@ fun LinkOptionsDialog(
 
                     Button(
                         onClick = {
-                            onOpenLink(link)
+                            onOpenImage(imageUrl)
                             onDismiss()
                         },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text("Open Link")
+                        Text("Open Image")
                     }
 
                     if (!isLocked) {
-                        Button(
-                            onClick = {
-                                val intent = Intent(Intent.ACTION_VIEW, link.toUri())
-                                safeStartActivity(context, intent)
-                                onDismiss()
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("Open in Browser")
+                        val uri = imageUrl.toUri()
+                        if (uri.scheme != "file") {
+                            Button(
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_VIEW, uri)
+                                    safeStartActivity(context, intent)
+                                    onDismiss()
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("Open in Browser")
+                            }
                         }
 
                         Button(
                             onClick = {
                                 val intent = Intent(Intent.ACTION_SEND).apply {
                                     type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, link)
+                                    putExtra(Intent.EXTRA_TEXT, imageUrl)
                                 }
                                 val chooser = Intent.createChooser(intent, "Share Link")
                                 safeStartActivity(context, chooser)
@@ -106,6 +119,45 @@ fun LinkOptionsDialog(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text("Share Link")
+                        }
+                    }
+
+                    if (userSettings.allowFileDownload) {
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    val uri = imageUrl.toUri()
+                                    var mimeType = getMimeType(context, uri)
+                                    var contentDisposition: String? = null
+
+                                    if (mimeType == null) {
+                                        ToastManager.show(
+                                            context,
+                                            "Retrieving image details..."
+                                        )
+                                        fetchRemoteFileInfo(imageUrl)?.let { info ->
+                                            mimeType = info.mimeType
+                                            contentDisposition = info.contentDisposition
+                                        }
+                                    }
+
+                                    if (mimeType == null) {
+                                        mimeType = "image/*"
+                                    }
+
+                                    handleDownloadPrompt(
+                                        context = context,
+                                        url = imageUrl,
+                                        userAgent = null,
+                                        contentDisposition = contentDisposition,
+                                        mimeType = mimeType
+                                    )
+                                    onDismiss()
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Download Image")
                         }
                     }
                 }

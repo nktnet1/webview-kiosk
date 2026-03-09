@@ -7,11 +7,14 @@ import android.net.Uri
 import android.os.Environment
 import android.provider.OpenableColumns
 import android.text.format.Formatter
+import android.util.Log
 import android.webkit.MimeTypeMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.config.Constants
 import java.io.File
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.UUID
 
 val supportedMimeTypesArray = arrayOf(
@@ -158,4 +161,56 @@ fun getDownloadLocation(): String {
     ).absolutePath.let {
         if (it.endsWith("/")) it else "$it/"
     }
+}
+data class RemoteFileInfo(
+    val mimeType: String?,
+    val contentDisposition: String?,
+)
+
+suspend fun fetchRemoteFileInfo(url: String): RemoteFileInfo? {
+    return withContext(Dispatchers.IO) {
+        try {
+            val connection = URL(url).openConnection() as HttpURLConnection
+            connection.requestMethod = "HEAD"
+            connection.connectTimeout = 5000
+            connection.readTimeout = 5000
+            connection.connect()
+
+            val mimeType = connection.contentType
+
+            val contentDisposition = connection.getHeaderField("Content-Disposition")
+            RemoteFileInfo(
+                mimeType = mimeType,
+                contentDisposition = contentDisposition,
+            )
+        } catch (e: Exception) {
+            Log.e(Constants.APP_SCHEME, "Failed to retrieve image details", e)
+            null
+        }
+    }
+}
+
+fun extractFileNameFromContentDisposition(contentDisposition: String?): String? {
+    if (contentDisposition.isNullOrEmpty()) {
+        return null
+    }
+    Regex(
+        "filename\\*=[^']*'[^']*'([^;]+)"
+    ).find(contentDisposition)
+        ?.groups
+        ?.get(1)
+        ?.value
+        ?.let {
+            return Uri.decode(it)
+        }
+    Regex(
+        "filename=\"?([^\";]+)\"?"
+    ).find(contentDisposition)
+        ?.groups
+        ?.get(1)
+        ?.value
+        ?.let {
+            return it
+        }
+    return null
 }
