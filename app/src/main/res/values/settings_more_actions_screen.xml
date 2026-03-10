@@ -11,7 +11,7 @@
     <string name="settings_more_action_device_settings">Device Settings</string>
     <string name="settings_more_action_default_launcher">Default Launcher</string>
     <string name="settings_more_action_default_apps">Default Apps</string>
-    <string name="settings_more_action_wifi_settings">WiFi Settings</string>
+    <string name="settings_more_action_wifi_settings">Wi-Fi Settings</string>
     <string name="settings_more_action_data_usage">Data Usage</string>
 
     <!-- Manage Actions -->
