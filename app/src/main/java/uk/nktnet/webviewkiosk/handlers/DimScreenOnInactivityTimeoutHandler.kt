@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.handlers
 
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,7 +29,16 @@ fun DimScreenOnInactivityTimeoutHandler() {
         setWindowBrightness(context, userSettings.brightness)
         while (true) {
             delay(500L)
-            val elapsed = System.currentTimeMillis() - lastInteraction
+            val elapsed = try {
+                System.currentTimeMillis() - lastInteraction
+            } catch (e: IllegalStateException) {
+                Log.w(
+                    Constants.APP_SCHEME,
+                    "Failed to check last interaction time",
+                    e
+                )
+                continue
+            }
             if (elapsed >= timeoutDuration) {
                 setWindowBrightness(context, 0)
                 break
