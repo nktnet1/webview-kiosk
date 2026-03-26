@@ -1,0 +1,3 @@
+## Changes
+
+- fix: crash on elapsed time in inactivity reset and screen dimming
