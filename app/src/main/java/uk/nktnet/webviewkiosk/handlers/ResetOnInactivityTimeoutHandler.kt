@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.handlers
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -57,7 +58,16 @@ fun ResetOnInactivityTimeoutHandler(
         countdown = RESET_TIMEOUT_INT
         while (true) {
             delay(500L)
-            val elapsed = System.currentTimeMillis() - lastInteraction
+            val elapsed = try {
+                System.currentTimeMillis() - lastInteraction
+            } catch (e: IllegalStateException) {
+                Log.w(
+                    Constants.APP_SCHEME,
+                    "Failed to check last interaction time for resetting on inactivity",
+                    e
+                )
+                continue
+            }
             if (elapsed >= countdownStartDuration) {
                 countdown = Constants.INACTIVITY_COUNTDOWN_SECONDS
                 while (countdown > 0) {

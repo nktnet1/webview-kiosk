@@ -34,7 +34,7 @@ fun DimScreenOnInactivityTimeoutHandler() {
             } catch (e: IllegalStateException) {
                 Log.w(
                     Constants.APP_SCHEME,
-                    "Failed to check last interaction time",
+                    "Failed to check last interaction time for dimming screen",
                     e
                 )
                 continue
