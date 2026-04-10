@@ -233,7 +233,8 @@ object UnifiedPushManager {
             return
         }
         if (contentString.isNotEmpty()) {
-            runCatching { JSONObject(contentString) }.onSuccess { json ->
+            runCatching {
+                val json = JSONObject(contentString)
                 val messageType = json.optString("type")
                 when (messageType) {
                     "command" -> {
@@ -277,6 +278,18 @@ object UnifiedPushManager {
                     decrypted: ${message.decrypted}
                     type: $messageType
                     """.trimIndent()
+                )
+            }.onFailure { throwable ->
+                addDebugLog(
+                    "message handler error",
+                    """
+                    |instance: $instance
+                    |reason: ${throwable.message}
+                    """.trimMargin()
+                )
+                ToastManager.show(
+                    context,
+                    "UnifiedPush: failed to handle message. See debug logs for details."
                 )
             }
         }
