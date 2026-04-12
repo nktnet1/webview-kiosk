@@ -65,11 +65,20 @@ fun handleDownloadPrompt(
     }
     layout.addView(infoText)
 
-    val suggestedName = if (contentDisposition != null) {
-        extractFileNameFromContentDisposition(contentDisposition)
-    } else {
-        URLUtil.guessFileName(url, contentDisposition, mimeType)
+    val uri = url.toUri()
+
+    val suggestedName = when {
+        !contentDisposition.isNullOrBlank() -> {
+            extractFileNameFromContentDisposition(contentDisposition)
+        }
+        uri.scheme == "blob" -> {
+            generateBlobFilename(mimeType)
+        }
+        else -> {
+            URLUtil.guessFileName(url, contentDisposition, mimeType)
+        }
     }
+    println("[DEBUG] suggestedName: $suggestedName | scheme: ${uri.scheme} | contentDisposition: $contentDisposition")
 
     val editText = EditText(context).apply {
         setText(suggestedName)
@@ -108,8 +117,6 @@ fun handleDownloadPrompt(
         try {
             UserInteractionStateSingleton.onUserInteraction()
             val filename = editText.text.toString()
-
-            val uri = url.toUri()
 
             if (uri.scheme == "blob") {
                 fetchBlob(webView, url, mimeType, filename)
@@ -196,4 +203,17 @@ private fun fetchBlob(webView: WebView, blobUrl: String, mimeType: String?,  fil
     """.trimIndent()
 
     webView.evaluateJavascript(js, null)
+}
+
+private fun generateBlobFilename(mimeType: String?): String {
+    val extension = when (mimeType) {
+        "application/pdf" -> "pdf"
+        "image/png" -> "png"
+        "image/jpeg" -> "jpg"
+        "text/plain" -> "txt"
+        "application/json" -> "json"
+        else -> "bin"
+    }
+
+    return "download_${System.currentTimeMillis()}.$extension"
 }
