@@ -40,6 +40,7 @@ fun handleDownloadPrompt(
         )
         return
     }
+
     val layout = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         setPadding(60, 60, 60, 30)
