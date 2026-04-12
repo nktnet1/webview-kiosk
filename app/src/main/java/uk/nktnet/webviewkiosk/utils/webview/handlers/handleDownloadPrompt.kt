@@ -10,11 +10,13 @@ import android.util.Log
 import android.view.Gravity
 import android.view.ViewGroup.LayoutParams
 import android.webkit.URLUtil
+import android.webkit.WebView
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.net.toUri
+import org.json.JSONObject
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -23,10 +25,12 @@ import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.utils.extractFileNameFromContentDisposition
 import uk.nktnet.webviewkiosk.utils.getDownloadLocation
 import uk.nktnet.webviewkiosk.utils.handleKeyEvent
+import uk.nktnet.webviewkiosk.utils.webview.interfaces.BlobInterface
 
 @SuppressLint("SetTextI18n")
 fun handleDownloadPrompt(
     context: Context,
+    webView: WebView,
     url: String,
     userAgent: String?,
     contentDisposition: String?,
@@ -105,13 +109,19 @@ fun handleDownloadPrompt(
             UserInteractionStateSingleton.onUserInteraction()
             val filename = editText.text.toString()
 
-            downloadNormal(
-                context = context,
-                url = url,
-                userAgent = userAgent,
-                mimeType = mimeType,
-                filename = filename
-            )
+            val uri = url.toUri()
+
+            if (uri.scheme == "blob") {
+                fetchBlob(webView, url, mimeType, filename)
+            } else {
+                downloadNormal(
+                    context = context,
+                    url = url,
+                    userAgent = userAgent,
+                    mimeType = mimeType,
+                    filename = filename
+                )
+            }
 
             dialog.dismiss()
             ToastManager.show(context, "Starting download for $filename")
@@ -153,4 +163,36 @@ fun downloadNormal(
 
     val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
     dm.enqueue(request)
+}
+
+// https://proandroiddev.com/blob-downloads-not-working-in-android-web-view-heres-the-real-fix-243144a2a426
+private fun fetchBlob(webView: WebView, blobUrl: String, mimeType: String?,  filename: String) {
+    val js = """
+        (async function() {
+            try {
+                const blobUrl = ${JSONObject.quote(blobUrl)};
+                const response = await fetch(blobUrl);
+                const blob = await response.blob();
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    ${BlobInterface.NAME}.download(reader.result, '$mimeType', '$filename');
+                };
+                reader.readAsDataURL(blob);
+                return;
+            } catch(e) {}
+
+            if (window._lastBlob) {
+                const reader2 = new FileReader();
+                reader2.onloadend = function() {
+                    WebviewKioskBlobDownloader.download(reader2.result, '$mimeType', '$filename');
+                };
+                reader2.readAsDataURL(window._lastBlob);
+                return;
+            }
+
+            WebviewKioskBlobDownloader.error('Blob fetch failed');
+        })();
+    """.trimIndent()
+
+    webView.evaluateJavascript(js, null)
 }

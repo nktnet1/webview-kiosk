@@ -8,7 +8,9 @@ import android.webkit.JavascriptInterface
 import org.json.JSONObject
 
 class BatteryInterface(private val context: Context) {
-    val name = "WebviewKioskBatteryInterface"
+    companion object {
+        const val NAME = "WebviewKioskBatteryInterface"
+    }
 
     @Suppress("unused")
     @JavascriptInterface

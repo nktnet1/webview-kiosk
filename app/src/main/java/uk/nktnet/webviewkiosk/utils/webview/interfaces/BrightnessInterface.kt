@@ -7,7 +7,9 @@ import uk.nktnet.webviewkiosk.utils.getWindowBrightness
 import uk.nktnet.webviewkiosk.utils.setWindowBrightness
 
 class BrightnessInterface(private val context: Context) {
-    val name = "WebviewKioskBrightnessInterface"
+    companion object {
+        const val NAME = "WebviewKioskBrightnessInterface"
+    }
 
     @Suppress("unused")
     @JavascriptInterface

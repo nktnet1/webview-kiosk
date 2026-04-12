@@ -134,11 +134,11 @@ fun createCustomWebview(
 
             if (userSettings.enableBatteryApi) {
                 val batteryInterface = BatteryInterface(context)
-                addJavascriptInterface(batteryInterface, batteryInterface.name)
+                addJavascriptInterface(batteryInterface, BatteryInterface.NAME)
             }
             if (userSettings.enableBrightnessApi) {
                 val brightnessInterface = BrightnessInterface(context)
-                addJavascriptInterface(brightnessInterface, brightnessInterface.name)
+                addJavascriptInterface(brightnessInterface, BrightnessInterface.NAME)
             }
 
             webViewClient = object : WebViewClient() {
@@ -509,10 +509,11 @@ fun createCustomWebview(
             setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
                 handleDownloadPrompt(
                     context = context,
+                    webView = this,
                     url = url,
                     userAgent = userAgent,
                     contentDisposition = contentDisposition,
-                    mimeType = mimeType
+                    mimeType = mimeType,
                 )
             }
         }

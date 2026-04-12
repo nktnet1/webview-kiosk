@@ -549,6 +549,7 @@ fun WebviewScreen(navController: NavController) {
         onOpenLink = { url -> customLoadUrl(url) },
     )
     ImageOptionsDialog(
+        webView = webView,
         imageUrl = imageToOpen,
         onDismiss = { imageToOpen = null },
         onOpenImage = { url -> customLoadUrl(url) }
