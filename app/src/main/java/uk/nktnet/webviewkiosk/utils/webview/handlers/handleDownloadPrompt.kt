@@ -9,6 +9,7 @@ import android.os.Environment
 import android.util.Log
 import android.view.Gravity
 import android.view.ViewGroup.LayoutParams
+import android.webkit.MimeTypeMap
 import android.webkit.URLUtil
 import android.webkit.WebView
 import android.widget.Button
@@ -204,14 +205,8 @@ private fun fetchBlob(webView: WebView, blobUrl: String, mimeType: String?,  fil
 }
 
 private fun generateBlobFilename(mimeType: String?): String {
-    val extension = when (mimeType) {
-        "application/pdf" -> "pdf"
-        "image/png" -> "png"
-        "image/jpeg" -> "jpg"
-        "text/plain" -> "txt"
-        "application/json" -> "json"
-        else -> "bin"
-    }
-
+    val extension = MimeTypeMap.getSingleton()
+        .getExtensionFromMimeType(mimeType)
+        ?: "bin"
     return "download_${System.currentTimeMillis()}.$extension"
 }
