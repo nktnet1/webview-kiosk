@@ -6,6 +6,7 @@ import android.os.Environment
 import android.util.Base64
 import android.webkit.JavascriptInterface
 import android.widget.Toast
+import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import java.io.File
 import java.io.FileOutputStream
@@ -28,7 +29,7 @@ class BlobInterface(private val context: Context) {
             (function() {
                 if (window.__blobHookInstalled) return;
                 window.__blobHookInstalled = true;
-        
+
                 const orig = URL.createObjectURL;
                 URL.createObjectURL = function(blob) {
                     window._lastBlob = blob;
@@ -73,7 +74,10 @@ class BlobInterface(private val context: Context) {
             Environment.DIRECTORY_DOWNLOADS
         )
         val file = File(downloads, name)
-        FileOutputStream(file).use { it.write(bytes) }
+        FileOutputStream(file).use {
+            it.write(bytes)
+        }
         ToastManager.show(context, "$name downloaded")
+        CustomNotificationManager.sendBlobDownloadNotification(context, file)
     }
 }

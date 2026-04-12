@@ -78,7 +78,6 @@ fun handleDownloadPrompt(
             URLUtil.guessFileName(url, contentDisposition, mimeType)
         }
     }
-    println("[DEBUG] suggestedName: $suggestedName | scheme: ${uri.scheme} | contentDisposition: $contentDisposition")
 
     val editText = EditText(context).apply {
         setText(suggestedName)
@@ -120,7 +119,6 @@ fun handleDownloadPrompt(
 
             if (uri.scheme == "blob") {
                 fetchBlob(webView, url, mimeType, filename)
-                println("\n\n[DEBUG]: fetchBlob $mimeType | $filename | $url")
             } else {
                 downloadNormal(
                     context = context,

@@ -5,4 +5,5 @@
 
     <string name="notification_mqtt_service_title">MQTT Service</string>
     <string name="notification_remote_notify_command_title">MQTT Notify</string>
+    <string name="notification_blob_download_title">Blob File Downloads</string>
 </resources>
