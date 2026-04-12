@@ -66,6 +66,7 @@ fun handleDownloadPrompt(
     } else {
         URLUtil.guessFileName(url, contentDisposition, mimeType)
     }
+
     val editText = EditText(context).apply {
         setText(suggestedName)
         setPadding(10, 10, 10, 35)
@@ -103,21 +104,15 @@ fun handleDownloadPrompt(
         try {
             UserInteractionStateSingleton.onUserInteraction()
             val filename = editText.text.toString()
-            val request = DownloadManager.Request(url.toUri()).apply {
-                setMimeType(mimeType)
-                userAgent?.let { addRequestHeader("User-Agent", it) }
-                setDescription("Downloading file...")
-                setTitle(filename)
-                setNotificationVisibility(
-                    DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
-                )
-                setDestinationInExternalPublicDir(
-                    Environment.DIRECTORY_DOWNLOADS,
-                    filename,
-                )
-            }
-            val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            dm.enqueue(request)
+
+            downloadNormal(
+                context = context,
+                url = url,
+                userAgent = userAgent,
+                mimeType = mimeType,
+                filename = filename
+            )
+
             dialog.dismiss()
             ToastManager.show(context, "Starting download for $filename")
         } catch (e: Exception) {
@@ -133,4 +128,29 @@ fun handleDownloadPrompt(
     dialog.setOnKeyListener { _, _, event ->
         handleKeyEvent(context, event)
     }
+}
+
+fun downloadNormal(
+    context: Context,
+    url: String,
+    userAgent: String?,
+    mimeType: String?,
+    filename: String
+) {
+    val request = DownloadManager.Request(url.toUri()).apply {
+        setMimeType(mimeType)
+        userAgent?.let { addRequestHeader("User-Agent", it) }
+        setDescription("Downloading file...")
+        setTitle(filename)
+        setNotificationVisibility(
+            DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+        )
+        setDestinationInExternalPublicDir(
+            Environment.DIRECTORY_DOWNLOADS,
+            filename,
+        )
+    }
+
+    val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+    dm.enqueue(request)
 }
