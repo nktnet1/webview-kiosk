@@ -32,6 +32,20 @@ class BlobInterface(private val context: Context) {
         fun setIsActive(value: Boolean) {
             isActive = value
         }
+
+        const val JS_BLOB_HOOK = """
+            (function() {
+                if (window.__blobHookInstalled) return;
+                window.__blobHookInstalled = true;
+        
+                const orig = URL.createObjectURL;
+                URL.createObjectURL = function(blob) {
+                    window._lastBlob = blob;
+                    try { ${NAME}.onDownloadPreparing(); } catch(e) {}
+                    return orig.call(URL, blob);
+                };
+            })();
+        """
     }
 
     @Suppress("unused")

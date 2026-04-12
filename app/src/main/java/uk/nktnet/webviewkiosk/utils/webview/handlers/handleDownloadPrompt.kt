@@ -113,6 +113,7 @@ fun handleDownloadPrompt(
 
             if (uri.scheme == "blob") {
                 fetchBlob(webView, url, mimeType, filename)
+                println("\n\n[DEBUG]: fetchBlob $mimeType | $filename | $url")
             } else {
                 downloadNormal(
                     context = context,
@@ -184,13 +185,13 @@ private fun fetchBlob(webView: WebView, blobUrl: String, mimeType: String?,  fil
             if (window._lastBlob) {
                 const reader2 = new FileReader();
                 reader2.onloadend = function() {
-                    WebviewKioskBlobDownloader.download(reader2.result, '$mimeType', '$filename');
+                    ${BlobInterface.NAME}.download(reader2.result, '$mimeType', '$filename');
                 };
                 reader2.readAsDataURL(window._lastBlob);
                 return;
             }
 
-            WebviewKioskBlobDownloader.error('Blob fetch failed');
+            ${BlobInterface.NAME}.error('Blob fetch failed');
         })();
     """.trimIndent()
 

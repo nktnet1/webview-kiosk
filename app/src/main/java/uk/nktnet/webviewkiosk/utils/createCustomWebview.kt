@@ -47,6 +47,7 @@ import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorPromptRequest
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BatteryInterface
+import uk.nktnet.webviewkiosk.utils.webview.interfaces.BlobInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BrightnessInterface
 import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
@@ -133,12 +134,13 @@ fun createCustomWebview(
             }
 
             if (userSettings.enableBatteryApi) {
-                val batteryInterface = BatteryInterface(context)
-                addJavascriptInterface(batteryInterface, BatteryInterface.NAME)
+                addJavascriptInterface(BatteryInterface(context), BatteryInterface.NAME)
             }
             if (userSettings.enableBrightnessApi) {
-                val brightnessInterface = BrightnessInterface(context)
-                addJavascriptInterface(brightnessInterface, BrightnessInterface.NAME)
+                addJavascriptInterface(BrightnessInterface(context), BrightnessInterface.NAME)
+            }
+            if (userSettings.allowFileDownload) {
+                addJavascriptInterface(BlobInterface(context), BlobInterface.NAME)
             }
 
             webViewClient = object : WebViewClient() {
@@ -152,6 +154,9 @@ fun createCustomWebview(
                             generatePrefersColorSchemeOverrideScript(userSettings.theme),
                             null
                         )
+                    }
+                    if (userSettings.allowFileDownload) {
+                        view?.evaluateJavascript(BlobInterface.JS_BLOB_HOOK, null)
                     }
                     if (userSettings.customScriptOnPageStart.isNotBlank()) {
                         view?.evaluateJavascript(
