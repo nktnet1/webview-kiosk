@@ -1,10 +1,8 @@
 package uk.nktnet.webviewkiosk.ui.components.webview
 
 import android.content.ClipData
-import android.content.ContentResolver
 import android.content.Intent
-import android.net.Uri
-import android.webkit.MimeTypeMap
+import android.webkit.WebView
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -37,6 +35,7 @@ import uk.nktnet.webviewkiosk.utils.webview.handlers.handleDownloadPrompt
 
 @Composable
 fun ImageOptionsDialog(
+    webView: WebView,
     imageUrl: String?,
     onDismiss: () -> Unit,
     onOpenImage: (String) -> Unit
@@ -147,6 +146,7 @@ fun ImageOptionsDialog(
 
                                     handleDownloadPrompt(
                                         context = context,
+                                        webView = webView,
                                         url = imageUrl,
                                         userAgent = null,
                                         contentDisposition = contentDisposition,

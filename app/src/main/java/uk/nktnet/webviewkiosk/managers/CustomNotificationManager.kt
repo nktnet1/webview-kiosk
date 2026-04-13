@@ -12,14 +12,17 @@ import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.FileProvider
 import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundNotifyCommand
+import java.io.File
 
 object CustomNotificationType {
     const val LOCK_TASK_MODE = 1001
     const val MQTT_SERVICE = 1002
     const val REMOTE_NOTIFY_COMMAND = 1003
+    const val BLOB_DOWNLOAD = 1004
 }
 
 object CustomNotificationChannel {
@@ -31,6 +34,9 @@ object CustomNotificationChannel {
     }
     object RemoteNotifyCommand {
         const val ID = "remote_notify_command_channel"
+    }
+    object BlobDownload {
+        const val ID = "blob_download_channel"
     }
 }
 
@@ -61,6 +67,11 @@ object CustomNotificationManager {
                 CustomNotificationChannel.RemoteNotifyCommand.ID,
                 context.getString(R.string.notification_remote_notify_command_title),
                 NotificationManager.IMPORTANCE_DEFAULT,
+            ),
+            NotificationChannel(
+                CustomNotificationChannel.BlobDownload.ID,
+                context.getString(R.string.notification_blob_download_title),
+                NotificationManager.IMPORTANCE_LOW
             )
         )
 
@@ -175,5 +186,55 @@ object CustomNotificationManager {
         } catch (e: SecurityException) {
             Log.e(javaClass.simpleName, "Failed to send notification", e)
         }
+    }
+
+    fun sendBlobDownloadNotification(
+        context: Context,
+        file: File,
+        mimeType: String? = null
+    ) {
+        val uri = FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            file
+        )
+
+        val resolvedMime = mimeType ?: "*/*"
+
+        val viewIntent = Intent(Intent.ACTION_VIEW).apply {
+            setDataAndType(uri, resolvedMime)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+
+        val chooserIntent = Intent.createChooser(
+            viewIntent,
+            "Open file with"
+        ).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            file.hashCode(),
+            chooserIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(
+            context,
+            CustomNotificationChannel.BlobDownload.ID
+        )
+            .setSmallIcon(R.drawable.outline_cloud_download_24)
+            .setContentTitle(file.name)
+            .setContentText("Tap to open")
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+
+        NotificationManagerCompat
+            .from(context)
+            .notify(CustomNotificationType.BLOB_DOWNLOAD, notification)
     }
 }

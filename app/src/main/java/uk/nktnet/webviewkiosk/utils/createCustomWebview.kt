@@ -35,7 +35,6 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.data.WebViewCreation
 import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
 import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
@@ -48,6 +47,7 @@ import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorPromptRequest
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BatteryInterface
+import uk.nktnet.webviewkiosk.utils.webview.interfaces.BlobInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BrightnessInterface
 import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
@@ -134,12 +134,13 @@ fun createCustomWebview(
             }
 
             if (userSettings.enableBatteryApi) {
-                val batteryInterface = BatteryInterface(context)
-                addJavascriptInterface(batteryInterface, batteryInterface.name)
+                addJavascriptInterface(BatteryInterface(context), BatteryInterface.NAME)
             }
             if (userSettings.enableBrightnessApi) {
-                val brightnessInterface = BrightnessInterface(context)
-                addJavascriptInterface(brightnessInterface, brightnessInterface.name)
+                addJavascriptInterface(BrightnessInterface(context), BrightnessInterface.NAME)
+            }
+            if (userSettings.allowFileDownload) {
+                addJavascriptInterface(BlobInterface(context), BlobInterface.NAME)
             }
 
             webViewClient = object : WebViewClient() {
@@ -153,6 +154,9 @@ fun createCustomWebview(
                             generatePrefersColorSchemeOverrideScript(userSettings.theme),
                             null
                         )
+                    }
+                    if (userSettings.allowFileDownload) {
+                        view?.evaluateJavascript(BlobInterface.JS_BLOB_HOOK, null)
                     }
                     if (userSettings.customScriptOnPageStart.isNotBlank()) {
                         view?.evaluateJavascript(
@@ -508,20 +512,14 @@ fun createCustomWebview(
             }
 
             setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
-                if (userSettings.allowFileDownload) {
-                    handleDownloadPrompt(
-                        context = context,
-                        url = url,
-                        userAgent = userAgent,
-                        contentDisposition = contentDisposition,
-                        mimeType = mimeType
-                    )
-                } else {
-                    ToastManager.show(
-                        context,
-                        "Download is disabled in settings (${UserSettingsKeys.WebEngine.ALLOW_FILE_DOWNLOAD})"
-                    )
-                }
+                handleDownloadPrompt(
+                    context = context,
+                    webView = this,
+                    url = url,
+                    userAgent = userAgent,
+                    contentDisposition = contentDisposition,
+                    mimeType = mimeType,
+                )
             }
         }
     }

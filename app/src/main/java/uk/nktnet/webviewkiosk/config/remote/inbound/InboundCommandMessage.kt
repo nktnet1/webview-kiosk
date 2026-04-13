@@ -3,7 +3,7 @@ package uk.nktnet.webviewkiosk.config.remote.inbound
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import uk.nktnet.webviewkiosk.config.mqtt.MqttNotifyPriority
+import uk.nktnet.webviewkiosk.config.remote.RemoteNotifyCommandPriority
 import uk.nktnet.webviewkiosk.utils.BaseJson
 
 @Serializable
@@ -236,7 +236,7 @@ data class InboundNotifyCommand(
         val contentText: String = "Notify",
         val silent: Boolean = false,
         val onGoing: Boolean = false,
-        val priority: MqttNotifyPriority = MqttNotifyPriority.DEFAULT,
+        val priority: RemoteNotifyCommandPriority = RemoteNotifyCommandPriority.DEFAULT,
         val timeout: Long = 0,
         val autoCancel: Boolean = true,
     )

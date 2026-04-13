@@ -9,12 +9,15 @@ import android.os.Environment
 import android.util.Log
 import android.view.Gravity
 import android.view.ViewGroup.LayoutParams
+import android.webkit.MimeTypeMap
 import android.webkit.URLUtil
+import android.webkit.WebView
 import android.widget.Button
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.net.toUri
+import org.json.JSONObject
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -23,10 +26,12 @@ import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.utils.extractFileNameFromContentDisposition
 import uk.nktnet.webviewkiosk.utils.getDownloadLocation
 import uk.nktnet.webviewkiosk.utils.handleKeyEvent
+import uk.nktnet.webviewkiosk.utils.webview.interfaces.BlobInterface
 
 @SuppressLint("SetTextI18n")
 fun handleDownloadPrompt(
     context: Context,
+    webView: WebView,
     url: String,
     userAgent: String?,
     contentDisposition: String?,
@@ -40,6 +45,7 @@ fun handleDownloadPrompt(
         )
         return
     }
+
     val layout = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         setPadding(60, 60, 60, 30)
@@ -60,11 +66,20 @@ fun handleDownloadPrompt(
     }
     layout.addView(infoText)
 
-    val suggestedName = if (contentDisposition != null) {
-        extractFileNameFromContentDisposition(contentDisposition)
-    } else {
-        URLUtil.guessFileName(url, contentDisposition, mimeType)
+    val uri = url.toUri()
+
+    val suggestedName = when {
+        !contentDisposition.isNullOrBlank() -> {
+            extractFileNameFromContentDisposition(contentDisposition)
+        }
+        uri.scheme == "blob" -> {
+            generateBlobFilename(mimeType)
+        }
+        else -> {
+            URLUtil.guessFileName(url, contentDisposition, mimeType)
+        }
     }
+
     val editText = EditText(context).apply {
         setText(suggestedName)
         setPadding(10, 10, 10, 35)
@@ -102,21 +117,19 @@ fun handleDownloadPrompt(
         try {
             UserInteractionStateSingleton.onUserInteraction()
             val filename = editText.text.toString()
-            val request = DownloadManager.Request(url.toUri()).apply {
-                setMimeType(mimeType)
-                userAgent?.let { addRequestHeader("User-Agent", it) }
-                setDescription("Downloading file...")
-                setTitle(filename)
-                setNotificationVisibility(
-                    DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
-                )
-                setDestinationInExternalPublicDir(
-                    Environment.DIRECTORY_DOWNLOADS,
-                    filename,
+
+            if (uri.scheme == "blob") {
+                fetchBlob(webView, url, mimeType, filename)
+            } else {
+                downloadNormal(
+                    context = context,
+                    url = url,
+                    userAgent = userAgent,
+                    mimeType = mimeType,
+                    filename = filename
                 )
             }
-            val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-            dm.enqueue(request)
+
             dialog.dismiss()
             ToastManager.show(context, "Starting download for $filename")
         } catch (e: Exception) {
@@ -132,4 +145,68 @@ fun handleDownloadPrompt(
     dialog.setOnKeyListener { _, _, event ->
         handleKeyEvent(context, event)
     }
+}
+
+fun downloadNormal(
+    context: Context,
+    url: String,
+    userAgent: String?,
+    mimeType: String?,
+    filename: String
+) {
+    val request = DownloadManager.Request(url.toUri()).apply {
+        setMimeType(mimeType)
+        userAgent?.let { addRequestHeader("User-Agent", it) }
+        setDescription("Downloading file...")
+        setTitle(filename)
+        setNotificationVisibility(
+            DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+        )
+        setDestinationInExternalPublicDir(
+            Environment.DIRECTORY_DOWNLOADS,
+            filename,
+        )
+    }
+
+    val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+    dm.enqueue(request)
+}
+
+// https://proandroiddev.com/blob-downloads-not-working-in-android-web-view-heres-the-real-fix-243144a2a426
+private fun fetchBlob(webView: WebView, blobUrl: String, mimeType: String?,  filename: String) {
+    val js = """
+        (async function() {
+            try {
+                const blobUrl = ${JSONObject.quote(blobUrl)};
+                const response = await fetch(blobUrl);
+                const blob = await response.blob();
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    ${BlobInterface.NAME}.download(reader.result, '$mimeType', '$filename');
+                };
+                reader.readAsDataURL(blob);
+                return;
+            } catch(e) {}
+
+            if (window._lastBlob) {
+                const reader2 = new FileReader();
+                reader2.onloadend = function() {
+                    ${BlobInterface.NAME}.download(reader2.result, '$mimeType', '$filename');
+                };
+                reader2.readAsDataURL(window._lastBlob);
+                return;
+            }
+
+            ${BlobInterface.NAME}.error('Blob fetch failed');
+        })();
+    """.trimIndent()
+
+    webView.evaluateJavascript(js, null)
+}
+
+private fun generateBlobFilename(mimeType: String?): String {
+    val extension = MimeTypeMap.getSingleton()
+        .getExtensionFromMimeType(mimeType)
+        ?: "bin"
+    return "download_${System.currentTimeMillis()}.$extension"
 }
