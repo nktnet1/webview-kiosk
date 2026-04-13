@@ -207,7 +207,10 @@ object CustomNotificationManager {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
 
-        val chooserIntent = Intent.createChooser(viewIntent, "Open file with").apply {
+        val chooserIntent = Intent.createChooser(
+            viewIntent,
+            "Open file with"
+        ).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
 
