@@ -184,7 +184,11 @@ object CustomNotificationManager {
                 notification
             )
         } catch (e: SecurityException) {
-            Log.e(javaClass.simpleName, "Failed to send notification", e)
+            Log.e(
+                javaClass.simpleName,
+                "Failed to send remote notify command notification",
+                e
+            )
         }
     }
 
@@ -233,8 +237,16 @@ object CustomNotificationManager {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
 
-        NotificationManagerCompat
-            .from(context)
-            .notify(CustomNotificationType.BLOB_DOWNLOAD, notification)
+        try {
+            NotificationManagerCompat
+                .from(context)
+                .notify(CustomNotificationType.BLOB_DOWNLOAD, notification)
+        } catch (e: SecurityException) {
+            Log.e(
+                javaClass.simpleName,
+                "Failed to send blob download notification",
+                e
+            )
+        }
     }
 }
