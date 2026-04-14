@@ -6,6 +6,7 @@ import android.os.Environment
 import android.util.Base64
 import android.webkit.JavascriptInterface
 import android.widget.Toast
+import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import java.io.File
@@ -78,6 +79,10 @@ class BlobInterface(private val context: Context) {
             it.write(bytes)
         }
         ToastManager.show(context, "$name downloaded")
-        CustomNotificationManager.sendBlobDownloadNotification(context, file)
+
+        val userSettings = UserSettings(context)
+        if (userSettings.allowNotifications) {
+            CustomNotificationManager.sendBlobDownloadNotification(context, file)
+        }
     }
 }
