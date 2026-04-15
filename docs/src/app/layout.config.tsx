@@ -13,6 +13,7 @@ export const baseOptions: BaseLayoutProps = {
         <Image
           src={AppIcon}
           className="w-8 h-8 md:w-9 md:h-9 rounded-full"
+          loading="eager"
           alt="WL"
         />
         {APP_NAME}
