@@ -1,4 +1,6 @@
 name: Release APK
+permissions:
+  contents: write
 
 on:
   push:
