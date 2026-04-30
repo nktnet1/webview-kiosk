@@ -8,13 +8,13 @@ plugins {
 }
 
 android {
-    compileSdk = 36
+    compileSdk = 37
     namespace = "uk.nktnet.webviewkiosk"
 
     defaultConfig {
         applicationId = "uk.nktnet.webviewkiosk"
         minSdk = 21
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 122
         versionName = "0.26.8"
         buildConfigField("int", "MIN_SDK_VERSION", "$minSdk")
