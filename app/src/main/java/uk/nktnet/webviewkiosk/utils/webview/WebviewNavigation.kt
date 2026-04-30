@@ -106,7 +106,13 @@ object WebViewNavigation {
     }
 
     fun clearHistory(systemSettings: SystemSettings) {
-        val currentIndex = systemSettings.historyIndex.coerceIn(0, systemSettings.historyStack.lastIndex)
+        if (systemSettings.historyStack.isEmpty()) {
+            return
+        }
+        val currentIndex = systemSettings.historyIndex.coerceIn(
+            0,
+            systemSettings.historyStack.lastIndex
+        )
         val currentEntry = systemSettings.historyStack.getOrNull(currentIndex)
         if (currentEntry != null) {
             systemSettings.historyStack = listOf(currentEntry)
