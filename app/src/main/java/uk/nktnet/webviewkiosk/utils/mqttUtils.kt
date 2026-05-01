@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.utils
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -10,8 +11,10 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONObject
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.MqttManager
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.services.MqttForegroundService
 
 fun isValidMqttPublishTopic(topic: String): Boolean {
@@ -124,13 +127,20 @@ fun filterSettingsJson(
 }
 
 fun initMqttForegroundService(context: Context, start: Boolean) {
-    val intent = Intent(
-        context,
-        MqttForegroundService::class.java
-    )
-    if (start) {
-        context.startService(intent)
-    } else {
-        context.stopService(intent)
+    val intent = Intent(context, MqttForegroundService::class.java)
+    try {
+        if (start) {
+            context.startService(intent)
+        } else {
+            context.stopService(intent)
+        }
+    } catch (e: Exception) {
+        val errorMessage = "Failed to ${if (start) "start" else "stop"} MQTT foreground service"
+        Log.e(
+            Constants.APP_SCHEME,
+            errorMessage,
+            e
+        )
+        ToastManager.show(context, errorMessage)
     }
 }
