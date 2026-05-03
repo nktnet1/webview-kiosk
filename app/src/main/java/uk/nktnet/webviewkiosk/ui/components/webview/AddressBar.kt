@@ -116,8 +116,15 @@ fun AddressBar(
     }
 
     LaunchedEffect(hasFocus) {
-        if (hasFocus) {
-            onUrlBarTextChange(urlBarText.copy(selection = TextRange(0, urlBarText.text.length)))
+        if (hasFocus && urlBarText.selection.collapsed) {
+            onUrlBarTextChange(
+                urlBarText.copy(
+                    selection = TextRange(
+                        start = 0,
+                        end = urlBarText.text.length,
+                    )
+                )
+            )
         }
     }
 
