@@ -52,7 +52,11 @@ object WebViewNavigation {
         }
     }
 
-    fun navigateToIndex(customLoadUrl: (newUrl: String) -> Unit, systemSettings: SystemSettings, index: Int) {
+    fun navigateToIndex(
+        customLoadUrl: (newUrl: String) -> Unit,
+        systemSettings: SystemSettings,
+        index: Int,
+    ) {
         if (index in systemSettings.historyStack.indices) {
             isProgrammaticNavigation = true
             systemSettings.historyIndex = index
