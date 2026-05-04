@@ -53,7 +53,7 @@ object WebViewNavigation {
     }
 
     fun navigateToIndex(customLoadUrl: (newUrl: String) -> Unit, systemSettings: SystemSettings, index: Int) {
-        if (index in 0..systemSettings.historyStack.lastIndex) {
+        if (index in systemSettings.historyStack.indices) {
             isProgrammaticNavigation = true
             systemSettings.historyIndex = index
             customLoadUrl(systemSettings.historyStack[index].url)
