@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -142,6 +143,7 @@ fun CustomAuthPasswordDialog() {
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
+                        .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
                         .focusRequester(focusRequester),
                     singleLine = true,
                     trailingIcon = {

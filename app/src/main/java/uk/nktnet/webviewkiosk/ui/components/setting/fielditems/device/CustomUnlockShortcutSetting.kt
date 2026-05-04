@@ -7,11 +7,13 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -135,12 +137,15 @@ fun CustomUnlockShortcutSetting() {
                     },
                     modifier = Modifier
                         .fillMaxWidth()
+                        .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
                         .focusRequester(focusRequester)
                         .focusable()
                         .background(
-                            if (isListening)
-                                androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant
-                            else Color.Transparent
+                            if (isListening) {
+                                MaterialTheme.colorScheme.surfaceVariant
+                            } else {
+                                Color.Transparent
+                            }
                         )
                         .onPreviewKeyEvent { event ->
                             val (newDraft, newListening) =

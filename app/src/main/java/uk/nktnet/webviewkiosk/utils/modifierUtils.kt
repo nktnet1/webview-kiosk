@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.utils
 
 import android.content.Context
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -11,6 +12,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.pointerInteropFilter
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
@@ -39,6 +41,7 @@ fun Modifier.handleUserKeyEvent(
     }
 
     return this
+        .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
         .focusRequester(focusRequester)
         .focusable()
         .onPreviewKeyEvent { event ->
