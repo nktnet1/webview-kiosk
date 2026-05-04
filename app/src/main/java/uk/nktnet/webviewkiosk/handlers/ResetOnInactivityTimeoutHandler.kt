@@ -27,6 +27,7 @@ import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import kotlin.math.max
+import kotlin.time.Duration.Companion.milliseconds
 
 const val RESET_TIMEOUT_INT = -1
 
@@ -57,7 +58,7 @@ fun ResetOnInactivityTimeoutHandler(
     LaunchedEffect(lastInteraction) {
         countdown = RESET_TIMEOUT_INT
         while (true) {
-            delay(500L)
+            delay(500.milliseconds)
             val elapsed = try {
                 System.currentTimeMillis() - lastInteraction
             } catch (e: IllegalStateException) {
@@ -71,7 +72,7 @@ fun ResetOnInactivityTimeoutHandler(
             if (elapsed >= countdownStartDuration) {
                 countdown = Constants.INACTIVITY_COUNTDOWN_SECONDS
                 while (countdown > 0) {
-                    delay(1000L)
+                    delay(1000.milliseconds)
                     countdown--
                 }
                 handleTimeoutReached()

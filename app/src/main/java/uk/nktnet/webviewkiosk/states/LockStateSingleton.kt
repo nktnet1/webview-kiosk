@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.option.LockStateType
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.utils.getIsLocked
+import kotlin.time.Duration.Companion.milliseconds
 
 object LockStateSingleton {
     private val _isLocked = mutableStateOf(false)
@@ -43,7 +44,7 @@ object LockStateSingleton {
                         MqttManager.publishUnlockEvent()
                     }
                 }
-                delay(1000L)
+                delay(1000.milliseconds)
             }
         }
     }

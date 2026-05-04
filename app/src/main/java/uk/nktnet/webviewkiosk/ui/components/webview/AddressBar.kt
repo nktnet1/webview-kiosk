@@ -60,6 +60,7 @@ import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 private fun AddressBarMenuItem(
@@ -111,7 +112,7 @@ fun AddressBar(
     val isLocked by LockStateSingleton.isLocked
 
     LaunchedEffect(Unit) {
-        delay(200)
+        delay(200.milliseconds)
         allowFocus = true
     }
 

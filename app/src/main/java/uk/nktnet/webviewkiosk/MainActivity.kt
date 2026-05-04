@@ -66,6 +66,7 @@ import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
+import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavHostController
@@ -118,7 +119,7 @@ class MainActivity : AppCompatActivity() {
             && userSettings.dhizukuRequestPermissionOnLaunch
         ) {
             lifecycleScope.launch {
-                delay(1000)
+                delay(1000.milliseconds)
                 DeviceOwnerManager.requestDhizukuPermission(
                     onGranted = {
                         setupLockTaskPackage(this@MainActivity)
@@ -206,7 +207,7 @@ class MainActivity : AppCompatActivity() {
 
                     if (settings.message.reloadActivity) {
                         lifecycleScope.launch(Dispatchers.Main) {
-                            delay(100)
+                            delay(100.milliseconds)
                             if (settings.message.reloadActivity) {
                                 updateDeviceSettings(context)
                             }

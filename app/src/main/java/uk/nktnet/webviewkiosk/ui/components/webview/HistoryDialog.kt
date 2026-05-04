@@ -52,6 +52,7 @@ import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import java.util.Date
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration.Companion.milliseconds
 
 private fun formatDatetime(context: Context, timestamp: Long): String {
     val now = System.currentTimeMillis()
@@ -110,7 +111,7 @@ fun HistoryDialog(
             when (commandMessage.message) {
                 is InboundClearHistoryCommand -> {
                     // The actual history is cleared in main activity
-                    delay(100)
+                    delay(100.milliseconds)
                     history = systemSettings.historyStack
                 }
                 else -> Unit

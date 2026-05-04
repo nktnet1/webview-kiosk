@@ -188,7 +188,7 @@ fun WebviewScreen(navController: NavController) {
                 && urlBarText.text.isNotBlank()
                 && !isValidUrl(urlBarText.text)
             ) {
-                delay(300)
+                delay(300.milliseconds)
                 suggestions = try {
                     withContext(Dispatchers.IO) {
                         SearchSuggestionEngine.suggest(
@@ -229,7 +229,7 @@ fun WebviewScreen(navController: NavController) {
         ) {
             mqttLastPublishedUrlJob?.cancel()
             mqttLastPublishedUrlJob = scope.launch {
-                delay(1000)
+                delay(1000.milliseconds)
                 MqttManager.publishUrlChangedEvent(url)
                 mqttLastPublishedUrl = url
             }
@@ -353,7 +353,9 @@ fun WebviewScreen(navController: NavController) {
     ) {
         LaunchedEffect(lastErrorUrl) {
             while (lastErrorUrl.isNotEmpty()) {
-                delay(userSettings.refreshOnLoadingErrorIntervalSeconds * 1000L)
+                delay(
+                    (userSettings.refreshOnLoadingErrorIntervalSeconds * 1000).milliseconds
+                )
                 WebViewNavigation.refresh(
                     ::customLoadUrl, systemSettings, userSettings
                 )

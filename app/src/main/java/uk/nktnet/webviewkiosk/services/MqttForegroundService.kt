@@ -26,6 +26,7 @@ import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.CustomNotificationType
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
+import kotlin.time.Duration.Companion.milliseconds
 
 class MqttForegroundService : Service() {
     private var isServiceActive = true
@@ -116,7 +117,7 @@ class MqttForegroundService : Service() {
                     }
                     lastStatus = status
                     updateNotification(status)
-                    delay(1000L)
+                    delay(1000.milliseconds)
                 }
             }
         }

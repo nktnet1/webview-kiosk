@@ -34,6 +34,7 @@ import androidx.navigation.NavController
 import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun AdminRestrictionsChangedScreen(
@@ -45,7 +46,7 @@ fun AdminRestrictionsChangedScreen(
     LaunchedEffect(Unit) {
         while (remaining > 1) {
             remaining -= 1
-            delay(1000)
+            delay(1000.milliseconds)
         }
         navigateToWebViewScreen(navController)
     }

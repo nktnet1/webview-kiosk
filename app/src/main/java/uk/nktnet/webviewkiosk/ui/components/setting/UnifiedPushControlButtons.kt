@@ -51,6 +51,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushEndpoint
 import uk.nktnet.webviewkiosk.managers.UnifiedPushManager
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun UnifiedPushControlButtons() {
@@ -78,7 +79,7 @@ fun UnifiedPushControlButtons() {
 
     LaunchedEffect(Unit) {
         while (true) {
-            delay(1000)
+            delay(1000.milliseconds)
             savedDistributor = UnifiedPushManager.getSavedDistributor(context)
             ackDistributor = UnifiedPushManager.getAckDistributor(context)
             if (ackDistributor.isNullOrBlank()) {

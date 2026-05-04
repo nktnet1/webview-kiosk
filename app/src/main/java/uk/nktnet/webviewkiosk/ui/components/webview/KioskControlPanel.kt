@@ -69,6 +69,7 @@ import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import kotlin.math.max
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 private fun ActionButton(
@@ -137,7 +138,7 @@ fun KioskControlPanel(
 
     LaunchedEffect(tapsLeft, lastTapTime) {
         if (tapsLeft in 1..5) {
-            delay(maxInterval)
+            delay(maxInterval.milliseconds)
             if (System.currentTimeMillis() - lastTapTime >= maxInterval) {
                 tapsLeft = requiredTaps
             }
@@ -148,7 +149,7 @@ fun KioskControlPanel(
         showDialog = true
         enableDismiss = false
         scope.launch {
-            delay(1000L)
+            delay(1000.milliseconds)
             enableDismiss = true
         }
     }
@@ -200,7 +201,7 @@ fun KioskControlPanel(
                                     enableInteraction = false
                                     handleShowDialog()
                                     scope.launch {
-                                        delay(600L)
+                                        delay(600.milliseconds)
                                         enableInteraction = true
                                     }
                                 }

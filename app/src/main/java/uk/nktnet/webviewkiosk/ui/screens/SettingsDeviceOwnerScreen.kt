@@ -58,6 +58,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.lock
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 import uk.nktnet.webviewkiosk.utils.openPackage
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun SettingsDeviceOwnerScreen(navController: NavController) {
@@ -88,7 +89,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
 
     LaunchedEffect(Unit) {
         while (true) {
-            delay(1000)
+            delay(1000.milliseconds)
             isDeviceOwner = dpm.isDeviceOwnerApp(context.packageName)
             hasOwnerPermission = DeviceOwnerManager.hasOwnerPermission(context)
         }
