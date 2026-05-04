@@ -12,7 +12,9 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import kotlinx.coroutines.android.awaitFrame
+import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
+import kotlin.time.Duration.Companion.milliseconds
 
 fun Modifier.handleUserTouchEvent(): Modifier {
     return this.pointerInteropFilter { _ ->
@@ -30,6 +32,7 @@ fun Modifier.handleUserKeyEvent(
 
     LaunchedEffect(isVisible) {
         if (isVisible) {
+            delay(100.milliseconds)
             awaitFrame()
             focusRequester.requestFocus()
         }

@@ -35,7 +35,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.android.awaitFrame
+import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.R
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 private fun RoundIconButton(
@@ -86,6 +89,8 @@ fun WebViewFindBar(
 
     LaunchedEffect(Unit) {
         if (isActiveFindInPage) {
+            delay(100.milliseconds)
+            awaitFrame()
             focusRequester.requestFocus()
         }
     }

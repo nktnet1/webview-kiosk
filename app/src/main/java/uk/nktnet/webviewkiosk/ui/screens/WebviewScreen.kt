@@ -34,6 +34,7 @@ import androidx.core.net.toUri
 import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -97,6 +98,7 @@ import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
 import java.io.File
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun WebviewScreen(navController: NavController) {
@@ -155,7 +157,11 @@ fun WebviewScreen(navController: NavController) {
         if (!isActiveFindInPage) {
             isActiveFindInPage = true
         } else {
-            findInPageFocusRequester.requestFocus()
+            scope.launch {
+                delay(100.milliseconds)
+                awaitFrame()
+                findInPageFocusRequester.requestFocus()
+            }
         }
     }
 
