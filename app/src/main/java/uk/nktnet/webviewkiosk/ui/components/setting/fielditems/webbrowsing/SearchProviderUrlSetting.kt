@@ -113,7 +113,9 @@ fun SearchProviderUrlSetting() {
                                         MaterialTheme.colorScheme.onSurface
                                     }
                                 ),
-                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
+                                elevation = ButtonDefaults.buttonElevation(
+                                    defaultElevation = 0.dp
+                                )
                             ) {
                                 Text(
                                     text = name,
