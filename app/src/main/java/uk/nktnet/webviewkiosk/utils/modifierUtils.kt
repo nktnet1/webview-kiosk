@@ -1,3 +1,4 @@
+
 package uk.nktnet.webviewkiosk.utils
 
 import android.content.Context
@@ -10,6 +11,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.pointer.pointerInteropFilter
+import kotlinx.coroutines.android.awaitFrame
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 
 fun Modifier.handleUserTouchEvent(): Modifier {
@@ -20,11 +22,15 @@ fun Modifier.handleUserTouchEvent(): Modifier {
 }
 
 @Composable
-fun Modifier.handleUserKeyEvent(context: Context, isVisible: Boolean): Modifier {
+fun Modifier.handleUserKeyEvent(
+    context: Context,
+    isVisible: Boolean
+): Modifier {
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(isVisible) {
         if (isVisible) {
+            awaitFrame()
             focusRequester.requestFocus()
         }
     }
