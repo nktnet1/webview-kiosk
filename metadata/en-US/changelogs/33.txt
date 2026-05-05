@@ -1,3 +1,5 @@
+# Changes
+
 - feat: history refactored with datetime and stable list IDs
 - fix: history index display and text wrap using zero-width characters
 - fix(ui): placeholder text new lines

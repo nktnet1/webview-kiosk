@@ -1,6 +1,7 @@
 ## Changes
 
 The action buttons in the
+
 - Address Bar
 - Kiosk Control Panel
 

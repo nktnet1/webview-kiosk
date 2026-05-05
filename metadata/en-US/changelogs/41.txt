@@ -1,1 +1,3 @@
-fix: fill max width for multiline textarea
+# Changes
+
+- fix: fill max width for multiline textarea

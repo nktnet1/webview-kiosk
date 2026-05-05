@@ -1,2 +1,4 @@
-feat: added installer source info in About screen
-deps: update android dependencies
+# Changes
+
+- feat: added installer source info in About screen
+- deps: update android dependencies

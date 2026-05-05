@@ -1,1 +1,3 @@
-fix: improve navigation with loading indicator during transition state
+# Changes
+
+- fix: improve navigation with loading indicator during transition state

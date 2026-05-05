@@ -1,1 +1,3 @@
-feat: support android 5.0 - lollipop (minSdk = 21)
+# Changes
+
+- feat: support android 5.0 - lollipop (minSdk = 21)

@@ -1,1 +1,3 @@
-fix: avoid re-creating main activity on screen rotation
+# Changes
+
+- fix: avoid re-creating main activity on screen rotation

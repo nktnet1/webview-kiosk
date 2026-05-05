@@ -1,1 +1,3 @@
-fix: add android.intent.category.APP_BROWSER to manifest
+# Changes
+
+- fix: add android.intent.category.APP_BROWSER to manifest

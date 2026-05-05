@@ -6,6 +6,7 @@
 ## Breaking Change
 
 Shared preference keys for custom JS scripts were renamed internally - they are now:
+
 - js_scripts.custom_script_on_page_start
 - js_scripts.custom_script_on_page_finish
 

@@ -3,11 +3,11 @@
 - feat: allow MQTT commands to wake the screen (uses WAKE_LOCK permission)
 - feat: maintain MQTT connection using a foreground service (configurable)
 - feat: new MQTT events:
-  - Screen On/Off
-  - User Present
-  - App Background/Foreground
-  - Power Plugged/Unplugged
-  - Admin Restrictions Changed
+    - Screen On/Off
+    - User Present
+    - App Background/Foreground
+    - Power Plugged/Unplugged
+    - Admin Restrictions Changed
 - feat: support for other url schemes (intent) in lock task mode
 - fix: duplicated command received in debug logs
 - fix: allow MQTT toast command data to be null
