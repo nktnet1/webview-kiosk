@@ -15,6 +15,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
 import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun BackPressHandler(
@@ -43,7 +44,7 @@ fun BackPressHandler(
                     WebViewNavigation.goHome(customLoadUrl, systemSettings, userSettings)
                 }
                 scope.launch {
-                    delay(1000L)
+                    delay(1000.milliseconds)
                     enableBack = true
                 }
             }

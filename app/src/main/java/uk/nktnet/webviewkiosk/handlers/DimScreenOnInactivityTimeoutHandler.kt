@@ -12,6 +12,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.utils.setWindowBrightness
 import kotlin.math.max
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun DimScreenOnInactivityTimeoutHandler() {
@@ -28,7 +29,7 @@ fun DimScreenOnInactivityTimeoutHandler() {
     LaunchedEffect(lastInteraction) {
         setWindowBrightness(context, userSettings.brightness)
         while (true) {
-            delay(500L)
+            delay(500.milliseconds)
             val elapsed = try {
                 System.currentTimeMillis() - lastInteraction
             } catch (e: IllegalStateException) {

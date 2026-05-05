@@ -10,6 +10,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
+import kotlin.time.Duration.Companion.milliseconds
 
 class BackButtonManager(
     private val lifecycleScope: LifecycleCoroutineScope,
@@ -38,7 +39,7 @@ class BackButtonManager(
         override fun handleOnBackStarted(backEvent: BackEventCompat) {
             if (shouldUsePredictiveBackLongPress() && isButtonPress(backEvent)) {
                 backLongPressJob = lifecycleScope.launch {
-                    delay(ViewConfiguration.getLongPressTimeout().toLong())
+                    delay(ViewConfiguration.getLongPressTimeout().milliseconds)
                     BackButtonStateSingleton.emitLongPress()
                 }
             }
@@ -71,7 +72,7 @@ class BackButtonManager(
         ) {
             if (backLongPressJob == null) {
                 backLongPressJob = lifecycleScope.launch {
-                    delay(ViewConfiguration.getLongPressTimeout().toLong())
+                    delay(ViewConfiguration.getLongPressTimeout().milliseconds)
                     BackButtonStateSingleton.emitLongPress()
                     isLegacyLongPressEmitted = true
                 }

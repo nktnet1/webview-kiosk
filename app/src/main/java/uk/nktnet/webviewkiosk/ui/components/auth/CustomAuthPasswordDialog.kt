@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -40,12 +41,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun CustomAuthPasswordDialog() {
@@ -68,7 +71,8 @@ fun CustomAuthPasswordDialog() {
     var isError by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        delay(100)
+        delay(100.milliseconds)
+        awaitFrame()
         focusRequester.requestFocus()
     }
 
@@ -83,7 +87,7 @@ fun CustomAuthPasswordDialog() {
                 val elapsed = System.currentTimeMillis() - start
                 val remaining = 1000L - elapsed
                 if (remaining > 0) {
-                    delay(remaining)
+                    delay(remaining.milliseconds)
                 }
                 isError = true
                 ToastManager.show(context, "Incorrect password")
@@ -139,6 +143,7 @@ fun CustomAuthPasswordDialog() {
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
+                        .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
                         .focusRequester(focusRequester),
                     singleLine = true,
                     trailingIcon = {

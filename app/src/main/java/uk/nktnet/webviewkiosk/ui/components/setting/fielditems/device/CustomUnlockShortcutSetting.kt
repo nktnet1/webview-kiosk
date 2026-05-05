@@ -7,11 +7,13 @@ import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -31,6 +33,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.android.awaitFrame
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -39,6 +43,7 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.CustomSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.keyEventToShortcutString
 import uk.nktnet.webviewkiosk.utils.modifierKeyCodes
+import kotlin.time.Duration.Companion.milliseconds
 
 fun handleUnlockShortcutKeyEvent(
     context: Context,
@@ -78,7 +83,11 @@ fun CustomUnlockShortcutSetting() {
     LaunchedEffect(isPressed) {
         if (isPressed && !isListening) {
             isListening = true
-            coroutineScope.launch { focusRequester.requestFocus() }
+            coroutineScope.launch {
+                delay(100.milliseconds)
+                awaitFrame()
+                focusRequester.requestFocus()
+            }
         }
     }
 
@@ -128,12 +137,15 @@ fun CustomUnlockShortcutSetting() {
                     },
                     modifier = Modifier
                         .fillMaxWidth()
+                        .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
                         .focusRequester(focusRequester)
                         .focusable()
                         .background(
-                            if (isListening)
-                                androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant
-                            else Color.Transparent
+                            if (isListening) {
+                                MaterialTheme.colorScheme.surfaceVariant
+                            } else {
+                                Color.Transparent
+                            }
                         )
                         .onPreviewKeyEvent { event ->
                             val (newDraft, newListening) =
@@ -157,7 +169,11 @@ fun CustomUnlockShortcutSetting() {
                             isListening = false
                         } else {
                             isListening = true
-                            coroutineScope.launch { focusRequester.requestFocus() }
+                            coroutineScope.launch {
+                                delay(100.milliseconds)
+                                awaitFrame()
+                                focusRequester.requestFocus()
+                            }
                         }
                     },
                     colors = androidx.compose.material3.ButtonDefaults.buttonColors(

@@ -29,6 +29,7 @@ import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundDisconnectingEvent
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import kotlin.math.max
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun MqttControlButtons() {
@@ -47,7 +48,7 @@ fun MqttControlButtons() {
     ) {
         while (true) {
             mqttClientState = MqttManager.getState()
-            delay(500)
+            delay(500.milliseconds)
         }
     }
 

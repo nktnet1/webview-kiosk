@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -35,7 +36,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.android.awaitFrame
+import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.R
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 private fun RoundIconButton(
@@ -86,6 +90,8 @@ fun WebViewFindBar(
 
     LaunchedEffect(Unit) {
         if (isActiveFindInPage) {
+            delay(100.milliseconds)
+            awaitFrame()
             focusRequester.requestFocus()
         }
     }
@@ -111,6 +117,7 @@ fun WebViewFindBar(
                 fontSize = 14.sp
             ),
             modifier = Modifier
+                .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
                 .focusRequester(focusRequester)
                 .weight(1f),
             keyboardOptions = KeyboardOptions.Default.copy(

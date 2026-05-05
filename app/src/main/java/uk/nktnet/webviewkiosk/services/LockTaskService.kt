@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.BuildConfig
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.CustomNotificationType
+import kotlin.time.Duration.Companion.milliseconds
 
 @RequiresApi(28)
 class LockTaskService: Service() {
@@ -70,9 +71,9 @@ class LockTaskService: Service() {
         if (updateJob?.isActive != true) {
             updateJob = scope.launch {
                 val am = getSystemService(ActivityManager::class.java)
-                delay(3000)
+                delay(3000.milliseconds)
                 while (am.lockTaskModeState == ActivityManager.LOCK_TASK_MODE_LOCKED) {
-                    delay(1000)
+                    delay(1000.milliseconds)
                 }
                 stopLockTaskService()
             }
