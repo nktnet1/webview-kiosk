@@ -1,0 +1,5 @@
+## Changes
+
+- fix: millisecond delays, await frame and default min size for elements that requests focus
+- fix: improve address bar text selection logic
+- fix: safely handle init mqtt foreground service
