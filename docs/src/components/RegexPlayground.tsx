@@ -44,7 +44,7 @@ export default function RegexPlayground() {
   function isBlockedUrl(
     url: string,
     blacklistRegexes: RegExp[],
-    whitelistRegexes: RegExp[]
+    whitelistRegexes: RegExp[],
   ): boolean {
     if (whitelistRegexes.some((re) => re.test(url))) {
       return false;
@@ -113,25 +113,20 @@ export default function RegexPlayground() {
               placeholder={`e.g.\n\t.*`}
               value={blacklist}
               onChange={(e) => setBlacklist(e.target.value)}
-              className={
-                `min-h-25 ${result === "blocked" ? "border border-red-500" : ""}`
-              }
+              className={`min-h-25 ${result === "blocked" ? "border border-red-500" : ""}`}
             />
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Whitelist</label>
             <Textarea
-              placeholder={
-                `e.g.\n\t^https://trusted\\.org/?$\n\t^https://.*\\.trusted\\.org/.*`
-              }
+              placeholder={`e.g.\n\t^https://trusted\\.org/?$\n\t^https://.*\\.trusted\\.org/.*`}
               value={whitelist}
               onChange={(e) => setWhitelist(e.target.value)}
-              className={
-                `min-h-25 ${result === "allowed" && whitelist.trim().length > 0
+              className={`min-h-25 ${
+                result === "allowed" && whitelist.trim().length > 0
                   ? "bordemin-h-25n-500"
                   : ""
-                }`
-              }
+              }`}
             />
           </div>
         </CardContent>

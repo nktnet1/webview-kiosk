@@ -46,7 +46,7 @@ export default async function Page(props: PageProps<"/[slug]">) {
 }
 
 export async function generateMetadata(
-  props: PageProps<"/[slug]">
+  props: PageProps<"/[slug]">,
 ): Promise<Metadata> {
   const params = await props.params;
   const page = legal.getPage([params.slug]);

@@ -8,7 +8,7 @@ export const source = loader(
   }),
   {
     baseUrl: "/docs",
-  }
+  },
 );
 
 export const legal = loader(toFumadocsSource(legalPages, []), {

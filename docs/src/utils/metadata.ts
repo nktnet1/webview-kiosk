@@ -1,4 +1,4 @@
-import type { Metadata } from 'next/types';
+import type { Metadata } from "next/types";
 
 export function createMetadata(override: Metadata): Metadata {
   return {
@@ -6,7 +6,7 @@ export function createMetadata(override: Metadata): Metadata {
     openGraph: {
       title: override.title ?? undefined,
       description: override.description ?? undefined,
-      url: 'https://fumadocs.vercel.app',
+      url: "https://fumadocs.vercel.app",
       ...override.openGraph,
     },
   };
