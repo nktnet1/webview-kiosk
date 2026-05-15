@@ -9,12 +9,14 @@ on:
       - main
     paths:
       - 'docs/**'
+      - '.github/workflows/validate-docs.yaml'
 
   pull_request:
     branches:
       - '*'
     paths:
       - 'docs/**'
+      - '.github/workflows/validate-docs.yaml'
 
 jobs:
   test:
