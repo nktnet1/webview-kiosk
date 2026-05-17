@@ -113,7 +113,7 @@ object RemoteInboundHandler {
                 } else {
                     ToastManager.show(
                         context,
-                        "Cannot execute notify command - notifications disabled in settings."
+                        "Cannot execute notify command - notifications disabled in settings"
                     )
                 }
             }
