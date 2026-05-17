@@ -385,8 +385,13 @@ Example Payload:
 
 ### 2.12. Lock Device
 
-Turns the device screen off. Note that this will also stop
-the MQTT connection.
+Turns the device screen off.
+
+This command requires device owner privileges or Dhizuku permission. For more
+details, see the [security](/docs/security#33-device-owner-mode) documentation.
+
+Note that if the `MQTT → Use Foreground Service` setting is not enabled,
+locking the device will also stop the MQTT connection.
 
 Example Payload:
 
