@@ -97,6 +97,11 @@ object RemoteInboundHandler {
                             "Failed to lock device: ${e.message}"
                         )
                     }
+                } else {
+                    ToastManager.show(
+                        context,
+                        "Cannot lock device without device owner privileges"
+                    )
                 }
             }
             is InboundNotifyCommand -> {
@@ -104,6 +109,11 @@ object RemoteInboundHandler {
                     CustomNotificationManager.sendInboundNotifyCommandNotification(
                         context,
                         command,
+                    )
+                } else {
+                    ToastManager.show(
+                        context,
+                        "Cannot execute notify command - notifications disabled in settings"
                     )
                 }
             }
