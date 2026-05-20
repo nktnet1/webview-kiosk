@@ -1,10 +1,10 @@
 import { InlineTOC } from "fumadocs-ui/components/inline-toc";
 import defaultMdxComponents from "fumadocs-ui/mdx";
-import { notFound } from "next/navigation";
+import { PageLastUpdate } from "fumadocs-ui/page";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { legal } from "@/lib/source";
 import { createMetadata } from "@/utils/metadata";
-import { PageLastUpdate } from "fumadocs-ui/page";
 
 export default async function Page(props: PageProps<"/[slug]">) {
   const params = await props.params;

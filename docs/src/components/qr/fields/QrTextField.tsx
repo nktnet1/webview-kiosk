@@ -1,8 +1,8 @@
 import { AnyFieldApi } from "@tanstack/react-form";
+import { ExternalLink } from "lucide-react";
+import FormFieldInfo from "@/components/common/FormFieldInfo";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import FormFieldInfo from "@/components/common/FormFieldInfo";
-import { ExternalLink } from "lucide-react";
 
 export default function QrTextField({
   field,

@@ -3,25 +3,25 @@
 /* eslint-disable react/no-children-prop */
 
 import { useForm } from "@tanstack/react-form";
+import { DynamicCodeBlock } from "fumadocs-ui/components/dynamic-codeblock";
 import { useState } from "react";
 import QRCode from "react-qr-code";
-import { DynamicCodeBlock } from "fumadocs-ui/components/dynamic-codeblock";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Separator } from "@/components/ui/separator";
+import QrCheckboxField from "@/components/qr/fields/QrCheckboxField";
+import QrSelectField from "@/components/qr/fields/QrSelectField";
+import QrTextField from "@/components/qr/fields/QrTextField";
 import {
-  QrData,
-  FormValues,
-  FormSchema,
   DownloadSource,
+  FormSchema,
+  FormValues,
+  QrData,
   WifiSecurityType,
 } from "@/components/qr/schema";
-import QrSelectField from "@/components/qr/fields/QrSelectField";
-import QrCheckboxField from "@/components/qr/fields/QrCheckboxField";
-import QrTextField from "@/components/qr/fields/QrTextField";
 import { LATEST_VERSION } from "@/components/qr/version";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 
 export default function QRCodeForm() {
   const [qrValue, setQrValue] = useState<QrData | null>(null);

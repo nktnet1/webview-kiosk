@@ -1,6 +1,6 @@
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { APP_NAME } from "@/config/app";
-import Link from "next/link";
 
 export default function HomePage() {
   return (

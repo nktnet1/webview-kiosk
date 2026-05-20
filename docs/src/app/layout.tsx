@@ -1,8 +1,8 @@
 import "@/app/global.css";
-import { Toaster } from "@/components/ui/sonner";
 import { RootProvider } from "fumadocs-ui/provider/next";
 import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
   subsets: ["latin"],

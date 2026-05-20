@@ -8,6 +8,7 @@
     "dev": "next dev --turbo",
     "lint": "biome lint",
     "format": "biome format",
+    "check": "biome check",
     "typecheck": "tsc --noEmit",
     "start": "next start",
     "postinstall": "fumadocs-mdx"
