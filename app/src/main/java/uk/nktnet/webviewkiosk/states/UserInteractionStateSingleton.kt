@@ -1,14 +1,17 @@
 package uk.nktnet.webviewkiosk.states
 
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableLongStateOf
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 object UserInteractionStateSingleton {
-    val lastInteractionState: MutableState<Long> = mutableLongStateOf(
-        System.currentTimeMillis()
-    )
+    private val _lastInteraction =
+        MutableStateFlow(System.currentTimeMillis())
+
+    val lastInteractionState: StateFlow<Long> =
+        _lastInteraction.asStateFlow()
 
     fun onUserInteraction() {
-        lastInteractionState.value = System.currentTimeMillis()
+        _lastInteraction.value = System.currentTimeMillis()
     }
 }
