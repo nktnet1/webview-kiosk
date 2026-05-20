@@ -160,7 +160,9 @@ fun WebviewScreen(navController: NavController) {
             scope.launch {
                 delay(100.milliseconds)
                 awaitFrame()
-                findInPageFocusRequester.requestFocus()
+                runCatching {
+                    findInPageFocusRequester.requestFocus()
+                }
             }
         }
     }

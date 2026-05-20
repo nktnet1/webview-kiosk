@@ -147,7 +147,9 @@ fun createCustomWebview(
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     config.setLastErrorUrl("")
                     if (userSettings.requestFocusOnPageStart) {
-                        view?.requestFocus()
+                        runCatching {
+                            view?.requestFocus()
+                        }
                     }
                     if (userSettings.applyAppTheme && userSettings.theme != ThemeOption.SYSTEM) {
                         evaluateJavascript(
