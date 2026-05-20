@@ -1,0 +1,5 @@
+## Changes
+
+- fix: illegal state exception from BringIntoViewRequester
+- fix: user interaction illegal state exception with snapshots
+- fix: toast warning about lock_device command without privileges
