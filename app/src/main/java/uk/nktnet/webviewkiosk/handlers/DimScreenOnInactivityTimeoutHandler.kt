@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.handlers
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
@@ -24,7 +25,7 @@ fun DimScreenOnInactivityTimeoutHandler() {
         Constants.MIN_INACTIVITY_TIMEOUT_SECONDS
     ) * 1000L
 
-    val lastInteraction by UserInteractionStateSingleton.lastInteractionState
+    val lastInteraction by UserInteractionStateSingleton.lastInteractionState.collectAsState()
 
     LaunchedEffect(lastInteraction) {
         setWindowBrightness(context, userSettings.brightness)
