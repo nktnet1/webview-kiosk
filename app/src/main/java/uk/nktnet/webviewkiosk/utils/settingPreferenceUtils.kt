@@ -20,16 +20,22 @@ fun stringPref(
             try {
                 getRestrictions()?.getString(key)?.takeIf { it.isNotBlank() } ?: default
             } catch (_: Exception) {
-                prefs.edit { putString(key, default) }
+                prefs.edit {
+                    putString(key, default)
+                }
                 default
             }
         } else {
-            prefs.getString(key, null)?.takeIf { it.isNotBlank() } ?: default
+            prefs.getString(key, null)?.takeIf {
+                it.isNotBlank()
+            } ?: default
         }
 
     override fun setValue(thisRef: Any?, property: KProperty<*>, value: String) {
         if (getRestrictions()?.containsKey(key) != true) {
-            prefs.edit { putString(key, value) }
+            prefs.edit {
+                putString(key, value)
+            }
         }
     }
 }
@@ -52,7 +58,11 @@ fun stringPrefOptional(
         }
 
     override fun setValue(thisRef: Any?, property: KProperty<*>, value: String) {
-        if (getRestrictions()?.containsKey(key) != true) prefs.edit { putString(key, value) }
+        if (getRestrictions()?.containsKey(key) != true) {
+            prefs.edit {
+                putString(key, value)
+            }
+        }
     }
 }
 
@@ -69,13 +79,19 @@ fun booleanPref(
             try {
                 prefs.getBoolean(key, default)
             } catch (_: Exception) {
-                prefs.edit { putBoolean(key, default) }
+                prefs.edit {
+                    putBoolean(key, default)
+                }
                 default
             }
         }
 
     override fun setValue(thisRef: Any?, property: KProperty<*>, value: Boolean) {
-        if (getRestrictions()?.containsKey(key) != true) prefs.edit { putBoolean(key, value) }
+        if (getRestrictions()?.containsKey(key) != true) {
+            prefs.edit {
+                putBoolean(key, value)
+            }
+        }
     }
 }
 
@@ -94,7 +110,9 @@ fun intPref(
             try {
                 prefs.getInt(key, default)
             } catch (_: Exception) {
-                prefs.edit { putInt(key, default) }
+                prefs.edit {
+                    putInt(key, default)
+                }
                 default
             }
         }
@@ -104,7 +122,9 @@ fun intPref(
     override fun setValue(thisRef: Any?, property: KProperty<*>, value: Int) {
         if (getRestrictions()?.containsKey(key) != true) {
             val coerced = value.coerceIn(min, max)
-            prefs.edit { putInt(key, coerced) }
+            prefs.edit {
+                putInt(key, coerced)
+            }
         }
     }
 }
@@ -122,14 +142,18 @@ fun floatPref(
             try {
                 prefs.getFloat(key, default)
             } catch (_: Exception) {
-                prefs.edit { putFloat(key, default) }
+                prefs.edit {
+                    putFloat(key, default)
+                }
                 default
             }
         }
 
     override fun setValue(thisRef: Any?, property: KProperty<*>, value: Float) {
         if (getRestrictions()?.containsKey(key) != true) {
-            prefs.edit { putFloat(key, value) }
+            prefs.edit {
+                putFloat(key, value)
+            }
         }
     }
 }
@@ -178,8 +202,9 @@ fun <T : Enum<T>> enumListPref(
                 JSONArray(stringValue)
             }
             LinkedHashSet(
-                List(jsonArray.length()) { idx -> jsonArray.getString(idx) }
-                    .mapNotNull { itemFromString(it) }
+                List(jsonArray.length()) {
+                    idx -> jsonArray.getString(idx)
+                }.mapNotNull { itemFromString(it) }
             ).toList()
         } catch (e: Exception) {
             Log.e(Constants.APP_SCHEME, "Failed to get reference value for $key", e)

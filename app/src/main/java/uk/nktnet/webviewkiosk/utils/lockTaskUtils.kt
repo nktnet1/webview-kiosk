@@ -20,12 +20,12 @@ import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 
 private fun tryLockAction(
     activity: Activity,
-    action: Activity.() -> Unit,
+    lockAction: Activity.() -> Unit,
     onSuccess: () -> Unit = {},
     onFailed: (String) -> Unit
 ): Boolean {
     return try {
-        activity.action()
+        activity.lockAction()
         onSuccess()
         true
     } catch (e: SecurityException) {
@@ -98,7 +98,7 @@ fun tryLockTask(activity: Activity?): Boolean {
     applyLockTaskFeatures(activity)
     return tryLockAction(
         activity,
-        Activity::startLockTask,
+        lockAction = Activity::startLockTask,
         onSuccess = {
             AuthenticationManager.resetAuthentication()
             // Handled MQTT publish in LockStateSingleton
@@ -115,7 +115,7 @@ fun tryUnlockTask(activity: Activity?): Boolean {
     }
     return tryLockAction(
         activity,
-        action = {
+        lockAction = {
             if (
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                 && DeviceOwnerManager.hasOwnerPermission(activity)

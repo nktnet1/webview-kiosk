@@ -1,6 +1,6 @@
 ## Changes
 
-- chore: bump gradle to 9.5, android compileSdk and targetSdk to 37, agp to 9.1.1
+- chore: bump Gradle to 9.5, android compileSdk and targetSdk to 37, agp to 9.1.1
 - fix: resolve crash when clearing history on empty stack
 - fix: url validation crash when failing to decode file url
 - fix: only send notifications for blob download if enabled in settings
