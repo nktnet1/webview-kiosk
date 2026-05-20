@@ -1,9 +1,9 @@
 import { createMDX } from "fumadocs-mdx/next";
+import { NextConfig } from 'next';
 
 const withMDX = createMDX();
 
-/** @type {import('next').NextConfig} */
-const config = {
+const config: NextConfig = {
   basePath: process.env.NEXT_PUBLIC_BASE_PATH,
   reactStrictMode: true,
   trailingSlash: true,
