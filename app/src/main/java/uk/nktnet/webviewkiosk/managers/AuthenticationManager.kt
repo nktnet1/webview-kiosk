@@ -3,6 +3,10 @@ package uk.nktnet.webviewkiosk.managers
 import android.app.KeyguardManager
 import android.content.Context
 import android.os.Build
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
@@ -16,9 +20,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
+import java.security.KeyStore
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
 
 object AuthenticationManager {
     private const val AUTH_TIMEOUT_MS = 5 * 60 * 1000L
+    private const val ANDROID_KEYSTORE = "AndroidKeyStore"
+    private const val BIOMETRIC_KEY_ALIAS = "WebViewKioskBiometricKey"
+    private const val CIPHER_TRANSFORMATION = "AES/GCM/NoPadding"
+
+    private var encryptedAuthToken: ByteArray? = null
+    private var encryptedAuthTokenIv: ByteArray? = null
     private const val SKIP_RESET_WINDOW_MS = 5000L
 
     private var activity: AppCompatActivity? = null
@@ -98,6 +113,7 @@ object AuthenticationManager {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     private fun showBiometricPromptModern(title: String, description: String) {
         val activity = this.activity ?: return
         val manager = BiometricManager.from(activity)
@@ -124,6 +140,33 @@ object AuthenticationManager {
             promptInfoBuilder.setDeviceCredentialAllowed(true)
         }
 
+        val existingToken = encryptedAuthToken?.let { token ->
+            encryptedAuthTokenIv?.let { iv ->
+                token to iv
+            }
+        }
+
+        val decryptCipher = try {
+            val cipher = getCipher()
+
+            if (existingToken == null) {
+                cipher.init(Cipher.ENCRYPT_MODE, generateOrGetSecretKey())
+            } else {
+                cipher.init(
+                    Cipher.DECRYPT_MODE,
+                    getSecretKey(),
+                    GCMParameterSpec(128, existingToken.second)
+                )
+            }
+
+            cipher
+        } catch (e: Exception) {
+            Log.e(javaClass.simpleName, "Failed to create cipher.", e)
+            _resultState.value = AuthenticationResult.AuthenticationError("Failed to create cipher.")
+            resetAuthentication()
+            return
+        }
+
         val prompt = BiometricPrompt(
             activity,
             object : BiometricPrompt.AuthenticationCallback() {
@@ -135,8 +178,27 @@ object AuthenticationManager {
 
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                     super.onAuthenticationSucceeded(result)
-                    _resultState.value = AuthenticationResult.AuthenticationSuccess
-                    lastAuthTime = System.currentTimeMillis()
+                    val cipher = result.cryptoObject?.cipher
+                    if (cipher == null) {
+                        _resultState.value = AuthenticationResult.AuthenticationError("Missing cryptographic context.")
+                        resetAuthentication()
+                        return
+                    }
+
+                    try {
+                        if (existingToken == null) {
+                            encryptedAuthToken = cipher.doFinal("auth-token".toByteArray(Charsets.UTF_8))
+                            encryptedAuthTokenIv = cipher.iv
+                        } else {
+                            cipher.doFinal(existingToken.first)
+                        }
+                        _resultState.value = AuthenticationResult.AuthenticationSuccess
+                        lastAuthTime = System.currentTimeMillis()
+                    } catch (e: Exception) {
+                        Log.e(javaClass.simpleName, "Secure authentication validation failed.", e)
+                        _resultState.value = AuthenticationResult.AuthenticationError("Secure authentication validation failed.")
+                        resetAuthentication()
+                    }
                 }
 
                 override fun onAuthenticationFailed() {
@@ -147,7 +209,49 @@ object AuthenticationManager {
             }
         )
 
-        prompt.authenticate(promptInfoBuilder.build())
+        prompt.authenticate(promptInfoBuilder.build(), BiometricPrompt.CryptoObject(decryptCipher))
+    }
+
+    private fun getCipher(): Cipher = Cipher.getInstance(CIPHER_TRANSFORMATION)
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    private fun generateOrGetSecretKey(): SecretKey {
+        return try {
+            getSecretKey()
+        } catch (_: Exception) {
+            val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
+            val keySpecBuilder = KeyGenParameterSpec.Builder(
+                BIOMETRIC_KEY_ALIAS,
+                KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+            )
+                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                .setUserAuthenticationRequired(true)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                keySpecBuilder.setUserAuthenticationParameters(
+                    0,
+                    KeyProperties.AUTH_BIOMETRIC_STRONG
+                            or KeyProperties.AUTH_DEVICE_CREDENTIAL
+                )
+            }
+
+            if (
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+                && Build.VERSION.SDK_INT < Build.VERSION_CODES.R
+            ) {
+                keySpecBuilder.setInvalidatedByBiometricEnrollment(true)
+            }
+
+            keyGenerator.init(keySpecBuilder.build())
+            keyGenerator.generateKey()
+        }
+    }
+
+    private fun getSecretKey(): SecretKey {
+        val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
+        keyStore.load(null)
+        return keyStore.getKey(BIOMETRIC_KEY_ALIAS, null) as SecretKey
     }
 
     private fun showDeviceCredentialLollipop(keyguardManager: KeyguardManager, title: String, description: String) {
