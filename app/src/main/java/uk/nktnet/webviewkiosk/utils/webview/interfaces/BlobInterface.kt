@@ -70,15 +70,26 @@ class BlobInterface(private val context: Context) {
         }
     }
 
-    private fun saveFile(name: String, bytes: ByteArray) {
+    private fun saveFile(filename: String, bytes: ByteArray) {
+        if (
+            filename.contains("..")
+            || filename.contains("/")
+            || filename.contains("\\")
+        ) {
+            ToastManager.show(
+                context,
+                "Invalid filename: '$filename' (contains '..', '/' or '\\'"
+            )
+            return
+        }
         val downloads = Environment.getExternalStoragePublicDirectory(
             Environment.DIRECTORY_DOWNLOADS
         )
-        val file = File(downloads, name)
+        val file = File(downloads, filename)
         FileOutputStream(file).use {
             it.write(bytes)
         }
-        ToastManager.show(context, "$name downloaded")
+        ToastManager.show(context, "$filename downloaded")
 
         val userSettings = UserSettings(context)
         if (userSettings.allowNotifications) {
