@@ -1,13 +1,12 @@
-
 package uk.nktnet.webviewkiosk.utils
 
 import android.content.Context
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.key.onPreviewKeyEvent
@@ -25,22 +24,23 @@ fun Modifier.handleUserTouchEvent(): Modifier {
     }
 }
 
-@Composable
 fun Modifier.handleUserKeyEvent(
     context: Context,
     isVisible: Boolean
-): Modifier {
+): Modifier = composed {
     val focusRequester = remember { FocusRequester() }
 
     LaunchedEffect(isVisible) {
         if (isVisible) {
             delay(100.milliseconds)
             awaitFrame()
-            focusRequester.requestFocus()
+            runCatching {
+                focusRequester.requestFocus()
+            }
         }
     }
 
-    return this
+    this
         .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
         .focusRequester(focusRequester)
         .focusable()

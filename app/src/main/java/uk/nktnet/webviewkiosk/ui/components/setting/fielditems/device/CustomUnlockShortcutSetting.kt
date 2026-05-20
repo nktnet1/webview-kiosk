@@ -86,7 +86,9 @@ fun CustomUnlockShortcutSetting() {
             coroutineScope.launch {
                 delay(100.milliseconds)
                 awaitFrame()
-                focusRequester.requestFocus()
+                runCatching {
+                    focusRequester.requestFocus()
+                }
             }
         }
     }
@@ -172,7 +174,9 @@ fun CustomUnlockShortcutSetting() {
                             coroutineScope.launch {
                                 delay(100.milliseconds)
                                 awaitFrame()
-                                focusRequester.requestFocus()
+                                runCatching {
+                                    focusRequester.requestFocus()
+                                }
                             }
                         }
                     },

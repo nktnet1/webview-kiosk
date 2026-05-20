@@ -73,7 +73,9 @@ fun CustomAuthPasswordDialog() {
     LaunchedEffect(Unit) {
         delay(100.milliseconds)
         awaitFrame()
-        focusRequester.requestFocus()
+        runCatching {
+            focusRequester.requestFocus()
+        }
     }
 
     fun handleUnlock() {

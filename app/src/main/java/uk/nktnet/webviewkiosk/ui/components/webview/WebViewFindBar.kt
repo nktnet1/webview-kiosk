@@ -92,7 +92,9 @@ fun WebViewFindBar(
         if (isActiveFindInPage) {
             delay(100.milliseconds)
             awaitFrame()
-            focusRequester.requestFocus()
+            runCatching {
+                focusRequester.requestFocus()
+            }
         }
     }
 
