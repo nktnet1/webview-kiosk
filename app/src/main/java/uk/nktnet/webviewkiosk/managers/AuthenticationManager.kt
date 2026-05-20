@@ -93,7 +93,10 @@ object AuthenticationManager {
             return
         }
 
-        val keyguardManager = activity.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        val keyguardManager = activity.getSystemService(
+            Context.KEYGUARD_SERVICE
+        ) as KeyguardManager
+
         val deviceSecure = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             keyguardManager.isDeviceSecure
         } else {
@@ -146,58 +149,55 @@ object AuthenticationManager {
             }
         }
 
-        val decryptCipher = try {
-            val cipher = getCipher()
-
-            if (existingToken == null) {
-                cipher.init(Cipher.ENCRYPT_MODE, generateOrGetSecretKey())
-            } else {
-                cipher.init(
-                    Cipher.DECRYPT_MODE,
-                    getSecretKey(),
-                    GCMParameterSpec(128, existingToken.second)
-                )
-            }
-
-            cipher
-        } catch (e: Exception) {
-            Log.e(javaClass.simpleName, "Failed to create cipher.", e)
-            _resultState.value = AuthenticationResult.AuthenticationError("Failed to create cipher.")
-            resetAuthentication()
-            return
-        }
-
         val prompt = BiometricPrompt(
             activity,
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
-                    _resultState.value = AuthenticationResult.AuthenticationError(errString.toString())
+                    _resultState.value = AuthenticationResult.AuthenticationError(
+                        errString.toString()
+                    )
                     resetAuthentication()
                 }
 
-                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                override fun onAuthenticationSucceeded(
+                    result: BiometricPrompt.AuthenticationResult
+                ) {
                     super.onAuthenticationSucceeded(result)
-                    val cipher = result.cryptoObject?.cipher
-                    if (cipher == null) {
-                        _resultState.value = AuthenticationResult.AuthenticationError("Missing cryptographic context.")
-                        resetAuthentication()
-                        return
-                    }
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                        val cipher = result.cryptoObject?.cipher
 
-                    try {
-                        if (existingToken == null) {
-                            encryptedAuthToken = cipher.doFinal("auth-token".toByteArray(Charsets.UTF_8))
-                            encryptedAuthTokenIv = cipher.iv
-                        } else {
-                            cipher.doFinal(existingToken.first)
+                        if (cipher == null) {
+                            _resultState.value = AuthenticationResult.AuthenticationError(
+                                "Missing cryptographic context."
+                            )
+                            resetAuthentication()
+                            return
                         }
-                        _resultState.value = AuthenticationResult.AuthenticationSuccess
-                        lastAuthTime = System.currentTimeMillis()
-                    } catch (e: Exception) {
-                        Log.e(javaClass.simpleName, "Secure authentication validation failed.", e)
-                        _resultState.value = AuthenticationResult.AuthenticationError("Secure authentication validation failed.")
-                        resetAuthentication()
+
+                        try {
+                            if (existingToken == null) {
+                                encryptedAuthToken = cipher.doFinal(
+                                    "auth-token".toByteArray(Charsets.UTF_8)
+                                )
+                                encryptedAuthTokenIv = cipher.iv
+                            } else {
+                                cipher.doFinal(existingToken.first)
+                            }
+                            _resultState.value = AuthenticationResult.AuthenticationSuccess
+                            lastAuthTime = System.currentTimeMillis()
+                        } catch (e: Exception) {
+                            Log.e(
+                                javaClass.simpleName,
+                                "Secure authentication validation failed.",
+                                e
+                            )
+                            _resultState.value =
+                                AuthenticationResult.AuthenticationError(
+                                    "Secure authentication validation failed."
+                                )
+                            resetAuthentication()
+                        }
                     }
                 }
 
@@ -209,7 +209,38 @@ object AuthenticationManager {
             }
         )
 
-        prompt.authenticate(promptInfoBuilder.build(), BiometricPrompt.CryptoObject(decryptCipher))
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val decryptCipher = try {
+                val cipher = getCipher()
+
+                if (existingToken == null) {
+                    cipher.init(Cipher.ENCRYPT_MODE, generateOrGetSecretKey())
+                } else {
+                    cipher.init(
+                        Cipher.DECRYPT_MODE,
+                        getSecretKey(),
+                        GCMParameterSpec(128, existingToken.second)
+                    )
+                }
+
+                cipher
+            } catch (e: Exception) {
+                Log.e(javaClass.simpleName, "Failed to create cipher.", e)
+                _resultState.value = AuthenticationResult.AuthenticationError(
+                    "Failed to create cipher."
+                )
+                resetAuthentication()
+                return
+            }
+            prompt.authenticate(
+                promptInfoBuilder.build(),
+                BiometricPrompt.CryptoObject(decryptCipher)
+            )
+        } else {
+            prompt.authenticate(
+                promptInfoBuilder.build(),
+            )
+        }
     }
 
     private fun getCipher(): Cipher = Cipher.getInstance(CIPHER_TRANSFORMATION)
@@ -219,7 +250,10 @@ object AuthenticationManager {
         return try {
             getSecretKey()
         } catch (_: Exception) {
-            val keyGenerator = KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, ANDROID_KEYSTORE)
+            val keyGenerator = KeyGenerator.getInstance(
+                KeyProperties.KEY_ALGORITHM_AES,
+                ANDROID_KEYSTORE
+            )
             val keySpecBuilder = KeyGenParameterSpec.Builder(
                 BIOMETRIC_KEY_ALIAS,
                 KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
@@ -232,7 +266,7 @@ object AuthenticationManager {
                 keySpecBuilder.setUserAuthenticationParameters(
                     0,
                     KeyProperties.AUTH_BIOMETRIC_STRONG
-                            or KeyProperties.AUTH_DEVICE_CREDENTIAL
+                        or KeyProperties.AUTH_DEVICE_CREDENTIAL
                 )
             }
 
@@ -254,16 +288,25 @@ object AuthenticationManager {
         return keyStore.getKey(BIOMETRIC_KEY_ALIAS, null) as SecretKey
     }
 
-    private fun showDeviceCredentialLollipop(keyguardManager: KeyguardManager, title: String, description: String) {
+    private fun showDeviceCredentialLollipop(
+        keyguardManager: KeyguardManager,
+        title: String,
+        description: String
+    ) {
         val activity = this.activity ?: return
         try {
             @Suppress("DEPRECATION")
             val intent = keyguardManager.createConfirmDeviceCredentialIntent(title, description)
             if (intent != null) {
                 @Suppress("DEPRECATION")
-                activity.startActivityForResult(intent, Constants.REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL)
+                activity.startActivityForResult(
+                    intent,
+                    Constants.REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL
+                )
             } else {
-                _resultState.value = AuthenticationResult.AuthenticationError("Failed to create device credential intent")
+                _resultState.value = AuthenticationResult.AuthenticationError(
+                    "Failed to create device credential intent"
+                )
             }
         } catch (e: Exception) {
             _resultState.value = AuthenticationResult.AuthenticationError(e.toString())
