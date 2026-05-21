@@ -72,8 +72,9 @@ object AuthenticationManager {
     }
 
     fun skipNextAuthResetForWindow() {
-        skipResetUntil = System.currentTimeMillis() + SKIP_RESET_WINDOW_MS
-        lastAuthTime = System.currentTimeMillis()
+        val now = System.currentTimeMillis()
+        skipResetUntil = now + SKIP_RESET_WINDOW_MS
+        lastAuthTime = now
     }
 
     fun showAuthenticationPrompt(
@@ -114,6 +115,12 @@ object AuthenticationManager {
         } else {
             showDeviceCredentialLollipop(keyguardManager, title, description)
         }
+    }
+
+    private fun handleAuthSuccess() {
+        _resultState.value = AuthenticationResult.AuthenticationSuccess
+        lastAuthTime = System.currentTimeMillis()
+        skipNextAuthResetForWindow()
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
@@ -164,6 +171,7 @@ object AuthenticationManager {
                     result: BiometricPrompt.AuthenticationResult
                 ) {
                     super.onAuthenticationSucceeded(result)
+
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                         val cipher = result.cryptoObject?.cipher
 
@@ -184,8 +192,7 @@ object AuthenticationManager {
                             } else {
                                 cipher.doFinal(existingToken.first)
                             }
-                            _resultState.value = AuthenticationResult.AuthenticationSuccess
-                            lastAuthTime = System.currentTimeMillis()
+                            handleAuthSuccess()
                         } catch (e: Exception) {
                             Log.e(
                                 javaClass.simpleName,
@@ -198,6 +205,8 @@ object AuthenticationManager {
                                 )
                             resetAuthentication()
                         }
+                    } else {
+                        handleAuthSuccess()
                     }
                 }
 
