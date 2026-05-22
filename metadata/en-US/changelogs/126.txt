@@ -1,0 +1,6 @@
+## Changes
+
+- fix: immersive mode overwriting system bar theme and styles (below Android 10)
+- fix: pending state causing infinite auth loop (below Android 10)
+- fix: authentication manager with cipher secret
+- fix: uncontrolled data used in path expression for blog saveFile
