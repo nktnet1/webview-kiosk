@@ -20,6 +20,7 @@ fun shouldBeImmersed(activity: Activity, userSettings: UserSettings): Boolean {
     }
 }
 
+@Suppress("DEPRECATION")
 fun enterImmersiveMode(activity: Activity) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         activity.window.insetsController?.let { controller ->
@@ -31,26 +32,38 @@ fun enterImmersiveMode(activity: Activity) {
                 WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
         }
     } else {
-        @Suppress("DEPRECATION")
-        activity.window.decorView.systemUiVisibility = (
+        val decorView = activity.window.decorView
+        val currentFlags = decorView.systemUiVisibility
+        val immersiveFlags = (
             View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-            or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-            or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-            or View.SYSTEM_UI_FLAG_FULLSCREEN
-            or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
         )
+        decorView.systemUiVisibility = currentFlags or immersiveFlags
     }
 }
 
+@Suppress("DEPRECATION")
 fun exitImmersiveMode(activity: Activity) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         activity.window.insetsController?.show(
             WindowInsets.Type.statusBars()
             or WindowInsets.Type.navigationBars()
         )
+
     } else {
-        @Suppress("DEPRECATION")
-        activity.window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_VISIBLE
+        val decorView = activity.window.decorView
+        val currentFlags = decorView.systemUiVisibility
+        val flagsToRemove = (
+            View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                or View.SYSTEM_UI_FLAG_FULLSCREEN
+                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+        )
+        decorView.systemUiVisibility = currentFlags and flagsToRemove.inv()
     }
 }

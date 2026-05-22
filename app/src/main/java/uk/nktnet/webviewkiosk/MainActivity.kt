@@ -4,10 +4,12 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
+import android.view.WindowManager
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -103,8 +105,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        super.onCreate(savedInstanceState)
         CustomNotificationManager.init(applicationContext)
         userSettings = UserSettings(this)
         systemSettings = SystemSettings(this)
@@ -246,12 +248,27 @@ class MainActivity : AppCompatActivity() {
             val isDarkTheme = resolveTheme(ThemeStateSingleton.currentTheme.value)
             val window = (this as? AppCompatActivity)?.window
             val insetsController = remember(window) {
-                window?.let { WindowInsetsControllerCompat(it, it.decorView) }
+                window?.let {
+                    WindowInsetsControllerCompat(it, it.decorView)
+                }
             }
 
             LaunchedEffect(isDarkTheme) {
                 insetsController?.isAppearanceLightStatusBars = !isDarkTheme
                 insetsController?.isAppearanceLightNavigationBars = !isDarkTheme
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+                    window?.run {
+                        addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+                        @Suppress("DEPRECATION")
+                        if (!isDarkTheme) {
+                            statusBarColor = Color.WHITE
+                            navigationBarColor = Color.WHITE
+                        } else {
+                            statusBarColor = Color.BLACK
+                            navigationBarColor = Color.BLACK
+                        }
+                    }
+                }
             }
 
             WebviewKioskTheme(darkTheme = isDarkTheme) {
