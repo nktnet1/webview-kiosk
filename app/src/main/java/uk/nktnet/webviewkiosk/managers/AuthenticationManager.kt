@@ -86,7 +86,7 @@ object AuthenticationManager {
             return
         }
 
-        _resultState.value = AuthenticationResult.Loading
+        _resultState.value = AuthenticationResult.Pending
 
         val customAuthPassword = UserSettings(activity).customAuthPassword
         if (customAuthPassword.isNotEmpty()) {
@@ -357,6 +357,7 @@ object AuthenticationManager {
 
     sealed interface AuthenticationResult {
         data object Loading : AuthenticationResult
+        data object Pending : AuthenticationResult
         data class AuthenticationError(val error: String) : AuthenticationResult
         data object AuthenticationFailed : AuthenticationResult
         data object AuthenticationSuccess : AuthenticationResult

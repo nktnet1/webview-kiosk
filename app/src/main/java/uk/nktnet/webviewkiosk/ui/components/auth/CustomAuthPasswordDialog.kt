@@ -59,7 +59,7 @@ fun CustomAuthPasswordDialog() {
 
     if (
         !AuthenticationManager.showCustomAuth.value
-        || state != AuthenticationManager.AuthenticationResult.Loading
+        || state != AuthenticationManager.AuthenticationResult.Pending
     ) {
         return
     }

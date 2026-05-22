@@ -225,10 +225,11 @@ class MainActivity : AppCompatActivity() {
             }
 
             LaunchedEffect(waitingForUnlock, biometricResult) {
-                if (
-                    waitingForUnlock
-                ) {
-                    if (biometricResult == AuthenticationManager.AuthenticationResult.Loading) {
+                if (waitingForUnlock) {
+                    if (
+                        biometricResult == AuthenticationManager.AuthenticationResult.Loading
+                        || biometricResult == AuthenticationManager.AuthenticationResult.Pending
+                    ) {
                         return@LaunchedEffect
                     }
                     if (

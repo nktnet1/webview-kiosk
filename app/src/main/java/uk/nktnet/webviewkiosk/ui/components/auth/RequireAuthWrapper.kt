@@ -59,7 +59,10 @@ private fun RequireAuthentication(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_START) {
-                if (!AuthenticationManager.checkAuthAndRefreshSession()) {
+                if (
+                    authenticationResult != AuthenticationManager.AuthenticationResult.Pending
+                    && !AuthenticationManager.checkAuthAndRefreshSession()
+                ) {
                     showAuthPrompt()
                 }
             }
@@ -72,7 +75,8 @@ private fun RequireAuthentication(
     }
 
     when (authenticationResult) {
-        is AuthenticationManager.AuthenticationResult.Loading -> {
+        is AuthenticationManager.AuthenticationResult.Loading,
+        is AuthenticationManager.AuthenticationResult.Pending -> {
             LoadingIndicator("Waiting for authentication...")
         }
         is AuthenticationManager.AuthenticationResult.AuthenticationSuccess,
