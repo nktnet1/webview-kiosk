@@ -236,8 +236,9 @@ object AuthenticationManager {
             } catch (e: Exception) {
                 Log.e(javaClass.simpleName, "Failed to create cipher.", e)
                 _resultState.value = AuthenticationResult.AuthenticationError(
-                    "Failed to create cipher."
+                    "Failed to create cipher: ${e.message}"
                 )
+                ToastManager.show(activity, "Failed to create cipher: ${e.message}")
                 resetAuthentication()
                 return
             }
