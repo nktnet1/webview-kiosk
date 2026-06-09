@@ -3,18 +3,26 @@ allowBuilds:
   sharp: false
   unrs-resolver: false
   workerd: false
-ignoredBuiltDependencies:
-  - '@tailwindcss/oxide'
-  - esbuild
-  - sharp
-  - unrs-resolver
-  - workerd
 minimumReleaseAgeExclude:
-  - '@tanstack/form-core@1.32.1'
-  - '@tanstack/react-form@1.32.1'
-  - fumadocs-mdx@15.0.9
-  - miniflare@4.20260526.0
-  - wrangler@4.95.0
+  - '@cloudflare/workerd-darwin-64@1.20260609.1'
+  - '@cloudflare/workerd-darwin-arm64@1.20260609.1'
+  - '@cloudflare/workerd-linux-64@1.20260609.1'
+  - '@cloudflare/workerd-linux-arm64@1.20260609.1'
+  - '@cloudflare/workerd-windows-64@1.20260609.1'
+  - '@next/env@16.2.9'
+  - '@next/swc-darwin-arm64@16.2.9'
+  - '@next/swc-darwin-x64@16.2.9'
+  - '@next/swc-linux-arm64-gnu@16.2.9'
+  - '@next/swc-linux-arm64-musl@16.2.9'
+  - '@next/swc-linux-x64-gnu@16.2.9'
+  - '@next/swc-linux-x64-musl@16.2.9'
+  - '@next/swc-win32-arm64-msvc@16.2.9'
+  - '@next/swc-win32-x64-msvc@16.2.9'
+  - miniflare@4.20260609.0
+  - next@16.2.9
+  - react-qr-code@2.2.0
+  - workerd@1.20260609.1
+  - wrangler@4.99.0
 overrides:
   brace-expansion@<1.1.13: '>=1.1.13'
   brace-expansion@>=4.0.0 <5.0.5: '>=5.0.5'

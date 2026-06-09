@@ -33,18 +33,16 @@ jobs:
         with:
           node-version: 24
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         name: Install pnpm
         with:
           package_json_file: docs/package.json
-          run_install: |
-            - cwd: docs
 
-      - name: Lint code
-        run: pnpm lint
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Format code
-        run: pnpm format
+      - name: Check lint and format
+        run: pnpm check
 
       - name: Setup Pages
         id: setup_pages

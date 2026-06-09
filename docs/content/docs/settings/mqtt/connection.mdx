@@ -15,6 +15,7 @@ and
 The hostname or IP address of the MQTT broker the app should connect to.
 
 For example,
+
 - 192.168.1.190
 - broker.hivemq.com
 - broker.emqx.io
@@ -27,10 +28,14 @@ The [port](https://www.emqx.com/en/blog/mqtt-ports#default-mqtt-ports-numbers)
 of the MQTT broker the app should connect to.
 
 Typically,
+
 - `1883`: MQTT (TCP)
 - `8883`: MQTTS (TCP with SSL/TLS)
 - `80`: WS (WebSocket, same port as HTTP)
 - `443`: WSS (WebSocket Secure, same port as HTTPS)
+
+When using WebSocket (e.g. on port 80 or 443), you will also need to enable
+the setting [Use WebSocket](#13-use-websocket)
 
 **Default:** 1883
 
@@ -126,9 +131,9 @@ Ensure the broker supports TLS on the configured port, e.g.
 - `80`: WS (WebSocket, same port as HTTP)
 - `443`: WSS (WebSocket Secure, same port as HTTPS)
 
-You should only enable WebSocket when strictly necessary, as it will consume
-more resources. A valid use case would be when you are connected to a network
-with a firewall that blocks non-standard ports like 8883.
+Use WebSocket only when necessary, as it consumes more resources than a direct
+MQTT connection via TCP. For example, it may be required on networks where a
+firewall blocks non-standard ports such as `8883` but allows HTTPS traffic.
 
 **Default:** false
 
