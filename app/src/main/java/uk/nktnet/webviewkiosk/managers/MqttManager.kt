@@ -101,7 +101,9 @@ object MqttManager {
     private fun addDebugLog(tag: String, message: String? = null, messageId: String? = null) {
         val logEntry = MqttLogEntry(Date(), tag, message, messageId)
         synchronized(logHistory) {
-            if (logHistory.size >= 100) logHistory.removeFirst()
+            if (logHistory.size >= 100) {
+                logHistory.removeFirst()
+            }
             logHistory.addLast(logEntry)
         }
         scope.launch {
@@ -274,13 +276,23 @@ object MqttManager {
                             TimeUnit.SECONDS
                         )
                 }
+
+                val causeText = disconnectedContext.cause.message.orEmpty()
+                val hint = if (causeText.contains("fixed header flags must be 0 but were 8", ignoreCase = true)) {
+                    "Hint: you may need to set 'MQTT -> Connection -> Use WebSocket' to true."
+                } else {
+                    ""
+                }
+
                 addDebugLog(
                     "disconnected",
                     """
                     source: ${disconnectedContext.source}
                     reconnect: ${disconnectedContext.reconnector.isReconnect}
                     cause: ${disconnectedContext.cause}
-                    """.trimIndent()
+
+                    $hint
+                    """.trimIndent().trimEnd()
                 )
             }
             .transportConfig()
