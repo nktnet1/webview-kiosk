@@ -94,7 +94,20 @@ do not want them.
 
 **Default:** false
 
-## 8. Back Button Hold Action
+## 8. Allow NFC
+
+Set to true to allow NFC usage in {APP_NAME} via a Web NFC API compatibility bridge.
+
+This will allow any website to use the devices NFC to read and write tags.
+
+Please note that this is not directly using Web NFC as is is not available in WebView,
+rather it is a compatibility layer between the native NFC and JS. This means that it does not have the same 
+[security limitations](https://developer.chrome.com/docs/capabilities/nfc#security-and-permissions) 
+and therefore does work on insecure websites.
+
+**Default:** false
+
+## 9. Back Button Hold Action
 
 Customise the behaviour when the back button is held down (long pressed).
 
@@ -106,7 +119,7 @@ Customise the behaviour when the back button is held down (long pressed).
 
 **Default:** Open Kiosk Control Panel
 
-## 9. Custom Unlock Shortcut
+## 10. Custom Unlock Shortcut
 
 Provide a custom keyboard shortcut using a modifier key (CTRL/SHIFT/ALT/META)
 in combination with another standard key to unlock/unpin the application.
@@ -118,7 +131,7 @@ has a physical keyboard connected.
 
 **Default:** *(blank)*
 
-## 10. Custom Auth Password
+## 11. Custom Auth Password
 
 Specify a custom password to protect your settings or when unlocking from
 the kiosk state.
@@ -135,7 +148,7 @@ Leave this setting blank to use your device's biometrics or credentials.
 
 **Default:** *(blank)*
 
-## 11. Unlock Auth Requirement
+## 12. Unlock Auth Requirement
 
 This setting only applies to in-app unlock methods, e.g. when unlocking
 using `Kiosk Control Panel` or `Custom Unlock Shortcut`.
@@ -151,7 +164,7 @@ unpinning, which is outside the control of {APP_NAME}.
 
 **Default:** Default
 
-## 12. Block Screen Capture
+## 13. Block Screen Capture
 
 Prevent screenshots, screen recording and content previews in Recent Apps.
 This is done by setting the FLAG_SECURE window flag.
@@ -161,7 +174,7 @@ For more information, see
 
 **Default:** false
 
-## 13. Block Volume Keys
+## 14. Block Volume Keys
 
 Disable the volume control buttons, specifically:
 
@@ -171,11 +184,11 @@ Disable the volume control buttons, specifically:
 
 **Default:** false
 
-## 14. Device Owner
+## 15. Device Owner
 
 For more information about `Device Owner`, see the [Security](/docs/security) documentation.
 
-### 14.1. Lock Task Features
+### 15.1. Lock Task Features
 
 {APP_NAME} The settings below are extracted from the official documentations:
 - [Lock Task Mode -> Customise UI](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode#customize-ui)
@@ -293,7 +306,7 @@ For more information about `Device Owner`, see the [Security](/docs/security) do
   </tbody>
 </table>
 
-### 14.2. Dhizuku Request Permission on Launch
+### 15.2. Dhizuku Request Permission on Launch
 
 When enabled, if [Dhizuku](https://github.com/iamr0s/Dhizuku) is installed and
 has not granted {APP_NAME} access through the

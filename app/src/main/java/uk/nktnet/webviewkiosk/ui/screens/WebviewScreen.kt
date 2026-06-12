@@ -96,6 +96,7 @@ import uk.nktnet.webviewkiosk.utils.webview.html.generateFileMissingPage
 import uk.nktnet.webviewkiosk.utils.webview.html.generateUnsupportedMimeTypePage
 import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
+import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
@@ -285,6 +286,7 @@ fun WebviewScreen(navController: NavController) {
 
     DisposableEffect(webView) {
         onDispose {
+            NfcBridgeManager.detachWebView(webView)
             webView.stopLoading()
             webView.removeAllViews()
             webView.destroy()

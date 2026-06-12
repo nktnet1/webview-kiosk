@@ -6,6 +6,8 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Color
 import android.net.Uri
+import android.nfc.NfcAdapter
+import android.nfc.Tag
 import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
@@ -68,6 +70,7 @@ import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
+import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : AppCompatActivity() {
@@ -77,8 +80,15 @@ class MainActivity : AppCompatActivity() {
     private lateinit var userSettings: UserSettings
     private lateinit var systemSettings: SystemSettings
     private lateinit var backButtonService: BackButtonManager
+    private var nfcAdapter: NfcAdapter? = null
 
     private var lastOnStartTime = 0L
+
+    private val nfcReaderCallback = NfcAdapter.ReaderCallback { tag ->
+        if (this::userSettings.isInitialized && userSettings.allowNfc) {
+            NfcBridgeManager.onTagScanned(tag)
+        }
+    }
 
     val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -110,6 +120,7 @@ class MainActivity : AppCompatActivity() {
         CustomNotificationManager.init(applicationContext)
         userSettings = UserSettings(this)
         systemSettings = SystemSettings(this)
+        nfcAdapter = NfcAdapter.getDefaultAdapter(this)
         DeviceOwnerManager.init(this)
         // https://github.com/nktnet1/webview-kiosk/pull/195
         getExternalFilesDir(null)
@@ -162,6 +173,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (intent != null) {
+            handleNfcIntent(intent)
             saveIntentUrl(intent)
         }
 
@@ -339,6 +351,13 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         backButtonService.onBackPressedCallback.isEnabled = true
+        enableNfcReaderMode()
+    }
+
+    override fun onPause() {
+        disableNfcReaderMode()
+        NfcBridgeManager.setScanActive(false)
+        super.onPause()
     }
 
     override fun onUserInteraction() {
@@ -364,6 +383,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        if (handleNfcIntent(intent)) {
+            return
+        }
         if (!this::navController.isInitialized) {
             return
         }
@@ -403,6 +425,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        disableNfcReaderMode()
         unregisterReceiver(broadcastReceiver)
         if (
             userSettings.mqttUseForegroundService
@@ -447,5 +470,59 @@ class MainActivity : AppCompatActivity() {
             backButtonService.onKeyLongPress(keyCode)
             || super.onKeyLongPress(keyCode, event)
         )
+    }
+
+    private fun enableNfcReaderMode() {
+        if (!this::userSettings.isInitialized || !userSettings.allowNfc) {
+            return
+        }
+
+        val adapter = nfcAdapter ?: return
+        val flags =
+            NfcAdapter.FLAG_READER_NFC_A or
+                NfcAdapter.FLAG_READER_NFC_B or
+                NfcAdapter.FLAG_READER_NFC_F or
+                NfcAdapter.FLAG_READER_NFC_V or
+                NfcAdapter.FLAG_READER_NFC_BARCODE
+
+        runCatching {
+            adapter.enableReaderMode(this, nfcReaderCallback, flags, null)
+        }
+    }
+
+    private fun disableNfcReaderMode() {
+        val adapter = nfcAdapter ?: return
+        runCatching {
+            adapter.disableReaderMode(this)
+        }
+    }
+
+    private fun handleNfcIntent(intent: Intent): Boolean {
+        if (!this::userSettings.isInitialized || !userSettings.allowNfc) {
+            return false
+        }
+
+        val action = intent.action ?: return false
+        if (
+            action != NfcAdapter.ACTION_TAG_DISCOVERED
+            && action != NfcAdapter.ACTION_TECH_DISCOVERED
+            && action != NfcAdapter.ACTION_NDEF_DISCOVERED
+        ) {
+            return false
+        }
+
+        val tag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+        }
+
+        tag?.let {
+            NfcBridgeManager.onTagScanned(it, action)
+            return true
+        }
+
+        return false
     }
 }
