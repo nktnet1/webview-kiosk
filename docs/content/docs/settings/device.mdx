@@ -80,15 +80,15 @@ required for the WebView's
 
 ## 7. Allow NFC
 
-Set to true to allow NFC usage in {APP_NAME} via a Web NFC API compatibility bridge.
+Set to true to enable NFC support in {APP_NAME} via a Web NFC compatibility bridge.
 
-This will allow any website to use the devices NFC to read and write tags.
+This allows websites to read and write NFC tags using the device's NFC hardware.
 
-Please note that this is not directly using Web NFC as is is not available in WebView,
-rather it is a compatibility layer between the native NFC and JS. This means
-that it does not have the same
+Please note that this does not use Web NFC directly, as Web NFC is not yet
+available in Android System WebView. Instead, a compatibility layer is provided
+between native NFC and JavaScript. As a result, it is not subject to the same
 [security limitations](https://developer.chrome.com/docs/capabilities/nfc#security-and-permissions)
-and therefore does work on insecure websites.
+as Web NFC and can also operate on insecure (non-HTTPS) websites.
 
 **Default:** false
 

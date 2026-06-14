@@ -33,13 +33,18 @@ fun AllowNfcSetting() {
     BooleanSettingFieldItem(
         label = stringResource(R.string.device_allow_nfc_title),
         infoText = """
-            Set to true to enable the Web NFC bridge in WebView.
+            Set to true to enable NFC support via a Web NFC compatibility bridge.
 
-            Websites can then use a Chrome Web NFC-compatible API:
-            - new NDEFReader().scan() and listen to the 'reading' event
-            - await new NDEFReader().write(...), then tap a tag to complete writing
+            This allows websites to read and write NFC tags using the device's NFC hardware.
 
-            NFC must also be enabled in your device settings.
+            Please note that this does not use Web NFC directly, as Web NFC is not yet
+            available in Android System WebView. Instead, a compatibility layer is provided
+            between native NFC and JavaScript. As a result, it is not subject to the same
+            security limitations as Web NFC:
+
+            - https://developer.chrome.com/docs/capabilities/nfc#security-and-permissions
+
+            and can also operate on insecure (non-HTTPS) websites.
         """.trimIndent(),
         initialValue = userSettings.allowNfc,
         settingKey = settingKey,
@@ -47,11 +52,19 @@ fun AllowNfcSetting() {
         onSave = { userSettings.allowNfc = it },
         itemText = { value ->
             val supportText = if (nfcSupported) {
-                if (nfcEnabled) "(nfc enabled)" else "(nfc disabled in device settings)"
+                if (nfcEnabled) {
+                    "(NFC enabled)"
+                } else {
+                    "(NFC disabled)"
+                }
             } else {
-                "(not supported on this device)"
+                "(NFC not supported)"
             }
-            if (value) "True $supportText" else "False $supportText"
+            if (value) {
+                "True $supportText"
+            } else {
+                "False $supportText"
+            }
         },
         extraContent = {
             if (nfcSupported) {
@@ -69,6 +82,14 @@ fun AllowNfcSetting() {
                         style = MaterialTheme.typography.labelMedium
                     )
                 }
+            } else {
+                Text(
+                    text = "NFC is not supported on this device.",
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
             }
         }
     )
