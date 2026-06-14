@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.utils
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.util.Log
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -130,7 +131,11 @@ fun initMqttForegroundService(context: Context, start: Boolean) {
     val intent = Intent(context, MqttForegroundService::class.java)
     try {
         if (start) {
-            context.startService(intent)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
         } else {
             context.stopService(intent)
         }

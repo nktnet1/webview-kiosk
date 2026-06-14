@@ -69,5 +69,6 @@ For more details, visit https://webviewkiosk.nktnet.uk
 <big>Alternatives</big>
 
 - Fully Kiosk Browser Lockdown (feature-rich, but not a free kiosk solution)
-- Web Kiosk (FOSS, developed by Screenlite)
-- FreeKiosk (FOSS, developed by Rushb-fr)
+- Web Kiosk (developed by Screenlite)
+- FreeKiosk (developed by Rushb-fr)
+- Kite AOS (developed by andrew-malitchuk)

@@ -498,7 +498,11 @@ fun KioskControlPanel(
                             },
                         ) {
                             Icon(
-                                painter = if (isSticky) painterResource(R.drawable.custom_pin) else painterResource(R.drawable.custom_unpin),
+                                painter = if (isSticky) {
+                                    painterResource(R.drawable.custom_pin)
+                                } else {
+                                    painterResource(R.drawable.custom_unpin)
+                                },
                                 contentDescription = if (isSticky) "Sticky" else "Non-Sticky",
                                 modifier = Modifier.size(20.dp)
                             )

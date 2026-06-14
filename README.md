@@ -111,5 +111,6 @@ See the [LICENSE](./LICENSE) file for details.
 ## Alternatives
 
 - [Fully Kiosk Browser Lockdown](https://www.fully-kiosk.com) (feature-rich, but not a free kiosk solution)
-- [Web Kiosk](https://github.com/screenlite/web-kiosk) (FOSS, developed by Screenlite)
-- [FreeKiosk](https://github.com/RushB-fr/freekiosk) (FOSS, developed by Rushb-fr)
+- [Web Kiosk](https://github.com/screenlite/web-kiosk) (developed by Screenlite)
+- [FreeKiosk](https://github.com/RushB-fr/freekiosk) (developed by Rushb-fr)
+- [Kite AOS](https://github.com/andrew-malitchuk/kite-aos) (developed by andrew-malitchuk)

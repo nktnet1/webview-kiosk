@@ -3,18 +3,12 @@ allowBuilds:
   sharp: false
   unrs-resolver: false
   workerd: false
-ignoredBuiltDependencies:
-  - '@tailwindcss/oxide'
-  - esbuild
-  - sharp
-  - unrs-resolver
-  - workerd
 minimumReleaseAgeExclude:
-  - '@tanstack/form-core@1.32.1'
-  - '@tanstack/react-form@1.32.1'
-  - fumadocs-mdx@15.0.9
-  - miniflare@4.20260526.0
-  - wrangler@4.95.0
+  - '@fuma-translate/react@1.0.1'
+  - fumadocs-core@16.10.1
+  - fumadocs-ui@16.10.1
+  - miniflare@4.20260611.0
+  - wrangler@4.100.0
 overrides:
   brace-expansion@<1.1.13: '>=1.1.13'
   brace-expansion@>=4.0.0 <5.0.5: '>=5.0.5'

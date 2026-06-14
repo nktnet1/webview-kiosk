@@ -1,0 +1,5 @@
+# Changes
+
+- feat(mqtt): hint in server port settings about enabling Use WebSocket
+- fix(mqtt): use startForegroundService for Android 8.0 and above
+- fix(auth): improve error handling when failing to create cipher
