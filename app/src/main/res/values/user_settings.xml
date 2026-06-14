@@ -199,6 +199,9 @@
     <string name="device_allow_location_title">Allow Location</string>
     <string name="device_allow_location_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
+    <string name="device_allow_nfc_title">Allow NFC</string>
+    <string name="device_allow_nfc_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
+
     <string name="device_allow_notifications_title">Allow Notifications</string>
     <string name="device_allow_notifications_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 

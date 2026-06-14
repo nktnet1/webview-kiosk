@@ -31,6 +31,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.net.toUri
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -46,9 +48,11 @@ import uk.nktnet.webviewkiosk.utils.webview.handlers.handleDownloadPrompt
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorPromptRequest
+import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BatteryInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BlobInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BrightnessInterface
+import uk.nktnet.webviewkiosk.utils.webview.interfaces.NfcInterface
 import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScript
@@ -139,6 +143,19 @@ fun createCustomWebview(
             if (userSettings.enableBrightnessApi) {
                 addJavascriptInterface(BrightnessInterface(context), BrightnessInterface.NAME)
             }
+            if (userSettings.allowNfc) {
+                addJavascriptInterface(NfcInterface(context), NfcInterface.NAME)
+                NfcBridgeManager.attachWebView(this)
+                if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+                    runCatching {
+                        WebViewCompat.addDocumentStartJavaScript(
+                            this,
+                            NfcInterface.JS_WEB_NFC_HOOK,
+                            setOf("*")
+                        )
+                    }
+                }
+            }
             if (userSettings.allowFileDownload) {
                 addJavascriptInterface(BlobInterface(context), BlobInterface.NAME)
             }
@@ -165,6 +182,9 @@ fun createCustomWebview(
                             wrapJsInIIFE(userSettings.customScriptOnPageStart),
                             null
                         )
+                    }
+                    if (userSettings.allowNfc) {
+                        view?.evaluateJavascript(NfcInterface.JS_WEB_NFC_HOOK, null)
                     }
                     super.onPageStarted(view, url, favicon)
                 }
