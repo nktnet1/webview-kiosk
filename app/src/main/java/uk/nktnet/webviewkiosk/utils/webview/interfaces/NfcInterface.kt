@@ -238,7 +238,10 @@ class NfcInterface(private val context: android.content.Context) {
 
                     async scan(options = {}) {
                         if (!nativeBridge || typeof nativeBridge.scan !== 'function') {
-                            throw createDomException('Web NFC bridge unavailable.', 'NotSupportedError');
+                            throw createDomException(
+                                'Web NFC bridge unavailable.',
+                                 'NotSupportedError'
+                             );
                         }
 
                         const ok = nativeBridge.scan(JSON.stringify(options));
@@ -261,7 +264,10 @@ class NfcInterface(private val context: android.content.Context) {
 
                     async write() {
                         if (!nativeBridge || typeof nativeBridge.write !== 'function') {
-                            throw createDomException('Web NFC write bridge unavailable.', 'NotSupportedError');
+                            throw createDomException(
+                                'Web NFC write bridge unavailable.',
+                                 'NotSupportedError'
+                             );
                         }
 
                         const message = arguments.length > 0 ? arguments[0] : null;
@@ -275,7 +281,10 @@ class NfcInterface(private val context: android.content.Context) {
                                 JSON.stringify(options || {})
                             ));
                         } catch (_) {
-                            throw createDomException('Unable to start NFC write.', 'OperationError');
+                            throw createDomException(
+                                'Unable to start NFC write.',
+                                 'OperationError'
+                             );
                         }
 
                         if (!response || !response.ok || !response.requestId) {
@@ -289,11 +298,18 @@ class NfcInterface(private val context: android.content.Context) {
                     }
 
                     async makeReadOnly() {
-                        throw createDomException('NDEFReader.makeReadOnly() is not supported by this bridge.', 'NotSupportedError');
+                        throw createDomException(
+                            'NDEFReader.makeReadOnly() is not supported by this bridge.',
+                             'NotSupportedError'
+                         );
                     }
 
                     stopScan() {
-                        if (this._scanActive && nativeBridge && typeof nativeBridge.stopScan === 'function') {
+                        if (
+                            this._scanActive
+                            && nativeBridge
+                            && typeof nativeBridge.stopScan === 'function'
+                        ) {
                             nativeBridge.stopScan();
                         }
                         this._scanActive = false;
@@ -356,7 +372,10 @@ class NfcInterface(private val context: android.content.Context) {
             return JSONObject().apply {
                 put("ok", false)
                 put("errorName", "NotAllowedError")
-                put("errorMessage", "NFC is unavailable or disabled in device settings.")
+                put(
+                    "errorMessage",
+                    "NFC is unavailable or disabled in device settings."
+                )
             }.toString()
         }
 
