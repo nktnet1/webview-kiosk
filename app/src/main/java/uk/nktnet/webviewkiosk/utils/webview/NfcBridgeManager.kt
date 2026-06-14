@@ -146,7 +146,9 @@ object NfcBridgeManager {
 
     private fun parseNdefRecordFromJson(record: JSONObject): NdefRecord {
         val recordType = record.optString("recordType", "text").lowercase()
-        val idBytes = record.optString("id", "").toByteArray(StandardCharsets.UTF_8)
+        val idBytes = record
+            .optString("id", "")
+            .toByteArray(StandardCharsets.UTF_8)
 
         return when (recordType) {
             "text" -> {
@@ -169,8 +171,20 @@ object NfcBridgeManager {
 
                 val payload = ByteArray(1 + languageBytes.size + textBytes.size)
                 payload[0] = status.toByte()
-                System.arraycopy(languageBytes, 0, payload, 1, languageBytes.size)
-                System.arraycopy(textBytes, 0, payload, 1 + languageBytes.size, textBytes.size)
+                System.arraycopy(
+                    languageBytes,
+                    0,
+                    payload,
+                    1,
+                    languageBytes.size
+                )
+                System.arraycopy(
+                    textBytes,
+                    0,
+                    payload,
+                    1 + languageBytes.size,
+                    textBytes.size
+                )
 
                 NdefRecord(
                     NdefRecord.TNF_WELL_KNOWN,
@@ -199,7 +213,9 @@ object NfcBridgeManager {
             }
 
             else -> {
-                val tnf = record.optInt("tnf", NdefRecord.TNF_UNKNOWN.toInt()).toShort()
+                val tnf = record
+                    .optInt("tnf", NdefRecord.TNF_UNKNOWN.toInt())
+                    .toShort()
                 val rawType = record.optString("rawType", "")
                 val typeBytes = rawType.toByteArray(StandardCharsets.UTF_8)
                 val payload = decodeRecordPayload(record)
@@ -268,8 +284,14 @@ object NfcBridgeManager {
         val payloadBase64 = Base64.encodeToString(payload, Base64.NO_WRAP)
 
         json.put("tnf", record.tnf.toInt())
-        json.put("id", String(record.id ?: byteArrayOf(), StandardCharsets.UTF_8))
-        json.put("rawType", String(record.type ?: byteArrayOf(), StandardCharsets.UTF_8))
+        json.put(
+            "id",
+            String(record.id ?: byteArrayOf(), StandardCharsets.UTF_8)
+        )
+        json.put(
+            "rawType",
+            String(record.type ?: byteArrayOf(), StandardCharsets.UTF_8)
+        )
         json.put("payloadBase64", payloadBase64)
 
         when {
@@ -288,10 +310,14 @@ object NfcBridgeManager {
 
             record.tnf == NdefRecord.TNF_MIME_MEDIA -> {
                 json.put("recordType", "mime")
-                json.put("mediaType", String(record.type ?: byteArrayOf(), StandardCharsets.US_ASCII))
-            }
-
-            else -> {
+                json.put(
+                    "mediaType",
+                    String(
+                        record.type ?: byteArrayOf(),
+                        StandardCharsets.US_ASCII
+                    )
+                )
+            } else -> {
                 json.put("recordType", "unknown")
             }
         }
@@ -300,11 +326,17 @@ object NfcBridgeManager {
     }
 
     private fun isTextRecord(record: NdefRecord): Boolean {
-        return record.tnf == NdefRecord.TNF_WELL_KNOWN && record.type.contentEquals(NdefRecord.RTD_TEXT)
+        return (
+            record.tnf == NdefRecord.TNF_WELL_KNOWN
+            && record.type.contentEquals(NdefRecord.RTD_TEXT)
+        )
     }
 
     private fun isUriRecord(record: NdefRecord): Boolean {
-        return record.tnf == NdefRecord.TNF_WELL_KNOWN && record.type.contentEquals(NdefRecord.RTD_URI)
+        return (
+            record.tnf == NdefRecord.TNF_WELL_KNOWN
+            && record.type.contentEquals(NdefRecord.RTD_URI)
+        )
     }
 
     private data class TextPayload(
@@ -333,7 +365,11 @@ object NfcBridgeManager {
         }
 
         val charset = if (isUtf16) StandardCharsets.UTF_16 else StandardCharsets.UTF_8
-        val text = String(payload, textStart, payload.size - textStart, charset)
+        val text = String(
+            payload,
+            textStart,
+            payload.size - textStart, charset
+        )
 
         return TextPayload(text, language, if (isUtf16) "utf-16" else "utf-8")
     }
@@ -384,7 +420,12 @@ object NfcBridgeManager {
 
         val prefixIndex = payload[0].toInt() and 0xFF
         val prefix = uriPrefixes.getOrElse(prefixIndex) { "" }
-        val uriRemainder = String(payload, 1, payload.size - 1, StandardCharsets.UTF_8)
+        val uriRemainder = String(
+            payload,
+            1,
+            payload.size - 1,
+            StandardCharsets.UTF_8
+        )
         return prefix + uriRemainder
     }
 
