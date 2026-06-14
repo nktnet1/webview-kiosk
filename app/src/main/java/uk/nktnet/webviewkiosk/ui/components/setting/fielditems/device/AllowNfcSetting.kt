@@ -53,7 +53,7 @@ fun AllowNfcSetting() {
         itemText = { value ->
             val supportText = if (nfcSupported) {
                 if (nfcEnabled) {
-                    "(NFC enabled)"
+                    ""
                 } else {
                     "(NFC disabled)"
                 }
