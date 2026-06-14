@@ -244,8 +244,7 @@ object NfcBridgeManager {
             }
         }
         if (record.has("data")) {
-            val value = record.get("data")
-            return when (value) {
+            return when (val value = record.get("data")) {
                 is String -> value.toByteArray(StandardCharsets.UTF_8)
                 else -> value.toString().toByteArray(StandardCharsets.UTF_8)
             }
