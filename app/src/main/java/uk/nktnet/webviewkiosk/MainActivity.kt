@@ -478,12 +478,13 @@ class MainActivity : AppCompatActivity() {
         }
 
         val adapter = nfcAdapter ?: return
-        val flags =
-            NfcAdapter.FLAG_READER_NFC_A or
-                NfcAdapter.FLAG_READER_NFC_B or
-                NfcAdapter.FLAG_READER_NFC_F or
-                NfcAdapter.FLAG_READER_NFC_V or
-                NfcAdapter.FLAG_READER_NFC_BARCODE
+        val flags = (
+            NfcAdapter.FLAG_READER_NFC_A
+                or NfcAdapter.FLAG_READER_NFC_B
+                or NfcAdapter.FLAG_READER_NFC_F
+                or NfcAdapter.FLAG_READER_NFC_V
+                or NfcAdapter.FLAG_READER_NFC_BARCODE
+        )
 
         runCatching {
             adapter.enableReaderMode(this, nfcReaderCallback, flags, null)
