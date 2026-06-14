@@ -414,12 +414,6 @@
         android:description="@string/device_brightness_description"
     />
     <restriction
-        android:key="device.allow_nfc"
-        android:restrictionType="bool"
-        android:title="@string/device_allow_nfc_title"
-        android:description="@string/device_allow_nfc_description"
-    />
-    <restriction
         android:key="device.allow_camera"
         android:restrictionType="bool"
         android:title="@string/device_allow_camera_title"
@@ -436,6 +430,12 @@
         android:restrictionType="bool"
         android:title="@string/device_allow_location_title"
         android:description="@string/device_allow_location_description"
+    />
+    <restriction
+        android:key="device.allow_nfc"
+        android:restrictionType="bool"
+        android:title="@string/device_allow_nfc_title"
+        android:description="@string/device_allow_nfc_description"
     />
     <restriction
         android:key="device.allow_notifications"

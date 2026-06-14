@@ -78,7 +78,21 @@ required for the WebView's
 
 **Default:** false
 
-## 7. Allow Notifications
+## 7. Allow NFC
+
+Set to true to allow NFC usage in {APP_NAME} via a Web NFC API compatibility bridge.
+
+This will allow any website to use the devices NFC to read and write tags.
+
+Please note that this is not directly using Web NFC as is is not available in WebView,
+rather it is a compatibility layer between the native NFC and JS. This means
+that it does not have the same
+[security limitations](https://developer.chrome.com/docs/capabilities/nfc#security-and-permissions)
+and therefore does work on insecure websites.
+
+**Default:** false
+
+## 8. Allow Notifications
 
 Set to true to allow {APP_NAME} to send notifications. For example, this
 will allow the MQTT notify command to create alerts.
@@ -91,19 +105,6 @@ Please note that for foreground services, e.g. when using lock task mode
 kiosk-launch or MQTT, the notification will always be created irrespective
 of this setting. You can disable notifications at the device level if you
 do not want them.
-
-**Default:** false
-
-## 8. Allow NFC
-
-Set to true to allow NFC usage in {APP_NAME} via a Web NFC API compatibility bridge.
-
-This will allow any website to use the devices NFC to read and write tags.
-
-Please note that this is not directly using Web NFC as is is not available in WebView,
-rather it is a compatibility layer between the native NFC and JS. This means that it does not have the same 
-[security limitations](https://developer.chrome.com/docs/capabilities/nfc#security-and-permissions) 
-and therefore does work on insecure websites.
 
 **Default:** false
 

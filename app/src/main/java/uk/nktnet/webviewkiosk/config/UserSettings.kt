@@ -453,12 +453,22 @@ class UserSettings(val context: Context) {
         min = -1,
         max = 100,
     )
-    var allowNfc by booleanPref(getRestrictions, prefs, UserSettingsKeys.Device.ALLOW_NFC, false)
-    var allowCamera by booleanPref(getRestrictions, prefs, UserSettingsKeys.Device.ALLOW_CAMERA, false)
+    var allowCamera by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.ALLOW_CAMERA,
+        false
+    )
     var allowMicrophone by booleanPref(
         getRestrictions,
         prefs,
         UserSettingsKeys.Device.ALLOW_MICROPHONE,
+        false
+    )
+    var allowNfc by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.ALLOW_NFC,
         false
     )
     var allowLocation by booleanPref(
@@ -1036,10 +1046,10 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)
             put(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.name)
             put(UserSettingsKeys.Device.BRIGHTNESS, brightness)
-            put(UserSettingsKeys.Device.ALLOW_NFC, allowNfc)
             put(UserSettingsKeys.Device.ALLOW_CAMERA, allowCamera)
             put(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             put(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
+            put(UserSettingsKeys.Device.ALLOW_NFC, allowNfc)
             put(UserSettingsKeys.Device.ALLOW_NOTIFICATIONS, allowNotifications)
             put(UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION, backButtonHoldAction.name)
             put(UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
@@ -1217,10 +1227,10 @@ class UserSettings(val context: Context) {
             keepScreenOn = json.optBoolean(UserSettingsKeys.Device.KEEP_SCREEN_ON, keepScreenOn)
             rotation = DeviceRotationOption.fromString(json.optString(UserSettingsKeys.Device.DEVICE_ROTATION, rotation.name))
             brightness = json.optInt(UserSettingsKeys.Device.BRIGHTNESS, brightness)
-            allowNfc = json.optBoolean(UserSettingsKeys.Device.ALLOW_NFC, allowNfc)
             allowCamera = json.optBoolean(UserSettingsKeys.Device.ALLOW_CAMERA, allowCamera)
             allowMicrophone = json.optBoolean(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             allowLocation = json.optBoolean(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
+            allowNfc = json.optBoolean(UserSettingsKeys.Device.ALLOW_NFC, allowNfc)
             allowNotifications = json.optBoolean(UserSettingsKeys.Device.ALLOW_NOTIFICATIONS, allowNotifications)
             backButtonHoldAction = BackButtonHoldActionOption.fromString(
                 json.optString(UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION, backButtonHoldAction.name)
