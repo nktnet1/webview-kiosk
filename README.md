@@ -67,6 +67,7 @@ and standalone Kiosk solution.
 - <b>MODIFY_AUDIO_SETTINGS</b>: for routing audio (microphone will not work without this)
 - <b>ACCESS_FINE_LOCATION</b>: (optional) for web apps that needs precise geolocation
 - <b>ACCESS_COARSE_LOCATION</b>: (optional) for web apps that needs approximate geolocation
+- <b>NFC</b>: for reading and writing NFC tags using the device's NFC hardware
 - <b>QUERY_ALL_PACKAGES</b>: to find launchable apps, device owners and lock task packages
 - <b>POST_NOTIFICATIONS</b>: (optional) for lock task mode (kiosk) launches and MQTT
 - <b>FOREGROUND_SERVICE</b>: for persistent notification and management with lock task and MQTT
