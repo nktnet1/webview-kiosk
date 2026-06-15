@@ -1,4 +1,4 @@
-import { AnyFieldApi } from "@tanstack/react-form";
+import type { AnyFieldApi } from "@tanstack/react-form";
 import { ExternalLink } from "lucide-react";
 import FormFieldInfo from "@/components/common/FormFieldInfo";
 import { Input } from "@/components/ui/input";

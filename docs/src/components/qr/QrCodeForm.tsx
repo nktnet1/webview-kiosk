@@ -13,8 +13,8 @@ import QrTextField from "@/components/qr/fields/QrTextField";
 import {
   DownloadSource,
   FormSchema,
-  FormValues,
-  QrData,
+  type FormValues,
+  type QrData,
   WifiSecurityType,
 } from "@/components/qr/schema";
 import { LATEST_VERSION } from "@/components/qr/version";

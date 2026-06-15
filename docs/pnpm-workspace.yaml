@@ -4,13 +4,13 @@ allowBuilds:
   unrs-resolver: false
   workerd: false
 minimumReleaseAgeExclude:
-  - '@fuma-translate/react@1.0.1'
-  - fumadocs-core@16.10.1
-  - fumadocs-ui@16.10.1
-  - miniflare@4.20260611.0
-  - wrangler@4.100.0
+  - esbuild@0.28.1
+  - fumadocs-core@16.10.3
+  - fumadocs-ui@16.10.3
 overrides:
   brace-expansion@<1.1.13: '>=1.1.13'
   brace-expansion@>=4.0.0 <5.0.5: '>=5.0.5'
+  esbuild@>=0.17.0 <0.28.1: ^0.28.1
+  esbuild@>=0.27.3 <0.28.1: ^0.28.1
   picomatch@<2.3.2: '>=2.3.2'
   postcss@<8.5.10: '>=8.5.10'

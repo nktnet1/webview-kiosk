@@ -91,9 +91,15 @@ export default function RegexPlayground() {
       <Card>
         <CardContent className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Test URL</label>
+            <label
+              htmlFor="test-url-input"
+              className="block text-sm font-medium mb-1"
+            >
+              Test URL
+            </label>
             <div className="flex space-x-2">
               <Input
+                id="test-url-input"
                 placeholder="https://example.com"
                 value={testUrl}
                 onChange={(e) => handleInputChange(e.target.value)}
@@ -108,8 +114,14 @@ export default function RegexPlayground() {
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Blacklist</label>
+            <label
+              htmlFor="blacklist-textarea"
+              className="block text-sm font-medium mb-1"
+            >
+              Blacklist
+            </label>
             <Textarea
+              id="blacklist-textarea"
               placeholder={`e.g.\n\t.*`}
               value={blacklist}
               onChange={(e) => setBlacklist(e.target.value)}
@@ -117,8 +129,14 @@ export default function RegexPlayground() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Whitelist</label>
+            <label
+              htmlFor="whitelist-textarea"
+              className="block text-sm font-medium mb-1"
+            >
+              Whitelist
+            </label>
             <Textarea
+              id="whitelist-textarea"
               placeholder={`e.g.\n\t^https://trusted\\.org/?$\n\t^https://.*\\.trusted\\.org/.*`}
               value={whitelist}
               onChange={(e) => setWhitelist(e.target.value)}
