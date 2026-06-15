@@ -2,8 +2,8 @@ import "@/app/global.css";
 import { RootProvider } from "fumadocs-ui/provider/next";
 import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
-import { Toaster } from "@/components/ui/sonner";
 import DefaultSearchDialog from "@/components/fumadocs/search";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
   subsets: ["latin"],
