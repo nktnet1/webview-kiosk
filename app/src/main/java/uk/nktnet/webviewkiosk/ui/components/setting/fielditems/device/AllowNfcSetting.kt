@@ -9,26 +9,61 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.safeStartActivity
 
 @Composable
 fun AllowNfcSetting() {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
     val userSettings = UserSettings(context)
     val settingKey = UserSettingsKeys.Device.ALLOW_NFC
 
-    val nfcAdapter = NfcAdapter.getDefaultAdapter(context)
-    val nfcSupported = nfcAdapter != null
-    val nfcEnabled = nfcAdapter?.isEnabled == true
+    var nfcSupported by remember { mutableStateOf(false) }
+    var nfcEnabled by remember { mutableStateOf(false) }
+
+    fun refreshNfcState() {
+        val adapter = NfcAdapter.getDefaultAdapter(context)
+        nfcSupported = adapter != null
+        nfcEnabled = adapter?.isEnabled == true
+    }
+
+    LaunchedEffect(Unit) {
+        refreshNfcState()
+    }
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                refreshNfcState()
+            }
+        }
+
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.device_allow_nfc_title),
@@ -73,7 +108,10 @@ fun AllowNfcSetting() {
                         .fillMaxWidth()
                         .padding(top = 8.dp),
                     onClick = {
-                        safeStartActivity(context, Intent(Settings.ACTION_NFC_SETTINGS))
+                        safeStartActivity(
+                            context,
+                            Intent(Settings.ACTION_NFC_SETTINGS)
+                        )
                     }
                 ) {
                     Text(
