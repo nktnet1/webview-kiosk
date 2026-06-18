@@ -5,8 +5,9 @@ allowBuilds:
   workerd: false
 minimumReleaseAgeExclude:
   - esbuild@0.28.1
-  - fumadocs-core@16.10.3
-  - fumadocs-ui@16.10.3
+  - lucide-react@1.21.0
+  - miniflare@4.20260617.0
+  - wrangler@4.102.0
 overrides:
   brace-expansion@<1.1.13: '>=1.1.13'
   brace-expansion@>=4.0.0 <5.0.5: '>=5.0.5'
