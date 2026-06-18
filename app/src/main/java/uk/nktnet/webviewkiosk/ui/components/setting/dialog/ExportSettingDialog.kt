@@ -186,7 +186,7 @@ fun ExportSettingsDialog(
                             scope.launch {
                                 try {
                                     exportLauncher.launch("wk_user_settings")
-                                    AuthenticationManager.skipNextAuthResetForWindow()
+                                    AuthenticationManager.bypassAuthForWindow()
                                 } catch (e: Exception) {
                                     Log.e(
                                         Constants.APP_SCHEME,

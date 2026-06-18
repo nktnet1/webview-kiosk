@@ -34,7 +34,7 @@ object AuthenticationManager {
 
     private var encryptedAuthToken: ByteArray? = null
     private var encryptedAuthTokenIv: ByteArray? = null
-    private const val SKIP_RESET_WINDOW_MS = 5000L
+    private const val BYPASS_AUTH_WINDOW_MS = 5000L
 
     private var activity: AppCompatActivity? = null
 
@@ -46,7 +46,7 @@ object AuthenticationManager {
     val showCustomAuth: MutableState<Boolean> = mutableStateOf(false)
 
     private var lastAuthTime = 0L
-    private var skipResetUntil: Long = 0L
+    private var authBypassUntil: Long = 0L
 
     fun init(activity: AppCompatActivity) {
         this.activity = activity
@@ -54,27 +54,23 @@ object AuthenticationManager {
 
     fun checkAuthAndRefreshSession(): Boolean {
         val now = System.currentTimeMillis()
+        if (now <= authBypassUntil) {
+            return true
+        }
         val isValid = now - lastAuthTime < AUTH_TIMEOUT_MS
         if (isValid) {
             lastAuthTime = now
         }
-        skipResetUntil = 0L
+        authBypassUntil = 0L
         return isValid
     }
 
     fun resetAuthentication() {
-        val now = System.currentTimeMillis()
-        if (now <= skipResetUntil) {
-            skipResetUntil = 0L
-            return
-        }
         lastAuthTime = 0
     }
 
-    fun skipNextAuthResetForWindow() {
-        val now = System.currentTimeMillis()
-        skipResetUntil = now + SKIP_RESET_WINDOW_MS
-        lastAuthTime = now
+    fun bypassAuthForWindow() {
+        authBypassUntil = System.currentTimeMillis() + BYPASS_AUTH_WINDOW_MS
     }
 
     fun showAuthenticationPrompt(
@@ -120,7 +116,7 @@ object AuthenticationManager {
     private fun handleAuthSuccess() {
         _resultState.value = AuthenticationResult.AuthenticationSuccess
         lastAuthTime = System.currentTimeMillis()
-        skipNextAuthResetForWindow()
+        bypassAuthForWindow()
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
