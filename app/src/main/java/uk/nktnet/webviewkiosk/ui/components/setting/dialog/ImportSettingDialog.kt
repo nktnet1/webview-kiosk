@@ -195,7 +195,7 @@ fun ImportSettingsDialog(
                                 fileLauncher.launch(
                                     arrayOf("text/plain", "application/json")
                                 )
-                                AuthenticationManager.skipNextAuthResetForWindow()
+                                AuthenticationManager.bypassAuthForWindow()
                             } catch (e: Exception) {
                                 Log.e(
                                     Constants.APP_SCHEME,

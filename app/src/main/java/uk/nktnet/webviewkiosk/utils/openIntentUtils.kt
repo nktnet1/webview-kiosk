@@ -17,6 +17,7 @@ import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.services.LockTaskService
 
@@ -24,6 +25,7 @@ fun safeStartActivity(context: Context, intent: Intent, bundle: Bundle? = null) 
     try {
         if (intent.resolveActivity(context.packageManager) != null) {
             context.startActivity(intent, bundle)
+            AuthenticationManager.bypassAuthForWindow()
         } else {
             val shortName = intent.action?.substringAfterLast('.') ?: "Unknown"
             ToastManager.show(
