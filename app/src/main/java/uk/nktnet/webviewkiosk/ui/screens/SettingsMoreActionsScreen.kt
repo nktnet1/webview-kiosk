@@ -118,11 +118,15 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 ActionButton(
                     stringResource(R.string.settings_more_action_app_info),
                     modifier = Modifier.weight(1f)
-                ) { openAppDetailsSettings(context) }
+                ) {
+                    openAppDetailsSettings(context)
+                }
                 ActionButton(
                     stringResource(R.string.settings_more_action_device_settings),
                     modifier = Modifier.weight(1f)
-                ) { openSettings(context) }
+                ) {
+                    openSettings(context)
+                }
             }
 
             Row(
@@ -132,7 +136,9 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 ActionButton(
                     stringResource(R.string.settings_more_action_default_launcher),
                     modifier = Modifier.weight(1f)
-                ) { openDefaultLauncherSettings(context) }
+                ) {
+                    openDefaultLauncherSettings(context)
+                }
                 ActionButton(
                     stringResource(R.string.settings_more_action_default_apps),
                     modifier = Modifier.weight(1f)
@@ -190,11 +196,15 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 ActionButton(
                     stringResource(R.string.settings_more_action_local_files),
                     modifier = Modifier.weight(1f)
-                ) { navController.navigate(Screen.SettingsWebContentFiles.route) }
+                ) {
+                    navController.navigate(Screen.SettingsWebContentFiles.route)
+                }
                 ActionButton(
                     stringResource(R.string.settings_more_action_site_permissions),
                     modifier = Modifier.weight(1f)
-                ) { navController.navigate(Screen.SettingsWebBrowsingSitePermissions.route) }
+                ) {
+                    navController.navigate(Screen.SettingsWebBrowsingSitePermissions.route)
+                }
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -203,11 +213,15 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 ActionButton(
                     stringResource(R.string.settings_more_action_device_owner),
                     modifier = Modifier.weight(1f)
-                ) { navController.navigate(Screen.SettingsDeviceOwner.route) }
+                ) {
+                    navController.navigate(Screen.SettingsDeviceOwner.route)
+                }
                 ActionButton(
                     stringResource(R.string.settings_more_action_app_launcher),
                     modifier = Modifier.weight(1f)
-                ) { showAppLauncherDialog = true }
+                ) {
+                    showAppLauncherDialog = true
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -304,7 +318,9 @@ fun SettingsMoreActionsScreen(navController: NavController) {
 
     AppLauncherDialog(
         showDialog = showAppLauncherDialog,
-        onDismiss = { showAppLauncherDialog = false }
+        onDismiss = {
+            showAppLauncherDialog = false
+        }
     )
 }
 
