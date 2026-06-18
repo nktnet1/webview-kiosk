@@ -131,7 +131,7 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                     onClick = {
                         try {
                             fileUploadLauncher.launch(supportedMimeTypesArray)
-                            AuthenticationManager.bypassAuthForWindow()
+                            AuthenticationManager.bypassAuthForWindow(30_000)
                         } catch (e: Exception) {
                             Log.e(Constants.APP_SCHEME, "File picker failed to launch", e)
                             ToastManager.show(context, "Error: ${e.message}")

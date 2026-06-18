@@ -54,10 +54,10 @@ object AuthenticationManager {
 
     fun checkAuthAndRefreshSession(): Boolean {
         val now = System.currentTimeMillis()
-        if (now <= authBypassUntil) {
-            return true
-        }
-        val isValid = now - lastAuthTime < AUTH_TIMEOUT_MS
+        val isValid = (
+            now <= authBypassUntil
+            || now - lastAuthTime < AUTH_TIMEOUT_MS
+        )
         if (isValid) {
             lastAuthTime = now
         }
@@ -69,8 +69,8 @@ object AuthenticationManager {
         lastAuthTime = 0
     }
 
-    fun bypassAuthForWindow() {
-        authBypassUntil = System.currentTimeMillis() + BYPASS_AUTH_WINDOW_MS
+    fun bypassAuthForWindow(durationMs: Long = BYPASS_AUTH_WINDOW_MS) {
+        authBypassUntil = System.currentTimeMillis() + durationMs
     }
 
     fun showAuthenticationPrompt(
