@@ -2,42 +2,45 @@ package uk.nktnet.webviewkiosk.utils.webview.scripts
 
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 
-fun generateErudaConsoleScript(): String {
+fun generateErudaConsoleScript(appName: String): String {
     val rawScript = """
-        if (window.eruda || window.__erudaLoading) {
+        console.log("\n\nStarting script for eruda! - $appName\n\n");
+        if (window.eruda || document.getElementById('__eruda_loader')) {
             return;
         }
-
-        window.__erudaLoading = true;
 
         const originalDefine = window.define;
 
         if (originalDefine) {
-            window.define = null;
+            window.define = undefined;
         }
 
         const script = document.createElement('script');
         script.src = 'https://cdn.jsdelivr.net/npm/eruda';
+        script.id = '__eruda_loader';
 
         script.onload = function() {
-            eruda.init();
-
-            if (originalDefine) {
-                window.define = originalDefine;
+            try {
+                eruda.init();
+                console.log("Eruda console loaded by ${appName}");
+            } finally {
+                if (originalDefine) {
+                    window.define = originalDefine;
+                }
             }
-
-            delete window.__erudaLoading;
         };
 
         script.onerror = function() {
             if (originalDefine) {
                 window.define = originalDefine;
             }
-
-            delete window.__erudaLoading;
         };
 
-        document.body.appendChild(script);
+        const target = document.body ?? document.head ?? document.documentElement;
+
+        if (target) {
+            target.appendChild(script);
+        }
     """.trimIndent()
 
     return wrapJsInIIFE(rawScript)

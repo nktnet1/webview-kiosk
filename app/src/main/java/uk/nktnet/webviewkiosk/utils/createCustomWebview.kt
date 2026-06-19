@@ -187,12 +187,6 @@ fun createCustomWebview(
                     if (userSettings.allowNfc) {
                         view?.evaluateJavascript(NfcInterface.JS_WEB_NFC_HOOK, null)
                     }
-                    if (userSettings.enableErudaConsole) {
-                        view?.evaluateJavascript(
-                            generateErudaConsoleScript(),
-                            null,
-                        )
-                    }
                     super.onPageStarted(view, url, favicon)
                 }
 
@@ -218,13 +212,10 @@ fun createCustomWebview(
                                 )
                             }
                             if (userSettings.enableErudaConsole) {
-                                /**
-                                 * Call again in onPageFinished (also in onPageStart) in
-                                 * case it wasn't loaded correctly the first time. There
-                                 * are guards in the script if Eruda is already loaded.
-                                 */
                                 view?.evaluateJavascript(
-                                    generateErudaConsoleScript(),
+                                    generateErudaConsoleScript(
+                                        context.getString(R.string.app_name)
+                                    ),
                                     null,
                                 )
                             }

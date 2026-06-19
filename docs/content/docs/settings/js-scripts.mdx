@@ -103,7 +103,26 @@ try {
 
 **Default:** false
 
-## 5. Custom Scripts
+## 5. Enable Eruda Console
+
+Automatically inject the Eruda console into web pages.
+
+- https://github.com/liriliri/eruda
+
+This provides a mobile browser developer console for inspecting:
+
+- JavaScript errors
+- Console output
+- Network requests
+- DOM elements
+- Storage and cookies
+
+Useful for debugging web applications on Android devices without
+desktop developer tools.
+
+**Default:** false
+
+## 6. Custom Scripts
 
 Your code content will be wrapped as follows to prevent polluting the global
 scope and avoid conflicts with other scripts:
@@ -120,7 +139,7 @@ scope and avoid conflicts with other scripts:
 document.body.style.backgroundColor = 'green';
 ```
 
-### 5.1. On Page Start
+### 6.1. On Page Start
 
 JavaScript to run immediately when the page starts loading.
 
@@ -128,7 +147,7 @@ Useful for early DOM manipulation or overriding functions.
 
 **Default:** *(blank)*
 
-### 5.2. On Page Finish
+### 6.2. On Page Finish
 
 JavaScript to run after the page has fully loaded.
 
