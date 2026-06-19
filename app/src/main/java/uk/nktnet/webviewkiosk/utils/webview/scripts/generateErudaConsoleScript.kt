@@ -4,7 +4,6 @@ import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 
 fun generateErudaConsoleScript(appName: String): String {
     val rawScript = """
-        console.log("\n\nStarting script for eruda! - $appName\n\n");
         if (window.eruda || document.getElementById('__eruda_loader')) {
             return;
         }
@@ -22,7 +21,7 @@ fun generateErudaConsoleScript(appName: String): String {
         script.onload = function() {
             try {
                 eruda.init();
-                console.log("Eruda console loaded by ${appName}");
+                console.log("Eruda console loaded by $appName");
             } finally {
                 if (originalDefine) {
                     window.define = originalDefine;
