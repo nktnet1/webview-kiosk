@@ -5,7 +5,6 @@ import android.content.Context
 import android.os.Environment
 import android.util.Base64
 import android.webkit.JavascriptInterface
-import android.widget.Toast
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
@@ -45,7 +44,7 @@ class BlobInterface(private val context: Context) {
     @JavascriptInterface
     fun onDownloadPreparing() {
         (context as? Activity)?.runOnUiThread {
-            Toast.makeText(context, "Preparing file…", Toast.LENGTH_SHORT).show()
+            ToastManager.show(context, "Preparing file…")
         }
     }
 

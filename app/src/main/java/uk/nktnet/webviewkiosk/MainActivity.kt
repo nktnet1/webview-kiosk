@@ -504,6 +504,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         val action = intent.action ?: return false
+        @Suppress("DEPRECATION")
         if (
             action != NfcAdapter.ACTION_TAG_DISCOVERED
             && action != NfcAdapter.ACTION_TECH_DISCOVERED
