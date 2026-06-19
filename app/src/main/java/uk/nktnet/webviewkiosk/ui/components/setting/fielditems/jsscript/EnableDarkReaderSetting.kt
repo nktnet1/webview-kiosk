@@ -17,17 +17,12 @@ fun EnableDarkReaderSetting() {
     BooleanSettingFieldItem(
         label = stringResource(R.string.js_scripts_enable_dark_reader_title),
         infoText = """
-            Automatically inject Dark Reader into web pages to enable dark mode rendering.
+            Automatically inject Dark Reader into web pages.
 
             - https://github.com/darkreader/darkreader
 
             This applies dynamic CSS transformations to force dark mode on websites
             that do not support it natively.
-
-            Provides:
-            - Automatic dark mode conversion for most websites
-            - Adjustable brightness, contrast, and sepia filtering
-            - Reduced eye strain in low-light environments
 
             Note: Some websites may render incorrectly due to CSS overrides.
         """.trimIndent(),
