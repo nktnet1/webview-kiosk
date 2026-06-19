@@ -596,6 +596,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API,
         false
     )
+    var enableDarkReader by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.JsScripts.ENABLE_DARK_READER,
+        false
+    )
     var enableErudaConsole by booleanPref(
         getRestrictions,
         prefs,
@@ -1077,6 +1083,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
             put(UserSettingsKeys.JsScripts.ENABLE_BATTERY_API, enableBatteryApi)
             put(UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API, enableBrightnessApi)
+            put(UserSettingsKeys.JsScripts.ENABLE_DARK_READER, enableDarkReader)
             put(UserSettingsKeys.JsScripts.ENABLE_ERUDA_CONSOLE, enableErudaConsole)
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)
@@ -1263,6 +1270,7 @@ class UserSettings(val context: Context) {
             applyDesktopViewportWidth = json.optInt(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
             enableBatteryApi = json.optBoolean(UserSettingsKeys.JsScripts.ENABLE_BATTERY_API, enableBatteryApi)
             enableBrightnessApi = json.optBoolean(UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API, enableBrightnessApi)
+            enableDarkReader = json.optBoolean(UserSettingsKeys.JsScripts.ENABLE_DARK_READER, enableDarkReader)
             enableErudaConsole = json.optBoolean(UserSettingsKeys.JsScripts.ENABLE_ERUDA_CONSOLE, enableErudaConsole)
             customScriptOnPageStart = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
             customScriptOnPageFinish = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH, customScriptOnPageFinish)

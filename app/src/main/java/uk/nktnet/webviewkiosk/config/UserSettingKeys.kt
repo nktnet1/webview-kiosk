@@ -114,6 +114,7 @@ object UserSettingsKeys {
         const val APPLY_DESKTOP_VIEWPORT_WIDTH = "js_scripts.apply_desktop_viewport_width"
         const val ENABLE_BATTERY_API = "js_scripts.enable_battery_api"
         const val ENABLE_BRIGHTNESS_API = "js_scripts.enable_brightness_api"
+        const val ENABLE_DARK_READER = "js_scripts.enable_dark_reader"
         const val ENABLE_ERUDA_CONSOLE = "js_scripts.enable_eruda_console"
         const val CUSTOM_SCRIPT_ON_PAGE_START = "js_scripts.custom_script_on_page_start"
         const val CUSTOM_SCRIPT_ON_PAGE_FINISH = "js_scripts.custom_script_on_page_finish"

@@ -55,6 +55,7 @@ import uk.nktnet.webviewkiosk.utils.webview.interfaces.BrightnessInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.NfcInterface
 import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
+import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDarkReaderScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateErudaConsoleScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOverrideScript
@@ -207,6 +208,14 @@ fun createCustomWebview(
                                 view?.evaluateJavascript(
                                     generateDesktopViewportScript(
                                         userSettings.applyDesktopViewportWidth
+                                    ),
+                                    null,
+                                )
+                            }
+                            if (userSettings.enableDarkReader) {
+                                view?.evaluateJavascript(
+                                    generateDarkReaderScript(
+                                        context.getString(R.string.app_name)
                                     ),
                                     null,
                                 )

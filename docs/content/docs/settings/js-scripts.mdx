@@ -103,7 +103,20 @@ try {
 
 **Default:** false
 
-## 5. Enable Eruda Console
+## 5. Enable Dark Reader
+
+Automatically inject Dark Reader into web pages.
+
+- https://github.com/darkreader/darkreader
+
+This applies dynamic CSS transformations to force dark mode on websites
+that do not support it natively.
+
+Note: Some websites may render incorrectly due to CSS overrides.
+
+**Default:** false
+
+## 6. Enable Eruda Console
 
 Automatically inject the Eruda console into web pages.
 
@@ -122,7 +135,7 @@ desktop developer tools.
 
 **Default:** false
 
-## 6. Custom Scripts
+## 7. Custom Scripts
 
 Your code content will be wrapped as follows to prevent polluting the global
 scope and avoid conflicts with other scripts:
@@ -139,7 +152,7 @@ scope and avoid conflicts with other scripts:
 document.body.style.backgroundColor = 'green';
 ```
 
-### 6.1. On Page Start
+### 7.1. On Page Start
 
 JavaScript to run immediately when the page starts loading.
 
@@ -147,7 +160,7 @@ Useful for early DOM manipulation or overriding functions.
 
 **Default:** *(blank)*
 
-### 6.2. On Page Finish
+### 7.2. On Page Finish
 
 JavaScript to run after the page has fully loaded.
 
