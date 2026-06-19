@@ -560,6 +560,12 @@
         android:description="@string/js_scripts_enable_brightness_api_description"
     />
     <restriction
+        android:key="js_scripts.enable_dark_reader"
+        android:restrictionType="bool"
+        android:title="@string/js_scripts_enable_dark_reader_title"
+        android:description="@string/js_scripts_enable_dark_reader_description"
+    />
+    <restriction
         android:key="js_scripts.enable_eruda_console"
         android:restrictionType="bool"
         android:title="@string/js_scripts_enable_eruda_console_title"
