@@ -14,6 +14,9 @@
     <string name="web_content_website_bookmarks_title">Website Bookmarks</string>
     <string name="web_content_website_bookmarks_description">https://webviewkiosk.nktnet.uk/docs/settings/web-content/</string>
 
+    <string name="web_content_support_pdf_rendering_title">Support PDF Rendering</string>
+    <string name="web_content_support_pdf_rendering_description">https://webviewkiosk.nktnet.uk/docs/settings/web-content/</string>
+
     <string name="web_content_allow_local_files_title">Allow Local Files</string>
     <string name="web_content_allow_local_files_description">https://webviewkiosk.nktnet.uk/docs/settings/web-content/</string>
 

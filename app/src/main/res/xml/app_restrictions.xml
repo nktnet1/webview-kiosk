@@ -26,6 +26,12 @@
         android:description="@string/web_content_website_bookmarks_description"
     />
     <restriction
+        android:key="web_content.support_pdf_rendering"
+        android:restrictionType="bool"
+        android:title="@string/web_content_support_pdf_rendering_title"
+        android:description="@string/web_content_support_pdf_rendering_description"
+    />
+    <restriction
         android:key="web_content.allow_local_files"
         android:restrictionType="bool"
         android:title="@string/web_content_allow_local_files_title"

@@ -73,6 +73,12 @@ class UserSettings(val context: Context) {
         prefs,
         UserSettingsKeys.WebContent.WEBSITE_BOOKMARKS
     )
+    var supportPdfRendering by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.WebContent.SUPPORT_PDF_RENDERING,
+        true
+    )
     var allowLocalFiles by booleanPref(
         getRestrictions,
         prefs,
@@ -996,6 +1002,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebContent.WEBSITE_BLACKLIST, websiteBlacklist)
             put(UserSettingsKeys.WebContent.WEBSITE_WHITELIST, websiteWhitelist)
             put(UserSettingsKeys.WebContent.WEBSITE_BOOKMARKS, websiteBookmarks)
+            put(UserSettingsKeys.WebContent.SUPPORT_PDF_RENDERING, supportPdfRendering)
             put(UserSettingsKeys.WebContent.ALLOW_LOCAL_FILES, allowLocalFiles)
 
             put(UserSettingsKeys.WebBrowsing.ALLOW_REFRESH, allowRefresh)
@@ -1157,6 +1164,7 @@ class UserSettings(val context: Context) {
             websiteBlacklist = json.optString(UserSettingsKeys.WebContent.WEBSITE_BLACKLIST, websiteBlacklist)
             websiteWhitelist = json.optString(UserSettingsKeys.WebContent.WEBSITE_WHITELIST, websiteWhitelist)
             websiteBookmarks = json.optString(UserSettingsKeys.WebContent.WEBSITE_BOOKMARKS, websiteBookmarks)
+            supportPdfRendering = json.optBoolean(UserSettingsKeys.WebContent.SUPPORT_PDF_RENDERING, supportPdfRendering)
             allowLocalFiles = json.optBoolean(UserSettingsKeys.WebContent.ALLOW_LOCAL_FILES, allowLocalFiles)
 
             allowRefresh = json.optBoolean(UserSettingsKeys.WebBrowsing.ALLOW_REFRESH, allowRefresh)

@@ -9,6 +9,7 @@ object UserSettingsKeys {
         const val WEBSITE_WHITELIST = "web_content.website_whitelist"
         const val WEBSITE_BOOKMARKS = "web_content.website_bookmarks"
         const val ALLOW_LOCAL_FILES = "web_content.allow_local_files"
+        const val SUPPORT_PDF_RENDERING = "web_content.support_pdf_rendering"
     }
 
     object WebBrowsing {
