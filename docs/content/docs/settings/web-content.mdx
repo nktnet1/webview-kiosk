@@ -58,7 +58,27 @@ This is accessible in the address bar. See also: "Allow Bookmark Access" under `
 
 **Default:** (blank)
 
-## 4. Allow Local Files
+## 4. Support PDF Rendering
+
+Set to true to support PDF Rendering using Mozilla's PDF.js renderer:
+
+- https://github.com/mozilla/pdf.js
+
+You will first need to download the renderer by opening the popup menu for this
+setting and clicking the `Download PDF.js assets` button.
+
+Remote PDF files are loaded through a dummy endpoint:
+
+- https://pdf-dummy.webviewkiosk.nktnet.uk?wk_pdf_url=[SAMPLE_PDF_URL].pdf
+
+which gets locally routed to the downloaded PDF.js renderer using the
+WebViewAssetLoader API:
+
+- https://developer.android.com/reference/androidx/webkit/WebViewAssetLoader
+
+**Default:** false
+
+## 5. Allow Local Files
 
 Set to true to enable access to local files (html, image, text) that were uploaded
 in the app settings via the 3-dot icon <span className="inline-flex">(<EllipsisVertical />)</span>
