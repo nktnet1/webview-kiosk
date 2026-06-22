@@ -77,7 +77,7 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.WebContent.SUPPORT_PDF_RENDERING,
-        true
+        false
     )
     var allowLocalFiles by booleanPref(
         getRestrictions,

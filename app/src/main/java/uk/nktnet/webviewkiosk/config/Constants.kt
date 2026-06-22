@@ -12,6 +12,7 @@ object Constants {
     const val MIN_DESKTOP_WIDTH = 640
 
     const val WEB_CONTENT_FILES_DIR = "web-content-files"
+    const val PDF_JS_ASSETS_DIR = "pdfjs-dist"
 
     const val APP_SCHEME = "webviewkiosk"
     const val GEOLOCATION_RESOURCE = "${APP_SCHEME}.custom-permission.geolocation"
