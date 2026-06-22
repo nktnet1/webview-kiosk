@@ -1,5 +1,7 @@
 package uk.nktnet.webviewkiosk.utils.webview.html
 
+import uk.nktnet.webviewkiosk.config.Constants
+
 fun generatePdfRendererHtml(pdfUrl: String): String {
     return """
         <!DOCTYPE html>
@@ -7,15 +9,24 @@ fun generatePdfRendererHtml(pdfUrl: String): String {
         <head>
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <style>
-                body { margin: 0; padding: 0; background-color: #333333; }
-                canvas { display: block; margin: 16px auto; max-width: 95%; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+                body {
+                    margin: 0;
+                    padding: 0;
+                    background-color: #333333;
+                }
+                canvas {
+                    display: block;
+                    margin: 16px auto;
+                    max-width: 95%;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+                }
             </style>
         </head>
         <body>
             <div id="pdf-container"></div>
             <script type="module">
-                import * as pdfjsLib from 'https://appassets.androidplatform.net/pdfjs_local/pdf.mjs';
-                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://appassets.androidplatform.net/pdfjs_local/pdf.worker.mjs';
+                import * as pdfjsLib from '${Constants.PDF_JS_ASSETS_DUMMY_URL}/pdfjs_local/pdf.mjs';
+                pdfjsLib.GlobalWorkerOptions.workerSrc = '${Constants.PDF_JS_ASSETS_DUMMY_URL}/pdfjs_local/pdf.worker.mjs';
 
                 pdfjsLib.getDocument({ url: '$pdfUrl' }).promise.then(pdf => {
                     const container = document.getElementById('pdf-container');

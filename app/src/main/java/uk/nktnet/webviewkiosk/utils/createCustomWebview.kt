@@ -114,7 +114,7 @@ fun createCustomWebview(
 
             val assetLoader = if (userSettings.supportPdfRendering) {
                 WebViewAssetLoader.Builder()
-                    .setDomain("appassets.androidplatform.net")
+                    .setDomain(Constants.PDF_JS_ASSETS_DUMMY_URL.toUri().host ?: "")
                     .addPathHandler(
                         "/pdfjs_local/",
                         WebViewAssetLoader.InternalStoragePathHandler(

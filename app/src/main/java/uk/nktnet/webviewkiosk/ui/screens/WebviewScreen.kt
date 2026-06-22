@@ -61,6 +61,7 @@ import uk.nktnet.webviewkiosk.handlers.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.DimScreenOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.ResetOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.managers.MqttManager
+import uk.nktnet.webviewkiosk.managers.PdfJsManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
@@ -326,6 +327,7 @@ fun WebviewScreen(navController: NavController) {
                 !file.exists() -> generateFileMissingPage(file, userSettings.theme)
                 (
                     userSettings.supportPdfRendering
+                        && PdfJsManager.areAssetsReady(context)
                         && (
                             mimeType == "application/pdf"
                             || file.extension.lowercase() == "pdf"
@@ -348,7 +350,25 @@ fun WebviewScreen(navController: NavController) {
                 )
                 return
             }
+        } else if (
+            userSettings.supportPdfRendering
+            && PdfJsManager.areAssetsReady(context)
+            && schemeType == SchemeType.WEB
+        ) {
+            val path = uri.path?.lowercase() ?: ""
+            if (path.endsWith(".pdf")) {
+                val htmlContent = generatePdfRendererHtml(newUrl)
+                webView.loadDataWithBaseURL(
+                    Constants.PDF_JS_ASSETS_DUMMY_URL,
+                    htmlContent,
+                    "text/html",
+                    "UTF-8",
+                    null
+                )
+                return
+            }
         }
+
         webView.loadUrl(newUrl)
     }
 

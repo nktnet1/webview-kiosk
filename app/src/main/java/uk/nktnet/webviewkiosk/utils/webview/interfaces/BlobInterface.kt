@@ -1,10 +1,10 @@
 package uk.nktnet.webviewkiosk.utils.webview.interfaces
 
-import android.app.Activity
 import android.content.Context
 import android.os.Environment
 import android.util.Base64
 import android.webkit.JavascriptInterface
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
@@ -27,13 +27,14 @@ class BlobInterface(private val context: Context) {
 
         const val JS_BLOB_HOOK = """
             (function() {
-                if (window.__blobHookInstalled) return;
-                window.__blobHookInstalled = true;
+                if (window.__${Constants.APP_SCHEME}_blobHookInstalled) {
+                    return;
+                }
+                window.__${Constants.APP_SCHEME}_blobHookInstalled = true;
 
                 const orig = URL.createObjectURL;
                 URL.createObjectURL = function(blob) {
-                    window._lastBlob = blob;
-                    try { ${NAME}.onDownloadPreparing(); } catch(e) {}
+                    window.__${Constants.APP_SCHEME}_lastBlob = blob;
                     return orig.call(URL, blob);
                 };
             })();
@@ -41,13 +42,6 @@ class BlobInterface(private val context: Context) {
     }
 
     @Suppress("unused")
-    @JavascriptInterface
-    fun onDownloadPreparing() {
-        (context as? Activity)?.runOnUiThread {
-            ToastManager.show(context, "Preparing file…")
-        }
-    }
-
     @JavascriptInterface
     fun error(message: String?) {
         ToastManager.show(context, message ?: "Unknown error")
