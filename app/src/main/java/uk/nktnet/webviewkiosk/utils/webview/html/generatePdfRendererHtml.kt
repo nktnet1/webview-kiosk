@@ -29,7 +29,6 @@ fun generatePdfRendererHtml(pdfBase64Data: String): String {
                 pdfjsLib.GlobalWorkerOptions.workerSrc = '${Constants.PDF_JS_ASSETS_DUMMY_URL}/pdfjs_local/pdf.worker.mjs';
 
                 try {
-                    // Decode the injected Base64 data bundle directly into a byte array
                     const base64Data = "$pdfBase64Data";
                     const binaryString = atob(base64Data);
                     const len = binaryString.length;
@@ -38,7 +37,6 @@ fun generatePdfRendererHtml(pdfBase64Data: String): String {
                         bytes[i] = binaryString.charCodeAt(i);
                     }
 
-                    // Feed raw binary array to PDF.js
                     pdfjsLib.getDocument({ data: bytes }).promise.then(pdf => {
                         const container = document.getElementById('pdf-container');
                         container.innerHTML = '';
