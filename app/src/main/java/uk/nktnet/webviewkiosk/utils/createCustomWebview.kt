@@ -20,6 +20,7 @@ import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
@@ -31,6 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.core.net.toUri
+import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import uk.nktnet.webviewkiosk.R
@@ -60,6 +62,7 @@ import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScrip
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateErudaConsoleScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOverrideScript
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
+import java.io.File
 
 data class WebViewConfig(
     val systemSettings: SystemSettings,
@@ -108,6 +111,24 @@ fun createCustomWebview(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
+
+            val assetLoader = if (userSettings.supportPdfRendering) {
+                WebViewAssetLoader.Builder()
+                    .setDomain("appassets.androidplatform.net")
+                    .addPathHandler(
+                        "/pdfjs_local/",
+                        WebViewAssetLoader.InternalStoragePathHandler(
+                            context,
+                            File(
+                                context.filesDir,
+                                Constants.PDF_JS_ASSETS_DIR
+                            )
+                        )
+                    )
+                    .build()
+            } else {
+                null
+            }
 
             settings.apply {
                 javaScriptEnabled = userSettings.enableJavaScript
@@ -237,6 +258,19 @@ fun createCustomWebview(
                             systemSettings.urlBeforeNavigation = ""
                         }
                     }
+                }
+
+                override fun shouldInterceptRequest(
+                    view: WebView?,
+                    request: WebResourceRequest?
+                ): WebResourceResponse? {
+                    if (assetLoader != null && request != null) {
+                        val response = assetLoader.shouldInterceptRequest(request.url)
+                        if (response != null) {
+                            return response
+                        }
+                    }
+                    return super.shouldInterceptRequest(view, request)
                 }
 
                 override fun shouldOverrideUrlLoading(

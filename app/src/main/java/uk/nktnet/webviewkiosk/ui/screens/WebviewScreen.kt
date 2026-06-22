@@ -88,15 +88,16 @@ import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
+import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.webview.html.generateFileMissingPage
+import uk.nktnet.webviewkiosk.utils.webview.html.generatePdfRendererHtml
 import uk.nktnet.webviewkiosk.utils.webview.html.generateUnsupportedMimeTypePage
 import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
-import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
@@ -323,6 +324,15 @@ fun WebviewScreen(navController: NavController) {
             val file = File(uri.path ?: "")
             val pageContent = when {
                 !file.exists() -> generateFileMissingPage(file, userSettings.theme)
+                (
+                    userSettings.supportPdfRendering
+                        && (
+                            mimeType == "application/pdf"
+                            || file.extension.lowercase() == "pdf"
+                        )
+                ) -> {
+                    generatePdfRendererHtml(newUrl)
+                }
                 !isSupportedFileURLMimeType(mimeType) -> generateUnsupportedMimeTypePage(
                     context, file, mimeType, userSettings.theme
                 )

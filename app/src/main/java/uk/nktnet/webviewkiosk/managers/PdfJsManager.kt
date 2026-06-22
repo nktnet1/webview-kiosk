@@ -11,10 +11,9 @@ import java.io.FileOutputStream
 import java.net.URL
 
 object PdfJsManager {
-
     private val assetUrls = mapOf(
-        "https://cdn.jsdelivr.net/npm/pdfjs-dist/+esm" to "pdf.mjs",
-        "https://cdn.jsdelivr.net/npm/pdfjs-dist/build/pdf.worker.mjs" to "pdf.worker.mjs"
+        "https://cdn.jsdelivr.net/npm/pdfjs-dist/legacy/build/pdf.mjs" to "pdf.mjs",
+        "https://cdn.jsdelivr.net/npm/pdfjs-dist/legacy/build/pdf.worker.mjs" to "pdf.worker.mjs"
     )
 
     private fun getTargetDirectory(context: Context): File {

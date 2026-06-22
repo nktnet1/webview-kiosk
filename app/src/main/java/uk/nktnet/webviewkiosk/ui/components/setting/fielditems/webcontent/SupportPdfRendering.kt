@@ -1,13 +1,20 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -28,6 +35,8 @@ fun SupportPdfRendering() {
     val userSettings = remember { UserSettings(context) }
     val settingKey = UserSettingsKeys.WebContent.SUPPORT_PDF_RENDERING
 
+    var assetsReady by remember { mutableStateOf(PdfJsManager.areAssetsReady(context)) }
+
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_content_support_pdf_rendering_title),
         infoText = """
@@ -40,26 +49,54 @@ fun SupportPdfRendering() {
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.supportPdfRendering = it },
         extraContent = {
-            Button(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                onClick = {
-                    coroutineScope.launch {
-                        if (PdfJsManager.areAssetsReady(context)) {
-                            ToastManager.show(context, "PDF.js assets are already downloaded")
-                        } else {
+            Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        coroutineScope.launch {
                             ToastManager.show(context, "Downloading PDF.js...")
-                            PdfJsManager.downloadAssets(context)
+                            val success = PdfJsManager.downloadAssets(context)
+                            assetsReady = PdfJsManager.areAssetsReady(context)
+                            if (success) {
+                                ToastManager.show(context, "Download complete")
+                            } else {
+                                ToastManager.show(context, "Download failed")
+                            }
                         }
                     }
+                ) {
+                    Text(
+                        text = if (assetsReady) "Update PDF.js" else "Download PDF.js",
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.labelMedium
+                    )
                 }
-            ) {
-                Text(
-                    text = "Download PDF.js",
-                    textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.labelMedium
-                )
+
+                if (assetsReady) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError
+                        ),
+                        onClick = {
+                            val deleted = PdfJsManager.clearAssets(context)
+                            assetsReady = PdfJsManager.areAssetsReady(context)
+                            if (deleted) {
+                                ToastManager.show(context, "Assets deleted")
+                            } else {
+                                ToastManager.show(context, "Failed to delete assets")
+                            }
+                        }
+                    ) {
+                        Text(
+                            text = "Delete Assets",
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
+                }
             }
         }
     )
