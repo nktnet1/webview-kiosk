@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.Constants.PDF_JS_ASSETS_DIR
 import java.io.File
 import java.io.FileOutputStream
@@ -46,7 +47,7 @@ object PdfJsManager {
             ToastManager.show(context, "Download complete")
             true
         } catch (e: Exception) {
-            Log.e(javaClass.simpleName, "Failed to download PDF.js", e)
+            Log.e(Constants.APP_SCHEME, "Failed to download PDF.js", e)
             ToastManager.show(context, "Download failed: ${e.message}")
             false
         }

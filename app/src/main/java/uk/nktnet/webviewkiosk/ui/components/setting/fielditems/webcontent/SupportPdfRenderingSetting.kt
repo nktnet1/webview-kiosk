@@ -46,6 +46,9 @@ fun SupportPdfRenderingSetting() {
             Set to true to support PDF Rendering using Mozilla's PDF.js:
 
             - https://github.com/mozilla/pdf.js
+
+            Please note that you will need to also download the relevant assets by clicking
+            the "Download PDF.js assets button in the menu for this setting.
         """.trimIndent(),
         initialValue = userSettings.supportPdfRendering,
         settingKey = settingKey,
@@ -53,28 +56,6 @@ fun SupportPdfRenderingSetting() {
         onSave = { userSettings.supportPdfRendering = it },
         extraContent = {
             Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                Button(
-                    enabled = !restricted,
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        coroutineScope.launch {
-                            ToastManager.show(context, "Downloading PDF.js...")
-                            PdfJsManager.downloadAssets(context)
-                            assetsReady = PdfJsManager.areAssetsReady(context)
-                        }
-                    }
-                ) {
-                    Text(
-                        text = if (assetsReady) {
-                            "Update PDF.js assets"
-                        } else {
-                            "Download PDF.js assets"
-                        },
-                        textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
-
                 if (assetsReady) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Button(
@@ -90,12 +71,29 @@ fun SupportPdfRenderingSetting() {
                         }
                     ) {
                         Text(
-                            text = "Delete Assets",
+                            text = "Delete PDF.js assets",
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.labelMedium
                         )
                     }
                 } else {
+                    Button(
+                        enabled = !restricted,
+                        modifier = Modifier.fillMaxWidth(),
+                        onClick = {
+                            coroutineScope.launch {
+                                ToastManager.show(context, "Downloading PDF.js...")
+                                PdfJsManager.downloadAssets(context)
+                                assetsReady = PdfJsManager.areAssetsReady(context)
+                            }
+                        }
+                    ) {
+                        Text(
+                            text = "Download PDF.js assets",
+                            textAlign = TextAlign.Center,
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
                     Text(
                         text = "PDF rendering cannot be used until PDF.js assets are downloaded.",
                         modifier = Modifier.padding(top = 6.dp),
