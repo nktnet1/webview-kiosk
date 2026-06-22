@@ -1,11 +1,10 @@
-package com.example.pdfviewer
+package uk.nktnet.webviewkiosk.managers
 
 import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.config.Constants.PDF_JS_ASSETS_DIR
-import uk.nktnet.webviewkiosk.managers.ToastManager
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URL
@@ -55,14 +54,17 @@ object PdfJsManager {
 
     fun areAssetsReady(context: Context): Boolean {
         val targetDir = getTargetDirectory(context)
-        return targetDir.exists() && assetUrls.values.all { File(targetDir, it).exists() }
+        return targetDir.exists() && assetUrls.values.all {
+            File(targetDir, it).exists()
+        }
     }
 
-    fun getAssetPath(context: Context, fileName: String): String {
-        return File(getTargetDirectory(context), fileName).absolutePath
-    }
-
-    fun clearAssets(context: Context): Boolean {
-        return getTargetDirectory(context).deleteRecursively()
+    fun clearAssets(context: Context) {
+        try {
+            getTargetDirectory(context).deleteRecursively()
+            ToastManager.show(context, "PDF.js asset deleted.")
+        } catch (e: Exception) {
+            ToastManager.show(context, "PDF.js asset deletion failed: ${e.message}")
+        }
     }
 }

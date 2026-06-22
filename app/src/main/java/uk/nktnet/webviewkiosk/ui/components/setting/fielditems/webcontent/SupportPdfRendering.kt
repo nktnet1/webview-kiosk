@@ -20,11 +20,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.pdfviewer.PdfJsManager
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
+import uk.nktnet.webviewkiosk.managers.PdfJsManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
@@ -35,7 +35,9 @@ fun SupportPdfRendering() {
     val userSettings = remember { UserSettings(context) }
     val settingKey = UserSettingsKeys.WebContent.SUPPORT_PDF_RENDERING
 
-    var assetsReady by remember { mutableStateOf(PdfJsManager.areAssetsReady(context)) }
+    var assetsReady by remember {
+        mutableStateOf(PdfJsManager.areAssetsReady(context))
+    }
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_content_support_pdf_rendering_title),
@@ -73,7 +75,7 @@ fun SupportPdfRendering() {
                 }
 
                 if (assetsReady) {
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     Button(
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
@@ -81,13 +83,8 @@ fun SupportPdfRendering() {
                             contentColor = MaterialTheme.colorScheme.onError
                         ),
                         onClick = {
-                            val deleted = PdfJsManager.clearAssets(context)
+                            PdfJsManager.clearAssets(context)
                             assetsReady = PdfJsManager.areAssetsReady(context)
-                            if (deleted) {
-                                ToastManager.show(context, "Assets deleted")
-                            } else {
-                                ToastManager.show(context, "Failed to delete assets")
-                            }
                         }
                     ) {
                         Text(
