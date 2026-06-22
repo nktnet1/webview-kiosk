@@ -294,7 +294,7 @@ fun createCustomWebview(
                         userSettings = userSettings
                     )
                     val uri = requestUrl.toUri()
-                    if (schemeType == SchemeType.WEBVIEW_KIOSK && uri.host == "block") {
+                    if (schemeType == SchemeType.APP_CUSTOM && uri.host == "block") {
                         val blockUrl = uri.getQueryParameter("url")
                         if (blockUrl != null) {
                             loadUrl(blockUrl)

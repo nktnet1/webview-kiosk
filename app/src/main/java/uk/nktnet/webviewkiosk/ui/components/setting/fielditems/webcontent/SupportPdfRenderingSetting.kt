@@ -29,11 +29,12 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
-fun SupportPdfRendering() {
+fun SupportPdfRenderingSetting() {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val userSettings = remember { UserSettings(context) }
     val settingKey = UserSettingsKeys.WebContent.SUPPORT_PDF_RENDERING
+    val restricted = userSettings.isRestricted(settingKey)
 
     var assetsReady by remember {
         mutableStateOf(PdfJsManager.areAssetsReady(context))
@@ -48,27 +49,27 @@ fun SupportPdfRendering() {
         """.trimIndent(),
         initialValue = userSettings.supportPdfRendering,
         settingKey = settingKey,
-        restricted = userSettings.isRestricted(settingKey),
+        restricted = restricted ,
         onSave = { userSettings.supportPdfRendering = it },
         extraContent = {
             Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 Button(
+                    enabled = !restricted,
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
                         coroutineScope.launch {
                             ToastManager.show(context, "Downloading PDF.js...")
-                            val success = PdfJsManager.downloadAssets(context)
+                            PdfJsManager.downloadAssets(context)
                             assetsReady = PdfJsManager.areAssetsReady(context)
-                            if (success) {
-                                ToastManager.show(context, "Download complete")
-                            } else {
-                                ToastManager.show(context, "Download failed")
-                            }
                         }
                     }
                 ) {
                     Text(
-                        text = if (assetsReady) "Update PDF.js" else "Download PDF.js",
+                        text = if (assetsReady) {
+                            "Update PDF.js assets"
+                        } else {
+                            "Download PDF.js assets"
+                        },
                         textAlign = TextAlign.Center,
                         style = MaterialTheme.typography.labelMedium
                     )
@@ -77,6 +78,7 @@ fun SupportPdfRendering() {
                 if (assetsReady) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Button(
+                        enabled = !restricted,
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.error,
@@ -93,6 +95,13 @@ fun SupportPdfRendering() {
                             style = MaterialTheme.typography.labelMedium
                         )
                     }
+                } else {
+                    Text(
+                        text = "PDF rendering cannot be used until PDF.js assets are downloaded.",
+                        modifier = Modifier.padding(top = 6.dp),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
                 }
             }
         }

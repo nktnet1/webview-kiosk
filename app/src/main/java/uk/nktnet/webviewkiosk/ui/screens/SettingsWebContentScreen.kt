@@ -24,7 +24,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.AllowLocalFilesSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.HomeUrlSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.SupportPdfRendering
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.SupportPdfRenderingSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.WebsiteBlacklistSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.WebsiteBookmarksSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.WebsiteWhitelistSetting
@@ -53,7 +53,7 @@ fun SettingsWebContentScreen(navController: NavController) {
             WebsiteBlacklistSetting()
             WebsiteWhitelistSetting()
             WebsiteBookmarksSetting()
-            SupportPdfRendering()
+            SupportPdfRenderingSetting()
             AllowLocalFilesSetting()
 
             Spacer(modifier = Modifier.height(12.dp))

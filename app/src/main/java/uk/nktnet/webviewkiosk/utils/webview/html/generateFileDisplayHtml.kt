@@ -4,6 +4,7 @@ import android.content.Context
 import android.text.Html
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.utils.getDisplayName
 import uk.nktnet.webviewkiosk.utils.getUUID
@@ -88,10 +89,12 @@ fun generateUnsupportedMimeTypePage(
 
             <p style="font-size:0.8rem; text-align:center; white-space:normal; margin-bottom:25px">
                 <i>
-                    This page is displayed because ${context.getString(R.string.app_name)}
-                    cannot render this file.
+                    This page is displayed because ${context.getString(R.string.app_name)} cannot render this file.
                     This is because the mime type, detected from the file extension, does not
-                    indicate a HTML, image, audio or video file. PDF files are not supported.
+                    indicate a HTML, image, audio or video file.
+                    <br><br>
+                    To support PDF files, you will need to enable the ${UserSettingsKeys.WebContent.SUPPORT_PDF_RENDERING}
+                    setting and download the Mozilla PDF.js assets (in the same setting menu).
                     <br><br>
                     You can try renaming the file extension if you think the detected mime type
                     is incorrect. Otherwise, if you believe this to be a bug, please create an

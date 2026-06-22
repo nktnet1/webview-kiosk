@@ -346,29 +346,38 @@ fun WebviewScreen(navController: NavController) {
                     it,
                     "text/html",
                     "UTF-8",
-                    null
-                )
-                return
-            }
-        } else if (
-            userSettings.supportPdfRendering
-            && PdfJsManager.areAssetsReady(context)
-            && schemeType == SchemeType.WEB
-        ) {
-            val path = uri.path?.lowercase() ?: ""
-            if (path.endsWith(".pdf")) {
-                val htmlContent = generatePdfRendererHtml(newUrl)
-                webView.loadDataWithBaseURL(
-                    Constants.PDF_JS_ASSETS_DUMMY_URL,
-                    htmlContent,
-                    "text/html",
-                    "UTF-8",
-                    null
+                    newUrl
                 )
                 return
             }
         }
 
+        val isWebPdf = (
+            schemeType == SchemeType.WEB
+            && uri.path?.lowercase()?.endsWith(".pdf") == true
+            && userSettings.supportPdfRendering
+            && PdfJsManager.areAssetsReady(context)
+        )
+        val isDummyFallback = newUrl.startsWith(Constants.PDF_JS_ASSETS_DUMMY_URL)
+
+        if (isWebPdf || isDummyFallback) {
+            val targetPdfUrl = if (isDummyFallback) {
+                uri.getQueryParameter("wk_pdf_url") ?: ""
+            } else {
+                newUrl
+            }
+            val htmlContent = generatePdfRendererHtml(targetPdfUrl)
+            val encodedPdfUrl = java.net.URLEncoder.encode(targetPdfUrl, "UTF-8")
+            val baseUrlWithFallback = "${Constants.PDF_JS_ASSETS_DUMMY_URL}?wk_pdf_url=$encodedPdfUrl"
+            webView.loadDataWithBaseURL(
+                baseUrlWithFallback,
+                htmlContent,
+                "text/html",
+                "UTF-8",
+                null
+            )
+            return
+        }
         webView.loadUrl(newUrl)
     }
 

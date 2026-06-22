@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -276,25 +277,32 @@ fun LocalFileList(
                 """.trimIndent())
             },
             confirmButton = {
-                TextButton(onClick = {
-                    activeFile?.let { file ->
-                        if (file.delete()) {
-                            refreshFiles()
-                        } else {
-                            ToastManager.show(context, "Failed to delete ${file.getDisplayName()}")
+                TextButton(
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                    onClick = {
+                        activeFile?.let { file ->
+                            if (file.delete()) {
+                                refreshFiles()
+                            } else {
+                                ToastManager.show(context, "Failed to delete ${file.getDisplayName()}")
+                            }
+                            showDeleteDialog = false
+                            activeFile = null
                         }
-                        showDeleteDialog = false
-                        activeFile = null
                     }
-                }) {
+                ) {
                     Text("Delete")
                 }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    showDeleteDialog = false
-                    activeFile = null
-                }) {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        activeFile = null
+                    }
+                ) {
                     Text("Cancel")
                 }
             }
