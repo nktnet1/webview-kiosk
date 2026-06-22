@@ -43,12 +43,21 @@ fun SupportPdfRenderingSetting() {
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_content_support_pdf_rendering_title),
         infoText = """
-            Set to true to support PDF Rendering using Mozilla's PDF.js:
-
+            Set to true to support PDF Rendering using Mozilla's PDF.js renderer:
+            
             - https://github.com/mozilla/pdf.js
-
-            Please note that you will need to also download the relevant assets by clicking
-            the "Download PDF.js assets button in the menu for this setting.
+            
+            You will first need to download the renderer by opening the popup menu for this
+            setting and clicking the `Download PDF.js assets` button.
+            
+            Remote PDF files are loaded through a dummy endpoint:
+            
+            - https://pdf-dummy.webviewkiosk.nktnet.uk?wk_pdf_url=[SAMPLE_PDF_URL].pdf
+            
+            which gets locally routed to the downloaded PDF.js renderer using the
+            WebViewAssetLoader API:
+            
+            - https://developer.android.com/reference/androidx/webkit/WebViewAssetLoader
         """.trimIndent(),
         initialValue = userSettings.supportPdfRendering,
         settingKey = settingKey,

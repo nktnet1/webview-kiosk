@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.ui.screens
 
 import android.content.Context
 import android.util.Base64
+import android.util.Log
 import android.webkit.CookieManager
 import android.webkit.HttpAuthHandler
 import android.webkit.URLUtil.isValidUrl
@@ -694,7 +695,8 @@ private fun handlePdfRemoteUrlRendering(
                 )
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e(Constants.APP_SCHEME, "Failed to fetch PDF: $targetPdfUrl", e)
+            ToastManager.show(context, "PDF fetch failed: ${e.message}")
         }
     }.start()
 }
