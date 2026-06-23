@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.app.Activity
 import android.content.Context
 import android.util.Base64
 import android.util.Log
@@ -690,7 +691,9 @@ private fun handlePdfRemoteUrlRendering(
             ToastManager.show(context, "Preparing to render PDF...")
             val bytes = URL(targetPdfUrl).openStream().use { it.readBytes() }
             val base64Data = Base64.encodeToString(bytes, Base64.NO_WRAP)
-            (context as? android.app.Activity)?.runOnUiThread {
+            val activity = context as? Activity ?: return@Thread
+            ToastManager.cancel()
+            activity.runOnUiThread {
                 val htmlContent = generatePdfRendererHtml(base64Data)
                 val encodedPdfUrl = java.net.URLEncoder.encode(targetPdfUrl, "UTF-8")
                 val baseUrlWithFallback = "${Constants.PDF_JS_ASSETS_DUMMY_URL}?wk_pdf_url=$encodedPdfUrl"

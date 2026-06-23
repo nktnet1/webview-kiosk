@@ -22,6 +22,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.PdfJsManager
@@ -50,14 +51,18 @@ fun SupportPdfRenderingSetting() {
             You will first need to download the renderer by opening the popup menu for this
             setting and clicking the `Download PDF.js assets` button.
 
-            Remote PDF files are loaded through a dummy endpoint:
+            ---
 
-            - https://pdf-dummy.webviewkiosk.nktnet.uk?wk_pdf_url=[SAMPLE_PDF_URL].pdf
+            Remote PDF files are loaded through a dummy endpoint
+
+            ${Constants.PDF_JS_ASSETS_DUMMY_URL}?wk_pdf_url=[SAMPLE_PDF_URL].pdf
 
             which gets locally routed to the downloaded PDF.js renderer using the
-            WebViewAssetLoader API:
+            WebViewAssetLoader API.
 
-            - https://developer.android.com/reference/androidx/webkit/WebViewAssetLoader
+            For more details, see:
+
+            https://developer.android.com/reference/androidx/webkit/WebViewAssetLoader
         """.trimIndent(),
         initialValue = userSettings.supportPdfRendering,
         settingKey = settingKey,
