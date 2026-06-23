@@ -1,8 +1,13 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.app.Activity
+import android.content.Context
+import android.util.Base64
+import android.util.Log
 import android.webkit.CookieManager
 import android.webkit.HttpAuthHandler
 import android.webkit.URLUtil.isValidUrl
+import android.webkit.WebView
 import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -61,6 +66,7 @@ import uk.nktnet.webviewkiosk.handlers.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.DimScreenOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.ResetOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.managers.MqttManager
+import uk.nktnet.webviewkiosk.managers.PdfJsManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
@@ -88,17 +94,19 @@ import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
+import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.webview.html.generateFileMissingPage
+import uk.nktnet.webviewkiosk.utils.webview.html.generatePdfRendererHtml
 import uk.nktnet.webviewkiosk.utils.webview.html.generateUnsupportedMimeTypePage
 import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
-import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
 import java.io.File
+import java.net.URL
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -323,6 +331,16 @@ fun WebviewScreen(navController: NavController) {
             val file = File(uri.path ?: "")
             val pageContent = when {
                 !file.exists() -> generateFileMissingPage(file, userSettings.theme)
+                (
+                    userSettings.supportPdfRendering
+                        && PdfJsManager.areAssetsReady(context)
+                        && (
+                            mimeType == "application/pdf"
+                            || file.extension.lowercase() == "pdf"
+                        )
+                ) -> {
+                    generatePdfRendererHtml(newUrl)
+                }
                 !isSupportedFileURLMimeType(mimeType) -> generateUnsupportedMimeTypePage(
                     context, file, mimeType, userSettings.theme
                 )
@@ -339,6 +357,38 @@ fun WebviewScreen(navController: NavController) {
                 return
             }
         }
+
+        val isPdfRenderingSupported = (
+            userSettings.supportPdfRendering
+            && PdfJsManager.areAssetsReady(context)
+        )
+        val isWebPdf = (
+            schemeType == SchemeType.WEB
+            && uri.path?.lowercase()?.endsWith(".pdf") == true
+        )
+        val isDummyFallback = newUrl.startsWith(Constants.PDF_JS_ASSETS_DUMMY_URL)
+
+        if (isPdfRenderingSupported && (isWebPdf || isDummyFallback)) {
+            val targetPdfUrl = if (isDummyFallback) {
+                uri.getQueryParameter("wk_pdf_url") ?: ""
+            } else {
+                newUrl
+            }
+            if (targetPdfUrl.isNotEmpty()) {
+                handlePdfRemoteUrlRendering(
+                    context,
+                    webView,
+                    targetPdfUrl,
+                )
+                return
+            }
+        } else if (isDummyFallback) {
+            val pdfUrl = uri.getQueryParameter("wk_pdf_url") ?: ""
+            if (pdfUrl.isNotEmpty()) {
+                customLoadUrl(pdfUrl)
+                return
+            }
+        }
         webView.loadUrl(newUrl)
     }
 
@@ -346,7 +396,13 @@ fun WebviewScreen(navController: NavController) {
         val searchUrl = resolveUrlOrSearch(
             userSettings.searchProviderUrl, input.trim()
         )
-        if (searchUrl.isNotBlank() && (searchUrl != systemSettings.currentUrl || userSettings.allowRefresh)) {
+        if (
+            searchUrl.isNotBlank()
+            && (
+                searchUrl != systemSettings.currentUrl
+                || userSettings.allowRefresh
+            )
+        ) {
             customLoadUrl(searchUrl)
         }
     }
@@ -619,4 +675,40 @@ fun WebviewScreen(navController: NavController) {
         showDialog = isOpenAppsDialog,
         onDismiss = { isOpenAppsDialog = false }
     )
+}
+
+private fun handlePdfRemoteUrlRendering(
+    context: Context,
+    webView: WebView,
+    targetPdfUrl: String
+) {
+    if (targetPdfUrl.isEmpty()) {
+        return
+    }
+
+    Thread {
+        try {
+            ToastManager.show(context, "Preparing to render PDF...")
+            val bytes = URL(targetPdfUrl).openStream().use { it.readBytes() }
+            val base64Data = Base64.encodeToString(bytes, Base64.NO_WRAP)
+            val activity = context as? Activity ?: return@Thread
+            ToastManager.cancel()
+            activity.runOnUiThread {
+                val htmlContent = generatePdfRendererHtml(base64Data)
+                val encodedPdfUrl = java.net.URLEncoder.encode(targetPdfUrl, "UTF-8")
+                val baseUrlWithFallback = "${Constants.PDF_JS_ASSETS_DUMMY_URL}?wk_pdf_url=$encodedPdfUrl"
+
+                webView.loadDataWithBaseURL(
+                    baseUrlWithFallback,
+                    htmlContent,
+                    "text/html",
+                    "UTF-8",
+                    null
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(Constants.APP_SCHEME, "Failed to fetch PDF: $targetPdfUrl", e)
+            ToastManager.show(context, "PDF fetch failed: ${e.message}")
+        }
+    }.start()
 }

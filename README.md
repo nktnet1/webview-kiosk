@@ -42,7 +42,7 @@ and standalone Kiosk solution.
 - <b>Secure Settings:</b> configurations are protected by biometrics, device credentials or custom password
 - <b>URL Filtering:</b> use regular expressions to control web access through a URL blacklist and whitelist
 - <b>Export/Import:</b> backup and restore user settings in Base64 or JSON format
-- <b>Local files:</b> display an image, audio, video, or HTML file in kiosk mode from your device
+- <b>Local files:</b> display images, audio, video, HTML or PDF (using Mozilla's PDF.js) in kiosk mode
 - <b>Default Launcher:</b> use as the home app and launch other apps in lock task mode (kiosk)
 - <b>JS Scripts:</b> supports NFC (Near Field Communication), Eruda console, Dark Reader and custom scripts
 

@@ -188,12 +188,12 @@ private fun fetchBlob(webView: WebView, blobUrl: String, mimeType: String?,  fil
                 return;
             } catch(e) {}
 
-            if (window._lastBlob) {
+            if (window.__${Constants.APP_SCHEME}_lastBlob) {
                 const reader2 = new FileReader();
                 reader2.onloadend = function() {
                     ${BlobInterface.NAME}.download(reader2.result, '$mimeType', '$filename');
                 };
-                reader2.readAsDataURL(window._lastBlob);
+                reader2.readAsDataURL(window.__${Constants.APP_SCHEME}_lastBlob);
                 return;
             }
 

@@ -15,7 +15,7 @@ enum class SchemeType {
     FILE,
     WEB,
     DATA,
-    WEBVIEW_KIOSK,
+    APP_CUSTOM,
     OTHER
 }
 
@@ -43,7 +43,7 @@ fun getBlockInfo(
         "file" -> SchemeType.FILE
         "http", "https" -> SchemeType.WEB
         "data" -> SchemeType.DATA
-        Constants.APP_SCHEME -> SchemeType.WEBVIEW_KIOSK
+        Constants.APP_SCHEME -> SchemeType.APP_CUSTOM
         else -> SchemeType.OTHER
     }
 
@@ -85,5 +85,5 @@ fun loadBlockedPage(
 }
 
 fun isCustomBlockPageUrl(schemeType: SchemeType, uri: Uri): Boolean {
-    return schemeType == SchemeType.WEBVIEW_KIOSK && uri.host == BLOCK_HOST
+    return schemeType == SchemeType.APP_CUSTOM && uri.host == BLOCK_HOST
 }
