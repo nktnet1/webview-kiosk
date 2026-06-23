@@ -109,7 +109,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(16.dp))
 
             SectionHeader(
-                stringResource(R.string.settings_more_action_section_shortcuts)
+                stringResource(R.string.settings_more_action_section_quick_access)
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),

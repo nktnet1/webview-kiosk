@@ -2,11 +2,11 @@
 <resources>
 
     <!-- Section Titles -->
-    <string name="settings_more_action_section_shortcuts">Shortcuts</string>
+    <string name="settings_more_action_section_quick_access">Quick Access</string>
     <string name="settings_more_action_section_manage">Manage</string>
     <string name="settings_more_action_section_clear">Clear</string>
 
-    <!-- Shortcut Actions -->
+    <!-- Quick Access Actions -->
     <string name="settings_more_action_app_info">App Info</string>
     <string name="settings_more_action_device_settings">Device Settings</string>
     <string name="settings_more_action_default_launcher">Default Launcher</string>
