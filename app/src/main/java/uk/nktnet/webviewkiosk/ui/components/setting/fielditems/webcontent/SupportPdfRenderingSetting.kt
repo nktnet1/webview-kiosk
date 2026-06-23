@@ -63,6 +63,18 @@ fun SupportPdfRenderingSetting() {
         settingKey = settingKey,
         restricted = restricted ,
         onSave = { userSettings.supportPdfRendering = it },
+        itemText = { value ->
+            val supportText = if (assetsReady) {
+                ""
+            } else {
+                "(missing assets)"
+            }
+            if (value) {
+                "True $supportText"
+            } else {
+                "False $supportText"
+            }
+        },
         extraContent = {
             Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 if (assetsReady) {
