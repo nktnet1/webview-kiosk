@@ -357,15 +357,17 @@ fun WebviewScreen(navController: NavController) {
             }
         }
 
+        val isPdfRenderingSupported = (
+            userSettings.supportPdfRendering
+            && PdfJsManager.areAssetsReady(context)
+        )
         val isWebPdf = (
             schemeType == SchemeType.WEB
             && uri.path?.lowercase()?.endsWith(".pdf") == true
-            && userSettings.supportPdfRendering
-            && PdfJsManager.areAssetsReady(context)
         )
         val isDummyFallback = newUrl.startsWith(Constants.PDF_JS_ASSETS_DUMMY_URL)
 
-        if (isWebPdf || isDummyFallback) {
+        if (isPdfRenderingSupported && (isWebPdf || isDummyFallback)) {
             val targetPdfUrl = if (isDummyFallback) {
                 uri.getQueryParameter("wk_pdf_url") ?: ""
             } else {
@@ -377,6 +379,12 @@ fun WebviewScreen(navController: NavController) {
                     webView,
                     targetPdfUrl,
                 )
+                return
+            }
+        } else if (isDummyFallback) {
+            val pdfUrl = uri.getQueryParameter("wk_pdf_url") ?: ""
+            if (pdfUrl.isNotEmpty()) {
+                customLoadUrl(pdfUrl)
                 return
             }
         }
@@ -679,6 +687,7 @@ private fun handlePdfRemoteUrlRendering(
 
     Thread {
         try {
+            ToastManager.show(context, "Preparing to render PDF...")
             val bytes = URL(targetPdfUrl).openStream().use { it.readBytes() }
             val base64Data = Base64.encodeToString(bytes, Base64.NO_WRAP)
             (context as? android.app.Activity)?.runOnUiThread {
