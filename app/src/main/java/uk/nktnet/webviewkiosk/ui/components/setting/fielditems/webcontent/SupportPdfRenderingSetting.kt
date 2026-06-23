@@ -49,7 +49,7 @@ fun SupportPdfRenderingSetting() {
             - https://github.com/mozilla/pdf.js
 
             You will first need to download the renderer by opening the popup menu for this
-            setting and clicking the `Download PDF.js assets` button.
+            setting and clicking the "Download PDF.js assets" button.
 
             ---
 
