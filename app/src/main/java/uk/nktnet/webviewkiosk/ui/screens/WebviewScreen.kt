@@ -352,7 +352,7 @@ fun WebviewScreen(navController: NavController) {
                     it,
                     "text/html",
                     "UTF-8",
-                    newUrl
+                    null
                 )
                 return
             }
