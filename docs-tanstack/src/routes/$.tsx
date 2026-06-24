@@ -48,6 +48,7 @@ const loader = createServerFn({
     return {
       path: page.path,
       title: page.data.title,
+      description: page.data.description,
       markdownUrl: slugsToMarkdownPath(page.slugs).url,
       pageTree: await legal.serializePageTree(legal.getPageTree()),
       lastModified: page.data.lastModified,
@@ -58,9 +59,13 @@ const clientLoader = browserCollections.legal.createClientLoader({
   component(
     { default: MDX, toc, lastModified },
     {
+      title,
+      description,
       markdownUrl,
       path,
     }: {
+      title: string,
+      description?: string,
       path: string;
       markdownUrl: string;
     },
@@ -69,8 +74,30 @@ const clientLoader = browserCollections.legal.createClientLoader({
     const components = useMDXComponents();
     return (
       <main className="mx-auto w-full max-w-page px-4 py-4 md:px-8 md:py-6">
+        <div
+          className="container rounded-xl border py-4 md:py-12 px-4 md:px-8"
+          style={{
+            backgroundColor: "black",
+            backgroundImage: [
+              "linear-gradient(140deg, hsla(224,34%,84%,0.3), transparent 50%)",
+              "linear-gradient(to left top, hsla(200,90%,50%,0.8), transparent 50%)",
+              "radial-gradient(circle at 100% 100%, hsla(100,100%,40%,1), hsla(240,40%,40%,1) 17%, hsla(240,40%,40%,0.5) 20%, transparent)",
+            ].join(", "),
+            backgroundBlendMode: "difference, difference, normal",
+          }}
+        >
+          <h1 className="mb-2 text-3xl font-bold text-white">
+            {title}
+          </h1>
+          <p className="mb-4 text-white/80">{description}</p>
+        </div>
+
         <article className="container grid grid-cols-1 px-0 py-2 md:py-4 lg:grid-cols-[2fr_1fr] lg:px-4">
           <div className="prose">
+            <InlineTOC className="mt-6 mb-0" items={toc} />
+            <MDX components={components} />
+          </div>
+          <div className="prose p-4 flex flex-col mt-3">
             <div className="flex flex-row gap-2 items-center border-b pb-6">
               <MarkdownCopyButton markdownUrl={markdownUrl} />
               <ViewOptionsPopover
@@ -78,10 +105,6 @@ const clientLoader = browserCollections.legal.createClientLoader({
                 githubUrl={`https://github.com/${gitConfig.user}/${gitConfig.repo}/blob/${gitConfig.branch}/docs/content/legal/${path}`}
               />
             </div>
-            <InlineTOC items={toc} />
-            <MDX components={components} />
-          </div>
-          <div className="prose p-4 flex justify-center mt-3">
             {lastModified && <PageLastUpdate date={lastModified} />}
           </div>
         </article>
@@ -91,13 +114,13 @@ const clientLoader = browserCollections.legal.createClientLoader({
 });
 
 function Page() {
-  const { path, markdownUrl } = useFumadocsLoader(Route.useLoaderData());
+  const { title, description, markdownUrl, path } = useFumadocsLoader(Route.useLoaderData());
 
   return (
     <HomeLayout {...homeBaseOptions()}>
       <Link to={markdownUrl} hidden />
       <Suspense>
-        {clientLoader.useContent(path, { markdownUrl, path })}
+        {clientLoader.useContent(path, { title, description, markdownUrl, path })}
       </Suspense>
     </HomeLayout>
   );
