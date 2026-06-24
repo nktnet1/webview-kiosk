@@ -1,15 +1,14 @@
+import { metaSchema, pageSchema } from "fumadocs-core/source/schema";
 import {
   defineCollections,
   defineConfig,
   defineDocs,
-  frontmatterSchema,
-  metaSchema,
 } from "fumadocs-mdx/config";
 import lastModified from "fumadocs-mdx/plugins/last-modified";
 
 export const docs = defineDocs({
   docs: {
-    schema: frontmatterSchema,
+    schema: pageSchema,
     async: true,
   },
   meta: {
@@ -19,9 +18,9 @@ export const docs = defineDocs({
 
 export const legal = defineCollections({
   type: "doc",
-  dir: "./content/legal",
-  schema: frontmatterSchema.extend({}),
   async: true,
+  schema: pageSchema,
+  dir: "./content/legal",
 });
 
 export default defineConfig({
