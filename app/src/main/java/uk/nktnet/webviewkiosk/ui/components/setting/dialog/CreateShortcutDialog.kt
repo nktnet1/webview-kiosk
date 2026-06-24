@@ -1,12 +1,15 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
 import android.content.Intent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -23,6 +26,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -31,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.core.graphics.drawable.toBitmap
 import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -59,6 +64,8 @@ fun CreateShortcutDialog(
     var urlError by remember { mutableStateOf<String?>(null) }
     var isOpenHistoryDialog by remember { mutableStateOf(false) }
 
+    var previewIcon by remember { mutableStateOf(IconUtils.buildLetterIcon(shortLabel)) }
+
     val canCreate = (
         shortLabelError == null
         && longLabelError == null
@@ -67,6 +74,12 @@ fun CreateShortcutDialog(
         && longLabel.isNotBlank()
         && url.isNotBlank()
     )
+
+    fun setShortLabel(value: String) {
+        shortLabel = value
+        shortLabelError = validateShortLabel(value)
+        previewIcon = IconUtils.buildLetterIcon(value)
+    }
 
     fun setUrl(value: String) {
         val trimmed = value.trim()
@@ -82,12 +95,14 @@ fun CreateShortcutDialog(
         onDismissRequest = onDismiss,
         title = { Text("Create Shortcut") },
         text = {
-            Column {
+            Column (
+                modifier = Modifier
+                    .verticalScroll(rememberScrollState())
+            ) {
                 SimpleOutlinedTextField(
                     value = shortLabel,
                     onValueChange = {
-                        shortLabel = it
-                        shortLabelError = validateShortLabel(it)
+                        setShortLabel(it)
                     },
                     label = "Short Label",
                     error = shortLabelError
@@ -160,6 +175,19 @@ fun CreateShortcutDialog(
                         color = MaterialTheme.colorScheme.onPrimary,
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                val drawable = previewIcon.loadDrawable(context)
+                val bitmap = drawable?.toBitmap()
+                bitmap?.let {
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Image(
+                        bitmap = it.asImageBitmap(),
+                        contentDescription = "Shortcut preview",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp)
                     )
                 }
             }
