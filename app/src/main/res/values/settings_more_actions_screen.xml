@@ -16,7 +16,7 @@
 
     <!-- Tools Actions -->
     <string name="settings_more_action_section_tools">Tools</string>
-    <string name="settings_more_action_add_shortcut">Add Shortcut</string>
+    <string name="settings_more_action_create_shortcut">Create Shortcut</string>
     <string name="settings_more_action_app_launcher">App Launcher</string>
 
     <!-- Manage Actions -->

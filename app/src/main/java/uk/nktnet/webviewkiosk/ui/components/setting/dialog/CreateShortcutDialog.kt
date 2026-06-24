@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -19,15 +21,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.config.SystemSettings
+import uk.nktnet.webviewkiosk.ui.components.webview.HistoryDialog
 import uk.nktnet.webviewkiosk.utils.validateUrl
 
 @Composable
@@ -40,37 +48,30 @@ fun CreateShortcutDialog(
     }
 
     val context = LocalContext.current
+    val systemSettings = remember { SystemSettings(context) }
 
-    var name by remember { mutableStateOf("") }
+    var shortLabel by remember { mutableStateOf("") }
+    var longLabel by remember { mutableStateOf("") }
     var url by remember { mutableStateOf("") }
 
-    var nameError by remember { mutableStateOf<String?>(null) }
+    var shortLabelError by remember { mutableStateOf<String?>(null) }
+    var longLabelError by remember { mutableStateOf<String?>(null) }
     var urlError by remember { mutableStateOf<String?>(null) }
+    var isOpenHistoryDialog by remember { mutableStateOf(false) }
 
-    val isNameValid = nameError == null && name.isNotBlank()
-    val isUrlValid = urlError == null && url.isNotBlank()
-    val canCreate = isNameValid && isUrlValid
+    val canCreate = (
+        shortLabelError == null
+        && longLabelError == null
+        && urlError == null
+        && shortLabel.isNotBlank()
+        && longLabel.isNotBlank()
+        && url.isNotBlank()
+    )
 
-    fun validateName(value: String): String? {
+    fun setUrl(value: String) {
         val trimmed = value.trim()
-
-        if (trimmed.isBlank()) {
-            return "Name cannot be empty"
-        }
-        if (trimmed.length > 30) {
-            return "Max 30 characters"
-        }
-
-        if (trimmed.any { it.isISOControl() }) {
-            return "Invalid characters in name"
-        }
-
-        return null
-    }
-
-    fun validateUrlLocal(value: String): String? {
-        val trimmed = value.trim()
-        return if (!validateUrl(trimmed)) {
+        url = trimmed
+        urlError = if (!validateUrl(trimmed)) {
             "Invalid URL"
         } else {
             null
@@ -83,31 +84,82 @@ fun CreateShortcutDialog(
         text = {
             Column {
                 SimpleOutlinedTextField(
-                    value = name,
+                    value = shortLabel,
                     onValueChange = {
-                        name = it
-                        nameError = validateName(it)
+                        shortLabel = it
+                        shortLabelError = validateShortLabel(it)
                     },
-                    label = "Name",
-                    error = nameError
+                    label = "Short Label",
+                    error = shortLabelError
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
+
+                SimpleOutlinedTextField(
+                    value = longLabel,
+                    onValueChange = {
+                        longLabel = it
+                        longLabelError = validateLongLabel(it)
+                    },
+                    label = "Long Label",
+                    error = longLabelError
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
 
                 SimpleOutlinedTextField(
                     value = url,
                     onValueChange = {
-                        url = it
-                        urlError = validateUrlLocal(it)
+                        setUrl(it)
                     },
                     label = "URL",
                     error = urlError
                 )
 
-                if (urlError != null) {
+                Button(
+                    onClick = {
+                        url = systemSettings.currentUrl
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp),
+                    shape = RoundedCornerShape(4.dp),
+                    colors = ButtonDefaults.buttonColors()
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = "Use the current URL:",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        Text(
+                            text = systemSettings.currentUrl,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+                Button(
+                    onClick = { isOpenHistoryDialog = true },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                        .padding(top = 6.dp),
+                    shape = RoundedCornerShape(4.dp),
+                    colors = ButtonDefaults.buttonColors()
+                ) {
                     Text(
-                        text = urlError.toString(),
-                        color = MaterialTheme.colorScheme.error
+                        text = "Select from History",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
@@ -116,7 +168,8 @@ fun CreateShortcutDialog(
             Button(
                 enabled = canCreate,
                 onClick = {
-                    val safeName = name.trim()
+                    val safeShortLabel = shortLabel.trim()
+                    val safeLongLabel = longLabel.trim()
                     val safeUrl = url.trim()
 
                     val intent = Intent(Intent.ACTION_VIEW).apply {
@@ -126,8 +179,8 @@ fun CreateShortcutDialog(
                     }
 
                     val shortcut = ShortcutInfoCompat.Builder(context, safeUrl)
-                        .setShortLabel(safeName)
-                        .setLongLabel(safeName)
+                        .setShortLabel(safeShortLabel)
+                        .setLongLabel(safeLongLabel)
                         .setIcon(
                             IconCompat.createWithResource(
                                 context,
@@ -154,6 +207,16 @@ fun CreateShortcutDialog(
                 Text("Cancel")
             }
         }
+    )
+
+    HistoryDialog(
+        isOpenHistoryDialog,
+        { isOpenHistoryDialog = false },
+        { item, _ ->
+            setUrl(item.url)
+        },
+        disableCurrent = false,
+        highlightCurrent = false,
     )
 }
 
@@ -186,8 +249,48 @@ private fun SimpleOutlinedTextField(
     if (error != null) {
         Text(
             text = error,
-            modifier = Modifier.padding(top = 4.dp),
+            modifier = Modifier.padding(
+                top = 6.dp,
+                bottom = 4.dp
+            ),
             color = MaterialTheme.colorScheme.error
         )
     }
+}
+
+private fun validateLabel(
+    value: String,
+    fieldName: String,
+    maxLength: Int
+): String? {
+    val trimmed = value.trim()
+
+    if (trimmed.isBlank()) {
+        return "$fieldName cannot be empty"
+    }
+    if (trimmed.length > maxLength) {
+        return "Max $maxLength characters"
+    }
+
+    if (trimmed.any { it.isISOControl() }) {
+        return "Invalid characters in $fieldName label"
+    }
+
+    return null
+}
+
+private fun validateShortLabel(value: String): String? {
+    return validateLabel(
+        value = value,
+        fieldName = "Short label",
+        maxLength = 10
+    )
+}
+
+private fun validateLongLabel(value: String): String? {
+    return validateLabel(
+        value = value,
+        fieldName = "Long label",
+        maxLength = 25
+    )
 }

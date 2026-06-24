@@ -197,7 +197,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 ActionButton(
-                    stringResource(R.string.settings_more_action_add_shortcut),
+                    stringResource(R.string.settings_more_action_create_shortcut),
                     modifier = Modifier.weight(1f)
                 ) {
                     showCreateShortcutDialog = true
