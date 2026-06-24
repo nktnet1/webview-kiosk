@@ -1,9 +1,8 @@
+import { docs, legal as legalPages } from "collections/server";
 import { loader } from "fumadocs-core/source";
 import { lucideIconsPlugin } from "fumadocs-core/source/lucide-icons";
-import { docs, legal as legalPages } from "collections/server";
-
-import { docsRoute } from "./shared";
 import { toFumadocsSource } from "fumadocs-mdx/runtime/server";
+import { docsRoute } from "./shared";
 
 export const source = loader({
   source: docs.toFumadocsSource(),
@@ -63,7 +62,6 @@ export async function getLLMText(page: (typeof source)["$inferPage"]) {
 
 ${processed}`;
 }
-
 
 export async function getLLMTextLegal(page: (typeof legal)["$inferPage"]) {
   const processed = await page.data.getText("processed");

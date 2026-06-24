@@ -1,10 +1,5 @@
 {
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "public/icon.svg",
-    "content/**/*.mdx"
-  ],
+  "include": ["**/*.ts", "**/*.tsx", "public/icon.svg", "content/**/*.mdx"],
   "compilerOptions": {
     "strict": true,
     "esModuleInterop": true,
