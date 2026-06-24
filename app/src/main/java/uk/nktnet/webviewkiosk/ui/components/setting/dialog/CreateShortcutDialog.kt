@@ -31,11 +31,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
-import androidx.core.graphics.drawable.IconCompat
 import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.ui.components.webview.HistoryDialog
+import uk.nktnet.webviewkiosk.utils.IconUtils
 import uk.nktnet.webviewkiosk.utils.validateUrl
 
 @Composable
@@ -118,7 +118,7 @@ fun CreateShortcutDialog(
 
                 Button(
                     onClick = {
-                        url = systemSettings.currentUrl
+                        setUrl(systemSettings.currentUrl)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -181,12 +181,7 @@ fun CreateShortcutDialog(
                     val shortcut = ShortcutInfoCompat.Builder(context, safeUrl)
                         .setShortLabel(safeShortLabel)
                         .setLongLabel(safeLongLabel)
-                        .setIcon(
-                            IconCompat.createWithResource(
-                                context,
-                                android.R.drawable.ic_menu_view
-                            )
-                        )
+                        .setIcon(IconUtils.buildLetterIcon(shortLabel))
                         .setIntent(intent)
                         .build()
 
@@ -195,7 +190,6 @@ fun CreateShortcutDialog(
                         shortcut,
                         null
                     )
-
                     onDismiss()
                 }
             ) {
@@ -233,6 +227,7 @@ private fun SimpleOutlinedTextField(
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
+        singleLine = true,
         modifier = modifier.fillMaxWidth(),
         trailingIcon = {
             IconButton(
