@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.nktnet.webview_kiosk",
+      "sha256_cert_fingerprints": [
+        "C2:C6:B4:D7:A7:34:69:6E:2A:87:EC:C4:12:F1:4C:04:8B:E2:D0:DC:61:9F:94:37:A6:78:DA:05:35:07:14:AA"
+      ]
+    }
+  }
+]

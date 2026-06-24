@@ -1,0 +1,87 @@
+---
+title: Web Content
+description: Home URL, blacklist, whitelist, bookmark, files
+---
+
+import { EllipsisVertical } from 'lucide-react';
+import RegexPlayground from '@/components/RegexPlayground';
+
+## 1. Home URL
+
+Configure the Home URL, which can be returned to as per <a href="/docs/settings/web-browsing/#allow-go-home">`Web Browsing -> Allow Go Home`</a>.
+
+**Default:** https://webviewkiosk.nktnet.uk
+
+## 2. Blacklist & Whitelist Regex
+
+Specify regular expressions (regex), one per line.
+Escaping is required for special characters in regex like `.` and `?`.
+
+These patterns also use partial matching.
+If you need strict control, anchor your regex with `^` and `$`.
+
+Whitelist patterns take precedence over blacklist patterns.
+
+**Default:** (blank)
+
+### 2.1. Blacklist Example
+
+Block all:
+
+```
+.*
+```
+
+Block google, including all subdomains and paths:
+
+```
+^https://.*\.?google\.com/?.*
+```
+
+### 2.2. Whitelist Example
+
+Allow `https://allowsite.com` home page and all subdomains and paths for `https://trusted.org` to bypass rules in the blacklist:
+```
+^https://trusted\.org/?$
+^https://.*\.trusted\.org/?.*
+```
+
+### 2.3. Regex Playground
+
+<RegexPlayground />
+
+## 3. Bookmarks
+
+Specify bookmarked URLs one per line.
+
+This is accessible in the address bar. See also: "Allow Bookmark Access" under `Web Browsing`.
+
+**Default:** (blank)
+
+## 4. Support PDF Rendering
+
+Set to true to support PDF Rendering using Mozilla's PDF.js renderer:
+
+- https://github.com/mozilla/pdf.js
+
+You will first need to download the renderer by opening the popup menu for this
+setting and clicking the `Download PDF.js assets` button.
+
+Remote PDF files are loaded through a dummy endpoint:
+
+- https://pdf-dummy.webviewkiosk.nktnet.uk?wk_pdf_url=[SAMPLE_PDF_URL].pdf
+
+which gets locally routed to the downloaded PDF.js renderer using the
+WebViewAssetLoader API:
+
+- https://developer.android.com/reference/androidx/webkit/WebViewAssetLoader
+
+**Default:** false
+
+## 5. Allow Local Files
+
+Set to true to enable access to local files (html, image, text) that were uploaded
+in the app settings via the 3-dot icon <span className="inline-flex">(<EllipsisVertical />)</span>
+on the right of the address bar.
+
+**Default:** true

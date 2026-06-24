@@ -1,0 +1,163 @@
+---
+title: Installation
+description: Supported platforms to download the app.
+---
+
+import Link from 'fumadocs-core/link';
+import urlJoin from 'url-join';
+import { APP_NAME } from '@/config/app'
+import { PLAYSTORE_URL, GITHUB_URL } from '@/config/links'
+
+<Callout title="Google's Developer Registration Decree" type="warning">
+
+Google's new developer verification requirements for 2026-2027 will
+mean the end for side-loading and many alternate stores and projects
+such as F-Droid and New Pipe.
+
+For more information, please refer to the following sources:
+
+- F-Droid: https://f-droid.org/en/2025/10/28/sideloading.html
+- Keep Android Open: https://keepandroidopen.org
+- Video context: https://www.youtube.com/watch?v=wRvqdLsnsKY
+
+</Callout>
+
+## 1. Google Play
+
+<Callout title="Automatic Protection Disabled" type="success">
+
+From [v0.17.0](https://github.com/nktnet1/webview-kiosk/releases/tag/v0.17.0),
+Google Play's [automatic protection](https://support.google.com/googleplay/android-developer/answer/10183279)
+has been intentionally **disabled** to allow installations from the Aurora Store
+([context](https://gitlab.com/AuroraOSS/AuroraStore/-/issues/1088)).
+
+</Callout>
+
+<a
+  href="https://play.google.com/store/apps/details?id=com.nktnet.webview_kiosk"
+  target="_blank"
+>
+  <img
+    src="/static/images/badges/google-play.svg"
+    alt="Get it on Google Play"
+    className="w-full max-w-48"
+  />
+</a>
+
+While the app is available on the Google Play Store, <u>**we strongly recommend
+that you install from Obtainium, F-Droid or IzzyOnDroid instead**</u> for
+faster updates, enhanced privacy and a stronger assurance that the APK was built
+directly from the source code.
+
+### 1.1. Aurora Store
+
+You can use the [Aurora Store](https://auroraoss.com/aurora-store),
+a FOSS client for Google Play that works without needing Google Play Services or MicroG,
+starting from [v0.17.0](https://github.com/nktnet1/webview-kiosk/releases/tag/v0.17.0).
+
+While installation methods with reproducible builds and no involvement from Google is
+preferred, this method still provides better privacy than using the Google Play Store.
+
+## 2. GitHub
+
+<Callout title="NOTE">
+  As of [v0.15.7](https://github.com/nktnet1/webview-kiosk/releases/tag/v0.15.7),
+  the package name has changed from `com.nktnet.webview_kiosk` to `uk.nktnet.webviewkiosk`
+  for all installation sources except for the Google Play Store and its derivatives.
+</Callout>
+
+<a
+  href={urlJoin(GITHUB_URL, 'releases')}
+  target="_blank"
+>
+  <img
+    src="/static/images/badges/github.png"
+    alt="Get it on IzzyOnDroid"
+    className="w-full max-w-48"
+  />
+</a>
+
+Signed APKs are available for download on the
+<a href={urlJoin(GITHUB_URL, 'releases')} target="_blank">GitHub Releases</a> page.
+
+To build the application from source, clone the <a href={GITHUB_URL} target="_blank">GitHub repository</a>, open
+the project in Android Studio and follow the [official documentation](https://developer.android.com/studio/run).
+
+### 2.1. Obtainium
+
+<a
+  href="https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/nktnet1/webview-kiosk"
+  target="_blank"
+>
+  <img
+    src="/static/images/badges/obtainium.png"
+    alt="Get it on Obtainium"
+    className="w-full max-w-48"
+  />
+</a>
+
+[Obtainium](https://obtainium.imranr.dev) can be used to manage
+installations and updates of {APP_NAME} on GitHub release page,
+with the added bonus of notifications when new releases are made
+available.
+
+### 2.2. F-Droid
+
+<a
+  href="https://f-droid.org/packages/uk.nktnet.webviewkiosk"
+  target="_blank"
+>
+  <img
+    src="/static/images/badges/f-droid.svg"
+    alt="Get it on F-Droid"
+    className="w-full max-w-48"
+  />
+</a>
+
+With [F-Droid reproducible builds](https://f-droid.org/docs/Reproducible_Builds)
+enabled, F-Droid will publish the same APK as the GitHub releases after confirming
+that it was generated from the same source code.
+
+### 2.3. IzzyOnDroid
+
+<a
+  href="https://apt.izzysoft.de/fdroid/index/apk/uk.nktnet.webviewkiosk"
+  target="_blank"
+>
+  <img
+    src="/static/images/badges/izzy-on-droid.svg"
+    alt="Get it on IzzyOnDroid"
+    className="w-full max-w-48"
+  />
+</a>
+
+Similar to F-Droid, the
+[IzzyOnDroid reproducible builds](https://android.izzysoft.de/articles/named/iod-rbs-mirrors-clients)
+criteria is also met.
+
+## 3. QR Code Provisioning
+
+This is the recommended installation method for full device owner capabilities.
+
+<Steps>
+
+<Step>
+On a new or factory-reset device, tap the screen 6 times on the same spot.
+</Step>
+
+<Step>
+You may be prompted to connect to a Wi-Fi network on some devices to download a QR scanner.
+</Step>
+
+<Step>
+Go to the <Link href="/provision-device">{APP_NAME} Provision Device</Link> page to generate a QR code.
+</Step>
+
+<Step>
+Scan the QR code with device and follow the setup wizard instructions.
+</Step>
+
+</Steps>
+
+If you do not want to factory reset your device, refer to the
+[security](/docs/security#33-device-owner-mode) guide for a different method.

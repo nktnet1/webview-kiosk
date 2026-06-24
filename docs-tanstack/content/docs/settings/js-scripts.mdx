@@ -1,0 +1,169 @@
+---
+title: JS Scripts
+description: Apply theme, desktop viewport, custom scripts
+---
+
+import { APP_NAME } from '@/config/app'
+
+## 1. Apply App Theme
+
+This option injects JavaScript that sets `prefers-color-scheme` according to
+your selected {APP_NAME} theme, which will keeps the webpage theme consistent
+with the app.
+
+The script runs immediately **on page start**.
+
+If **System** is used, this script is a no-op (does nothing).
+
+**Default:** true
+
+## 2. Apply Desktop Viewport Width (px)
+
+This script injects JavaScript code that sets document.meta.content to
+`width=YOUR_WIDTH_VALUE`, simulating web browsing on a Desktop.
+
+JS history state changes will also be subscribed to (e.g. from Single Page
+Applications), and the script will be re-triggered as needed.
+
+You should only enable this option if setting the user agent was insufficient
+to force Desktop mode, as the additional JS here will slow down the page.
+
+You may also want to enable the following options under
+`Settings -> Web Engine`:
+
+- User Agent: Desktop
+- Use Wide Viewport: `True`
+- Load with Overview Mode: `True`
+
+To disable, use the value `0`.
+
+**Minimum:** 640
+
+**Default:** 0
+
+## 3. Enable Battery API
+
+When enabled, web pages can call `window.WebviewKioskBatteryInterface.getBatteryStatus()`
+to retrieve the battery data below:
+
+- **Level and percentage** - Battery charge level as a decimal (0.0-1.0) and percentage (0-100)
+- **Charging status** - Whether the device is currently charging
+- **Charging type** - Method of charging: `none`, `usb`, `ac`, or `wireless`
+- **Voltage** - Battery voltage in volts
+- **Temperature** - Battery temperature in degrees Celsius
+- **Health** - Battery health status: `good`, `overheat`, `dead`, `overvoltage`, `cold`, or `unknown`
+
+Example web usage:
+
+```javascript
+try {
+    const dataString = window.WebviewKioskBatteryInterface.getBatteryStatus();
+    const battery = JSON.parse(dataString);
+
+    console.log(`Level: ${battery.level}`);
+    console.log(`Percentage: ${battery.percentage}%`);
+    console.log(`Charging: ${battery.charging}`);
+    console.log(`Charging Type: ${battery.chargingType}`);
+    console.log(`Voltage: ${battery.voltage} V`);
+    console.log(`Temperature: ${battery.temperature} °C`);
+    console.log(`Health: ${battery.health}`);
+} catch (error) {
+    console.error("Failed to retrieve battery information:", error);
+}
+```
+
+**Default:** false
+
+## 4. Enable Brightness API
+
+When enabled, web pages can call
+- `window.WebviewKioskBrightnessInterface.getBrightness(): number`
+- `window.WebviewKioskBrightnessInterface.setBrightness(value: number)`
+
+Values are integers between -1 and 100, with
+
+-  `-1`: use system brightness
+-   `0`: very dim
+- `100`: very bright
+
+Example web usage:
+
+```javascript
+try {
+    const brightness = parseInt(window.WebviewKioskBrightnessInterface.getBrightness());
+    console.log(`Current brightness: ${brightness}`);
+
+    const newBrightness = 10;
+    window.WebviewKioskBrightnessInterface.setBrightness(newBrightness);
+    console.log(`Brightness set to ${newBrightness}%`);
+} catch (error) {
+    console.error("Brightness Control Error:", error);
+}
+```
+
+**Default:** false
+
+## 5. Enable Dark Reader
+
+Automatically inject Dark Reader into web pages.
+
+- https://github.com/darkreader/darkreader
+
+This applies dynamic CSS transformations to force dark mode on websites
+that do not support it natively.
+
+Note: Some websites may render incorrectly due to CSS overrides.
+
+**Default:** false
+
+## 6. Enable Eruda Console
+
+Automatically inject the Eruda console into web pages.
+
+- https://github.com/liriliri/eruda
+
+This provides a mobile browser developer console for inspecting:
+
+- JavaScript errors
+- Console output
+- Network requests
+- DOM elements
+- Storage and cookies
+
+Useful for debugging web applications on Android devices without
+desktop developer tools.
+
+**Default:** false
+
+## 7. Custom Scripts
+
+Your code content will be wrapped as follows to prevent polluting the global
+scope and avoid conflicts with other scripts:
+
+```javascript
+(function() {
+    // <YOUR CODE>
+})()
+```
+
+**Example:**
+
+```javascript
+document.body.style.backgroundColor = 'green';
+```
+
+### 7.1. On Page Start
+
+JavaScript to run immediately when the page starts loading.
+
+Useful for early DOM manipulation or overriding functions.
+
+**Default:** *(blank)*
+
+### 7.2. On Page Finish
+
+JavaScript to run after the page has fully loaded.
+
+Useful for DOM updates, styling, or injecting behavior.
+
+**Default:** *(blank)*
