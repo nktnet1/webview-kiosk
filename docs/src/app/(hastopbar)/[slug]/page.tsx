@@ -10,7 +10,9 @@ export default async function Page(props: PageProps<"/[slug]">) {
   const params = await props.params;
   const page = legal.getPage([params.slug]);
 
-  if (!page) notFound();
+  if (!page) {
+    notFound();
+  }
   const { body: Mdx, toc, lastModified } = await page.data.load();
 
   return (
@@ -51,7 +53,9 @@ export async function generateMetadata(
   const params = await props.params;
   const page = legal.getPage([params.slug]);
 
-  if (!page) notFound();
+  if (!page) {
+    notFound();
+  }
 
   return createMetadata({
     title: page.data.title,
