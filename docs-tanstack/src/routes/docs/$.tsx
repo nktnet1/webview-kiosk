@@ -26,6 +26,15 @@ export const Route = createFileRoute("/docs/$")({
     await clientLoader.preload(data.path);
     return data;
   },
+  head: ({ loaderData }) => {
+    return {
+      meta: [
+        {
+          title: loaderData?.title,
+        },
+      ],
+    };
+  },
 });
 
 const loader = createServerFn({
@@ -35,10 +44,13 @@ const loader = createServerFn({
   .middleware([staticFunctionMiddleware])
   .handler(async ({ data: slugs }) => {
     const page = source.getPage(slugs);
-    if (!page) throw notFound();
+    if (!page) {
+      throw notFound();
+    }
 
     return {
       path: page.path,
+      title: page.data.title,
       markdownUrl: slugsToMarkdownPath(page.slugs).url,
       pageTree: await source.serializePageTree(source.getPageTree()),
     };

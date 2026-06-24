@@ -24,6 +24,15 @@ export const Route = createFileRoute("/$")({
     await clientLoader.preload(data.path);
     return data;
   },
+  head: ({ loaderData }) => {
+    return {
+      meta: [
+        {
+          title: loaderData?.title,
+        },
+      ],
+    };
+  },
 });
 
 const loader = createServerFn({
@@ -38,6 +47,7 @@ const loader = createServerFn({
     }
     return {
       path: page.path,
+      title: page.data.title,
       markdownUrl: slugsToMarkdownPath(page.slugs).url,
       pageTree: await legal.serializePageTree(legal.getPageTree()),
       lastModified: page.data.lastModified,
