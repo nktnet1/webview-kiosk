@@ -35,7 +35,6 @@ export function slugsToMarkdownPath(slugs: string[]) {
   } else {
     segments[segments.length - 1] += ".md";
   }
-  console.log({ segments });
 
   return {
     segments,
@@ -61,6 +60,15 @@ export async function getLLMText(page: (typeof source)["$inferPage"]) {
   const processed = await page.data.getText("processed");
 
   return `# ${page.data.title} (${page.url})
+
+${processed}`;
+}
+
+
+export async function getLLMTextLegal(page: (typeof legal)["$inferPage"]) {
+  const processed = await page.data.getText("processed");
+
+  return `# ${page.data.info} (${page.url})
 
 ${processed}`;
 }

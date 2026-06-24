@@ -15,6 +15,9 @@ export const legal = defineCollections({
   type: "doc",
   dir: "./content/legal",
   async: true,
+  postprocess: {
+    includeProcessedMarkdown: true 
+  }
 });
 
 
