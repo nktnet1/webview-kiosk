@@ -64,7 +64,9 @@ fun CreateShortcutDialog(
     var urlError by remember { mutableStateOf<String?>(null) }
     var isOpenHistoryDialog by remember { mutableStateOf(false) }
 
-    var previewIcon by remember { mutableStateOf(IconUtils.buildLetterIcon(shortLabel)) }
+    var previewIcon by remember {
+        mutableStateOf(IconUtils.buildLetterIcon(shortLabel))
+    }
 
     val canCreate = (
         shortLabelError == null
@@ -206,10 +208,12 @@ fun CreateShortcutDialog(
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     }
 
-                    val shortcut = ShortcutInfoCompat.Builder(context, safeUrl)
+                    val uniqueId = "${System.currentTimeMillis()}_${safeUrl}"
+                    val shortcut = ShortcutInfoCompat.Builder(context, uniqueId)
                         .setShortLabel(safeShortLabel)
                         .setLongLabel(safeLongLabel)
-                        .setIcon(IconUtils.buildLetterIcon(shortLabel))
+                        .setIcon(previewIcon)
+                        .setAlwaysBadged()
                         .setIntent(intent)
                         .build()
 
