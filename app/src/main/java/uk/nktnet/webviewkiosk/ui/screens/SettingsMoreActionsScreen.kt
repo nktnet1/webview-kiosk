@@ -46,6 +46,7 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.dialog.AppLauncherDialog
+import uk.nktnet.webviewkiosk.ui.components.setting.dialog.CreateShortcutDialog
 import uk.nktnet.webviewkiosk.ui.placeholders.WebViewUnavailable
 import uk.nktnet.webviewkiosk.utils.openAppDetailsSettings
 import uk.nktnet.webviewkiosk.utils.openDataUsageSettings
@@ -80,6 +81,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
 
     val systemSettings = SystemSettings(context)
     var showAppLauncherDialog by remember { mutableStateOf(false) }
+    var showCreateShortcutDialog by remember { mutableStateOf(false) }
 
     DisposableEffect(webView) {
         onDispose {
@@ -109,7 +111,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(16.dp))
 
             SectionHeader(
-                stringResource(R.string.settings_more_action_section_shortcuts)
+                stringResource(R.string.settings_more_action_section_quick_access)
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -187,6 +189,29 @@ fun SettingsMoreActionsScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
             SectionHeader(
+                stringResource(R.string.settings_more_action_section_tools)
+            )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                ActionButton(
+                    stringResource(R.string.settings_more_action_create_shortcut),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    showCreateShortcutDialog = true
+                }
+                ActionButton(
+                    stringResource(R.string.settings_more_action_app_launcher),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    showAppLauncherDialog = true
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            SectionHeader(
                 stringResource(R.string.settings_more_action_section_manage)
             )
             Row(
@@ -216,12 +241,7 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                 ) {
                     navController.navigate(Screen.SettingsDeviceOwner.route)
                 }
-                ActionButton(
-                    stringResource(R.string.settings_more_action_app_launcher),
-                    modifier = Modifier.weight(1f)
-                ) {
-                    showAppLauncherDialog = true
-                }
+                Spacer(modifier = Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -320,6 +340,13 @@ fun SettingsMoreActionsScreen(navController: NavController) {
         showDialog = showAppLauncherDialog,
         onDismiss = {
             showAppLauncherDialog = false
+        }
+    )
+
+    CreateShortcutDialog(
+        showDialog = showCreateShortcutDialog,
+        onDismiss = {
+            showCreateShortcutDialog = false
         }
     )
 }
