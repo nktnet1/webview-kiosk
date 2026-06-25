@@ -24,7 +24,3 @@ local.properties
 
 .env*
 *.jks
-
-node_modules/
-.source/
-.output

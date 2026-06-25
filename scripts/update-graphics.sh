@@ -6,7 +6,7 @@ if ! command -v magick > /dev/null 2>&1; then
 fi
 
 # Metadata
-magick docs/src/app/icon.svg -background none -size 512x512 metadata/en-US/images/icon.png
+magick docs/public/icon.svg -background none -size 512x512 metadata/en-US/images/icon.png
 magick misc/featureGraphic.svg -background none -size 1024x500 metadata/en-US/images/featureGraphic.png
 
 # GitHub Social

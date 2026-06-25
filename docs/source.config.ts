@@ -1,4 +1,4 @@
-import { metaSchema, pageSchema } from "fumadocs-core/source/schema";
+import { pageSchema } from "fumadocs-core/source/schema";
 import {
   defineCollections,
   defineConfig,
@@ -7,23 +7,24 @@ import {
 import lastModified from "fumadocs-mdx/plugins/last-modified";
 
 export const docs = defineDocs({
+  dir: "./content/docs",
   docs: {
     schema: pageSchema,
-    async: true,
-  },
-  meta: {
-    schema: metaSchema,
+    postprocess: {
+      includeProcessedMarkdown: true,
+    },
   },
 });
 
 export const legal = defineCollections({
   type: "doc",
-  async: true,
-  schema: pageSchema,
   dir: "./content/legal",
+  schema: pageSchema,
+  postprocess: {
+    includeProcessedMarkdown: true,
+  },
 });
 
 export default defineConfig({
   plugins: [lastModified()],
-  mdxOptions: {},
 });

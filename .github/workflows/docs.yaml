@@ -58,13 +58,11 @@ jobs:
 
       - name: Build static site
         run: pnpm build
-        env:
-          NEXT_PUBLIC_BASE_PATH: ${{ steps.setup_pages.outputs.base_path }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./docs/out
+          path: ./docs/dist/client
 
   deploy:
     permissions:

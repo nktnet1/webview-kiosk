@@ -1,14 +1,12 @@
-import type { Metadata } from "next";
-import Link from "next/link";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { APP_DESCRIPTION, APP_NAME } from "@/config/app";
 
-export const metadata: Metadata = {
-  title: APP_NAME,
-  description: APP_DESCRIPTION,
-};
+export const Route = createFileRoute("/_homelayout/")({
+  component: Home,
+});
 
-export default function HomePage() {
+function Home() {
   return (
     <main className="flex flex-1 flex-col items-center text-center p-4 md:mt-8">
       <div className="bg-fd-muted rounded-2xl p-6 md:p-16">
@@ -18,10 +16,19 @@ export default function HomePage() {
         </p>
         <div className="flex flex-wrap gap-2 items-center justify-center">
           <Button asChild variant="info" className="w-28">
-            <Link href="/docs">Get Started</Link>
+            <Link
+              to="/docs/$"
+              params={{
+                _splat: "",
+              }}
+            >
+              Get Started
+            </Link>
           </Button>
           <Button asChild variant="success" className="w-28">
-            <Link href="/docs/installation">Download</Link>
+            <Link to="/docs/$" params={{ _splat: "installation" }}>
+              Download
+            </Link>
           </Button>
         </div>
       </div>
