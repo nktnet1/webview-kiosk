@@ -2,12 +2,17 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react";
 import mdx from "fumadocs-mdx/vite";
+import urlJoin from "url-join";
 import { defineConfig, type Plugin } from "vite";
+
+const basePath = urlJoin("/", process.env.PUBLIC_DOCS_BASE_PATH ?? "/");
 
 export default defineConfig({
   server: {
     port: 3000,
   },
+  envPrefix: "PUBLIC_",
+  base: basePath,
   plugins: [
     mdx(),
     tailwindcss(),
@@ -23,6 +28,12 @@ export default defineConfig({
       pages: [
         {
           path: "/docs",
+        },
+        {
+          path: "/privacy",
+        },
+        {
+          path: "/terms",
         },
         {
           path: "/api/search",
