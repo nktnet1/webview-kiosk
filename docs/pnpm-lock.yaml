@@ -59,9 +59,6 @@ importers:
       react-qr-code:
         specifier: 2.2.0
         version: 2.2.0(react@19.2.7)
-      shiki:
-        specifier: ^4.2.0
-        version: 4.2.0
       sonner:
         specifier: 2.0.7
         version: 2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -77,12 +74,6 @@ importers:
       valibot:
         specifier: 1.4.1
         version: 1.4.1(typescript@6.0.3)
-      vite:
-        specifier: ^8.1.0
-        version: 8.1.0(@types/node@26.0.1)(esbuild@0.28.1)(jiti@2.7.0)
-      wrangler:
-        specifier: ^4.104.0
-        version: 4.104.0
     devDependencies:
       '@biomejs/biome':
         specifier: ^2.5.1
@@ -108,6 +99,9 @@ importers:
       serve:
         specifier: ^14.2.6
         version: 14.2.6
+      shiki:
+        specifier: ^4.2.0
+        version: 4.2.0
       srvx:
         specifier: ^0.11.17
         version: 0.11.17
@@ -117,6 +111,12 @@ importers:
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
+      vite:
+        specifier: ^8.1.0
+        version: 8.1.0(@types/node@26.0.1)(esbuild@0.28.1)(jiti@2.7.0)
+      wrangler:
+        specifier: ^4.104.0
+        version: 4.104.0
 
 packages:
 
