@@ -1,16 +1,14 @@
-## Webview Kiosk Documentation
+# docs-tanstack
 
-This is the documentation site for Webview Kiosk, built using
-[Fumadocs](https://fumadocs.dev) and [Next.js](https://nextjs.org).
+This is a Tanstack Start application generated with
+[Create Fumadocs](https://github.com/fuma-nama/fumadocs).
 
-To run the site locally, use the commands:
+Run development server:
 
-```sh
-git clone git@github.com:nktnet1/webview-kiosk.git
-cd webview-kiosk/docs
-
-pnpm i
+```bash
+npm run dev
+# or
 pnpm dev
+# or
+yarn dev
 ```
-
-Then go to `http://localhost:3000`.
