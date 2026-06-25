@@ -18,6 +18,7 @@ import { Route as DocsChar123Char125DotmdRouteImport } from './routes/docs/{$}[.
 import { Route as DocsSplatRouteImport } from './routes/docs/$'
 import { Route as ApiSearchRouteImport } from './routes/api/search'
 import { Route as HomelayoutSplatRouteImport } from './routes/_homelayout/$'
+import { Route as HomelayoutProvisionDeviceIndexRouteImport } from './routes/_homelayout/provision-device/index'
 
 const Char123Char125DotmdRoute = Char123Char125DotmdRouteImport.update({
   id: '/{$}.md',
@@ -63,6 +64,12 @@ const HomelayoutSplatRoute = HomelayoutSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => HomelayoutRouteRoute,
 } as any)
+const HomelayoutProvisionDeviceIndexRoute =
+  HomelayoutProvisionDeviceIndexRouteImport.update({
+    id: '/provision-device/',
+    path: '/provision-device/',
+    getParentRoute: () => HomelayoutRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof HomelayoutIndexRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/api/search': typeof ApiSearchRoute
   '/docs/$': typeof DocsSplatRoute
   '/docs/{$}.md': typeof DocsChar123Char125DotmdRoute
+  '/provision-device/': typeof HomelayoutProvisionDeviceIndexRoute
 }
 export interface FileRoutesByTo {
   '/llms-full.txt': typeof LlmsFullDottxtRoute
@@ -83,6 +91,7 @@ export interface FileRoutesByTo {
   '/docs/$': typeof DocsSplatRoute
   '/docs/{$}.md': typeof DocsChar123Char125DotmdRoute
   '/': typeof HomelayoutIndexRoute
+  '/provision-device': typeof HomelayoutProvisionDeviceIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -95,6 +104,7 @@ export interface FileRoutesById {
   '/docs/$': typeof DocsSplatRoute
   '/docs/{$}.md': typeof DocsChar123Char125DotmdRoute
   '/_homelayout/': typeof HomelayoutIndexRoute
+  '/_homelayout/provision-device/': typeof HomelayoutProvisionDeviceIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -107,6 +117,7 @@ export interface FileRouteTypes {
     | '/api/search'
     | '/docs/$'
     | '/docs/{$}.md'
+    | '/provision-device/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/llms-full.txt'
@@ -117,6 +128,7 @@ export interface FileRouteTypes {
     | '/docs/$'
     | '/docs/{$}.md'
     | '/'
+    | '/provision-device'
   id:
     | '__root__'
     | '/_homelayout'
@@ -128,6 +140,7 @@ export interface FileRouteTypes {
     | '/docs/$'
     | '/docs/{$}.md'
     | '/_homelayout/'
+    | '/_homelayout/provision-device/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -205,17 +218,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomelayoutSplatRouteImport
       parentRoute: typeof HomelayoutRouteRoute
     }
+    '/_homelayout/provision-device/': {
+      id: '/_homelayout/provision-device/'
+      path: '/provision-device'
+      fullPath: '/provision-device/'
+      preLoaderRoute: typeof HomelayoutProvisionDeviceIndexRouteImport
+      parentRoute: typeof HomelayoutRouteRoute
+    }
   }
 }
 
 interface HomelayoutRouteRouteChildren {
   HomelayoutSplatRoute: typeof HomelayoutSplatRoute
   HomelayoutIndexRoute: typeof HomelayoutIndexRoute
+  HomelayoutProvisionDeviceIndexRoute: typeof HomelayoutProvisionDeviceIndexRoute
 }
 
 const HomelayoutRouteRouteChildren: HomelayoutRouteRouteChildren = {
   HomelayoutSplatRoute: HomelayoutSplatRoute,
   HomelayoutIndexRoute: HomelayoutIndexRoute,
+  HomelayoutProvisionDeviceIndexRoute: HomelayoutProvisionDeviceIndexRoute,
 }
 
 const HomelayoutRouteRouteWithChildren = HomelayoutRouteRoute._addFileChildren(
