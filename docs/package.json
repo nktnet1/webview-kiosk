@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "start": "serve dist/client --config ../../serve.json",
+    "start": "serve dist/client",
     "preview": "vite preview",
     "typecheck": "fumadocs-mdx && tsc --noEmit",
     "postinstall": "fumadocs-mdx",
