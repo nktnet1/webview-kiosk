@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-router";
 import { RootProvider } from "fumadocs-ui/provider/tanstack";
 import SearchDialog from "@/components/search";
+import { Toaster } from "@/components/ui/sonner";
 import { APP_NAME } from "@/config/app";
 import appCss from "@/styles/app.css?url";
 
@@ -40,6 +41,7 @@ function RootComponent() {
       <body className="flex flex-col min-h-screen">
         <RootProvider search={{ SearchDialog }}>
           <Outlet />
+          <Toaster />
         </RootProvider>
         <Scripts />
       </body>

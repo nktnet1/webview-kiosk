@@ -64,8 +64,8 @@ const clientLoader = browserCollections.legal.createClientLoader({
       markdownUrl,
       path,
     }: {
-      title: string,
-      description?: string,
+      title: string;
+      description?: string;
       path: string;
       markdownUrl: string;
     },
@@ -86,19 +86,17 @@ const clientLoader = browserCollections.legal.createClientLoader({
             backgroundBlendMode: "difference, difference, normal",
           }}
         >
-          <h1 className="mb-2 text-3xl font-bold text-white">
-            {title}
-          </h1>
+          <h1 className="mb-2 text-3xl font-bold text-white">{title}</h1>
           <p className="mb-4 text-white/80">{description}</p>
         </div>
 
-        <article className="container grid grid-cols-1 px-0 py-2 md:py-4 lg:grid-cols-[2fr_1fr] lg:px-4">
+        <article className="container grid grid-cols-1 px-0 py-2 md:py-4 lg:grid-cols-[2fr_1fr] lg:px-4 gap-y-6">
           <div className="prose">
             <InlineTOC className="mt-6 mb-0" items={toc} />
             <MDX components={components} />
           </div>
-          <div className="prose p-4 flex flex-col mt-3">
-            <div className="flex flex-row gap-2 items-center border-b pb-6">
+          <div className="prose p-4 flex flex-col items-center mt-3">
+            <div className="flex flex-row gap-2 items-center justify-center border-b pb-6">
               <MarkdownCopyButton markdownUrl={markdownUrl} />
               <ViewOptionsPopover
                 markdownUrl={markdownUrl}
@@ -114,13 +112,20 @@ const clientLoader = browserCollections.legal.createClientLoader({
 });
 
 function Page() {
-  const { title, description, markdownUrl, path } = useFumadocsLoader(Route.useLoaderData());
+  const { title, description, markdownUrl, path } = useFumadocsLoader(
+    Route.useLoaderData(),
+  );
 
   return (
     <HomeLayout {...homeBaseOptions()}>
       <Link to={markdownUrl} hidden />
       <Suspense>
-        {clientLoader.useContent(path, { title, description, markdownUrl, path })}
+        {clientLoader.useContent(path, {
+          title,
+          description,
+          markdownUrl,
+          path,
+        })}
       </Suspense>
     </HomeLayout>
   );
