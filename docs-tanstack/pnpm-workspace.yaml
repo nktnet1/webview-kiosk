@@ -1,4 +1,6 @@
 allowBuilds:
   esbuild: false
+  sharp: false
+  workerd: false
 minimumReleaseAgeExclude:
   - '@types/node@26.0.1'

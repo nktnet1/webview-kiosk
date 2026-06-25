@@ -28,3 +28,4 @@ local.properties
 node_modules/
 .source/
 .output
+.wrangler
