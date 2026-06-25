@@ -4,6 +4,7 @@
   "compatibility_date": "2025-01-01",
   "assets": {
     "directory": "./dist/client",
+    "not_found_handling": "404-page",
     "binding": "ASSETS"
   },
   "observability": {

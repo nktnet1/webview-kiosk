@@ -16,4 +16,5 @@ node_modules
 .tanstack
 
 .source
+.wrangler
 dist/
