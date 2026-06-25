@@ -9,14 +9,12 @@ import {
   PageLastUpdate,
   ViewOptionsPopover,
 } from "fumadocs-ui/layouts/docs/page";
-import { HomeLayout } from "fumadocs-ui/layouts/home";
 import { Suspense } from "react";
 import { useMDXComponents } from "@/components/mdx";
-import { homeBaseOptions } from "@/lib/layout.shared";
 import { gitConfig } from "@/lib/shared";
 import { legal, slugsToMarkdownPath } from "@/lib/source";
 
-export const Route = createFileRoute("/$")({
+export const Route = createFileRoute("/_homelayout/$")({
   component: Page,
   loader: async ({ params }) => {
     const slugs = params._splat?.split("/") ?? [];
@@ -117,7 +115,7 @@ function Page() {
   );
 
   return (
-    <HomeLayout {...homeBaseOptions()}>
+    <main>
       <Link to={markdownUrl} hidden />
       <Suspense>
         {clientLoader.useContent(path, {
@@ -127,6 +125,6 @@ function Page() {
           path,
         })}
       </Suspense>
-    </HomeLayout>
+    </main>
   );
 }

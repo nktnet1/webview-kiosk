@@ -12,11 +12,12 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as Char123Char125DotmdRouteImport } from './routes/{$}[.]md'
 import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
 import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
-import { Route as SplatRouteImport } from './routes/$'
-import { Route as IndexRouteImport } from './routes/index'
+import { Route as HomelayoutRouteRouteImport } from './routes/_homelayout/route'
+import { Route as HomelayoutIndexRouteImport } from './routes/_homelayout/index'
 import { Route as DocsChar123Char125DotmdRouteImport } from './routes/docs/{$}[.]md'
 import { Route as DocsSplatRouteImport } from './routes/docs/$'
 import { Route as ApiSearchRouteImport } from './routes/api/search'
+import { Route as HomelayoutSplatRouteImport } from './routes/_homelayout/$'
 
 const Char123Char125DotmdRoute = Char123Char125DotmdRouteImport.update({
   id: '/{$}.md',
@@ -33,15 +34,14 @@ const LlmsFullDottxtRoute = LlmsFullDottxtRouteImport.update({
   path: '/llms-full.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SplatRoute = SplatRouteImport.update({
-  id: '/$',
-  path: '/$',
+const HomelayoutRouteRoute = HomelayoutRouteRouteImport.update({
+  id: '/_homelayout',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
+const HomelayoutIndexRoute = HomelayoutIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRouteImport,
+  getParentRoute: () => HomelayoutRouteRoute,
 } as any)
 const DocsChar123Char125DotmdRoute = DocsChar123Char125DotmdRouteImport.update({
   id: '/docs/{$}.md',
@@ -58,74 +58,80 @@ const ApiSearchRoute = ApiSearchRouteImport.update({
   path: '/api/search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HomelayoutSplatRoute = HomelayoutSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => HomelayoutRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/$': typeof SplatRoute
+  '/': typeof HomelayoutIndexRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/{$}.md': typeof Char123Char125DotmdRoute
+  '/$': typeof HomelayoutSplatRoute
   '/api/search': typeof ApiSearchRoute
   '/docs/$': typeof DocsSplatRoute
   '/docs/{$}.md': typeof DocsChar123Char125DotmdRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/$': typeof SplatRoute
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/{$}.md': typeof Char123Char125DotmdRoute
+  '/$': typeof HomelayoutSplatRoute
   '/api/search': typeof ApiSearchRoute
   '/docs/$': typeof DocsSplatRoute
   '/docs/{$}.md': typeof DocsChar123Char125DotmdRoute
+  '/': typeof HomelayoutIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/$': typeof SplatRoute
+  '/_homelayout': typeof HomelayoutRouteRouteWithChildren
   '/llms-full.txt': typeof LlmsFullDottxtRoute
   '/llms.txt': typeof LlmsDottxtRoute
   '/{$}.md': typeof Char123Char125DotmdRoute
+  '/_homelayout/$': typeof HomelayoutSplatRoute
   '/api/search': typeof ApiSearchRoute
   '/docs/$': typeof DocsSplatRoute
   '/docs/{$}.md': typeof DocsChar123Char125DotmdRoute
+  '/_homelayout/': typeof HomelayoutIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/$'
     | '/llms-full.txt'
     | '/llms.txt'
     | '/{$}.md'
+    | '/$'
     | '/api/search'
     | '/docs/$'
     | '/docs/{$}.md'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/'
-    | '/$'
     | '/llms-full.txt'
     | '/llms.txt'
     | '/{$}.md'
+    | '/$'
     | '/api/search'
     | '/docs/$'
     | '/docs/{$}.md'
+    | '/'
   id:
     | '__root__'
-    | '/'
-    | '/$'
+    | '/_homelayout'
     | '/llms-full.txt'
     | '/llms.txt'
     | '/{$}.md'
+    | '/_homelayout/$'
     | '/api/search'
     | '/docs/$'
     | '/docs/{$}.md'
+    | '/_homelayout/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  SplatRoute: typeof SplatRoute
+  HomelayoutRouteRoute: typeof HomelayoutRouteRouteWithChildren
   LlmsFullDottxtRoute: typeof LlmsFullDottxtRoute
   LlmsDottxtRoute: typeof LlmsDottxtRoute
   Char123Char125DotmdRoute: typeof Char123Char125DotmdRoute
@@ -157,19 +163,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LlmsFullDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/$': {
-      id: '/$'
-      path: '/$'
-      fullPath: '/$'
-      preLoaderRoute: typeof SplatRouteImport
+    '/_homelayout': {
+      id: '/_homelayout'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof HomelayoutRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
+    '/_homelayout/': {
+      id: '/_homelayout/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
+      preLoaderRoute: typeof HomelayoutIndexRouteImport
+      parentRoute: typeof HomelayoutRouteRoute
     }
     '/docs/{$}.md': {
       id: '/docs/{$}.md'
@@ -192,12 +198,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_homelayout/$': {
+      id: '/_homelayout/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof HomelayoutSplatRouteImport
+      parentRoute: typeof HomelayoutRouteRoute
+    }
   }
 }
 
+interface HomelayoutRouteRouteChildren {
+  HomelayoutSplatRoute: typeof HomelayoutSplatRoute
+  HomelayoutIndexRoute: typeof HomelayoutIndexRoute
+}
+
+const HomelayoutRouteRouteChildren: HomelayoutRouteRouteChildren = {
+  HomelayoutSplatRoute: HomelayoutSplatRoute,
+  HomelayoutIndexRoute: HomelayoutIndexRoute,
+}
+
+const HomelayoutRouteRouteWithChildren = HomelayoutRouteRoute._addFileChildren(
+  HomelayoutRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  SplatRoute: SplatRoute,
+  HomelayoutRouteRoute: HomelayoutRouteRouteWithChildren,
   LlmsFullDottxtRoute: LlmsFullDottxtRoute,
   LlmsDottxtRoute: LlmsDottxtRoute,
   Char123Char125DotmdRoute: Char123Char125DotmdRoute,
