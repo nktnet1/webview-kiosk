@@ -37,7 +37,11 @@ export default defineConfig({
       ],
     }),
     react(),
-    nitro(),
+    nitro({
+      renderer: {
+        static: true,
+      }
+    }),
   ],
   resolve: {
     tsconfigPaths: true,
