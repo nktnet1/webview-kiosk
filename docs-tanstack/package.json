@@ -8,7 +8,7 @@
     "build": "vite build",
     "start": "serve .output/public --config ../../serve.json",
     "preview": "vite preview",
-    "types:check": "fumadocs-mdx && tsc --noEmit",
+    "typecheck": "fumadocs-mdx && tsc --noEmit",
     "postinstall": "fumadocs-mdx",
     "lint": "biome lint",
     "format": "biome format",
