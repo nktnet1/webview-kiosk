@@ -6,12 +6,10 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { RootProvider } from "fumadocs-ui/provider/tanstack";
-import urlJoin from "url-join";
 import IconAsset from "@/assets/icon.svg";
-import SearchDialog from "@/components/search";
+import SearchDialog from "@/components/fumadocs/search";
 import { Toaster } from "@/components/ui/sonner";
 import { APP_NAME } from "@/config/app";
-import { getBasePath } from "@/lib/basePath";
 import appCss from "@/styles/app.css?url";
 
 export const Route = createRootRoute({
@@ -43,14 +41,7 @@ function RootComponent() {
         <HeadContent />
       </head>
       <body className="flex flex-col min-h-screen">
-        <RootProvider
-          search={{
-            SearchDialog,
-            options: {
-              api: urlJoin(getBasePath(), "/api/search"),
-            },
-          }}
-        >
+        <RootProvider search={{ SearchDialog }}>
           <Outlet />
           <Toaster />
           <TanStackRouterDevtools position="bottom-right" />
