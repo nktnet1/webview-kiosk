@@ -3,7 +3,6 @@ title: UnifiedPush
 description: Control kiosk devices via push messages
 ---
 
-import { APP_NAME } from '@/config/app';
 
 ## 1. Introduction
 
@@ -11,14 +10,14 @@ UnifiedPush is a decentralised push notification system designed to be
 privacy-friendly, flexible, and open.
 For more information, see the official documentation: https://unifiedpush.org
 
-{APP_NAME} utilises UnifiedPush to enable you to remotely:
+[[APP_NAME]] utilises UnifiedPush to enable you to remotely:
 
 - update app settings
 - perform actions via commands
 
 ## 2. Distributor
 
-To use UnifiedPush with {APP_NAME}, you will need to choose a
+To use UnifiedPush with [[APP_NAME]], you will need to choose a
 [distributor](https://unifiedpush.org/users/distributors)
 application, e.g.
 
@@ -49,7 +48,7 @@ lifecycle. The logs will not persist between app restarts.
 
 ### 4.1. Enabled
 
-Allow {APP_NAME} to process new push messages or register new endpoints.
+Allow [[APP_NAME]] to process new push messages or register new endpoints.
 
 **Default:** false
 
@@ -61,7 +60,7 @@ The package name of the [distributor](https://unifiedpush.org/users/distributors
 - io.heckel.ntfy
 
 The distributor app serves as the middle-man that receives the app notification
-from the push server and forwarding it to {APP_NAME}.
+from the push server and forwarding it to [[APP_NAME]].
 
 **Default:** (blank)
 
@@ -97,7 +96,7 @@ For more details, see:
 
 ### 4.6. Process Unencrypted Messages
 
-When enabled, {APP_NAME} will also handle UnifiedPush messages that
+When enabled, [[APP_NAME]] will also handle UnifiedPush messages that
 did not successfully decrypt.
 
 A valid use case for this would be to for sending simple curl requests
@@ -108,7 +107,7 @@ this reduces security.
 
 ### 4.7. Store Endpoint Credentials
 
-When enabled, {APP_NAME} will persist the following values after registration:
+When enabled, [[APP_NAME]] will persist the following values after registration:
 
 - Endpoint URL
 - Endpoint Public Key
@@ -117,7 +116,7 @@ When enabled, {APP_NAME} will persist the following values after registration:
 Ideally, these values should not be stored at all, and are instead sent
 directly to the application server at the point of registration.
 
-However, {APP_NAME} does not yet have an application server. These values are
+However, [[APP_NAME]] does not yet have an application server. These values are
 thus stored locally in the application so they can be copied. They can be
 optionally redacted afterwards through the settings UI.
 

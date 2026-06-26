@@ -1,5 +1,5 @@
 {
-  "include": ["**/*.ts", "**/*.tsx", "content/**/*.mdx"],
+  "include": ["**/*.ts", "**/*.tsx", "./content/**/*.mdx"],
   "compilerOptions": {
     "strict": true,
     "esModuleInterop": true,

@@ -3,7 +3,6 @@ title: Topics
 description: Publish and subscribe topics
 ---
 
-import { APP_NAME } from '@/config/app';
 
 <Callout title="Tip" type="info">
 
@@ -18,7 +17,7 @@ To understand MQTT's publish and subscribe architecture, refer to
 
 ### 1.1. Quality of Service (QoS)
 
-All topics in {APP_NAME} will allow the Quality of Service to be configured using one of:
+All topics in [[APP_NAME]] will allow the Quality of Service to be configured using one of:
 
 | QoS | Description |
 |-----|-------------|
@@ -130,7 +129,7 @@ of the global variables.
 For **subscribed topics**, the `targetInstances` and `targetUsernames` (**type:** string array)
 can be optionally provided.
 
-{APP_NAME} will ignore messages that contain these properties if neither
+[[APP_NAME]] will ignore messages that contain these properties if neither
 of its `appInstanceId` or `username` were specified in the array.
 
 When the arrays are empty (or `null`/`undefined`), all messages will be processed.

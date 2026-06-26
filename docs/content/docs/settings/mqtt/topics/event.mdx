@@ -3,7 +3,6 @@ title: Event
 description: Publish device and webview state changes
 ---
 
-import { APP_NAME } from '@/config/app';
 
 ## 1. Settings
 
@@ -43,7 +42,7 @@ mentioned previously, as well as an additional `eventType` property.
 
 ### 2.1. Connected
 
-The `connected` event is published when {APP_NAME} has successfully connected
+The `connected` event is published when [[APP_NAME]] has successfully connected
 to your configured MQTT Broker.
 
 The payload data is identical to the `get_status` request/response.

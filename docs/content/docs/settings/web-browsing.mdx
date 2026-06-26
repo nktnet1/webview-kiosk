@@ -44,7 +44,7 @@ Set to true to allow the user to go home using one of:
 1. Clicking the <span className="inline-flex">(<EllipsisVertical />)</span> icon on the right of the address bar (top-right corner of screen) and selecting `Home`
 1. Clicking the floating toolbar <span className="inline-flex">(<Wrench className="-rotate-90"/>)</span> icon and selecting `Home`
 1. Clicking your device's home button
-    - This requires {APP_NAME} to be set as the **default launcher (home) app**
+    - This requires [[APP_NAME]] to be set as the **default launcher (home) app**
 
 **Default:** true
 
@@ -354,7 +354,7 @@ The following actions are available to be configured (remove or rearrange):
         When in lock task mode (kiosk), the following are required to launch apps:
         <ol>
           <li>Your device is on Android 9+ (SDK/API level 28+)</li>
-          <li>{APP_NAME} is lock task permitted</li>
+          <li>[[APP_NAME]] is lock task permitted</li>
           <li>The target app is lock task permitted</li>
           <li><code>Lock Task Feature -> HOME</code> is enabled</li>
         </ol>
@@ -362,19 +362,19 @@ The following actions are available to be configured (remove or rearrange):
         The last condition helps avoid being trapped in lock task mode. It
         enables the use of the home button to open your default launcher
         (which *may* show an error that you can safely dismiss).
-        From the launcher, you can find and open {APP_NAME} to unlock the kiosk.
+        From the launcher, you can find and open [[APP_NAME]] to unlock the kiosk.
 
         You may want to also consider:
 
         <ol>
-          <li>Granting notifications permission to {APP_NAME}</li>
+          <li>Granting notifications permission to [[APP_NAME]]</li>
           <li>Enabling <code>Lock Task Feature -> NOTIFICATIONS</code></li>
-          <li>Setting {APP_NAME} as the default launcher</li>
+          <li>Setting [[APP_NAME]] as the default launcher</li>
         </ol>
 
         The first two suggestions is to display the foreground service
         notification in lock task mode. Tapping on the notification will
-        return you to {APP_NAME}.
+        return you to [[APP_NAME]].
 
         Please note that for user-owned devices utilising "Screen Pinning"
         mode, app launching is not supported.

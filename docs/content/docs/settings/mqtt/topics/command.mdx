@@ -3,7 +3,6 @@ title: Command
 description: Subscribe to control commands (actions)
 ---
 
-import { APP_NAME } from '@/config/app';
 
 ## 1. Settings
 
@@ -31,7 +30,7 @@ in case of connection failures.
 
 ### 1.3. Retain Handling
 
-Control whether {APP_NAME} should receive existing
+Control whether [[APP_NAME]] should receive existing
 retained messages when subscribing.
 
 **Default:** Do Not Send (2)
@@ -83,7 +82,7 @@ the following properties exists for all commands:
         This requires <code>Settings → MQTT → Use Foreground Service</code>.
 
         It is highly recommended that you disable battery optimisation for
-        {APP_NAME}, which will help keep its foreground service alive.
+        [[APP_NAME]], which will help keep its foreground service alive.
 
         For more details, visit
         - https://dontkillmyapp.com
@@ -218,7 +217,7 @@ Example Payload:
 ### 2.6. Search
 
 Perform a query search using the selected search engine. This
-is the same as using {APP_NAME}'s address bar.
+is the same as using [[APP_NAME]]'s address bar.
 
 Example Payload:
 
@@ -305,13 +304,13 @@ Example Payload:
 
 ### 2.9. Lock
 
-Start lock task mode (or screen pinning) depending on whether {APP_NAME} has
+Start lock task mode (or screen pinning) depending on whether [[APP_NAME]] has
 device owner permissions.
 
 Please note that for screen pinning, the user will be prompted to confirm the
 action, which needs to be done on the device.
 
-If possible, we recommend to always enable lock task packages for {APP_NAME} -
+If possible, we recommend to always enable lock task packages for [[APP_NAME]] -
 more details in the [security](/docs/security) section.
 
 Example Payload:
@@ -335,7 +334,7 @@ Example Payload:
 
 ### 2.10. Unlock
 
-Stop lock task mode (or screen pinning) depending on whether {APP_NAME} has
+Stop lock task mode (or screen pinning) depending on whether [[APP_NAME]] has
 device owner permissions.
 
 Example Payload:
@@ -546,7 +545,7 @@ Open an application based on its package name, e.g. `com.afwsamples.testdpc`.
 In Lock Task Mode, the same restrictions outlined in [Web Browsing](/docs/settings/web-browsing)
 under `Kiosk Control Panel Actions -> Apps` applies.
 
-Additionally, packages can only be launched when {APP_NAME} is in the foreground, unless
+Additionally, packages can only be launched when [[APP_NAME]] is in the foreground, unless
 direct Device Owner permission has been granted. Dhizuku is insufficient.
 
 In the payload `data`, you can optionally specify the `activityName`. For example, this can

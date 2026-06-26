@@ -3,7 +3,6 @@ title: Integration
 description: Examples of sending push messages
 ---
 
-import { APP_NAME } from '@/config/app';
 
 ## 1. Curl (ntfy)
 
@@ -14,7 +13,7 @@ This solution is specific to the ntfy server and is less secure than web push.
 </Callout>
 
 If you use [ntfy](https://github.com/binwiederhier/ntfy) as your distributor
-and push server, it is possible to send push messages directly to {APP_NAME}
+and push server, it is possible to send push messages directly to [[APP_NAME]]
 via an [API client](https://www.postman.com/api-platform/api-client/) such as
 [curl](https://curl.se).
 
@@ -140,7 +139,7 @@ ENDPOINT_AUTH_SECRET=
 
 <Step>
 
-In {APP_NAME}, under the `Settings -> UnifiedPush` screen,
+In [[APP_NAME]], under the `Settings -> UnifiedPush` screen,
 
 1. Enable UnifiedPush
 2. Select a distributor (e.g. ntfy or sunup)
@@ -231,7 +230,7 @@ Run the script with:
 pnpx tsx src/index.ts
 ```
 
-This will result in {APP_NAME} creating an on-screen message (i.e. toast) on
+This will result in [[APP_NAME]] creating an on-screen message (i.e. toast) on
 your device.
 
 </Step>
