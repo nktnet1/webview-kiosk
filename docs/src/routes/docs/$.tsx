@@ -13,7 +13,7 @@ import {
   ViewOptionsPopover,
 } from "fumadocs-ui/layouts/docs/page";
 import { Suspense } from "react";
-import { useMDXComponents } from "@/components/mdx";
+import { useMDXComponents } from "@/components/fumadocs/mdx";
 import { baseOptions } from "@/lib/layout.shared";
 import { gitConfig } from "@/lib/shared";
 import { slugsToMarkdownPath, source } from "@/lib/source";
