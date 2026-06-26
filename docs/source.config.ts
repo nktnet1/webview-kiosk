@@ -15,18 +15,17 @@ function remarkReplaceConstants(options: {
   return (tree: Root) => {
     visit(tree, (node, index, parent) => {
       if (
-        !(
-          node.type === "mdxFlowExpression" || node.type === "mdxTextExpression"
-        )
+        node.type !== "mdxFlowExpression"
+        && node.type !== "mdxTextExpression"
       ) {
         return;
       }
 
       const replacementValue = options.constants[node.value];
       if (
-        replacementValue !== undefined &&
-        parent &&
-        typeof index === "number"
+        parent
+        && replacementValue !== undefined
+        && typeof index === "number"
       ) {
         parent.children[index] = {
           type: "text",
