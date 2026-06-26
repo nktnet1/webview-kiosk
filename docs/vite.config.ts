@@ -69,7 +69,7 @@ function generate404Page(): Plugin {
     <meta http-equiv="refresh" content="0; url=/">
     <title>Redirecting...</title>
     <script>
-        window.location.replace("/");
+        window.location.replace("${basePath}");
     </script>
 </head>
 </html>`;
