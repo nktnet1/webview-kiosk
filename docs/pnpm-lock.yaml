@@ -23,9 +23,6 @@ importers:
       '@tanstack/react-start':
         specifier: 1.168.26
         version: 1.168.26(crossws@0.4.6(srvx@0.11.17))(esbuild@0.28.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rolldown@1.1.3)(vite@8.1.0(@types/node@26.0.1)(esbuild@0.28.1)(jiti@2.7.0))
-      '@tanstack/start-static-server-functions':
-        specifier: 1.167.17
-        version: 1.167.17(@tanstack/react-start@1.168.26(crossws@0.4.6(srvx@0.11.17))(esbuild@0.28.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rolldown@1.1.3)(vite@8.1.0(@types/node@26.0.1)(esbuild@0.28.1)(jiti@2.7.0)))
       class-variance-authority:
         specifier: 0.7.1
         version: 0.7.1
@@ -56,6 +53,9 @@ importers:
       react-qr-code:
         specifier: 2.2.0
         version: 2.2.0(react@19.2.7)
+      seroval:
+        specifier: ^1.5.4
+        version: 1.5.4
       sonner:
         specifier: 2.0.7
         version: 2.0.7(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -1808,18 +1808,6 @@ packages:
   '@tanstack/start-server-core@1.169.15':
     resolution: {integrity: sha512-V8ie2G2Ecb3Nklk8/QuKzulxb+tDUqgz6rjJe8Isdp4iKVXZu/TscItkUP/4Q5Bu7W4gUy3P25O6soC1oW1SXQ==}
     engines: {node: '>=22.12.0'}
-
-  '@tanstack/start-static-server-functions@1.167.17':
-    resolution: {integrity: sha512-Vje5veG9bMS2hD+6nelpCwRiJwt+6L0EqNuxDJigQ31+dj0YklPBUSC8dDfBZZQq4/2USRZmd+em3YHt3FT73g==}
-    engines: {node: '>=22.12.0'}
-    peerDependencies:
-      '@tanstack/react-start': ^1.168.25
-      '@tanstack/solid-start': ^1.168.25
-    peerDependenciesMeta:
-      '@tanstack/react-start':
-        optional: true
-      '@tanstack/solid-start':
-        optional: true
 
   '@tanstack/start-storage-context@1.167.15':
     resolution: {integrity: sha512-Jy0q4vdG6pv76N92+X+ag3fuOV2zINQagYyMN1/es7tPI1vzpKECIU8AqHqzI6ahkwaph7XDvmfUkiLJ3i4LOA==}
@@ -5089,13 +5077,6 @@ snapshots:
       seroval: 1.5.4
     transitivePeerDependencies:
       - crossws
-
-  '@tanstack/start-static-server-functions@1.167.17(@tanstack/react-start@1.168.26(crossws@0.4.6(srvx@0.11.17))(esbuild@0.28.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rolldown@1.1.3)(vite@8.1.0(@types/node@26.0.1)(esbuild@0.28.1)(jiti@2.7.0)))':
-    dependencies:
-      '@tanstack/start-client-core': 1.170.12
-      seroval: 1.5.4
-    optionalDependencies:
-      '@tanstack/react-start': 1.168.26(crossws@0.4.6(srvx@0.11.17))(esbuild@0.28.1)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(rolldown@1.1.3)(vite@8.1.0(@types/node@26.0.1)(esbuild@0.28.1)(jiti@2.7.0))
 
   '@tanstack/start-storage-context@1.167.15':
     dependencies:
