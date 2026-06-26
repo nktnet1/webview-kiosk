@@ -2,6 +2,8 @@ import { docs, legal as legalPages } from "collections/server";
 import { loader } from "fumadocs-core/source";
 import { lucideIconsPlugin } from "fumadocs-core/source/lucide-icons";
 import { toFumadocsSource } from "fumadocs-mdx/runtime/server";
+import urlJoin from "url-join";
+import { getBasePath } from "./basePath";
 import { docsRoute } from "./shared";
 
 export const source = loader({
@@ -37,21 +39,7 @@ export function slugsToMarkdownPath(slugs: string[]) {
 
   return {
     segments,
-    url: `${docsRoute}/${segments.join("/")}`,
-  };
-}
-
-export function getPageMarkdownUrl(slugs: string[]) {
-  const segments = [...slugs];
-  if (segments.length === 0) {
-    segments.push("index.md");
-  } else {
-    segments[segments.length - 1] += ".md";
-  }
-
-  return {
-    segments,
-    url: `${docsRoute}/${segments.join("/")}`,
+    url: urlJoin(getBasePath(), docsRoute, segments.join("/")),
   };
 }
 
