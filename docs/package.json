@@ -41,6 +41,7 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.1",
     "@tailwindcss/vite": "^4.3.1",
+    "@types/mdast": "4.0.4",
     "@types/mdx": "^2.0.14",
     "@types/node": "^26.0.1",
     "@types/react": "^19.2.17",
@@ -51,6 +52,7 @@
     "srvx": "^0.11.17",
     "tailwindcss": "^4.3.1",
     "typescript": "^6.0.3",
+    "unist-util-visit": "5.1.0",
     "vite": "^8.1.0",
     "wrangler": "^4.104.0"
   },

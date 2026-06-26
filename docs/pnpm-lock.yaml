@@ -81,6 +81,9 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.3.1
         version: 4.3.1(vite@8.1.0(@types/node@26.0.1)(esbuild@0.28.1)(jiti@2.7.0))
+      '@types/mdast':
+        specifier: 4.0.4
+        version: 4.0.4
       '@types/mdx':
         specifier: ^2.0.14
         version: 2.0.14
@@ -111,6 +114,9 @@ importers:
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
+      unist-util-visit:
+        specifier: 5.1.0
+        version: 5.1.0
       vite:
         specifier: ^8.1.0
         version: 8.1.0(@types/node@26.0.1)(esbuild@0.28.1)(jiti@2.7.0)

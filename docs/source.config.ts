@@ -5,6 +5,36 @@ import {
   defineDocs,
 } from "fumadocs-mdx/config";
 import lastModified from "fumadocs-mdx/plugins/last-modified";
+import type { Root } from "mdast";
+import { visit } from "unist-util-visit";
+import { APP_NAME } from "./src/config/app";
+
+function remarkReplaceConstants(options: {
+  constants: Record<string, string>;
+}) {
+  return (tree: Root) => {
+    visit(tree, (node, index, parent) => {
+      if (
+        node.type !== "mdxFlowExpression"
+        && node.type !== "mdxTextExpression"
+      ) {
+        return;
+      }
+
+      const replacementValue = options.constants[node.value];
+      if (
+        parent
+        && replacementValue !== undefined
+        && typeof index === "number"
+      ) {
+        parent.children[index] = {
+          type: "text",
+          value: replacementValue,
+        };
+      }
+    });
+  };
+}
 
 export const docs = defineDocs({
   dir: "./content/docs",
@@ -27,4 +57,16 @@ export const legal = defineCollections({
 
 export default defineConfig({
   plugins: [lastModified()],
+  mdxOptions: {
+    remarkPlugins: [
+      [
+        remarkReplaceConstants,
+        {
+          constants: {
+            APP_NAME,
+          },
+        },
+      ],
+    ],
+  },
 });
