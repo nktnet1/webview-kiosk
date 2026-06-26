@@ -4,6 +4,7 @@ import {
   Outlet,
   Scripts,
 } from "@tanstack/react-router";
+import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { RootProvider } from "fumadocs-ui/provider/tanstack";
 import urlJoin from "url-join";
 import IconAsset from "@/assets/icon.svg";
@@ -52,6 +53,7 @@ function RootComponent() {
         >
           <Outlet />
           <Toaster />
+          <TanStackRouterDevtools position="bottom-right" />
         </RootProvider>
         <Scripts />
       </body>
