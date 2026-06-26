@@ -1,6 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import { staticFunctionMiddleware } from "@tanstack/start-static-server-functions";
 import browserCollections from "collections/browser";
 import { useFumadocsLoader } from "fumadocs-core/source/client";
 import { InlineTOC } from "fumadocs-ui/components/inline-toc";
@@ -13,6 +12,7 @@ import { Suspense } from "react";
 import { useMDXComponents } from "@/components/fumadocs/mdx";
 import { gitConfig } from "@/lib/shared";
 import { legal, slugsToMarkdownPath } from "@/lib/source";
+import { staticFunctionMiddleware } from "@/lib/staticMiddlewareFunction";
 
 export const Route = createFileRoute("/_homelayout/$")({
   component: Page,
