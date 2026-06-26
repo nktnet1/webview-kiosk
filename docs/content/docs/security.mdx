@@ -17,7 +17,7 @@ the authentication session will be revoked.
 
 ## 2. Default Launcher
 
-By setting [[APP_NAME]] as the default launcher (home screen) app, any attempts to
+By setting {APP_NAME} as the default launcher (home screen) app, any attempts to
 leave the app will simply re-open it.
 
 To do this, use the `Launcher` option in [Setting Actions](/docs/setting-actions).
@@ -50,7 +50,7 @@ See the `Device Owner Mode` section for further details.
 If you have access to your
 [Device Policy Controller (DPC)](https://developer.android.com/work/dpc/build-dpc),
 or your MDM/EMM has provided an interface to do so, it is recommended that you
-add [[APP_NAME]] to the allowlist of apps for lock task packages.
+add {APP_NAME} to the allowlist of apps for lock task packages.
 
 This has the benefits of:
 
@@ -64,7 +64,7 @@ This has the benefits of:
 
 In
 [Lock Task Mode](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode),
-the only way to unlock [[APP_NAME]] would be using a methods provided in-app,
+the only way to unlock {APP_NAME} would be using a methods provided in-app,
 which are always configurable and can be disabled. The supported methods are
 currently:
 
@@ -79,11 +79,11 @@ There are also standalone applications that, when set as the device owner, can
 perform the duties of a DPC. Below are instructions for two popular applications:
 1. Google's [Test DPC](https://github.com/googlesamples/android-testdpc)
 
-   - Go to `Lock Task -> Manage lock task list` and enable [[APP_NAME]].
+   - Go to `Lock Task -> Manage lock task list` and enable {APP_NAME}.
 
 2. [OwnDroid](https://github.com/BinTianqi/OwnDroid)
 
-   - Go to `System -> Lock Task Mode -> Applications` and add [[APP_NAME]]'s package
+   - Go to `System -> Lock Task Mode -> Applications` and add {APP_NAME}'s package
    name, which you can find in the [Settings -> About](/docs/settings/about) screen.
 
 Finally, if you are writing your own DPC, the kotlin code to achieve this would be:
@@ -105,9 +105,9 @@ For more information, see
 
 ### 3.3. Device Owner Mode
 
-When set as the device owner, [[APP_NAME]] can act as a DPC and automatically adds itself to the
+When set as the device owner, {APP_NAME} can act as a DPC and automatically adds itself to the
 [allowlist for lock task packages](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode).
-It is also possible for [[APP_NAME]] to add other applications in settings, thus allowing it to
+It is also possible for {APP_NAME} to add other applications in settings, thus allowing it to
 launch other apps in Lock Task Mode (kiosk).
 
 The easiest way is to factory reset your device and use the
@@ -140,7 +140,7 @@ Remove all accounts.
 
 <Step>
 
-Set [[APP_NAME]] as the device owner using Android Debug Bridge (ADB) on a computer:
+Set {APP_NAME} as the device owner using Android Debug Bridge (ADB) on a computer:
 
 ```sh
 adb shell dpm set-device-owner uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver
@@ -158,7 +158,7 @@ for a video demonstration.
 
 </Steps>
 
-[[APP_NAME]] also supports [Dhizuku](https://github.com/iamr0s/Dhizuku), a
+{APP_NAME} also supports [Dhizuku](https://github.com/iamr0s/Dhizuku), a
 tool that can share device owner permissions.
 
 If you encounter any troubles with the setup, it is worth taking a look at the
@@ -169,7 +169,7 @@ which includes helpful debugging steps when setting up a device owner applicatio
 
 For fully managed (company-owned) devices, you can use
 [managed configurations](https://developer.android.com/work/managed-configurations)
-to restrict and remotely modify [[APP_NAME]] settings through your MDM/EMM.
+to restrict and remotely modify {APP_NAME} settings through your MDM/EMM.
 
 It is also possible to set app restrictions using [OwnDroid](https://github.com/BinTianqi/OwnDroid)
 or [Test DPC](https://github.com/googlesamples/android-testdpc).
