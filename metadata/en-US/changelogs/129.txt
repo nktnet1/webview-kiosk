@@ -1,0 +1,10 @@
+## Changes
+
+- feat: allow creation of android launcher shortcuts for URLs
+- feat: support PDF rendering via Mozilla's PDF.js
+- feat: dark reader settings under js scripts
+- feat: add support for loading the eruda console under js scripts
+- fix(auth): bypass auth for window when launching activities
+- fix: refresh state on resume for nfc status
+- docs: add NFC to the list of permissions
+- deps: bump dhizuku api version to 2.6.0
