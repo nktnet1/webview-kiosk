@@ -9,6 +9,7 @@ import {
   DocsPage,
   DocsTitle,
   MarkdownCopyButton,
+  PageLastUpdate,
   ViewOptionsPopover,
 } from "fumadocs-ui/layouts/docs/page";
 import { Suspense } from "react";
@@ -51,6 +52,7 @@ const loader = createServerFn({
     return {
       path: page.path,
       title: page.data.title,
+      lastModified: page.data.lastModified,
       markdownUrl: slugsToMarkdownPath(page.slugs).url,
       pageTree: await source.serializePageTree(source.getPageTree()),
     };
@@ -62,9 +64,11 @@ const clientLoader = browserCollections.docs.createClientLoader({
     {
       markdownUrl,
       path,
+      lastModified,
     }: {
       markdownUrl: string;
       path: string;
+      lastModified?: Date;
     },
   ) {
     // biome-ignore lint/correctness/useHookAtTopLevel: default fumadocs template
@@ -82,6 +86,12 @@ const clientLoader = browserCollections.docs.createClientLoader({
         </div>
         <DocsBody>
           <MDX components={components} />
+          {lastModified && (
+            <PageLastUpdate
+              className="mb-6 mt-8 pt-4 border-t-2"
+              date={lastModified}
+            />
+          )}
         </DocsBody>
       </DocsPage>
     );
@@ -89,7 +99,7 @@ const clientLoader = browserCollections.docs.createClientLoader({
 });
 
 function Page() {
-  const { pageTree, path, markdownUrl } = useFumadocsLoader(
+  const { pageTree, path, markdownUrl, lastModified } = useFumadocsLoader(
     Route.useLoaderData(),
   );
 
@@ -97,7 +107,7 @@ function Page() {
     <DocsLayout {...baseOptions()} tree={pageTree}>
       <Link to={markdownUrl} hidden />
       <Suspense>
-        {clientLoader.useContent(path, { markdownUrl, path })}
+        {clientLoader.useContent(path, { markdownUrl, path, lastModified })}
       </Suspense>
     </DocsLayout>
   );
