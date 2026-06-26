@@ -10,8 +10,10 @@
   "observability": {
     "logs": {
       "enabled": true,
-      "invocation_logs": true,
-      "traces": true
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": true
     }
   }
 }
