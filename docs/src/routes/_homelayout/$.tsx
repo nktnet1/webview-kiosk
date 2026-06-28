@@ -47,7 +47,7 @@ const loader = createServerFn({
       path: page.path,
       title: page.data.title,
       description: page.data.description,
-      markdownUrl: slugsToMarkdownPath(page.slugs, "").url,
+      markdownUrl: slugsToMarkdownPath(page.slugs, "/").url,
       pageTree: await legal.serializePageTree(legal.getPageTree()),
       lastModified: page.data.lastModified,
     };

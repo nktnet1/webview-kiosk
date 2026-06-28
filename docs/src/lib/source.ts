@@ -3,7 +3,6 @@ import { loader } from "fumadocs-core/source";
 import { lucideIconsPlugin } from "fumadocs-core/source/lucide-icons";
 import { toFumadocsSource } from "fumadocs-mdx/runtime/server";
 import urlJoin from "url-join";
-import { getBasePath } from "./basePath";
 import { docsRoute } from "./shared";
 
 export const source = loader({
@@ -39,7 +38,7 @@ export function slugsToMarkdownPath(slugs: string[], baseRoute: string) {
 
   return {
     segments,
-    url: urlJoin(getBasePath(), baseRoute, segments.join("/")),
+    url: urlJoin(baseRoute, segments.join("/")),
   };
 }
 
