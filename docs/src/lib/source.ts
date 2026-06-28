@@ -29,7 +29,7 @@ export function markdownPathToSlugs(segs: string[]) {
   return out;
 }
 
-export function slugsToMarkdownPath(slugs: string[]) {
+export function slugsToMarkdownPath(slugs: string[], baseRoute: string) {
   const segments = [...slugs];
   if (segments.length === 0) {
     segments.push("index.md");
@@ -39,7 +39,7 @@ export function slugsToMarkdownPath(slugs: string[]) {
 
   return {
     segments,
-    url: urlJoin(getBasePath(), docsRoute, segments.join("/")),
+    url: urlJoin(getBasePath(), baseRoute, segments.join("/")),
   };
 }
 

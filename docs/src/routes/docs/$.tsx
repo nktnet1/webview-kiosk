@@ -15,7 +15,7 @@ import {
 import { Suspense } from "react";
 import { useMDXComponents } from "@/components/fumadocs/mdx";
 import { baseOptions } from "@/lib/layout.shared";
-import { gitConfig } from "@/lib/shared";
+import { docsRoute, gitConfig } from "@/lib/shared";
 import { slugsToMarkdownPath, source } from "@/lib/source";
 import { staticFunctionMiddleware } from "@/lib/staticMiddlewareFunction";
 
@@ -53,7 +53,7 @@ const loader = createServerFn({
       path: page.path,
       title: page.data.title,
       lastModified: page.data.lastModified,
-      markdownUrl: slugsToMarkdownPath(page.slugs).url,
+      markdownUrl: slugsToMarkdownPath(page.slugs, docsRoute).url,
       pageTree: await source.serializePageTree(source.getPageTree()),
     };
   });
