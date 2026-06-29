@@ -8,13 +8,11 @@ import {
   DocsDescription,
   DocsPage,
   DocsTitle,
+  MarkdownCopyButton,
   PageLastUpdate,
+  ViewOptionsPopover,
 } from "fumadocs-ui/layouts/docs/page";
 import { Suspense } from "react";
-import {
-  MarkdownCopyButton,
-  ViewOptionsPopover,
-} from "@/components/ai/page-actions";
 import { useMDXComponents } from "@/components/fumadocs/mdx";
 import { baseOptions } from "@/lib/layout.shared";
 import { docsRoute, gitConfig } from "@/lib/shared";

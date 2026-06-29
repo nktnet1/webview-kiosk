@@ -3,4 +3,22 @@ allowBuilds:
   sharp: false
   workerd: false
 minimumReleaseAgeExclude:
-  - '@types/node@26.0.1'
+  - '@tailwindcss/node@4.3.2'
+  - '@tailwindcss/oxide-android-arm64@4.3.2'
+  - '@tailwindcss/oxide-darwin-arm64@4.3.2'
+  - '@tailwindcss/oxide-darwin-x64@4.3.2'
+  - '@tailwindcss/oxide-freebsd-x64@4.3.2'
+  - '@tailwindcss/oxide-linux-arm-gnueabihf@4.3.2'
+  - '@tailwindcss/oxide-linux-arm64-gnu@4.3.2'
+  - '@tailwindcss/oxide-linux-arm64-musl@4.3.2'
+  - '@tailwindcss/oxide-linux-x64-gnu@4.3.2'
+  - '@tailwindcss/oxide-linux-x64-musl@4.3.2'
+  - '@tailwindcss/oxide-wasm32-wasi@4.3.2'
+  - '@tailwindcss/oxide-win32-arm64-msvc@4.3.2'
+  - '@tailwindcss/oxide-win32-x64-msvc@4.3.2'
+  - '@tailwindcss/oxide@4.3.2'
+  - '@tailwindcss/vite@4.3.2'
+  - fumadocs-core@16.10.7
+  - fumadocs-ui@16.10.7
+  - lucide-react@1.22.0
+  - tailwindcss@4.3.2
