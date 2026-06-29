@@ -3,12 +3,12 @@ import { createServerFn } from "@tanstack/react-start";
 import browserCollections from "collections/browser";
 import { useFumadocsLoader } from "fumadocs-core/source/client";
 import { InlineTOC } from "fumadocs-ui/components/inline-toc";
+import { PageLastUpdate } from "fumadocs-ui/layouts/docs/page";
+import { Suspense } from "react";
 import {
   MarkdownCopyButton,
-  PageLastUpdate,
   ViewOptionsPopover,
-} from "fumadocs-ui/layouts/docs/page";
-import { Suspense } from "react";
+} from "@/components/ai/page-actions";
 import { useMDXComponents } from "@/components/fumadocs/mdx";
 import { gitConfig } from "@/lib/shared";
 import { legal, slugsToMarkdownPath } from "@/lib/source";
