@@ -356,7 +356,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onPause() {
         disableNfcReaderMode()
-        NfcBridgeManager.setScanActive(false)
         super.onPause()
     }
 
