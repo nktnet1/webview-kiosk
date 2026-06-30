@@ -1,7 +1,10 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import cn from "cnfast";
 import browserCollections from "collections/browser";
+import type { Separator } from "fumadocs-core/page-tree";
 import { useFumadocsLoader } from "fumadocs-core/source/client";
+import * as Base from "fumadocs-ui/components/sidebar/base";
 import { DocsLayout } from "fumadocs-ui/layouts/docs";
 import {
   DocsBody,
@@ -12,7 +15,7 @@ import {
   PageLastUpdate,
   ViewOptionsPopover,
 } from "fumadocs-ui/layouts/docs/page";
-import { Suspense } from "react";
+import { type ComponentProps, Suspense } from "react";
 import { useMDXComponents } from "@/components/fumadocs/mdx";
 import { baseOptions } from "@/lib/layout.shared";
 import { docsRoute, gitConfig } from "@/lib/shared";
@@ -98,13 +101,49 @@ const clientLoader = browserCollections.docs.createClientLoader({
   },
 });
 
+function SidebarSeparator({
+  className,
+  style,
+  children,
+  item,
+  ...props
+}: ComponentProps<"p"> & { item: Separator }) {
+  const depth = Base.useFolderDepth();
+
+  return (
+    <Base.SidebarSeparator
+      className={cn(
+        "[&_svg]:size-4 [&_svg]:shrink-0 first:mt-3 mt-4.5 mb-1",
+        className,
+      )}
+      style={{
+        paddingInlineStart: `calc(${2 + 3 * depth} * var(--spacing))`,
+        ...style,
+      }}
+      {...props}
+    >
+      <span className="inline-flex items-center gap-x-1.5">
+        {item.icon}
+        {item.name}
+      </span>
+    </Base.SidebarSeparator>
+  );
+}
+
 function Page() {
   const { pageTree, path, markdownUrl, lastModified } = useFumadocsLoader(
     Route.useLoaderData(),
   );
 
   return (
-    <DocsLayout {...baseOptions()} tree={pageTree}>
+    <DocsLayout
+      {...baseOptions()}
+      tree={pageTree}
+      sidebar={{
+        enabled: true,
+        components: { Separator: SidebarSeparator },
+      }}
+    >
       <Link to={markdownUrl} hidden />
       <Suspense>
         {clientLoader.useContent(path, { markdownUrl, path, lastModified })}
