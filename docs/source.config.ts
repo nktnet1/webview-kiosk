@@ -58,6 +58,16 @@ export const legal = defineCollections({
 export default defineConfig({
   plugins: [lastModified()],
   mdxOptions: {
+    remarkStructureOptions: {
+      types: [
+        "heading",
+        "paragraph",
+        "blockquote",
+        "tableCell",
+        "mdxJsxFlowElement",
+        "code",
+      ],
+    },
     remarkPlugins: [
       [
         remarkReplaceConstants,
