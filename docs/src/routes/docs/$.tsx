@@ -113,7 +113,7 @@ function SidebarSeparator({
   return (
     <Base.SidebarSeparator
       className={cn(
-        "[&_svg]:size-4 [&_svg]:shrink-0 first:mt-3 mt-4.5 mb-1",
+        "[&_svg]:size-4 [&_svg]:shrink-0 first:mt-2 mt-4 mb-1",
         className,
       )}
       style={{
