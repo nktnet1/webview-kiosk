@@ -112,7 +112,7 @@ fun createCustomWebview(
 
     var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
 
-    val cameraCaptureLauncher = rememberLauncherForActivityResult(
+    val captureLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         val captured = result.data?.data ?: pendingCaptureUri
@@ -125,7 +125,7 @@ fun createCustomWebview(
         pendingCaptureUri = null
     }
 
-    fun launchMediaCapture(action: String, fileSuffix: String) {
+    fun customLaunchCapture(action: String, fileSuffix: String) {
         runCatching {
             val captureDir = File(
                 context.cacheDir,
@@ -149,15 +149,15 @@ fun createCustomWebview(
                 addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
             }
             if (captureIntent.resolveActivity(context.packageManager) != null) {
-                cameraCaptureLauncher.launch(captureIntent)
+                captureLauncher.launch(captureIntent)
             } else {
-                ToastManager.show(context, "No camera app is available on this device.")
+                ToastManager.show(context, "No capture app is available on this device.")
                 pendingFileChooserCallback?.onReceiveValue(null)
                 pendingFileChooserCallback = null
                 pendingCaptureUri = null
             }
         }.onFailure {
-            ToastManager.show(context, "Could not open the camera.")
+            ToastManager.show(context, "Could not open the capture.")
             pendingFileChooserCallback?.onReceiveValue(null)
             pendingFileChooserCallback = null
             pendingCaptureUri = null
@@ -621,21 +621,50 @@ fun createCustomWebview(
                     val acceptTypes = fileChooserParams.acceptTypes.filter { it.isNotBlank() }
                     val wantsImage = acceptTypes.any { it.startsWith("image/") }
                     val wantsVideo = acceptTypes.any { it.startsWith("video/") }
+                    val wantsAudio = acceptTypes.any { it.startsWith("audio/") }
+
+                    val hasCameraPermission =
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.CAMERA,
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                    val hasAudioPermission =
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.RECORD_AUDIO,
+                        ) == PackageManager.PERMISSION_GRANTED
+
                     val captureRequest = when {
-                        !(
-                            fileChooserParams.isCaptureEnabled
+                        !fileChooserParams.isCaptureEnabled -> null
+                        (
+                            wantsImage
                             && config.userSettings.allowCamera
-                            && ContextCompat.checkSelfPermission(
-                                    context,
-                                    Manifest.permission.CAMERA
-                               ) == PackageManager.PERMISSION_GRANTED
-                        ) -> null
-                        wantsImage -> MediaStore.ACTION_IMAGE_CAPTURE to ".jpg"
-                        wantsVideo -> MediaStore.ACTION_VIDEO_CAPTURE to ".mp4"
-                        else -> null
+                            && hasCameraPermission
+                        ) -> {
+                            MediaStore.ACTION_IMAGE_CAPTURE to ".jpg"
+                        }
+                        (
+                            wantsVideo
+                            && config.userSettings.allowCamera
+                            && hasCameraPermission
+                        ) -> {
+                            MediaStore.ACTION_VIDEO_CAPTURE to ".mp4"
+                        }
+                        (
+                            wantsAudio
+                            && config.userSettings.allowMicrophone
+                            && hasAudioPermission
+                        ) -> {
+                            MediaStore.Audio.Media.RECORD_SOUND_ACTION to ".m4a"
+                        }
+                        else -> {
+                            null
+                        }
                     }
+
                     if (captureRequest != null) {
-                        launchMediaCapture(
+                        customLaunchCapture(
                             captureRequest.first,
                             captureRequest.second,
                         )
