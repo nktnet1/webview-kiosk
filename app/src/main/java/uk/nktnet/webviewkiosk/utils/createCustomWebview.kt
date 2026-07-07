@@ -111,7 +111,6 @@ fun createCustomWebview(
     }
 
     var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
-    var pendingCaptureRequest by remember { mutableStateOf<Pair<String, String>?>(null) }
 
     val cameraCaptureLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -128,8 +127,17 @@ fun createCustomWebview(
 
     fun launchMediaCapture(action: String, fileSuffix: String) {
         runCatching {
-            val captureDir = File(context.cacheDir, "capture").apply { mkdirs() }
-            val outputFile = File.createTempFile("capture_", fileSuffix, captureDir)
+            val captureDir = File(
+                context.cacheDir,
+                Constants.FILE_CAPTURE_CACHE_PATH_NAME
+            ).apply {
+                mkdirs()
+            }
+            val outputFile = File.createTempFile(
+                "${Constants.FILE_CAPTURE_CACHE_PATH_NAME}_",
+                fileSuffix,
+                captureDir
+            )
             val outputUri = FileProvider.getUriForFile(
                 context,
                 "${context.packageName}.provider",
@@ -153,20 +161,6 @@ fun createCustomWebview(
             pendingFileChooserCallback?.onReceiveValue(null)
             pendingFileChooserCallback = null
             pendingCaptureUri = null
-        }
-    }
-
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        val request = pendingCaptureRequest
-        pendingCaptureRequest = null
-        if (granted && request != null) {
-            launchMediaCapture(request.first, request.second)
-        } else {
-            ToastManager.show(context, "Camera permission is required to capture a photo or video.")
-            pendingFileChooserCallback?.onReceiveValue(null)
-            pendingFileChooserCallback = null
         }
     }
 
@@ -618,31 +612,33 @@ fun createCustomWebview(
 
                     pendingFileChooserCallback = filePathCallback
 
-                    // Honour the HTML `capture` attribute: when a page requests capture from an
-                    // image/video input (e.g. <input type="file" accept="image/*" capture>), open
-                    // the device camera app instead of the document picker. Gated behind the
-                    // existing "Allow camera" setting; falls back to the normal picker otherwise.
+                    /**
+                     * Honour the HTML `capture` attribute: when a page requests capture from an
+                     * image/video input (e.g. <input type="file" accept="image/\*" capture>), open
+                     * the device camera app instead of the document picker. Gated behind the
+                     * existing "Allow camera" setting; falls back to the normal picker otherwise.
+                     */
                     val acceptTypes = fileChooserParams.acceptTypes.filter { it.isNotBlank() }
-                    val wantsImage = acceptTypes.isEmpty() ||
-                        acceptTypes.any { it.startsWith("image/") || it == "*/*" }
+                    val wantsImage = acceptTypes.any { it.startsWith("image/") }
                     val wantsVideo = acceptTypes.any { it.startsWith("video/") }
                     val captureRequest = when {
-                        !fileChooserParams.isCaptureEnabled || !config.userSettings.allowCamera -> null
-                        wantsVideo && !wantsImage -> MediaStore.ACTION_VIDEO_CAPTURE to ".mp4"
+                        !(
+                            fileChooserParams.isCaptureEnabled
+                            && config.userSettings.allowCamera
+                            && ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.CAMERA
+                               ) == PackageManager.PERMISSION_GRANTED
+                        ) -> null
                         wantsImage -> MediaStore.ACTION_IMAGE_CAPTURE to ".jpg"
+                        wantsVideo -> MediaStore.ACTION_VIDEO_CAPTURE to ".mp4"
                         else -> null
                     }
-
                     if (captureRequest != null) {
-                        if (
-                            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
-                            == PackageManager.PERMISSION_GRANTED
-                        ) {
-                            launchMediaCapture(captureRequest.first, captureRequest.second)
-                        } else {
-                            pendingCaptureRequest = captureRequest
-                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                        }
+                        launchMediaCapture(
+                            captureRequest.first,
+                            captureRequest.second,
+                        )
                     } else {
                         val intent = fileChooserParams.createIntent()
                         if (fileChooserParams.mode == FileChooserParams.MODE_OPEN_MULTIPLE) {
