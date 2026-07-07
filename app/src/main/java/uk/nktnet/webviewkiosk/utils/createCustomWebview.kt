@@ -1,13 +1,16 @@
 package uk.nktnet.webviewkiosk.utils
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.net.http.SslError
 import android.os.Build
+import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
@@ -31,6 +34,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewCompat
@@ -103,6 +108,66 @@ fun createCustomWebview(
         }
         pendingFileChooserCallback?.onReceiveValue(uris)
         pendingFileChooserCallback = null
+    }
+
+    var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingCaptureRequest by remember { mutableStateOf<Pair<String, String>?>(null) }
+
+    val cameraCaptureLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val captured = result.data?.data ?: pendingCaptureUri
+        if (result.resultCode == Activity.RESULT_OK && captured != null) {
+            pendingFileChooserCallback?.onReceiveValue(arrayOf(captured))
+        } else {
+            pendingFileChooserCallback?.onReceiveValue(null)
+        }
+        pendingFileChooserCallback = null
+        pendingCaptureUri = null
+    }
+
+    fun launchMediaCapture(action: String, fileSuffix: String) {
+        runCatching {
+            val captureDir = File(context.cacheDir, "capture").apply { mkdirs() }
+            val outputFile = File.createTempFile("capture_", fileSuffix, captureDir)
+            val outputUri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.provider",
+                outputFile
+            )
+            pendingCaptureUri = outputUri
+            val captureIntent = Intent(action).apply {
+                putExtra(MediaStore.EXTRA_OUTPUT, outputUri)
+                addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            }
+            if (captureIntent.resolveActivity(context.packageManager) != null) {
+                cameraCaptureLauncher.launch(captureIntent)
+            } else {
+                ToastManager.show(context, "No camera app is available on this device.")
+                pendingFileChooserCallback?.onReceiveValue(null)
+                pendingFileChooserCallback = null
+                pendingCaptureUri = null
+            }
+        }.onFailure {
+            ToastManager.show(context, "Could not open the camera.")
+            pendingFileChooserCallback?.onReceiveValue(null)
+            pendingFileChooserCallback = null
+            pendingCaptureUri = null
+        }
+    }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        val request = pendingCaptureRequest
+        pendingCaptureRequest = null
+        if (granted && request != null) {
+            launchMediaCapture(request.first, request.second)
+        } else {
+            ToastManager.show(context, "Camera permission is required to capture a photo or video.")
+            pendingFileChooserCallback?.onReceiveValue(null)
+            pendingFileChooserCallback = null
+        }
     }
 
     fun buildWebView(): WebView {
@@ -548,8 +613,37 @@ fun createCustomWebview(
                             "File picker is disabled in ${context.getString(R.string.app_name)}'s Web Engine settings."
                         )
                         filePathCallback.onReceiveValue(null)
+                        return true
+                    }
+
+                    pendingFileChooserCallback = filePathCallback
+
+                    // Honour the HTML `capture` attribute: when a page requests capture from an
+                    // image/video input (e.g. <input type="file" accept="image/*" capture>), open
+                    // the device camera app instead of the document picker. Gated behind the
+                    // existing "Allow camera" setting; falls back to the normal picker otherwise.
+                    val acceptTypes = fileChooserParams.acceptTypes.filter { it.isNotBlank() }
+                    val wantsImage = acceptTypes.isEmpty() ||
+                        acceptTypes.any { it.startsWith("image/") || it == "*/*" }
+                    val wantsVideo = acceptTypes.any { it.startsWith("video/") }
+                    val captureRequest = when {
+                        !fileChooserParams.isCaptureEnabled || !config.userSettings.allowCamera -> null
+                        wantsVideo && !wantsImage -> MediaStore.ACTION_VIDEO_CAPTURE to ".mp4"
+                        wantsImage -> MediaStore.ACTION_IMAGE_CAPTURE to ".jpg"
+                        else -> null
+                    }
+
+                    if (captureRequest != null) {
+                        if (
+                            ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+                            == PackageManager.PERMISSION_GRANTED
+                        ) {
+                            launchMediaCapture(captureRequest.first, captureRequest.second)
+                        } else {
+                            pendingCaptureRequest = captureRequest
+                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
                     } else {
-                        pendingFileChooserCallback = filePathCallback
                         val intent = fileChooserParams.createIntent()
                         if (fileChooserParams.mode == FileChooserParams.MODE_OPEN_MULTIPLE) {
                             intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
