@@ -620,12 +620,6 @@ fun createCustomWebview(
 
                     pendingFileChooserCallback = filePathCallback
 
-                    /**
-                     * Honour the HTML `capture` attribute: when a page requests capture from an
-                     * image/video input (e.g. <input type="file" accept="image/\*" capture>), open
-                     * the device camera app instead of the document picker. Gated behind the
-                     * existing "Allow camera" setting; falls back to the normal picker otherwise.
-                     */
                     val acceptTypes = fileChooserParams.acceptTypes.filter { it.isNotBlank() }
                     val wantsImage = acceptTypes.any { it.startsWith("image/") }
                     val wantsVideo = acceptTypes.any { it.startsWith("video/") }
