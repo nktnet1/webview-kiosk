@@ -125,7 +125,15 @@ fun createCustomWebview(
         pendingCaptureUri = null
     }
 
-    fun customLaunchCapture(action: String, fileSuffix: String) {
+    fun launchFilePicker(fileChooserParams: WebChromeClient.FileChooserParams) {
+        val intent = fileChooserParams.createIntent()
+        if (fileChooserParams.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE) {
+            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        }
+        filePickerLauncher.launch(intent)
+    }
+
+    fun customLaunchCapture(action: String, fileSuffix: String): Boolean {
         runCatching {
             val captureDir = File(
                 context.cacheDir,
@@ -150,18 +158,18 @@ fun createCustomWebview(
             }
             if (captureIntent.resolveActivity(context.packageManager) != null) {
                 captureLauncher.launch(captureIntent)
+                return true
             } else {
-                ToastManager.show(context, "No capture app is available on this device.")
                 pendingFileChooserCallback?.onReceiveValue(null)
                 pendingFileChooserCallback = null
                 pendingCaptureUri = null
             }
         }.onFailure {
-            ToastManager.show(context, "Could not open the capture.")
             pendingFileChooserCallback?.onReceiveValue(null)
             pendingFileChooserCallback = null
             pendingCaptureUri = null
         }
+        return false
     }
 
     fun buildWebView(): WebView {
@@ -663,17 +671,16 @@ fun createCustomWebview(
                         }
                     }
 
-                    if (captureRequest != null) {
-                        customLaunchCapture(
+                    val captureHandled = (
+                        captureRequest != null
+                        && customLaunchCapture(
                             captureRequest.first,
                             captureRequest.second,
                         )
-                    } else {
-                        val intent = fileChooserParams.createIntent()
-                        if (fileChooserParams.mode == FileChooserParams.MODE_OPEN_MULTIPLE) {
-                            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
-                        }
-                        filePickerLauncher.launch(intent)
+                    )
+
+                    if (!captureHandled) {
+                        launchFilePicker(fileChooserParams)
                     }
                     return true
                 }
