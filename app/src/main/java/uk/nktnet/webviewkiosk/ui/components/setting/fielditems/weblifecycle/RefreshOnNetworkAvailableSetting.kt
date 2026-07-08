@@ -19,8 +19,8 @@ fun RefreshOnNetworkAvailableSetting() {
     DropdownSettingFieldItem(
         label = stringResource(R.string.web_lifecycle_refresh_on_network_available_title),
         infoText = """
-            Select when the page should automatically refresh when a
-            network connection becomes available.
+            Select when the page should automatically refresh when network
+            connectivity is restored.
 
             - Always: refresh whenever a network connection is available
             - On Page Error: only refresh if the previous page load failed
