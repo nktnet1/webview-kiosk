@@ -322,6 +322,14 @@
         android:description="@string/web_lifecycle_dim_screen_on_inactivity_seconds_description"
     />
     <restriction
+        android:key="web_lifecycle.refresh_on_network_available"
+        android:restrictionType="choice"
+        android:entries="@array/entries_refresh_on_network_available_option"
+        android:entryValues="@array/entry_values_refresh_on_network_available_option"
+        android:title="@string/web_lifecycle_refresh_on_network_available_title"
+        android:description="@string/web_lifecycle_refresh_on_network_available_description"
+    />
+    <restriction
         android:key="web_lifecycle.refresh_on_loading_error_interval_seconds"
         android:restrictionType="integer"
         android:title="@string/web_lifecycle_refresh_on_loading_error_interval_seconds_title"

@@ -20,6 +20,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +51,7 @@ import uk.nktnet.webviewkiosk.config.data.WebViewCreation
 import uk.nktnet.webviewkiosk.config.option.AddressBarModeOption
 import uk.nktnet.webviewkiosk.config.option.AddressBarPositionOption
 import uk.nktnet.webviewkiosk.config.option.FloatingToolbarModeOption
+import uk.nktnet.webviewkiosk.config.option.RefreshOnNetworkAvailableOption
 import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundErrorCommand
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundGoBackCommand
@@ -66,6 +68,7 @@ import uk.nktnet.webviewkiosk.handlers.BackPressHandler
 import uk.nktnet.webviewkiosk.handlers.DimScreenOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.handlers.ResetOnInactivityTimeoutHandler
 import uk.nktnet.webviewkiosk.managers.MqttManager
+import uk.nktnet.webviewkiosk.managers.NetworkManager
 import uk.nktnet.webviewkiosk.managers.PdfJsManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
@@ -390,6 +393,30 @@ fun WebviewScreen(navController: NavController) {
             }
         }
         webView.loadUrl(newUrl)
+    }
+
+    val isOnline by remember(context) {
+        NetworkManager.isOnline(context)
+    }.collectAsState(initial = true)
+    var previousOnline by remember { mutableStateOf<Boolean?>(null) }
+
+    LaunchedEffect(isOnline) {
+        if (previousOnline != null && previousOnline != isOnline) {
+            if (isOnline) {
+                when (userSettings.refreshOnNetworkAvailable) {
+                    RefreshOnNetworkAvailableOption.ALWAYS -> {
+                        WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
+                    }
+                    RefreshOnNetworkAvailableOption.ON_PAGE_ERROR -> {
+                        if (lastErrorUrl.isNotEmpty()) {
+                            WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
+                        }
+                    }
+                    RefreshOnNetworkAvailableOption.NEVER -> Unit
+                }
+            }
+        }
+        previousOnline = isOnline
     }
 
     val addressBarSearch: (String) -> Unit = { input ->

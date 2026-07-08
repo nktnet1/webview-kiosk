@@ -287,4 +287,15 @@
         <item>SEND_IF_SUBSCRIPTION_DOES_NOT_EXIST</item>
         <item>DO_NOT_SEND</item>
     </string-array>
+
+    <string-array name="entries_refresh_on_network_available_option">
+        <item>Always</item>
+        <item>On Page Error</item>
+        <item>Never</item>
+    </string-array>
+    <string-array name="entry_values_refresh_on_network_available_option">
+        <item>ALWAYS</item>
+        <item>ON_PAGE_ERROR</item>
+        <item>NEVER</item>
+    </string-array>
 </resources>
