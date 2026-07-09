@@ -63,6 +63,7 @@ and standalone Kiosk solution.
 ## Permissions
 
 - <b>INTERNET</b>: for general web browsing
+- <b>ACCESS_NETWORK_STATE</b>: to refresh web pages when network connectivity is restored
 - <b>CAMERA</b>: (optional) for use with web apps that requires photo/video capture
 - <b>RECORD_AUDIO</b>: (optional) for use with web apps that requires audio capture
 - <b>MODIFY_AUDIO_SETTINGS</b>: for routing audio (microphone will not work without this)

@@ -24,6 +24,7 @@ import uk.nktnet.webviewkiosk.config.option.LayoutAlgorithmOption
 import uk.nktnet.webviewkiosk.config.option.MixedContentModeOption
 import uk.nktnet.webviewkiosk.config.option.OverScrollModeOption
 import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
+import uk.nktnet.webviewkiosk.config.option.RefreshOnNetworkAvailableOption
 import uk.nktnet.webviewkiosk.config.option.SearchSuggestionEngineOption
 import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
@@ -365,6 +366,13 @@ class UserSettings(val context: Context) {
         0,
         min = 0,
         max = Constants.MAX_INT_SETTING,
+    )
+    var refreshOnNetworkAvailable by stringEnumPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.WebLifecycle.REFRESH_ON_NETWORK_AVAILABLE,
+        RefreshOnNetworkAvailableOption.ON_PAGE_ERROR.name,
+        fromString = RefreshOnNetworkAvailableOption::fromString
     )
     var refreshOnLoadingErrorIntervalSeconds by intPref(
         getRestrictions,
@@ -1050,6 +1058,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, resetOnLaunch)
             put(UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
             put(UserSettingsKeys.WebLifecycle.DIM_SCREEN_ON_INACTIVITY_SECONDS, dimScreenOnInactivitySeconds)
+            put(UserSettingsKeys.WebLifecycle.REFRESH_ON_NETWORK_AVAILABLE, refreshOnNetworkAvailable)
             put(UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS, refreshOnLoadingErrorIntervalSeconds)
 
             put(UserSettingsKeys.Appearance.THEME, theme.name)
@@ -1232,6 +1241,7 @@ class UserSettings(val context: Context) {
             resetOnLaunch = json.optBoolean(UserSettingsKeys.WebLifecycle.RESET_ON_LAUNCH, resetOnLaunch)
             resetOnInactivitySeconds = json.optInt(UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS, resetOnInactivitySeconds)
             dimScreenOnInactivitySeconds = json.optInt(UserSettingsKeys.WebLifecycle.DIM_SCREEN_ON_INACTIVITY_SECONDS, dimScreenOnInactivitySeconds)
+            refreshOnNetworkAvailable = RefreshOnNetworkAvailableOption.fromString(json.optString(UserSettingsKeys.WebLifecycle.REFRESH_ON_NETWORK_AVAILABLE, refreshOnNetworkAvailable.name))
             refreshOnLoadingErrorIntervalSeconds = json.optInt(UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS, refreshOnLoadingErrorIntervalSeconds)
 
             theme = ThemeOption.fromString(json.optString(UserSettingsKeys.Appearance.THEME, theme.name))

@@ -62,6 +62,7 @@ object UserSettingsKeys {
         const val RESET_ON_LAUNCH = "web_lifecycle.reset_on_launch"
         const val RESET_ON_INACTIVITY_SECONDS = "web_lifecycle.reset_on_inactivity_seconds"
         const val DIM_SCREEN_ON_INACTIVITY_SECONDS = "web_lifecycle.dim_screen_on_inactivity_seconds"
+        const val REFRESH_ON_NETWORK_AVAILABLE = "web_lifecycle.refresh_on_network_available"
         const val REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS = "web_lifecycle.refresh_on_loading_error_interval_seconds"
     }
 
