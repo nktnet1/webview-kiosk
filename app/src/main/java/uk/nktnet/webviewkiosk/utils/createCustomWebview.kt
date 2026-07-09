@@ -1,13 +1,16 @@
 package uk.nktnet.webviewkiosk.utils
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.net.http.SslError
 import android.os.Build
+import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
@@ -31,6 +34,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewCompat
@@ -103,6 +108,68 @@ fun createCustomWebview(
         }
         pendingFileChooserCallback?.onReceiveValue(uris)
         pendingFileChooserCallback = null
+    }
+
+    var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
+
+    val captureLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val captured = result.data?.data ?: pendingCaptureUri
+        if (result.resultCode == Activity.RESULT_OK && captured != null) {
+            pendingFileChooserCallback?.onReceiveValue(arrayOf(captured))
+        } else {
+            pendingFileChooserCallback?.onReceiveValue(null)
+        }
+        pendingFileChooserCallback = null
+        pendingCaptureUri = null
+    }
+
+    fun launchFilePicker(fileChooserParams: WebChromeClient.FileChooserParams) {
+        val intent = fileChooserParams.createIntent()
+        if (fileChooserParams.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE) {
+            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        }
+        filePickerLauncher.launch(intent)
+    }
+
+    fun customLaunchCapture(action: String, fileSuffix: String): Boolean {
+        runCatching {
+            val captureDir = File(
+                context.cacheDir,
+                Constants.FILE_CAPTURE_CACHE_PATH_NAME
+            ).apply {
+                mkdirs()
+            }
+            val outputFile = File.createTempFile(
+                "${Constants.FILE_CAPTURE_CACHE_PATH_NAME}_",
+                fileSuffix,
+                captureDir
+            )
+            val outputUri = FileProvider.getUriForFile(
+                context,
+                "${context.packageName}.provider",
+                outputFile
+            )
+            pendingCaptureUri = outputUri
+            val captureIntent = Intent(action).apply {
+                putExtra(MediaStore.EXTRA_OUTPUT, outputUri)
+                addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+            }
+            if (captureIntent.resolveActivity(context.packageManager) != null) {
+                captureLauncher.launch(captureIntent)
+                return true
+            } else {
+                pendingFileChooserCallback?.onReceiveValue(null)
+                pendingFileChooserCallback = null
+                pendingCaptureUri = null
+            }
+        }.onFailure {
+            pendingFileChooserCallback?.onReceiveValue(null)
+            pendingFileChooserCallback = null
+            pendingCaptureUri = null
+        }
+        return false
     }
 
     fun buildWebView(): WebView {
@@ -548,13 +615,66 @@ fun createCustomWebview(
                             "File picker is disabled in ${context.getString(R.string.app_name)}'s Web Engine settings."
                         )
                         filePathCallback.onReceiveValue(null)
-                    } else {
-                        pendingFileChooserCallback = filePathCallback
-                        val intent = fileChooserParams.createIntent()
-                        if (fileChooserParams.mode == FileChooserParams.MODE_OPEN_MULTIPLE) {
-                            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+                        return true
+                    }
+
+                    pendingFileChooserCallback = filePathCallback
+
+                    val acceptTypes = fileChooserParams.acceptTypes.filter { it.isNotBlank() }
+                    val wantsImage = acceptTypes.any { it.startsWith("image/") }
+                    val wantsVideo = acceptTypes.any { it.startsWith("video/") }
+                    val wantsAudio = acceptTypes.any { it.startsWith("audio/") }
+
+                    val hasCameraPermission =
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.CAMERA,
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                    val hasAudioPermission =
+                        ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.RECORD_AUDIO,
+                        ) == PackageManager.PERMISSION_GRANTED
+
+                    val captureRequest = when {
+                        !fileChooserParams.isCaptureEnabled -> null
+                        (
+                            wantsImage
+                            && config.userSettings.allowCamera
+                            && hasCameraPermission
+                        ) -> {
+                            MediaStore.ACTION_IMAGE_CAPTURE to ".jpg"
                         }
-                        filePickerLauncher.launch(intent)
+                        (
+                            wantsVideo
+                            && config.userSettings.allowCamera
+                            && hasCameraPermission
+                        ) -> {
+                            MediaStore.ACTION_VIDEO_CAPTURE to ".mp4"
+                        }
+                        (
+                            wantsAudio
+                            && config.userSettings.allowMicrophone
+                            && hasAudioPermission
+                        ) -> {
+                            MediaStore.Audio.Media.RECORD_SOUND_ACTION to ".m4a"
+                        }
+                        else -> {
+                            null
+                        }
+                    }
+
+                    val captureHandled = (
+                        captureRequest != null
+                        && customLaunchCapture(
+                            captureRequest.first,
+                            captureRequest.second,
+                        )
+                    )
+
+                    if (!captureHandled) {
+                        launchFilePicker(fileChooserParams)
                     }
                     return true
                 }
