@@ -1,0 +1,6 @@
+## Changes
+
+- feat(web-lifecycle): refresh on network available setting
+- feat: open camera or voice recorder for HTML <input capture> - photo/video/audio uploads
+- fix: only apply ime padding for Android 11+ or 8 and below
+- fix(nfc): remove setScanActive(False) on screen off
