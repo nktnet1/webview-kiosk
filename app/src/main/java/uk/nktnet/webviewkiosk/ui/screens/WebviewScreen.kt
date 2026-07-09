@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.ui.screens
 
 import android.app.Activity
 import android.content.Context
+import android.os.Build
 import android.util.Base64
 import android.util.Log
 import android.webkit.CookieManager
@@ -111,6 +112,15 @@ import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
 import java.io.File
 import java.net.URL
 import kotlin.time.Duration.Companion.milliseconds
+
+fun Modifier.imePaddingCompat(): Modifier = if (
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+    || Build.VERSION.SDK_INT <= Build.VERSION_CODES.P
+) {
+    this.imePadding()
+} else {
+    this
+}
 
 @Composable
 fun WebviewScreen(navController: NavController) {
@@ -529,7 +539,7 @@ fun WebviewScreen(navController: NavController) {
         modifier = Modifier
             .fillMaxSize()
             .windowInsetsPadding(userSettings.webViewInset.toWindowInsets())
-            .imePadding()
+            .imePaddingCompat()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             if (showAddressBar && userSettings.addressBarPosition == AddressBarPositionOption.TOP) {
