@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
 import android.content.Intent
+import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -181,7 +182,11 @@ fun CreateShortcutDialog(
                 }
 
                 val drawable = previewIcon.loadDrawable(context)
-                val bitmap = drawable?.toBitmap()
+                val bitmap = drawable?.toBitmap(
+                    width = 192,
+                    height = 192,
+                    config = Bitmap.Config.ARGB_8888
+                )
                 bitmap?.let {
                     Spacer(modifier = Modifier.height(20.dp))
                     Image(

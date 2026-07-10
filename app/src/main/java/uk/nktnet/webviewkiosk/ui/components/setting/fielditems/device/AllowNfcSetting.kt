@@ -26,7 +26,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.safeStartActivity
 
