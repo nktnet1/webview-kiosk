@@ -2,10 +2,3 @@ allowBuilds:
   esbuild: false
   sharp: false
   workerd: false
-minimumReleaseAgeExclude:
-  - lucide-react@1.24.0
-  - '@tanstack/form-core@1.33.1'
-  - '@tanstack/react-form@1.33.1'
-  - miniflare@4.20260708.1
-  - vite@8.1.4
-  - wrangler@4.110.0
