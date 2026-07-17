@@ -47,7 +47,8 @@ fun TextSettingFieldItem(
     onLongClick: ((value: String) -> Unit)? = null,
     validator: (String) -> Boolean = { true },
     validationMessage: String? = null,
-    onSave: (String) -> Unit,
+    onSave: ((String) -> Unit)? = null,
+    onSaveDeferred: ((String, () -> Unit) -> Unit)? = null,
     readOnly: Boolean = false,
     isPassword: Boolean = false,
     descriptionFormatter: ((String) -> String)? = null,
@@ -113,9 +114,16 @@ fun TextSettingFieldItem(
             onDismiss = { showDialog = false },
             onSave = {
                 if (!draftError) {
-                    value = draftValue
-                    onSave(draftValue)
-                    showDialog = false
+                    if (onSaveDeferred != null) {
+                        onSaveDeferred(draftValue) {
+                            value = draftValue
+                            showDialog = false
+                        }
+                    } else {
+                        onSave?.invoke(draftValue)
+                        value = draftValue
+                        showDialog = false
+                    }
                 }
             }
         ) {
