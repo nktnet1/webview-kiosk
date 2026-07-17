@@ -1,0 +1,6 @@
+## Changes
+
+- feat: support titles in bookmarks
+- feat: add confirmation for custom password save + show password checkbox
+- fix: allow https protocol with localhost scheme in URLs
+- fix: shortcut icon bitmap with fixed width and height
