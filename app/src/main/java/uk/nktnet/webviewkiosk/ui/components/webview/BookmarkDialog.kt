@@ -34,6 +34,11 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 
+private data class Bookmark(
+    val url: String,
+    val title: String,
+)
+
 @Composable
 fun BookmarksDialog(
     showBookmarkDialog: Boolean,
@@ -46,7 +51,20 @@ fun BookmarksDialog(
 
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-    val bookmarks = remember { userSettings.websiteBookmarks.lines().filter { it.isNotBlank() } }
+
+    val bookmarks = remember {
+        userSettings.websiteBookmarks.lines()
+            .filter { it.isNotBlank() }
+            .map { line ->
+                val parts = line.split("|", limit = 2)
+
+                Bookmark(
+                    url = parts[0].trim(),
+                    title = parts.getOrNull(1)?.trim().orEmpty(),
+                )
+            }
+    }
+
     val listState = rememberLazyListState()
 
     Dialog(onDismissRequest = onDismiss) {
@@ -64,7 +82,11 @@ fun BookmarksDialog(
                     .fillMaxSize()
                     .padding(16.dp)
             ) {
-                Text("Bookmarks", style = MaterialTheme.typography.headlineMedium)
+                Text(
+                    text = "Bookmarks",
+                    style = MaterialTheme.typography.headlineMedium
+                )
+
                 Spacer(Modifier.height(16.dp))
 
                 if (bookmarks.isEmpty()) {
@@ -85,13 +107,13 @@ fun BookmarksDialog(
                         modifier = Modifier.weight(1f),
                         state = listState
                     ) {
-                        itemsIndexed(bookmarks) { index, url ->
+                        itemsIndexed(bookmarks) { index, bookmark ->
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp)
                                     .clickable {
-                                        customLoadUrl(url)
+                                        customLoadUrl(bookmark.url)
                                         onDismiss()
                                     }
                             ) {
@@ -102,10 +124,23 @@ fun BookmarksDialog(
                                 ) {
                                     Text(
                                         text = buildAnnotatedString {
-                                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                            withStyle(
+                                                style = SpanStyle(
+                                                    fontWeight = FontWeight.Bold
+                                                )
+                                            ) {
                                                 append("[$index] ")
                                             }
-                                            append(url.toCharArray().joinToString("\u200B"))
+
+                                            val displayText = bookmark.title.ifEmpty {
+                                                bookmark.url
+                                            }
+
+                                            append(
+                                                displayText
+                                                    .toCharArray()
+                                                    .joinToString("\u200B")
+                                            )
                                         },
                                         maxLines = 2,
                                         overflow = TextOverflow.Ellipsis,
@@ -123,7 +158,9 @@ fun BookmarksDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
-                    TextButton(onClick = onDismiss) { Text("Close") }
+                    TextButton(onClick = onDismiss) {
+                        Text("Close")
+                    }
                 }
             }
         }

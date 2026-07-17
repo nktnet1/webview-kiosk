@@ -55,7 +55,19 @@ fun WebsiteBookmarksSetting() {
         restricted = restricted,
         isMultiline = true,
         validator = { input ->
-            input.isEmpty() || input.lines().all { validateUrl(it.trim()) }
+            input.isEmpty() || input.lines().all { line ->
+                val trimmedLine = line.trim()
+
+                if (trimmedLine.count { it == '|' } > 1) {
+                    false
+                } else {
+                    val url = trimmedLine
+                        .substringBefore('|')
+                        .trim()
+
+                    validateUrl(url)
+                }
+            }
         },
         validationMessage = "Some lines contain invalid URLs",
         onSave = { input ->
