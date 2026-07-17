@@ -52,3 +52,5 @@
 -dontwarn org.jboss.log4j.**
 -dontwarn org.slf4j.**
 -dontwarn sun.security.**
+-dontwarn org.osgi.annotation.bundle.Export
+-dontwarn reactor.blockhound.integration.BlockHoundIntegration

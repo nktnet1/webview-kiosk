@@ -43,19 +43,19 @@ fun WebsiteBookmarksSetting() {
         label = stringResource(R.string.web_content_website_bookmarks_title ),
         infoText = """
             Specify bookmarked URLs one per line. Blank lines will be ignored.
-            
+
             This is accessible in the address bar. See the relevant setting "Web Browsing -> Allow Bookmark Access".
-            
+
             You can also specify a title for display in the format: "<URL> | <Title>".
 
             For example:
-            
+
             ```
 
             ${Constants.WEBSITE_URL} | Webview Kiosk
-            
+
             https://duckduckgo.com | DuckDuckGo
-            
+
             https://f-droid.org | F-Droid
 
             ```
@@ -64,9 +64,9 @@ fun WebsiteBookmarksSetting() {
             e.g.
 
             ${Constants.WEBSITE_URL} | Webview Kiosk
-            
+
             https://duckduckgo.com | DuckDuckGo
-            
+
             https://f-droid.org | F-Droid
         """.trimIndent(),
         initialValue = userSettings.websiteBookmarks,
