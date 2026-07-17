@@ -32,6 +32,7 @@ fun validateUrl(input: String): Boolean {
             && (
                 Patterns.WEB_URL.matcher(trimmedInput).matches()
                 || uri.host?.matches(Regex("""\[[0-9a-fA-F:]+]""")) == true
+                || uri.host.equals("localhost", ignoreCase = true)
             )
         }
         "data" -> {
