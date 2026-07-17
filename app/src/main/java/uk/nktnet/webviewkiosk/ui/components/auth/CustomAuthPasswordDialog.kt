@@ -1,6 +1,8 @@
 package uk.nktnet.webviewkiosk.ui.components.auth
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +18,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -39,6 +42,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.android.awaitFrame
@@ -66,6 +70,7 @@ fun CustomAuthPasswordDialog() {
 
     val focusRequester = remember { FocusRequester() }
     var password by remember { mutableStateOf("") }
+    var showPassword by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     var waiting by remember { mutableStateOf(false) }
     var isError by remember { mutableStateOf(false) }
@@ -128,7 +133,11 @@ fun CustomAuthPasswordDialog() {
                     isError = isError,
                     label = { Text("Password") },
                     placeholder = { Text("Enter your password") },
-                    visualTransformation = PasswordVisualTransformation(),
+                    visualTransformation = if (showPassword) {
+                        VisualTransformation.None
+                    } else {
+                        PasswordVisualTransformation()
+                    },
                     keyboardOptions = if (isNumeric) {
                         KeyboardOptions(
                             keyboardType = KeyboardType.NumberPassword,
@@ -162,6 +171,33 @@ fun CustomAuthPasswordDialog() {
                         }
                     }
                 )
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth().padding(top = 2.dp, start = 2.dp),
+                ) {
+                    Checkbox(
+                        checked = showPassword,
+                        onCheckedChange = {
+                            showPassword = it
+                        }
+                    )
+
+                    Text(
+                        text = "Show password",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier
+                            .combinedClickable(
+                                interactionSource = remember {
+                                    MutableInteractionSource()
+                                },
+                                indication = null,
+                                onClick = {
+                                    showPassword = !showPassword
+                                }
+                            )
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
