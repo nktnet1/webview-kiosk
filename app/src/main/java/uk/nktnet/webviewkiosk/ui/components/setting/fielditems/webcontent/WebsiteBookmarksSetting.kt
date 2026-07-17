@@ -42,13 +42,32 @@ fun WebsiteBookmarksSetting() {
     TextSettingFieldItem(
         label = stringResource(R.string.web_content_website_bookmarks_title ),
         infoText = """
-            Add your bookmark URLs, one per line.
-            You can access the bookmarks using the address bar menu.
+            Specify bookmarked URLs one per line. Blank lines will be ignored.
+            
+            This is accessible in the address bar. See the relevant setting "Web Browsing -> Allow Bookmark Access".
+            
+            You can also specify a title for display in the format: "<URL> | <Title>".
+
+            For example:
+            
+            ```
+
+            ${Constants.WEBSITE_URL} | Webview Kiosk
+            
+            https://duckduckgo.com | DuckDuckGo
+            
+            https://f-droid.org | F-Droid
+
+            ```
         """.trimIndent(),
         placeholder = """
             e.g.
-            ${Constants.WEBSITE_URL}
-            ${Constants.SOURCE_CODE_URL}
+
+            ${Constants.WEBSITE_URL} | Webview Kiosk
+            
+            https://duckduckgo.com | DuckDuckGo
+            
+            https://f-droid.org | F-Droid
         """.trimIndent(),
         initialValue = userSettings.websiteBookmarks,
         settingKey = settingKey,
@@ -57,7 +76,6 @@ fun WebsiteBookmarksSetting() {
         validator = { input ->
             input.isEmpty() || input.lines().all { line ->
                 val trimmedLine = line.trim()
-
                 if (trimmedLine.count { it == '|' } > 1) {
                     false
                 } else {
