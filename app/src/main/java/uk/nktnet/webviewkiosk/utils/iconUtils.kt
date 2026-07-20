@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.utils
 
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -9,8 +10,12 @@ import androidx.core.graphics.drawable.IconCompat
 import java.util.UUID
 
 object IconUtils {
+    data class GeneratedIcon(
+        val icon: IconCompat,
+        val bitmap: Bitmap
+    )
 
-    fun buildLetterIcon(shortLabel: String): IconCompat {
+    fun buildLetterIcon(shortLabel: String): GeneratedIcon {
         val safeLabel = shortLabel.trim()
 
         val iconTextDisplay = if (safeLabel.isEmpty()) {
@@ -50,7 +55,10 @@ object IconUtils {
         val yPos = (size / 2f) - ((textPaint.descent() + textPaint.ascent()) / 2f)
         canvas.drawText(iconTextDisplay, size / 2f, yPos, textPaint)
 
-        return IconCompat.createWithBitmap(bitmap)
+        return GeneratedIcon(
+            icon = IconCompat.createWithBitmap(bitmap),
+            bitmap = bitmap
+        )
     }
 
     private fun generateColor(input: String): Int {
