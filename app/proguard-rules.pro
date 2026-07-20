@@ -26,6 +26,5 @@
 -keep class io.netty.handler.codec.** { *; }  # Without this, MQTTS via websocket will hang
 
 -dontwarn io.netty.**
--dontwarn org.osgi.annotation.bundle.Export
 -dontwarn org.slf4j.**
 -dontwarn reactor.blockhound.integration.BlockHoundIntegration
