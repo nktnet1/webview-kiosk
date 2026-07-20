@@ -1,7 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
 import android.content.Intent
-import android.graphics.Bitmap
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -36,7 +35,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
-import androidx.core.graphics.drawable.toBitmap
 import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -65,7 +63,7 @@ fun CreateShortcutDialog(
     var urlError by remember { mutableStateOf<String?>(null) }
     var isOpenHistoryDialog by remember { mutableStateOf(false) }
 
-    var previewIcon by remember {
+    var generatedIcon by remember {
         mutableStateOf(IconUtils.buildLetterIcon(shortLabel))
     }
 
@@ -81,7 +79,7 @@ fun CreateShortcutDialog(
     fun setShortLabel(value: String) {
         shortLabel = value
         shortLabelError = validateShortLabel(value)
-        previewIcon = IconUtils.buildLetterIcon(value)
+        generatedIcon = IconUtils.buildLetterIcon(value)
     }
 
     fun setUrl(value: String) {
@@ -181,22 +179,15 @@ fun CreateShortcutDialog(
                     )
                 }
 
-                val drawable = previewIcon.loadDrawable(context)
-                val bitmap = drawable?.toBitmap(
-                    width = 192,
-                    height = 192,
-                    config = Bitmap.Config.ARGB_8888
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Image(
+                    bitmap = generatedIcon.bitmap.asImageBitmap(),
+                    contentDescription = "Shortcut preview",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
                 )
-                bitmap?.let {
-                    Spacer(modifier = Modifier.height(20.dp))
-                    Image(
-                        bitmap = it.asImageBitmap(),
-                        contentDescription = "Shortcut preview",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp)
-                    )
-                }
             }
         },
         confirmButton = {
@@ -217,7 +208,7 @@ fun CreateShortcutDialog(
                     val shortcut = ShortcutInfoCompat.Builder(context, uniqueId)
                         .setShortLabel(safeShortLabel)
                         .setLongLabel(safeLongLabel)
-                        .setIcon(previewIcon)
+                        .setIcon(generatedIcon.icon)
                         .setAlwaysBadged()
                         .setIntent(intent)
                         .build()
