@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -52,6 +53,16 @@ fun TextSettingFieldItem(
     readOnly: Boolean = false,
     isPassword: Boolean = false,
     descriptionFormatter: ((String) -> String)? = null,
+    descriptionStyle: @Composable (String) -> TextStyle = { v ->
+        if (v.isBlank()) {
+            MaterialTheme.typography.bodyMedium.copy(
+                fontStyle = FontStyle.Italic
+            )
+        } else {
+            MaterialTheme.typography.bodyMedium
+        }
+    },
+    saveText: String = "Save",
     extraContent: (
         @Composable (
             (
@@ -94,10 +105,7 @@ fun TextSettingFieldItem(
 
         Text(
             text = description,
-            style = if (description == "(blank)")
-                MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic)
-            else
-                MaterialTheme.typography.bodyMedium,
+            style = descriptionStyle(v),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -112,6 +120,7 @@ fun TextSettingFieldItem(
             settingKey = settingKey,
             restricted = restricted,
             onDismiss = { showDialog = false },
+            saveText = saveText,
             onSave = {
                 if (!draftError) {
                     if (onSaveDeferred != null) {

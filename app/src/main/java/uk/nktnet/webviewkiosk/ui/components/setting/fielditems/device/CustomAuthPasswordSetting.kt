@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -15,23 +16,28 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.android.awaitFrame
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
+import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 
 @Composable
 fun CustomAuthPasswordSetting() {
@@ -44,10 +50,27 @@ fun CustomAuthPasswordSetting() {
 
     var confirmPassword by remember { mutableStateOf("") }
     var showConfirmationDialog by remember { mutableStateOf(false) }
+
+    var showRemovePasswordDialog by remember { mutableStateOf(false) }
+
     var pendingPassword by remember { mutableStateOf("") }
     var pendingCommit by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var pendingRemoveCommit by remember { mutableStateOf<(() -> Unit)?>(null) }
+
     var showPassword by remember { mutableStateOf(false) }
     var passwordMismatch by remember { mutableStateOf(false) }
+
+    val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(showConfirmationDialog) {
+        if (showConfirmationDialog) {
+            awaitFrame()
+
+            runCatching {
+                focusRequester.requestFocus()
+            }
+        }
+    }
 
     TextSettingFieldItem(
         label = stringResource(R.string.device_custom_auth_password_title),
@@ -70,15 +93,22 @@ fun CustomAuthPasswordSetting() {
         restricted = restricted,
         isMultiline = false,
         isPassword = true,
-        validator = { it.length <= maxCharacters },
-        validationMessage = "Please enter fewer than $maxCharacters characters.",
-        descriptionFormatter = { v ->
-            if (v.isNotBlank()) "*".repeat(20) else "(blank)"
+        validator = {
+            it.length <= maxCharacters
         },
+        validationMessage = "Please enter fewer than $maxCharacters characters.",
+        descriptionFormatter = { value ->
+            if (value.isNotBlank()) {
+                "*".repeat(20)
+            } else {
+                "(blank = device credentials)"
+            }
+        },
+        saveText = "Next",
         onSaveDeferred = { password, commit ->
             if (password.isBlank()) {
-                userSettings.customAuthPassword = password
-                commit()
+                pendingRemoveCommit = commit
+                showRemovePasswordDialog = true
             } else {
                 pendingPassword = password
                 pendingCommit = commit
@@ -98,7 +128,10 @@ fun CustomAuthPasswordSetting() {
                 passwordMismatch = false
             },
             title = {
-                Text("Confirm Change")
+                Text(
+                    style = MaterialTheme.typography.titleMedium,
+                    text = "Re-enter password"
+                )
             },
             text = {
                 Column {
@@ -131,7 +164,9 @@ fun CustomAuthPasswordSetting() {
                                     contentDescription = "Clear"
                                 )
                             }
-                        }
+                        },
+                        modifier = Modifier
+                            .focusRequester(focusRequester)
                     )
 
                     Spacer(
@@ -182,6 +217,7 @@ fun CustomAuthPasswordSetting() {
                         if (confirmPassword == pendingPassword) {
                             userSettings.customAuthPassword = pendingPassword
                             pendingCommit?.invoke()
+
                             pendingCommit = null
                             showConfirmationDialog = false
                         } else {
@@ -198,6 +234,57 @@ fun CustomAuthPasswordSetting() {
                         showConfirmationDialog = false
                         pendingCommit = null
                         passwordMismatch = false
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showRemovePasswordDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showRemovePasswordDialog = false
+                pendingRemoveCommit = null
+            },
+            title = {
+                Text(
+                    style = MaterialTheme.typography.titleMedium,
+                    text = "Remove Custom Password"
+                )
+            },
+            text = {
+                Text(
+                    normaliseInfoText(
+                        """
+                        Are you sure you want to remove your custom password?
+
+                        Your device credentials or biometrics will be used instead.
+                        """.trimIndent()
+                    )
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error,
+                    ),
+                    onClick = {
+                        userSettings.customAuthPassword = ""
+                        pendingRemoveCommit?.invoke()
+                        pendingRemoveCommit = null
+                        showRemovePasswordDialog = false
+                    }
+                ) {
+                    Text("Remove")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showRemovePasswordDialog = false
+                        pendingRemoveCommit = null
                     }
                 ) {
                     Text("Cancel")

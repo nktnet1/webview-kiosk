@@ -83,7 +83,7 @@ fun WebsiteBookmarksSetting() {
                         .substringBefore('|')
                         .trim()
 
-                    validateUrl(url)
+                   line.isBlank() || (url.isNotBlank() && validateUrl(url))
                 }
             }
         },

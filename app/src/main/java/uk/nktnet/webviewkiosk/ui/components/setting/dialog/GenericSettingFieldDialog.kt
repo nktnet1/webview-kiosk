@@ -39,6 +39,7 @@ fun GenericSettingFieldDialog(
     onSave: () -> Unit,
     settingKey: String,
     restricted: Boolean,
+    saveText: String = "Save",
     content: @Composable ColumnScope.() -> Unit
 ) {
     var showInfoDialog by remember { mutableStateOf(false) }
@@ -126,7 +127,7 @@ fun GenericSettingFieldDialog(
         confirmButton = {
             if (!restricted) {
                 TextButton(onClick = onSave) {
-                    Text("Save")
+                    Text(saveText)
                 }
             }
         },
