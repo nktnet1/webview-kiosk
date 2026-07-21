@@ -101,7 +101,7 @@ fun CustomAuthPasswordSetting() {
             if (value.isNotBlank()) {
                 "*".repeat(20)
             } else {
-                "(blank)"
+                "(blank = device credentials)"
             }
         },
         saveText = "Next",

@@ -95,7 +95,7 @@ fun TextSettingFieldItem(
 
         Text(
             text = description,
-            style = if (description == "(blank)")
+            style = if (description.startsWith("(blank"))
                 MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic)
             else
                 MaterialTheme.typography.bodyMedium,
