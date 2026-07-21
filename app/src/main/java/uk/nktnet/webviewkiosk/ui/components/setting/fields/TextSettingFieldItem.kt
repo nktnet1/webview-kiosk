@@ -52,6 +52,7 @@ fun TextSettingFieldItem(
     readOnly: Boolean = false,
     isPassword: Boolean = false,
     descriptionFormatter: ((String) -> String)? = null,
+    saveText: String = "Save",
     extraContent: (
         @Composable (
             (
@@ -112,6 +113,7 @@ fun TextSettingFieldItem(
             settingKey = settingKey,
             restricted = restricted,
             onDismiss = { showDialog = false },
+            saveText = saveText,
             onSave = {
                 if (!draftError) {
                     if (onSaveDeferred != null) {
