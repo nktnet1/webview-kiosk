@@ -1,0 +1,7 @@
+## Changes
+
+- feat(mqtt): allow common ports to be selected via chips
+- fix: custom password - removal confirmation and blank description
+- fix: website bookmarks validation for empty URLs
+- fix: improve proguard rules
+- fix: app icon bitmap handling
