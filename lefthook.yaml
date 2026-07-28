@@ -1,0 +1,16 @@
+pre-commit:
+  commands:
+    typecheck:
+      root: "docs/"
+      glob: "*.{ts,cts,mts}"
+      run: >
+        pnpm typecheck
+    check:
+      root: "docs/"
+      glob: "*.{js,ts,cjs,mjs,d.cts,d.mts,jsx,tsx,json,jsonc,css}"
+      run: >
+        pnpm check
+        --error-on-warnings
+        --no-errors-on-unmatched
+        --files-ignore-unknown=true
+        {staged_files}

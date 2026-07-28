@@ -1,4 +1,10 @@
 allowBuilds:
   esbuild: false
+  lefthook: true
   sharp: false
   workerd: false
+overrides:
+  brace-expansion@>=4.0.0 <5.0.9: ^5.0.9
+  fast-uri@>=3.0.0 <3.1.5: ^3.1.5
+  nanoid@<3.3.18: ^3.3.18
+  undici@>=7.0.0 <7.29.0: ^7.29.0
