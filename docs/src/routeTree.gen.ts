@@ -9,25 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as Char123Char125DotmdRouteImport } from './routes/{$}[.]md'
-import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
-import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
 import { Route as HomelayoutRouteRouteImport } from './routes/_homelayout/route'
+import { Route as LlmsFullDottxtRouteImport } from './routes/llms-full[.]txt'
+import { Route as LlmsDottxtRouteImport } from './routes/llms[.]txt'
+import { Route as Char123Char125DotmdRouteImport } from './routes/{$}[.]md'
 import { Route as HomelayoutIndexRouteImport } from './routes/_homelayout/index'
-import { Route as DocsChar123Char125DotmdRouteImport } from './routes/docs/{$}[.]md'
-import { Route as DocsSplatRouteImport } from './routes/docs/$'
-import { Route as ApiSearchRouteImport } from './routes/api/search'
 import { Route as HomelayoutSplatRouteImport } from './routes/_homelayout/$'
+import { Route as ApiSearchRouteImport } from './routes/api/search'
+import { Route as DocsSplatRouteImport } from './routes/docs/$'
+import { Route as DocsChar123Char125DotmdRouteImport } from './routes/docs/{$}[.]md'
 import { Route as HomelayoutProvisionDeviceIndexRouteImport } from './routes/_homelayout/provision-device/index'
 
-const Char123Char125DotmdRoute = Char123Char125DotmdRouteImport.update({
-  id: '/{$}.md',
-  path: '/{$}.md',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
-  id: '/llms.txt',
-  path: '/llms.txt',
+const HomelayoutRouteRoute = HomelayoutRouteRouteImport.update({
+  id: '/_homelayout',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LlmsFullDottxtRoute = LlmsFullDottxtRouteImport.update({
@@ -35,8 +29,14 @@ const LlmsFullDottxtRoute = LlmsFullDottxtRouteImport.update({
   path: '/llms-full.txt',
   getParentRoute: () => rootRouteImport,
 } as any)
-const HomelayoutRouteRoute = HomelayoutRouteRouteImport.update({
-  id: '/_homelayout',
+const LlmsDottxtRoute = LlmsDottxtRouteImport.update({
+  id: '/llms.txt',
+  path: '/llms.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Char123Char125DotmdRoute = Char123Char125DotmdRouteImport.update({
+  id: '/{$}.md',
+  path: '/{$}.md',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HomelayoutIndexRoute = HomelayoutIndexRouteImport.update({
@@ -44,9 +44,14 @@ const HomelayoutIndexRoute = HomelayoutIndexRouteImport.update({
   path: '/',
   getParentRoute: () => HomelayoutRouteRoute,
 } as any)
-const DocsChar123Char125DotmdRoute = DocsChar123Char125DotmdRouteImport.update({
-  id: '/docs/{$}.md',
-  path: '/docs/{$}.md',
+const HomelayoutSplatRoute = HomelayoutSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => HomelayoutRouteRoute,
+} as any)
+const ApiSearchRoute = ApiSearchRouteImport.update({
+  id: '/api/search',
+  path: '/api/search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocsSplatRoute = DocsSplatRouteImport.update({
@@ -54,15 +59,10 @@ const DocsSplatRoute = DocsSplatRouteImport.update({
   path: '/docs/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiSearchRoute = ApiSearchRouteImport.update({
-  id: '/api/search',
-  path: '/api/search',
+const DocsChar123Char125DotmdRoute = DocsChar123Char125DotmdRouteImport.update({
+  id: '/docs/{$}.md',
+  path: '/docs/{$}.md',
   getParentRoute: () => rootRouteImport,
-} as any)
-const HomelayoutSplatRoute = HomelayoutSplatRouteImport.update({
-  id: '/$',
-  path: '/$',
-  getParentRoute: () => HomelayoutRouteRoute,
 } as any)
 const HomelayoutProvisionDeviceIndexRoute =
   HomelayoutProvisionDeviceIndexRouteImport.update({
@@ -155,18 +155,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/{$}.md': {
-      id: '/{$}.md'
-      path: '/{$}.md'
-      fullPath: '/{$}.md'
-      preLoaderRoute: typeof Char123Char125DotmdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/llms.txt': {
-      id: '/llms.txt'
-      path: '/llms.txt'
-      fullPath: '/llms.txt'
-      preLoaderRoute: typeof LlmsDottxtRouteImport
+    '/_homelayout': {
+      id: '/_homelayout'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof HomelayoutRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/llms-full.txt': {
@@ -176,11 +169,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LlmsFullDottxtRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_homelayout': {
-      id: '/_homelayout'
-      path: ''
-      fullPath: '/'
-      preLoaderRoute: typeof HomelayoutRouteRouteImport
+    '/llms.txt': {
+      id: '/llms.txt'
+      path: '/llms.txt'
+      fullPath: '/llms.txt'
+      preLoaderRoute: typeof LlmsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/{$}.md': {
+      id: '/{$}.md'
+      path: '/{$}.md'
+      fullPath: '/{$}.md'
+      preLoaderRoute: typeof Char123Char125DotmdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_homelayout/': {
@@ -190,11 +190,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomelayoutIndexRouteImport
       parentRoute: typeof HomelayoutRouteRoute
     }
-    '/docs/{$}.md': {
-      id: '/docs/{$}.md'
-      path: '/docs/{$}.md'
-      fullPath: '/docs/{$}.md'
-      preLoaderRoute: typeof DocsChar123Char125DotmdRouteImport
+    '/_homelayout/$': {
+      id: '/_homelayout/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof HomelayoutSplatRouteImport
+      parentRoute: typeof HomelayoutRouteRoute
+    }
+    '/api/search': {
+      id: '/api/search'
+      path: '/api/search'
+      fullPath: '/api/search'
+      preLoaderRoute: typeof ApiSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs/$': {
@@ -204,19 +211,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/search': {
-      id: '/api/search'
-      path: '/api/search'
-      fullPath: '/api/search'
-      preLoaderRoute: typeof ApiSearchRouteImport
+    '/docs/{$}.md': {
+      id: '/docs/{$}.md'
+      path: '/docs/{$}.md'
+      fullPath: '/docs/{$}.md'
+      preLoaderRoute: typeof DocsChar123Char125DotmdRouteImport
       parentRoute: typeof rootRouteImport
-    }
-    '/_homelayout/$': {
-      id: '/_homelayout/$'
-      path: '/$'
-      fullPath: '/$'
-      preLoaderRoute: typeof HomelayoutSplatRouteImport
-      parentRoute: typeof HomelayoutRouteRoute
     }
     '/_homelayout/provision-device/': {
       id: '/_homelayout/provision-device/'

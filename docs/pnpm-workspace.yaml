@@ -2,3 +2,5 @@ allowBuilds:
   esbuild: false
   sharp: false
   workerd: false
+overrides:
+  brace-expansion@<=5.0.7: ^5.0.8
