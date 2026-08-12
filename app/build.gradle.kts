@@ -105,4 +105,6 @@ dependencies {
     implementation(libs.hiddenapibypass)
     implementation(libs.reorderable)
     debugImplementation(libs.androidx.ui.tooling)
+    // Optional: storage for chosen client cert alias; helpful on devices that support AndroidX Security
+    implementation("androidx.security:security-crypto:1.1.0")
 }

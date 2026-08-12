@@ -26,6 +26,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.webkit.ClientCertRequest
 import android.widget.FrameLayout
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -250,6 +251,10 @@ fun createCustomWebview(
                 addJavascriptInterface(BlobInterface(context), BlobInterface.NAME)
             }
 
+            // Client cert manager: used to handle onReceivedClientCertRequest
+            val _activity = context as? Activity
+            val clientCertManager = _activity?.let { ClientCertManager(context = context, activity = it) }
+
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     config.setLastErrorUrl("")
@@ -462,6 +467,15 @@ fun createCustomWebview(
                     realm: String?
                 ) {
                     config.onHttpAuthRequest(handler, host, realm)
+                }
+
+                override fun onReceivedClientCertRequest(view: WebView?, request: ClientCertRequest?) {
+                    // Attempt to satisfy using stored alias or show chooser; cancel if no activity.
+                    if (clientCertManager != null) {
+                        clientCertManager.handleClientCertRequest(view, request)
+                    } else {
+                        request?.cancel()
+                    }
                 }
 
                 override fun onReceivedError(
