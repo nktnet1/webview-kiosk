@@ -52,7 +52,7 @@ object NfcBridgeManager {
         return requestId
     }
 
-    fun onTagScanned(tag: Tag, action: String? = null) {
+    fun onTagScanned(tag: Tag) {
         val webView = webViewRef?.get() ?: return
 
         val writeResult = consumePendingWriteAndWrite(tag)
@@ -69,7 +69,7 @@ object NfcBridgeManager {
             return
         }
 
-        val payload = buildTagPayload(tag, action)
+        val payload = buildTagPayload(tag)
         webView.post {
             webView.evaluateJavascript(
                 "window.__WebviewKioskNfcBridge && window.__WebviewKioskNfcBridge.onTagScanned($payload);",
@@ -252,9 +252,8 @@ object NfcBridgeManager {
         return byteArrayOf()
     }
 
-    private fun buildTagPayload(tag: Tag, action: String?): JSONObject {
+    private fun buildTagPayload(tag: Tag): JSONObject {
         val obj = JSONObject()
-        obj.put("action", action ?: "")
         obj.put("serialNumber", toHex(tag.id ?: byteArrayOf()))
         obj.put("timestamp", System.currentTimeMillis())
 
