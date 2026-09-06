@@ -172,32 +172,132 @@ fun downloadNormal(
     dm.enqueue(request)
 }
 
-// https://proandroiddev.com/blob-downloads-not-working-in-android-web-view-heres-the-real-fix-243144a2a426
-private fun fetchBlob(webView: WebView, blobUrl: String, mimeType: String?,  filename: String) {
+private fun fetchBlob(
+    webView: WebView,
+    blobUrl: String,
+    mimeType: String?,
+    filename: String
+) {
+    val transferId = java.util.UUID.randomUUID().toString()
+
+    val quotedBlobUrl = JSONObject.quote(blobUrl)
+    val quotedMimeType = JSONObject.quote(mimeType ?: "application/octet-stream")
+    val quotedFilename = JSONObject.quote(filename)
+    val quotedTransferId = JSONObject.quote(transferId)
+
     val js = """
         (async function() {
-            try {
-                const blobUrl = ${JSONObject.quote(blobUrl)};
-                const response = await fetch(blobUrl);
-                const blob = await response.blob();
-                const reader = new FileReader();
-                reader.onloadend = function() {
-                    ${BlobInterface.NAME}.download(reader.result, '$mimeType', '$filename');
-                };
-                reader.readAsDataURL(blob);
-                return;
-            } catch(e) {}
+            const bridge = ${BlobInterface.NAME};
+            const blobUrl = $quotedBlobUrl;
+            const mimeType = $quotedMimeType;
+            const filename = $quotedFilename;
+            const transferId = $quotedTransferId;
 
-            if (window.__${Constants.APP_SCHEME}_lastBlob) {
-                const reader2 = new FileReader();
-                reader2.onloadend = function() {
-                    ${BlobInterface.NAME}.download(reader2.result, '$mimeType', '$filename');
-                };
-                reader2.readAsDataURL(window.__${Constants.APP_SCHEME}_lastBlob);
-                return;
+            // Keep each bridge call comfortably small.
+            const CHUNK_SIZE = 256 * 1024;
+
+            function readChunkAsBase64(blob) {
+                return new Promise(function(resolve, reject) {
+                    const reader = new FileReader();
+
+                    reader.onload = function() {
+                        try {
+                            const result = reader.result;
+
+                            if (typeof result !== 'string') {
+                                reject(new Error('Unexpected FileReader result'));
+                                return;
+                            }
+
+                            const comma = result.indexOf(',');
+                            resolve(comma >= 0 ? result.substring(comma + 1) : result);
+                        } catch (e) {
+                            reject(e);
+                        }
+                    };
+
+                    reader.onerror = function() {
+                        reject(reader.error || new Error('FileReader failed'));
+                    };
+
+                    reader.readAsDataURL(blob);
+                });
             }
 
-            ${BlobInterface.NAME}.error('Blob fetch failed');
+            try {
+                let blob = null;
+
+                try {
+                    const response = await fetch(blobUrl);
+
+                    if (!response.ok) {
+                        throw new Error(
+                            'Blob fetch returned HTTP ' + response.status
+                        );
+                    }
+
+                    blob = await response.blob();
+                } catch (e) {
+                    blob = window.__${Constants.APP_SCHEME}_lastBlob || null;
+                }
+
+                if (!blob) {
+                    throw new Error('Blob fetch failed');
+                }
+
+                if (!bridge.startDownload(
+                    transferId,
+                    mimeType,
+                    filename
+                )) {
+                    throw new Error('Unable to create download file');
+                }
+
+                for (
+                    let offset = 0;
+                    offset < blob.size;
+                    offset += CHUNK_SIZE
+                ) {
+                    const end = Math.min(
+                        offset + CHUNK_SIZE,
+                        blob.size
+                    );
+
+                    const chunk = blob.slice(offset, end);
+
+                    const base64Chunk =
+                        await readChunkAsBase64(chunk);
+
+                    if (!bridge.appendChunk(
+                        transferId,
+                        base64Chunk
+                    )) {
+                        throw new Error(
+                            'Failed writing download chunk'
+                        );
+                    }
+                }
+
+                if (!bridge.finishDownload(transferId)) {
+                    throw new Error(
+                        'Failed finalising download'
+                    );
+                }
+
+                // Your hook keeps a strong reference to the most recently
+                // created blob. Release it after the file has been written.
+                window.__${Constants.APP_SCHEME}_lastBlob = null;
+
+            } catch (e) {
+                try {
+                    bridge.abortDownload(transferId);
+                } catch (_) {}
+
+                bridge.error(
+                    'Blob download failed: ' +
+                    (e && e.message ? e.message : String(e))
+                );
+            }
         })();
     """.trimIndent()
 

@@ -10,9 +10,11 @@ import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import java.io.File
 import java.io.FileOutputStream
+import java.util.concurrent.ConcurrentHashMap
 
-// https://proandroiddev.com/blob-downloads-not-working-in-android-web-view-heres-the-real-fix-243144a2a426
-class BlobInterface(private val context: Context) {
+class BlobInterface(
+    private val context: Context
+) {
     companion object {
         const val NAME = "WebviewKioskBlobInterface"
 
@@ -30,9 +32,11 @@ class BlobInterface(private val context: Context) {
                 if (window.__${Constants.APP_SCHEME}_blobHookInstalled) {
                     return;
                 }
+
                 window.__${Constants.APP_SCHEME}_blobHookInstalled = true;
 
                 const orig = URL.createObjectURL;
+
                 URL.createObjectURL = function(blob) {
                     window.__${Constants.APP_SCHEME}_lastBlob = blob;
                     return orig.call(URL, blob);
@@ -41,50 +45,201 @@ class BlobInterface(private val context: Context) {
         """
     }
 
-    @JavascriptInterface
-    fun error(message: String?) {
-        ToastManager.show(context, message ?: "Unknown error")
-    }
+    private data class ActiveDownload(
+        val file: File,
+        val output: FileOutputStream,
+        val mimeType: String?
+    )
+
+    private val activeDownloads =
+        ConcurrentHashMap<String, ActiveDownload>()
 
     @JavascriptInterface
-    fun download(base64: String?, mimeType: String?, filename: String) {
-        if (!isActive || base64 == null) {
-            return
+    fun error(message: String?) {
+        ToastManager.show(
+            context,
+            message ?: "Unknown error"
+        )
+    }
+
+    @Suppress("unused")
+    @JavascriptInterface
+    fun startDownload(
+        transferId: String,
+        mimeType: String?,
+        filename: String
+    ): Boolean {
+        if (!isActive) {
+            return false
+        }
+
+        if (!isValidFilename(filename)) {
+            ToastManager.show(
+                context,
+                "Invalid filename: '$filename'"
+            )
+            return false
+        }
+
+        return try {
+            // Clean up an accidentally reused transfer ID.
+            activeDownloads.remove(transferId)?.let {
+                try {
+                    it.output.close()
+                } catch (_: Exception) {
+                }
+            }
+
+            val downloads =
+                Environment.getExternalStoragePublicDirectory(
+                    Environment.DIRECTORY_DOWNLOADS
+                )
+
+            if (!downloads.exists()) {
+                downloads.mkdirs()
+            }
+
+            val file = File(downloads, filename)
+            val output = FileOutputStream(file)
+
+            activeDownloads[transferId] = ActiveDownload(
+                file = file,
+                output = output,
+                mimeType = mimeType
+            )
+
+            true
+        } catch (e: Exception) {
+            ToastManager.show(
+                context,
+                "Unable to start download: ${e.message}"
+            )
+            false
+        }
+    }
+
+    @Suppress("unused")
+    @JavascriptInterface
+    fun appendChunk(
+        transferId: String,
+        base64Chunk: String?
+    ): Boolean {
+        if (!isActive || base64Chunk == null) {
+            return false
+        }
+
+        val download =
+            activeDownloads[transferId]
+                ?: return false
+
+        return try {
+            /*
+             * Only this one small chunk is decoded into memory.
+             *
+             * NO_WRAP is suitable here because FileReader's Base64 output
+             * contains no line wrapping.
+             */
+            val bytes = Base64.decode(
+                base64Chunk,
+                Base64.NO_WRAP
+            )
+
+            synchronized(download) {
+                download.output.write(bytes)
+            }
+
+            true
+        } catch (e: Exception) {
+            abortInternal(transferId)
+
+            ToastManager.show(
+                context,
+                "Download failed: ${e.message}"
+            )
+
+            false
+        }
+    }
+
+    @Suppress("unused")
+    @JavascriptInterface
+    fun finishDownload(
+        transferId: String
+    ): Boolean {
+        val download =
+            activeDownloads.remove(transferId)
+                ?: return false
+
+        return try {
+            synchronized(download) {
+                download.output.flush()
+                download.output.close()
+            }
+
+            ToastManager.show(
+                context,
+                "${download.file.name} downloaded"
+            )
+
+            val userSettings = UserSettings(context)
+
+            if (userSettings.allowNotifications) {
+                CustomNotificationManager
+                    .sendBlobDownloadNotification(
+                        context,
+                        download.file
+                    )
+            }
+
+            true
+        } catch (e: Exception) {
+            try {
+                download.output.close()
+            } catch (_: Exception) {
+            }
+
+            ToastManager.show(
+                context,
+                "Failed to finish download: ${e.message}"
+            )
+
+            false
+        }
+    }
+
+    @Suppress("unused")
+    @JavascriptInterface
+    fun abortDownload(
+        transferId: String
+    ) {
+        abortInternal(transferId)
+    }
+
+    private fun abortInternal(
+        transferId: String
+    ) {
+        val download =
+            activeDownloads.remove(transferId)
+                ?: return
+
+        try {
+            download.output.close()
+        } catch (_: Exception) {
         }
 
         try {
-            val cleanBase64 = base64.substringAfter(',')
-            val bytes = Base64.decode(cleanBase64, Base64.DEFAULT)
-            saveFile(filename, bytes)
-        } catch (e: Exception) {
-            ToastManager.show(context, "Failed (mimeType=${mimeType}: ${e.message}")
+            download.file.delete()
+        } catch (_: Exception) {
         }
     }
 
-    private fun saveFile(filename: String, bytes: ByteArray) {
-        if (
-            filename.contains("..")
-            || filename.contains("/")
-            || filename.contains("\\")
-        ) {
-            ToastManager.show(
-                context,
-                "Invalid filename: '$filename' (contains '..', '/' or '\\'"
-            )
-            return
-        }
-        val downloads = Environment.getExternalStoragePublicDirectory(
-            Environment.DIRECTORY_DOWNLOADS
-        )
-        val file = File(downloads, filename)
-        FileOutputStream(file).use {
-            it.write(bytes)
-        }
-        ToastManager.show(context, "$filename downloaded")
-
-        val userSettings = UserSettings(context)
-        if (userSettings.allowNotifications) {
-            CustomNotificationManager.sendBlobDownloadNotification(context, file)
-        }
+    private fun isValidFilename(
+        filename: String
+    ): Boolean {
+        return filename.isNotBlank()
+                && !filename.contains("..")
+                && !filename.contains("/")
+                && !filename.contains("\\")
+                && !filename.contains('\u0000')
     }
 }
