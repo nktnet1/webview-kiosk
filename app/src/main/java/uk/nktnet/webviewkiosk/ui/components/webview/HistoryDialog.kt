@@ -107,7 +107,7 @@ fun HistoryDialog(
     }
 
     LaunchedEffect(Unit) {
-        RemoteMessageManager.commands.collect { commandMessage ->
+        RemoteMessageManager.commandsFlow.collect { commandMessage ->
             when (commandMessage.message) {
                 is InboundClearHistoryCommand -> {
                     // The actual history is cleared in main activity

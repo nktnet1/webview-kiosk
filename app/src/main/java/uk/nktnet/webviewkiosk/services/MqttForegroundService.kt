@@ -75,7 +75,7 @@ class MqttForegroundService : Service() {
         wakeLock.acquire()
 
         mqttCommandJob = scope.launch {
-            RemoteMessageManager.commands.collect { command ->
+            RemoteMessageManager.commandsFlow.collect { command ->
                 if (command.source == RemoteMessageManager.RemoteMessage.Source.MQTT) {
                     RemoteInboundHandler.handleInboundCommand(
                         this@MqttForegroundService,
@@ -85,7 +85,7 @@ class MqttForegroundService : Service() {
             }
         }
         mqttSettingsJob = scope.launch {
-            RemoteMessageManager.settings.collect { settings ->
+            RemoteMessageManager.settingsFlow.collect { settings ->
                 if (settings.source == RemoteMessageManager.RemoteMessage.Source.MQTT) {
                     RemoteInboundHandler.handleInboundSettings(
                         this@MqttForegroundService,
@@ -95,7 +95,7 @@ class MqttForegroundService : Service() {
             }
         }
         mqttRequestJob = scope.launch {
-            RemoteMessageManager.requests.collect { request ->
+            RemoteMessageManager.requestsFlow.collect { request ->
                 if (request.source == RemoteMessageManager.RemoteMessage.Source.MQTT) {
                     RemoteInboundHandler.handleInboundMqttRequest(
                         this@MqttForegroundService,

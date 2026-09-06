@@ -37,8 +37,8 @@ data class UnifiedPushLogEntry(
 object UnifiedPushManager {
     private val scope = CoroutineScope(Dispatchers.Default)
     private val logHistory = ArrayDeque<UnifiedPushLogEntry>(100)
-    private val _debugLog = MutableSharedFlow<UnifiedPushLogEntry>(extraBufferCapacity = 100)
-    val debugLog: SharedFlow<UnifiedPushLogEntry> get() = _debugLog
+    val debugLog: SharedFlow<UnifiedPushLogEntry>
+        field = MutableSharedFlow<UnifiedPushLogEntry>(extraBufferCapacity = 100)
 
     fun addDebugLog(tag: String, message: String? = null) {
         val logEntry = UnifiedPushLogEntry(Date(), tag, message)
@@ -49,7 +49,7 @@ object UnifiedPushManager {
             logHistory.addLast(logEntry)
         }
         scope.launch {
-            _debugLog.emit(logEntry)
+            debugLog.emit(logEntry)
         }
     }
 

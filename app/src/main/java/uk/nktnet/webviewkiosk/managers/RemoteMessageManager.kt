@@ -19,24 +19,24 @@ object RemoteMessageManager {
         enum class Source { MQTT, UNIFIEDPUSH }
     }
 
-    private val _commands = MutableSharedFlow<RemoteMessage<InboundCommandMessage>>(extraBufferCapacity = 100)
-    val commands: SharedFlow<RemoteMessage<InboundCommandMessage>> get() = _commands
+    val commandsFlow: SharedFlow<RemoteMessage<InboundCommandMessage>>
+        field = MutableSharedFlow<RemoteMessage<InboundCommandMessage>>(extraBufferCapacity = 100)
 
-    private val _settings = MutableSharedFlow<RemoteMessage<InboundSettingsMessage>>(extraBufferCapacity = 100)
-    val settings: SharedFlow<RemoteMessage<InboundSettingsMessage>> get() = _settings
+    val settingsFlow: SharedFlow<RemoteMessage<InboundSettingsMessage>>
+        field = MutableSharedFlow<RemoteMessage<InboundSettingsMessage>>(extraBufferCapacity = 100)
 
-    private val _requests = MutableSharedFlow<RemoteMessage<InboundRequestMessage>>(extraBufferCapacity = 100)
-    val requests: SharedFlow<RemoteMessage<InboundRequestMessage>> get() = _requests
+    val requestsFlow: SharedFlow<RemoteMessage<InboundRequestMessage>>
+        field = MutableSharedFlow<RemoteMessage<InboundRequestMessage>>(extraBufferCapacity = 100)
 
     fun emitCommand(command: InboundCommandMessage, source: RemoteMessage.Source) {
-        scope.launch { _commands.emit(RemoteMessage(command, source)) }
+        scope.launch { commandsFlow.emit(RemoteMessage(command, source)) }
     }
 
     fun emitSettings(settings: InboundSettingsMessage, source: RemoteMessage.Source) {
-        scope.launch { _settings.emit(RemoteMessage(settings, source)) }
+        scope.launch { settingsFlow.emit(RemoteMessage(settings, source)) }
     }
 
     fun emitRequest(request: InboundRequestMessage, source: RemoteMessage.Source) {
-        scope.launch { _requests.emit(RemoteMessage(request, source)) }
+        scope.launch { requestsFlow.emit(RemoteMessage(request, source)) }
     }
 }

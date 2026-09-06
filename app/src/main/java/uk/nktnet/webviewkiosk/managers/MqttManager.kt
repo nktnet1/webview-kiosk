@@ -94,8 +94,8 @@ object MqttManager {
     private val scope = CoroutineScope(Dispatchers.Default)
 
     private val logHistory = ArrayDeque<MqttLogEntry>(100)
-    private val _debugLog = MutableSharedFlow<MqttLogEntry>(extraBufferCapacity = 100)
-    val debugLog: SharedFlow<MqttLogEntry> get() = _debugLog
+    val debugLog: SharedFlow<MqttLogEntry>
+        field = MutableSharedFlow<MqttLogEntry>(extraBufferCapacity = 100)
     private val pendingCancelConnect: AtomicBoolean = AtomicBoolean(false)
 
     private fun addDebugLog(tag: String, message: String? = null, messageId: String? = null) {
@@ -107,7 +107,7 @@ object MqttManager {
             logHistory.addLast(logEntry)
         }
         scope.launch {
-            _debugLog.emit(logEntry)
+            debugLog.emit(logEntry)
         }
     }
 

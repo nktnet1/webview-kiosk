@@ -661,7 +661,7 @@ fun WebviewScreen(navController: NavController) {
     )
 
     LaunchedEffect(Unit) {
-        RemoteMessageManager.commands.collect { command ->
+        RemoteMessageManager.commandsFlow.collect { command ->
             when (command.message) {
                 is InboundGoBackCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)
                 is InboundGoForwardCommand -> WebViewNavigation.goForward(::customLoadUrl, systemSettings)

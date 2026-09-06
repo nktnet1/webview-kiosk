@@ -187,7 +187,7 @@ class MainActivity : AppCompatActivity() {
             val activity = LocalActivity.current
 
             LaunchedEffect(Unit) {
-                RemoteMessageManager.commands.collect { command ->
+                RemoteMessageManager.commandsFlow.collect { command ->
                     if (
                         command.source == RemoteMessageManager.RemoteMessage.Source.MQTT
                         && !userSettings.mqttUseForegroundService
@@ -198,7 +198,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             LaunchedEffect(Unit) {
-                RemoteMessageManager.requests.collect { request ->
+                RemoteMessageManager.requestsFlow.collect { request ->
                     if (
                         request.source == RemoteMessageManager.RemoteMessage.Source.MQTT
                         && !userSettings.mqttUseForegroundService
@@ -209,7 +209,7 @@ class MainActivity : AppCompatActivity() {
             }
 
             LaunchedEffect(Unit) {
-                RemoteMessageManager.settings.collect { settings ->
+                RemoteMessageManager.settingsFlow.collect { settings ->
                     if (
                         settings.source == RemoteMessageManager.RemoteMessage.Source.MQTT
                         && !userSettings.mqttUseForegroundService
