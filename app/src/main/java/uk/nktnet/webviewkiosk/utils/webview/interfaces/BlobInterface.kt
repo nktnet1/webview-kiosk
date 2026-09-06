@@ -41,13 +41,11 @@ class BlobInterface(private val context: Context) {
         """
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun error(message: String?) {
         ToastManager.show(context, message ?: "Unknown error")
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun download(base64: String?, mimeType: String?, filename: String) {
         if (!isActive || base64 == null) {
@@ -59,7 +57,7 @@ class BlobInterface(private val context: Context) {
             val bytes = Base64.decode(cleanBase64, Base64.DEFAULT)
             saveFile(filename, bytes)
         } catch (e: Exception) {
-            ToastManager.show(context, "Failed: ${e.message}")
+            ToastManager.show(context, "Failed (mimeType=${mimeType}: ${e.message}")
         }
     }
 
