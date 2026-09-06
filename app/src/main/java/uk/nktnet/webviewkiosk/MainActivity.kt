@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk
 
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -7,6 +8,7 @@ import android.content.IntentFilter
 import android.graphics.Color
 import android.net.Uri
 import android.nfc.NfcAdapter
+import android.nfc.Tag
 import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
@@ -82,12 +84,6 @@ class MainActivity : AppCompatActivity() {
     private var nfcAdapter: NfcAdapter? = null
 
     private var lastOnStartTime = 0L
-
-    private val nfcReaderCallback = NfcAdapter.ReaderCallback { tag ->
-        if (this::userSettings.isInitialized && userSettings.allowNfc) {
-            NfcBridgeManager.onTagScanned(tag)
-        }
-    }
 
     val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -349,11 +345,11 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         backButtonService.onBackPressedCallback.isEnabled = true
-        enableNfcReaderMode()
+        enableNfcForegroundDispatch()
     }
 
     override fun onPause() {
-        disableNfcReaderMode()
+        disableNfcForegroundDispatch()
         super.onPause()
     }
 
@@ -380,6 +376,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+
+        if (handleNfcIntent(intent)) {
+            return
+        }
+
         if (!this::navController.isInitialized) {
             return
         }
@@ -419,7 +420,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        disableNfcReaderMode()
+        disableNfcForegroundDispatch()
         unregisterReceiver(broadcastReceiver)
         if (
             userSettings.mqttUseForegroundService
@@ -466,29 +467,76 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun enableNfcReaderMode() {
+    private fun enableNfcForegroundDispatch() {
         if (!this::userSettings.isInitialized || !userSettings.allowNfc) {
             return
         }
 
         val adapter = nfcAdapter ?: return
-        val flags = (
-            NfcAdapter.FLAG_READER_NFC_A
-                or NfcAdapter.FLAG_READER_NFC_B
-                or NfcAdapter.FLAG_READER_NFC_F
-                or NfcAdapter.FLAG_READER_NFC_V
-                or NfcAdapter.FLAG_READER_NFC_BARCODE
+
+        val intent = Intent(this, javaClass).apply {
+            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
+        }
+
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                PendingIntent.FLAG_MUTABLE
+            } else {
+                0
+            }
+
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            intent,
+            flags
         )
 
         runCatching {
-            adapter.enableReaderMode(this, nfcReaderCallback, flags, null)
+            adapter.enableForegroundDispatch(
+                this,
+                pendingIntent,
+                null,
+                null
+            )
         }
     }
 
-    private fun disableNfcReaderMode() {
+    private fun disableNfcForegroundDispatch() {
         val adapter = nfcAdapter ?: return
+
         runCatching {
-            adapter.disableReaderMode(this)
+            adapter.disableForegroundDispatch(this)
         }
+    }
+
+    private fun handleNfcIntent(intent: Intent): Boolean {
+        if (!this::userSettings.isInitialized || !userSettings.allowNfc) {
+            return false
+        }
+
+        @Suppress("DEPRECATION")
+        if (
+            intent.action != NfcAdapter.ACTION_TAG_DISCOVERED &&
+            intent.action != NfcAdapter.ACTION_TECH_DISCOVERED &&
+            intent.action != NfcAdapter.ACTION_NDEF_DISCOVERED
+        ) {
+            return false
+        }
+
+        val tag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra(
+                NfcAdapter.EXTRA_TAG,
+                Tag::class.java
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+        }
+
+        tag ?: return false
+
+        NfcBridgeManager.onTagScanned(tag)
+        return true
     }
 }
