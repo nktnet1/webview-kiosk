@@ -7,7 +7,6 @@ import android.content.IntentFilter
 import android.graphics.Color
 import android.net.Uri
 import android.nfc.NfcAdapter
-import android.nfc.Tag
 import android.os.Build
 import android.os.Bundle
 import android.view.KeyEvent
@@ -173,7 +172,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (intent != null) {
-            handleNfcIntent(intent)
             saveIntentUrl(intent)
         }
 
@@ -382,9 +380,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        if (handleNfcIntent(intent)) {
-            return
-        }
         if (!this::navController.isInitialized) {
             return
         }
@@ -495,35 +490,5 @@ class MainActivity : AppCompatActivity() {
         runCatching {
             adapter.disableReaderMode(this)
         }
-    }
-
-    private fun handleNfcIntent(intent: Intent): Boolean {
-        if (!this::userSettings.isInitialized || !userSettings.allowNfc) {
-            return false
-        }
-
-        val action = intent.action ?: return false
-        @Suppress("DEPRECATION")
-        if (
-            action != NfcAdapter.ACTION_TAG_DISCOVERED
-            && action != NfcAdapter.ACTION_TECH_DISCOVERED
-            && action != NfcAdapter.ACTION_NDEF_DISCOVERED
-        ) {
-            return false
-        }
-
-        val tag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getParcelableExtra(NfcAdapter.EXTRA_TAG, Tag::class.java)
-        } else {
-            @Suppress("DEPRECATION")
-            intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
-        }
-
-        tag?.let {
-            NfcBridgeManager.onTagScanned(it, action)
-            return true
-        }
-
-        return false
     }
 }

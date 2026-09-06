@@ -126,10 +126,6 @@
                 <data android:mimeType="application/txt" />
             </intent-filter>
 
-            <intent-filter>
-                <action android:name="android.nfc.action.TAG_DISCOVERED" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
         </activity>
 
         <activity
