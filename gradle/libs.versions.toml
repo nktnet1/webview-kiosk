@@ -1,5 +1,5 @@
 [versions]
-agp = "9.3.2"
+agp = "9.4.0"
 androidRetrofix = "1.1.0"
 androidRetrostreams = "1.7.4"
 biometric = "1.1.0"
@@ -10,7 +10,6 @@ hivemqMqttClient = "1.4.0"
 kotlin = "2.4.10"
 kotlinSerializationPlugin = "2.4.10"
 kotlinxSerializationJson = "1.11.0"
-navigationCompose = "2.9.8"
 reorderable = "3.1.0"
 swiperefreshlayout = "1.2.0"
 
@@ -24,6 +23,8 @@ composeBom = "2025.11.01"
 coreKtx = "1.17.0"
 #noinspection GradleDependency
 lifecycleRuntimeKtx = "2.9.4"
+#noinspection GradleDependency
+navigationCompose = "2.9.8"
 #noinspection GradleDependency
 webkit = "1.14.0"
 

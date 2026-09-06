@@ -1,6 +1,5 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
-import cn from "cnfast";
 import browserCollections from "collections/browser";
 import type { Separator } from "fumadocs-core/page-tree";
 import { useFumadocsLoader } from "fumadocs-core/source/client";
@@ -17,6 +16,7 @@ import {
 } from "fumadocs-ui/layouts/docs/page";
 import { type ComponentProps, Suspense } from "react";
 import { useMDXComponents } from "@/components/fumadocs/mdx";
+import { cn } from "@/lib/cn";
 import { baseOptions } from "@/lib/layout.shared";
 import { docsRoute, gitConfig } from "@/lib/shared";
 import { slugsToMarkdownPath, source } from "@/lib/source";
