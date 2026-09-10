@@ -120,7 +120,7 @@ object UnifiedPushManager {
                 """
                 instance=$instance
                 messageForDistributor=${userSettings.unifiedPushMessageForDistributor}
-                error: distributor is not installed (${userSettings.unifiedPushDistributor})
+                error: invalid VAPID public key
                 """.trimIndent()
             )
             ToastManager.show(context, "Error: invalid VAPID public key")

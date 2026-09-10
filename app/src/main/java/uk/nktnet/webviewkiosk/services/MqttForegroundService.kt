@@ -112,11 +112,10 @@ class MqttForegroundService : Service() {
             pollLockTaskModeJob = scope.launch {
                 while (isServiceActive) {
                     val status = MqttManager.getState()
-                    if (lastStatus != null && status == lastStatus) {
-                        continue
+                    if (lastStatus == null || status != lastStatus) {
+                        lastStatus = status
+                        updateNotification(status)
                     }
-                    lastStatus = status
-                    updateNotification(status)
                     delay(1000.milliseconds)
                 }
             }
