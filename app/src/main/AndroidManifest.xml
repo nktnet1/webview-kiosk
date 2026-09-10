@@ -106,10 +106,11 @@
                 <data android:mimeType="image/*" />
                 <data android:mimeType="audio/*" />
                 <data android:mimeType="video/*" />
-                <data android:mimeType="application/json" />
                 <data android:mimeType="application/javascript" />
-                <data android:mimeType="application/xml" />
+                <data android:mimeType="application/json" />
+                <data android:mimeType="application/pdf" />
                 <data android:mimeType="application/txt" />
+                <data android:mimeType="application/xml" />
                 <data android:scheme="content" />
             </intent-filter>
 

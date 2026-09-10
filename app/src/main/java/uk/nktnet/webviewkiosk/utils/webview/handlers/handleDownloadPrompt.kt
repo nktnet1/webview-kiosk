@@ -9,6 +9,7 @@ import android.os.Environment
 import android.util.Log
 import android.view.Gravity
 import android.view.ViewGroup.LayoutParams
+import android.webkit.CookieManager
 import android.webkit.MimeTypeMap
 import android.webkit.URLUtil
 import android.webkit.WebView
@@ -99,6 +100,9 @@ fun handleDownloadPrompt(
     val dialog = AlertDialog.Builder(context)
         .setView(layout)
         .setOnCancelListener {
+            if (uri.scheme == "blob") {
+                releaseCapturedBlob(webView, url)
+            }
             UserInteractionStateSingleton.onUserInteraction()
         }
         .setOnDismissListener {
@@ -108,6 +112,9 @@ fun handleDownloadPrompt(
 
     val cancelButton = Button(context).apply { text = "Cancel" }
     cancelButton.setOnClickListener {
+        if (uri.scheme == "blob") {
+            releaseCapturedBlob(webView, url)
+        }
         UserInteractionStateSingleton.onUserInteraction()
         dialog.dismiss()
     }
@@ -157,6 +164,9 @@ fun downloadNormal(
     val request = DownloadManager.Request(url.toUri()).apply {
         setMimeType(mimeType)
         userAgent?.let { addRequestHeader("User-Agent", it) }
+        CookieManager.getInstance().getCookie(url)
+            ?.takeIf { it.isNotBlank() }
+            ?.let { addRequestHeader("Cookie", it) }
         setDescription("Downloading file...")
         setTitle(filename)
         setNotificationVisibility(
@@ -225,24 +235,28 @@ private fun fetchBlob(
             }
 
             try {
-                let blob = null;
+                const blobMap =
+                    window.__${Constants.APP_SCHEME}_blobsByUrl;
+                let blob = blobMap ? blobMap.get(blobUrl) : null;
 
-                try {
-                    const response = await fetch(blobUrl);
+                // Prefer the captured Blob. Besides avoiding another read,
+                // this is required on sites whose CSP disallows fetch(blob:).
+                if (!blob) {
+                    try {
+                        const response = await fetch(blobUrl);
 
-                    if (!response.ok) {
-                        throw new Error(
-                            'Blob fetch returned HTTP ' + response.status
-                        );
-                    }
+                        if (!response.ok) {
+                            throw new Error(
+                                'Blob fetch returned HTTP ' + response.status
+                            );
+                        }
 
-                    blob = await response.blob();
-                } catch (e) {
-                    blob = window.__${Constants.APP_SCHEME}_lastBlob || null;
+                        blob = await response.blob();
+                    } catch (_) {}
                 }
 
                 if (!blob) {
-                    throw new Error('Blob fetch failed');
+                    throw new Error('Blob is no longer available');
                 }
 
                 if (!bridge.startDownload(
@@ -284,14 +298,20 @@ private fun fetchBlob(
                     );
                 }
 
-                // Your hook keeps a strong reference to the most recently
-                // created blob. Release it after the file has been written.
-                window.__${Constants.APP_SCHEME}_lastBlob = null;
+                if (blobMap) {
+                    blobMap.delete(blobUrl);
+                }
 
             } catch (e) {
                 try {
                     bridge.abortDownload(transferId);
                 } catch (_) {}
+
+                const blobMap =
+                    window.__${Constants.APP_SCHEME}_blobsByUrl;
+                if (blobMap) {
+                    blobMap.delete(blobUrl);
+                }
 
                 bridge.error(
                     'Blob download failed: ' +
@@ -302,6 +322,18 @@ private fun fetchBlob(
     """.trimIndent()
 
     webView.evaluateJavascript(js, null)
+}
+
+private fun releaseCapturedBlob(
+    webView: WebView,
+    blobUrl: String
+) {
+    val quotedBlobUrl = JSONObject.quote(blobUrl)
+    webView.evaluateJavascript(
+        "window.__${Constants.APP_SCHEME}_blobsByUrl && " +
+            "window.__${Constants.APP_SCHEME}_blobsByUrl.delete($quotedBlobUrl);",
+        null
+    )
 }
 
 private fun generateBlobFilename(mimeType: String?): String {
