@@ -1,0 +1,9 @@
+## Changes
+
+* feat: add editing for uploaded text files
+* fix: stream PDF rendering for large files
+* fix: stream blob file downloads for large files
+* fix: improve WebView recovery after renderer crashes
+* fix: enhance NFC reliability and prevent NFC-related crashes
+* fix: performance for MQTT foreground service
+* fix: unified push error message mismatch for VAPID
