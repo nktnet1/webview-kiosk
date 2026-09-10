@@ -1,11 +1,11 @@
 package uk.nktnet.webviewkiosk.utils.webview.html
 
-import android.net.Uri
+import androidx.core.net.toUri
 import org.json.JSONObject
 import uk.nktnet.webviewkiosk.config.Constants
 
 fun generatePdfRendererHtml(pdfSourceToken: String): String {
-    val pdfSourceUrl = Uri.parse(Constants.PDF_JS_ASSETS_DUMMY_URL)
+    val pdfSourceUrl = Constants.PDF_JS_ASSETS_DUMMY_URL.toUri()
         .buildUpon()
         .appendPath("pdf_source")
         .appendQueryParameter("wk_pdf_token", pdfSourceToken)
