@@ -1,10 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
-import android.app.Activity
-import android.content.Context
 import android.os.Build
-import android.util.Base64
-import android.util.Log
 import android.webkit.CookieManager
 import android.webkit.HttpAuthHandler
 import android.webkit.URLUtil.isValidUrl
@@ -110,7 +106,6 @@ import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
 import java.io.File
-import java.net.URL
 import kotlin.time.Duration.Companion.milliseconds
 
 fun Modifier.imePaddingCompat(): Modifier = if (
@@ -307,6 +302,7 @@ fun WebviewScreen(navController: NavController) {
 
     DisposableEffect(webView) {
         onDispose {
+            (webViewCreation as? WebViewCreation.Success)?.onDispose?.invoke()
             NfcBridgeManager.detachWebView(webView)
             webView.stopLoading()
             webView.removeAllViews()
@@ -342,18 +338,23 @@ fun WebviewScreen(navController: NavController) {
         } else if (schemeType == SchemeType.FILE) {
             val mimeType = getMimeType(context, uri)
             val file = File(uri.path ?: "")
+            val isPdf = (
+                mimeType == "application/pdf"
+                    || file.extension.lowercase() == "pdf"
+            )
+
+            if (
+                file.exists()
+                && isPdf
+                && userSettings.supportPdfRendering
+                && PdfJsManager.areAssetsReady(context)
+            ) {
+                handlePdfUrlRendering(webView, newUrl)
+                return
+            }
+
             val pageContent = when {
                 !file.exists() -> generateFileMissingPage(file, userSettings.theme)
-                (
-                    userSettings.supportPdfRendering
-                        && PdfJsManager.areAssetsReady(context)
-                        && (
-                            mimeType == "application/pdf"
-                            || file.extension.lowercase() == "pdf"
-                        )
-                ) -> {
-                    generatePdfRendererHtml(newUrl)
-                }
                 !isSupportedFileURLMimeType(mimeType) -> generateUnsupportedMimeTypePage(
                     context, file, mimeType, userSettings.theme
                 )
@@ -388,8 +389,7 @@ fun WebviewScreen(navController: NavController) {
                 newUrl
             }
             if (targetPdfUrl.isNotEmpty()) {
-                handlePdfRemoteUrlRendering(
-                    context,
+                handlePdfUrlRendering(
                     webView,
                     targetPdfUrl,
                 )
@@ -714,8 +714,7 @@ fun WebviewScreen(navController: NavController) {
     )
 }
 
-private fun handlePdfRemoteUrlRendering(
-    context: Context,
+private fun handlePdfUrlRendering(
     webView: WebView,
     targetPdfUrl: String
 ) {
@@ -723,29 +722,16 @@ private fun handlePdfRemoteUrlRendering(
         return
     }
 
-    Thread {
-        try {
-            ToastManager.show(context, "Preparing to render PDF...")
-            val bytes = URL(targetPdfUrl).openStream().use { it.readBytes() }
-            val base64Data = Base64.encodeToString(bytes, Base64.NO_WRAP)
-            val activity = context as? Activity ?: return@Thread
-            ToastManager.cancel()
-            activity.runOnUiThread {
-                val htmlContent = generatePdfRendererHtml(base64Data)
-                val encodedPdfUrl = java.net.URLEncoder.encode(targetPdfUrl, "UTF-8")
-                val baseUrlWithFallback = "${Constants.PDF_JS_ASSETS_DUMMY_URL}?wk_pdf_url=$encodedPdfUrl"
+    val htmlContent = generatePdfRendererHtml(targetPdfUrl)
+    val encodedPdfUrl = java.net.URLEncoder.encode(targetPdfUrl, "UTF-8")
+    val baseUrlWithFallback =
+        "${Constants.PDF_JS_ASSETS_DUMMY_URL}?wk_pdf_url=$encodedPdfUrl"
 
-                webView.loadDataWithBaseURL(
-                    baseUrlWithFallback,
-                    htmlContent,
-                    "text/html",
-                    "UTF-8",
-                    null
-                )
-            }
-        } catch (e: Exception) {
-            Log.e(Constants.APP_SCHEME, "Failed to fetch PDF: $targetPdfUrl", e)
-            ToastManager.show(context, "PDF fetch failed: ${e.message}")
-        }
-    }.start()
+    webView.loadDataWithBaseURL(
+        baseUrlWithFallback,
+        htmlContent,
+        "text/html",
+        "UTF-8",
+        null
+    )
 }

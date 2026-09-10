@@ -52,6 +52,12 @@ object AuthenticationManager {
         this.activity = activity
     }
 
+    fun clear(activity: AppCompatActivity) {
+        if (this.activity === activity) {
+            this.activity = null
+        }
+    }
+
     fun checkAuthAndRefreshSession(): Boolean {
         val now = System.currentTimeMillis()
         val isValid = (

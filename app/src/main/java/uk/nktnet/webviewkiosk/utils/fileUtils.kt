@@ -22,10 +22,11 @@ val supportedMimeTypesArray = arrayOf(
     "image/*",
     "audio/*",
     "video/*",
-    "application/json",
     "application/javascript",
+    "application/json",
+    "application/pdf",
+    "application/txt",
     "application/xml",
-    "application/txt"
 )
 
 fun listLocalFiles(dir: File): List<File> {
@@ -34,7 +35,13 @@ fun listLocalFiles(dir: File): List<File> {
 
 fun getFileNameFromUri(context: Context, uri: Uri): String {
     var name: String? = null
-    val cursor: Cursor? = context.contentResolver.query(uri, null, null, null, null)
+    val cursor: Cursor? = context.contentResolver.query(
+        uri,
+        null,
+        null,
+        null,
+        null,
+    )
     cursor?.use {
         if (it.moveToFirst()) {
             val index = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)

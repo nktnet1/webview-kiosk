@@ -19,15 +19,6 @@ class BlobInterface(
     companion object {
         const val NAME = "WebviewKioskBlobInterface"
 
-        @JvmStatic
-        private var isActive = true
-
-        @Suppress("unused")
-        @JvmStatic
-        fun setIsActive(value: Boolean) {
-            isActive = value
-        }
-
         const val JS_BLOB_HOOK = """
             (function() {
                 if (window.__${Constants.APP_SCHEME}_blobHookInstalled) {
@@ -35,12 +26,19 @@ class BlobInterface(
                 }
 
                 window.__${Constants.APP_SCHEME}_blobHookInstalled = true;
+                window.__${Constants.APP_SCHEME}_blobsByUrl = new Map();
 
-                const orig = URL.createObjectURL;
+                const origCreateObjectURL = URL.createObjectURL;
 
                 URL.createObjectURL = function(blob) {
-                    window.__${Constants.APP_SCHEME}_lastBlob = blob;
-                    return orig.call(URL, blob);
+                    const url = origCreateObjectURL.call(URL, blob);
+                    // Keep the Blob available even if the page immediately
+                    // revokes its object URL. Some sites (including GitHub)
+                    // revoke download URLs before the native download prompt
+                    // has been confirmed. The entry is removed after the
+                    // download succeeds, fails, or is cancelled.
+                    window.__${Constants.APP_SCHEME}_blobsByUrl.set(url, blob);
+                    return url;
                 };
             })();
         """
@@ -52,8 +50,16 @@ class BlobInterface(
         val mimeType: String?
     )
 
+    @Volatile
+    private var isActive = true
+
     private val activeDownloads =
         ConcurrentHashMap<String, ActiveDownload>()
+
+    fun dispose() {
+        isActive = false
+        activeDownloads.keys.toList().forEach(::abortInternal)
+    }
 
     @JavascriptInterface
     fun error(message: String?) {
@@ -84,12 +90,7 @@ class BlobInterface(
 
         return try {
             // Clean up an accidentally reused transfer ID.
-            activeDownloads.remove(transferId)?.let {
-                try {
-                    it.output.close()
-                } catch (_: Exception) {
-                }
-            }
+            abortInternal(transferId)
 
             val downloads =
                 Environment.getExternalStoragePublicDirectory(
@@ -140,6 +141,9 @@ class BlobInterface(
             )
 
             synchronized(download) {
+                if (!isActive || activeDownloads[transferId] !== download) {
+                    return false
+                }
                 download.output.write(bytes)
             }
 
@@ -162,13 +166,22 @@ class BlobInterface(
         transferId: String
     ): Boolean {
         val download =
-            activeDownloads.remove(transferId)
+            activeDownloads[transferId]
                 ?: return false
 
         return try {
-            synchronized(download) {
-                download.output.flush()
-                download.output.close()
+            val completed = synchronized(download) {
+                if (!isActive || activeDownloads[transferId] !== download) {
+                    false
+                } else {
+                    download.output.flush()
+                    download.output.close()
+                    activeDownloads.remove(transferId, download)
+                }
+            }
+
+            if (!completed) {
+                return false
             }
 
             ToastManager.show(
@@ -182,17 +195,14 @@ class BlobInterface(
                 CustomNotificationManager
                     .sendBlobDownloadNotification(
                         context,
-                        download.file
+                        download.file,
+                        download.mimeType
                     )
             }
 
             true
         } catch (e: Exception) {
-            try {
-                download.output.close()
-            } catch (e: Exception) {
-                Log.e(javaClass.simpleName, "Failed to close download output", e)
-            }
+            abortInternal(transferId)
 
             ToastManager.show(
                 context,
@@ -215,23 +225,29 @@ class BlobInterface(
         transferId: String
     ) {
         val download =
-            activeDownloads.remove(transferId)
+            activeDownloads[transferId]
                 ?: return
 
-        try {
-            download.output.close()
-        } catch (e: Exception) {
-            Log.e(
-                javaClass.simpleName,
-                "Failed to close download output during abort",
-                e
-            )
-        }
+        synchronized(download) {
+            if (!activeDownloads.remove(transferId, download)) {
+                return
+            }
 
-        try {
-            download.file.delete()
-        } catch (e: Exception) {
-            Log.e(javaClass.simpleName, "Failed to delete file during abort", e)
+            try {
+                download.output.close()
+            } catch (e: Exception) {
+                Log.e(
+                    javaClass.simpleName,
+                    "Failed to close download output during abort",
+                    e
+                )
+            }
+
+            try {
+                download.file.delete()
+            } catch (e: Exception) {
+                Log.e(javaClass.simpleName, "Failed to delete file during abort", e)
+            }
         }
     }
 

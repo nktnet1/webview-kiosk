@@ -433,6 +433,7 @@ class MainActivity : AppCompatActivity() {
         stopService(
             Intent(this, MqttForegroundService::class.java)
         )
+        AuthenticationManager.clear(this)
         super.onDestroy()
     }
 

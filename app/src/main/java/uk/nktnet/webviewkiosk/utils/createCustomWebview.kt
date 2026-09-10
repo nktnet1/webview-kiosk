@@ -54,6 +54,7 @@ import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleDownloadPrompt
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
+import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePdfSourceRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorPromptRequest
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BatteryInterface
@@ -172,8 +173,16 @@ fun createCustomWebview(
         return false
     }
 
+    val blobInterfaces = remember { mutableSetOf<BlobInterface>() }
+
     fun buildWebView(): WebView {
-        return WebView(context).apply {
+        val blobInterface = if (userSettings.allowFileDownload) {
+            BlobInterface(context).also { blobInterfaces.add(it) }
+        } else {
+            null
+        }
+
+        val webView = WebView(context).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
@@ -246,9 +255,11 @@ fun createCustomWebview(
                     }
                 }
             }
-            if (userSettings.allowFileDownload) {
-                addJavascriptInterface(BlobInterface(context), BlobInterface.NAME)
+            blobInterface?.let {
+                addJavascriptInterface(it, BlobInterface.NAME)
             }
+
+            val requestUserAgent = settings.userAgentString
 
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
@@ -331,10 +342,20 @@ fun createCustomWebview(
                     view: WebView?,
                     request: WebResourceRequest?
                 ): WebResourceResponse? {
-                    if (assetLoader != null && request != null) {
-                        val response = assetLoader.shouldInterceptRequest(request.url)
-                        if (response != null) {
-                            return response
+                    if (request != null) {
+                        handlePdfSourceRequest(
+                            request,
+                            requestUserAgent,
+                            userSettings.allowLocalFiles
+                        )?.let {
+                            return it
+                        }
+
+                        if (assetLoader != null) {
+                            val response = assetLoader.shouldInterceptRequest(request.url)
+                            if (response != null) {
+                                return response
+                            }
                         }
                     }
                     return super.shouldInterceptRequest(view, request)
@@ -517,6 +538,10 @@ fun createCustomWebview(
                         "WebView renderer gone. crashed=${detail.didCrash()}"
                     )
                     parent?.removeView(view)
+                    blobInterface?.let {
+                        it.dispose()
+                        blobInterfaces.remove(it)
+                    }
                     view.destroy()
                     if (parent != null) {
                         val newWebView = buildWebView()
@@ -720,12 +745,17 @@ fun createCustomWebview(
                 )
             }
         }
+
+        return webView
     }
 
     val webViewCreationResult = remember {
         try {
             val webView = buildWebView()
-            WebViewCreation.Success(webView)
+            WebViewCreation.Success(webView) {
+                blobInterfaces.toList().forEach { it.dispose() }
+                blobInterfaces.clear()
+            }
         } catch (e: Exception) {
             Log.e(Constants.APP_SCHEME, "Failed to create WebView", e)
             WebViewCreation.Failure(e)
