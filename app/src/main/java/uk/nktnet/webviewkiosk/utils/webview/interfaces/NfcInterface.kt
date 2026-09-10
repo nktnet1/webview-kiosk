@@ -1,9 +1,9 @@
 package uk.nktnet.webviewkiosk.utils.webview.interfaces
 
-import android.nfc.NfcAdapter
 import android.webkit.JavascriptInterface
 import org.json.JSONObject
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
+import uk.nktnet.webviewkiosk.utils.webview.isNfcEnabled
 
 class NfcInterface(private val context: android.content.Context) {
     companion object {
@@ -338,8 +338,8 @@ class NfcInterface(private val context: android.content.Context) {
                 window.addEventListener('beforeunload', function() {
                     activeReaders.clear();
                     pendingWrites.clear();
-                    if (nativeBridge && typeof nativeBridge.stopScan === 'function') {
-                        nativeBridge.stopScan();
+                    if (nativeBridge && typeof nativeBridge.reset === 'function') {
+                        nativeBridge.reset();
                     }
                 });
             })();
@@ -349,8 +349,7 @@ class NfcInterface(private val context: android.content.Context) {
     @Suppress("unused")
     @JavascriptInterface
     fun scan(optionsJson: String?): Boolean {
-        val isAvailable = NfcAdapter.getDefaultAdapter(context)?.isEnabled == true
-        if (!isAvailable) {
+        if (!isNfcEnabled(context)) {
             return false
         }
 
@@ -366,9 +365,14 @@ class NfcInterface(private val context: android.content.Context) {
 
     @Suppress("unused")
     @JavascriptInterface
+    fun reset() {
+        NfcBridgeManager.resetSession()
+    }
+
+    @Suppress("unused")
+    @JavascriptInterface
     fun write(messageJson: String?, optionsJson: String?): String {
-        val isAvailable = NfcAdapter.getDefaultAdapter(context)?.isEnabled == true
-        if (!isAvailable) {
+        if (!isNfcEnabled(context)) {
             return JSONObject().apply {
                 put("ok", false)
                 put("errorName", "NotAllowedError")
@@ -387,6 +391,11 @@ class NfcInterface(private val context: android.content.Context) {
             }.toString()
 
         val requestId = NfcBridgeManager.queueWrite(message)
+            ?: return JSONObject().apply {
+                put("ok", false)
+                put("errorName", "InvalidStateError")
+                put("errorMessage", "An NFC write is already pending")
+            }.toString()
         return JSONObject().apply {
             put("ok", true)
             put("requestId", requestId)

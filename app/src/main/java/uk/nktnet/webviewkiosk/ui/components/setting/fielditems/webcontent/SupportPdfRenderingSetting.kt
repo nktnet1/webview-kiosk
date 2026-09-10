@@ -53,11 +53,8 @@ fun SupportPdfRenderingSetting() {
 
             ---
 
-            Remote PDF files are loaded through a dummy endpoint
-
-            ${Constants.PDF_JS_ASSETS_DUMMY_URL}?wk_pdf_url=[SAMPLE_PDF_URL].pdf
-
-            which gets locally routed to the downloaded PDF.js renderer using the
+            PDF.js assets and PDF source requests are routed through
+            ${Constants.PDF_JS_ASSETS_DUMMY_URL} and handled locally by the app using the
             WebViewAssetLoader API.
 
             For more details, see:

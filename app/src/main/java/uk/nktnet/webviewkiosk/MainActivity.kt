@@ -72,6 +72,7 @@ import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
+import uk.nktnet.webviewkiosk.utils.webview.getNfcAdapterOrNull
 import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : AppCompatActivity() {
@@ -81,17 +82,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var userSettings: UserSettings
     private lateinit var systemSettings: SystemSettings
     private lateinit var backButtonService: BackButtonManager
-    private var nfcAdapter: NfcAdapter? = null
-
     private var lastOnStartTime = 0L
 
     val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             when (intent.action) {
                 Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED -> {
-                    val currentRoute = navController.currentBackStackEntry?.destination?.route
-                    if (currentRoute != Screen.AdminRestrictionsChanged.route) {
-                        navController.navigate(Screen.AdminRestrictionsChanged.route)
+                    if (this@MainActivity::navController.isInitialized) {
+                        val currentRoute = navController.currentBackStackEntry?.destination?.route
+                        if (currentRoute != Screen.AdminRestrictionsChanged.route) {
+                            navController.navigate(Screen.AdminRestrictionsChanged.route)
+                        }
                     }
                     updateDeviceSettings(context)
                     AuthenticationManager.resetAuthentication()
@@ -115,7 +116,6 @@ class MainActivity : AppCompatActivity() {
         CustomNotificationManager.init(applicationContext)
         userSettings = UserSettings(this)
         systemSettings = SystemSettings(this)
-        nfcAdapter = NfcAdapter.getDefaultAdapter(this)
         DeviceOwnerManager.init(this)
         // https://github.com/nktnet1/webview-kiosk/pull/195
         getExternalFilesDir(null)
@@ -472,7 +472,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        val adapter = nfcAdapter ?: return
+        val adapter = getNfcAdapterOrNull(this) ?: return
 
         val intent = Intent(this, javaClass).apply {
             addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
@@ -503,7 +503,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun disableNfcForegroundDispatch() {
-        val adapter = nfcAdapter ?: return
+        val adapter = getNfcAdapterOrNull(this) ?: return
 
         runCatching {
             adapter.disableForegroundDispatch(this)

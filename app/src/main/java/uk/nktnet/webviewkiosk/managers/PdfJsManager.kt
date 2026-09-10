@@ -41,6 +41,10 @@ object PdfJsManager {
                 }
             }
 
+            if (!tempFile.isFile || tempFile.length() == 0L) {
+                throw IOException("Downloaded ${outputFile.name} is empty")
+            }
+
             if (!tempFile.renameTo(outputFile)) {
                 throw IOException("Failed to finalise ${outputFile.name}")
             }
@@ -54,17 +58,22 @@ object PdfJsManager {
             val targetDir = getTargetDirectory(context)
 
             if (!isCurrentVersion(targetDir)) {
-                targetDir.deleteRecursively()
+                if (targetDir.exists() && !targetDir.deleteRecursively()) {
+                    throw IOException("Failed to clear old PDF.js assets")
+                }
             }
 
-            if (!targetDir.exists()) {
-                targetDir.mkdirs()
+            if (!targetDir.exists() && !targetDir.mkdirs()) {
+                throw IOException("Failed to create PDF.js asset directory")
             }
 
             for ((url, fileName) in assetUrls) {
                 val outputFile = File(targetDir, fileName)
 
-                if (!outputFile.exists()) {
+                if (!outputFile.isFile || outputFile.length() == 0L) {
+                    if (outputFile.exists() && !outputFile.delete()) {
+                        throw IOException("Failed to replace ${outputFile.name}")
+                    }
                     downloadAsset(url, outputFile)
                 }
             }
@@ -85,14 +94,19 @@ object PdfJsManager {
             targetDir.exists()
                 && isCurrentVersion(targetDir)
                 && assetUrls.values.all {
-                    File(targetDir, it).isFile
+                    File(targetDir, it).let { file ->
+                        file.isFile && file.length() > 0L
+                    }
                 }
         )
     }
 
     fun clearAssets(context: Context) {
         try {
-            getTargetDirectory(context).deleteRecursively()
+            val targetDir = getTargetDirectory(context)
+            if (targetDir.exists() && !targetDir.deleteRecursively()) {
+                throw IOException("Failed to delete PDF.js assets")
+            }
             ToastManager.show(context, "PDF.js asset deleted.")
         } catch (e: Exception) {
             ToastManager.show(context, "PDF.js asset deletion failed: ${e.message}")

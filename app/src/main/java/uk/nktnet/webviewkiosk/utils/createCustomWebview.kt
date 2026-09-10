@@ -19,6 +19,7 @@ import android.webkit.HttpAuthHandler
 import android.webkit.PermissionRequest
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.SslErrorHandler
+import android.webkit.URLUtil
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -48,6 +49,7 @@ import uk.nktnet.webviewkiosk.config.data.WebViewCreation
 import uk.nktnet.webviewkiosk.config.option.OverrideUrlLoadingBlockActionOption
 import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
+import uk.nktnet.webviewkiosk.managers.PdfJsManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
@@ -70,6 +72,31 @@ import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOv
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 import java.io.File
 
+private fun isWebPdf(
+    url: String,
+    contentDisposition: String?,
+    mimeType: String?
+): Boolean {
+    val uri = runCatching { url.toUri() }.getOrNull() ?: return false
+    if (uri.scheme != "http" && uri.scheme != "https") {
+        return false
+    }
+
+    val normalizedMimeType = mimeType
+        ?.substringBefore(';')
+        ?.trim()
+
+    if (normalizedMimeType.equals("application/pdf", ignoreCase = true)) {
+        return true
+    }
+
+    return URLUtil.guessFileName(
+        url,
+        contentDisposition,
+        mimeType
+    ).endsWith(".pdf", ignoreCase = true)
+}
+
 data class WebViewConfig(
     val systemSettings: SystemSettings,
     val userSettings: UserSettings,
@@ -82,13 +109,16 @@ data class WebViewConfig(
     val onHttpAuthRequest: (handler: HttpAuthHandler?, host: String?, realm: String?) -> Unit,
     val onLinkLongClick: (url: String) -> Unit,
     val onImageLongClick: (url: String) -> Unit,
+    val onPdfUrlRequested: (webView: WebView, url: String) -> Unit,
+    val onRenderProcessGone: () -> Unit,
 )
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
 fun createCustomWebview(
     context: Context,
-    config: WebViewConfig
+    config: WebViewConfig,
+    recreationKey: Int = 0
 ): WebViewCreation {
     val systemSettings = config.systemSettings
     val userSettings = config.userSettings
@@ -173,11 +203,9 @@ fun createCustomWebview(
         return false
     }
 
-    val blobInterfaces = remember { mutableSetOf<BlobInterface>() }
-
-    fun buildWebView(): WebView {
+    fun buildWebView(): Pair<WebView, BlobInterface?> {
         val blobInterface = if (userSettings.allowFileDownload) {
-            BlobInterface(context).also { blobInterfaces.add(it) }
+            BlobInterface(context)
         } else {
             null
         }
@@ -264,6 +292,8 @@ fun createCustomWebview(
             webViewClient = object : WebViewClient() {
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     config.setLastErrorUrl("")
+                    blobInterface?.abortAllDownloads()
+                    NfcBridgeManager.resetSession()
                     if (userSettings.requestFocusOnPageStart) {
                         runCatching {
                             view?.requestFocus()
@@ -346,7 +376,9 @@ fun createCustomWebview(
                         handlePdfSourceRequest(
                             request,
                             requestUserAgent,
-                            userSettings.allowLocalFiles
+                            userSettings,
+                            config.blacklistRegexes,
+                            config.whitelistRegexes,
                         )?.let {
                             return it
                         }
@@ -412,6 +444,16 @@ fun createCustomWebview(
 
                             else -> Unit
                         }
+                        return true
+                    }
+
+                    if (
+                        view != null
+                        && userSettings.supportPdfRendering
+                        && PdfJsManager.areAssetsReady(context)
+                        && isWebPdf(requestUrl, null, null)
+                    ) {
+                        config.onPdfUrlRequested(view, requestUrl)
                         return true
                     }
                     return false
@@ -532,22 +574,15 @@ fun createCustomWebview(
                     view: WebView,
                     detail: RenderProcessGoneDetail
                 ): Boolean {
-                    val parent = view.parent as? ViewGroup
                     Log.e(
                         Constants.APP_SCHEME,
                         "WebView renderer gone. crashed=${detail.didCrash()}"
                     )
-                    parent?.removeView(view)
-                    blobInterface?.let {
-                        it.dispose()
-                        blobInterfaces.remove(it)
-                    }
+                    (view.parent as? ViewGroup)?.removeView(view)
+                    NfcBridgeManager.detachWebView(view)
+                    blobInterface?.dispose()
                     view.destroy()
-                    if (parent != null) {
-                        val newWebView = buildWebView()
-                        parent.addView(newWebView)
-                        newWebView.loadUrl(systemSettings.currentUrl)
-                    }
+                    config.onRenderProcessGone()
                     return true
                 }
             }
@@ -735,26 +770,33 @@ fun createCustomWebview(
             }
 
             setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
-                handleDownloadPrompt(
-                    context = context,
-                    webView = this,
-                    url = url,
-                    userAgent = userAgent,
-                    contentDisposition = contentDisposition,
-                    mimeType = mimeType,
-                )
+                if (
+                    userSettings.supportPdfRendering
+                    && PdfJsManager.areAssetsReady(context)
+                    && isWebPdf(url, contentDisposition, mimeType)
+                ) {
+                    config.onPdfUrlRequested(this, url)
+                } else {
+                    handleDownloadPrompt(
+                        context = context,
+                        webView = this,
+                        url = url,
+                        userAgent = userAgent,
+                        contentDisposition = contentDisposition,
+                        mimeType = mimeType,
+                    )
+                }
             }
         }
 
-        return webView
+        return webView to blobInterface
     }
 
-    val webViewCreationResult = remember {
+    val webViewCreationResult = remember(recreationKey) {
         try {
-            val webView = buildWebView()
+            val (webView, blobInterface) = buildWebView()
             WebViewCreation.Success(webView) {
-                blobInterfaces.toList().forEach { it.dispose() }
-                blobInterfaces.clear()
+                blobInterface?.dispose()
             }
         } catch (e: Exception) {
             Log.e(Constants.APP_SCHEME, "Failed to create WebView", e)

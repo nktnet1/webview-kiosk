@@ -1,7 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device
 
 import android.content.Intent
-import android.nfc.NfcAdapter
 import android.provider.Settings
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -27,6 +26,8 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import uk.nktnet.webviewkiosk.utils.webview.getNfcAdapterOrNull
+import uk.nktnet.webviewkiosk.utils.webview.isNfcEnabled
 import uk.nktnet.webviewkiosk.utils.safeStartActivity
 
 @Composable
@@ -41,9 +42,9 @@ fun AllowNfcSetting() {
     var nfcEnabled by remember { mutableStateOf(false) }
 
     fun refreshNfcState() {
-        val adapter = NfcAdapter.getDefaultAdapter(context)
+        val adapter = getNfcAdapterOrNull(context)
         nfcSupported = adapter != null
-        nfcEnabled = adapter?.isEnabled == true
+        nfcEnabled = adapter != null && isNfcEnabled(context)
     }
 
     LaunchedEffect(Unit) {

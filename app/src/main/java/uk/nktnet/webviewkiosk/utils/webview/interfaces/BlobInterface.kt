@@ -27,6 +27,21 @@ class BlobInterface(
 
                 window.__${Constants.APP_SCHEME}_blobHookInstalled = true;
                 window.__${Constants.APP_SCHEME}_blobsByUrl = new Map();
+                window.__${Constants.APP_SCHEME}_blobTimersByUrl = new Map();
+
+                const MAX_CAPTURED_BLOBS = 32;
+                const BLOB_RETENTION_MS = 5 * 60 * 1000;
+
+                function releaseBlob(url) {
+                    const timer = window.__${Constants.APP_SCHEME}_blobTimersByUrl.get(url);
+                    if (timer !== undefined) {
+                        clearTimeout(timer);
+                        window.__${Constants.APP_SCHEME}_blobTimersByUrl.delete(url);
+                    }
+                    window.__${Constants.APP_SCHEME}_blobsByUrl.delete(url);
+                }
+
+                window.__${Constants.APP_SCHEME}_releaseBlob = releaseBlob;
 
                 const origCreateObjectURL = URL.createObjectURL;
 
@@ -38,8 +53,26 @@ class BlobInterface(
                     // has been confirmed. The entry is removed after the
                     // download succeeds, fails, or is cancelled.
                     window.__${Constants.APP_SCHEME}_blobsByUrl.set(url, blob);
+
+                    while (window.__${Constants.APP_SCHEME}_blobsByUrl.size > MAX_CAPTURED_BLOBS) {
+                        const oldestUrl = window.__${Constants.APP_SCHEME}_blobsByUrl.keys().next().value;
+                        if (!oldestUrl) break;
+                        releaseBlob(oldestUrl);
+                    }
+
+                    const timer = setTimeout(function() {
+                        releaseBlob(url);
+                    }, BLOB_RETENTION_MS);
+                    window.__${Constants.APP_SCHEME}_blobTimersByUrl.set(url, timer);
                     return url;
                 };
+
+                window.addEventListener('pagehide', function() {
+                    try {
+                        ${NAME}.abortAllDownloads();
+                    } catch (_) {}
+                    Array.from(window.__${Constants.APP_SCHEME}_blobsByUrl.keys()).forEach(releaseBlob);
+                });
             })();
         """
     }
@@ -58,6 +91,12 @@ class BlobInterface(
 
     fun dispose() {
         isActive = false
+        abortAllDownloads()
+    }
+
+    @Suppress("unused")
+    @JavascriptInterface
+    fun abortAllDownloads() {
         activeDownloads.keys.toList().forEach(::abortInternal)
     }
 

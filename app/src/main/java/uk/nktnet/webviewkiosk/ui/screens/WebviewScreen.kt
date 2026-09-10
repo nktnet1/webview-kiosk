@@ -19,6 +19,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -99,6 +100,7 @@ import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
+import uk.nktnet.webviewkiosk.utils.webview.handlers.registerPdfSource
 import uk.nktnet.webviewkiosk.utils.webview.html.generateFileMissingPage
 import uk.nktnet.webviewkiosk.utils.webview.html.generatePdfRendererHtml
 import uk.nktnet.webviewkiosk.utils.webview.html.generateUnsupportedMimeTypePage
@@ -199,6 +201,7 @@ fun WebviewScreen(navController: NavController) {
     var lastErrorUrl by remember { mutableStateOf("") }
 
     var suggestions by remember { mutableStateOf(listOf<String>()) }
+    var webViewRecreationKey by remember { mutableIntStateOf(0) }
 
     if (userSettings.searchSuggestionEngine != SearchSuggestionEngineOption.NONE) {
         LaunchedEffect(addressBarHasFocus, urlBarText.text) {
@@ -287,7 +290,12 @@ fun WebviewScreen(navController: NavController) {
             onImageLongClick = { image ->
                 imageToOpen = image
             },
-        )
+            onPdfUrlRequested = ::handlePdfUrlRendering,
+            onRenderProcessGone = {
+                webViewRecreationKey++
+            },
+        ),
+        recreationKey = webViewRecreationKey,
     )
 
     val (webView, webViewError) = when (webViewCreation) {
@@ -304,9 +312,9 @@ fun WebviewScreen(navController: NavController) {
         onDispose {
             (webViewCreation as? WebViewCreation.Success)?.onDispose?.invoke()
             NfcBridgeManager.detachWebView(webView)
-            webView.stopLoading()
-            webView.removeAllViews()
-            webView.destroy()
+            runCatching { webView.stopLoading() }
+            runCatching { webView.removeAllViews() }
+            runCatching { webView.destroy() }
         }
     }
 
@@ -382,25 +390,18 @@ fun WebviewScreen(navController: NavController) {
         )
         val isDummyFallback = newUrl.startsWith(Constants.PDF_JS_ASSETS_DUMMY_URL)
 
-        if (isPdfRenderingSupported && (isWebPdf || isDummyFallback)) {
-            val targetPdfUrl = if (isDummyFallback) {
-                uri.getQueryParameter("wk_pdf_url") ?: ""
-            } else {
-                newUrl
-            }
-            if (targetPdfUrl.isNotEmpty()) {
-                handlePdfUrlRendering(
-                    webView,
-                    targetPdfUrl,
-                )
-                return
-            }
-        } else if (isDummyFallback) {
+        if (isDummyFallback) {
             val pdfUrl = uri.getQueryParameter("wk_pdf_url") ?: ""
             if (pdfUrl.isNotEmpty()) {
                 customLoadUrl(pdfUrl)
                 return
             }
+        } else if (isPdfRenderingSupported && isWebPdf) {
+            handlePdfUrlRendering(
+                webView,
+                newUrl,
+            )
+            return
         }
         webView.loadUrl(newUrl)
     }
@@ -467,72 +468,76 @@ fun WebviewScreen(navController: NavController) {
     )
 
     val composableAddressBarView = @Composable {
-        AndroidView(
-            factory = { ctx ->
-                ComposeView(ctx).apply {
-                    setContent {
-                        AddressBar(
-                            navController = navController,
-                            urlBarText = urlBarText,
-                            onUrlBarTextChange = { urlBarText = it },
-                            hasFocus = addressBarHasFocus,
-                            onFocusChanged = { addressBarHasFocus = it.isFocused },
-                            showFindInPage = showFindInPage,
-                            addressBarSearch = addressBarSearch,
-                            showHistoryDialog = { isOpenHistoryDialog = true },
-                            showBookmarkDialog = { isOpenBookmarkDialog = true },
-                            showFilesDialog = { isOpenFilesDialog = true },
-                            showAppsDialog = { isOpenAppsDialog = true },
-                            webView = webView,
-                            customLoadUrl = ::customLoadUrl,
-                        )
+        key(webView) {
+            AndroidView(
+                factory = { ctx ->
+                    ComposeView(ctx).apply {
+                        setContent {
+                            AddressBar(
+                                navController = navController,
+                                urlBarText = urlBarText,
+                                onUrlBarTextChange = { urlBarText = it },
+                                hasFocus = addressBarHasFocus,
+                                onFocusChanged = { addressBarHasFocus = it.isFocused },
+                                showFindInPage = showFindInPage,
+                                addressBarSearch = addressBarSearch,
+                                showHistoryDialog = { isOpenHistoryDialog = true },
+                                showBookmarkDialog = { isOpenBookmarkDialog = true },
+                                showFilesDialog = { isOpenFilesDialog = true },
+                                showAppsDialog = { isOpenAppsDialog = true },
+                                webView = webView,
+                                customLoadUrl = ::customLoadUrl,
+                            )
+                        }
                     }
-                }
-            },
-            modifier = Modifier.fillMaxWidth()
-        )
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
     }
 
     val composableWebView = @Composable {
-        AndroidView(
-            factory = { ctx ->
-                var initialUrl = lastVisitedUrl
+        key(webView) {
+            AndroidView(
+                factory = { ctx ->
+                    var initialUrl = lastVisitedUrl
 
-                if (systemSettings.intentUrl.isNotEmpty()) {
-                    initialUrl = systemSettings.intentUrl
-                    systemSettings.intentUrl = ""
-                } else if (systemSettings.isFreshLaunch) {
-                    systemSettings.isFreshLaunch = false
-                    if (userSettings.resetOnLaunch) {
-                        initialUrl = userSettings.homeUrl
-                        systemSettings.clearHistory()
+                    if (systemSettings.intentUrl.isNotEmpty()) {
+                        initialUrl = systemSettings.intentUrl
+                        systemSettings.intentUrl = ""
+                    } else if (systemSettings.isFreshLaunch) {
+                        systemSettings.isFreshLaunch = false
+                        if (userSettings.resetOnLaunch) {
+                            initialUrl = userSettings.homeUrl
+                            systemSettings.clearHistory()
+                        }
                     }
-                }
 
-                urlBarText = urlBarText.copy(text = initialUrl)
+                    urlBarText = urlBarText.copy(text = initialUrl)
 
-                WebviewAwareSwipeRefreshLayout(ctx, webView).apply {
-                    isEnabled = userSettings.allowRefresh && userSettings.allowPullToRefresh
-                    setOnRefreshListener {
-                        isSwipeRefreshing = true
-                        WebViewNavigation.refresh(
-                            ::customLoadUrl,
-                            systemSettings,
-                            userSettings
+                    WebviewAwareSwipeRefreshLayout(ctx, webView).apply {
+                        isEnabled = userSettings.allowRefresh && userSettings.allowPullToRefresh
+                        setOnRefreshListener {
+                            isSwipeRefreshing = true
+                            WebViewNavigation.refresh(
+                                ::customLoadUrl,
+                                systemSettings,
+                                userSettings
+                            )
+                        }
+                        addView(
+                            webView.apply {
+                                customLoadUrl(initialUrl)
+                            }
                         )
                     }
-                    addView(
-                        webView.apply {
-                            customLoadUrl(initialUrl)
-                        }
-                    )
-                }
-            },
-            update = { view ->
-                view.isRefreshing = isSwipeRefreshing
-            },
-            modifier = Modifier.fillMaxSize()
-        )
+                },
+                update = { view ->
+                    view.isRefreshing = isSwipeRefreshing
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
 
     Box(
@@ -722,7 +727,8 @@ private fun handlePdfUrlRendering(
         return
     }
 
-    val htmlContent = generatePdfRendererHtml(targetPdfUrl)
+    val sourceToken = registerPdfSource(targetPdfUrl)
+    val htmlContent = generatePdfRendererHtml(sourceToken)
     val encodedPdfUrl = java.net.URLEncoder.encode(targetPdfUrl, "UTF-8")
     val baseUrlWithFallback =
         "${Constants.PDF_JS_ASSETS_DUMMY_URL}?wk_pdf_url=$encodedPdfUrl"

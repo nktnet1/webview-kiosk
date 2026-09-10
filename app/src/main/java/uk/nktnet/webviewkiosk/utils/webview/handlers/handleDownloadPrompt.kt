@@ -83,6 +83,8 @@ fun handleDownloadPrompt(
 
     val editText = EditText(context).apply {
         setText(suggestedName)
+        setSingleLine(true)
+        maxLines = 1
         setPadding(10, 10, 10, 35)
     }
     layout.addView(editText)
@@ -298,7 +300,11 @@ private fun fetchBlob(
                     );
                 }
 
-                if (blobMap) {
+                const releaseBlob =
+                    window.__${Constants.APP_SCHEME}_releaseBlob;
+                if (typeof releaseBlob === 'function') {
+                    releaseBlob(blobUrl);
+                } else if (blobMap) {
                     blobMap.delete(blobUrl);
                 }
 
@@ -309,7 +315,11 @@ private fun fetchBlob(
 
                 const blobMap =
                     window.__${Constants.APP_SCHEME}_blobsByUrl;
-                if (blobMap) {
+                const releaseBlob =
+                    window.__${Constants.APP_SCHEME}_releaseBlob;
+                if (typeof releaseBlob === 'function') {
+                    releaseBlob(blobUrl);
+                } else if (blobMap) {
                     blobMap.delete(blobUrl);
                 }
 
@@ -330,8 +340,12 @@ private fun releaseCapturedBlob(
 ) {
     val quotedBlobUrl = JSONObject.quote(blobUrl)
     webView.evaluateJavascript(
-        "window.__${Constants.APP_SCHEME}_blobsByUrl && " +
-            "window.__${Constants.APP_SCHEME}_blobsByUrl.delete($quotedBlobUrl);",
+        "(function(){" +
+            "const releaseBlob=window.__${Constants.APP_SCHEME}_releaseBlob;" +
+            "if(typeof releaseBlob==='function'){releaseBlob($quotedBlobUrl);}" +
+            "else if(window.__${Constants.APP_SCHEME}_blobsByUrl){" +
+            "window.__${Constants.APP_SCHEME}_blobsByUrl.delete($quotedBlobUrl);}" +
+            "})();",
         null
     )
 }

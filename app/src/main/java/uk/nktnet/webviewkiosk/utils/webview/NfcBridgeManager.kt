@@ -17,23 +17,31 @@ object NfcBridgeManager {
     @Volatile
     private var isScanActive = false
 
+    @Volatile
     private var webViewRef: WeakReference<WebView>? = null
     private val writeCounter = AtomicLong(0)
+    private val sessionCounter = AtomicLong(0)
+
+    @Volatile
+    private var sessionId = 0L
 
     @Volatile
     private var pendingWrite: PendingWriteRequest? = null
 
     private data class PendingWriteRequest(
         val requestId: String,
-        val messageJson: String
+        val messageJson: String,
+        val sessionId: Long
     )
 
     fun attachWebView(webView: WebView) {
+        resetSession()
         webViewRef = WeakReference(webView)
     }
 
     fun detachWebView(webView: WebView) {
         if (webViewRef?.get() == webView) {
+            resetSession()
             webViewRef?.clear()
             webViewRef = null
         }
@@ -43,44 +51,72 @@ object NfcBridgeManager {
         isScanActive = active
     }
 
-    fun queueWrite(messageJson: String): String {
+    @Synchronized
+    fun queueWrite(messageJson: String): String? {
+        if (pendingWrite != null) {
+            return null
+        }
+
         val requestId = "nfc-write-${System.currentTimeMillis()}-${writeCounter.incrementAndGet()}"
         pendingWrite = PendingWriteRequest(
             requestId = requestId,
-            messageJson = messageJson
+            messageJson = messageJson,
+            sessionId = sessionId
         )
         return requestId
     }
 
+    @Synchronized
+    fun resetSession() {
+        isScanActive = false
+        pendingWrite = null
+        sessionId = sessionCounter.incrementAndGet()
+    }
+
     fun onTagScanned(tag: Tag) {
         val webView = webViewRef?.get() ?: return
+        val activeSessionId = sessionId
 
-        val writeResult = consumePendingWriteAndWrite(tag)
-        if (writeResult != null) {
+        val writeResult = consumePendingWriteAndWrite(tag, activeSessionId)
+        if (writeResult != null && isCurrentSession(webView, activeSessionId)) {
             webView.post {
-                webView.evaluateJavascript(
-                    "window.__WebviewKioskNfcBridge && window.__WebviewKioskNfcBridge.onWriteResult($writeResult);",
-                    null
-                )
+                if (isCurrentSession(webView, activeSessionId)) {
+                    webView.evaluateJavascript(
+                        "window.__WebviewKioskNfcBridge && window.__WebviewKioskNfcBridge.onWriteResult($writeResult);",
+                        null
+                    )
+                }
             }
         }
 
-        if (!isScanActive) {
+        if (!isScanActive || !isCurrentSession(webView, activeSessionId)) {
             return
         }
 
         val payload = buildTagPayload(tag)
         webView.post {
-            webView.evaluateJavascript(
-                "window.__WebviewKioskNfcBridge && window.__WebviewKioskNfcBridge.onTagScanned($payload);",
-                null
-            )
+            if (isScanActive && isCurrentSession(webView, activeSessionId)) {
+                webView.evaluateJavascript(
+                    "window.__WebviewKioskNfcBridge && window.__WebviewKioskNfcBridge.onTagScanned($payload);",
+                    null
+                )
+            }
         }
     }
 
-    private fun consumePendingWriteAndWrite(tag: Tag): JSONObject? {
-        val request = pendingWrite ?: return null
-        pendingWrite = null
+    private fun consumePendingWriteAndWrite(
+        tag: Tag,
+        activeSessionId: Long
+    ): JSONObject? {
+        val request = synchronized(this) {
+            val current = pendingWrite ?: return null
+            if (current.sessionId != activeSessionId) {
+                pendingWrite = null
+                return null
+            }
+            pendingWrite = null
+            current
+        }
 
         return runCatching {
             writeNdefToTag(tag, request.messageJson)
@@ -96,6 +132,10 @@ object NfcBridgeManager {
                 put("errorMessage", error.message ?: "Failed to write NFC tag")
             }
         }
+    }
+
+    private fun isCurrentSession(webView: WebView, expectedSessionId: Long): Boolean {
+        return sessionId == expectedSessionId && webViewRef?.get() === webView
     }
 
     private fun mapWriteErrorName(error: Throwable): String {
