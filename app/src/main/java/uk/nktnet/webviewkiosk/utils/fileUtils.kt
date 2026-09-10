@@ -6,15 +6,21 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Environment
 import android.provider.OpenableColumns
+import android.system.Os
 import android.text.format.Formatter
 import android.util.Log
 import android.webkit.MimeTypeMap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.config.Constants
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.nio.ByteBuffer
+import java.nio.charset.CodingErrorAction
 import java.util.UUID
 
 val supportedMimeTypesArray = arrayOf(
@@ -29,8 +35,104 @@ val supportedMimeTypesArray = arrayOf(
     "application/xml",
 )
 
+
+private const val MAX_EDITABLE_TEXT_FILE_BYTES = 1024 * 1024
+
+private fun readFileBytesUpTo(file: File, maxBytes: Int): ByteArray? {
+    if (!file.isFile || file.length() > maxBytes) {
+        return null
+    }
+
+    return FileInputStream(file).use { input ->
+        val initialCapacity = file.length().coerceAtMost(maxBytes.toLong()).toInt()
+        val output = ByteArrayOutputStream(initialCapacity)
+        val buffer = ByteArray(8192)
+        var totalBytes = 0
+
+        while (true) {
+            val bytesRead = input.read(buffer)
+            if (bytesRead < 0) {
+                break
+            }
+            totalBytes += bytesRead
+            if (totalBytes > maxBytes) {
+                return null
+            }
+            output.write(buffer, 0, bytesRead)
+        }
+
+        output.toByteArray()
+    }
+}
+
+/**
+ * Returns UTF-8 text when a local file is safe to expose in the text editor.
+ *
+ * File names and MIME metadata are not trusted. The actual contents are bounded
+ * and validated so a binary file cannot become editable just by being renamed.
+ */
+fun readEditableTextFile(file: File): String? {
+    val bytes = try {
+        readFileBytesUpTo(file, MAX_EDITABLE_TEXT_FILE_BYTES)
+    } catch (e: Exception) {
+        Log.e(Constants.APP_SCHEME, "Failed to inspect local file for editing", e)
+        null
+    } ?: return null
+
+    if (bytes.any { it == 0.toByte() }) {
+        return null
+    }
+
+    val text = try {
+        Charsets.UTF_8
+            .newDecoder()
+            .onMalformedInput(CodingErrorAction.REPORT)
+            .onUnmappableCharacter(CodingErrorAction.REPORT)
+            .decode(ByteBuffer.wrap(bytes))
+            .toString()
+    } catch (_: Exception) {
+        return null
+    }
+
+    val hasBinaryControlCharacters = text.any { character ->
+        val code = character.code
+        (code in 0x00..0x1F && character != '\t' && character != '\n' && character != '\r')
+            || code == 0x7F
+    }
+    if (hasBinaryControlCharacters) {
+        return null
+    }
+
+    return text
+}
+
+fun writeEditableTextFile(file: File, content: String): Boolean {
+    val bytes = content.toByteArray(Charsets.UTF_8)
+    if (bytes.size > MAX_EDITABLE_TEXT_FILE_BYTES) {
+        return false
+    }
+
+    val parent = file.parentFile ?: return false
+    val tempFile = File(parent, ".wk-edit-${UUID.randomUUID()}.tmp")
+
+    return try {
+        FileOutputStream(tempFile).use { output ->
+            output.write(bytes)
+            output.fd.sync()
+        }
+        Os.rename(tempFile.absolutePath, file.absolutePath)
+        true
+    } catch (e: Exception) {
+        tempFile.delete()
+        Log.e(Constants.APP_SCHEME, "Failed to save edited local file", e)
+        false
+    }
+}
+
 fun listLocalFiles(dir: File): List<File> {
-    return dir.listFiles { it.isFile }?.sortedByDescending { it.lastModified() } ?: emptyList()
+    return dir.listFiles { file ->
+        file.isFile && !(file.name.startsWith(".wk-edit-") && file.name.endsWith(".tmp"))
+    }?.sortedByDescending { it.lastModified() } ?: emptyList()
 }
 
 fun getFileNameFromUri(context: Context, uri: Uri): String {

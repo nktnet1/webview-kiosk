@@ -40,7 +40,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.managers.ToastManager
@@ -49,6 +51,7 @@ import uk.nktnet.webviewkiosk.utils.getLocalUrl
 import uk.nktnet.webviewkiosk.utils.getUUID
 import uk.nktnet.webviewkiosk.utils.humanReadableSize
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
+import uk.nktnet.webviewkiosk.utils.readEditableTextFile
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -69,9 +72,12 @@ fun LocalFileList(
     val scope = rememberCoroutineScope()
 
     var activeFile by remember { mutableStateOf<File?>(null) }
+    var showEditDialog by remember { mutableStateOf(false) }
     var showRenameDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf("") }
+    var editableText by remember { mutableStateOf<String?>(null) }
+    var canEditActiveFile by remember { mutableStateOf(false) }
     var menuExpanded by remember { mutableStateOf(false) }
 
     LazyColumn(modifier = modifier) {
@@ -117,7 +123,19 @@ fun LocalFileList(
                     IconButton(onClick = {
                         activeFile = file
                         newName = displayName
-                        menuExpanded = true
+                        editableText = null
+                        canEditActiveFile = false
+                        menuExpanded = false
+                        scope.launch {
+                            val inspectedText = withContext(Dispatchers.IO) {
+                                readEditableTextFile(file)
+                            }
+                            if (activeFile == file) {
+                                editableText = inspectedText
+                                canEditActiveFile = inspectedText != null
+                                menuExpanded = true
+                            }
+                        }
                     }) {
                         Icon(
                             painter = painterResource(R.drawable.outline_more_vert_24),
@@ -128,12 +146,18 @@ fun LocalFileList(
 
                     DropdownMenu(
                         expanded = menuExpanded && activeFile == file,
-                        onDismissRequest = { menuExpanded = false }
+                        onDismissRequest = {
+                            menuExpanded = false
+                            activeFile = null
+                            editableText = null
+                        }
                     ) {
                         DropdownMenuItem(
                             text = { Text("Open File") },
                             onClick = {
                                 menuExpanded = false
+                                activeFile = null
+                                editableText = null
                                 systemSettings.intentUrl = file.getLocalUrl()
                                 navigateToWebViewScreen(navController)
                             },
@@ -151,6 +175,8 @@ fun LocalFileList(
                                     val clipData = ClipData.newPlainText("File URL", file.getLocalUrl())
                                     clipboard.setClipEntry(clipData.toClipEntry())
                                     menuExpanded = false
+                                    activeFile = null
+                                    editableText = null
                                 }
                             },
                             leadingIcon = {
@@ -160,6 +186,21 @@ fun LocalFileList(
                                 )
                             },
                         )
+                        if (canEditActiveFile) {
+                            DropdownMenuItem(
+                                text = { Text("Edit File") },
+                                onClick = {
+                                    showEditDialog = true
+                                    menuExpanded = false
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        painter = painterResource(R.drawable.baseline_edit_24),
+                                        contentDescription = null
+                                    )
+                                },
+                            )
+                        }
                         DropdownMenuItem(
                             text = { Text("Rename") },
                             onClick = {
@@ -198,11 +239,30 @@ fun LocalFileList(
         }
     }
 
+    if (showEditDialog && activeFile != null && editableText != null) {
+        LocalFileEditorDialog(
+            file = activeFile!!,
+            initialText = editableText!!,
+            onDismiss = {
+                showEditDialog = false
+                activeFile = null
+                editableText = null
+            },
+            onSaved = {
+                refreshFiles()
+                showEditDialog = false
+                activeFile = null
+                editableText = null
+            },
+        )
+    }
+
     if (showRenameDialog && activeFile != null) {
         AlertDialog(
             onDismissRequest = {
                 showRenameDialog = false
                 activeFile = null
+                editableText = null
             },
             title = { Text("Rename File") },
             text = {
@@ -244,6 +304,7 @@ fun LocalFileList(
                         }
                         showRenameDialog = false
                         activeFile = null
+                        editableText = null
                     }
                 }) {
                     Text("Save")
@@ -253,6 +314,7 @@ fun LocalFileList(
                 TextButton(onClick = {
                     showRenameDialog = false
                     activeFile = null
+                    editableText = null
                 }) {
                     Text("Cancel")
                 }
@@ -265,6 +327,7 @@ fun LocalFileList(
             onDismissRequest = {
                 showDeleteDialog = false
                 activeFile = null
+                editableText = null
             },
             title = { Text("Delete File") },
             text = {
@@ -290,6 +353,7 @@ fun LocalFileList(
                             }
                             showDeleteDialog = false
                             activeFile = null
+                            editableText = null
                         }
                     }
                 ) {
@@ -301,6 +365,7 @@ fun LocalFileList(
                     onClick = {
                         showDeleteDialog = false
                         activeFile = null
+                        editableText = null
                     }
                 ) {
                     Text("Cancel")
