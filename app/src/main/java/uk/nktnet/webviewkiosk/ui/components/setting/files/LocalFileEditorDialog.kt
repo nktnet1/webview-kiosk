@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -19,8 +21,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -28,6 +33,7 @@ import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.getDisplayName
 import uk.nktnet.webviewkiosk.utils.writeEditableTextFile
@@ -41,6 +47,7 @@ fun LocalFileEditorDialog(
     onSaved: () -> Unit,
 ) {
     val context = LocalContext.current
+    val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
     var text by remember(file, initialText) { mutableStateOf(initialText) }
     var isSaving by remember(file) { mutableStateOf(false) }
@@ -89,6 +96,53 @@ fun LocalFileEditorDialog(
                     enabled = !isSaving,
                     textStyle = MaterialTheme.typography.bodySmall,
                 )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    IconButton(
+                        enabled = !isSaving && text != initialText,
+                        onClick = { text = initialText },
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_refresh_24),
+                            contentDescription = "Reset",
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    IconButton(
+                        enabled = !isSaving && text.isNotEmpty(),
+                        onClick = { text = "" },
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.baseline_clear_24),
+                            contentDescription = "Clear",
+                            tint = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                    IconButton(
+                        enabled = !isSaving,
+                        onClick = {
+                            scope.launch {
+                                val clipEntry = clipboard.getClipEntry()
+                                text = clipEntry
+                                    ?.clipData
+                                    ?.getItemAt(0)
+                                    ?.text
+                                    ?.toString()
+                                    ?: ""
+                            }
+                        },
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.outline_content_paste_24),
+                            contentDescription = "Paste",
+                            tint = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
 
                 Spacer(Modifier.height(12.dp))
                 Row(
