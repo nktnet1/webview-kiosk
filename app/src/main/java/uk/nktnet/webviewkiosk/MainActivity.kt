@@ -420,7 +420,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        disableNfcForegroundDispatch()
         unregisterReceiver(broadcastReceiver)
         if (
             userSettings.mqttUseForegroundService
@@ -537,7 +536,9 @@ class MainActivity : AppCompatActivity() {
 
         tag ?: return false
 
-        NfcBridgeManager.onTagScanned(tag)
+        lifecycleScope.launch(Dispatchers.IO) {
+            NfcBridgeManager.onTagScanned(tag)
+        }
         return true
     }
 }
