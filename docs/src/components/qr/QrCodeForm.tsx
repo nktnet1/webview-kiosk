@@ -7,21 +7,21 @@ import { DynamicCodeBlock } from "fumadocs-ui/components/dynamic-codeblock";
 import { useState } from "react";
 import QRCode from "react-qr-code";
 import { toast } from "sonner";
-import QrCheckboxField from "@/components/qr/fields/QrCheckboxField";
-import QrSelectField from "@/components/qr/fields/QrSelectField";
-import QrTextField from "@/components/qr/fields/QrTextField";
+import QrCheckboxField from "#/components/qr/fields/QrCheckboxField";
+import QrSelectField from "#/components/qr/fields/QrSelectField";
+import QrTextField from "#/components/qr/fields/QrTextField";
 import {
   DownloadSource,
   FormSchema,
   type FormValues,
   type QrData,
   WifiSecurityType,
-} from "@/components/qr/schema";
-import { LATEST_VERSION } from "@/components/qr/version";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+} from "#/components/qr/schema";
+import { LATEST_VERSION } from "#/components/qr/version";
+import { Button } from "#/components/ui/button";
+import { Checkbox } from "#/components/ui/checkbox";
+import { Label } from "#/components/ui/label";
+import { Separator } from "#/components/ui/separator";
 
 export default function QRCodeForm() {
   const [qrValue, setQrValue] = useState<QrData | null>(null);

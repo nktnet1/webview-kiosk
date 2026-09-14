@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createSearchAPI } from "fumadocs-core/search/server";
-import { legal, source } from "@/lib/source";
+import { legal, source } from "#/lib/source";
 
 const pages = source.getPages().concat(legal.getPages());
 

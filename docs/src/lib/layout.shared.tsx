@@ -1,7 +1,7 @@
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 import { BookIcon, FileTextIcon, ShieldIcon } from "lucide-react";
-import IconAsset from "@/assets/icon.svg";
-import { APP_NAME } from "@/config/app";
+import IconAsset from "#/assets/icon.svg";
+import { APP_NAME } from "#/config/app";
 import { gitConfig } from "./shared";
 
 export function baseOptions(): BaseLayoutProps {

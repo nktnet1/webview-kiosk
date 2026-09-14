@@ -6,11 +6,11 @@ import {
 } from "@tanstack/react-router";
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 import { RootProvider } from "fumadocs-ui/provider/tanstack";
-import IconAsset from "@/assets/icon.svg";
-import SearchDialog from "@/components/fumadocs/search";
-import { Toaster } from "@/components/ui/sonner";
-import { APP_NAME } from "@/config/app";
-import appCss from "@/styles/app.css?url";
+import IconAsset from "#/assets/icon.svg";
+import SearchDialog from "#/components/fumadocs/search";
+import { Toaster } from "#/components/ui/sonner";
+import { APP_NAME } from "#/config/app";
+import appCss from "#/styles/app.css?url";
 
 export const Route = createRootRoute({
   head: () => ({

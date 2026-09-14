@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import QRCodeForm from "@/components/qr/QrCodeForm";
+import QRCodeForm from "#/components/qr/QrCodeForm";
 
 export const Route = createFileRoute("/_homelayout/provision-device/")({
   component: RouteComponent,

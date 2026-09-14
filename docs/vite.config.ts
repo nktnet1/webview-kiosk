@@ -2,17 +2,15 @@ import tailwindcss from "@tailwindcss/vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react";
 import mdx from "fumadocs-mdx/vite";
-import urlJoin from "url-join";
 import { defineConfig, type Plugin } from "vite";
-
-const basePath = urlJoin("/", process.env.PUBLIC_DOCS_BASE_PATH ?? "/");
+import { CLIENT_ENV_PREFIX, env } from "#/lib/env";
 
 export default defineConfig({
   server: {
     port: 3000,
   },
-  envPrefix: "PUBLIC_",
-  base: basePath,
+  envPrefix: CLIENT_ENV_PREFIX,
+  base: env.PUBLIC_DOCS_BASE_PATH,
   plugins: [
     mdx(),
     tailwindcss(),
@@ -66,10 +64,10 @@ function generate404Page(): Plugin {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=/">
+    <meta http-equiv="refresh" content="0; url=${env.PUBLIC_DOCS_BASE_PATH}">
     <title>Redirecting...</title>
     <script>
-        window.location.replace("${basePath}");
+        window.location.replace("${env.PUBLIC_DOCS_BASE_PATH}");
     </script>
 </head>
 </html>`;

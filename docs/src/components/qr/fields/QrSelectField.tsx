@@ -1,6 +1,6 @@
 import type { AnyFieldApi } from "@tanstack/react-form";
 import { ExternalLink } from "lucide-react";
-import { Label } from "@/components/ui/label";
+import { Label } from "#/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -8,7 +8,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "#/components/ui/select";
 
 export default function QrSelectField({
   field,

@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { HomeLayout } from "fumadocs-ui/layouts/home";
-import { NotFound } from "@/components/fumadocs/not-found";
-import { homeBaseOptions } from "@/lib/layout.shared";
+import { NotFound } from "#/components/fumadocs/not-found";
+import { homeBaseOptions } from "#/lib/layout.shared";
 
 export const Route = createFileRoute("/_homelayout")({
   component: RouteComponent,

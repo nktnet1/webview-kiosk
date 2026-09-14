@@ -15,7 +15,7 @@
     "allowJs": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
-      "@/*": ["./src/*"],
+      "#/*": ["./src/*"],
       "collections/*": ["./.source/*"]
     },
     "noEmit": true

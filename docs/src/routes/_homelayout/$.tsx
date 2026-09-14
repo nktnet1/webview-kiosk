@@ -9,10 +9,10 @@ import {
   ViewOptionsPopover,
 } from "fumadocs-ui/layouts/docs/page";
 import { Suspense } from "react";
-import { useMDXComponents } from "@/components/fumadocs/mdx";
-import { gitConfig } from "@/lib/shared";
-import { legal, slugsToMarkdownPath } from "@/lib/source";
-import { staticFunctionMiddleware } from "@/lib/staticMiddlewareFunction";
+import { useMDXComponents } from "#/components/fumadocs/mdx";
+import { gitConfig } from "#/lib/shared";
+import { legal, slugsToMarkdownPath } from "#/lib/source";
+import { staticFunctionMiddleware } from "#/lib/staticMiddlewareFunction";
 
 export const Route = createFileRoute("/_homelayout/$")({
   component: Page,

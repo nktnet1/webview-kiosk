@@ -1,5 +1,5 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { getLLMText, markdownPathToSlugs, source } from "@/lib/source";
+import { getLLMText, markdownPathToSlugs, source } from "#/lib/source";
 
 export const Route = createFileRoute("/docs/{$}.md")({
   server: {

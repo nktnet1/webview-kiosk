@@ -15,12 +15,12 @@ import {
   ViewOptionsPopover,
 } from "fumadocs-ui/layouts/docs/page";
 import { type ComponentProps, Suspense } from "react";
-import { useMDXComponents } from "@/components/fumadocs/mdx";
-import { cn } from "@/lib/cn";
-import { baseOptions } from "@/lib/layout.shared";
-import { docsRoute, gitConfig } from "@/lib/shared";
-import { slugsToMarkdownPath, source } from "@/lib/source";
-import { staticFunctionMiddleware } from "@/lib/staticMiddlewareFunction";
+import { useMDXComponents } from "#/components/fumadocs/mdx";
+import { cn } from "#/lib/cn";
+import { baseOptions } from "#/lib/layout.shared";
+import { docsRoute, gitConfig } from "#/lib/shared";
+import { slugsToMarkdownPath, source } from "#/lib/source";
+import { staticFunctionMiddleware } from "#/lib/staticMiddlewareFunction";
 
 export const Route = createFileRoute("/docs/$")({
   component: Page,
