@@ -27,6 +27,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowLocat
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowMicrophoneSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowNfcSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowNotificationsSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowVibrationSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.BackButtonHoldActionSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.BlockScreenCaptureSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.BlockVolumeKeysSetting
@@ -64,6 +65,7 @@ fun SettingsDeviceScreen(navController: NavController) {
             AllowMicrophoneSetting()
             AllowLocationSetting()
             AllowNfcSetting()
+            AllowVibrationSetting()
             AllowNotificationsSetting()
             BackButtonHoldActionSetting()
             CustomUnlockShortcutSetting()

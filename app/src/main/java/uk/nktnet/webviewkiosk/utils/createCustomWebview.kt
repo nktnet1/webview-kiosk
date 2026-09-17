@@ -67,6 +67,7 @@ import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDarkReaderScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScript
+import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDisableVibrationApiScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateErudaConsoleScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOverrideScript
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
@@ -283,6 +284,18 @@ fun createCustomWebview(
                     }
                 }
             }
+            if (
+                !userSettings.allowVibration
+                && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
+            ) {
+                runCatching {
+                    WebViewCompat.addDocumentStartJavaScript(
+                        this,
+                        generateDisableVibrationApiScript(),
+                        setOf("*")
+                    )
+                }
+            }
             blobInterface?.let {
                 addJavascriptInterface(it, BlobInterface.NAME)
             }
@@ -316,6 +329,9 @@ fun createCustomWebview(
                     }
                     if (userSettings.allowNfc) {
                         view?.evaluateJavascript(NfcInterface.JS_WEB_NFC_HOOK, null)
+                    }
+                    if (!userSettings.allowVibration) {
+                        view?.evaluateJavascript(generateDisableVibrationApiScript(), null)
                     }
                     super.onPageStarted(view, url, favicon)
                 }

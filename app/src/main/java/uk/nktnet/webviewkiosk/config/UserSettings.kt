@@ -485,6 +485,12 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Device.ALLOW_NFC,
         false
     )
+    var allowVibration by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.Device.ALLOW_VIBRATION,
+        false
+    )
     var allowLocation by booleanPref(
         getRestrictions,
         prefs,
@@ -1078,6 +1084,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             put(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
             put(UserSettingsKeys.Device.ALLOW_NFC, allowNfc)
+            put(UserSettingsKeys.Device.ALLOW_VIBRATION, allowVibration)
             put(UserSettingsKeys.Device.ALLOW_NOTIFICATIONS, allowNotifications)
             put(UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION, backButtonHoldAction.name)
             put(UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
@@ -1263,6 +1270,7 @@ class UserSettings(val context: Context) {
             allowMicrophone = json.optBoolean(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             allowLocation = json.optBoolean(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
             allowNfc = json.optBoolean(UserSettingsKeys.Device.ALLOW_NFC, allowNfc)
+            allowVibration = json.optBoolean(UserSettingsKeys.Device.ALLOW_VIBRATION, allowVibration)
             allowNotifications = json.optBoolean(UserSettingsKeys.Device.ALLOW_NOTIFICATIONS, allowNotifications)
             backButtonHoldAction = BackButtonHoldActionOption.fromString(
                 json.optString(UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION, backButtonHoldAction.name)
