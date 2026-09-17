@@ -35,7 +35,6 @@ val supportedMimeTypesArray = arrayOf(
     "application/xml",
 )
 
-
 private const val MAX_EDITABLE_TEXT_FILE_BYTES = 1024 * 1024
 
 private fun readFileBytesUpTo(file: File, maxBytes: Int): ByteArray? {

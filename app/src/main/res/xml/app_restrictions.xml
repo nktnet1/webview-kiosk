@@ -452,6 +452,12 @@
         android:description="@string/device_allow_nfc_description"
     />
     <restriction
+        android:key="device.allow_vibration"
+        android:restrictionType="bool"
+        android:title="@string/device_allow_vibration_title"
+        android:description="@string/device_allow_vibration_description"
+    />
+    <restriction
         android:key="device.allow_notifications"
         android:restrictionType="bool"
         android:title="@string/device_allow_notifications_title"

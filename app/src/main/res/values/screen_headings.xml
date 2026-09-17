@@ -24,7 +24,7 @@
     <string name="settings_appearance_description">Theme, address bar, insets, immersive, blocked message</string>
 
     <string name="settings_device_title">Device</string>
-    <string name="settings_device_description">Timeout, rotation, camera, microphone, location, unlock shortcut</string>
+    <string name="settings_device_description">Rotation, camera, microphone, location, vibration, unlock controls</string>
 
     <string name="settings_js_scripts_title">JS Scripts</string>
     <string name="settings_js_scripts_description">Apply theme, desktop viewport, custom scripts</string>
