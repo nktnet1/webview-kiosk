@@ -323,7 +323,9 @@ class UserSettings(val context: Context) {
             val previous = clientCertificateSitesPref
             clientCertificateSitesPref = value
             val current = clientCertificateSitesPref
-            if (current == previous) return
+            if (current == previous) {
+                return
+            }
             refreshClientCertificateSiteState()
         }
     var sslErrorMode by stringEnumPref(
