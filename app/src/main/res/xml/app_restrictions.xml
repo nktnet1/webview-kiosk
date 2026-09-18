@@ -266,6 +266,12 @@
         android:description="@string/web_engine_media_playback_requires_user_gesture_description"
     />
     <restriction
+        android:key="web_engine.mutual_tls"
+        android:restrictionType="string"
+        android:title="@string/web_engine_mutual_tls_title"
+        android:description="@string/web_engine_mutual_tls_description"
+    />
+    <restriction
         android:key="web_engine.ssl_error_mode"
         android:restrictionType="choice"
         android:entries="@array/entries_ssl_error_mode_option"

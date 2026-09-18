@@ -83,7 +83,7 @@ fun handleDownloadPrompt(
 
     val editText = EditText(context).apply {
         setText(suggestedName)
-        setSingleLine(true)
+        isSingleLine = true
         maxLines = 1
         setPadding(10, 10, 10, 35)
     }

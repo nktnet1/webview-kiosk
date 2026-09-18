@@ -78,6 +78,21 @@ class SystemSettings(val context: Context) {
             prefs.edit { putString(SITE_PERMISSIONS, serialized) }
         }
 
+    var mutualTlsAliasesMap: Map<String, String>
+        get() {
+            val raw = prefs.getString(MUTUAL_TLS_ALIASES, null) ?: return emptyMap()
+            return try {
+                json.decodeFromString(raw)
+            } catch (e: Exception) {
+                Log.e(javaClass.simpleName, "Failed to decode Mutual TLS aliases", e)
+                emptyMap()
+            }
+        }
+        set(value) {
+            val serialized = json.encodeToString(value)
+            prefs.edit { putString(MUTUAL_TLS_ALIASES, serialized) }
+        }
+
     var intentUrl by stringPrefOptional(prefs = prefs, key = INTENT_URL)
 
     var unifiedpushEndpoint: UnifiedPushEndpoint?
@@ -122,6 +137,7 @@ class SystemSettings(val context: Context) {
         private const val IS_KIOSK_CONTROL_PANEL_STICKY = "is_kiosk_control_panel_sticky"
         private const val APP_INSTANCE_ID = "app_instance_id"
         private const val SITE_PERMISSIONS = "site_permissions"
+        private const val MUTUAL_TLS_ALIASES = "mutual_tls_aliases"
         private const val INTENT_URL = "intent_url"
         private const val UNIFIEDPUSH_ENDPOINT = "unifiedpush_endpoint"
     }
@@ -151,5 +167,29 @@ class SystemSettings(val context: Context) {
         set.add(resource)
         current[origin] = set
         sitePermissionsMap = current
+    }
+
+    fun getMutualTlsAlias(siteKey: String): String? {
+        return mutualTlsAliasesMap[siteKey]
+    }
+
+    fun setMutualTlsAlias(siteKey: String, alias: String) {
+        mutualTlsAliasesMap = mutualTlsAliasesMap.toMutableMap().apply {
+            put(siteKey, alias)
+        }
+    }
+
+    fun removeMutualTlsAlias(siteKey: String) {
+        mutualTlsAliasesMap = mutualTlsAliasesMap.toMutableMap().apply {
+            remove(siteKey)
+        }
+    }
+
+    fun clearMutualTlsAliases() {
+        mutualTlsAliasesMap = emptyMap()
+    }
+
+    fun retainMutualTlsAliases(siteKeys: Set<String>) {
+        mutualTlsAliasesMap = mutualTlsAliasesMap.filterKeys(siteKeys::contains)
     }
 }

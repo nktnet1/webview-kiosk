@@ -95,6 +95,7 @@ class MainActivity : AppCompatActivity() {
                         }
                     }
                     updateDeviceSettings(context)
+                    userSettings.refreshMutualTlsState()
                     AuthenticationManager.resetAuthentication()
                     AuthenticationManager.hideCustomAuthPrompt()
                     MqttManager.publishApplicationRestrictionsChangedEvent()
