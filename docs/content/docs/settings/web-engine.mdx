@@ -230,8 +230,10 @@ Sets whether the WebView requires a user gesture (e.g. tap) to play media.
 
 ## 15. Mutual TLS Client Certificate Sites
 
-Configure exact sites that may use a client certificate for Mutual TLS.
-Add one entry per line using:
+Configure exact sites that may use a client certificate for
+[Mutual TLS (mTLS)](https://www.cloudflare.com/learning/access-management/what-is-mutual-tls/).
+
+Add one entry per line in the format::
 
 ```text
 host[:port][=KeyChain alias]
@@ -241,25 +243,10 @@ The port defaults to `443`. Wildcards, schemes, paths, query strings and
 fragments are not supported. This prevents a client certificate from being
 sent to a site that was not explicitly configured.
 
-If the KeyChain alias is omitted, Android prompts for an installed client
-certificate the first time that site requests one. The selected alias is
-remembered locally on the device and is not included in exported settings.
-
-The setting popup also includes an **Install client certificate** button. It opens
-the system document picker so the user can select a PKCS#12 client identity
-(`.p12`, `.pfx`, or a PKCS#12 file with a generic `.bin` extension). Webview Kiosk
-passes the selected PKCS#12 bytes directly to Android's credential installer. The
-credential is installed into Android KeyChain and is not retained in app storage.
-
-The adjacent **Clear certificate preferences** button clears both locally remembered KeyChain
-aliases and WebView's cached client-certificate accept/deny decisions. This can be
-used to recover from an accidentally denied certificate prompt or to choose a
-different certificate the next time a configured site requests one.
-
 An alias can be provided explicitly for managed devices where the app already
 has access to that KeyChain entry.
 
-When Webview Kiosk is the device/profile owner, an explicitly configured alias
+When {APP_NAME} is the device/profile owner, an explicitly configured alias
 is also returned from Android's private-key selection callback for Webview
 Kiosk's own matching site, allowing Android to grant access without showing the
 certificate picker.

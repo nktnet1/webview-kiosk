@@ -77,25 +77,23 @@ fun ClientCertificateSitesSetting() {
     TextSettingFieldItem(
         label = stringResource(R.string.web_engine_client_certificate_sites_title),
         infoText = """
-            Configure sites that may use a client certificate for Mutual TLS,
-            one exact host per line. An optional port may be specified; otherwise 443 is used.
+            Configure exact sites that may use a client certificate for Mutual TLS (mTLS).
+            
+            Add one entry per line in the format:
 
-            Format:
                 host[:port][=KeyChain alias]
 
-            If the KeyChain alias is omitted, Android will ask which installed client
-            certificate to use on the first Mutual TLS request and remember that choice on this
-            device. Use the "Install client certificate" button below to choose a PKCS#12
-            (.p12/.pfx/.bin) client identity and pass it to Android's credential installer.
-            Use "Clear certificate preferences" to reset locally remembered certificate choices
-            as well as WebView's remembered accept/deny decisions.
-
-            Supplying an alias is useful for managed devices where certificate access has
-            already been granted to the app. In device/profile owner mode, an explicit alias
-            can be approved automatically for this app's matching site.
-
-            Wildcards and URL paths are not supported. Certificates are never exported with
-            app settings; only an explicitly configured alias string is exported.
+            The port defaults to `443`. Wildcards, schemes, paths, query strings and
+            fragments are not supported. This prevents a client certificate from being
+            sent to a site that was not explicitly configured.
+            
+            An alias can be provided explicitly for managed devices where the app already
+            has access to that KeyChain entry.
+            
+            When ${stringResource(R.string.app_name)} is the device/profile owner,
+            an explicitly configured alias is also returned from Android's private-key selection
+            callback for ${stringResource(R.string.app_name)}'s own matching site, allowing
+            Android to grant access without showing the certificate picker.
         """.trimIndent(),
         placeholder = """
             secure.example.com
