@@ -78,7 +78,7 @@ fun ClientCertificateSitesSetting() {
         label = stringResource(R.string.web_engine_client_certificate_sites_title),
         infoText = """
             Configure exact sites that may use a client certificate for Mutual TLS (mTLS).
-            
+
             Add one entry per line in the format:
 
                 host[:port][=KeyChain alias]
@@ -86,10 +86,10 @@ fun ClientCertificateSitesSetting() {
             The port defaults to `443`. Wildcards, schemes, paths, query strings and
             fragments are not supported. This prevents a client certificate from being
             sent to a site that was not explicitly configured.
-            
+
             An alias can be provided explicitly for managed devices where the app already
             has access to that KeyChain entry.
-            
+
             When ${stringResource(R.string.app_name)} is the device/profile owner,
             an explicitly configured alias is also returned from Android's private-key selection
             callback for ${stringResource(R.string.app_name)}'s own matching site, allowing
