@@ -158,12 +158,46 @@ fun generateUuidFileName(originalName: String): String {
     return "${UUID.randomUUID()}|$originalName"
 }
 
+private fun getFileSizeFromUri(context: Context, uri: Uri): Long? {
+    val contentResolver = context.contentResolver
+    val sizeFromMetadata = try {
+        contentResolver.query(
+            uri,
+            arrayOf(OpenableColumns.SIZE),
+            null,
+            null,
+            null,
+        )?.use { cursor ->
+            val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+            if (sizeIndex >= 0 && cursor.moveToFirst() && !cursor.isNull(sizeIndex)) {
+                cursor.getLong(sizeIndex).takeIf { it >= 0 }
+            } else {
+                null
+            }
+        }
+    } catch (_: Exception) {
+        null
+    }
+
+    if (sizeFromMetadata != null) {
+        return sizeFromMetadata
+    }
+
+    return try {
+        contentResolver.openAssetFileDescriptor(uri, "r")?.use { descriptor ->
+            descriptor.length.takeIf { it >= 0 }
+        }
+    } catch (_: Exception) {
+        null
+    }
+}
+
 private fun copyInputStreamToFile(
     input: java.io.InputStream,
     targetFile: File,
+    totalBytes: Long? = null,
     onProgress: ((Float) -> Unit)? = null
 ): File {
-    val totalBytes = input.available().toLong()
     var copiedBytes = 0L
     input.use { i ->
         targetFile.outputStream().use { o ->
@@ -172,8 +206,11 @@ private fun copyInputStreamToFile(
             while (i.read(buffer).also { bytesRead = it } >= 0) {
                 o.write(buffer, 0, bytesRead)
                 copiedBytes += bytesRead
-                if (totalBytes > 0) {
-                    onProgress?.invoke(copiedBytes.toFloat() / totalBytes)
+                if (totalBytes != null && totalBytes > 0) {
+                    val progress = (copiedBytes.toDouble() / totalBytes)
+                        .coerceIn(0.0, 1.0)
+                        .toFloat()
+                    onProgress?.invoke(progress)
                 }
             }
         }
@@ -187,11 +224,13 @@ fun uploadFile(
     targetDir: File,
     onProgress: (Float) -> Unit
 ): File {
+    val totalBytes = getFileSizeFromUri(context, uri)
     val inputStream = context.contentResolver.openInputStream(uri)
+        ?: throw IllegalArgumentException("Unable to open InputStream for URI: $uri")
     val originalFileName = getFileNameFromUri(context, uri)
     val fileName = generateUuidFileName(originalFileName)
     val file = File(targetDir, fileName)
-    return copyInputStreamToFile(inputStream!!, file, onProgress)
+    return copyInputStreamToFile(inputStream, file, totalBytes, onProgress)
 }
 
 suspend fun saveContentIntentToFile(
@@ -200,6 +239,7 @@ suspend fun saveContentIntentToFile(
     targetDir: File,
     onProgress: ((Float) -> Unit)? = null
 ): File = withContext(Dispatchers.IO) {
+    val totalBytes = getFileSizeFromUri(context, contentUri)
     val inputStream = context.contentResolver.openInputStream(contentUri)
         ?: throw IllegalArgumentException("Unable to open InputStream for URI: $contentUri")
 
@@ -214,7 +254,7 @@ suspend fun saveContentIntentToFile(
     val fileName = generateUuidFileName(originalName)
     val file = File(targetDir, fileName)
 
-    copyInputStreamToFile(inputStream, file, onProgress)
+    copyInputStreamToFile(inputStream, file, totalBytes, onProgress)
 }
 
 fun getWebContentFilesDir(context: Context): File {
