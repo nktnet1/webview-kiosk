@@ -1,6 +1,9 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine
 
 import android.app.Activity
+import android.content.Context
+import android.net.Uri
+import android.provider.OpenableColumns
 import android.security.KeyChain
 import android.webkit.WebView
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -34,6 +37,58 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.webview.parseMutualTlsRules
 import uk.nktnet.webviewkiosk.utils.webview.validateMutualTls
+import java.io.ByteArrayOutputStream
+
+private const val MAX_PKCS12_FILE_BYTES = 10 * 1024 * 1024
+
+private fun readPkcs12File(context: Context, uri: Uri): ByteArray {
+    val contentResolver = context.contentResolver
+    val reportedSize = try {
+        contentResolver.query(
+            uri,
+            arrayOf(OpenableColumns.SIZE),
+            null,
+            null,
+            null,
+        )?.use { cursor ->
+            val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+            if (sizeIndex >= 0 && cursor.moveToFirst() && !cursor.isNull(sizeIndex)) {
+                cursor.getLong(sizeIndex).takeIf { it >= 0 }
+            } else {
+                null
+            }
+        }
+    } catch (_: Exception) {
+        null
+    }
+
+    require(reportedSize == null || reportedSize <= MAX_PKCS12_FILE_BYTES) {
+        "Client certificate file exceeds the 10 MiB limit."
+    }
+
+    return contentResolver.openInputStream(uri)?.use { input ->
+        val output = ByteArrayOutputStream(
+            reportedSize?.coerceAtMost(MAX_PKCS12_FILE_BYTES.toLong())?.toInt() ?: 8192
+        )
+        val buffer = ByteArray(8192)
+        var totalBytes = 0
+
+        while (true) {
+            val bytesRead = input.read(buffer)
+            if (bytesRead < 0) {
+                break
+            }
+
+            totalBytes += bytesRead
+            require(totalBytes <= MAX_PKCS12_FILE_BYTES) {
+                "Client certificate file exceeds the 10 MiB limit."
+            }
+            output.write(buffer, 0, bytesRead)
+        }
+
+        output.toByteArray()
+    } ?: error("Unable to open selected certificate file.")
+}
 
 @Composable
 fun MutualTlsSetting() {
@@ -56,8 +111,7 @@ fun MutualTlsSetting() {
             scope.launch {
                 try {
                     val pkcs12 = withContext(Dispatchers.IO) {
-                        context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
-                            ?: error("Unable to open selected certificate file.")
+                        readPkcs12File(context, uri)
                     }
                     certificateInstallerLauncher.launch(
                         KeyChain.createInstallIntent().apply {
