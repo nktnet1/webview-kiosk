@@ -315,9 +315,9 @@ class UserSettings(val context: Context) {
     private var clientCertificateSitesPref by stringPrefOptional(
         getRestrictions,
         prefs,
-        UserSettingsKeys.WebEngine.CLIENT_CERTIFICATE_SITES
+        UserSettingsKeys.WebEngine.MUTUAL_TLS
     )
-    var clientCertificateSites: String
+    var mutualTls: String
         get() = clientCertificateSitesPref
         set(value) {
             val previous = clientCertificateSitesPref
@@ -1029,7 +1029,7 @@ class UserSettings(val context: Context) {
     )
 
     fun refreshClientCertificateSiteState() {
-        val activeSiteKeys = parseClientCertificateSiteRules(clientCertificateSites)
+        val activeSiteKeys = parseClientCertificateSiteRules(mutualTls)
             ?.map { it.siteKey }
             ?.toSet()
             ?: emptySet()
@@ -1082,7 +1082,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebEngine.ALLOW_FILE_PICKER, allowFilePicker)
             put(UserSettingsKeys.WebEngine.ALLOW_FILE_DOWNLOAD, allowFileDownload)
             put(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
-            put(UserSettingsKeys.WebEngine.CLIENT_CERTIFICATE_SITES, clientCertificateSites)
+            put(UserSettingsKeys.WebEngine.MUTUAL_TLS, mutualTls)
             put(UserSettingsKeys.WebEngine.SSL_ERROR_MODE, sslErrorMode.name)
             put(UserSettingsKeys.WebEngine.MIXED_CONTENT_MODE, mixedContentMode.name)
             put(UserSettingsKeys.WebEngine.OVER_SCROLL_MODE, overScrollMode.name)
@@ -1261,7 +1261,7 @@ class UserSettings(val context: Context) {
             allowFilePicker = json.optBoolean(UserSettingsKeys.WebEngine.ALLOW_FILE_PICKER, allowFilePicker)
             allowFileDownload = json.optBoolean(UserSettingsKeys.WebEngine.ALLOW_FILE_DOWNLOAD, allowFileDownload)
             mediaPlaybackRequiresUserGesture = json.optBoolean(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
-            clientCertificateSites = json.optString(UserSettingsKeys.WebEngine.CLIENT_CERTIFICATE_SITES, clientCertificateSites)
+            mutualTls = json.optString(UserSettingsKeys.WebEngine.MUTUAL_TLS, mutualTls)
             sslErrorMode = SslErrorModeOption.fromString(
                 json.optString(UserSettingsKeys.WebEngine.SSL_ERROR_MODE, sslErrorMode.name)
             )

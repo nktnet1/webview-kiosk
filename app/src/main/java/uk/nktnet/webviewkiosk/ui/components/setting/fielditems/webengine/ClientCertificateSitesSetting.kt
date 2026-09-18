@@ -41,7 +41,7 @@ fun ClientCertificateSitesSetting() {
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
     val scope = rememberCoroutineScope()
-    val settingKey = UserSettingsKeys.WebEngine.CLIENT_CERTIFICATE_SITES
+    val settingKey = UserSettingsKeys.WebEngine.MUTUAL_TLS
     val certificateInstallerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -100,7 +100,7 @@ fun ClientCertificateSitesSetting() {
             api.example.com:8443
             managed.example.com=work-client-cert
         """.trimIndent(),
-        initialValue = userSettings.clientCertificateSites,
+        initialValue = userSettings.mutualTls,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         isMultiline = true,
@@ -114,7 +114,7 @@ fun ClientCertificateSitesSetting() {
                 else -> "$count sites"
             }
         },
-        onSave = { userSettings.clientCertificateSites = it },
+        onSave = { userSettings.mutualTls = it },
         extraContent = { _, _ ->
             Row(
                 modifier = Modifier

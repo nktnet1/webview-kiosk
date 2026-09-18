@@ -318,7 +318,7 @@ fun createCustomWebview(
                         context = context,
                         request = request,
                         siteRules = parseClientCertificateSiteRules(
-                            userSettings.clientCertificateSites
+                            userSettings.mutualTls
                         ).orEmpty(),
                         systemSettings = systemSettings,
                         scope = scope,

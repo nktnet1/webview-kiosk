@@ -27,7 +27,7 @@ class WebviewKioskAdminReceiver : DeviceAdminReceiver() {
         val port = uri.port.takeIf { it != -1 } ?: 443
         val siteKey = clientCertificateSiteKey(host, port)
         val configuredAlias = parseClientCertificateSiteRules(
-            UserSettings(context).clientCertificateSites
+            UserSettings(context).mutualTls
         )
             ?.firstOrNull { it.siteKey == siteKey }
             ?.alias

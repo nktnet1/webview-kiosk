@@ -266,7 +266,7 @@
         android:description="@string/web_engine_media_playback_requires_user_gesture_description"
     />
     <restriction
-        android:key="web_engine.client_certificate_sites"
+        android:key="web_engine.mutual_tls"
         android:restrictionType="string"
         android:title="@string/web_engine_client_certificate_sites_title"
         android:description="@string/web_engine_client_certificate_sites_description"
