@@ -44,7 +44,7 @@ and standalone Kiosk solution.
 - <b>Export/Import:</b> backup and restore user settings in Base64 or JSON format
 - <b>Local files:</b> display images, audio, video, HTML or PDF (using Mozilla's PDF.js) in kiosk mode
 - <b>Default Launcher:</b> use as the home app and launch other apps in lock task mode (kiosk)
-- <b>JS Scripts:</b> supports NFC (Near Field Communication), Eruda console, Dark Reader and custom scripts
+- <b>Web Integration:</b> supports NFC, vibration, per-site mTLS, Eruda, Dark Reader and custom scripts
 
 ### Remote Management / Enterprise
 

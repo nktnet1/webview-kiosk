@@ -5,6 +5,7 @@ import android.content.RestrictionsManager
 import android.content.SharedPreferences
 import android.util.Base64
 import android.util.Log
+import android.webkit.WebView
 import org.json.JSONArray
 import org.json.JSONObject
 import uk.nktnet.webviewkiosk.R
@@ -37,6 +38,7 @@ import uk.nktnet.webviewkiosk.utils.intPref
 import uk.nktnet.webviewkiosk.utils.stringEnumPref
 import uk.nktnet.webviewkiosk.utils.stringPref
 import uk.nktnet.webviewkiosk.utils.stringPrefOptional
+import uk.nktnet.webviewkiosk.utils.webview.parseClientCertificateSiteRules
 
 class UserSettings(val context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(
@@ -310,6 +312,20 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE,
         true
     )
+    private var clientCertificateSitesPref by stringPrefOptional(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.WebEngine.CLIENT_CERTIFICATE_SITES
+    )
+    var clientCertificateSites: String
+        get() = clientCertificateSitesPref
+        set(value) {
+            val previous = clientCertificateSitesPref
+            clientCertificateSitesPref = value
+            val current = clientCertificateSitesPref
+            if (current == previous) return
+            refreshClientCertificateSiteState()
+        }
     var sslErrorMode by stringEnumPref(
         getRestrictions,
         prefs,
@@ -1010,6 +1026,15 @@ class UserSettings(val context: Context) {
         true
     )
 
+    fun refreshClientCertificateSiteState() {
+        val activeSiteKeys = parseClientCertificateSiteRules(clientCertificateSites)
+            ?.map { it.siteKey }
+            ?.toSet()
+            ?: emptySet()
+        SystemSettings(context).retainClientCertificateAliases(activeSiteKeys)
+        runCatching { WebView.clearClientCertPreferences(null) }
+    }
+
     fun exportJson(): JSONObject {
         val json = JSONObject().apply {
             put(UserSettingsKeys.WebContent.HOME_URL, homeUrl)
@@ -1055,6 +1080,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.WebEngine.ALLOW_FILE_PICKER, allowFilePicker)
             put(UserSettingsKeys.WebEngine.ALLOW_FILE_DOWNLOAD, allowFileDownload)
             put(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
+            put(UserSettingsKeys.WebEngine.CLIENT_CERTIFICATE_SITES, clientCertificateSites)
             put(UserSettingsKeys.WebEngine.SSL_ERROR_MODE, sslErrorMode.name)
             put(UserSettingsKeys.WebEngine.MIXED_CONTENT_MODE, mixedContentMode.name)
             put(UserSettingsKeys.WebEngine.OVER_SCROLL_MODE, overScrollMode.name)
@@ -1233,6 +1259,7 @@ class UserSettings(val context: Context) {
             allowFilePicker = json.optBoolean(UserSettingsKeys.WebEngine.ALLOW_FILE_PICKER, allowFilePicker)
             allowFileDownload = json.optBoolean(UserSettingsKeys.WebEngine.ALLOW_FILE_DOWNLOAD, allowFileDownload)
             mediaPlaybackRequiresUserGesture = json.optBoolean(UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE, mediaPlaybackRequiresUserGesture)
+            clientCertificateSites = json.optString(UserSettingsKeys.WebEngine.CLIENT_CERTIFICATE_SITES, clientCertificateSites)
             sslErrorMode = SslErrorModeOption.fromString(
                 json.optString(UserSettingsKeys.WebEngine.SSL_ERROR_MODE, sslErrorMode.name)
             )

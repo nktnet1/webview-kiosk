@@ -14,6 +14,7 @@ import android.provider.MediaStore
 import android.util.Log
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.ClientCertRequest
 import android.webkit.GeolocationPermissions
 import android.webkit.HttpAuthHandler
 import android.webkit.PermissionRequest
@@ -34,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -54,6 +56,7 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
+import uk.nktnet.webviewkiosk.utils.webview.handleClientCertificateRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleDownloadPrompt
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePdfSourceRequest
@@ -65,6 +68,7 @@ import uk.nktnet.webviewkiosk.utils.webview.interfaces.BrightnessInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.NfcInterface
 import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
+import uk.nktnet.webviewkiosk.utils.webview.parseClientCertificateSiteRules
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDarkReaderScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDisableVibrationApiScript
@@ -123,6 +127,7 @@ fun createCustomWebview(
 ): WebViewCreation {
     val systemSettings = config.systemSettings
     val userSettings = config.userSettings
+    val scope = rememberCoroutineScope()
 
     var pendingFileChooserCallback by remember {
         mutableStateOf<ValueCallback<Array<Uri>>?>(null)
@@ -303,6 +308,23 @@ fun createCustomWebview(
             val requestUserAgent = settings.userAgentString
 
             webViewClient = object : WebViewClient() {
+                override fun onReceivedClientCertRequest(
+                    view: WebView?,
+                    request: ClientCertRequest?
+                ) {
+                    if (request == null) return
+                    handleClientCertificateRequest(
+                        activity = context as? Activity,
+                        context = context,
+                        request = request,
+                        siteRules = parseClientCertificateSiteRules(
+                            userSettings.clientCertificateSites
+                        ).orEmpty(),
+                        systemSettings = systemSettings,
+                        scope = scope,
+                    )
+                }
+
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     config.setLastErrorUrl("")
                     blobInterface?.abortAllDownloads()

@@ -266,6 +266,12 @@
         android:description="@string/web_engine_media_playback_requires_user_gesture_description"
     />
     <restriction
+        android:key="web_engine.client_certificate_sites"
+        android:restrictionType="string"
+        android:title="@string/web_engine_client_certificate_sites_title"
+        android:description="@string/web_engine_client_certificate_sites_description"
+    />
+    <restriction
         android:key="web_engine.ssl_error_mode"
         android:restrictionType="choice"
         android:entries="@array/entries_ssl_error_mode_option"
