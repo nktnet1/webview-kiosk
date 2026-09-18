@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
 import android.util.Log
+import java.io.ByteArrayOutputStream
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -37,13 +38,38 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
+
+private const val MAX_IMPORT_FILE_BYTES = 1024 * 1024
+
+private fun readBoundedText(stream: java.io.InputStream): String {
+    val output = ByteArrayOutputStream()
+    val buffer = ByteArray(8192)
+    var totalBytes = 0
+
+    while (true) {
+        val bytesRead = stream.read(buffer)
+        if (bytesRead < 0) {
+            break
+        }
+
+        totalBytes += bytesRead
+        require(totalBytes <= MAX_IMPORT_FILE_BYTES) {
+            "Settings file exceeds the 1 MiB limit."
+        }
+        output.write(buffer, 0, bytesRead)
+    }
+
+    return output.toString(Charsets.UTF_8.name())
+}
 
 enum class ImportTab {
     Base64,
@@ -75,12 +101,15 @@ fun ImportSettingsDialog(
         if (uri != null) {
             scope.launch {
                 try {
-                    context.contentResolver.openInputStream(uri)?.use { stream ->
-                        importText = stream.bufferedReader().use { it.readText() }
-                        importError = false
+                    val loadedText = withContext(Dispatchers.IO) {
+                        context.contentResolver.openInputStream(uri)?.use(::readBoundedText)
+                            ?: error("Unable to open selected settings file.")
                     }
+                    importText = loadedText
+                    importError = false
                     ToastManager.show(context, "Loaded file successfully.")
                 } catch (e: Exception) {
+                    importError = true
                     Log.e(Constants.APP_SCHEME, "Loading imported file failed", e)
                     ToastManager.show(context, "Failed to read file: ${e.message}")
                 }
