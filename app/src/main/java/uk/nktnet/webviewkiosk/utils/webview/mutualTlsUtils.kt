@@ -20,15 +20,15 @@ private const val DEFAULT_HTTPS_PORT = 443
  * [alias] is optional. When omitted, the device-local alias saved in [SystemSettings]
  * is used, or Android's KeyChain picker is shown on the first certificate request.
  */
-data class ClientCertificateSiteRule(
+data class MutualTlsRule(
     val host: String,
     val port: Int,
     val alias: String?,
 ) {
-    val siteKey: String = clientCertificateSiteKey(host, port)
+    val siteKey: String = mutualTlsSiteKey(host, port)
 }
 
-fun clientCertificateSiteKey(host: String, port: Int): String {
+fun mutualTlsSiteKey(host: String, port: Int): String {
     val normalizedHost = host
         .trim()
         .removePrefix("[")
@@ -40,8 +40,8 @@ fun clientCertificateSiteKey(host: String, port: Int): String {
     return "$displayHost:$normalizedPort"
 }
 
-fun parseClientCertificateSiteRules(value: String): List<ClientCertificateSiteRule>? {
-    val rules = mutableListOf<ClientCertificateSiteRule>()
+fun parseMutualTlsRules(value: String): List<MutualTlsRule>? {
+    val rules = mutableListOf<MutualTlsRule>()
     val seenSites = mutableSetOf<String>()
 
     for (rawLine in value.lines()) {
@@ -71,7 +71,7 @@ fun parseClientCertificateSiteRules(value: String): List<ClientCertificateSiteRu
         val port = if (uri.port == -1) DEFAULT_HTTPS_PORT else uri.port
         if (port !in 1..65535) return null
 
-        val rule = ClientCertificateSiteRule(
+        val rule = MutualTlsRule(
             host = uri.host,
             port = port,
             alias = aliasPart,
@@ -83,19 +83,19 @@ fun parseClientCertificateSiteRules(value: String): List<ClientCertificateSiteRu
     return rules
 }
 
-fun validateClientCertificateSites(value: String): Boolean {
-    return parseClientCertificateSiteRules(value) != null
+fun validateMutualTls(value: String): Boolean {
+    return parseMutualTlsRules(value) != null
 }
 
-fun handleClientCertificateRequest(
+fun handleMutualTlsRequest(
     activity: Activity?,
     context: Context,
     request: ClientCertRequest,
-    siteRules: List<ClientCertificateSiteRule>,
+    siteRules: List<MutualTlsRule>,
     systemSettings: SystemSettings,
     scope: CoroutineScope,
 ) {
-    val siteKey = clientCertificateSiteKey(request.host, request.port)
+    val siteKey = mutualTlsSiteKey(request.host, request.port)
     val rule = siteRules.firstOrNull { it.siteKey == siteKey }
     if (rule == null || activity == null) {
         // Do not cache a negative response so a later settings change can take effect.
@@ -121,11 +121,11 @@ fun handleClientCertificateRequest(
 
             if (credentials != null) {
                 if (rule.alias == null) {
-                    systemSettings.setClientCertificateAlias(siteKey, alias)
+                    systemSettings.setMutualTlsAlias(siteKey, alias)
                 }
                 request.proceed(credentials.first, credentials.second)
             } else {
-                systemSettings.removeClientCertificateAlias(siteKey)
+                systemSettings.removeMutualTlsAlias(siteKey)
                 if (promptOnFailure) {
                     chooseAlias(alias, rule.alias)
                 } else {
@@ -146,7 +146,7 @@ fun handleClientCertificateRequest(
                             || alias == KeyChain.KEY_ALIAS_SELECTION_DENIED
                             || (requiredAlias != null && alias != requiredAlias)
                         ) {
-                            systemSettings.removeClientCertificateAlias(siteKey)
+                            systemSettings.removeMutualTlsAlias(siteKey)
                             request.ignore()
                         } else {
                             loadAlias(alias, false)
@@ -165,7 +165,7 @@ fun handleClientCertificateRequest(
     }
 
     val configuredAlias = rule.alias
-    val rememberedAlias = systemSettings.getClientCertificateAlias(siteKey)
+    val rememberedAlias = systemSettings.getMutualTlsAlias(siteKey)
     when {
         configuredAlias != null -> loadAlias(configuredAlias, true)
         rememberedAlias != null -> loadAlias(rememberedAlias, true)

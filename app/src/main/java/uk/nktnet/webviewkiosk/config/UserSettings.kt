@@ -38,7 +38,7 @@ import uk.nktnet.webviewkiosk.utils.intPref
 import uk.nktnet.webviewkiosk.utils.stringEnumPref
 import uk.nktnet.webviewkiosk.utils.stringPref
 import uk.nktnet.webviewkiosk.utils.stringPrefOptional
-import uk.nktnet.webviewkiosk.utils.webview.parseClientCertificateSiteRules
+import uk.nktnet.webviewkiosk.utils.webview.parseMutualTlsRules
 
 class UserSettings(val context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(
@@ -312,21 +312,21 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.WebEngine.MEDIA_PLAYBACK_REQUIRES_USER_GESTURE,
         true
     )
-    private var clientCertificateSitesPref by stringPrefOptional(
+    private var mutualTlsPref by stringPrefOptional(
         getRestrictions,
         prefs,
         UserSettingsKeys.WebEngine.MUTUAL_TLS
     )
     var mutualTls: String
-        get() = clientCertificateSitesPref
+        get() = mutualTlsPref
         set(value) {
-            val previous = clientCertificateSitesPref
-            clientCertificateSitesPref = value
-            val current = clientCertificateSitesPref
+            val previous = mutualTlsPref
+            mutualTlsPref = value
+            val current = mutualTlsPref
             if (current == previous) {
                 return
             }
-            refreshClientCertificateSiteState()
+            refreshMutualTlsState()
         }
     var sslErrorMode by stringEnumPref(
         getRestrictions,
@@ -1028,12 +1028,12 @@ class UserSettings(val context: Context) {
         true
     )
 
-    fun refreshClientCertificateSiteState() {
-        val activeSiteKeys = parseClientCertificateSiteRules(mutualTls)
+    fun refreshMutualTlsState() {
+        val activeSiteKeys = parseMutualTlsRules(mutualTls)
             ?.map { it.siteKey }
             ?.toSet()
             ?: emptySet()
-        SystemSettings(context).retainClientCertificateAliases(activeSiteKeys)
+        SystemSettings(context).retainMutualTlsAliases(activeSiteKeys)
         runCatching { WebView.clearClientCertPreferences(null) }
     }
 

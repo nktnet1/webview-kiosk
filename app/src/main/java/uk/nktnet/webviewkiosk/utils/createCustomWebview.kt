@@ -56,7 +56,7 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
-import uk.nktnet.webviewkiosk.utils.webview.handleClientCertificateRequest
+import uk.nktnet.webviewkiosk.utils.webview.handleMutualTlsRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleDownloadPrompt
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePdfSourceRequest
@@ -68,7 +68,7 @@ import uk.nktnet.webviewkiosk.utils.webview.interfaces.BrightnessInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.NfcInterface
 import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
-import uk.nktnet.webviewkiosk.utils.webview.parseClientCertificateSiteRules
+import uk.nktnet.webviewkiosk.utils.webview.parseMutualTlsRules
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDarkReaderScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDisableVibrationApiScript
@@ -313,11 +313,11 @@ fun createCustomWebview(
                     request: ClientCertRequest?
                 ) {
                     if (request == null) return
-                    handleClientCertificateRequest(
+                    handleMutualTlsRequest(
                         activity = context as? Activity,
                         context = context,
                         request = request,
-                        siteRules = parseClientCertificateSiteRules(
+                        siteRules = parseMutualTlsRules(
                             userSettings.mutualTls
                         ).orEmpty(),
                         systemSettings = systemSettings,

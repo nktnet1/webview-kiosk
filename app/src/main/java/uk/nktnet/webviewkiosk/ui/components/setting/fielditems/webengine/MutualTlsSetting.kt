@@ -32,11 +32,11 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
-import uk.nktnet.webviewkiosk.utils.webview.parseClientCertificateSiteRules
-import uk.nktnet.webviewkiosk.utils.webview.validateClientCertificateSites
+import uk.nktnet.webviewkiosk.utils.webview.parseMutualTlsRules
+import uk.nktnet.webviewkiosk.utils.webview.validateMutualTls
 
 @Composable
-fun ClientCertificateSitesSetting() {
+fun MutualTlsSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
@@ -75,7 +75,7 @@ fun ClientCertificateSitesSetting() {
     }
 
     TextSettingFieldItem(
-        label = stringResource(R.string.web_engine_client_certificate_sites_title),
+        label = stringResource(R.string.web_engine_mutual_tls_title),
         infoText = """
             Configure exact sites that may use a client certificate for Mutual TLS (mTLS).
 
@@ -104,10 +104,10 @@ fun ClientCertificateSitesSetting() {
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         isMultiline = true,
-        validator = ::validateClientCertificateSites,
+        validator = ::validateMutualTls,
         validationMessage = "Use one unique host[:port][=KeyChain alias] entry per line.",
         descriptionFormatter = { value ->
-            val count = parseClientCertificateSiteRules(value)?.size ?: 0
+            val count = parseMutualTlsRules(value)?.size ?: 0
             when (count) {
                 0 -> "(none)"
                 1 -> "1 site"
@@ -131,7 +131,7 @@ fun ClientCertificateSitesSetting() {
                     ),
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                     onClick = {
-                        systemSettings.clearClientCertificateAliases()
+                        systemSettings.clearMutualTlsAliases()
                         try {
                             WebView.clearClientCertPreferences {
                                 ToastManager.show(

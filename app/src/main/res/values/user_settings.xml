@@ -127,8 +127,8 @@
     <string name="web_engine_media_playback_requires_user_gesture_title">Media Playback Requires User Gesture</string>
     <string name="web_engine_media_playback_requires_user_gesture_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
-    <string name="web_engine_client_certificate_sites_title">Mutual TLS</string>
-    <string name="web_engine_client_certificate_sites_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
+    <string name="web_engine_mutual_tls_title">Mutual TLS</string>
+    <string name="web_engine_mutual_tls_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>
 
     <string name="web_engine_ssl_error_mode_title">SSL Error Mode</string>
     <string name="web_engine_ssl_error_mode_description">https://webviewkiosk.nktnet.uk/docs/settings/web-engine/</string>

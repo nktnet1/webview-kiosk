@@ -26,7 +26,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.AllowFi
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.AllowUniversalAccessFromFileURLsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.BuiltInZoomControlsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.CacheModeSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.ClientCertificateSitesSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.MutualTlsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.DisplayZoomControlsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.EnableDomStorageSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.EnableJavaScriptSetting
@@ -80,7 +80,7 @@ fun SettingsWebEngineScreen(navController: NavController) {
             AllowFilePickerSetting()
             AllowFileDownloadSetting()
             MediaPlaybackRequiresUserGestureSetting()
-            ClientCertificateSitesSetting()
+            MutualTlsSetting()
             SslErrorModeSetting()
             MixedContentModeSetting()
             OverScrollModeSetting()

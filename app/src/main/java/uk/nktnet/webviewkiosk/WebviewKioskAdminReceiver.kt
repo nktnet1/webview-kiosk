@@ -6,8 +6,8 @@ import android.content.Intent
 import android.net.Uri
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
-import uk.nktnet.webviewkiosk.utils.webview.clientCertificateSiteKey
-import uk.nktnet.webviewkiosk.utils.webview.parseClientCertificateSiteRules
+import uk.nktnet.webviewkiosk.utils.webview.mutualTlsSiteKey
+import uk.nktnet.webviewkiosk.utils.webview.parseMutualTlsRules
 
 class WebviewKioskAdminReceiver : DeviceAdminReceiver() {
     override fun onEnabled(context: Context, intent: Intent) {
@@ -25,8 +25,8 @@ class WebviewKioskAdminReceiver : DeviceAdminReceiver() {
         if (uid != context.applicationInfo.uid || alias.isNullOrBlank()) return null
         val host = uri?.host ?: return null
         val port = uri.port.takeIf { it != -1 } ?: 443
-        val siteKey = clientCertificateSiteKey(host, port)
-        val configuredAlias = parseClientCertificateSiteRules(
+        val siteKey = mutualTlsSiteKey(host, port)
+        val configuredAlias = parseMutualTlsRules(
             UserSettings(context).mutualTls
         )
             ?.firstOrNull { it.siteKey == siteKey }
