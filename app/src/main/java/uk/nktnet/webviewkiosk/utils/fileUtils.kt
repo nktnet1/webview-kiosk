@@ -300,7 +300,7 @@ fun File.getDisplayName(): String {
     return this.name.split("|", limit = 2).getOrElse(1) { this.name }
 }
 
-fun File.getLocalUrl(): String {
+fun File.getLegacyLocalFileUrl(): String {
     return "file://${Uri.encode(this.absolutePath, "/")}"
 }
 

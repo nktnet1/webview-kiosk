@@ -74,7 +74,7 @@ fun LocalFileEditorDialog(
                     .padding(16.dp),
             ) {
                 Text(
-                    text = "Edit File",
+                    text = "Edit file",
                     style = MaterialTheme.typography.headlineSmall,
                 )
                 Spacer(Modifier.height(4.dp))

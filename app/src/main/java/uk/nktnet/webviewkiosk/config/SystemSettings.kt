@@ -53,6 +53,12 @@ class SystemSettings(val context: Context) {
 
     var isKioskControlPanelSticky by booleanPref(prefs = prefs, key = IS_KIOSK_CONTROL_PANEL_STICKY, default = false)
 
+    var showLegacyLocalFileLinks by booleanPref(
+        prefs = prefs,
+        key = SHOW_LEGACY_LOCAL_FILE_LINKS,
+        default = false
+    )
+
     val appInstanceId: String
         get() {
             var id = prefs.getString(APP_INSTANCE_ID, null)
@@ -135,6 +141,7 @@ class SystemSettings(val context: Context) {
         private const val HISTORY_STACK = "history_stack"
         private const val HISTORY_INDEX = "history_index"
         private const val IS_KIOSK_CONTROL_PANEL_STICKY = "is_kiosk_control_panel_sticky"
+        private const val SHOW_LEGACY_LOCAL_FILE_LINKS = "show_legacy_local_file_links"
         private const val APP_INSTANCE_ID = "app_instance_id"
         private const val SITE_PERMISSIONS = "site_permissions"
         private const val MUTUAL_TLS_ALIASES = "mutual_tls_aliases"

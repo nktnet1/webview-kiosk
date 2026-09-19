@@ -34,7 +34,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import uk.nktnet.webviewkiosk.utils.getDisplayName
-import uk.nktnet.webviewkiosk.utils.getLocalUrl
+import uk.nktnet.webviewkiosk.utils.getLocalFileLink
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
@@ -99,7 +99,7 @@ fun LocalFilesDialog(
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp)
                                     .clickable {
-                                        customLoadUrl(file.getLocalUrl())
+                                        customLoadUrl(file.getLocalFileLink())
                                         onDismiss()
                                     }
                             ) {

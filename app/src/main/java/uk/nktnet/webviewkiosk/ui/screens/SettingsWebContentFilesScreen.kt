@@ -5,8 +5,10 @@ import android.util.Log
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProgressIndicatorDefaults
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,6 +34,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -42,6 +46,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
+import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
@@ -57,10 +62,14 @@ import java.util.concurrent.CancellationException
 fun SettingsWebContentFilesScreen(navController: NavController) {
     val context = LocalContext.current
     val filesDir = getWebContentFilesDir(context)
+    val systemSettings = remember(context) { SystemSettings(context) }
 
     var filesList by remember { mutableStateOf(listLocalFiles(filesDir)) }
     var uploading by remember { mutableStateOf(false) }
     var progress by remember { mutableFloatStateOf(0f) }
+    var showLegacyLocalFileLinks by remember {
+        mutableStateOf(systemSettings.showLegacyLocalFileLinks)
+    }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -161,14 +170,45 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
             }
         }
 
-        Text(
-            text = "Total files: ${filesList.size}",
-            fontSize = 13.sp,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        Row(
             modifier = Modifier
-                .align(Alignment.End)
-                .padding(top = 4.dp, end = 4.dp)
-        )
+                .fillMaxWidth()
+                .padding(top = 4.dp, start = 4.dp, end = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "Total files: ${filesList.size}",
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Legacy file:// links",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.width(2.dp))
+                Box(
+                    modifier = Modifier
+                        .width(40.dp)
+                        .height(28.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Switch(
+                        checked = showLegacyLocalFileLinks,
+                        onCheckedChange = {
+                            showLegacyLocalFileLinks = it
+                            systemSettings.showLegacyLocalFileLinks = it
+                        },
+                        modifier = Modifier.scale(0.72f)
+                    )
+                }
+            }
+        }
 
         if (filesList.isEmpty()) {
             Box(
@@ -188,6 +228,7 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                 navController = navController,
                 filesList = filesList,
                 filesDir = filesDir,
+                showLegacyLocalFileLinks = showLegacyLocalFileLinks,
                 modifier = Modifier.padding(top = 8.dp),
                 refreshFiles = ::refreshFiles
             )

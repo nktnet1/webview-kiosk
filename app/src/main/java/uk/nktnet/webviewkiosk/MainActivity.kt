@@ -62,7 +62,7 @@ import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
 import uk.nktnet.webviewkiosk.ui.screens.SetupNavHost
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
-import uk.nktnet.webviewkiosk.utils.getLocalUrl
+import uk.nktnet.webviewkiosk.utils.getLocalFileLink
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handleKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleMainIntent
@@ -291,7 +291,7 @@ class MainActivity : AppCompatActivity() {
                             targetDir = webContentDir,
                             onProgress = { progress -> uploadProgress = progress },
                             onComplete = { file ->
-                                systemSettings.intentUrl = file.getLocalUrl()
+                                systemSettings.intentUrl = file.getLocalFileLink()
                                 uploadingFileUri = null
                             }
                         )
