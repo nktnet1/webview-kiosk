@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg id="svg51" width="180" height="53.333" version="1.1" viewBox="0 0 180 53.333" xml:space="preserve"
+<svg id="svg51" width="564" height="168" version="1.1" viewBox="0 0 180 53.333" xml:space="preserve"
     xmlns="http://www.w3.org/2000/svg" xmlns:cc="http://creativecommons.org/ns#"
     xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
     <title>Google Play Badge</title>
@@ -13,7 +13,7 @@
     </metadata>
     <path id="path11"
         d="m173.33 53.333h-166.66c-3.6666 0-6.6665-2.9999-6.6665-6.6665v-39.999c0-3.6666 2.9999-6.6665 6.6665-6.6665h166.66c3.6666 0 6.6665 2.9999 6.6665 6.6665v39.999c0 3.6666-2.9999 6.6665-6.6665 6.6665"
-        fill="#100f0d" stroke-width=".13333" />
+        fill="#000000" stroke-width=".13333" />
     <path id="path13"
         d="m173.33 1e-3h-166.66c-3.6666 0-6.6665 2.9999-6.6665 6.6665v39.999c0 3.6666 2.9999 6.6665 6.6665 6.6665h166.66c3.6666 0 6.6665-2.9999 6.6665-6.6665v-39.999c0-3.6666-2.9999-6.6665-6.6665-6.6665zm0 1.0661c3.0879 0 5.5999 2.5125 5.5999 5.6004v39.999c0 3.0879-2.5119 5.6004-5.5999 5.6004h-166.66c-3.0879 0-5.5993-2.5125-5.5993-5.6004v-39.999c0-3.0879 2.5114-5.6004 5.5993-5.6004h166.66"
         fill="#a2a2a1" stroke-width=".13333" />
