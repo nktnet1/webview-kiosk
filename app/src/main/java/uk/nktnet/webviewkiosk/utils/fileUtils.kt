@@ -10,6 +10,7 @@ import android.system.Os
 import android.text.format.Formatter
 import android.util.Log
 import android.webkit.MimeTypeMap
+import androidx.webkit.WebViewAssetLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.config.Constants
@@ -299,8 +300,43 @@ fun File.getDisplayName(): String {
     return this.name.split("|", limit = 2).getOrElse(1) { this.name }
 }
 
-fun File.getLocalUrl(): String {
+fun File.getLegacyLocalFileUrl(): String {
     return "file://${Uri.encode(this.absolutePath, "/")}"
+}
+
+fun File.getLocalFileLink(): String {
+    return Uri.Builder()
+        .scheme("https")
+        .authority(WebViewAssetLoader.DEFAULT_DOMAIN)
+        .appendPath(Constants.WEB_CONTENT_FILES_DIR)
+        .appendPath(name)
+        .build()
+        .toString()
+}
+
+fun Uri.isLocalFileLink(): Boolean {
+    return scheme.equals("https", ignoreCase = true)
+        && host.equals(WebViewAssetLoader.DEFAULT_DOMAIN, ignoreCase = true)
+        && pathSegments.size == 2
+        && pathSegments[0] == Constants.WEB_CONTENT_FILES_DIR
+}
+
+fun Uri.resolveLocalFileLink(context: Context): File? {
+    if (!isLocalFileLink()) {
+        return null
+    }
+
+    val fileName = pathSegments.getOrNull(1)?.takeIf { it.isNotBlank() }
+        ?: return null
+    val filesDir = getWebContentFilesDir(context)
+
+    return try {
+        val canonicalDir = filesDir.canonicalFile
+        val canonicalFile = File(canonicalDir, fileName).canonicalFile
+        canonicalFile.takeIf { it.parentFile == canonicalDir }
+    } catch (_: Exception) {
+        null
+    }
 }
 
 fun getDownloadLocation(): String {

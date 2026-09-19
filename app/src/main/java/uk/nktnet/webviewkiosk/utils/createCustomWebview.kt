@@ -222,7 +222,21 @@ fun createCustomWebview(
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
 
-            val assetLoader = if (userSettings.supportPdfRendering) {
+            val localFileAssetLoader = if (userSettings.allowLocalFiles) {
+                WebViewAssetLoader.Builder()
+                    .addPathHandler(
+                        "/${Constants.WEB_CONTENT_FILES_DIR}/",
+                        WebViewAssetLoader.InternalStoragePathHandler(
+                            context,
+                            getWebContentFilesDir(context)
+                        )
+                    )
+                    .build()
+            } else {
+                null
+            }
+
+            val pdfAssetLoader = if (userSettings.supportPdfRendering) {
                 WebViewAssetLoader.Builder()
                     .setDomain(Constants.PDF_JS_ASSETS_DUMMY_URL.toUri().host ?: "")
                     .addPathHandler(
@@ -412,6 +426,7 @@ fun createCustomWebview(
                 ): WebResourceResponse? {
                     if (request != null) {
                         handlePdfSourceRequest(
+                            context,
                             request,
                             requestUserAgent,
                             userSettings,
@@ -421,8 +436,15 @@ fun createCustomWebview(
                             return it
                         }
 
-                        if (assetLoader != null) {
-                            val response = assetLoader.shouldInterceptRequest(request.url)
+                        if (localFileAssetLoader != null) {
+                            val response = localFileAssetLoader.shouldInterceptRequest(request.url)
+                            if (response != null) {
+                                return response
+                            }
+                        }
+
+                        if (pdfAssetLoader != null) {
+                            val response = pdfAssetLoader.shouldInterceptRequest(request.url)
                             if (response != null) {
                                 return response
                             }

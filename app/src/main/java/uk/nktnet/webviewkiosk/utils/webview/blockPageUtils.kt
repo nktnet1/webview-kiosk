@@ -5,6 +5,7 @@ import android.webkit.WebView
 import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.utils.isLocalFileLink
 import uk.nktnet.webviewkiosk.utils.webview.html.BlockCause
 import uk.nktnet.webviewkiosk.utils.webview.html.generateBlockedPageHtml
 import java.net.URLEncoder
@@ -49,7 +50,8 @@ fun getBlockInfo(
 
     val blockCause = when {
         isBlockedUrl(url, blacklistRegexes, whitelistRegexes) -> BlockCause.BLACKLIST
-        schemeType == SchemeType.FILE && !userSettings.allowLocalFiles -> BlockCause.LOCAL_FILE
+        (schemeType == SchemeType.FILE || uri.isLocalFileLink())
+            && !userSettings.allowLocalFiles -> BlockCause.LOCAL_FILE
         else -> null
     }
     return schemeType to blockCause
