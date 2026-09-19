@@ -290,7 +290,7 @@ fun createCustomWebview(
                 }
             }
             if (
-                !userSettings.allowVibration
+                !userSettings.enableVibrationApi
                 && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
             ) {
                 runCatching {
@@ -352,7 +352,7 @@ fun createCustomWebview(
                     if (userSettings.allowNfc) {
                         view?.evaluateJavascript(NfcInterface.JS_WEB_NFC_HOOK, null)
                     }
-                    if (!userSettings.allowVibration) {
+                    if (!userSettings.enableVibrationApi) {
                         view?.evaluateJavascript(generateDisableVibrationApiScript(), null)
                     }
                     super.onPageStarted(view, url, favicon)

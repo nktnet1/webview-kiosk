@@ -1,6 +1,6 @@
 ---
 title: JS Scripts
-description: Apply theme, desktop viewport, custom scripts
+description: Theme, viewport, Web APIs, custom scripts
 ---
 
 import { APP_NAME } from '#/config/app'
@@ -103,7 +103,21 @@ try {
 
 **Default:** false
 
-## 5. Enable Dark Reader
+## 5. Enable Vibration API
+
+When enabled, web pages can vibrate the device using
+[`navigator.vibrate(pattern)`](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/vibrate).
+The pattern can be a duration in milliseconds or an array of alternating
+vibration and pause durations.
+
+The app declares Android's
+[`VIBRATE`](https://developer.android.com/reference/android/Manifest.permission#VIBRATE)
+permission, while this setting controls whether the API is available to web
+content.
+
+**Default:** false
+
+## 6. Enable Dark Reader
 
 Automatically inject Dark Reader into web pages.
 
@@ -116,7 +130,7 @@ Note: Some websites may render incorrectly due to CSS overrides.
 
 **Default:** false
 
-## 6. Enable Eruda Console
+## 7. Enable Eruda Console
 
 Automatically inject the Eruda console into web pages.
 
@@ -135,7 +149,7 @@ desktop developer tools.
 
 **Default:** false
 
-## 7. Custom Scripts
+## 8. Custom Scripts
 
 Your code content will be wrapped as follows to prevent polluting the global
 scope and avoid conflicts with other scripts:
@@ -152,7 +166,7 @@ scope and avoid conflicts with other scripts:
 document.body.style.backgroundColor = 'green';
 ```
 
-### 7.1. On Page Start
+### 8.1. On Page Start
 
 JavaScript to run immediately when the page starts loading.
 
@@ -160,7 +174,7 @@ Useful for early DOM manipulation or overriding functions.
 
 **Default:** *(blank)*
 
-### 7.2. On Page Finish
+### 8.2. On Page Finish
 
 JavaScript to run after the page has fully loaded.
 

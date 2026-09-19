@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device
+package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
@@ -9,13 +9,13 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 
 @Composable
-fun AllowVibrationSetting() {
+fun EnableVibrationApiSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
-    val settingKey = UserSettingsKeys.Device.ALLOW_VIBRATION
+    val settingKey = UserSettingsKeys.JsScripts.ENABLE_VIBRATION_API
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.device_allow_vibration_title),
+        label = stringResource(R.string.js_scripts_enable_vibration_api_title),
         infoText = """
             Allow web pages to vibrate the device using navigator.vibrate(pattern).
 
@@ -23,9 +23,9 @@ fun AllowVibrationSetting() {
             vibration and pause durations. A user interaction may be required by the
             WebView before vibration is allowed.
         """.trimIndent(),
-        initialValue = userSettings.allowVibration,
+        initialValue = userSettings.enableVibrationApi,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.allowVibration = it }
+        onSave = { userSettings.enableVibrationApi = it }
     )
 }

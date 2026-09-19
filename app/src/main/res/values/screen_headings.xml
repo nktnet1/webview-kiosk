@@ -24,10 +24,10 @@
     <string name="settings_appearance_description">Theme, address bar, insets, immersive, blocked message</string>
 
     <string name="settings_device_title">Device</string>
-    <string name="settings_device_description">Rotation, camera, microphone, location, vibration, unlock controls</string>
+    <string name="settings_device_description">Rotation, camera, microphone, location, unlock controls</string>
 
     <string name="settings_js_scripts_title">JS Scripts</string>
-    <string name="settings_js_scripts_description">Apply theme, desktop viewport, custom scripts</string>
+    <string name="settings_js_scripts_description">Theme, viewport, Web APIs, custom scripts</string>
 
     <string name="settings_mqtt_title">MQTT</string>
     <string name="settings_mqtt_description">Remote management and monitoring of your kiosk device</string>

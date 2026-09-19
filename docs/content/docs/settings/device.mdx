@@ -1,6 +1,6 @@
 ---
 title: Device
-description: Rotation, camera, microphone, location, vibration, unlock controls
+description: Rotation, camera, microphone, location, unlock controls
 ---
 
 import { APP_NAME } from '#/config/app'
@@ -92,21 +92,7 @@ as Web NFC and can also operate on insecure (non-HTTPS) websites.
 
 **Default:** false
 
-## 8. Allow Vibration
-
-Set to true to allow web pages to vibrate the device using
-[`navigator.vibrate(pattern)`](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/vibrate).
-The pattern can be a duration in milliseconds or an array of alternating
-vibration and pause durations.
-
-The app declares Android's
-[`VIBRATE`](https://developer.android.com/reference/android/Manifest.permission#VIBRATE)
-permission, while this setting controls whether the API is available to web
-content.
-
-**Default:** false
-
-## 9. Allow Notifications
+## 8. Allow Notifications
 
 Set to true to allow {APP_NAME} to send notifications. For example, this
 will allow the MQTT notify command to create alerts.
@@ -122,7 +108,7 @@ do not want them.
 
 **Default:** false
 
-## 10. Back Button Hold Action
+## 9. Back Button Hold Action
 
 Customise the behaviour when the back button is held down (long pressed).
 
@@ -134,7 +120,7 @@ Customise the behaviour when the back button is held down (long pressed).
 
 **Default:** Open Kiosk Control Panel
 
-## 11. Custom Unlock Shortcut
+## 10. Custom Unlock Shortcut
 
 Provide a custom keyboard shortcut using a modifier key (CTRL/SHIFT/ALT/META)
 in combination with another standard key to unlock/unpin the application.
@@ -146,7 +132,7 @@ has a physical keyboard connected.
 
 **Default:** *(blank)*
 
-## 12. Custom Auth Password
+## 11. Custom Auth Password
 
 Specify a custom password to protect your settings or when unlocking from
 the kiosk state.
@@ -163,7 +149,7 @@ Leave this setting blank to use your device's biometrics or credentials.
 
 **Default:** *(blank)*
 
-## 13. Unlock Auth Requirement
+## 12. Unlock Auth Requirement
 
 This setting only applies to in-app unlock methods, e.g. when unlocking
 using `Kiosk Control Panel` or `Custom Unlock Shortcut`.
@@ -179,7 +165,7 @@ unpinning, which is outside the control of {APP_NAME}.
 
 **Default:** Default
 
-## 14. Block Screen Capture
+## 13. Block Screen Capture
 
 Prevent screenshots, screen recording and content previews in Recent Apps.
 This is done by setting the FLAG_SECURE window flag.
@@ -189,7 +175,7 @@ For more information, see
 
 **Default:** false
 
-## 15. Block Volume Keys
+## 14. Block Volume Keys
 
 Disable the volume control buttons, specifically:
 
@@ -199,11 +185,11 @@ Disable the volume control buttons, specifically:
 
 **Default:** false
 
-## 16. Device Owner
+## 15. Device Owner
 
 For more information about `Device Owner`, see the [Security](/docs/security) documentation.
 
-### 16.1. Lock Task Features
+### 15.1. Lock Task Features
 
 {APP_NAME} The settings below are extracted from the official documentations:
 - [Lock Task Mode -> Customise UI](https://developer.android.com/work/dpc/dedicated-devices/lock-task-mode#customize-ui)
@@ -321,7 +307,7 @@ For more information about `Device Owner`, see the [Security](/docs/security) do
   </tbody>
 </table>
 
-### 16.2. Dhizuku Request Permission on Launch
+### 15.2. Dhizuku Request Permission on Launch
 
 When enabled, if [Dhizuku](https://github.com/iamr0s/Dhizuku) is installed and
 has not granted {APP_NAME} access through the

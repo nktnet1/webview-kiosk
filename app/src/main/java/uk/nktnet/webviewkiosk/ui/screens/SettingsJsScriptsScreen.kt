@@ -26,6 +26,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.EnableBa
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.EnableBrightnessApiSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.EnableDarkReaderSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.EnableErudaConsoleSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.EnableVibrationApiSetting
 
 @Composable
 fun SettingsJsScriptsScreen(
@@ -53,6 +54,7 @@ fun SettingsJsScriptsScreen(
             ApplyDesktopViewportWidthSetting()
             EnableBatteryApiSetting()
             EnableBrightnessApiSetting()
+            EnableVibrationApiSetting()
             EnableDarkReaderSetting()
             EnableErudaConsoleSetting()
             CustomScriptOnPageStartSetting()
