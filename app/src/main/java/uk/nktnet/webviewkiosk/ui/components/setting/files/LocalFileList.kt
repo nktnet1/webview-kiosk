@@ -47,6 +47,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.getDisplayName
+import uk.nktnet.webviewkiosk.utils.getLocalFileLink
 import uk.nktnet.webviewkiosk.utils.getLocalUrl
 import uk.nktnet.webviewkiosk.utils.getUUID
 import uk.nktnet.webviewkiosk.utils.humanReadableSize
@@ -173,6 +174,43 @@ fun LocalFileList(
                             onClick = {
                                 scope.launch {
                                     val clipData = ClipData.newPlainText("File URL", file.getLocalUrl())
+                                    clipboard.setClipEntry(clipData.toClipEntry())
+                                    menuExpanded = false
+                                    activeFile = null
+                                    editableText = null
+                                }
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_content_copy_24),
+                                    contentDescription = null
+                                )
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Open File Link") },
+                            onClick = {
+                                menuExpanded = false
+                                activeFile = null
+                                editableText = null
+                                systemSettings.intentUrl = file.getLocalFileLink()
+                                navigateToWebViewScreen(navController)
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.baseline_file_open_24),
+                                    contentDescription = null
+                                )
+                            },
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Copy File Link") },
+                            onClick = {
+                                scope.launch {
+                                    val clipData = ClipData.newPlainText(
+                                        "File Link",
+                                        file.getLocalFileLink()
+                                    )
                                     clipboard.setClipEntry(clipData.toClipEntry())
                                     menuExpanded = false
                                     activeFile = null

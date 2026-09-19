@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.utils.webview.handlers
 
+import android.content.Context
 import android.util.Log
 import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
@@ -7,6 +8,8 @@ import android.webkit.WebResourceResponse
 import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.utils.isLocalFileLink
+import uk.nktnet.webviewkiosk.utils.resolveLocalFileLink
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
 import java.io.ByteArrayInputStream
@@ -47,6 +50,7 @@ fun registerPdfSource(sourceUrl: String): String {
 }
 
 fun handlePdfSourceRequest(
+    context: Context,
     request: WebResourceRequest,
     userAgent: String?,
     userSettings: UserSettings,
@@ -76,9 +80,15 @@ fun handlePdfSourceRequest(
             return errorResponse(403, "PDF source is blocked")
         }
 
-        when (schemeType) {
-            SchemeType.FILE -> localPdfResponse(sourceUrl)
-            SchemeType.WEB -> remotePdfResponse(
+        val sourceUri = sourceUrl.toUri()
+        when {
+            sourceUri.isLocalFileLink() -> localPdfResponse(
+                sourceUri.resolveLocalFileLink(context)
+            )
+            schemeType == SchemeType.FILE -> localPdfResponse(
+                sourceUri.path?.let(::File)
+            )
+            schemeType == SchemeType.WEB -> remotePdfResponse(
                 sourceUrl = sourceUrl,
                 request = request,
                 userAgent = userAgent,
@@ -97,13 +107,8 @@ fun handlePdfSourceRequest(
     }
 }
 
-private fun localPdfResponse(sourceUrl: String): WebResourceResponse {
-    val sourceUri = sourceUrl.toUri()
-    val path = sourceUri.path
-        ?: return errorResponse(400, "Invalid file URL")
-    val file = File(path)
-
-    if (!file.isFile) {
+private fun localPdfResponse(file: File?): WebResourceResponse {
+    if (file == null || !file.isFile) {
         return errorResponse(404, "PDF not found")
     }
 
