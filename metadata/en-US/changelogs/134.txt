@@ -1,0 +1,5 @@
+## Changes
+
+- feat: add opt-in navigator.vibrate(pattern) support
+- feat: add per-site Mutual TLS client certificate support using Android KeyChain
+- feat: proxy local file over web asset loader (appassets.androidplatform.net)
