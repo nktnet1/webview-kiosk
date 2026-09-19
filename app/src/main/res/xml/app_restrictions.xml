@@ -458,12 +458,6 @@
         android:description="@string/device_allow_nfc_description"
     />
     <restriction
-        android:key="device.allow_vibration"
-        android:restrictionType="bool"
-        android:title="@string/device_allow_vibration_title"
-        android:description="@string/device_allow_vibration_description"
-    />
-    <restriction
         android:key="device.allow_notifications"
         android:restrictionType="bool"
         android:title="@string/device_allow_notifications_title"
@@ -584,6 +578,12 @@
         android:restrictionType="bool"
         android:title="@string/js_scripts_enable_brightness_api_title"
         android:description="@string/js_scripts_enable_brightness_api_description"
+    />
+    <restriction
+        android:key="js_scripts.enable_vibration_api"
+        android:restrictionType="bool"
+        android:title="@string/js_scripts_enable_vibration_api_title"
+        android:description="@string/js_scripts_enable_vibration_api_description"
     />
     <restriction
         android:key="js_scripts.enable_dark_reader"
