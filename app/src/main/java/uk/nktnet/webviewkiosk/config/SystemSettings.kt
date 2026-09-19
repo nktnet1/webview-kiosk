@@ -46,12 +46,20 @@ class SystemSettings(val context: Context) {
             prefs.edit { putString(HISTORY_STACK, serialized) }
         }
 
-    var historyIndex by intPref(prefs = prefs, key = HISTORY_INDEX, default = -1)
+    var historyIndex by intPref(
+        prefs = prefs,
+        key = HISTORY_INDEX,
+        default = -1
+    )
 
     val currentUrl
         get() = historyStack.getOrNull(historyIndex)?.url ?: ""
 
-    var isKioskControlPanelSticky by booleanPref(prefs = prefs, key = IS_KIOSK_CONTROL_PANEL_STICKY, default = false)
+    var isKioskControlPanelSticky by booleanPref(
+        prefs = prefs,
+        key = IS_KIOSK_CONTROL_PANEL_STICKY,
+        default = false
+    )
 
     var showLegacyLocalFileLinks by booleanPref(
         prefs = prefs,
