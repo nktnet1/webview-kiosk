@@ -211,9 +211,6 @@
     <string name="device_allow_nfc_title">Allow NFC</string>
     <string name="device_allow_nfc_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
-    <string name="device_allow_vibration_title">Allow Vibration</string>
-    <string name="device_allow_vibration_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
-
     <string name="device_allow_notifications_title">Allow Notifications</string>
     <string name="device_allow_notifications_description">https://webviewkiosk.nktnet.uk/docs/settings/device/</string>
 
@@ -272,6 +269,9 @@
 
     <string name="js_scripts_enable_brightness_api_title">Enable Brightness API</string>
     <string name="js_scripts_enable_brightness_api_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
+
+    <string name="js_scripts_enable_vibration_api_title">Enable Vibration API</string>
+    <string name="js_scripts_enable_vibration_api_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>
 
     <string name="js_scripts_enable_dark_reader_title">Enable Dark Reader</string>
     <string name="js_scripts_enable_dark_reader_description">https://webviewkiosk.nktnet.uk/docs/settings/js-scripts/</string>

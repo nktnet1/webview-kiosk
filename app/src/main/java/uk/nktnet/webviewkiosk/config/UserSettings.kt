@@ -503,12 +503,6 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Device.ALLOW_NFC,
         false
     )
-    var allowVibration by booleanPref(
-        getRestrictions,
-        prefs,
-        UserSettingsKeys.Device.ALLOW_VIBRATION,
-        false
-    )
     var allowLocation by booleanPref(
         getRestrictions,
         prefs,
@@ -632,6 +626,12 @@ class UserSettings(val context: Context) {
         getRestrictions,
         prefs,
         UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API,
+        false
+    )
+    var enableVibrationApi by booleanPref(
+        getRestrictions,
+        prefs,
+        UserSettingsKeys.JsScripts.ENABLE_VIBRATION_API,
         false
     )
     var enableDarkReader by booleanPref(
@@ -1112,7 +1112,6 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             put(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
             put(UserSettingsKeys.Device.ALLOW_NFC, allowNfc)
-            put(UserSettingsKeys.Device.ALLOW_VIBRATION, allowVibration)
             put(UserSettingsKeys.Device.ALLOW_NOTIFICATIONS, allowNotifications)
             put(UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION, backButtonHoldAction.name)
             put(UserSettingsKeys.Device.CUSTOM_UNLOCK_SHORTCUT, customUnlockShortcut)
@@ -1134,6 +1133,7 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
             put(UserSettingsKeys.JsScripts.ENABLE_BATTERY_API, enableBatteryApi)
             put(UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API, enableBrightnessApi)
+            put(UserSettingsKeys.JsScripts.ENABLE_VIBRATION_API, enableVibrationApi)
             put(UserSettingsKeys.JsScripts.ENABLE_DARK_READER, enableDarkReader)
             put(UserSettingsKeys.JsScripts.ENABLE_ERUDA_CONSOLE, enableErudaConsole)
             put(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
@@ -1299,7 +1299,6 @@ class UserSettings(val context: Context) {
             allowMicrophone = json.optBoolean(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             allowLocation = json.optBoolean(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
             allowNfc = json.optBoolean(UserSettingsKeys.Device.ALLOW_NFC, allowNfc)
-            allowVibration = json.optBoolean(UserSettingsKeys.Device.ALLOW_VIBRATION, allowVibration)
             allowNotifications = json.optBoolean(UserSettingsKeys.Device.ALLOW_NOTIFICATIONS, allowNotifications)
             backButtonHoldAction = BackButtonHoldActionOption.fromString(
                 json.optString(UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION, backButtonHoldAction.name)
@@ -1325,6 +1324,7 @@ class UserSettings(val context: Context) {
             applyDesktopViewportWidth = json.optInt(UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH, applyDesktopViewportWidth)
             enableBatteryApi = json.optBoolean(UserSettingsKeys.JsScripts.ENABLE_BATTERY_API, enableBatteryApi)
             enableBrightnessApi = json.optBoolean(UserSettingsKeys.JsScripts.ENABLE_BRIGHTNESS_API, enableBrightnessApi)
+            enableVibrationApi = json.optBoolean(UserSettingsKeys.JsScripts.ENABLE_VIBRATION_API, enableVibrationApi)
             enableDarkReader = json.optBoolean(UserSettingsKeys.JsScripts.ENABLE_DARK_READER, enableDarkReader)
             enableErudaConsole = json.optBoolean(UserSettingsKeys.JsScripts.ENABLE_ERUDA_CONSOLE, enableErudaConsole)
             customScriptOnPageStart = json.optString(UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_START, customScriptOnPageStart)
