@@ -178,7 +178,7 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = "Total files: ${filesList.size}",
+                text = "Total: ${filesList.size}",
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -187,11 +187,11 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Legacy file:// links",
+                    text = "legacy file://",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Spacer(modifier = Modifier.width(2.dp))
+                Spacer(modifier = Modifier.width(5.dp))
                 Box(
                     modifier = Modifier
                         .width(40.dp)
