@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device
 
+import android.Manifest
 import android.os.Build
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,12 +19,9 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.rememberPermissionState
 
-private const val ANDROID_17_API_LEVEL = 37
-private const val ACCESS_LOCAL_NETWORK_PERMISSION = "android.permission.ACCESS_LOCAL_NETWORK"
-
 @Composable
 fun AllowLocalNetworkAccessSetting() {
-    if (Build.VERSION.SDK_INT < ANDROID_17_API_LEVEL) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.CINNAMON_BUN) {
         return
     }
 
@@ -34,7 +32,7 @@ fun AllowLocalNetworkAccessSetting() {
     val (
         permissionState,
         requestPermission
-    ) = rememberPermissionState(ACCESS_LOCAL_NETWORK_PERMISSION)
+    ) = rememberPermissionState(Manifest.permission.ACCESS_LOCAL_NETWORK)
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.device_allow_local_network_access_title),
