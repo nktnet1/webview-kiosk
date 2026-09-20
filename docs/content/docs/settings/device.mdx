@@ -1,6 +1,6 @@
 ---
 title: Device
-description: Rotation, camera, microphone, location, local network, unlock controls
+description: Rotation, camera, microphone, location, unlock controls
 ---
 
 import { APP_NAME } from '#/config/app'
@@ -78,18 +78,7 @@ required for the WebView's
 
 **Default:** false
 
-## 7. Allow Local Network Access
-
-On Android 17 (API 37) and newer, grant the
-[ACCESS_LOCAL_NETWORK](https://developer.android.com/reference/android/Manifest.permission#ACCESS_LOCAL_NETWORK)
-permission to let WebView connect to devices and services on the local network.
-
-Use the permission button in this setting to request the permission or open Android App Info to change it later.
-This setting is not shown on older Android versions.
-
-**Default:** false
-
-## 8. Allow NFC
+## 7. Allow NFC
 
 Set to true to enable NFC support in {APP_NAME} via a Web NFC compatibility bridge.
 
@@ -103,7 +92,7 @@ as Web NFC and can also operate on insecure (non-HTTPS) websites.
 
 **Default:** false
 
-## 9. Allow Notifications
+## 8. Allow Notifications
 
 Set to true to allow {APP_NAME} to send notifications. For example, this
 will allow the MQTT notify command to create alerts.
@@ -119,7 +108,7 @@ do not want them.
 
 **Default:** false
 
-## 10. Back Button Hold Action
+## 9. Back Button Hold Action
 
 Customise the behaviour when the back button is held down (long pressed).
 
@@ -131,7 +120,7 @@ Customise the behaviour when the back button is held down (long pressed).
 
 **Default:** Open Kiosk Control Panel
 
-## 11. Custom Unlock Shortcut
+## 10. Custom Unlock Shortcut
 
 Provide a custom keyboard shortcut using a modifier key (CTRL/SHIFT/ALT/META)
 in combination with another standard key to unlock/unpin the application.
@@ -143,7 +132,7 @@ has a physical keyboard connected.
 
 **Default:** *(blank)*
 
-## 12. Custom Auth Password
+## 11. Custom Auth Password
 
 Specify a custom password to protect your settings or when unlocking from
 the kiosk state.
@@ -160,7 +149,7 @@ Leave this setting blank to use your device's biometrics or credentials.
 
 **Default:** *(blank)*
 
-## 13. Unlock Auth Requirement
+## 12. Unlock Auth Requirement
 
 This setting only applies to in-app unlock methods, e.g. when unlocking
 using `Kiosk Control Panel` or `Custom Unlock Shortcut`.
@@ -176,7 +165,7 @@ unpinning, which is outside the control of {APP_NAME}.
 
 **Default:** Default
 
-## 14. Block Screen Capture
+## 13. Block Screen Capture
 
 Prevent screenshots, screen recording and content previews in Recent Apps.
 This is done by setting the FLAG_SECURE window flag.
@@ -186,7 +175,7 @@ For more information, see
 
 **Default:** false
 
-## 15. Block Volume Keys
+## 14. Block Volume Keys
 
 Disable the volume control buttons, specifically:
 
@@ -196,7 +185,7 @@ Disable the volume control buttons, specifically:
 
 **Default:** false
 
-## 16. Device Owner
+## 15. Device Owner
 
 For more information about `Device Owner`, see the [Security](/docs/security) documentation.
 

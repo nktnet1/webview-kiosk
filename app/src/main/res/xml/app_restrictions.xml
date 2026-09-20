@@ -452,12 +452,6 @@
         android:description="@string/device_allow_location_description"
     />
     <restriction
-        android:key="device.allow_local_network_access"
-        android:restrictionType="bool"
-        android:title="@string/device_allow_local_network_access_title"
-        android:description="@string/device_allow_local_network_access_description"
-    />
-    <restriction
         android:key="device.allow_nfc"
         android:restrictionType="bool"
         android:title="@string/device_allow_nfc_title"

@@ -509,12 +509,6 @@ class UserSettings(val context: Context) {
         UserSettingsKeys.Device.ALLOW_LOCATION,
         false
     )
-    var allowLocalNetworkAccess by booleanPref(
-        getRestrictions,
-        prefs,
-        UserSettingsKeys.Device.ALLOW_LOCAL_NETWORK_ACCESS,
-        false
-    )
     var allowNotifications by booleanPref(
         getRestrictions,
         prefs,
@@ -1117,7 +1111,6 @@ class UserSettings(val context: Context) {
             put(UserSettingsKeys.Device.ALLOW_CAMERA, allowCamera)
             put(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             put(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
-            put(UserSettingsKeys.Device.ALLOW_LOCAL_NETWORK_ACCESS, allowLocalNetworkAccess)
             put(UserSettingsKeys.Device.ALLOW_NFC, allowNfc)
             put(UserSettingsKeys.Device.ALLOW_NOTIFICATIONS, allowNotifications)
             put(UserSettingsKeys.Device.BACK_BUTTON_HOLD_ACTION, backButtonHoldAction.name)
@@ -1305,10 +1298,6 @@ class UserSettings(val context: Context) {
             allowCamera = json.optBoolean(UserSettingsKeys.Device.ALLOW_CAMERA, allowCamera)
             allowMicrophone = json.optBoolean(UserSettingsKeys.Device.ALLOW_MICROPHONE, allowMicrophone)
             allowLocation = json.optBoolean(UserSettingsKeys.Device.ALLOW_LOCATION, allowLocation)
-            allowLocalNetworkAccess = json.optBoolean(
-                UserSettingsKeys.Device.ALLOW_LOCAL_NETWORK_ACCESS,
-                allowLocalNetworkAccess
-            )
             allowNfc = json.optBoolean(UserSettingsKeys.Device.ALLOW_NFC, allowNfc)
             allowNotifications = json.optBoolean(UserSettingsKeys.Device.ALLOW_NOTIFICATIONS, allowNotifications)
             backButtonHoldAction = BackButtonHoldActionOption.fromString(
