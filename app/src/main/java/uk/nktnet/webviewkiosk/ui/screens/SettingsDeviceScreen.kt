@@ -24,6 +24,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowCameraSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowLocationSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowLocalNetworkAccessSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowMicrophoneSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowNfcSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.AllowNotificationsSetting
@@ -63,6 +64,7 @@ fun SettingsDeviceScreen(navController: NavController) {
             AllowCameraSetting()
             AllowMicrophoneSetting()
             AllowLocationSetting()
+            AllowLocalNetworkAccessSetting()
             AllowNfcSetting()
             AllowNotificationsSetting()
             BackButtonHoldActionSetting()
