@@ -20,7 +20,7 @@ Designed for small businesses and device owners who are looking for a simple and
 
 1. MQTT (Message Queuing Telemetry Transport)
 
-    - Monitor events, update settings, execute commands and build custom automations using the API
+    - Monitor events, update settings, execute commands and build custom automations
     - Requires an MQTT broker (e.g. Mosquitto, EMQX, HiveMQ, or their HomeAssistant integrations)
 
 2. UnifiedPush
@@ -30,8 +30,8 @@ Designed for small businesses and device owners who are looking for a simple and
 
 3. Managed Configurations (App Restrictions)
 
-    - For fully-managed (company-owned) devices, settings can be remotely configured via an MDM/EMM provider
-    - Advanced users using a device policy controller (e.g. Test DPC or OwnDroid) can also enforce configurations locally
+    - For fully-managed (company-owned) devices, settings can be configured via an MDM/EMM provider
+    - Advanced users with a device policy controller (e.g. Test DPC or OwnDroid) can also enforce configurations locally
 
 For more details, visit https://webviewkiosk.nktnet.uk
 
@@ -60,21 +60,12 @@ For more details, visit https://webviewkiosk.nktnet.uk
 
 <big>Contact</big>
 
-<b>Questions/Feature Requests</b>
-
-- https://github.com/nktnet1/webview-kiosk/discussions
-
-<b>Bugs/Issues</b>
-
-- https://github.com/nktnet1/webview-kiosk/issues
-
-<b>Other</b>
-
+- https://github.com/nktnet1/webview-kiosk
 - support@webviewkiosk.nktnet.uk
 
 <big>Alternatives</big>
 
 - Fully Kiosk Browser Lockdown (feature-rich, but not a free kiosk solution)
-- Web Kiosk (developed by Screenlite)
-- FreeKiosk (developed by Rushb-fr)
-- Kite AOS (developed by andrew-malitchuk)
+- Web Kiosk (by Screenlite)
+- FreeKiosk (by Rushb-fr)
+- Kite AOS (by andrew-malitchuk)

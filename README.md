@@ -49,7 +49,7 @@ and standalone Kiosk solution.
 ### Remote Management / Enterprise
 
 1. MQTT (Message Queuing Telemetry Transport)
-   - Monitor events, update settings, execute commands and build custom automations using the API
+   - Monitor events, update settings, execute commands and build custom automations
    - Requires an MQTT broker (e.g. Mosquitto, EMQX, HiveMQ, or their HomeAssistant integrations)
 
 2. UnifiedPush
@@ -57,8 +57,8 @@ and standalone Kiosk solution.
    - Requires a distributor application (e.g. sunup, ntfy, gCompat-UP)
 
 3. Managed Configurations (App Restrictions)
-   - For fully-managed (company-owned) devices, settings can be remotely configured via an MDM/EMM provider
-   - Advanced users using a device policy controller (e.g. Test DPC or OwnDroid) can also enforce configurations locally
+   - For fully-managed (company-owned) devices, settings can be configured via an MDM/EMM provider
+   - Advanced users with a device policy controller (e.g. Test DPC or OwnDroid) can also enforce configurations locally
 
 ## Permissions
 
@@ -117,6 +117,6 @@ See the [LICENSE](./LICENSE) file for details.
 ## Alternatives
 
 - [Fully Kiosk Browser Lockdown](https://www.fully-kiosk.com) (feature-rich, but not a free kiosk solution)
-- [Web Kiosk](https://github.com/screenlite/web-kiosk) (developed by Screenlite)
-- [FreeKiosk](https://github.com/RushB-fr/freekiosk) (developed by Rushb-fr)
-- [Kite AOS](https://github.com/andrew-malitchuk/kite-aos) (developed by andrew-malitchuk)
+- [Web Kiosk](https://github.com/screenlite/web-kiosk) (by Screenlite)
+- [FreeKiosk](https://github.com/RushB-fr/freekiosk) (by Rushb-fr)
+- [Kite AOS](https://github.com/andrew-malitchuk/kite-aos) (by andrew-malitchuk)
