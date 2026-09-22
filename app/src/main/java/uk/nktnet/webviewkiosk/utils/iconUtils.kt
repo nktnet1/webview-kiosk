@@ -6,12 +6,10 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Typeface
 import androidx.core.graphics.createBitmap
-import androidx.core.graphics.drawable.IconCompat
 import java.util.UUID
 
 object IconUtils {
     data class GeneratedIcon(
-        val icon: IconCompat,
         val bitmap: Bitmap
     )
 
@@ -56,7 +54,6 @@ object IconUtils {
         canvas.drawText(iconTextDisplay, size / 2f, yPos, textPaint)
 
         return GeneratedIcon(
-            icon = IconCompat.createWithBitmap(bitmap),
             bitmap = bitmap
         )
     }
