@@ -1,11 +1,15 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Build
 import android.webkit.CookieManager
 import android.webkit.HttpAuthHandler
 import android.webkit.URLUtil.isValidUrl
 import android.webkit.WebView
 import androidx.activity.compose.LocalActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
@@ -200,6 +205,17 @@ fun WebviewScreen(navController: NavController) {
 
     var lastErrorUrl by remember { mutableStateOf("") }
 
+    var localNetworkPermissionRequestInFlight by remember { mutableStateOf(false) }
+    var retryAfterLocalNetworkPermission by remember { mutableStateOf(false) }
+    val localNetworkPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        localNetworkPermissionRequestInFlight = false
+        if (isGranted && !LockStateSingleton.isLocked.value) {
+            retryAfterLocalNetworkPermission = true
+        }
+    }
+
     var suggestions by remember { mutableStateOf(listOf<String>()) }
     var webViewRecreationKey by remember { mutableIntStateOf(0) }
 
@@ -273,6 +289,22 @@ fun WebviewScreen(navController: NavController) {
             whitelistRegexes = whitelistRegexes,
             setLastErrorUrl = { errorUrl ->
                 lastErrorUrl = errorUrl
+            },
+            onLocalNetworkPermissionMissing = {
+                if (
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN
+                    && !LockStateSingleton.isLocked.value
+                    && !localNetworkPermissionRequestInFlight
+                    && ContextCompat.checkSelfPermission(
+                        context,
+                        Manifest.permission.ACCESS_LOCAL_NETWORK
+                    ) != PackageManager.PERMISSION_GRANTED
+                ) {
+                    localNetworkPermissionRequestInFlight = true
+                    localNetworkPermissionLauncher.launch(
+                        Manifest.permission.ACCESS_LOCAL_NETWORK
+                    )
+                }
             },
             onProgressChanged = { newProgress -> progress = newProgress },
             finishSwipeRefresh = {
@@ -404,6 +436,15 @@ fun WebviewScreen(navController: NavController) {
             return
         }
         webView.loadUrl(newUrl)
+    }
+
+    LaunchedEffect(retryAfterLocalNetworkPermission) {
+        if (retryAfterLocalNetworkPermission) {
+            retryAfterLocalNetworkPermission = false
+            if (!LockStateSingleton.isLocked.value) {
+                webView.reload()
+            }
+        }
     }
 
     val isOnline by remember(context) {

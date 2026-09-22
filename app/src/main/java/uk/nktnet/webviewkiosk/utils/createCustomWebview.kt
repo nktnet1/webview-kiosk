@@ -77,6 +77,15 @@ import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOv
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 import java.io.File
 
+private const val LOCAL_NETWORK_PERMISSION_ERROR = "ERR_LOCAL_NETWORK_PERMISSION_MISSING"
+
+private fun isLocalNetworkPermissionError(error: WebResourceError?): Boolean {
+    return (
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN
+        && error?.description?.toString()?.contains(LOCAL_NETWORK_PERMISSION_ERROR) == true
+    )
+}
+
 private fun isWebPdf(
     url: String,
     contentDisposition: String?,
@@ -108,6 +117,7 @@ data class WebViewConfig(
     val blacklistRegexes: List<Regex>,
     val whitelistRegexes: List<Regex>,
     val setLastErrorUrl: (errorUrl: String) -> Unit,
+    val onLocalNetworkPermissionMissing: () -> Unit,
     val finishSwipeRefresh: () -> Unit,
     val onProgressChanged: (newProgress: Int) -> Unit,
     val updateAddressBarAndHistory: (url: String, originalUrl: String?) -> Unit,
@@ -592,6 +602,9 @@ fun createCustomWebview(
                     request: WebResourceRequest?,
                     error: WebResourceError?
                 ) {
+                    if (isLocalNetworkPermissionError(error)) {
+                        config.onLocalNetworkPermissionMissing()
+                    }
                     if (
                         Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
                         && request?.isForMainFrame == true
