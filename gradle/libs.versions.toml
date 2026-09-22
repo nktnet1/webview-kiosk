@@ -25,6 +25,7 @@ coreKtx = "1.17.0"
 lifecycleRuntimeKtx = "2.9.4"
 #noinspection GradleDependency
 navigationCompose = "2.9.8"
+okhttp = "5.5.0"
 #noinspection GradleDependency
 webkit = "1.14.0"
 
@@ -51,6 +52,7 @@ hivemq-mqtt-client = { module = "com.hivemq:hivemq-mqtt-client", version.ref = "
 hivemq-mqtt-client-websocket = { module = "com.hivemq:hivemq-mqtt-client-websocket", version.ref = "hivemqMqttClient" }
 hiddenapibypass = { module = "org.lsposed.hiddenapibypass:hiddenapibypass", version.ref = "hiddenapibypass" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
 
 [plugins]

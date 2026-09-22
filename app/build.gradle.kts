@@ -96,6 +96,7 @@ dependencies {
     implementation(libs.androidx.webkit)
     implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.kotlinx.serialization.json)
+    implementation(libs.okhttp)
     implementation(libs.hivemq.mqtt.client)
     implementation(platform(libs.hivemq.mqtt.client.websocket))
     implementation(libs.connector)
