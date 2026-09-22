@@ -1,6 +1,12 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
+import android.content.Context
 import android.content.Intent
+import android.content.pm.ShortcutInfo
+import android.content.pm.ShortcutManager
+import android.graphics.Bitmap
+import android.graphics.drawable.Icon as AndroidIcon
+import android.os.Build
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -33,8 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.content.pm.ShortcutInfoCompat
-import androidx.core.content.pm.ShortcutManagerCompat
+import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -204,19 +209,13 @@ fun CreateShortcutDialog(
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     }
 
-                    val uniqueId = "${System.currentTimeMillis()}_${safeUrl}"
-                    val shortcut = ShortcutInfoCompat.Builder(context, uniqueId)
-                        .setShortLabel(safeShortLabel)
-                        .setLongLabel(safeLongLabel)
-                        .setIcon(generatedIcon.icon)
-                        .setAlwaysBadged()
-                        .setIntent(intent)
-                        .build()
-
-                    ShortcutManagerCompat.requestPinShortcut(
+                    requestPinnedShortcut(
                         context,
-                        shortcut,
-                        null
+                        id = "${System.currentTimeMillis()}_${safeUrl}",
+                        shortLabel = safeShortLabel,
+                        longLabel = safeLongLabel,
+                        icon = generatedIcon.bitmap,
+                        intent = intent
                     )
                     onDismiss()
                 }
@@ -240,6 +239,72 @@ fun CreateShortcutDialog(
         disableCurrent = false,
         highlightCurrent = false,
     )
+}
+
+private fun requestPinnedShortcut(
+    context: Context,
+    id: String,
+    shortLabel: String,
+    longLabel: String,
+    icon: Bitmap,
+    intent: Intent
+) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        requestPinnedShortcutApi26(
+            context = context,
+            id = id,
+            shortLabel = shortLabel,
+            longLabel = longLabel,
+            icon = icon,
+            intent = intent
+        )
+    } else {
+        requestPinnedShortcutLegacy(
+            context = context,
+            shortLabel = shortLabel,
+            icon = icon,
+            intent = intent
+        )
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+private fun requestPinnedShortcutApi26(
+    context: Context,
+    id: String,
+    shortLabel: String,
+    longLabel: String,
+    icon: Bitmap,
+    intent: Intent
+) {
+    val shortcutManager = context.getSystemService(ShortcutManager::class.java) ?: return
+    if (!shortcutManager.isRequestPinShortcutSupported) {
+        return
+    }
+
+    val shortcut = ShortcutInfo.Builder(context, id)
+        .setShortLabel(shortLabel)
+        .setLongLabel(longLabel)
+        .setIcon(AndroidIcon.createWithBitmap(icon))
+        .setIntent(intent)
+        .build()
+
+    shortcutManager.requestPinShortcut(shortcut, null)
+}
+
+@Suppress("DEPRECATION")
+private fun requestPinnedShortcutLegacy(
+    context: Context,
+    shortLabel: String,
+    icon: Bitmap,
+    intent: Intent
+) {
+    val installIntent = Intent("com.android.launcher.action.INSTALL_SHORTCUT").apply {
+        putExtra(Intent.EXTRA_SHORTCUT_INTENT, intent)
+        putExtra(Intent.EXTRA_SHORTCUT_NAME, shortLabel)
+        putExtra(Intent.EXTRA_SHORTCUT_ICON, icon)
+    }
+    context.sendBroadcast(installIntent)
 }
 
 @Composable
