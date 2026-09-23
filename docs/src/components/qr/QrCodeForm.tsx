@@ -17,7 +17,7 @@ import {
   type QrData,
   WifiSecurityType,
 } from "#/components/qr/schema";
-import { LATEST_VERSION } from "#/components/qr/version";
+import { QR_INSTALLATION_VERSIONS } from "#/components/qr/version";
 import { Button } from "#/components/ui/button";
 import { Checkbox } from "#/components/ui/checkbox";
 import { Label } from "#/components/ui/label";
@@ -52,22 +52,16 @@ export default function QRCodeForm() {
     } as FormValues,
     validators: { onChange: FormSchema },
     onSubmit: ({ value }) => {
-      let downloadLocation = "";
-      if (value.downloadSource === "GitHub") {
-        downloadLocation = `https://github.com/nktnet1/webview-kiosk/releases/download/${LATEST_VERSION.tag}/WebviewKiosk_${LATEST_VERSION.tag}.apk`;
-      } else if (value.downloadSource === "F-Droid") {
-        downloadLocation = `https://f-droid.org/repo/uk.nktnet.webviewkiosk_${LATEST_VERSION.code}.apk`;
-      } else if (value.downloadSource === "IzzyOnDroid") {
-        downloadLocation = `https://apt.izzysoft.de/fdroid/repo/uk.nktnet.webviewkiosk_${LATEST_VERSION.code}.apk`;
-      }
+      const installationVersion =
+        QR_INSTALLATION_VERSIONS[value.downloadSource];
 
       const payload: QrData = {
         "android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME":
           "uk.nktnet.webviewkiosk/.WebviewKioskAdminReceiver",
         "android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_DOWNLOAD_LOCATION":
-          downloadLocation,
+          installationVersion.downloadUrl,
         "android.app.extra.PROVISIONING_DEVICE_ADMIN_SIGNATURE_CHECKSUM":
-          LATEST_VERSION.adminSignatureChecksum,
+          installationVersion.adminSignatureChecksum,
         "android.app.extra.PROVISIONING_LEAVE_ALL_SYSTEM_APPS_ENABLED":
           value.leaveAllSystemAppsEnabled,
         "android.app.extra.PROVISIONING_SKIP_ENCRYPTION": value.skipEncryption,
@@ -331,16 +325,24 @@ export default function QRCodeForm() {
         </div>
 
         <form.Subscribe
-          selector={(s) => [s.canSubmit, s.isSubmitting]}
-          children={([canSubmit]) => (
-            <Button
-              type="submit"
-              disabled={!canSubmit}
-              className="mt-2 min-h-12 whitespace-normal wrap-break-word"
-            >
-              Generate QR code for {LATEST_VERSION.tag} ({LATEST_VERSION.code})
-            </Button>
-          )}
+          selector={(s) => ({
+            canSubmit: s.canSubmit,
+            downloadSource: s.values.downloadSource,
+          })}
+          children={({ canSubmit, downloadSource }) => {
+            const installationVersion =
+              QR_INSTALLATION_VERSIONS[downloadSource];
+
+            return (
+              <Button
+                type="submit"
+                disabled={!canSubmit}
+                className="mt-2 min-h-12 whitespace-normal wrap-break-word"
+              >
+                {`Generate QR code for ${installationVersion.tag} (${installationVersion.code})`}
+              </Button>
+            );
+          }}
         />
       </form>
 
