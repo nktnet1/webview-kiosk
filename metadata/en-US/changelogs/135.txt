@@ -1,0 +1,6 @@
+## Changes
+
+- feat: allow local network access setting for android 17 (API 37+)
+- fix: remove icon compat deprecation
+- fix: improve app shortcut bitmap handling
+- refactor: search engine, use okhttp for suggestion api
