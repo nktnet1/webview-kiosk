@@ -115,8 +115,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
-            // On API 21-29, enableEdgeToEdge() uses legacy systemUiVisibility layout flags.
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
+            // On API 23, enableEdgeToEdge() uses legacy systemUiVisibility layout flags.
             // AppCompat can overwrite those flags while creating the decor view, leaving the
             // content already inset by the framework before Compose applies its own insets.
             WindowCompat.setDecorFitsSystemWindows(window, false)
