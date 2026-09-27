@@ -115,8 +115,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-            // On API 23, enableEdgeToEdge() uses legacy systemUiVisibility layout flags.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            // On API 21-29, enableEdgeToEdge() uses legacy systemUiVisibility layout flags.
             // AppCompat can overwrite those flags while creating the decor view, leaving the
             // content already inset by the framework before Compose applies its own insets.
             WindowCompat.setDecorFitsSystemWindows(window, false)
@@ -269,32 +269,36 @@ class MainActivity : AppCompatActivity() {
 
             LaunchedEffect(isDarkTheme) {
                 insetsController?.isAppearanceLightStatusBars = !isDarkTheme
-                if (Build.VERSION.SDK_INT != Build.VERSION_CODES.M) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     insetsController?.isAppearanceLightNavigationBars = !isDarkTheme
                 }
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                     window?.run {
                         addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-                        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-                            @Suppress("DEPRECATION")
-                            statusBarColor = if (isDarkTheme) Color.BLACK else Color.WHITE
-                            @Suppress("DEPRECATION")
-                            navigationBarColor = if (isDarkTheme) {
-                                Color.BLACK
-                            } else {
-                                // API 23 navigation buttons are always light. Use the AndroidX
-                                // legacy navigation-bar scrim in light theme for contrast.
-                                Color.argb(0x80, 0x1B, 0x1B, 0x1B)
-                            }
+
+                        // API 21-22 cannot render dark status-bar icons, so a white status bar
+                        // would make the fixed light icons unreadable in light theme.
+                        @Suppress("DEPRECATION")
+                        statusBarColor = if (
+                            !isDarkTheme && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                        ) {
+                            Color.WHITE
+                        } else if (isDarkTheme) {
+                            Color.BLACK
                         } else {
-                            @Suppress("DEPRECATION")
-                            if (!isDarkTheme) {
-                                statusBarColor = Color.WHITE
-                                navigationBarColor = Color.WHITE
-                            } else {
-                                statusBarColor = Color.BLACK
-                                navigationBarColor = Color.BLACK
-                            }
+                            Color.argb(0x80, 0x1B, 0x1B, 0x1B)
+                        }
+
+                        // Dark navigation-bar icons were added in API 26. Keep a dark scrim on
+                        // API 21-25 in light theme so the fixed light navigation buttons remain
+                        // visible, while API 26+ retains the original light/dark bar colours.
+                        @Suppress("DEPRECATION")
+                        navigationBarColor = if (isDarkTheme) {
+                            Color.BLACK
+                        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            Color.WHITE
+                        } else {
+                            Color.argb(0x80, 0x1B, 0x1B, 0x1B)
                         }
                     }
                 }
