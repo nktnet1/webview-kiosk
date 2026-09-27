@@ -31,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
@@ -114,6 +115,12 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
+            // On API 23, enableEdgeToEdge() uses legacy systemUiVisibility layout flags.
+            // AppCompat can overwrite those flags while creating the decor view, leaving the
+            // content already inset by the framework before Compose applies its own insets.
+            WindowCompat.setDecorFitsSystemWindows(window, false)
+        }
         CustomNotificationManager.init(applicationContext)
         userSettings = UserSettings(this)
         systemSettings = SystemSettings(this)
@@ -262,17 +269,32 @@ class MainActivity : AppCompatActivity() {
 
             LaunchedEffect(isDarkTheme) {
                 insetsController?.isAppearanceLightStatusBars = !isDarkTheme
-                insetsController?.isAppearanceLightNavigationBars = !isDarkTheme
+                if (Build.VERSION.SDK_INT != Build.VERSION_CODES.M) {
+                    insetsController?.isAppearanceLightNavigationBars = !isDarkTheme
+                }
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                     window?.run {
                         addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
-                        @Suppress("DEPRECATION")
-                        if (!isDarkTheme) {
-                            statusBarColor = Color.WHITE
-                            navigationBarColor = Color.WHITE
+                        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
+                            @Suppress("DEPRECATION")
+                            statusBarColor = if (isDarkTheme) Color.BLACK else Color.WHITE
+                            @Suppress("DEPRECATION")
+                            navigationBarColor = if (isDarkTheme) {
+                                Color.BLACK
+                            } else {
+                                // API 23 navigation buttons are always light. Use the AndroidX
+                                // legacy navigation-bar scrim in light theme for contrast.
+                                Color.argb(0x80, 0x1B, 0x1B, 0x1B)
+                            }
                         } else {
-                            statusBarColor = Color.BLACK
-                            navigationBarColor = Color.BLACK
+                            @Suppress("DEPRECATION")
+                            if (!isDarkTheme) {
+                                statusBarColor = Color.WHITE
+                                navigationBarColor = Color.WHITE
+                            } else {
+                                statusBarColor = Color.BLACK
+                                navigationBarColor = Color.BLACK
+                            }
                         }
                     }
                 }
