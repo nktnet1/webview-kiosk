@@ -92,8 +92,14 @@ fun applyLockTaskFeatures(context: Context) {
     }
 }
 
+private enum class Android6LockTaskPreparation {
+    CONTINUE,
+    ALREADY_LOCKED,
+    FAILED,
+}
+
 @RequiresApi(Build.VERSION_CODES.M)
-private fun tryLockTaskOnAndroid6(activity: Activity): Boolean {
+private fun prepareAndroid6LockTask(activity: Activity): Android6LockTaskPreparation {
     val isDeviceOwner = try {
         DeviceOwnerManager.DPM.isDeviceOwnerApp(activity.packageName)
     } catch (e: Exception) {
@@ -101,60 +107,49 @@ private fun tryLockTaskOnAndroid6(activity: Activity): Boolean {
         false
     }
 
-    if (isDeviceOwner) {
-        val lockTaskPermitted = try {
-            if (!DeviceOwnerManager.DPM.isLockTaskPermitted(activity.packageName)) {
-                setupLockTaskPackage(activity)
-            }
-            DeviceOwnerManager.DPM.isLockTaskPermitted(activity.packageName)
-        } catch (e: Exception) {
-            Log.e(Constants.APP_SCHEME, "Failed to verify Android 6 lock task permission", e)
-            false
-        }
-
-        if (!lockTaskPermitted) {
-            ToastManager.show(
-                activity,
-                "Failed to lock: app is not permitted for lock task mode."
-            )
-            return false
-        }
-
-        val activityManager =
-            activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-
-        when (activityManager.lockTaskModeState) {
-            ActivityManager.LOCK_TASK_MODE_LOCKED -> {
-                AuthenticationManager.resetAuthentication()
-                return true
-            }
-            ActivityManager.LOCK_TASK_MODE_PINNED -> {
-                val unpinned = tryLockAction(
-                    activity,
-                    lockAction = Activity::stopLockTask,
-                    onFailed = {
-                        ToastManager.show(activity, "Failed to leave screen pinning: $it")
-                    }
-                )
-                if (!unpinned) {
-                    return false
-                }
-            }
-        }
+    if (!isDeviceOwner) {
+        return Android6LockTaskPreparation.CONTINUE
     }
 
-    applyLockTaskFeatures(activity)
-    return tryLockAction(
-        activity,
-        lockAction = Activity::startLockTask,
-        onSuccess = {
-            AuthenticationManager.resetAuthentication()
-            // Handled MQTT publish in LockStateSingleton
-        },
-        onFailed = {
-            ToastManager.show(activity, "Failed to lock: $it")
+    val lockTaskPermitted = try {
+        if (!DeviceOwnerManager.DPM.isLockTaskPermitted(activity.packageName)) {
+            setupLockTaskPackage(activity)
         }
-    )
+        DeviceOwnerManager.DPM.isLockTaskPermitted(activity.packageName)
+    } catch (e: Exception) {
+        Log.e(Constants.APP_SCHEME, "Failed to verify Android 6 lock task permission", e)
+        false
+    }
+
+    if (!lockTaskPermitted) {
+        ToastManager.show(
+            activity,
+            "Failed to lock: app is not permitted for lock task mode."
+        )
+        return Android6LockTaskPreparation.FAILED
+    }
+
+    val activityManager =
+        activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+
+    return when (activityManager.lockTaskModeState) {
+        ActivityManager.LOCK_TASK_MODE_LOCKED -> Android6LockTaskPreparation.ALREADY_LOCKED
+        ActivityManager.LOCK_TASK_MODE_PINNED -> {
+            val unpinned = tryLockAction(
+                activity,
+                lockAction = Activity::stopLockTask,
+                onFailed = {
+                    ToastManager.show(activity, "Failed to leave screen pinning: $it")
+                }
+            )
+            if (unpinned) {
+                Android6LockTaskPreparation.CONTINUE
+            } else {
+                Android6LockTaskPreparation.FAILED
+            }
+        }
+        else -> Android6LockTaskPreparation.CONTINUE
+    }
 }
 
 fun tryLockTask(activity: Activity?): Boolean {
@@ -163,10 +158,16 @@ fun tryLockTask(activity: Activity?): Boolean {
     }
 
     if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-        return tryLockTaskOnAndroid6(activity)
+        when (prepareAndroid6LockTask(activity)) {
+            Android6LockTaskPreparation.ALREADY_LOCKED -> {
+                AuthenticationManager.resetAuthentication()
+                return true
+            }
+            Android6LockTaskPreparation.FAILED -> return false
+            Android6LockTaskPreparation.CONTINUE -> Unit
+        }
     }
 
-    // Keep the original lock-task path unchanged on API 21-22 and API 24+.
     applyLockTaskFeatures(activity)
     return tryLockAction(
         activity,
