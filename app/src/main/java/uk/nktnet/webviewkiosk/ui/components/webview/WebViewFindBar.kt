@@ -29,17 +29,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.android.awaitFrame
-import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.R
-import kotlin.time.Duration.Companion.milliseconds
+import uk.nktnet.webviewkiosk.utils.requestFocusWhenPlaced
 
 @Composable
 private fun RoundIconButton(
@@ -72,6 +69,7 @@ fun WebViewFindBar(
     onActiveChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
     focusRequester: FocusRequester,
+    focusRequestKey: Int,
 ) {
     if (!isActiveFindInPage) return
 
@@ -85,16 +83,6 @@ fun WebViewFindBar(
             currentMatch = activeMatchOrdinal + 1
             totalMatches = numberOfMatches
             doneSearching = isDoneCounting
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        if (isActiveFindInPage) {
-            delay(100.milliseconds)
-            awaitFrame()
-            runCatching {
-                focusRequester.requestFocus()
-            }
         }
     }
 
@@ -120,7 +108,11 @@ fun WebViewFindBar(
             ),
             modifier = Modifier
                 .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
-                .focusRequester(focusRequester)
+                .requestFocusWhenPlaced(
+                    focusRequester = focusRequester,
+                    enabled = isActiveFindInPage,
+                    requestKey = focusRequestKey,
+                )
                 .weight(1f),
             keyboardOptions = KeyboardOptions.Default.copy(
                 imeAction = ImeAction.Next

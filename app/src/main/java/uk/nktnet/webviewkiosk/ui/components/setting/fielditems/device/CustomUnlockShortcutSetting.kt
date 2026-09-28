@@ -22,21 +22,16 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.android.awaitFrame
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -44,7 +39,7 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.CustomSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.keyEventToShortcutString
 import uk.nktnet.webviewkiosk.utils.modifierKeyCodes
-import kotlin.time.Duration.Companion.milliseconds
+import uk.nktnet.webviewkiosk.utils.requestFocusWhenPlaced
 
 fun handleUnlockShortcutKeyEvent(
     context: Context,
@@ -69,7 +64,6 @@ fun handleUnlockShortcutKeyEvent(
 fun CustomUnlockShortcutSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-    val coroutineScope = rememberCoroutineScope()
     val focusRequester = remember { FocusRequester() }
 
     var currentValue by remember { mutableStateOf(userSettings.customUnlockShortcut) }
@@ -84,13 +78,6 @@ fun CustomUnlockShortcutSetting() {
     LaunchedEffect(isPressed) {
         if (isPressed && !isListening) {
             isListening = true
-            coroutineScope.launch {
-                delay(100.milliseconds)
-                awaitFrame()
-                runCatching {
-                    focusRequester.requestFocus()
-                }
-            }
         }
     }
 
@@ -141,7 +128,11 @@ fun CustomUnlockShortcutSetting() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
-                        .focusRequester(focusRequester)
+                        .requestFocusWhenPlaced(
+                            focusRequester = focusRequester,
+                            enabled = isListening,
+                            requestKey = isListening,
+                        )
                         .focusable()
                         .background(
                             if (isListening) {
@@ -172,13 +163,6 @@ fun CustomUnlockShortcutSetting() {
                             isListening = false
                         } else {
                             isListening = true
-                            coroutineScope.launch {
-                                delay(100.milliseconds)
-                                awaitFrame()
-                                runCatching {
-                                    focusRequester.requestFocus()
-                                }
-                            }
                         }
                     },
                     colors = ButtonDefaults.buttonColors(

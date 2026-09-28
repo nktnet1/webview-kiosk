@@ -16,7 +16,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,20 +23,19 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.android.awaitFrame
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
+import uk.nktnet.webviewkiosk.utils.requestFocusWhenPlaced
 
 @Composable
 fun CustomAuthPasswordSetting() {
@@ -61,16 +59,6 @@ fun CustomAuthPasswordSetting() {
     var passwordMismatch by remember { mutableStateOf(false) }
 
     val focusRequester = remember { FocusRequester() }
-
-    LaunchedEffect(showConfirmationDialog) {
-        if (showConfirmationDialog) {
-            awaitFrame()
-
-            runCatching {
-                focusRequester.requestFocus()
-            }
-        }
-    }
 
     TextSettingFieldItem(
         label = stringResource(R.string.device_custom_auth_password_title),
@@ -166,7 +154,11 @@ fun CustomAuthPasswordSetting() {
                             }
                         },
                         modifier = Modifier
-                            .focusRequester(focusRequester)
+                            .requestFocusWhenPlaced(
+                                focusRequester = focusRequester,
+                                enabled = showConfirmationDialog,
+                                requestKey = showConfirmationDialog,
+                            )
                     )
 
                     Spacer(
