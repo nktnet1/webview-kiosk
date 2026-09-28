@@ -107,6 +107,38 @@ class MqttForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val contentIntent = PendingIntent.getActivity(
+            this,
+            0,
+            Intent(this, MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE
+        )
+
+        try {
+            ServiceCompat.startForeground(
+                this,
+                CustomNotificationType.MQTT_SERVICE,
+                CustomNotificationManager.buildMqttServiceNotification(
+                    this,
+                    contentIntent,
+                    "Status: ${MqttManager.getState().name}",
+                ),
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_MANIFEST
+                } else {
+                    0
+                }
+            )
+        } catch (e: IllegalStateException) {
+            Log.e(
+                javaClass.simpleName,
+                "MQTT foreground service is not allowed to enter the foreground",
+                e
+            )
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
+
         isServiceActive = true
         if (pollLockTaskModeJob?.isActive != true) {
             pollLockTaskModeJob = scope.launch {
@@ -120,27 +152,6 @@ class MqttForegroundService : Service() {
                 }
             }
         }
-        val contentIntent = PendingIntent.getActivity(
-            this,
-            0,
-            Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE
-        )
-
-        ServiceCompat.startForeground(
-            this,
-            CustomNotificationType.MQTT_SERVICE,
-            CustomNotificationManager.buildMqttServiceNotification(
-                this,
-                contentIntent,
-                "Status: ${MqttManager.getState().name}",
-            ),
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_MANIFEST
-            } else {
-                0
-            }
-        )
         return START_STICKY
     }
 
