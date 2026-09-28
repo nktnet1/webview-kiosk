@@ -43,7 +43,6 @@ import androidx.core.net.toUri
 import androidx.navigation.NavController
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -177,18 +176,10 @@ fun WebviewScreen(navController: NavController) {
 
     var isActiveFindInPage by remember { mutableStateOf(false) }
     val findInPageFocusRequester = remember { FocusRequester() }
+    var findInPageFocusRequestKey by remember { mutableIntStateOf(0) }
     val showFindInPage: () -> Unit = {
-        if (!isActiveFindInPage) {
-            isActiveFindInPage = true
-        } else {
-            scope.launch {
-                delay(100.milliseconds)
-                awaitFrame()
-                runCatching {
-                    findInPageFocusRequester.requestFocus()
-                }
-            }
-        }
+        isActiveFindInPage = true
+        findInPageFocusRequestKey++
     }
 
     val blacklistRegexes: List<Regex> by lazy {
@@ -635,6 +626,7 @@ fun WebviewScreen(navController: NavController) {
                 isActiveFindInPage = isActiveFindInPage,
                 onActiveChange = { isActiveFindInPage = it },
                 focusRequester = findInPageFocusRequester,
+                focusRequestKey = findInPageFocusRequestKey,
             )
 
             if (showAddressBar && userSettings.addressBarPosition == AddressBarPositionOption.BOTTOM) {
