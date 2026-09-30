@@ -20,6 +20,7 @@ object Constants {
     const val FILE_CAPTURE_CACHE_PATH_NAME = "capture"
 
     const val INTENT_NAVIGATE_TO_WEBVIEW_SCREEN = "intent_navigate_to_webview_screen"
+    const val INTENT_HOME_LAUNCH = "intent_home_launch"
 
     const val MQTT_AUTO_RECONNECT_INTERVAL_SECONDS = 3
     const val REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL = 9999

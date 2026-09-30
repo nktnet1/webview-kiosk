@@ -171,10 +171,6 @@ class MainActivity : AppCompatActivity() {
 
         systemSettings.isFreshLaunch = true
 
-        if (userSettings.lockOnLaunch) {
-            tryLockTask(this)
-        }
-
         if (intent != null) {
             saveIntentUrl(intent)
         }
@@ -373,6 +369,9 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         backButtonService.onBackPressedCallback.isEnabled = true
         enableNfcForegroundDispatch()
+        if (userSettings.lockOnLaunch) {
+            tryLockTask(this)
+        }
     }
 
     override fun onPause() {
@@ -422,10 +421,15 @@ class MainActivity : AppCompatActivity() {
             }
             return
         }
+        val isHomeLaunch =
+            intent.getBooleanExtra(Constants.INTENT_HOME_LAUNCH, false)
+                || (
+                    intent.action == Intent.ACTION_MAIN
+                        && intent.hasCategory(Intent.CATEGORY_HOME)
+                    )
         if (
             System.currentTimeMillis() - lastOnStartTime > 100L
-            && intent.action == Intent.ACTION_MAIN
-            && intent.hasCategory(Intent.CATEGORY_HOME)
+            && isHomeLaunch
             && userSettings.allowGoHome
         ) {
             UserInteractionStateSingleton.onUserInteraction()
