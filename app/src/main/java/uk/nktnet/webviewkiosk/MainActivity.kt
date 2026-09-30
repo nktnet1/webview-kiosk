@@ -76,7 +76,7 @@ import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.getNfcAdapterOrNull
 import kotlin.time.Duration.Companion.milliseconds
 
-class MainActivity : AppCompatActivity() {
+open class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavHostController
     private var uploadingFileUri by mutableStateOf<Uri?>(null)
     private var uploadProgress by mutableFloatStateOf(0f)
@@ -170,6 +170,13 @@ class MainActivity : AppCompatActivity() {
         AuthenticationManager.init(this)
 
         systemSettings.isFreshLaunch = true
+
+        if (
+            userSettings.lockOnLaunch
+            && Build.VERSION.SDK_INT != Build.VERSION_CODES.M
+        ) {
+            tryLockTask(this)
+        }
 
         if (intent != null) {
             saveIntentUrl(intent)
@@ -369,8 +376,16 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         backButtonService.onBackPressedCallback.isEnabled = true
         enableNfcForegroundDispatch()
-        if (userSettings.lockOnLaunch) {
-            tryLockTask(this)
+
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
+            if (isAndroid6HomeIntent(intent) && javaClass == MainActivity::class.java) {
+                launchAndroid6KioskTask()
+                return
+            }
+
+            if (userSettings.lockOnLaunch) {
+                tryLockTask(this)
+            }
         }
     }
 
@@ -403,6 +418,15 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
 
+        if (
+            Build.VERSION.SDK_INT == Build.VERSION_CODES.M
+            && javaClass == MainActivity::class.java
+            && isAndroid6HomeIntent(intent)
+        ) {
+            launchAndroid6KioskTask()
+            return
+        }
+
         if (handleNfcIntent(intent)) {
             return
         }
@@ -422,10 +446,10 @@ class MainActivity : AppCompatActivity() {
             return
         }
         val isHomeLaunch =
-            intent.getBooleanExtra(Constants.INTENT_HOME_LAUNCH, false)
+            isAndroid6HomeIntent(intent)
                 || (
-                    intent.action == Intent.ACTION_MAIN
-                        && intent.hasCategory(Intent.CATEGORY_HOME)
+                    Build.VERSION.SDK_INT == Build.VERSION_CODES.M
+                        && intent.getBooleanExtra(Constants.INTENT_HOME_LAUNCH, false)
                     )
         if (
             System.currentTimeMillis() - lastOnStartTime > 100L
@@ -441,6 +465,21 @@ class MainActivity : AppCompatActivity() {
         if (hasIntentUrl) {
             navigateToWebViewScreen(navController)
         }
+    }
+
+    private fun isAndroid6HomeIntent(intent: Intent?): Boolean {
+        return intent?.action == Intent.ACTION_MAIN
+            && intent.hasCategory(Intent.CATEGORY_HOME)
+    }
+
+    private fun launchAndroid6KioskTask() {
+        val launchIntent = Intent(this, Android6KioskActivity::class.java).apply {
+            action = Intent.ACTION_MAIN
+            addCategory(Intent.CATEGORY_LAUNCHER)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
+            putExtra(Constants.INTENT_HOME_LAUNCH, true)
+        }
+        startActivity(launchIntent)
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
