@@ -8,20 +8,26 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.RemoteException
+import android.os.SystemClock
 import android.util.Log
 import com.rosan.dhizuku.api.Dhizuku
 import com.rosan.dhizuku.api.DhizukuBinderWrapper
 import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 
 object DeviceOwnerManager {
+    private const val DHIZUKU_SETTLE_TIME_MS = 1000L
+    private val DHIZUKU_RETRY_DELAYS_MS = longArrayOf(100L, 250L, 650L, 1000L, 1000L)
+
     lateinit var DPM: DevicePolicyManager
         private set
     lateinit var DAR: ComponentName
         private set
+    private var dhizukuBinderAvailableSince = 0L
 
     data class Status(
         var mode: DeviceOwnerMode = DeviceOwnerMode.None,
@@ -29,7 +35,68 @@ object DeviceOwnerManager {
 
     val status = MutableStateFlow(Status())
 
+    @Synchronized
     fun init(context: Context) {
+        resetToPlatformDpm(context)
+
+        if (DPM.isDeviceOwnerApp(context.packageName)) {
+            dhizukuBinderAvailableSince = 0L
+            updateStatus(DeviceOwnerMode.DeviceOwner)
+            return
+        }
+
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+            return
+        }
+
+        try {
+            if (!HiddenApiBypass.setHiddenApiExemptions("") || !Dhizuku.init(context)) {
+                dhizukuBinderAvailableSince = 0L
+                return
+            }
+
+            val now = SystemClock.elapsedRealtime()
+            if (dhizukuBinderAvailableSince == 0L) {
+                dhizukuBinderAvailableSince = now
+                return
+            }
+            if (now - dhizukuBinderAvailableSince < DHIZUKU_SETTLE_TIME_MS) {
+                return
+            }
+
+            val dpm = binderWrapperDevicePolicyManager(context) ?: return
+            val dar = Dhizuku.getOwnerComponent()
+
+            DPM = dpm
+            DAR = dar
+            updateStatus(DeviceOwnerMode.Dhizuku)
+        } catch (e: Throwable) {
+            invalidateDhizuku(context)
+            Log.w(javaClass.simpleName, "Dhizuku is not ready", e)
+        }
+    }
+
+    suspend fun initWithDhizukuRetry(context: Context): DeviceOwnerMode {
+        init(context)
+        if (
+            status.value.mode != DeviceOwnerMode.None
+            || Build.VERSION.SDK_INT < Build.VERSION_CODES.P
+        ) {
+            return status.value.mode
+        }
+
+        for (retryDelay in DHIZUKU_RETRY_DELAYS_MS) {
+            delay(retryDelay)
+            init(context)
+            if (status.value.mode != DeviceOwnerMode.None) {
+                break
+            }
+        }
+
+        return status.value.mode
+    }
+
+    private fun resetToPlatformDpm(context: Context) {
         DPM = context.getSystemService(
             Context.DEVICE_POLICY_SERVICE
         ) as DevicePolicyManager
@@ -37,31 +104,12 @@ object DeviceOwnerManager {
             context.packageName,
             WebviewKioskAdminReceiver::class.java.name
         )
-        if (DPM.isDeviceOwnerApp(context.packageName)) {
-            updateStatus(DeviceOwnerMode.DeviceOwner)
-            return
-        }
+        updateStatus(DeviceOwnerMode.None)
+    }
 
-        try {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
-                return
-            }
-            val success = (
-                HiddenApiBypass.setHiddenApiExemptions("")
-                && Dhizuku.init(context)
-            )
-            if (!success) {
-                return
-            }
-
-            val dpm = binderWrapperDevicePolicyManager(context) ?: return
-
-            DPM = dpm
-            DAR = Dhizuku.getOwnerComponent()
-            updateStatus(DeviceOwnerMode.Dhizuku)
-        } catch (e: Throwable) {
-            Log.e(javaClass.simpleName, "Failed to use Dhizuku DPM", e)
-        }
+    private fun invalidateDhizuku(context: Context) {
+        dhizukuBinderAvailableSince = 0L
+        resetToPlatformDpm(context)
     }
 
     fun hasOwnerPermission(context: Context): Boolean {
@@ -77,12 +125,19 @@ object DeviceOwnerManager {
                 }
             }
         } catch (e: Exception) {
+            if (status.value.mode == DeviceOwnerMode.Dhizuku) {
+                invalidateDhizuku(context)
+            }
             Log.w(javaClass.simpleName, "Failed to check owner permission", e)
             false
         }
     }
 
-    fun requestDhizukuPermission(onGranted: () -> Unit = {}, onDenied: () -> Unit = {}) {
+    fun requestDhizukuPermission(
+        context: Context,
+        onGranted: () -> Unit = {},
+        onDenied: () -> Unit = {},
+    ) {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
             onDenied()
             return
@@ -110,6 +165,10 @@ object DeviceOwnerManager {
                 }
             })
         } catch (e: Throwable) {
+            if (status.value.mode == DeviceOwnerMode.Dhizuku) {
+                // The cached binder/wrapper is no longer trustworthy after a remote failure.
+                invalidateDhizuku(context)
+            }
             Log.e(javaClass.simpleName, "Failed to request Dhizuku permission", e)
             onDenied()
         }

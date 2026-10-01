@@ -37,6 +37,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.Constants
@@ -86,6 +87,8 @@ open class MainActivity : AppCompatActivity() {
     private var lastOnStartTime = 0L
     private var pendingAndroid6HomeRedirect = false
     private var pendingAndroid6LockOnLaunch = false
+    private var pendingDhizukuPermissionRequest = false
+    private var deviceOwnerInitJob: Job? = null
 
     val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -127,23 +130,12 @@ open class MainActivity : AppCompatActivity() {
         userSettings = UserSettings(this)
         systemSettings = SystemSettings(this)
         DeviceOwnerManager.init(this)
+        pendingDhizukuPermissionRequest = userSettings.dhizukuRequestPermissionOnLaunch
         // https://github.com/nktnet1/webview-kiosk/pull/195
         getExternalFilesDir(null)
 
         if (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.DeviceOwner) {
             setupLockTaskPackage(this)
-        } else if (
-            DeviceOwnerManager.status.value.mode == DeviceOwnerMode.Dhizuku
-            && userSettings.dhizukuRequestPermissionOnLaunch
-        ) {
-            lifecycleScope.launch {
-                delay(1000.milliseconds)
-                DeviceOwnerManager.requestDhizukuPermission(
-                    onGranted = {
-                        setupLockTaskPackage(this@MainActivity)
-                    }
-                )
-            }
         }
 
         LockStateSingleton.startMonitoring(application)
@@ -366,6 +358,27 @@ open class MainActivity : AppCompatActivity() {
         AuthenticationManager.init(this)
         DeviceOwnerManager.init(this)
         updateDeviceSettings(this)
+        if (
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+            && DeviceOwnerManager.status.value.mode != DeviceOwnerMode.DeviceOwner
+        ) {
+            deviceOwnerInitJob?.cancel()
+            deviceOwnerInitJob = lifecycleScope.launch {
+                val mode = DeviceOwnerManager.initWithDhizukuRetry(this@MainActivity)
+                if (mode == DeviceOwnerMode.Dhizuku) {
+                    updateDeviceSettings(this@MainActivity)
+                    if (pendingDhizukuPermissionRequest) {
+                        pendingDhizukuPermissionRequest = false
+                        DeviceOwnerManager.requestDhizukuPermission(
+                            context = this@MainActivity,
+                            onGranted = {
+                                setupLockTaskPackage(this@MainActivity)
+                            }
+                        )
+                    }
+                }
+            }
+        }
         if (
             userSettings.mqttEnabled
         ) {
