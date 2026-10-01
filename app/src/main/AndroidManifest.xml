@@ -50,7 +50,6 @@
         android:taskAffinity="${applicationId}.BROWSER"
         android:theme="@style/Theme.AppCompat"
         tools:targetApi="24"
-        android:lockTaskMode="if_whitelisted"
         android:networkSecurityConfig="@xml/network_security_config"
     >
         <provider
