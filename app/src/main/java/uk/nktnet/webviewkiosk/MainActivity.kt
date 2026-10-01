@@ -85,7 +85,8 @@ open class MainActivity : AppCompatActivity() {
     private lateinit var systemSettings: SystemSettings
     private lateinit var backButtonService: BackButtonManager
     private var lastOnStartTime = 0L
-    private var pendingAndroid6HomeRedirect = false
+    private var pendingAndroid6KioskRedirect = false
+    private var pendingAndroid6RedirectFromHome = false
     private var pendingAndroid6LockOnLaunch = false
     private var pendingDhizukuPermissionRequest = false
     private var deviceOwnerInitJob: Job? = null
@@ -166,12 +167,18 @@ open class MainActivity : AppCompatActivity() {
         systemSettings.isFreshLaunch = true
 
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-            // API 23 must enter lock task only after the activity is resumed. Keep these as
-            // one-shot launch actions so returning HOME after an unlock does not lock again.
-            pendingAndroid6HomeRedirect =
+            // API 23 must lock a task created by Webview Kiosk itself. Launcher-created tasks can
+            // retain the launcher's UID as the lock owner, which then prevents stopLockTask().
+            // Redirect HOME launches as before, and also redirect any cold launch that will lock
+            // on launch. These are one-shot actions so returning HOME after an unlock does not
+            // enter lock task again.
+            pendingAndroid6RedirectFromHome =
                 javaClass == MainActivity::class.java && isAndroid6HomeIntent(intent)
+            pendingAndroid6KioskRedirect =
+                javaClass == MainActivity::class.java
+                    && (pendingAndroid6RedirectFromHome || userSettings.lockOnLaunch)
             pendingAndroid6LockOnLaunch =
-                userSettings.lockOnLaunch && !pendingAndroid6HomeRedirect
+                userSettings.lockOnLaunch && !pendingAndroid6KioskRedirect
         } else if (userSettings.lockOnLaunch) {
             tryLockTask(this)
         }
@@ -397,9 +404,10 @@ open class MainActivity : AppCompatActivity() {
         enableNfcForegroundDispatch()
 
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-            if (pendingAndroid6HomeRedirect) {
-                pendingAndroid6HomeRedirect = false
-                launchAndroid6KioskTask()
+            if (pendingAndroid6KioskRedirect) {
+                pendingAndroid6KioskRedirect = false
+                launchAndroid6KioskTask(isHomeLaunch = pendingAndroid6RedirectFromHome)
+                pendingAndroid6RedirectFromHome = false
                 return
             }
 
@@ -438,6 +446,19 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+
+        if (
+            Build.VERSION.SDK_INT == Build.VERSION_CODES.M
+            && javaClass == MainActivity::class.java
+            && userSettings.lockOnLaunch
+            && isAndroid6LauncherIntent(intent)
+        ) {
+            // MainActivity is singleTask, so launching from an app menu can arrive here instead
+            // of creating a new instance. Treat that as a fresh launch, but deliberately do not
+            // redirect HOME intents here: HOME after an unlock must remain unlocked.
+            launchAndroid6KioskTask(isHomeLaunch = false)
+            return
+        }
 
         if (handleNfcIntent(intent)) {
             return
@@ -484,12 +505,19 @@ open class MainActivity : AppCompatActivity() {
             && intent.hasCategory(Intent.CATEGORY_HOME)
     }
 
-    private fun launchAndroid6KioskTask() {
+    private fun isAndroid6LauncherIntent(intent: Intent?): Boolean {
+        return intent?.action == Intent.ACTION_MAIN
+            && intent.hasCategory(Intent.CATEGORY_LAUNCHER)
+    }
+
+    private fun launchAndroid6KioskTask(isHomeLaunch: Boolean) {
         val launchIntent = Intent(this, Android6KioskActivity::class.java).apply {
             action = Intent.ACTION_MAIN
             addCategory(Intent.CATEGORY_LAUNCHER)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-            putExtra(Constants.INTENT_HOME_LAUNCH, true)
+            // Always recreate the private API 23 task. This guarantees its root was launched by
+            // Webview Kiosk rather than retaining a task originally created by Launcher3.
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            putExtra(Constants.INTENT_HOME_LAUNCH, isHomeLaunch)
         }
         startActivity(launchIntent)
     }

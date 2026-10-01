@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.auth
 
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -145,7 +146,15 @@ fun CustomAuthPasswordDialog() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
-                        .requestFocusWhenPlaced(focusRequester),
+                        .then(
+                            if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
+                                // Compose can request bring-into-view before the dialog's parents
+                                // are placed on API 23. The field remains focusable by tapping it.
+                                Modifier
+                            } else {
+                                Modifier.requestFocusWhenPlaced(focusRequester)
+                            }
+                        ),
                     singleLine = true,
                     trailingIcon = {
                         IconButton(
