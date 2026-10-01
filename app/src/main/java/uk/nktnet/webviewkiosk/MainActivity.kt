@@ -84,6 +84,8 @@ open class MainActivity : AppCompatActivity() {
     private lateinit var systemSettings: SystemSettings
     private lateinit var backButtonService: BackButtonManager
     private var lastOnStartTime = 0L
+    private var pendingAndroid6HomeRedirect = false
+    private var pendingAndroid6LockOnLaunch = false
 
     val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -171,10 +173,14 @@ open class MainActivity : AppCompatActivity() {
 
         systemSettings.isFreshLaunch = true
 
-        if (
-            userSettings.lockOnLaunch
-            && Build.VERSION.SDK_INT != Build.VERSION_CODES.M
-        ) {
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
+            // API 23 must enter lock task only after the activity is resumed. Keep these as
+            // one-shot launch actions so returning HOME after an unlock does not lock again.
+            pendingAndroid6HomeRedirect =
+                javaClass == MainActivity::class.java && isAndroid6HomeIntent(intent)
+            pendingAndroid6LockOnLaunch =
+                userSettings.lockOnLaunch && !pendingAndroid6HomeRedirect
+        } else if (userSettings.lockOnLaunch) {
             tryLockTask(this)
         }
 
@@ -378,12 +384,14 @@ open class MainActivity : AppCompatActivity() {
         enableNfcForegroundDispatch()
 
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-            if (isAndroid6HomeIntent(intent) && javaClass == MainActivity::class.java) {
+            if (pendingAndroid6HomeRedirect) {
+                pendingAndroid6HomeRedirect = false
                 launchAndroid6KioskTask()
                 return
             }
 
-            if (userSettings.lockOnLaunch) {
+            if (pendingAndroid6LockOnLaunch) {
+                pendingAndroid6LockOnLaunch = false
                 tryLockTask(this)
             }
         }
@@ -417,15 +425,6 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-
-        if (
-            Build.VERSION.SDK_INT == Build.VERSION_CODES.M
-            && javaClass == MainActivity::class.java
-            && isAndroid6HomeIntent(intent)
-        ) {
-            launchAndroid6KioskTask()
-            return
-        }
 
         if (handleNfcIntent(intent)) {
             return
