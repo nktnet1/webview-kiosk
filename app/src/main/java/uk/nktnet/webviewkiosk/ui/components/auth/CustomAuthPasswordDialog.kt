@@ -67,6 +67,13 @@ fun CustomAuthPasswordDialog() {
         return
     }
 
+    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
+        // Disabling autofocus alone is insufficient: tapping/typing also triggers Compose's
+        // bring-into-view machinery. Keep the API 23 auth prompt entirely in Android Views.
+        Android6CustomAuthPasswordDialog(userSettings)
+        return
+    }
+
     val focusRequester = remember { FocusRequester() }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
@@ -146,15 +153,7 @@ fun CustomAuthPasswordDialog() {
                     modifier = Modifier
                         .fillMaxWidth()
                         .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
-                        .then(
-                            if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-                                // Compose can request bring-into-view before the dialog's parents
-                                // are placed on API 23. The field remains focusable by tapping it.
-                                Modifier
-                            } else {
-                                Modifier.requestFocusWhenPlaced(focusRequester)
-                            }
-                        ),
+                        .requestFocusWhenPlaced(focusRequester),
                     singleLine = true,
                     trailingIcon = {
                         IconButton(

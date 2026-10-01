@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
@@ -197,6 +198,14 @@ open class MainActivity : AppCompatActivity() {
             val context = LocalContext.current
 
             val activity = LocalActivity.current
+            val handlesAuthentication = if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
+                // The API 23 workaround keeps both MainActivity and Android6KioskActivity alive.
+                // Only the resumed host may display or consume the process-wide auth prompt.
+                val lifecycleState by lifecycle.currentStateFlow.collectAsState()
+                lifecycleState == Lifecycle.State.RESUMED
+            } else {
+                true
+            }
 
             LaunchedEffect(Unit) {
                 RemoteMessageManager.commandsFlow.collect { command ->
@@ -248,7 +257,17 @@ open class MainActivity : AppCompatActivity() {
                 }
             }
 
-            LaunchedEffect(waitingForUnlock, biometricResult) {
+            LaunchedEffect(waitingForUnlock, biometricResult, handlesAuthentication) {
+                val isAndroid6 = Build.VERSION.SDK_INT == Build.VERSION_CODES.M
+                if (
+                    isAndroid6 && (
+                        !handlesAuthentication
+                            || lifecycle.currentState != Lifecycle.State.RESUMED
+                            || !WaitingForUnlockStateSingleton.waitingForUnlock.value
+                    )
+                ) {
+                    return@LaunchedEffect
+                }
                 if (waitingForUnlock) {
                     if (
                         biometricResult == AuthenticationManager.AuthenticationResult.Loading
@@ -256,14 +275,31 @@ open class MainActivity : AppCompatActivity() {
                     ) {
                         return@LaunchedEffect
                     }
+                    if (isAndroid6) {
+                        // Consume the result before emitting a suspending event. A second host
+                        // must not process the same unlock if activity lifecycles change.
+                        WaitingForUnlockStateSingleton.stopWaiting()
+                    }
                     if (
                         biometricResult == AuthenticationManager.AuthenticationResult.AuthenticationSuccess
                         || biometricResult == AuthenticationManager.AuthenticationResult.AuthenticationNotSet
                     ) {
-                        tryUnlockTask(activity)
-                        WaitingForUnlockStateSingleton.emitUnlockSuccess()
+                        val unlocked = tryUnlockTask(activity)
+                        if (isAndroid6) {
+                            if (unlocked) {
+                                // stopWaiting changes this effect's key. Send the notification
+                                // in the activity scope so that recomposition cannot cancel it.
+                                lifecycleScope.launch {
+                                    WaitingForUnlockStateSingleton.emitUnlockSuccess()
+                                }
+                            }
+                        } else {
+                            WaitingForUnlockStateSingleton.emitUnlockSuccess()
+                        }
                     }
-                    WaitingForUnlockStateSingleton.stopWaiting()
+                    if (!isAndroid6) {
+                        WaitingForUnlockStateSingleton.stopWaiting()
+                    }
                 }
             }
 
@@ -330,7 +366,9 @@ open class MainActivity : AppCompatActivity() {
                             }
                         )
                     } ?: run {
-                        CustomAuthPasswordDialog()
+                        if (handlesAuthentication) {
+                            CustomAuthPasswordDialog()
+                        }
                         SetupNavHost(navController)
                     }
                 }
