@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.ui.components.auth
 
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -64,13 +63,6 @@ fun CustomAuthPasswordDialog() {
         !AuthenticationManager.showCustomAuth.value
         || state != AuthenticationManager.AuthenticationResult.Pending
     ) {
-        return
-    }
-
-    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-        // Disabling autofocus alone is insufficient: tapping/typing also triggers Compose's
-        // bring-into-view machinery. Keep the API 23 auth prompt entirely in Android Views.
-        Android6CustomAuthPasswordDialog(userSettings)
         return
     }
 

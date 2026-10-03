@@ -1,10 +1,10 @@
 package uk.nktnet.webviewkiosk
 
 /**
- * Lock-task host used only on Android 6.0 (API 23).
+ * Lock-task host used only on Android 6.0 (API 23) when Webview Kiosk is launched as HOME.
  *
- * Marshmallow can retain the UID that originally created a task as its lock-task owner. Keeping
- * automatic lock-on-launch inside this app-created task avoids Launcher3/system HOME ownership,
- * while the separate affinity also prevents the locked task from being the HOME task itself.
+ * Some Android 6 devices immediately leave lock task mode when the locked task is also the HOME
+ * task. [MainActivity] keeps the normal HOME component unchanged and redirects only API 23 HOME
+ * launches into this activity, which has a separate task affinity.
  */
 class Android6KioskActivity : MainActivity()
