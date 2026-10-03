@@ -6,6 +6,7 @@ import android.app.admin.DevicePolicyManager
 import android.content.Context
 import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -91,10 +92,82 @@ fun applyLockTaskFeatures(context: Context) {
     }
 }
 
+private enum class Android6LockTaskPreparation {
+    CONTINUE,
+    ALREADY_LOCKED,
+    FAILED,
+}
+
+@RequiresApi(Build.VERSION_CODES.M)
+private fun prepareAndroid6LockTask(activity: Activity): Android6LockTaskPreparation {
+    val isDeviceOwner = try {
+        DeviceOwnerManager.DPM.isDeviceOwnerApp(activity.packageName)
+    } catch (e: Exception) {
+        Log.w(Constants.APP_SCHEME, "Failed to check Android 6 device owner state", e)
+        false
+    }
+
+    if (!isDeviceOwner) {
+        return Android6LockTaskPreparation.CONTINUE
+    }
+
+    val lockTaskPermitted = try {
+        if (!DeviceOwnerManager.DPM.isLockTaskPermitted(activity.packageName)) {
+            setupLockTaskPackage(activity)
+        }
+        DeviceOwnerManager.DPM.isLockTaskPermitted(activity.packageName)
+    } catch (e: Exception) {
+        Log.e(Constants.APP_SCHEME, "Failed to verify Android 6 lock task permission", e)
+        false
+    }
+
+    if (!lockTaskPermitted) {
+        ToastManager.show(
+            activity,
+            "Failed to lock: app is not permitted for lock task mode."
+        )
+        return Android6LockTaskPreparation.FAILED
+    }
+
+    val activityManager =
+        activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+
+    return when (activityManager.lockTaskModeState) {
+        ActivityManager.LOCK_TASK_MODE_LOCKED -> Android6LockTaskPreparation.ALREADY_LOCKED
+        ActivityManager.LOCK_TASK_MODE_PINNED -> {
+            val unpinned = tryLockAction(
+                activity,
+                lockAction = Activity::stopLockTask,
+                onFailed = {
+                    ToastManager.show(activity, "Failed to leave screen pinning: $it")
+                }
+            )
+            if (unpinned) {
+                Android6LockTaskPreparation.CONTINUE
+            } else {
+                Android6LockTaskPreparation.FAILED
+            }
+        }
+        else -> Android6LockTaskPreparation.CONTINUE
+    }
+}
+
 fun tryLockTask(activity: Activity?): Boolean {
     if (activity == null) {
         return false
     }
+
+    if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
+        when (prepareAndroid6LockTask(activity)) {
+            Android6LockTaskPreparation.ALREADY_LOCKED -> {
+                AuthenticationManager.resetAuthentication()
+                return true
+            }
+            Android6LockTaskPreparation.FAILED -> return false
+            Android6LockTaskPreparation.CONTINUE -> Unit
+        }
+    }
+
     applyLockTaskFeatures(activity)
     return tryLockAction(
         activity,
