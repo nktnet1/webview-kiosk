@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.auth
 
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -81,16 +82,21 @@ fun CustomAuthPasswordDialog() {
     ) {
         val focusManager = LocalFocusManager.current
         val keyboardController = LocalSoftwareKeyboardController.current
+        val needsLegacyImeCleanup = Build.VERSION.SDK_INT == Build.VERSION_CODES.M
 
         fun dismissKeyboard() {
-            keyboardController?.hide()
-            focusManager.clearFocus(force = true)
-        }
-
-        DisposableEffect(Unit) {
-            onDispose {
+            if (needsLegacyImeCleanup) {
                 keyboardController?.hide()
                 focusManager.clearFocus(force = true)
+            }
+        }
+
+        if (needsLegacyImeCleanup) {
+            DisposableEffect(Unit) {
+                onDispose {
+                    keyboardController?.hide()
+                    focusManager.clearFocus(force = true)
+                }
             }
         }
 
