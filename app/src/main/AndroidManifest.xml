@@ -141,6 +141,7 @@
             android:windowSoftInputMode="adjustResize"
             android:launchMode="singleTask"
             android:documentLaunchMode="never"
+            android:excludeFromRecents="true"
             android:exported="false"
             android:taskAffinity="${applicationId}.ANDROID6_KIOSK"
             android:theme="@style/Theme.WebviewKiosk"
