@@ -69,6 +69,7 @@ import uk.nktnet.webviewkiosk.utils.getLocalFileLink
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handleKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleMainIntent
+import uk.nktnet.webviewkiosk.utils.launchAndroid6KioskTask
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
@@ -87,7 +88,7 @@ open class MainActivity : AppCompatActivity() {
     private lateinit var backButtonService: BackButtonManager
     private var lastOnStartTime = 0L
     private var pendingAndroid6HomeRedirect = false
-    private var pendingAndroid6LockOnLaunch = false
+    private var pendingAndroid6LockRequest = false
     private var pendingDhizukuPermissionRequest = false
     private var deviceOwnerInitJob: Job? = null
 
@@ -169,10 +170,11 @@ open class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
             // API 23 must enter lock task only after the activity is resumed. Keep these as
             // one-shot launch actions so returning HOME after an unlock does not lock again.
+            val lockRequested = consumeAndroid6LockRequest(intent)
             pendingAndroid6HomeRedirect =
                 javaClass == MainActivity::class.java && isAndroid6HomeIntent(intent)
-            pendingAndroid6LockOnLaunch =
-                userSettings.lockOnLaunch && !pendingAndroid6HomeRedirect
+            pendingAndroid6LockRequest =
+                !pendingAndroid6HomeRedirect && (userSettings.lockOnLaunch || lockRequested)
         } else if (userSettings.lockOnLaunch) {
             tryLockTask(this)
         }
@@ -437,12 +439,12 @@ open class MainActivity : AppCompatActivity() {
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
             if (pendingAndroid6HomeRedirect) {
                 pendingAndroid6HomeRedirect = false
-                launchAndroid6KioskTask()
+                launchAndroid6KioskTask(this, fromHome = true)
                 return
             }
 
-            if (pendingAndroid6LockOnLaunch) {
-                pendingAndroid6LockOnLaunch = false
+            if (pendingAndroid6LockRequest) {
+                pendingAndroid6LockRequest = false
                 tryLockTask(this)
             }
         }
@@ -476,6 +478,20 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
+            setIntent(intent)
+            if (javaClass == MainActivity::class.java && isAndroid6HomeIntent(intent)) {
+                // Always route HOME back to the private task. Reusing that task must not
+                // request a new lock after the user has deliberately unlocked it.
+                pendingAndroid6HomeRedirect = true
+                pendingAndroid6LockRequest = false
+                return
+            }
+            if (consumeAndroid6LockRequest(intent)) {
+                pendingAndroid6LockRequest = true
+            }
+        }
 
         if (handleNfcIntent(intent)) {
             return
@@ -522,14 +538,16 @@ open class MainActivity : AppCompatActivity() {
             && intent.hasCategory(Intent.CATEGORY_HOME)
     }
 
-    private fun launchAndroid6KioskTask() {
-        val launchIntent = Intent(this, Android6KioskActivity::class.java).apply {
-            action = Intent.ACTION_MAIN
-            addCategory(Intent.CATEGORY_LAUNCHER)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-            putExtra(Constants.INTENT_HOME_LAUNCH, true)
+    private fun consumeAndroid6LockRequest(intent: Intent?): Boolean {
+        if (
+            javaClass != Android6KioskActivity::class.java
+            || intent?.getBooleanExtra(Constants.INTENT_ANDROID6_LOCK_TASK, false) != true
+        ) {
+            return false
         }
-        startActivity(launchIntent)
+        // A later recreation or HOME return must not replay a manual lock request.
+        intent.removeExtra(Constants.INTENT_ANDROID6_LOCK_TASK)
+        return true
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {

@@ -131,8 +131,8 @@
         </activity>
 
         <!--
-            Android 6.0 only: MainActivity redirects HOME launches here before entering lock task
-            mode. Keeping the lock target in a separate task avoids the API 23 HOME-task bug where
+            Android 6.0 only: MainActivity redirects HOME launches and lock requests here.
+            Keeping the lock target in a separate task avoids the API 23 HOME-task bug where
             lock task mode can enter and immediately exit. No other Android version launches this
             private activity.
         -->
@@ -141,7 +141,6 @@
             android:windowSoftInputMode="adjustResize"
             android:launchMode="singleTask"
             android:documentLaunchMode="never"
-            android:excludeFromRecents="true"
             android:exported="false"
             android:taskAffinity="${applicationId}.ANDROID6_KIOSK"
             android:theme="@style/Theme.WebviewKiosk"
