@@ -14,21 +14,25 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.BuildConfig
+import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.CustomNotificationType
 import kotlin.time.Duration.Companion.milliseconds
 
 @RequiresApi(28)
 class LockTaskService: Service() {
-    private val scope = CoroutineScope(Dispatchers.IO)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var updateJob: Job? = null
+    private var receiverRegistered = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -39,14 +43,48 @@ class LockTaskService: Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        ContextCompat.registerReceiver(
-            this,
-            returnReceiver,
-            IntentFilter(RETURN_ACTION),
-            ContextCompat.RECEIVER_NOT_EXPORTED,
-        )
+        try {
+            startForegroundNotification()
+        } catch (e: Exception) {
+            Log.e(javaClass.simpleName, "Unable to start lock task foreground service", e)
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
+
+        if (updateJob?.isActive != true) {
+            updateJob = scope.launch {
+                try {
+                    val am = getSystemService(ActivityManager::class.java)
+                    delay(3000.milliseconds)
+                    while (am.lockTaskModeState == ActivityManager.LOCK_TASK_MODE_LOCKED) {
+                        delay(1000.milliseconds)
+                    }
+                    stopLockTaskService()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.e(javaClass.simpleName, "Unable to monitor lock task mode", e)
+                    stopLockTaskService()
+                }
+            }
+        }
+
+        return START_STICKY
+    }
+
+    private fun startForegroundNotification() {
+        if (!receiverRegistered) {
+            ContextCompat.registerReceiver(
+                this,
+                returnReceiver,
+                IntentFilter(RETURN_ACTION),
+                ContextCompat.RECEIVER_NOT_EXPORTED,
+            )
+            receiverRegistered = true
+        }
 
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
+            ?: Intent(this, MainActivity::class.java)
         val contentIntent = PendingIntent.getActivity(
             this,
             0,
@@ -67,30 +105,24 @@ class LockTaskService: Service() {
                 0
             }
         )
-
-        if (updateJob?.isActive != true) {
-            updateJob = scope.launch {
-                val am = getSystemService(ActivityManager::class.java)
-                delay(3000.milliseconds)
-                while (am.lockTaskModeState == ActivityManager.LOCK_TASK_MODE_LOCKED) {
-                    delay(1000.milliseconds)
-                }
-                stopLockTaskService()
-            }
-        }
-
-        return START_STICKY
     }
 
     private fun stopLockTaskService() {
-        try {
-            updateJob?.cancel()
-            scope.cancel()
-            unregisterReceiver(returnReceiver)
-            stopSelf()
-        } catch (e: Exception) {
-            Log.e(javaClass.simpleName, "Failed to stop lock task service", e)
+        stopSelf()
+    }
+
+    override fun onDestroy() {
+        updateJob?.cancel()
+        scope.cancel()
+        if (receiverRegistered) {
+            receiverRegistered = false
+            try {
+                unregisterReceiver(returnReceiver)
+            } catch (e: IllegalArgumentException) {
+                Log.w(javaClass.simpleName, "Lock task receiver was already unregistered", e)
+            }
         }
+        super.onDestroy()
     }
 
     companion object {

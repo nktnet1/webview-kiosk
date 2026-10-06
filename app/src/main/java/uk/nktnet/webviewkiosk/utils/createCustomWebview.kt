@@ -55,6 +55,7 @@ import uk.nktnet.webviewkiosk.managers.PdfJsManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
+import uk.nktnet.webviewkiosk.utils.webview.WebViewDialogController
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.webview.handleMutualTlsRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleDownloadPrompt
@@ -224,7 +225,7 @@ fun createCustomWebview(
         return false
     }
 
-    fun buildWebView(): Pair<WebView, BlobInterface?> {
+    fun buildWebView(dialogs: WebViewDialogController): Pair<WebView, BlobInterface?> {
         val blobInterface = if (userSettings.allowFileDownload) {
             BlobInterface(context)
         } else {
@@ -641,7 +642,7 @@ fun createCustomWebview(
                     when (userSettings.sslErrorMode) {
                         SslErrorModeOption.BLOCK -> handler?.cancel()
                         SslErrorModeOption.PROMPT -> handleSslErrorPromptRequest(
-                            context, handler, error
+                            context, handler, error, dialogs
                         )
 
                         SslErrorModeOption.PROCEED -> handler?.proceed()
@@ -656,6 +657,7 @@ fun createCustomWebview(
                         Constants.APP_SCHEME,
                         "WebView renderer gone. crashed=${detail.didCrash()}"
                     )
+                    dialogs.dispose()
                     (view.parent as? ViewGroup)?.removeView(view)
                     NfcBridgeManager.detachWebView(view)
                     blobInterface?.dispose()
@@ -675,7 +677,11 @@ fun createCustomWebview(
                 }
 
                 override fun onPermissionRequest(request: PermissionRequest) {
-                    handlePermissionRequest(context, request, systemSettings, userSettings)
+                    handlePermissionRequest(context, request, systemSettings, userSettings, dialogs)
+                }
+
+                override fun onPermissionRequestCanceled(request: PermissionRequest) {
+                    dialogs.dismiss(request, resolveRequest = false)
                 }
 
                 override fun onGeolocationPermissionsShowPrompt(
@@ -688,9 +694,14 @@ fun createCustomWebview(
                             it.trimEnd('/'),
                             callback,
                             systemSettings,
-                            userSettings
+                            userSettings,
+                            dialogs,
                         )
                     }
+                }
+
+                override fun onGeolocationPermissionsHidePrompt() {
+                    dialogs.dismiss(WebViewDialogController.GEOLOCATION_PROMPT, resolveRequest = false)
                 }
 
                 override fun onShowCustomView(view: View, callback: CustomViewCallback) {
@@ -870,6 +881,7 @@ fun createCustomWebview(
                         userAgent = userAgent,
                         contentDisposition = contentDisposition,
                         mimeType = mimeType,
+                        dialogs = dialogs,
                     )
                 }
             }
@@ -879,12 +891,15 @@ fun createCustomWebview(
     }
 
     val webViewCreationResult = remember(recreationKey) {
+        val dialogs = WebViewDialogController(context)
         try {
-            val (webView, blobInterface) = buildWebView()
+            val (webView, blobInterface) = buildWebView(dialogs)
             WebViewCreation.Success(webView) {
+                dialogs.dispose()
                 blobInterface?.dispose()
             }
         } catch (e: Exception) {
+            dialogs.dispose()
             Log.e(Constants.APP_SCHEME, "Failed to create WebView", e)
             WebViewCreation.Failure(e)
         }

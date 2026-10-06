@@ -89,6 +89,7 @@ data class MqttLogEntry(
 
 object MqttManager {
     private var client: Mqtt5AsyncClient? = null
+    private var configurationError: String? = null
     private lateinit var config: MqttConfig
 
     private val scope = CoroutineScope(Dispatchers.Default)
@@ -180,7 +181,22 @@ object MqttManager {
             restrictionsRequestResponseInformation = userSettings.mqttRestrictionsRequestResponseInformation
         )
         if (rebuildClient) {
-            client = buildClient(context)
+            configurationError = null
+            client = if (!config.enabled) {
+                null
+            } else {
+                try {
+                    require(isValidMqttPublishTopic(mqttVariableReplacement(config.willTopic))) {
+                        "Invalid MQTT will topic after variable replacement."
+                    }
+                    buildClient(context)
+                } catch (e: Exception) {
+                    configurationError = e.message ?: "Invalid MQTT configuration."
+                    addDebugLog("configuration invalid", configurationError)
+                    Log.e(javaClass.simpleName, "Failed to build MQTT client", e)
+                    null
+                }
+            }
         }
     }
 
@@ -316,8 +332,9 @@ object MqttManager {
         }
         val c = client
         if (c == null) {
-            onError?.invoke("MQTT client is not initialised.")
-            addDebugLog("connect failed", "client is not initialised")
+            val message = configurationError ?: "MQTT client is not initialised."
+            onError?.invoke(message)
+            addDebugLog("connect failed", message)
             return
         }
 
@@ -337,6 +354,20 @@ object MqttManager {
             """.trimIndent()
         )
 
+        try {
+            connectClient(c, onConnected, onError)
+        } catch (e: Exception) {
+            addDebugLog("connect failed", e.message)
+            Log.e(javaClass.simpleName, "Failed to build MQTT connection", e)
+            onError?.invoke(e.message)
+        }
+    }
+
+    private fun connectClient(
+        c: Mqtt5AsyncClient,
+        onConnected: (() -> Unit)?,
+        onError: ((String?) -> Unit)?,
+    ) {
         var connection = c.connectWith()
             .cleanStart(config.cleanStart)
             .keepAlive(config.keepAlive)
@@ -376,8 +407,14 @@ object MqttManager {
             .send()
             .whenComplete { _, throwable ->
                 if (throwable == null) {
-                    subscribeToTopics()
-                    onConnected?.invoke()
+                    try {
+                        subscribeToTopics()
+                        onConnected?.invoke()
+                    } catch (e: Exception) {
+                        addDebugLog("subscribe failed", e.message)
+                        Log.e(javaClass.simpleName, "Failed to subscribe after MQTT connection", e)
+                        onError?.invoke(e.message)
+                    }
                 } else {
                     addDebugLog("connect failed", throwable.message)
                     Log.e(javaClass.simpleName, "Failed to subscribe/connect", throwable)

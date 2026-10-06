@@ -6,6 +6,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.webkit.WebView
+import kotlinx.coroutines.CancellationException
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -153,6 +154,34 @@ object RemoteInboundHandler {
     }
 
     fun handleInboundMqttRequest(
+        context: Context,
+        request: InboundRequestMessage,
+    ) {
+        try {
+            processInboundMqttRequest(context, request)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(javaClass.simpleName, "Failed to handle MQTT request", e)
+            try {
+                MqttManager.publishErrorResponse(
+                    InboundErrorRequest(
+                        messageId = request.messageId,
+                        responseTopic = request.responseTopic,
+                        correlationData = request.correlationData,
+                        payloadStr = request.toString(),
+                        error = e.message ?: "Failed to handle MQTT request.",
+                    )
+                )
+            } catch (responseError: CancellationException) {
+                throw responseError
+            } catch (responseError: Exception) {
+                Log.e(javaClass.simpleName, "Failed to publish MQTT request error", responseError)
+            }
+        }
+    }
+
+    private fun processInboundMqttRequest(
         context: Context,
         request: InboundRequestMessage,
     ) {

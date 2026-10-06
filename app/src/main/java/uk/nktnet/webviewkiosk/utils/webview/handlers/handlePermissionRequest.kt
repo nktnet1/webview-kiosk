@@ -2,16 +2,19 @@ package uk.nktnet.webviewkiosk.utils.webview.handlers
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
 import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.webkit.PermissionRequest
 import androidx.appcompat.app.AlertDialog
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.utils.handleKeyEvent
 import uk.nktnet.webviewkiosk.utils.hasPermissionForResource
+import uk.nktnet.webviewkiosk.utils.webview.WebViewDialogController
 
 data class WebPermission(
     val resource: String,
@@ -24,8 +27,32 @@ fun handlePermissionRequest(
     context: Context,
     request: PermissionRequest,
     systemSettings: SystemSettings,
-    userSettings: UserSettings
+    userSettings: UserSettings,
+    dialogs: WebViewDialogController,
 ) {
+    var resolved = false
+    fun respond(resources: Array<String>? = null): Boolean {
+        if (resolved) {
+            return false
+        }
+        resolved = true
+        val granted = resources != null && dialogs.isActive()
+        return try {
+            if (granted) {
+                request.grant(resources)
+            } else {
+                request.deny()
+            }
+            granted
+        } catch (e: Exception) {
+            Log.w(Constants.APP_SCHEME, "Unable to complete WebView permission request", e)
+            false
+        }
+    }
+    if (!dialogs.isActive()) {
+        respond()
+        return
+    }
     val host = request.origin.toString().trimEnd('/')
 
     val permissions = request.resources.mapNotNull { res ->
@@ -52,7 +79,7 @@ fun handlePermissionRequest(
     }
 
     if (allowedPermissions.isEmpty() && blockedPermissions.isEmpty()) {
-        request.deny()
+        respond()
         return
     }
 
@@ -60,7 +87,7 @@ fun handlePermissionRequest(
 
     val remembered = systemSettings.getSitePermissions(host)
     if (!isBlockedDialog && permissions.all { remembered.contains(it.resource) }) {
-        request.grant(permissions.map { it.resource }.toTypedArray())
+        respond(permissions.map { it.resource }.toTypedArray())
         return
     }
 
@@ -106,15 +133,12 @@ fun handlePermissionRequest(
         .setTitle(title)
         .setMessage(message.trimMargin())
         .setOnCancelListener {
-            request.deny()
-        }
-        .setOnDismissListener {
-            UserInteractionStateSingleton.onUserInteraction()
+            respond()
         }
 
     if (isBlockedDialog) {
         builder.setPositiveButton("Close") { _, _ ->
-            request.deny()
+            respond()
         }
     } else {
         val checkBox = CheckBox(context).apply { text = "Remember my choice" }
@@ -129,19 +153,26 @@ fun handlePermissionRequest(
         }
         builder.setView(layout)
             .setPositiveButton("Allow") { _, _ ->
-                request.grant(allowedPermissions.map { it.resource }.toTypedArray())
-                if (checkBox.isChecked) {
+                val granted = respond(allowedPermissions.map { it.resource }.toTypedArray())
+                if (granted && checkBox.isChecked) {
                     allowedPermissions.forEach {
                         systemSettings.saveSitePermissions(host, it.resource)
                     }
                 }
             }
             .setNegativeButton("Deny") { _, _ ->
-                request.deny()
+                respond()
             }
     }
 
-    val dialog = builder.show()
+    val dialog = dialogs.show(builder.create(), key = request) { resolveRequest ->
+        if (resolveRequest) {
+            respond()
+        } else {
+            resolved = true
+        }
+        UserInteractionStateSingleton.onUserInteraction()
+    } ?: return
 
     dialog.setOnKeyListener { _, _, event ->
         handleKeyEvent(context, event)

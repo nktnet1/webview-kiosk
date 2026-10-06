@@ -31,7 +31,14 @@ fun MqttWillTopicSetting() {
         initialValue = userSettings.mqttWillTopic,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        validator = { it.isEmpty() || isValidMqttPublishTopic(it) },
+        validator = {
+            it.isEmpty() || isValidMqttPublishTopic(
+                mqttVariableReplacement(
+                    it,
+                    mapOf(MqttVariableName.USERNAME.name to userSettings.mqttUsername),
+                )
+            )
+        },
         descriptionFormatter = {
             mqttVariableReplacement( it)
         },
