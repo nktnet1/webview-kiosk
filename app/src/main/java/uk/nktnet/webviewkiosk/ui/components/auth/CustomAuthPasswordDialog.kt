@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.auth
 
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -26,6 +27,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +38,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -73,29 +77,50 @@ fun CustomAuthPasswordDialog() {
     var waiting by remember { mutableStateOf(false) }
     var isError by remember { mutableStateOf(false) }
 
-    fun handleUnlock() {
-        scope.launch {
-            waiting = true
-            val start = System.currentTimeMillis()
-            if (password == userSettings.customAuthPassword) {
-                password = ""
-                AuthenticationManager.customAuthSuccess()
-            } else {
-                val elapsed = System.currentTimeMillis() - start
-                val remaining = 1000L - elapsed
-                if (remaining > 0) {
-                    delay(remaining.milliseconds)
-                }
-                isError = true
-                ToastManager.show(context, "Incorrect password")
-            }
-            waiting = false
-        }
-    }
-
     Dialog(
         onDismissRequest = { AuthenticationManager.customAuthCancel() }
     ) {
+        val focusManager = LocalFocusManager.current
+        val keyboardController = LocalSoftwareKeyboardController.current
+        val needsLegacyImeCleanup = Build.VERSION.SDK_INT == Build.VERSION_CODES.M
+
+        fun dismissKeyboard() {
+            if (needsLegacyImeCleanup) {
+                keyboardController?.hide()
+                focusManager.clearFocus(force = true)
+            }
+        }
+
+        if (needsLegacyImeCleanup) {
+            DisposableEffect(Unit) {
+                onDispose {
+                    keyboardController?.hide()
+                    focusManager.clearFocus(force = true)
+                }
+            }
+        }
+
+        fun handleUnlock() {
+            scope.launch {
+                waiting = true
+                val start = System.currentTimeMillis()
+                if (password == userSettings.customAuthPassword) {
+                    password = ""
+                    dismissKeyboard()
+                    AuthenticationManager.customAuthSuccess()
+                } else {
+                    val elapsed = System.currentTimeMillis() - start
+                    val remaining = 1000L - elapsed
+                    if (remaining > 0) {
+                        delay(remaining.milliseconds)
+                    }
+                    isError = true
+                    ToastManager.show(context, "Incorrect password")
+                }
+                waiting = false
+            }
+        }
+
         Box(
             modifier = Modifier
                 .background(MaterialTheme.colorScheme.background.copy(alpha = 0.95f))
@@ -198,6 +223,7 @@ fun CustomAuthPasswordDialog() {
                     TextButton(
                         onClick = {
                             password = ""
+                            dismissKeyboard()
                             AuthenticationManager.customAuthCancel()
                         },
                         modifier = Modifier.weight(1f),
