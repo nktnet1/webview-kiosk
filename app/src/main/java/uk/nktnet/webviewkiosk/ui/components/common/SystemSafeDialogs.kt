@@ -1,11 +1,13 @@
 package uk.nktnet.webviewkiosk.ui.components.common
 
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import uk.nktnet.webviewkiosk.utils.ProvideSystemSafeClipboard
 
@@ -15,7 +17,7 @@ fun SystemSafeDialog(
     properties: DialogProperties = DialogProperties(),
     content: @Composable () -> Unit,
 ) {
-    androidx.compose.ui.window.Dialog(
+    Dialog(
         onDismissRequest = onDismissRequest,
         properties = properties,
     ) {
@@ -42,7 +44,7 @@ fun SystemSafeAlertDialog(
     properties: DialogProperties = DialogProperties(),
 ) {
     // Slot content runs inside Material's dialog root, after its owner locals are installed.
-    androidx.compose.material3.AlertDialog(
+    AlertDialog(
         onDismissRequest = onDismissRequest,
         confirmButton = systemSafeSlot(confirmButton),
         modifier = modifier,
