@@ -38,12 +38,15 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
+import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog as Dialog
+import uk.nktnet.webviewkiosk.utils.boundedTextPreview
+
+private const val EXPORT_PREVIEW_MAX_CHARS = 8192
 
 enum class ExportTab {
     Base64,
@@ -149,8 +152,16 @@ fun ExportSettingsDialog(
                         .verticalScroll(rememberScrollState())
                 ) {
                     Text(
-                        text = textDisplay,
+                        text = boundedTextPreview(textDisplay, EXPORT_PREVIEW_MAX_CHARS),
                         style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                if (textDisplay.length > EXPORT_PREVIEW_MAX_CHARS) {
+                    Text(
+                        text = "Preview shortened. Copy or save the file to view all settings.",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 8.dp),
                     )
                 }
 

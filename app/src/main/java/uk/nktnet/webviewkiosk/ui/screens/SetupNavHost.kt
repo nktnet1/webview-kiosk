@@ -1,5 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -59,7 +61,15 @@ fun SetupNavHost(
         }
     )
 
-    NavHost(navController, startDestination = Screen.WebView.route) {
+    NavHost(
+        navController = navController,
+        startDestination = Screen.WebView.route,
+        // Avoid animating the nested AndroidView/ComposeView hierarchy during navigation.
+        enterTransition = { EnterTransition.None },
+        exitTransition = { ExitTransition.None },
+        popEnterTransition = { EnterTransition.None },
+        popExitTransition = { ExitTransition.None },
+    ) {
         composable(Screen.WebView.route) {
             WebviewScreen(navController)
         }

@@ -32,12 +32,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.data.AppInfo
 import uk.nktnet.webviewkiosk.ui.components.apps.AppList
 import uk.nktnet.webviewkiosk.ui.components.apps.AppSearchBar
+import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog as Dialog
 
 @Composable
 fun <T : AppInfo> BaseAppListDialog(
