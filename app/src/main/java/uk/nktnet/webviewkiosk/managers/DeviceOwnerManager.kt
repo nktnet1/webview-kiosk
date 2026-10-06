@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
+import kotlin.time.Duration.Companion.milliseconds
 
 object DeviceOwnerManager {
     private const val DHIZUKU_SETTLE_TIME_MS = 1000L
@@ -86,7 +87,7 @@ object DeviceOwnerManager {
         }
 
         for (retryDelay in DHIZUKU_RETRY_DELAYS_MS) {
-            delay(retryDelay)
+            delay(retryDelay.milliseconds)
             init(context)
             if (status.value.mode != DeviceOwnerMode.None) {
                 break

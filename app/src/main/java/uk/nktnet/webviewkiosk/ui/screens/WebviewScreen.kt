@@ -89,6 +89,7 @@ import uk.nktnet.webviewkiosk.ui.components.webview.LocalFilesDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.WebViewFindBar
 import uk.nktnet.webviewkiosk.ui.components.webview.WebviewAwareSwipeRefreshLayout
 import uk.nktnet.webviewkiosk.ui.placeholders.WebViewUnavailable
+import uk.nktnet.webviewkiosk.utils.ProvideSystemSafeClipboard
 import uk.nktnet.webviewkiosk.utils.WebViewConfig
 import uk.nktnet.webviewkiosk.utils.createCustomWebview
 import uk.nktnet.webviewkiosk.utils.enterImmersiveMode
@@ -505,24 +506,28 @@ fun WebviewScreen(navController: NavController) {
                 factory = { ctx ->
                     ComposeView(ctx).apply {
                         setContent {
-                            AddressBar(
-                                navController = navController,
-                                urlBarText = urlBarText,
-                                onUrlBarTextChange = { urlBarText = it },
-                                hasFocus = addressBarHasFocus,
-                                onFocusChanged = { addressBarHasFocus = it.isFocused },
-                                showFindInPage = showFindInPage,
-                                addressBarSearch = addressBarSearch,
-                                showHistoryDialog = { isOpenHistoryDialog = true },
-                                showBookmarkDialog = { isOpenBookmarkDialog = true },
-                                showFilesDialog = { isOpenFilesDialog = true },
-                                showAppsDialog = { isOpenAppsDialog = true },
-                                webView = webView,
-                                customLoadUrl = ::customLoadUrl,
-                            )
+                            // Keep the separate ComposeView needed for WebView autofill.
+                            ProvideSystemSafeClipboard {
+                                AddressBar(
+                                    navController = navController,
+                                    urlBarText = urlBarText,
+                                    onUrlBarTextChange = { urlBarText = it },
+                                    hasFocus = addressBarHasFocus,
+                                    onFocusChanged = { addressBarHasFocus = it.isFocused },
+                                    showFindInPage = showFindInPage,
+                                    addressBarSearch = addressBarSearch,
+                                    showHistoryDialog = { isOpenHistoryDialog = true },
+                                    showBookmarkDialog = { isOpenBookmarkDialog = true },
+                                    showFilesDialog = { isOpenFilesDialog = true },
+                                    showAppsDialog = { isOpenAppsDialog = true },
+                                    webView = webView,
+                                    customLoadUrl = ::customLoadUrl,
+                                )
+                            }
                         }
                     }
                 },
+                onRelease = { it.disposeComposition() },
                 modifier = Modifier.fillMaxWidth()
             )
         }

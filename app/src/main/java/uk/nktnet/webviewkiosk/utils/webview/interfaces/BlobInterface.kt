@@ -94,7 +94,6 @@ class BlobInterface(
         abortAllDownloads()
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun abortAllDownloads() {
         activeDownloads.keys.toList().forEach(::abortInternal)

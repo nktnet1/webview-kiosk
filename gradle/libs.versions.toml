@@ -10,6 +10,7 @@ hivemqMqttClient = "1.4.0"
 kotlin = "2.4.20"
 kotlinSerializationPlugin = "2.4.20"
 kotlinxSerializationJson = "1.11.0"
+okhttp = "5.5.0"
 reorderable = "3.1.0"
 swiperefreshlayout = "1.2.0"
 
@@ -25,7 +26,6 @@ coreKtx = "1.17.0"
 lifecycleRuntimeKtx = "2.9.4"
 #noinspection GradleDependency
 navigationCompose = "2.9.8"
-okhttp = "5.5.0"
 #noinspection GradleDependency
 webkit = "1.14.0"
 
