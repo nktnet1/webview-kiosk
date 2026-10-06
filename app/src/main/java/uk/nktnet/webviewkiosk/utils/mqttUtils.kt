@@ -10,7 +10,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonPrimitive
 import org.json.JSONObject
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -85,7 +84,7 @@ fun filterSettingsJson(
         for (keyElem in filterKeys) {
             val keyStr = when (keyElem) {
                 is JsonPrimitive -> keyElem.content
-                is JsonObject -> keyElem["key"]?.jsonPrimitive?.content ?: continue
+                is JsonObject -> (keyElem["key"] as? JsonPrimitive)?.content ?: continue
                 else -> continue
             }
 
@@ -93,12 +92,10 @@ fun filterSettingsJson(
                 continue
             }
 
+            val options = keyElem as? JsonObject
             val evaluateVariables = (
-                (keyElem as? JsonObject)
-                    ?.get("evaluateVariables")
-                    ?.jsonPrimitive
-                    ?.booleanOrNull ?: false
-            ) && keyStr in ALLOW_EVALUATE_VARIABLES_SETTING_KEYS
+                options?.get("evaluateVariables") as? JsonPrimitive
+            )?.booleanOrNull == true && keyStr in ALLOW_EVALUATE_VARIABLES_SETTING_KEYS
 
             val value = if (evaluateVariables) {
                 MqttManager.mqttVariableReplacement(settings.getString(keyStr))
@@ -107,10 +104,7 @@ fun filterSettingsJson(
             }
 
             val parseAsArray = (
-                (keyElem as? JsonObject)
-                    ?.get("parseAsArray")
-                    ?.jsonPrimitive
-                    ?.booleanOrNull ?: false
+                (options?.get("parseAsArray") as? JsonPrimitive)?.booleanOrNull == true
                 && value is String
                 && keyStr in ALLOW_PARSED_AS_ARRAY_SETTING_KEYS
             )

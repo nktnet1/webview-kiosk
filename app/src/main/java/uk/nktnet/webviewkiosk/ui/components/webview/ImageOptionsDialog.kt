@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -33,6 +34,7 @@ import uk.nktnet.webviewkiosk.utils.boundedTextPreview
 import uk.nktnet.webviewkiosk.utils.fetchRemoteFileInfo
 import uk.nktnet.webviewkiosk.utils.getMimeType
 import uk.nktnet.webviewkiosk.utils.safeStartActivity
+import uk.nktnet.webviewkiosk.utils.webview.WebViewDialogController
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleDownloadPrompt
 
 @Composable
@@ -46,6 +48,11 @@ fun ImageOptionsDialog(
     val userSettings = remember { UserSettings(context) }
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
+    val dialogs = remember(webView, context) { WebViewDialogController(context) }
+
+    DisposableEffect(dialogs) {
+        onDispose { dialogs.dispose() }
+    }
 
     val isLocked by LockStateSingleton.isLocked
 
@@ -154,7 +161,8 @@ fun ImageOptionsDialog(
                                         url = imageUrl,
                                         userAgent = null,
                                         contentDisposition = contentDisposition,
-                                        mimeType = mimeType
+                                        mimeType = mimeType,
+                                        dialogs = dialogs,
                                     )
                                     onDismiss()
                                 }

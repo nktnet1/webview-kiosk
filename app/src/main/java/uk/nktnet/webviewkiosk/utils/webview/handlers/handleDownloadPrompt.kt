@@ -27,6 +27,7 @@ import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.utils.extractFileNameFromContentDisposition
 import uk.nktnet.webviewkiosk.utils.getDownloadLocation
 import uk.nktnet.webviewkiosk.utils.handleKeyEvent
+import uk.nktnet.webviewkiosk.utils.webview.WebViewDialogController
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BlobInterface
 
 @SuppressLint("SetTextI18n")
@@ -36,7 +37,8 @@ fun handleDownloadPrompt(
     url: String,
     userAgent: String?,
     contentDisposition: String?,
-    mimeType: String?
+    mimeType: String?,
+    dialogs: WebViewDialogController,
 ) {
     val userSettings = UserSettings(context)
     if (!userSettings.allowFileDownload) {
@@ -99,30 +101,28 @@ fun handleDownloadPrompt(
         setPadding(0, 50, 0, 0)
     }
 
-    val dialog = AlertDialog.Builder(context)
+    var downloadStarted = false
+    val prompt = AlertDialog.Builder(context)
         .setView(layout)
-        .setOnCancelListener {
-            if (uri.scheme == "blob") {
-                releaseCapturedBlob(webView, url)
-            }
-            UserInteractionStateSingleton.onUserInteraction()
-        }
-        .setOnDismissListener {
-            UserInteractionStateSingleton.onUserInteraction()
-        }
-        .show()
-
-    val cancelButton = Button(context).apply { text = "Cancel" }
-    cancelButton.setOnClickListener {
-        if (uri.scheme == "blob") {
+        .create()
+    val dialog = dialogs.show(prompt) {
+        if (!downloadStarted && uri.scheme == "blob") {
             releaseCapturedBlob(webView, url)
         }
         UserInteractionStateSingleton.onUserInteraction()
-        dialog.dismiss()
+    } ?: return
+
+    val cancelButton = Button(context).apply { text = "Cancel" }
+    cancelButton.setOnClickListener {
+        dialogs.dismiss(dialog)
     }
 
     val downloadButton = Button(context).apply { text = "Download" }
     downloadButton.setOnClickListener {
+        if (!dialogs.isActive()) {
+            dialogs.dismiss(dialog)
+            return@setOnClickListener
+        }
         try {
             UserInteractionStateSingleton.onUserInteraction()
             val filename = editText.text.toString()
@@ -139,7 +139,8 @@ fun handleDownloadPrompt(
                 )
             }
 
-            dialog.dismiss()
+            downloadStarted = true
+            dialogs.dismiss(dialog)
             ToastManager.show(context, "Starting download for $filename")
         } catch (e: Exception) {
             Log.e(Constants.APP_SCHEME, "Download failed", e)

@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.utils.webview.handlers
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.util.Log
 import android.widget.CheckBox
 import android.widget.LinearLayout
 import android.webkit.GeolocationPermissions
@@ -13,6 +14,7 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.utils.handleKeyEvent
 import uk.nktnet.webviewkiosk.utils.hasPermissionForResource
+import uk.nktnet.webviewkiosk.utils.webview.WebViewDialogController
 
 @SuppressLint("SetTextI18n")
 fun handleGeolocationRequest(
@@ -20,14 +22,35 @@ fun handleGeolocationRequest(
     origin: String,
     callback: GeolocationPermissions.Callback?,
     systemSettings: SystemSettings,
-    userSettings: UserSettings
+    userSettings: UserSettings,
+    dialogs: WebViewDialogController,
 ) {
+    var resolved = false
+    fun respond(allow: Boolean = false): Boolean {
+        if (resolved) {
+            return false
+        }
+        resolved = true
+        val granted = allow && dialogs.isActive()
+        return try {
+            callback?.invoke(origin, granted, false)
+            granted
+        } catch (e: Exception) {
+            Log.w(Constants.APP_SCHEME, "Unable to complete WebView location request", e)
+            false
+        }
+    }
+    if (!dialogs.isActive()) {
+        respond()
+        return
+    }
+
     val isAllowed = (
         userSettings.allowLocation
         && hasPermissionForResource(context, Constants.GEOLOCATION_RESOURCE)
     )
     if (!isAllowed) {
-        val dialog = AlertDialog.Builder(context)
+        val prompt = AlertDialog.Builder(context)
             .setTitle("Permission blocked")
             .setMessage(
                 """
@@ -37,8 +60,16 @@ fun handleGeolocationRequest(
                 not yet granted to ${context.getString(R.string.app_name)}.
                 """.trimIndent()
             )
-            .setPositiveButton("Close") { _, _ -> callback?.invoke(origin, false, false) }
-            .show()
+            .setPositiveButton("Close") { _, _ -> respond() }
+            .create()
+        val dialog = dialogs.show(prompt, WebViewDialogController.GEOLOCATION_PROMPT) { resolveRequest ->
+            if (resolveRequest) {
+                respond()
+            } else {
+                resolved = true
+            }
+            UserInteractionStateSingleton.onUserInteraction()
+        } ?: return
         dialog.setOnKeyListener { _, _, event ->
             handleKeyEvent(context, event)
         }
@@ -48,7 +79,7 @@ fun handleGeolocationRequest(
     val remembered = systemSettings.getSitePermissions(origin)
 
     if (remembered.contains(Constants.GEOLOCATION_RESOURCE)) {
-        callback?.invoke(origin, true, false)
+        respond(true)
         return
     }
 
@@ -63,26 +94,32 @@ fun handleGeolocationRequest(
         addView(checkBox)
     }
 
-    val dialog = AlertDialog.Builder(context)
+    val prompt = AlertDialog.Builder(context)
         .setTitle("Permission request")
         .setMessage("$origin is requesting access to your location")
         .setView(layout)
         .setPositiveButton("Allow") { _, _ ->
-            callback?.invoke(origin, true, false)
-            if (checkBox.isChecked) {
+            val granted = respond(true)
+            if (granted && checkBox.isChecked) {
                 systemSettings.saveSitePermissions(origin, Constants.GEOLOCATION_RESOURCE)
             }
         }
         .setNegativeButton("Deny") { _, _ ->
-            callback?.invoke(origin, false, false)
+            respond()
         }
         .setOnCancelListener {
-            callback?.invoke(origin, false, false)
+            respond()
         }
-        .setOnDismissListener {
-            UserInteractionStateSingleton.onUserInteraction()
+        .create()
+
+    val dialog = dialogs.show(prompt, WebViewDialogController.GEOLOCATION_PROMPT) { resolveRequest ->
+        if (resolveRequest) {
+            respond()
+        } else {
+            resolved = true
         }
-        .show()
+        UserInteractionStateSingleton.onUserInteraction()
+    } ?: return
 
     dialog.setOnKeyListener { _, _, event ->
         handleKeyEvent(context, event)

@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.utils.webview.handlers
 import android.annotation.SuppressLint
 import android.content.Context
 import android.net.http.SslError
+import android.util.Log
 import android.view.Gravity
 import android.widget.Button
 import android.widget.LinearLayout
@@ -10,15 +11,39 @@ import android.widget.TextView
 import android.webkit.SslErrorHandler
 import androidx.appcompat.app.AlertDialog
 import android.view.ViewGroup.LayoutParams
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.utils.handleKeyEvent
+import uk.nktnet.webviewkiosk.utils.webview.WebViewDialogController
 
 @SuppressLint("SetTextI18n")
 fun handleSslErrorPromptRequest(
     context: Context,
     handler: SslErrorHandler?,
     error: SslError?,
+    dialogs: WebViewDialogController,
 ) {
+    var resolved = false
+    fun respond(proceed: Boolean = false) {
+        if (resolved) {
+            return
+        }
+        resolved = true
+        try {
+            if (proceed && dialogs.isActive()) {
+                handler?.proceed()
+            } else {
+                handler?.cancel()
+            }
+        } catch (e: Exception) {
+            Log.w(Constants.APP_SCHEME, "Unable to complete WebView SSL request", e)
+        }
+    }
+    if (!dialogs.isActive()) {
+        respond()
+        return
+    }
+
     val layout = LinearLayout(context).apply {
         orientation = LinearLayout.VERTICAL
         setPadding(60, 60, 60, 0)
@@ -58,23 +83,24 @@ fun handleSslErrorPromptRequest(
         )
     }
 
-    val dialog = AlertDialog.Builder(context)
+    val prompt = AlertDialog.Builder(context)
         .setView(layout)
         .setNegativeButton("Cancel") { _, _ ->
-            handler?.cancel()
+            respond()
         }
         .setOnCancelListener {
-            handler?.cancel()
+            respond()
         }
-        .setOnDismissListener {
-            UserInteractionStateSingleton.onUserInteraction()
-        }
-        .show()
+        .create()
+    val dialog = dialogs.show(prompt) {
+        respond()
+        UserInteractionStateSingleton.onUserInteraction()
+    } ?: return
 
     val proceedButton = Button(context).apply { text = "Proceed" }
     proceedButton.setOnClickListener {
-        handler?.proceed()
-        dialog.dismiss()
+        respond(true)
+        dialogs.dismiss(dialog)
     }
 
     val advancedButton = Button(context).apply { text = "Advanced" }
