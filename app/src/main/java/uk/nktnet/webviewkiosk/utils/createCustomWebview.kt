@@ -173,11 +173,18 @@ fun createCustomWebview(
     }
 
     fun launchFilePicker(fileChooserParams: WebChromeClient.FileChooserParams) {
-        val intent = fileChooserParams.createIntent()
-        if (fileChooserParams.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE) {
-            intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        runCatching {
+            val intent = fileChooserParams.createIntent()
+            if (fileChooserParams.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE) {
+                intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+            }
+            filePickerLauncher.launch(intent)
+        }.onFailure {
+            Log.e(Constants.APP_SCHEME, "Failed to launch file picker", it)
+            pendingFileChooserCallback?.onReceiveValue(null)
+            pendingFileChooserCallback = null
+            ToastManager.show(context, "Unable to open file picker.")
         }
-        filePickerLauncher.launch(intent)
     }
 
     fun customLaunchCapture(action: String, fileSuffix: String): Boolean {
@@ -207,15 +214,13 @@ fun createCustomWebview(
                 captureLauncher.launch(captureIntent)
                 return true
             } else {
-                pendingFileChooserCallback?.onReceiveValue(null)
-                pendingFileChooserCallback = null
-                pendingCaptureUri = null
+                Log.w(Constants.APP_SCHEME, "No activity available for capture action: $action")
             }
         }.onFailure {
-            pendingFileChooserCallback?.onReceiveValue(null)
-            pendingFileChooserCallback = null
-            pendingCaptureUri = null
+            Log.e(Constants.APP_SCHEME, "Failed to launch capture action: $action", it)
         }
+        // Keep the callback pending so the file picker fallback can complete the upload.
+        pendingCaptureUri = null
         return false
     }
 
@@ -769,6 +774,14 @@ fun createCustomWebview(
                             context,
                             Manifest.permission.RECORD_AUDIO,
                         ) == PackageManager.PERMISSION_GRANTED
+
+                    Log.d(
+                        Constants.APP_SCHEME,
+                        "File chooser request: mode=${fileChooserParams.mode}, "
+                            + "capture=${fileChooserParams.isCaptureEnabled}, acceptTypes=$acceptTypes, "
+                            + "allowCamera=${config.userSettings.allowCamera}, cameraPermission=$hasCameraPermission, "
+                            + "allowMicrophone=${config.userSettings.allowMicrophone}, audioPermission=$hasAudioPermission"
+                    )
 
                     val captureRequest = when {
                         !fileChooserParams.isCaptureEnabled -> null
