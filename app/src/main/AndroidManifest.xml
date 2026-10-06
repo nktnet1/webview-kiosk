@@ -50,7 +50,6 @@
         android:taskAffinity="${applicationId}.BROWSER"
         android:theme="@style/Theme.AppCompat"
         tools:targetApi="24"
-        android:lockTaskMode="if_whitelisted"
         android:networkSecurityConfig="@xml/network_security_config"
     >
         <provider
@@ -130,6 +129,25 @@
             </intent-filter>
 
         </activity>
+
+        <!--
+            Android 6.0 only: MainActivity redirects HOME launches and lock requests here.
+            Keeping the lock target in a separate task avoids the API 23 HOME-task bug where
+            lock task mode can enter and immediately exit. No other Android version launches this
+            private activity.
+        -->
+        <activity
+            android:name="uk.nktnet.webviewkiosk.Android6KioskActivity"
+            android:windowSoftInputMode="adjustResize"
+            android:launchMode="singleTask"
+            android:documentLaunchMode="never"
+            android:exported="false"
+            android:taskAffinity="${applicationId}.ANDROID6_KIOSK"
+            android:theme="@style/Theme.WebviewKiosk"
+            android:configChanges="orientation|screenSize"
+            tools:targetApi="33"
+            android:enableOnBackInvokedCallback="@bool/enableOnBackInvokedCallback"
+        />
 
         <activity
             android:name=".activities.ProvisioningActivity"

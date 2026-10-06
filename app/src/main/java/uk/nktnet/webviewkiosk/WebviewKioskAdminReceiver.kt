@@ -5,12 +5,14 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.webview.mutualTlsSiteKey
 import uk.nktnet.webviewkiosk.utils.webview.parseMutualTlsRules
 
 class WebviewKioskAdminReceiver : DeviceAdminReceiver() {
     override fun onEnabled(context: Context, intent: Intent) {
+        DeviceOwnerManager.init(context)
         setupLockTaskPackage(context)
         super.onEnabled(context, intent)
     }

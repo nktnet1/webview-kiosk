@@ -207,6 +207,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                     Button(
                         onClick = {
                             DeviceOwnerManager.requestDhizukuPermission(
+                                context = context,
                                 onGranted = {
                                     setupLockTaskPackage(context)
                                     hasOwnerPermission = DeviceOwnerManager.hasOwnerPermission(context)
