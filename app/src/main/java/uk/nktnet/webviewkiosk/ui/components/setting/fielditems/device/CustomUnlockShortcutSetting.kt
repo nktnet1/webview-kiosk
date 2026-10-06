@@ -159,11 +159,7 @@ fun CustomUnlockShortcutSetting() {
                 Button(
                     enabled = !restricted,
                     onClick = {
-                        if (isListening) {
-                            isListening = false
-                        } else {
-                            isListening = true
-                        }
+                        isListening = !isListening
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (isListening) {

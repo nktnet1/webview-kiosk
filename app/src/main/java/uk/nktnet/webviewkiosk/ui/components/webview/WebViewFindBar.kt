@@ -71,7 +71,9 @@ fun WebViewFindBar(
     focusRequester: FocusRequester,
     focusRequestKey: Int,
 ) {
-    if (!isActiveFindInPage) return
+    if (!isActiveFindInPage) {
+        return
+    }
 
     var query by remember { mutableStateOf("") }
     var currentMatch by remember { mutableIntStateOf(0) }
@@ -110,7 +112,6 @@ fun WebViewFindBar(
                 .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
                 .requestFocusWhenPlaced(
                     focusRequester = focusRequester,
-                    enabled = isActiveFindInPage,
                     requestKey = focusRequestKey,
                 )
                 .weight(1f),
