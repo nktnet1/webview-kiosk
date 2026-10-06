@@ -89,11 +89,13 @@ class BlobInterface(
     private val activeDownloads =
         ConcurrentHashMap<String, ActiveDownload>()
 
+    @Synchronized
     fun dispose() {
         isActive = false
         abortAllDownloads()
     }
 
+    @Synchronized
     @JavascriptInterface
     fun abortAllDownloads() {
         activeDownloads.keys.toList().forEach(::abortInternal)
@@ -108,6 +110,7 @@ class BlobInterface(
     }
 
     @Suppress("unused")
+    @Synchronized
     @JavascriptInterface
     fun startDownload(
         transferId: String,
@@ -139,8 +142,13 @@ class BlobInterface(
                 downloads.mkdirs()
             }
 
-            val file = File(downloads, filename)
-            val output = FileOutputStream(file)
+            val file = createDownloadFile(downloads, filename)
+            val output = try {
+                FileOutputStream(file)
+            } catch (e: Exception) {
+                file.delete()
+                throw e
+            }
 
             activeDownloads[transferId] = ActiveDownload(
                 file = file,
@@ -286,6 +294,23 @@ class BlobInterface(
             } catch (e: Exception) {
                 Log.e(javaClass.simpleName, "Failed to delete file during abort", e)
             }
+        }
+    }
+
+    private fun createDownloadFile(directory: File, filename: String): File {
+        val extensionIndex = filename.lastIndexOf('.').takeIf { it > 0 }
+        val stem = extensionIndex?.let { filename.substring(0, it) } ?: filename
+        val extension = extensionIndex?.let { filename.substring(it) }.orEmpty()
+        var suffix = 0
+        while (true) {
+            val name = if (suffix == 0) filename else "$stem ($suffix)$extension"
+            val file = File(directory, name)
+            // Reserve the name atomically so neither existing files nor another
+            // active transfer can be overwritten or deleted by this download.
+            if (file.createNewFile()) {
+                return file
+            }
+            suffix++
         }
     }
 

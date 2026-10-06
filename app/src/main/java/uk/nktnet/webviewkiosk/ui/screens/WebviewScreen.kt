@@ -430,7 +430,7 @@ fun WebviewScreen(navController: NavController) {
         webView.loadUrl(newUrl)
     }
 
-    LaunchedEffect(retryAfterLocalNetworkPermission) {
+    LaunchedEffect(webView, retryAfterLocalNetworkPermission) {
         if (retryAfterLocalNetworkPermission) {
             retryAfterLocalNetworkPermission = false
             if (!LockStateSingleton.isLocked.value) {
@@ -444,7 +444,7 @@ fun WebviewScreen(navController: NavController) {
     }.collectAsState(initial = true)
     var previousOnline by remember { mutableStateOf<Boolean?>(null) }
 
-    LaunchedEffect(isOnline) {
+    LaunchedEffect(webView, isOnline) {
         if (previousOnline != null && previousOnline != isOnline) {
             if (isOnline) {
                 when (userSettings.refreshOnNetworkAvailable) {
@@ -482,7 +482,7 @@ fun WebviewScreen(navController: NavController) {
         userSettings.refreshOnLoadingErrorIntervalSeconds
         >= Constants.MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS
     ) {
-        LaunchedEffect(lastErrorUrl) {
+        LaunchedEffect(webView, lastErrorUrl) {
             while (lastErrorUrl.isNotEmpty()) {
                 delay(
                     (userSettings.refreshOnLoadingErrorIntervalSeconds * 1000).milliseconds
@@ -703,7 +703,7 @@ fun WebviewScreen(navController: NavController) {
         onOpenImage = { url -> customLoadUrl(url) }
     )
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(webView) {
         RemoteMessageManager.commandsFlow.collect { command ->
             when (command.message) {
                 is InboundGoBackCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)
