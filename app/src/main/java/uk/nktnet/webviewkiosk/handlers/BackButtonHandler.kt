@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.delay
@@ -24,6 +25,7 @@ fun BackPressHandler(
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
+    val currentLoadUrl by rememberUpdatedState(customLoadUrl)
 
     val scope = rememberCoroutineScope()
     var enableBack by remember { mutableStateOf(true) }
@@ -31,7 +33,7 @@ fun BackPressHandler(
     LaunchedEffect(userSettings.allowBackwardsNavigation) {
         BackButtonStateSingleton.shortPressEvents.collect {
             if (userSettings.allowBackwardsNavigation && enableBack) {
-                WebViewNavigation.goBack(customLoadUrl, systemSettings)
+                WebViewNavigation.goBack(currentLoadUrl, systemSettings)
             }
         }
     }
@@ -41,7 +43,7 @@ fun BackPressHandler(
             BackButtonStateSingleton.longPressEvents.collect {
                 enableBack = false
                 if (userSettings.backButtonHoldAction == BackButtonHoldActionOption.GO_HOME) {
-                    WebViewNavigation.goHome(customLoadUrl, systemSettings, userSettings)
+                    WebViewNavigation.goHome(currentLoadUrl, systemSettings, userSettings)
                 }
                 scope.launch {
                     delay(1000.milliseconds)

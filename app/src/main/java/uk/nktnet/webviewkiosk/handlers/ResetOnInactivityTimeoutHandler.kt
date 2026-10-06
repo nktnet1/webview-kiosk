@@ -14,6 +14,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +40,7 @@ fun ResetOnInactivityTimeoutHandler(
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
+    val currentLoadUrl by rememberUpdatedState(customLoadUrl)
 
     val timeoutDuration = max(
         userSettings.resetOnInactivitySeconds,
@@ -52,7 +54,7 @@ fun ResetOnInactivityTimeoutHandler(
 
     val handleTimeoutReached = {
         systemSettings.clearHistory()
-        customLoadUrl(userSettings.homeUrl)
+        currentLoadUrl(userSettings.homeUrl)
         UserInteractionStateSingleton.onUserInteraction()
     }
 

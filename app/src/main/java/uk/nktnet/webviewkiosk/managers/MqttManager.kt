@@ -709,11 +709,13 @@ object MqttManager {
         whenComplete: ((Mqtt5PublishResult?, Throwable?) -> Unit)? = null
     ) {
         if (!isValidMqttPublishTopic(topic)) {
+            val error = IllegalArgumentException("Invalid publish topic name.")
             addDebugLog(
                 "publish failed",
                 "topic: $topic\nerror: Invalid publish topic name.",
                 messageId,
             )
+            whenComplete?.invoke(null, error)
             return
         }
 
@@ -754,6 +756,7 @@ object MqttManager {
                 "topic: $topic\nerror: $e",
                 messageId,
             )
+            whenComplete?.invoke(null, e)
         }
     }
 
@@ -971,6 +974,8 @@ object MqttManager {
         }
     }
 
+    fun isInitialized(): Boolean = ::config.isInitialized
+
     fun isConnected(): Boolean = client?.state?.isConnected ?: false
 
     fun isConnectedOrReconnect(): Boolean = client?.state?.isConnectedOrReconnect ?: false
@@ -1004,17 +1009,12 @@ object MqttManager {
             return
         }
 
-        publishEventMessage(
-            c,
-            OutboundDisconnectingEvent(
-                messageId = UUID.randomUUID().toString(),
-                username = config.username,
-                appInstanceId = config.appInstanceId,
-                data = OutboundDisconnectingEvent.DisconnectingData(
-                    cause = cause,
-                )
-            ),
-            whenComplete = { _, _ ->
+        val disconnectStarted = AtomicBoolean(false)
+        fun disconnectClient() {
+            if (!disconnectStarted.compareAndSet(false, true)) {
+                return
+            }
+            try {
                 @SuppressLint("NewApi")
                 c.disconnectWith()
                     .userProperties()
@@ -1023,15 +1023,36 @@ object MqttManager {
                         .applyUserProperties()
                     .send()
                     .whenComplete { _, throwable ->
-                    if (throwable == null) {
-                        onDisconnected?.invoke()
-                    } else {
-                        addDebugLog("disconnect failed", throwable.message)
-                        onError?.invoke(throwable.message)
+                        if (throwable == null) {
+                            onDisconnected?.invoke()
+                        } else {
+                            addDebugLog("disconnect failed", throwable.message)
+                            onError?.invoke(throwable.message)
+                        }
                     }
-                }
+            } catch (e: Exception) {
+                addDebugLog("disconnect failed", e.message)
+                Log.e(javaClass.simpleName, "Failed to build MQTT disconnect", e)
+                onError?.invoke(e.message)
             }
-        )
+        }
+
+        try {
+            publishEventMessage(
+                c,
+                OutboundDisconnectingEvent(
+                    messageId = UUID.randomUUID().toString(),
+                    username = config.username,
+                    appInstanceId = config.appInstanceId,
+                    data = OutboundDisconnectingEvent.DisconnectingData(cause),
+                ),
+                whenComplete = { _, _ -> disconnectClient() },
+            )
+        } catch (e: Exception) {
+            addDebugLog("disconnect event failed", e.message)
+            Log.e(javaClass.simpleName, "Failed to publish MQTT disconnect event", e)
+            disconnectClient()
+        }
     }
 
     fun clearLogs() {

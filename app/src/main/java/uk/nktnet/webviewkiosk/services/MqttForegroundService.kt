@@ -21,9 +21,11 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.MainActivity
+import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.handlers.RemoteInboundHandler
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.CustomNotificationType
+import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import kotlin.time.Duration.Companion.milliseconds
@@ -107,6 +109,12 @@ class MqttForegroundService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        val userSettings = UserSettings(this)
+        if (!userSettings.mqttEnabled || !userSettings.mqttUseForegroundService) {
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
+
         val contentIntent = PendingIntent.getActivity(
             this,
             0,
@@ -115,6 +123,8 @@ class MqttForegroundService : Service() {
         )
 
         try {
+            // A sticky restart may be the first entry point in a fresh process.
+            CustomNotificationManager.init(applicationContext)
             ServiceCompat.startForeground(
                 this,
                 CustomNotificationType.MQTT_SERVICE,
@@ -129,7 +139,7 @@ class MqttForegroundService : Service() {
                     0
                 }
             )
-        } catch (e: IllegalStateException) {
+        } catch (e: Exception) {
             Log.e(
                 javaClass.simpleName,
                 "MQTT foreground service is not allowed to enter the foreground",
@@ -137,6 +147,17 @@ class MqttForegroundService : Service() {
             )
             stopSelf(startId)
             return START_NOT_STICKY
+        }
+
+        if (!MqttManager.isInitialized()) {
+            try {
+                DeviceOwnerManager.init(applicationContext)
+                MqttManager.connect(applicationContext)
+            } catch (e: Exception) {
+                Log.e(javaClass.simpleName, "Unable to restore MQTT after service restart", e)
+                stopSelf(startId)
+                return START_NOT_STICKY
+            }
         }
 
         isServiceActive = true

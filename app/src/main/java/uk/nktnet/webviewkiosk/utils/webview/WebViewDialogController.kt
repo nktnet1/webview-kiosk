@@ -114,7 +114,7 @@ class WebViewDialogController(context: Context) {
                 }
                 current = base
             }
-            return current as? Activity
+            return null
         }
     }
 }
