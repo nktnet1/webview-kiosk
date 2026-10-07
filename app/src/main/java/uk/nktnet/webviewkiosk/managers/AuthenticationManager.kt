@@ -61,7 +61,7 @@ object AuthenticationManager {
         val now = System.currentTimeMillis()
         return (
             now <= authBypassUntil
-            || (lastAuthTime > 0L && now >= lastAuthTime && now - lastAuthTime < AUTH_TIMEOUT_MS)
+            || (lastAuthTime in 1..now && now - lastAuthTime < AUTH_TIMEOUT_MS)
         )
     }
 

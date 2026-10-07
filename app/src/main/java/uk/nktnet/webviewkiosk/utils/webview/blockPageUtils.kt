@@ -25,10 +25,10 @@ fun isBlockedUrl(
     blacklistRegexes: List<Regex>,
     whitelistRegexes: List<Regex>
 ): Boolean {
-    return if (whitelistRegexes.any { it.containsMatchIn(url) }) {
-        false
-    } else {
-        blacklistRegexes.any { it.containsMatchIn(url) }
+    return !whitelistRegexes.any {
+        it.containsMatchIn(url)
+    } && blacklistRegexes.any {
+        it.containsMatchIn(url)
     }
 }
 

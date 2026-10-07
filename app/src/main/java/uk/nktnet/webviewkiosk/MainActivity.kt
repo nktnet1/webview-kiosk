@@ -587,10 +587,7 @@ open class MainActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (handleKeyEvent(this, event)) {
-            return true
-        }
-        return super.dispatchKeyEvent(event)
+        return handleKeyEvent(this, event) || super.dispatchKeyEvent(event)
     }
 
     override fun onDestroy() {

@@ -101,11 +101,7 @@ private fun isWebPdf(
         ?.substringBefore(';')
         ?.trim()
 
-    if (normalizedMimeType.equals("application/pdf", ignoreCase = true)) {
-        return true
-    }
-
-    return URLUtil.guessFileName(
+    return normalizedMimeType.equals("application/pdf", ignoreCase = true) || URLUtil.guessFileName(
         url,
         contentDisposition,
         mimeType
@@ -629,6 +625,7 @@ fun createCustomWebview(
                     super.onReceivedError(view, request, error)
                 }
 
+                @Suppress("DeprecatedCallableAddReplaceWith")
                 @Deprecated("For API < 23")
                 override fun onReceivedError(
                     view: WebView?,
@@ -663,7 +660,7 @@ fun createCustomWebview(
                 ): Boolean {
                     Log.e(
                         Constants.APP_SCHEME,
-                        "WebView renderer gone. crashed=${detail.didCrash()}"
+                        "WebView renderer gone. crashed=${detail}"
                     )
                     dialogs.dispose()
                     (view.parent as? ViewGroup)?.removeView(view)

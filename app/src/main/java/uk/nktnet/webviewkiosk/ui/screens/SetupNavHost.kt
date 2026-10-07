@@ -1,3 +1,5 @@
+@file:Suppress("UnusedVariable")
+
 package uk.nktnet.webviewkiosk.ui.screens
 
 import android.os.Build
@@ -90,7 +92,13 @@ private fun KeepLegacyInsetsListenerAttached() {
         // Authentication placeholders have no inset consumers. Keep the activity listener
         // attached across navigation so legacy inset animations finish and clear their
         // cached animation state.
-        @Suppress("UNUSED_VARIABLE")
+        // The transition hides this issue, but can be reproduced by adding the following
+        // properties to NavHost:
+        //     enterTransition = { EnterTransition.None },
+        //     exitTransition = { ExitTransition.None },
+        //     popEnterTransition = { EnterTransition.None },
+        //     popExitTransition = { ExitTransition.None },
+        @Suppress("Unused")
         val activityImeInsets = WindowInsets.ime
     }
 }
