@@ -35,12 +35,14 @@ const val RESET_TIMEOUT_INT = -1
 
 @Composable
 fun ResetOnInactivityTimeoutHandler(
-    customLoadUrl: (newUrl: String) -> Unit
+    customLoadUrl: (newUrl: String) -> Unit,
+    canHandleEvents: () -> Boolean,
 ) {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
     val currentLoadUrl by rememberUpdatedState(customLoadUrl)
+    val currentCanHandleEvents by rememberUpdatedState(canHandleEvents)
 
     val timeoutDuration = max(
         userSettings.resetOnInactivitySeconds,
@@ -53,9 +55,11 @@ fun ResetOnInactivityTimeoutHandler(
     val lastInteraction by UserInteractionStateSingleton.lastInteractionState.collectAsState()
 
     val handleTimeoutReached = {
-        systemSettings.clearHistory()
-        currentLoadUrl(userSettings.homeUrl)
-        UserInteractionStateSingleton.onUserInteraction()
+        if (currentCanHandleEvents()) {
+            systemSettings.clearHistory()
+            currentLoadUrl(userSettings.homeUrl)
+            UserInteractionStateSingleton.onUserInteraction()
+        }
     }
 
     LaunchedEffect(lastInteraction) {

@@ -92,8 +92,22 @@ open class MainActivity : AppCompatActivity() {
     private var pendingDhizukuPermissionRequest = false
     private var deviceOwnerInitJob: Job? = null
 
+    // Android 6 can keep the HOME routing activity and private kiosk host alive together.
+    // Track their shared lifecycle on the main thread, retaining one event/UI host in background.
+    companion object {
+        private val createdHosts = mutableSetOf<MainActivity>()
+        private val startedHosts = mutableSetOf<MainActivity>()
+        private var android6EventHost by mutableStateOf<MainActivity?>(null)
+    }
+
+    internal fun isApplicationEventHost(): Boolean =
+        Build.VERSION.SDK_INT != Build.VERSION_CODES.M || android6EventHost === this
+
     val broadcastReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
+            if (!isApplicationEventHost()) {
+                return
+            }
             when (intent.action) {
                 Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED -> {
                     if (this@MainActivity::navController.isInitialized) {
@@ -122,6 +136,7 @@ open class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        createdHosts.add(this)
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
             // On API 23, enableEdgeToEdge() uses legacy systemUiVisibility layout flags.
             // AppCompat can overwrite those flags while creating the decor view, leaving the
@@ -195,11 +210,12 @@ open class MainActivity : AppCompatActivity() {
             val context = LocalContext.current
 
             val activity = LocalActivity.current
+            val handlesApplicationEvents = isApplicationEventHost()
             val handlesAuthentication = if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
                 // The API 23 workaround keeps both MainActivity and Android6KioskActivity alive.
                 // Only the resumed host may display or consume the process-wide auth prompt.
                 val lifecycleState by lifecycle.currentStateFlow.collectAsState()
-                lifecycleState == Lifecycle.State.RESUMED
+                handlesApplicationEvents && lifecycleState == Lifecycle.State.RESUMED
             } else {
                 true
             }
@@ -207,8 +223,10 @@ open class MainActivity : AppCompatActivity() {
             LaunchedEffect(Unit) {
                 RemoteMessageManager.commandsFlow.collect { command ->
                     if (
-                        command.source == RemoteMessageManager.RemoteMessage.Source.MQTT
+                        isApplicationEventHost()
+                        && command.source == RemoteMessageManager.RemoteMessage.Source.MQTT
                         && !userSettings.mqttUseForegroundService
+                        && command.tryClaim()
                     ) {
                         RemoteInboundHandler.handleInboundCommand(context, command.message)
                     }
@@ -218,8 +236,10 @@ open class MainActivity : AppCompatActivity() {
             LaunchedEffect(Unit) {
                 RemoteMessageManager.requestsFlow.collect { request ->
                     if (
-                        request.source == RemoteMessageManager.RemoteMessage.Source.MQTT
+                        isApplicationEventHost()
+                        && request.source == RemoteMessageManager.RemoteMessage.Source.MQTT
                         && !userSettings.mqttUseForegroundService
+                        && request.tryClaim()
                     ) {
                         RemoteInboundHandler.handleInboundMqttRequest(context, request.message)
                     }
@@ -229,7 +249,8 @@ open class MainActivity : AppCompatActivity() {
             LaunchedEffect(Unit) {
                 RemoteMessageManager.settingsFlow.collect { settings ->
                     if (
-                        settings.source == RemoteMessageManager.RemoteMessage.Source.MQTT
+                        isApplicationEventHost()
+                        && settings.source == RemoteMessageManager.RemoteMessage.Source.MQTT
                         && !userSettings.mqttUseForegroundService
                         && settings.tryClaim()
                     ) {
@@ -242,7 +263,7 @@ open class MainActivity : AppCompatActivity() {
 
             LaunchedEffect(Unit) {
                 RemoteMessageManager.settingsAppliedFlow.collect { settings ->
-                    if (settings.message.reloadActivity) {
+                    if (isApplicationEventHost() && settings.message.reloadActivity) {
                         lifecycleScope.launch(Dispatchers.Main) {
                             delay(100.milliseconds)
                             if (settings.message.reloadActivity) {
@@ -373,7 +394,10 @@ open class MainActivity : AppCompatActivity() {
                         if (handlesAuthentication) {
                             CustomAuthPasswordDialog()
                         }
-                        SetupNavHost(navController)
+                        if (handlesApplicationEvents) {
+                            // Dispose the inactive host's WebView, timers and global command collectors.
+                            SetupNavHost(navController)
+                        }
                     }
                 }
             }
@@ -402,6 +426,10 @@ open class MainActivity : AppCompatActivity() {
     }
 
     override fun onStart() {
+        startedHosts.add(this)
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
+            android6EventHost = this
+        }
         super.onStart()
         lastOnStartTime = System.currentTimeMillis()
         AuthenticationManager.init(this)
@@ -469,7 +497,8 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onStop() {
         super.onStop()
-        if (!isChangingConfigurations) {
+        startedHosts.remove(this)
+        if (!isChangingConfigurations && startedHosts.isEmpty()) {
             AuthenticationManager.resetAuthentication()
             if (userSettings.mqttUseForegroundService) {
                 if (MqttManager.isConnected()) {
@@ -558,19 +587,18 @@ open class MainActivity : AppCompatActivity() {
     }
 
     override fun dispatchKeyEvent(event: KeyEvent): Boolean {
-        if (handleKeyEvent(this, event)) {
-            return true
-        }
-        return super.dispatchKeyEvent(event)
+        return handleKeyEvent(this, event) || super.dispatchKeyEvent(event)
     }
 
     override fun onDestroy() {
+        createdHosts.remove(this)
+        startedHosts.remove(this)
+        if (android6EventHost === this) {
+            android6EventHost = startedHosts.lastOrNull() ?: createdHosts.lastOrNull()
+        }
         unregisterReceiver(broadcastReceiver)
-        if (!isChangingConfigurations) {
-            if (
-                userSettings.mqttUseForegroundService
-                && MqttManager.isConnected()
-            ) {
+        if (!isChangingConfigurations && createdHosts.isEmpty()) {
+            if (userSettings.mqttUseForegroundService) {
                 MqttManager.disconnect(
                     cause = OutboundDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_DESTROYED
                 )

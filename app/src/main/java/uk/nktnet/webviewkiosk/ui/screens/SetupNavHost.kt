@@ -1,7 +1,10 @@
+@file:Suppress("UnusedVariable")
+
 package uk.nktnet.webviewkiosk.ui.screens
 
-import androidx.compose.animation.EnterTransition
-import androidx.compose.animation.ExitTransition
+import android.os.Build
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -14,6 +17,8 @@ import uk.nktnet.webviewkiosk.utils.authComposable
 fun SetupNavHost(
     navController: NavHostController,
 ) {
+    KeepLegacyInsetsListenerAttached()
+
     val settingsScreens: List<Pair<String, @Composable () -> Unit>> = listOf(
         Screen.Settings.route to { SettingsListScreen(navController) },
         Screen.SettingsMoreActions.route to { SettingsMoreActionsScreen(navController) },
@@ -64,11 +69,6 @@ fun SetupNavHost(
     NavHost(
         navController = navController,
         startDestination = Screen.WebView.route,
-        // Avoid animating the nested AndroidView/ComposeView hierarchy during navigation.
-        enterTransition = { EnterTransition.None },
-        exitTransition = { ExitTransition.None },
-        popEnterTransition = { EnterTransition.None },
-        popExitTransition = { ExitTransition.None },
     ) {
         composable(Screen.WebView.route) {
             WebviewScreen(navController)
@@ -83,5 +83,22 @@ fun SetupNavHost(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun KeepLegacyInsetsListenerAttached() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+        // Authentication placeholders have no inset consumers. Keep the activity listener
+        // attached across navigation so legacy inset animations finish and clear their
+        // cached animation state.
+        // The transition hides this issue, but can be reproduced by adding the following
+        // properties to NavHost:
+        //     enterTransition = { EnterTransition.None },
+        //     exitTransition = { ExitTransition.None },
+        //     popEnterTransition = { EnterTransition.None },
+        //     popExitTransition = { ExitTransition.None },
+        @Suppress("Unused")
+        val activityImeInsets = WindowInsets.ime
     }
 }

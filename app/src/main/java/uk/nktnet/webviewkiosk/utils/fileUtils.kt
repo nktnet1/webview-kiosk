@@ -280,15 +280,12 @@ fun getMimeType(context: Context, uri: Uri): String? {
 }
 
 fun isSupportedFileURLMimeType(mimeType: String?): Boolean {
-    if (mimeType == null) {
-        return false
-    }
-    return supportedMimeTypesArray.any { supported ->
+    return mimeType != null && supportedMimeTypesArray.any { supported ->
         supported == mimeType
-        || (
+            || (
             supported.endsWith("/*")
-            && mimeType.startsWith(supported.substringBefore("/*"))
-        )
+                && mimeType.startsWith(supported.substringBefore("/*"))
+            )
     }
 }
 

@@ -12,20 +12,20 @@ object WebViewNavigation {
         val index = systemSettings.historyIndex
         if (index > 0) {
             val newIndex = index - 1
+            val entry = systemSettings.historyStack.getOrNull(newIndex) ?: return
             systemSettings.historyIndex = newIndex
             isProgrammaticNavigation = true
-            customLoadUrl(systemSettings.historyStack[newIndex].url)
+            customLoadUrl(entry.url)
         }
     }
 
     fun goForward(customLoadUrl: (newUrl: String) -> Unit, systemSettings: SystemSettings) {
         val index = systemSettings.historyIndex
-        if (index < systemSettings.historyStack.lastIndex) {
-            val newIndex = index + 1
-            systemSettings.historyIndex = newIndex
-            isProgrammaticNavigation = true
-            customLoadUrl(systemSettings.historyStack[newIndex].url)
-        }
+        val newIndex = index + 1
+        val entry = systemSettings.historyStack.getOrNull(newIndex) ?: return
+        systemSettings.historyIndex = newIndex
+        isProgrammaticNavigation = true
+        customLoadUrl(entry.url)
     }
 
     fun goHome(
@@ -57,11 +57,10 @@ object WebViewNavigation {
         systemSettings: SystemSettings,
         index: Int,
     ) {
-        if (index in systemSettings.historyStack.indices) {
-            isProgrammaticNavigation = true
-            systemSettings.historyIndex = index
-            customLoadUrl(systemSettings.historyStack[index].url)
-        }
+        val entry = systemSettings.historyStack.getOrNull(index) ?: return
+        isProgrammaticNavigation = true
+        systemSettings.historyIndex = index
+        customLoadUrl(entry.url)
     }
 
     fun appendWebviewHistory(
@@ -110,14 +109,15 @@ object WebViewNavigation {
     }
 
     fun clearHistory(systemSettings: SystemSettings) {
-        if (systemSettings.historyStack.isEmpty()) {
+        val stack = systemSettings.historyStack
+        if (stack.isEmpty()) {
             return
         }
         val currentIndex = systemSettings.historyIndex.coerceIn(
             0,
-            systemSettings.historyStack.lastIndex
+            stack.lastIndex
         )
-        val currentEntry = systemSettings.historyStack.getOrNull(currentIndex)
+        val currentEntry = stack.getOrNull(currentIndex)
         if (currentEntry != null) {
             systemSettings.historyStack = listOf(currentEntry)
             systemSettings.historyIndex = 0

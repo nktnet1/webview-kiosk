@@ -128,22 +128,27 @@ object AppFlowManager {
         val current = mutableListOf<LaunchableAppInfo>()
 
         for ((pkg, pair) in resolved) {
-            val appInfo = pm.getApplicationInfo(pkg, 0)
-            val (list, lockTaskPermitted) = pair
-            current.add(
-                LaunchableAppInfo(
-                    packageName = pkg,
-                    name = pm.getApplicationLabel(appInfo).toString(),
-                    icon = pm.getApplicationIcon(appInfo),
-                    activities = list.map {
-                        LaunchableAppInfo.Activity(
-                            label = it.loadLabel(pm).toString(),
-                            name = it.activityInfo.name
-                        )
-                    },
-                    isLockTaskPermitted = lockTaskPermitted
+            try {
+                val appInfo = pm.getApplicationInfo(pkg, 0)
+                val (list, lockTaskPermitted) = pair
+                current.add(
+                    LaunchableAppInfo(
+                        packageName = pkg,
+                        name = pm.getApplicationLabel(appInfo).toString(),
+                        icon = pm.getApplicationIcon(appInfo),
+                        activities = list.map {
+                            LaunchableAppInfo.Activity(
+                                label = it.loadLabel(pm).toString(),
+                                name = it.activityInfo.name
+                            )
+                        },
+                        isLockTaskPermitted = lockTaskPermitted
+                    )
                 )
-            )
+            } catch (e: PackageManager.NameNotFoundException) {
+                // Packages can disappear between the initial query and loading each entry.
+                Log.w(javaClass.simpleName, "Launchable package disappeared: $pkg", e)
+            }
 
             processed++
 
@@ -191,18 +196,26 @@ object AppFlowManager {
         val currentChunk = mutableListOf<AdminAppInfo>()
 
         filteredReceivers.forEachIndexed { index, deviceAdminInfo ->
-            val appInfo = pm.getApplicationInfo(deviceAdminInfo.packageName, 0)
-            currentChunk.add(
-                AdminAppInfo(
-                    packageName = appInfo.packageName,
-                    name = pm.getApplicationLabel(appInfo).toString(),
-                    icon = pm.getApplicationIcon(appInfo),
-                    admin = ComponentName(
-                        deviceAdminInfo.packageName,
-                        deviceAdminInfo.receiverName
+            try {
+                val appInfo = pm.getApplicationInfo(deviceAdminInfo.packageName, 0)
+                currentChunk.add(
+                    AdminAppInfo(
+                        packageName = appInfo.packageName,
+                        name = pm.getApplicationLabel(appInfo).toString(),
+                        icon = pm.getApplicationIcon(appInfo),
+                        admin = ComponentName(
+                            deviceAdminInfo.packageName,
+                            deviceAdminInfo.receiverName
+                        )
                     )
                 )
-            )
+            } catch (e: PackageManager.NameNotFoundException) {
+                Log.w(
+                    javaClass.simpleName,
+                    "Device admin package disappeared: ${deviceAdminInfo.packageName}",
+                    e
+                )
+            }
 
             if (currentChunk.size == chunkSize || index == total - 1) {
                 emit(

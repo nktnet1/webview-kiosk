@@ -101,11 +101,7 @@ private fun isWebPdf(
         ?.substringBefore(';')
         ?.trim()
 
-    if (normalizedMimeType.equals("application/pdf", ignoreCase = true)) {
-        return true
-    }
-
-    return URLUtil.guessFileName(
+    return normalizedMimeType.equals("application/pdf", ignoreCase = true) || URLUtil.guessFileName(
         url,
         contentDisposition,
         mimeType
@@ -473,8 +469,16 @@ fun createCustomWebview(
                     view: WebView?,
                     request: WebResourceRequest?
                 ): Boolean {
-                    val requestUrl = request?.url.toString()
-                    if (requestUrl.isEmpty()) {
+                    return handleUrlLoading(view, request?.url?.toString())
+                }
+
+                @Deprecated("For API < 24")
+                override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                    return handleUrlLoading(view, url)
+                }
+
+                private fun handleUrlLoading(view: WebView?, requestUrl: String?): Boolean {
+                    if (requestUrl.isNullOrEmpty()) {
                         return false
                     }
                     systemSettings.urlBeingHandled = requestUrl
@@ -496,11 +500,6 @@ fun createCustomWebview(
                             loadUrl(blockUrl)
                             return true
                         }
-                    } else if (schemeType == SchemeType.OTHER) {
-                        if (userSettings.allowOtherUrlSchemes) {
-                            handleExternalSchemeUrl(context, requestUrl)
-                        }
-                        return true
                     }
 
                     if (blockCause != null) {
@@ -519,6 +518,13 @@ fun createCustomWebview(
                             }
 
                             else -> Unit
+                        }
+                        return true
+                    }
+
+                    if (schemeType == SchemeType.OTHER) {
+                        if (userSettings.allowOtherUrlSchemes) {
+                            handleExternalSchemeUrl(context, requestUrl)
                         }
                         return true
                     }
@@ -621,6 +627,7 @@ fun createCustomWebview(
                     super.onReceivedError(view, request, error)
                 }
 
+                @Suppress("DeprecatedCallableAddReplaceWith")
                 @Deprecated("For API < 23")
                 override fun onReceivedError(
                     view: WebView?,
@@ -655,7 +662,7 @@ fun createCustomWebview(
                 ): Boolean {
                     Log.e(
                         Constants.APP_SCHEME,
-                        "WebView renderer gone. crashed=${detail.didCrash()}"
+                        "WebView renderer gone. crashed=${detail}"
                     )
                     dialogs.dispose()
                     (view.parent as? ViewGroup)?.removeView(view)

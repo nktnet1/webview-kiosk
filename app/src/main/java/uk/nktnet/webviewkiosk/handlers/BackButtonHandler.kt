@@ -21,18 +21,24 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun BackPressHandler(
     customLoadUrl: (newUrl: String) -> Unit,
+    canHandleEvents: () -> Boolean,
 ) {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
     val currentLoadUrl by rememberUpdatedState(customLoadUrl)
+    val currentCanHandleEvents by rememberUpdatedState(canHandleEvents)
 
     val scope = rememberCoroutineScope()
     var enableBack by remember { mutableStateOf(true) }
 
     LaunchedEffect(userSettings.allowBackwardsNavigation) {
         BackButtonStateSingleton.shortPressEvents.collect {
-            if (userSettings.allowBackwardsNavigation && enableBack) {
+            if (
+                currentCanHandleEvents()
+                && userSettings.allowBackwardsNavigation
+                && enableBack
+            ) {
                 WebViewNavigation.goBack(currentLoadUrl, systemSettings)
             }
         }
@@ -41,6 +47,9 @@ fun BackPressHandler(
     LaunchedEffect(userSettings.backButtonHoldAction) {
         if (userSettings.backButtonHoldAction != BackButtonHoldActionOption.DISABLED) {
             BackButtonStateSingleton.longPressEvents.collect {
+                if (!currentCanHandleEvents()) {
+                    return@collect
+                }
                 enableBack = false
                 if (userSettings.backButtonHoldAction == BackButtonHoldActionOption.GO_HOME) {
                     WebViewNavigation.goHome(currentLoadUrl, systemSettings, userSettings)

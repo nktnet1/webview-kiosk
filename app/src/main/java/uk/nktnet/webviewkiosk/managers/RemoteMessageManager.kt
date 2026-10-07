@@ -21,7 +21,7 @@ object RemoteMessageManager {
 
         private val claimed = AtomicBoolean(false)
 
-        // Activity and service collectors must apply a settings emission only once.
+        // Activity/service collectors share this claim; WebView actions are handled separately.
         fun tryClaim(): Boolean = claimed.compareAndSet(false, true)
     }
 

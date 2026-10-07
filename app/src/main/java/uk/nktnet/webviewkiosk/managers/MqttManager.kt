@@ -1099,8 +1099,6 @@ object MqttManager {
 
     fun isConnected(): Boolean = client?.state?.isConnected ?: false
 
-    fun isConnectedOrReconnect(): Boolean = client?.state?.isConnectedOrReconnect ?: false
-
     fun getState() = client?.state ?: MqttClientState.DISCONNECTED
 
     @Synchronized
