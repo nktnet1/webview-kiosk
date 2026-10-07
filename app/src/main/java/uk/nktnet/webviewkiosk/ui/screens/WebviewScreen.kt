@@ -46,6 +46,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -705,6 +706,10 @@ fun WebviewScreen(navController: NavController) {
 
     LaunchedEffect(webView) {
         RemoteMessageManager.commandsFlow.collect { command ->
+            // A host change takes effect before Compose disposes the previous NavHost.
+            if ((activity as? MainActivity)?.isApplicationEventHost() == false) {
+                return@collect
+            }
             when (command.message) {
                 is InboundGoBackCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)
                 is InboundGoForwardCommand -> WebViewNavigation.goForward(::customLoadUrl, systemSettings)

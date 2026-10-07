@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.handlers
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -11,6 +12,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
@@ -23,6 +25,7 @@ fun BackPressHandler(
     customLoadUrl: (newUrl: String) -> Unit,
 ) {
     val context = LocalContext.current
+    val activity = LocalActivity.current
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
     val currentLoadUrl by rememberUpdatedState(customLoadUrl)
@@ -32,7 +35,11 @@ fun BackPressHandler(
 
     LaunchedEffect(userSettings.allowBackwardsNavigation) {
         BackButtonStateSingleton.shortPressEvents.collect {
-            if (userSettings.allowBackwardsNavigation && enableBack) {
+            if (
+                (activity as? MainActivity)?.isApplicationEventHost() != false
+                && userSettings.allowBackwardsNavigation
+                && enableBack
+            ) {
                 WebViewNavigation.goBack(currentLoadUrl, systemSettings)
             }
         }
@@ -41,6 +48,9 @@ fun BackPressHandler(
     LaunchedEffect(userSettings.backButtonHoldAction) {
         if (userSettings.backButtonHoldAction != BackButtonHoldActionOption.DISABLED) {
             BackButtonStateSingleton.longPressEvents.collect {
+                if ((activity as? MainActivity)?.isApplicationEventHost() == false) {
+                    return@collect
+                }
                 enableBack = false
                 if (userSettings.backButtonHoldAction == BackButtonHoldActionOption.GO_HOME) {
                     WebViewNavigation.goHome(currentLoadUrl, systemSettings, userSettings)

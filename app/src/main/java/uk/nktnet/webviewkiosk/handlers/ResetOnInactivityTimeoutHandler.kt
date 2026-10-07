@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.handlers
 
 import android.util.Log
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.delay
+import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -38,6 +40,7 @@ fun ResetOnInactivityTimeoutHandler(
     customLoadUrl: (newUrl: String) -> Unit
 ) {
     val context = LocalContext.current
+    val activity = LocalActivity.current
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
     val currentLoadUrl by rememberUpdatedState(customLoadUrl)
@@ -53,9 +56,11 @@ fun ResetOnInactivityTimeoutHandler(
     val lastInteraction by UserInteractionStateSingleton.lastInteractionState.collectAsState()
 
     val handleTimeoutReached = {
-        systemSettings.clearHistory()
-        currentLoadUrl(userSettings.homeUrl)
-        UserInteractionStateSingleton.onUserInteraction()
+        if ((activity as? MainActivity)?.isApplicationEventHost() != false) {
+            systemSettings.clearHistory()
+            currentLoadUrl(userSettings.homeUrl)
+            UserInteractionStateSingleton.onUserInteraction()
+        }
     }
 
     LaunchedEffect(lastInteraction) {

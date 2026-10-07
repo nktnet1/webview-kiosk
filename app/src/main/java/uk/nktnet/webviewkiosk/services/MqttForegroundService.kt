@@ -78,7 +78,10 @@ class MqttForegroundService : Service() {
 
         mqttCommandJob = scope.launch {
             RemoteMessageManager.commandsFlow.collect { command ->
-                if (command.source == RemoteMessageManager.RemoteMessage.Source.MQTT) {
+                if (
+                    command.source == RemoteMessageManager.RemoteMessage.Source.MQTT
+                    && command.tryClaim()
+                ) {
                     RemoteInboundHandler.handleInboundCommand(
                         this@MqttForegroundService,
                         command.message
@@ -102,7 +105,10 @@ class MqttForegroundService : Service() {
         }
         mqttRequestJob = scope.launch {
             RemoteMessageManager.requestsFlow.collect { request ->
-                if (request.source == RemoteMessageManager.RemoteMessage.Source.MQTT) {
+                if (
+                    request.source == RemoteMessageManager.RemoteMessage.Source.MQTT
+                    && request.tryClaim()
+                ) {
                     RemoteInboundHandler.handleInboundMqttRequest(
                         this@MqttForegroundService,
                         request.message
