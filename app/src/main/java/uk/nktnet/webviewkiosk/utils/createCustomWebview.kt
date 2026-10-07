@@ -473,8 +473,16 @@ fun createCustomWebview(
                     view: WebView?,
                     request: WebResourceRequest?
                 ): Boolean {
-                    val requestUrl = request?.url.toString()
-                    if (requestUrl.isEmpty()) {
+                    return handleUrlLoading(view, request?.url?.toString())
+                }
+
+                @Deprecated("For API < 24")
+                override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                    return handleUrlLoading(view, url)
+                }
+
+                private fun handleUrlLoading(view: WebView?, requestUrl: String?): Boolean {
+                    if (requestUrl.isNullOrEmpty()) {
                         return false
                     }
                     systemSettings.urlBeingHandled = requestUrl

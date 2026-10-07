@@ -40,7 +40,9 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -48,6 +50,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.config.Constants
+import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.data.WebViewCreation
@@ -129,7 +132,15 @@ fun Modifier.imePaddingCompat(): Modifier = if (
 fun WebviewScreen(navController: NavController) {
     val context = LocalContext.current
     val activity = LocalActivity.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    val isCurrentEntry = currentBackStackEntry === lifecycleOwner
     val focusManager = LocalFocusManager.current
+
+    // A refresh can animate two entries with the same route; compare their owners instead.
+    fun canHandleEvents(): Boolean =
+        navController.currentBackStackEntry === lifecycleOwner
+            && (activity as? MainActivity)?.isApplicationEventHost() != false
 
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
@@ -236,8 +247,8 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
-    DisposableEffect(activity, isLocked) {
-        if (activity != null) {
+    DisposableEffect(activity, isLocked, isCurrentEntry) {
+        if (activity != null && isCurrentEntry && canHandleEvents()) {
             val shouldImmerse = shouldBeImmersed(activity, userSettings)
             if (shouldImmerse) {
                 enterImmersiveMode(activity)
@@ -246,11 +257,21 @@ fun WebviewScreen(navController: NavController) {
             }
         }
         onDispose {
-            activity?.let { exitImmersiveMode(it) }
+            // A replacement WebView may already have set the same window's immersive mode
+            // while this outgoing entry is still fading out.
+            if (
+                navController.currentBackStackEntry === lifecycleOwner
+                || navController.currentDestination?.route != Screen.WebView.route
+            ) {
+                activity?.let { exitImmersiveMode(it) }
+            }
         }
     }
 
     fun updateAddressBarAndHistory(url: String, originalUrl: String?) {
+        if (!canHandleEvents()) {
+            return
+        }
         if (!addressBarHasFocus) {
             urlBarText = urlBarText.copy(text = url)
         }
@@ -434,7 +455,7 @@ fun WebviewScreen(navController: NavController) {
     LaunchedEffect(webView, retryAfterLocalNetworkPermission) {
         if (retryAfterLocalNetworkPermission) {
             retryAfterLocalNetworkPermission = false
-            if (!LockStateSingleton.isLocked.value) {
+            if (canHandleEvents() && !LockStateSingleton.isLocked.value) {
                 webView.reload()
             }
         }
@@ -446,7 +467,7 @@ fun WebviewScreen(navController: NavController) {
     var previousOnline by remember { mutableStateOf<Boolean?>(null) }
 
     LaunchedEffect(webView, isOnline) {
-        if (previousOnline != null && previousOnline != isOnline) {
+        if (canHandleEvents() && previousOnline != null && previousOnline != isOnline) {
             if (isOnline) {
                 when (userSettings.refreshOnNetworkAvailable) {
                     RefreshOnNetworkAvailableOption.ALWAYS -> {
@@ -486,11 +507,13 @@ fun WebviewScreen(navController: NavController) {
         LaunchedEffect(webView, lastErrorUrl) {
             while (lastErrorUrl.isNotEmpty()) {
                 delay(
-                    (userSettings.refreshOnLoadingErrorIntervalSeconds * 1000).milliseconds
+                    (userSettings.refreshOnLoadingErrorIntervalSeconds * 1000L).milliseconds
                 )
-                WebViewNavigation.refresh(
-                    ::customLoadUrl, systemSettings, userSettings
-                )
+                if (canHandleEvents()) {
+                    WebViewNavigation.refresh(
+                        ::customLoadUrl, systemSettings, userSettings
+                    )
+                }
             }
         }
     }
@@ -668,12 +691,18 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
-    if (userSettings.resetOnInactivitySeconds >= Constants.MIN_INACTIVITY_TIMEOUT_SECONDS) {
-        ResetOnInactivityTimeoutHandler(::customLoadUrl)
+    if (
+        isCurrentEntry
+        && userSettings.resetOnInactivitySeconds >= Constants.MIN_INACTIVITY_TIMEOUT_SECONDS
+    ) {
+        ResetOnInactivityTimeoutHandler(::customLoadUrl, ::canHandleEvents)
     }
 
-    if (userSettings.dimScreenOnInactivitySeconds >= Constants.MIN_INACTIVITY_TIMEOUT_SECONDS) {
-        DimScreenOnInactivityTimeoutHandler()
+    if (
+        isCurrentEntry
+        && userSettings.dimScreenOnInactivitySeconds >= Constants.MIN_INACTIVITY_TIMEOUT_SECONDS
+    ) {
+        DimScreenOnInactivityTimeoutHandler(::canHandleEvents)
     }
 
     KioskControlPanel(
@@ -688,7 +717,7 @@ fun WebviewScreen(navController: NavController) {
         customLoadUrl = ::customLoadUrl,
     )
 
-    BackPressHandler(::customLoadUrl)
+    BackPressHandler(::customLoadUrl, ::canHandleEvents)
 
     BasicAuthDialog(authHandler, authHost, authRealm) { authHandler = null }
 
@@ -706,8 +735,8 @@ fun WebviewScreen(navController: NavController) {
 
     LaunchedEffect(webView) {
         RemoteMessageManager.commandsFlow.collect { command ->
-            // A host change takes effect before Compose disposes the previous NavHost.
-            if ((activity as? MainActivity)?.isApplicationEventHost() == false) {
+            // Navigation fades can keep both the outgoing and incoming WebViews composed.
+            if (!canHandleEvents()) {
                 return@collect
             }
             when (command.message) {

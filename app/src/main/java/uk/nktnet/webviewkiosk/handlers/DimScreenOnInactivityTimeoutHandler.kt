@@ -6,6 +6,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.config.Constants
@@ -16,9 +17,10 @@ import kotlin.math.max
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
-fun DimScreenOnInactivityTimeoutHandler() {
+fun DimScreenOnInactivityTimeoutHandler(canHandleEvents: () -> Boolean) {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
+    val currentCanHandleEvents by rememberUpdatedState(canHandleEvents)
 
     val timeoutDuration = max(
         userSettings.dimScreenOnInactivitySeconds,
@@ -28,7 +30,9 @@ fun DimScreenOnInactivityTimeoutHandler() {
     val lastInteraction by UserInteractionStateSingleton.lastInteractionState.collectAsState()
 
     LaunchedEffect(lastInteraction) {
-        setWindowBrightness(context, userSettings.brightness)
+        if (currentCanHandleEvents()) {
+            setWindowBrightness(context, userSettings.brightness)
+        }
         while (true) {
             delay(500.milliseconds)
             val elapsed = try {
@@ -42,7 +46,9 @@ fun DimScreenOnInactivityTimeoutHandler() {
                 continue
             }
             if (elapsed >= timeoutDuration) {
-                setWindowBrightness(context, 0)
+                if (currentCanHandleEvents()) {
+                    setWindowBrightness(context, 0)
+                }
                 break
             }
         }

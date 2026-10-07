@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.handlers
 
-import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -12,7 +11,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
@@ -23,12 +21,13 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun BackPressHandler(
     customLoadUrl: (newUrl: String) -> Unit,
+    canHandleEvents: () -> Boolean,
 ) {
     val context = LocalContext.current
-    val activity = LocalActivity.current
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
     val currentLoadUrl by rememberUpdatedState(customLoadUrl)
+    val currentCanHandleEvents by rememberUpdatedState(canHandleEvents)
 
     val scope = rememberCoroutineScope()
     var enableBack by remember { mutableStateOf(true) }
@@ -36,7 +35,7 @@ fun BackPressHandler(
     LaunchedEffect(userSettings.allowBackwardsNavigation) {
         BackButtonStateSingleton.shortPressEvents.collect {
             if (
-                (activity as? MainActivity)?.isApplicationEventHost() != false
+                currentCanHandleEvents()
                 && userSettings.allowBackwardsNavigation
                 && enableBack
             ) {
@@ -48,7 +47,7 @@ fun BackPressHandler(
     LaunchedEffect(userSettings.backButtonHoldAction) {
         if (userSettings.backButtonHoldAction != BackButtonHoldActionOption.DISABLED) {
             BackButtonStateSingleton.longPressEvents.collect {
-                if ((activity as? MainActivity)?.isApplicationEventHost() == false) {
+                if (!currentCanHandleEvents()) {
                     return@collect
                 }
                 enableBack = false
