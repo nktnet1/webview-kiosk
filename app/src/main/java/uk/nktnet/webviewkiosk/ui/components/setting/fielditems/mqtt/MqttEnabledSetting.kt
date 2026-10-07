@@ -36,11 +36,11 @@ fun MqttEnabledSetting() {
             val isChanged = isEnabled != userSettings.mqttEnabled
             if (isChanged) {
                 userSettings.mqttEnabled = isEnabled
-                if (!isEnabled && MqttManager.isConnected()) {
+                MqttManager.updateConfig(context.applicationContext, false)
+                if (!isEnabled) {
                     MqttManager.disconnect(
                         cause = OutboundDisconnectingEvent.DisconnectCause.USER_INITIATED_SETTINGS_DISABLED
                     )
-                    MqttManager.updateConfig(context, false)
                 }
                 initMqttForegroundService(
                     context,

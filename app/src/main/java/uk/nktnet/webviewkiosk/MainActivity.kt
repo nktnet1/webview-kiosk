@@ -431,9 +431,7 @@ open class MainActivity : AppCompatActivity() {
         if (
             userSettings.mqttEnabled
         ) {
-            if (!MqttManager.isConnectedOrReconnect()) {
-                MqttManager.connect(applicationContext)
-            }
+            MqttManager.connect(applicationContext)
             if (userSettings.mqttUseForegroundService && MqttManager.isConnected()) {
                 MqttManager.publishAppForegroundEvent()
             }
@@ -473,14 +471,14 @@ open class MainActivity : AppCompatActivity() {
         super.onStop()
         if (!isChangingConfigurations) {
             AuthenticationManager.resetAuthentication()
-            if (MqttManager.isConnected()) {
-                if (userSettings.mqttUseForegroundService) {
+            if (userSettings.mqttUseForegroundService) {
+                if (MqttManager.isConnected()) {
                     MqttManager.publishAppBackgroundEvent()
-                } else {
-                    MqttManager.disconnect(
-                        cause = OutboundDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_STOPPED
-                    )
                 }
+            } else {
+                MqttManager.disconnect(
+                    cause = OutboundDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_STOPPED
+                )
             }
         }
     }
