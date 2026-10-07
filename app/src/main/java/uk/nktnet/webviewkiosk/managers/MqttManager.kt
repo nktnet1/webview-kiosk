@@ -80,6 +80,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.jvm.optionals.getOrNull
 import kotlin.text.Charsets.UTF_8
+import kotlin.time.Duration.Companion.milliseconds
 
 data class MqttLogEntry(
     val timestamp: Date,
@@ -1100,7 +1101,7 @@ object MqttManager {
         }
 
         val eventTimeout = scope.launch {
-            delay(DISCONNECT_EVENT_TIMEOUT_MS)
+            delay(DISCONNECT_EVENT_TIMEOUT_MS.milliseconds)
             addDebugLog("disconnect event timed out", "Disconnecting without waiting for the event acknowledgement.")
             disconnectClient()
         }
