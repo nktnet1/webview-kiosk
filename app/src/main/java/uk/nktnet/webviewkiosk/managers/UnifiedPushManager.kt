@@ -236,10 +236,42 @@ object UnifiedPushManager {
             runCatching {
                 val json = JSONObject(contentString)
                 val messageType = json.optString("type")
+
+                fun matchesTargets(
+                    targetInstances: Set<String>?,
+                    targetUsernames: Set<String>?,
+                ): Boolean {
+                    val appInstanceId = SystemSettings(context).appInstanceId
+                    val matches = (
+                        (targetInstances.isNullOrEmpty() || appInstanceId in targetInstances)
+                        && (targetUsernames.isNullOrEmpty() || userSettings.mqttUsername in targetUsernames)
+                    )
+                    if (!matches) {
+                        addDebugLog(
+                            "message received (ignored)",
+                            """
+                            instance: $instance
+                            decrypted: ${message.decrypted}
+                            type: $messageType
+
+                            Reason:
+                            - target instance or username does not match this device
+                            """.trimIndent()
+                        )
+                    }
+                    return matches
+                }
+
                 when (messageType) {
                     "command" -> {
                         val commandMessage = InboundCommandJsonParser
                             .decodeFromString<InboundCommandMessage>(contentString)
+                        if (!matchesTargets(
+                            commandMessage.targetInstances,
+                            commandMessage.targetUsernames,
+                        )) {
+                            return
+                        }
                         RemoteMessageManager.emitCommand(
                             commandMessage,
                             RemoteMessageManager.RemoteMessage.Source.UNIFIEDPUSH,
@@ -247,10 +279,13 @@ object UnifiedPushManager {
                         RemoteInboundHandler.handleInboundCommand(context, commandMessage)
                     }
                     "settings" -> {
-                        val settingsMessage = runCatching {
-                            BaseJson.decodeFromString<InboundSettingsMessage>(contentString)
-                        }.getOrElse {
-                            InboundSettingsMessage()
+                        val settingsMessage = BaseJson
+                            .decodeFromString<InboundSettingsMessage>(contentString)
+                        if (!matchesTargets(
+                            settingsMessage.targetInstances,
+                            settingsMessage.targetUsernames,
+                        )) {
+                            return
                         }
                         RemoteInboundHandler.handleInboundSettings(
                             context,

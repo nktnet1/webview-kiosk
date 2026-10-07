@@ -58,6 +58,12 @@ object AuthenticationManager {
     }
 
     fun hasValidSession(): Boolean {
+        if (
+            _resultState.value != AuthenticationResult.AuthenticationSuccess
+            && _resultState.value != AuthenticationResult.AuthenticationNotSet
+        ) {
+            return false
+        }
         val now = System.currentTimeMillis()
         return (
             now <= authBypassUntil
@@ -86,6 +92,11 @@ object AuthenticationManager {
     }
 
     fun bypassAuthForWindow(durationMs: Long = BYPASS_AUTH_WINDOW_MS) {
+        // Preserve an authenticated session during an external activity round trip.
+        // Opening an external app must not establish a session by itself.
+        if (!hasValidSession()) {
+            return
+        }
         authBypassUntil = System.currentTimeMillis() + durationMs
     }
 
@@ -132,8 +143,8 @@ object AuthenticationManager {
 
     private fun handleAuthSuccess() {
         lastAuthTime = System.currentTimeMillis()
-        bypassAuthForWindow()
         _resultState.value = AuthenticationResult.AuthenticationSuccess
+        bypassAuthForWindow()
     }
 
     @RequiresApi(Build.VERSION_CODES.M)

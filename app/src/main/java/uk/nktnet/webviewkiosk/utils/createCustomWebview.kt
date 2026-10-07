@@ -500,11 +500,6 @@ fun createCustomWebview(
                             loadUrl(blockUrl)
                             return true
                         }
-                    } else if (schemeType == SchemeType.OTHER) {
-                        if (userSettings.allowOtherUrlSchemes) {
-                            handleExternalSchemeUrl(context, requestUrl)
-                        }
-                        return true
                     }
 
                     if (blockCause != null) {
@@ -523,6 +518,13 @@ fun createCustomWebview(
                             }
 
                             else -> Unit
+                        }
+                        return true
+                    }
+
+                    if (schemeType == SchemeType.OTHER) {
+                        if (userSettings.allowOtherUrlSchemes) {
+                            handleExternalSchemeUrl(context, requestUrl)
                         }
                         return true
                     }

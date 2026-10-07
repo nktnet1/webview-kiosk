@@ -1,12 +1,24 @@
 package uk.nktnet.webviewkiosk.services
 
+import android.util.Log
 import org.unifiedpush.android.connector.FailedReason
 import org.unifiedpush.android.connector.PushService
 import org.unifiedpush.android.connector.data.PushEndpoint
 import org.unifiedpush.android.connector.data.PushMessage
+import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.UnifiedPushManager
 
 class UnifiedPushService : PushService() {
+    override fun onCreate() {
+        super.onCreate()
+        try {
+            // A push message can start the process before any activity or MQTT service.
+            DeviceOwnerManager.init(applicationContext)
+        } catch (e: Exception) {
+            Log.e(javaClass.simpleName, "Failed to initialise device owner state", e)
+        }
+    }
+
     override fun onMessage(message: PushMessage, instance: String) {
         UnifiedPushManager.handleMessage(this, message, instance)
     }
