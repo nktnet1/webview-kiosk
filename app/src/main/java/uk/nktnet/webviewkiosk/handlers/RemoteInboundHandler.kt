@@ -31,6 +31,7 @@ import uk.nktnet.webviewkiosk.managers.AppFlowManager
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.MqttManager
+import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.utils.getStatus
@@ -136,9 +137,13 @@ object RemoteInboundHandler {
     fun handleInboundSettings(
         context: Context,
         settings: InboundSettingsMessage,
+        source: RemoteMessageManager.RemoteMessage.Source,
     ) {
         val userSettings = UserSettings(context)
-        userSettings.importJson(settings.data.settings.toString())
+        if (!userSettings.importJson(settings.data.settings.toString())) {
+            return
+        }
+        RemoteMessageManager.emitSettingsApplied(settings, source)
 
         if (settings.showToast) {
             /**

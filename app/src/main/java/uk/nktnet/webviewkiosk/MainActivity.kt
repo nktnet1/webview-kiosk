@@ -159,7 +159,9 @@ open class MainActivity : AppCompatActivity() {
             }
         )
 
-        MqttManager.updateConfig(this)
+        if (!MqttManager.isInitialized()) {
+            MqttManager.updateConfig(applicationContext)
+        }
 
         val webContentDir = getWebContentFilesDir(this)
 
@@ -229,10 +231,17 @@ open class MainActivity : AppCompatActivity() {
                     if (
                         settings.source == RemoteMessageManager.RemoteMessage.Source.MQTT
                         && !userSettings.mqttUseForegroundService
+                        && settings.tryClaim()
                     ) {
-                        RemoteInboundHandler.handleInboundSettings(context, settings.message)
+                        RemoteInboundHandler.handleInboundSettings(
+                            context, settings.message, settings.source
+                        )
                     }
+                }
+            }
 
+            LaunchedEffect(Unit) {
+                RemoteMessageManager.settingsAppliedFlow.collect { settings ->
                     if (settings.message.reloadActivity) {
                         lifecycleScope.launch(Dispatchers.Main) {
                             delay(100.milliseconds)
@@ -559,17 +568,19 @@ open class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         unregisterReceiver(broadcastReceiver)
-        if (
-            userSettings.mqttUseForegroundService
-            && MqttManager.isConnected()
-        ) {
-            MqttManager.disconnect(
-                cause = OutboundDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_DESTROYED
+        if (!isChangingConfigurations) {
+            if (
+                userSettings.mqttUseForegroundService
+                && MqttManager.isConnected()
+            ) {
+                MqttManager.disconnect(
+                    cause = OutboundDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_DESTROYED
+                )
+            }
+            stopService(
+                Intent(this, MqttForegroundService::class.java)
             )
         }
-        stopService(
-            Intent(this, MqttForegroundService::class.java)
-        )
         AuthenticationManager.clear(this)
         super.onDestroy()
     }

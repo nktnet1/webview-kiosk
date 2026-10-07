@@ -252,11 +252,11 @@ object UnifiedPushManager {
                         }.getOrElse {
                             InboundSettingsMessage()
                         }
-                        RemoteMessageManager.emitSettings(
+                        RemoteInboundHandler.handleInboundSettings(
+                            context,
                             settingsMessage,
                             RemoteMessageManager.RemoteMessage.Source.UNIFIEDPUSH,
                         )
-                        RemoteInboundHandler.handleInboundSettings(context, settingsMessage)
                     }
                     "" -> {
                         ToastManager.show(
