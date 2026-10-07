@@ -388,7 +388,11 @@ open class MainActivity : AppCompatActivity() {
                             onComplete = { file ->
                                 systemSettings.intentUrl = file.getLocalFileLink()
                                 uploadingFileUri = null
-                            }
+                            },
+                            onFailed = {
+                                uploadingFileUri = null
+                                uploadProgress = 0f
+                            },
                         )
                     } ?: run {
                         if (handlesAuthentication) {
@@ -620,11 +624,15 @@ open class MainActivity : AppCompatActivity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        return (
-            handleKeyEvent(this, event)
-            || backButtonService.onKeyDown(keyCode)
-            || super.onKeyDown(keyCode, event)
-        )
+        if (handleKeyEvent(this, event)) {
+            return true
+        }
+        if (backButtonService.onKeyDown(keyCode)) {
+            // The Huawei fallback consumes Back-down; retain framework tracking for short taps.
+            event.startTracking()
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {

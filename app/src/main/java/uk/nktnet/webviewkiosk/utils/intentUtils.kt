@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.utils
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.Parcelable
 
 data class IntentResult(
     val uploadUri: Uri? = null,
@@ -33,7 +34,7 @@ fun handleMainIntent(intent: Intent): IntentResult {
                 intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
             } else {
                 @Suppress("DEPRECATION")
-                intent.getParcelableExtra(Intent.EXTRA_STREAM)
+                intent.getParcelableExtra<Parcelable>(Intent.EXTRA_STREAM) as? Uri
             } ?: intent.data
 
             IntentResult(uploadUri = uri)

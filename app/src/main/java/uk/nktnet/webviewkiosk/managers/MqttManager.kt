@@ -931,8 +931,13 @@ object MqttManager {
             onMessage = { publish, payloadStr ->
                 val settingsMessage = runCatching {
                     BaseJson.decodeFromString<InboundSettingsMessage>(payloadStr)
-                }.getOrElse {
-                    InboundSettingsMessage()
+                }.getOrElse { e ->
+                    addDebugLog(
+                        "settings error",
+                        e.message,
+                        messageId = getValueFromPrimitiveJson(payloadStr, "messageId"),
+                    )
+                    return@subscribeTopic
                 }
 
                 val targetInstances = settingsMessage.targetInstances
