@@ -88,10 +88,14 @@ class MqttForegroundService : Service() {
         }
         mqttSettingsJob = scope.launch {
             RemoteMessageManager.settingsFlow.collect { settings ->
-                if (settings.source == RemoteMessageManager.RemoteMessage.Source.MQTT) {
+                if (
+                    settings.source == RemoteMessageManager.RemoteMessage.Source.MQTT
+                    && settings.tryClaim()
+                ) {
                     RemoteInboundHandler.handleInboundSettings(
                         this@MqttForegroundService,
-                        settings.message
+                        settings.message,
+                        settings.source,
                     )
                 }
             }

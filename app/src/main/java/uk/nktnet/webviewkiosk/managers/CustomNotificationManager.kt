@@ -144,13 +144,16 @@ object CustomNotificationManager {
         context: Context,
         notifyCommand: InboundNotifyCommand
     ) {
-        if (lastNotifications.size >= 5) {
-            lastNotifications.removeFirst()
+        val notificationHistory = synchronized(lastNotifications) {
+            if (lastNotifications.size >= 5) {
+                lastNotifications.removeFirst()
+            }
+            lastNotifications.addLast(notifyCommand.data.contentText)
+            lastNotifications.toList()
         }
-        lastNotifications.addLast(notifyCommand.data.contentText)
 
         val inboxStyle = NotificationCompat.InboxStyle()
-        lastNotifications.forEach { msg ->
+        notificationHistory.forEach { msg ->
             inboxStyle.addLine(msg)
         }
 
