@@ -1,7 +1,10 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import android.os.Build
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.ime
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -14,6 +17,8 @@ import uk.nktnet.webviewkiosk.utils.authComposable
 fun SetupNavHost(
     navController: NavHostController,
 ) {
+    KeepLegacyInsetsListenerAttached()
+
     val settingsScreens: List<Pair<String, @Composable () -> Unit>> = listOf(
         Screen.Settings.route to { SettingsListScreen(navController) },
         Screen.SettingsMoreActions.route to { SettingsMoreActionsScreen(navController) },
@@ -83,5 +88,16 @@ fun SetupNavHost(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun KeepLegacyInsetsListenerAttached() {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+        // With no navigation transitions, the WebView's inset consumer is removed before the
+        // authentication placeholder. Keep the shared activity listener attached so legacy
+        // inset animations can finish instead of leaving its cached animation state active.
+        @Suppress("UNUSED_VARIABLE")
+        val activityImeInsets = WindowInsets.ime
     }
 }
