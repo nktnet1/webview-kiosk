@@ -50,9 +50,7 @@ private fun RequireAuthentication(
     onAuthenticated: @Composable () -> Unit,
     onFailed: @Composable (AuthenticationManager.AuthenticationResult?) -> Unit
 ) {
-    val authenticationResult by AuthenticationManager.promptResults.collectAsState(
-        initial = AuthenticationManager.AuthenticationResult.Loading
-    )
+    val authenticationResult by AuthenticationManager.promptResults.collectAsState()
 
     val lifecycleOwner = LocalLifecycleOwner.current
 
@@ -60,7 +58,7 @@ private fun RequireAuthentication(
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_START) {
                 if (
-                    authenticationResult != AuthenticationManager.AuthenticationResult.Pending
+                    AuthenticationManager.promptResults.value != AuthenticationManager.AuthenticationResult.Pending
                     && !AuthenticationManager.checkAuthAndRefreshSession()
                 ) {
                     showAuthPrompt()
