@@ -12,6 +12,9 @@ import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.webkit.WebViewAssetLoader
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.config.Constants
 import java.io.ByteArrayOutputStream
@@ -131,7 +134,10 @@ fun writeEditableTextFile(file: File, content: String): Boolean {
 
 fun listLocalFiles(dir: File): List<File> {
     return dir.listFiles { file ->
-        file.isFile && !(file.name.startsWith(".wk-edit-") && file.name.endsWith(".tmp"))
+        file.isFile && !(
+            file.name.endsWith(".tmp")
+                && (file.name.startsWith(".wk-edit-") || file.name.startsWith(".wk-import-"))
+        )
     }?.sortedByDescending { it.lastModified() } ?: emptyList()
 }
 
@@ -193,19 +199,25 @@ private fun getFileSizeFromUri(context: Context, uri: Uri): Long? {
     }
 }
 
-private fun copyInputStreamToFile(
+private suspend fun copyInputStreamToFile(
     input: java.io.InputStream,
     targetFile: File,
     totalBytes: Long? = null,
     onProgress: ((Float) -> Unit)? = null
 ): File {
     var copiedBytes = 0L
-    input.use { i ->
-        targetFile.outputStream().use { o ->
+    val tempFile = File.createTempFile(".wk-import-", ".tmp", targetFile.parentFile)
+    try {
+        tempFile.outputStream().use { output ->
             val buffer = ByteArray(4 * 1024 * 1024)
-            var bytesRead: Int
-            while (i.read(buffer).also { bytesRead = it } >= 0) {
-                o.write(buffer, 0, bytesRead)
+            while (true) {
+                currentCoroutineContext().ensureActive()
+                val bytesRead = input.read(buffer)
+                currentCoroutineContext().ensureActive()
+                if (bytesRead < 0) {
+                    break
+                }
+                output.write(buffer, 0, bytesRead)
                 copiedBytes += bytesRead
                 if (totalBytes != null && totalBytes > 0) {
                     val progress = (copiedBytes.toDouble() / totalBytes)
@@ -215,23 +227,50 @@ private fun copyInputStreamToFile(
                 }
             }
         }
+        currentCoroutineContext().ensureActive()
+        Os.rename(tempFile.absolutePath, targetFile.absolutePath)
+        return targetFile
+    } finally {
+        tempFile.delete()
     }
-    return targetFile
 }
 
-fun uploadFile(
+private suspend fun importContentFile(
+    context: Context,
+    uri: Uri,
+    targetDir: File,
+    onProgress: ((Float) -> Unit)?,
+    getOriginalName: () -> String,
+): File {
+    var copiedFile: File? = null
+    try {
+        return withContext(Dispatchers.IO) {
+            val totalBytes = getFileSizeFromUri(context, uri)
+            val input = context.contentResolver.openInputStream(uri)
+                ?: throw IllegalArgumentException("Unable to open InputStream for URI: $uri")
+            input.use {
+                val file = File(targetDir, generateUuidFileName(getOriginalName()))
+                copiedFile = file
+                copyInputStreamToFile(it, file, totalBytes, onProgress)
+            }
+        }
+    } catch (e: Exception) {
+        // Also clean up if cancellation occurs after rename, before the result
+        // is delivered back to the caller's dispatcher.
+        withContext(NonCancellable + Dispatchers.IO) {
+            copiedFile?.delete()
+        }
+        throw e
+    }
+}
+
+suspend fun uploadFile(
     context: Context,
     uri: Uri,
     targetDir: File,
     onProgress: (Float) -> Unit
-): File {
-    val totalBytes = getFileSizeFromUri(context, uri)
-    val inputStream = context.contentResolver.openInputStream(uri)
-        ?: throw IllegalArgumentException("Unable to open InputStream for URI: $uri")
-    val originalFileName = getFileNameFromUri(context, uri)
-    val fileName = generateUuidFileName(originalFileName)
-    val file = File(targetDir, fileName)
-    return copyInputStreamToFile(inputStream, file, totalBytes, onProgress)
+): File = importContentFile(context, uri, targetDir, onProgress) {
+    getFileNameFromUri(context, uri)
 }
 
 suspend fun saveContentIntentToFile(
@@ -239,11 +278,7 @@ suspend fun saveContentIntentToFile(
     contentUri: Uri,
     targetDir: File,
     onProgress: ((Float) -> Unit)? = null
-): File = withContext(Dispatchers.IO) {
-    val totalBytes = getFileSizeFromUri(context, contentUri)
-    val inputStream = context.contentResolver.openInputStream(contentUri)
-        ?: throw IllegalArgumentException("Unable to open InputStream for URI: $contentUri")
-
+): File = importContentFile(context, contentUri, targetDir, onProgress) {
     var originalName = contentUri.lastPathSegment ?: "uploaded_file"
     val mimeType = context.contentResolver.getType(contentUri)
     if (!originalName.contains('.') && mimeType != null) {
@@ -252,10 +287,7 @@ suspend fun saveContentIntentToFile(
         }
     }
 
-    val fileName = generateUuidFileName(originalName)
-    val file = File(targetDir, fileName)
-
-    copyInputStreamToFile(inputStream, file, totalBytes, onProgress)
+    originalName
 }
 
 fun getWebContentFilesDir(context: Context): File {

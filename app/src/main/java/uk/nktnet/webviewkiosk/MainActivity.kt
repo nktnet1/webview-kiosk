@@ -11,6 +11,7 @@ import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.os.Build
 import android.os.Bundle
+import android.os.Parcelable
 import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.compose.LocalActivity
@@ -714,7 +715,7 @@ open class MainActivity : AppCompatActivity() {
             )
         } else {
             @Suppress("DEPRECATION")
-            intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
+            intent.getParcelableExtra<Parcelable>(NfcAdapter.EXTRA_TAG) as? Tag
         }
 
         tag ?: return false

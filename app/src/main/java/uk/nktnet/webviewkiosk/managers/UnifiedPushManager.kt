@@ -4,12 +4,14 @@ import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.unifiedpush.android.connector.FailedReason
 import org.unifiedpush.android.connector.INSTANCE_DEFAULT
@@ -40,7 +42,7 @@ data class UnifiedPushLogEntry(
 
 object UnifiedPushManager {
     private val scope = CoroutineScope(Dispatchers.Default)
-    private val deviceOwnerCommandMutex = Mutex()
+    private val commandMutex = Mutex()
     private val logHistory = ArrayDeque<UnifiedPushLogEntry>(100)
     val debugLog: SharedFlow<UnifiedPushLogEntry>
         field = MutableSharedFlow<UnifiedPushLogEntry>(extraBufferCapacity = 100)
@@ -277,15 +279,7 @@ object UnifiedPushManager {
                         )) {
                             return
                         }
-                        RemoteMessageManager.emitCommand(
-                            commandMessage,
-                            RemoteMessageManager.RemoteMessage.Source.UNIFIEDPUSH,
-                        )
-                        if (commandMessage is InboundLockDeviceCommand) {
-                            handleDeviceOwnerCommand(context, commandMessage, instance)
-                        } else {
-                            RemoteInboundHandler.handleInboundCommand(context, commandMessage)
-                        }
+                        handleCommand(context, commandMessage, instance)
                     }
                     "settings" -> {
                         val settingsMessage = BaseJson
@@ -339,19 +333,32 @@ object UnifiedPushManager {
         }
     }
 
-    private fun handleDeviceOwnerCommand(
+    private fun handleCommand(
         context: Context,
-        command: InboundLockDeviceCommand,
+        command: InboundCommandMessage,
         instance: String,
     ) {
         val appContext = context.applicationContext
         // The connector may destroy the service after its callback returns. Use the
         // process scope so the Dhizuku retry and pending command survive that callback.
-        scope.launch {
+        // Enter the mutex in callback order so later commands cannot overtake a lock
+        // while it waits for Dhizuku. Dispatch the work off the callback thread.
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
             try {
-                deviceOwnerCommandMutex.withLock {
-                    DeviceOwnerManager.initWithDhizukuRetry(appContext)
-                    RemoteInboundHandler.handleInboundCommand(appContext, command)
+                commandMutex.withLock {
+                    withContext(Dispatchers.IO) {
+                        if (
+                            command is InboundLockDeviceCommand
+                            && !DeviceOwnerManager.hasOwnerPermission(appContext)
+                        ) {
+                            DeviceOwnerManager.initWithDhizukuRetry(appContext)
+                        }
+                        RemoteMessageManager.emitCommand(
+                            command,
+                            RemoteMessageManager.RemoteMessage.Source.UNIFIEDPUSH,
+                        )
+                        RemoteInboundHandler.handleInboundCommand(appContext, command)
+                    }
                 }
             } catch (e: CancellationException) {
                 throw e

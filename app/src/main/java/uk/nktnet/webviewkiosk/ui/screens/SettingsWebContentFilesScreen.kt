@@ -41,9 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -83,10 +81,8 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                 uploading = true
                 progress = 0f
                 try {
-                    withContext(Dispatchers.IO) {
-                        uploadFile(context, uri, filesDir) { p ->
-                            progress = p
-                        }
+                    uploadFile(context, uri, filesDir) { p ->
+                        progress = p
                     }
                     filesList = listLocalFiles(filesDir)
                     ToastManager.show(context, "File uploaded")

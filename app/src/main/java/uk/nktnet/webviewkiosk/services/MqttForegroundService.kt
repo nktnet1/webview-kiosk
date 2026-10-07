@@ -14,6 +14,7 @@ import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.ServiceCompat
 import com.hivemq.client.mqtt.MqttClientState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,12 +23,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.remote.inbound.InboundLockDeviceCommand
 import uk.nktnet.webviewkiosk.handlers.RemoteInboundHandler
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.CustomNotificationType
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import kotlin.time.Duration.Companion.milliseconds
 
 class MqttForegroundService : Service() {
@@ -82,10 +85,26 @@ class MqttForegroundService : Service() {
                     command.source == RemoteMessageManager.RemoteMessage.Source.MQTT
                     && command.tryClaim()
                 ) {
-                    RemoteInboundHandler.handleInboundCommand(
-                        this@MqttForegroundService,
-                        command.message
-                    )
+                    try {
+                        if (
+                            command.message is InboundLockDeviceCommand
+                            && !DeviceOwnerManager.hasOwnerPermission(applicationContext)
+                        ) {
+                            DeviceOwnerManager.initWithDhizukuRetry(applicationContext)
+                        }
+                        RemoteInboundHandler.handleInboundCommand(
+                            this@MqttForegroundService,
+                            command.message,
+                        )
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Log.e(javaClass.simpleName, "Failed to handle MQTT command", e)
+                        ToastManager.show(
+                            applicationContext,
+                            "MQTT: failed to handle command.",
+                        )
+                    }
                 }
             }
         }
