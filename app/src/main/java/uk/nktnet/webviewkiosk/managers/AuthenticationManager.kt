@@ -8,7 +8,6 @@ import android.security.keystore.KeyProperties
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
@@ -58,14 +57,18 @@ object AuthenticationManager {
         }
     }
 
-    fun checkAuthAndRefreshSession(): Boolean {
+    fun hasValidSession(): Boolean {
         val now = System.currentTimeMillis()
-        val isValid = (
+        return (
             now <= authBypassUntil
-            || now - lastAuthTime < AUTH_TIMEOUT_MS
+            || (lastAuthTime > 0L && now >= lastAuthTime && now - lastAuthTime < AUTH_TIMEOUT_MS)
         )
+    }
+
+    fun checkAuthAndRefreshSession(): Boolean {
+        val isValid = hasValidSession()
         if (isValid) {
-            lastAuthTime = now
+            lastAuthTime = System.currentTimeMillis()
         }
         authBypassUntil = 0L
         return isValid
@@ -73,6 +76,13 @@ object AuthenticationManager {
 
     fun resetAuthentication() {
         lastAuthTime = 0
+        if (
+            !hasValidSession()
+            && (_resultState.value == AuthenticationResult.AuthenticationSuccess
+                || _resultState.value == AuthenticationResult.AuthenticationNotSet)
+        ) {
+            _resultState.value = AuthenticationResult.Loading
+        }
     }
 
     fun bypassAuthForWindow(durationMs: Long = BYPASS_AUTH_WINDOW_MS) {
@@ -108,6 +118,7 @@ object AuthenticationManager {
         }
 
         if (!deviceSecure) {
+            lastAuthTime = System.currentTimeMillis()
             _resultState.value = AuthenticationResult.AuthenticationNotSet
             return
         }
@@ -120,27 +131,22 @@ object AuthenticationManager {
     }
 
     private fun handleAuthSuccess() {
-        _resultState.value = AuthenticationResult.AuthenticationSuccess
         lastAuthTime = System.currentTimeMillis()
         bypassAuthForWindow()
+        _resultState.value = AuthenticationResult.AuthenticationSuccess
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
     private fun showBiometricPromptModern(title: String, description: String) {
         val activity = this.activity ?: return
-        val manager = BiometricManager.from(activity)
         val authenticators = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             BIOMETRIC_STRONG or DEVICE_CREDENTIAL
         } else {
             BIOMETRIC_STRONG
         }
 
-        val canAuthenticate = manager.canAuthenticate(authenticators)
-        if (canAuthenticate == BiometricManager.BIOMETRIC_ERROR_NONE_ENROLLED) {
-            _resultState.value = AuthenticationResult.AuthenticationNotSet
-            return
-        }
-
+        // The device is secure. Let the prompt offer its PIN/pattern/password fallback
+        // even when there are no enrolled biometrics (including Android 6-10).
         val promptInfoBuilder = PromptInfo.Builder()
             .setTitle(title)
             .setDescription(description)
@@ -330,8 +336,8 @@ object AuthenticationManager {
             return
         }
         if (resultCode == AppCompatActivity.RESULT_OK) {
-            _resultState.value = AuthenticationResult.AuthenticationSuccess
             lastAuthTime = System.currentTimeMillis()
+            _resultState.value = AuthenticationResult.AuthenticationSuccess
         } else {
             _resultState.value = AuthenticationResult.AuthenticationFailed
             resetAuthentication()
@@ -347,8 +353,8 @@ object AuthenticationManager {
     }
 
     fun customAuthSuccess() {
-        _resultState.value = AuthenticationResult.AuthenticationSuccess
         lastAuthTime = System.currentTimeMillis()
+        _resultState.value = AuthenticationResult.AuthenticationSuccess
         hideCustomAuthPrompt()
     }
 

@@ -76,6 +76,7 @@ import uk.nktnet.webviewkiosk.utils.isValidMqttSubscribeTopic
 import uk.nktnet.webviewkiosk.utils.replaceVariables
 import java.util.Date
 import java.util.UUID
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.jvm.optionals.getOrNull
@@ -105,6 +106,18 @@ object MqttManager {
         field = MutableSharedFlow<MqttLogEntry>(extraBufferCapacity = 100)
     private val pendingCancelConnect: AtomicBoolean = AtomicBoolean(false)
 
+    @SuppressLint("NewApi")
+    private class DisconnectOperation(val client: Mqtt5AsyncClient) {
+        val completion = CompletableFuture<Void>()
+        val started = AtomicBoolean(false)
+    }
+
+    @Volatile
+    private var pendingDisconnect: DisconnectOperation? = null
+    private var disconnectRequestId = 0L
+    @SuppressLint("NewApi")
+    private var reconnectCancellation = CompletableFuture<Void>()
+
     private fun addDebugLog(tag: String, message: String? = null, messageId: String? = null) {
         val logEntry = MqttLogEntry(Date(), tag, message, messageId)
         synchronized(logHistory) {
@@ -122,6 +135,7 @@ object MqttManager {
         get() = synchronized(logHistory) { logHistory.toList() }
 
     @Synchronized
+    @SuppressLint("NewApi")
     fun updateConfig(
         context: Context,
         rebuildClient: Boolean = true
@@ -129,8 +143,8 @@ object MqttManager {
         val existingClient = client
         if (
             rebuildClient
-            && existingClient != null
-            && existingClient.state != MqttClientState.DISCONNECTED
+            && (pendingDisconnect != null
+                || (existingClient != null && existingClient.state != MqttClientState.DISCONNECTED))
         ) {
             // Keep the live client's configuration until an explicit disconnect/restart.
             return
@@ -198,6 +212,7 @@ object MqttManager {
         )
         if (rebuildClient) {
             pendingCancelConnect.set(false)
+            reconnectCancellation = CompletableFuture()
             configurationError = null
             client = if (!config.enabled) {
                 null
@@ -217,8 +232,10 @@ object MqttManager {
         }
     }
 
+    @SuppressLint("NewApi")
     private fun buildClient(context: Context): Mqtt5AsyncClient {
         lateinit var builtClient: Mqtt5AsyncClient
+        val stopReconnect = reconnectCancellation
         var builder = MqttClient.builder()
             .useMqttVersion5()
             .serverHost(config.serverHost)
@@ -282,7 +299,12 @@ object MqttManager {
             .addConnectedListener { connectedContext ->
                 val c = builtClient
                 if (c !== client || pendingCancelConnect.get() || !config.enabled) {
-                    cancelConnectedClient(c)
+                    val operation = pendingDisconnect
+                    if (operation != null && operation.client === c) {
+                        disconnectClient(operation)
+                    } else {
+                        cancelConnectedClient(c)
+                    }
                     return@addConnectedListener
                 }
                 addDebugLog(
@@ -306,16 +328,28 @@ object MqttManager {
                 }
                 if (pendingCancelConnect.get()) {
                     disconnectedContext.reconnector.reconnect(false)
-                    pendingCancelConnect.set(false)
                     return@addDisconnectedListener
                 }
-                if (config.enabled && config.automaticReconnect) {
+                if (
+                    config.enabled
+                    && config.automaticReconnect
+                    && disconnectedContext.source != MqttDisconnectSource.USER
+                ) {
+                    val reconnectDelay = CompletableFuture<Void>()
+                    val delayJob = scope.launch {
+                        delay((Constants.MQTT_AUTO_RECONNECT_INTERVAL_SECONDS * 1_000L).milliseconds)
+                        reconnectDelay.complete(null)
+                    }
+                    val reconnectReady = CompletableFuture.anyOf(reconnectDelay, stopReconnect)
+                    reconnectReady.whenComplete { _, _ -> delayJob.cancel() }
                     disconnectedContext.reconnector
-                        .reconnect(disconnectedContext.source != MqttDisconnectSource.USER)
-                        .delay(
-                            Constants.MQTT_AUTO_RECONNECT_INTERVAL_SECONDS.toLong(),
-                            TimeUnit.SECONDS
-                        )
+                        .reconnectWhen(reconnectReady) { _, _ ->
+                            // HiveMQ runs this callback on its event loop, where the
+                            // reconnector may be updated before starting another attempt.
+                            if (builtClient !== client || pendingCancelConnect.get() || !config.enabled) {
+                                disconnectedContext.reconnector.reconnect(false)
+                            }
+                        }
                 }
 
                 val causeText = disconnectedContext.cause.message.orEmpty()
@@ -345,11 +379,29 @@ object MqttManager {
     }
 
     @Synchronized
+    @SuppressLint("NewApi")
     fun connect(
         context: Context,
         onConnected: (() -> Unit)? = null,
         onError: ((String?) -> Unit)? = null
     ) {
+        val operation = pendingDisconnect
+        if (operation != null) {
+            val requestId = disconnectRequestId
+            val appContext = context.applicationContext
+            operation.completion.whenComplete { _, throwable ->
+                synchronized(this) {
+                    if (requestId != disconnectRequestId) {
+                        onError?.invoke("MQTT connection cancelled.")
+                    } else if (throwable != null) {
+                        onError?.invoke(throwable.message)
+                    } else {
+                        connect(appContext, onConnected, onError)
+                    }
+                }
+            }
+            return
+        }
         val existingClient = client
         if (existingClient != null && existingClient.state != MqttClientState.DISCONNECTED) {
             if (existingClient.state.isConnected && !pendingCancelConnect.get()) {
@@ -397,6 +449,30 @@ object MqttManager {
             Log.e(javaClass.simpleName, "Failed to build MQTT connection", e)
             onError?.invoke(e.message)
         }
+    }
+
+    @Synchronized
+    fun restart(
+        context: Context,
+        cause: OutboundDisconnectingEvent.DisconnectCause,
+        onConnected: (() -> Unit)? = null,
+        onError: ((String?) -> Unit)? = null,
+    ) {
+        val requestId = disconnectRequestId + 1
+        val appContext = context.applicationContext
+        disconnect(
+            cause = cause,
+            onDisconnected = {
+                synchronized(this) {
+                    if (requestId == disconnectRequestId) {
+                        connect(appContext, onConnected, onError)
+                    } else {
+                        onError?.invoke("MQTT restart cancelled.")
+                    }
+                }
+            },
+            onError = onError,
+        )
     }
 
     private fun connectClient(
@@ -1030,13 +1106,16 @@ object MqttManager {
     @Synchronized
     fun cancelConnect(): Boolean {
         val c = client ?: return false
-        if (c.state == MqttClientState.DISCONNECTED || !pendingCancelConnect.compareAndSet(false, true)) {
+        if (pendingDisconnect != null) {
+            // Also cancel a foreground connect/restart queued behind this shutdown.
+            disconnectRequestId++
+            return false
+        }
+        if (c.state == MqttClientState.DISCONNECTED || pendingCancelConnect.get()) {
             return false
         }
         addDebugLog("connect cancel requested", "User manually triggered cancellation request.")
-        if (c.state.isConnected) {
-            cancelConnectedClient(c)
-        }
+        disconnect(OutboundDisconnectingEvent.DisconnectCause.USER_INITIATED_DISCONNECT)
         return true
     }
 
@@ -1054,56 +1133,101 @@ object MqttManager {
         }
     }
 
+    @SuppressLint("NewApi")
+    private fun finishDisconnect(operation: DisconnectOperation, error: Throwable? = null) {
+        synchronized(this) {
+            if (pendingDisconnect !== operation) {
+                return
+            }
+            pendingDisconnect = null
+            if (operation.client.state == MqttClientState.DISCONNECTED) {
+                pendingCancelConnect.set(false)
+            }
+        }
+        if (error == null) {
+            operation.completion.complete(null)
+        } else {
+            addDebugLog("disconnect failed", error.message)
+            operation.completion.completeExceptionally(error)
+        }
+    }
+
+    private fun disconnectClient(operation: DisconnectOperation) {
+        val c = operation.client
+        if (!c.state.isConnected || !operation.started.compareAndSet(false, true)) {
+            return
+        }
+        try {
+            @SuppressLint("NewApi")
+            c.disconnectWith()
+                .userProperties()
+                    .add("username", config.username)
+                    .add("appInstanceId", config.appInstanceId)
+                    .applyUserProperties()
+                .send()
+                .whenComplete { _, throwable ->
+                    finishDisconnect(
+                        operation,
+                        if (c.state == MqttClientState.DISCONNECTED) null else throwable
+                    )
+                }
+        } catch (e: Exception) {
+            Log.e(javaClass.simpleName, "Failed to build MQTT disconnect", e)
+            finishDisconnect(operation, e)
+        }
+    }
+
+    @Synchronized
+    @SuppressLint("NewApi")
     fun disconnect(
         cause: OutboundDisconnectingEvent.DisconnectCause,
         onDisconnected: (() -> Unit)? = null,
         onError: ((String?) -> Unit)? = null,
     ) {
-        val c = client
-        if (c == null) {
-            addDebugLog("disconnect - not initialised")
+        // A later stop/disable cancels any connect deferred by an earlier foreground start.
+        disconnectRequestId++
+        val existingOperation = pendingDisconnect
+        val c = existingOperation?.client ?: client
+        if (c == null || (existingOperation == null && c.state == MqttClientState.DISCONNECTED)) {
+            addDebugLog("disconnect - already disconnected")
             onDisconnected?.invoke()
             return
         }
 
+        val operation = existingOperation ?: DisconnectOperation(c).also {
+            pendingDisconnect = it
+            pendingCancelConnect.set(true)
+            reconnectCancellation.complete(null)
+        }
+        operation.completion.whenComplete { _, throwable ->
+            if (throwable == null) {
+                onDisconnected?.invoke()
+            } else {
+                onError?.invoke(throwable.message)
+            }
+        }
+        if (existingOperation != null) {
+            return
+        }
+
+        // A connection attempt can only be closed once it finishes or fails. Its
+        // listeners suppress retries and close a late success before it is accepted.
+        scope.launch {
+            while (!operation.completion.isDone && c.state != MqttClientState.DISCONNECTED) {
+                delay(25.milliseconds)
+            }
+            if (!operation.completion.isDone) {
+                finishDisconnect(operation)
+            }
+        }
         if (!c.state.isConnected) {
-            addDebugLog("disconnect - not connected", "state: ${c.state}")
-            onDisconnected?.invoke()
             return
-        }
-
-        val disconnectStarted = AtomicBoolean(false)
-        fun disconnectClient() {
-            if (!disconnectStarted.compareAndSet(false, true)) {
-                return
-            }
-            try {
-                @SuppressLint("NewApi")
-                c.disconnectWith()
-                    .userProperties()
-                        .add("username", config.username)
-                        .add("appInstanceId", config.appInstanceId)
-                        .applyUserProperties()
-                    .send()
-                    .whenComplete { _, throwable ->
-                        if (throwable == null) {
-                            onDisconnected?.invoke()
-                        } else {
-                            addDebugLog("disconnect failed", throwable.message)
-                            onError?.invoke(throwable.message)
-                        }
-                    }
-            } catch (e: Exception) {
-                addDebugLog("disconnect failed", e.message)
-                Log.e(javaClass.simpleName, "Failed to build MQTT disconnect", e)
-                onError?.invoke(e.message)
-            }
         }
 
         val eventTimeout = scope.launch {
             delay(DISCONNECT_EVENT_TIMEOUT_MS.milliseconds)
             addDebugLog("disconnect event timed out", "Disconnecting without waiting for the event acknowledgement.")
-            disconnectClient()
+            disconnectClient(operation)
         }
         try {
             publishEventMessage(
@@ -1116,14 +1240,14 @@ object MqttManager {
                 ),
                 whenComplete = { _, _ ->
                     eventTimeout.cancel()
-                    disconnectClient()
+                    disconnectClient(operation)
                 },
             )
         } catch (e: Exception) {
             eventTimeout.cancel()
             addDebugLog("disconnect event failed", e.message)
             Log.e(javaClass.simpleName, "Failed to publish MQTT disconnect event", e)
-            disconnectClient()
+            disconnectClient(operation)
         }
     }
 

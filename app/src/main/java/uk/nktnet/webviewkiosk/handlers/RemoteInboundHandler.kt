@@ -56,11 +56,9 @@ object RemoteInboundHandler {
         }
         when (command) {
             is InboundReconnectCommand -> {
-                MqttManager.disconnect(
+                MqttManager.restart(
+                    context = context.applicationContext,
                     cause = OutboundDisconnectingEvent.DisconnectCause.MQTT_RECONNECT_COMMAND_RECEIVED,
-                    onDisconnected = {
-                        MqttManager.connect(context.applicationContext)
-                    }
                 )
             }
             is InboundClearHistoryCommand -> {

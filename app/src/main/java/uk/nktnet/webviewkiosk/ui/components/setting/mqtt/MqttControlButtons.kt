@@ -124,24 +124,16 @@ fun MqttControlButtons() {
                         enabled = !isRestarting,
                         onClick = {
                             isRestarting = true
-                            MqttManager.disconnect(
+                            MqttManager.restart(
+                                context = context.applicationContext,
                                 cause = OutboundDisconnectingEvent.DisconnectCause.USER_INITIATED_RESTART,
-                                onDisconnected = {
-                                    MqttManager.connect(
-                                        context.applicationContext,
-                                        onConnected = {
-                                            isRestarting = false
-                                            ToastManager.show(context, "Restarted successfully.")
-                                        },
-                                        onError = {
-                                            isRestarting = false
-                                            ToastManager.show(context, "Error connecting: $it")
-                                        }
-                                    )
+                                onConnected = {
+                                    isRestarting = false
+                                    ToastManager.show(context, "Restarted successfully.")
                                 },
                                 onError = {
                                     isRestarting = false
-                                    ToastManager.show(context, "Error disconnecting: $it")
+                                    ToastManager.show(context, "Error restarting: $it")
                                 }
                             )
 

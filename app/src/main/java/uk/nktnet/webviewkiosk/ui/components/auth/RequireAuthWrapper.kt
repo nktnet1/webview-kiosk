@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -53,6 +54,7 @@ private fun RequireAuthentication(
     val authenticationResult by AuthenticationManager.promptResults.collectAsState()
 
     val lifecycleOwner = LocalLifecycleOwner.current
+    val hasValidSession = AuthenticationManager.hasValidSession()
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
@@ -72,6 +74,19 @@ private fun RequireAuthentication(
         }
     }
 
+    LaunchedEffect(lifecycleOwner, authenticationResult, hasValidSession) {
+        val currentResult = AuthenticationManager.promptResults.value
+        if (
+            lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
+            && !AuthenticationManager.hasValidSession()
+            && (currentResult == AuthenticationManager.AuthenticationResult.Loading
+                || currentResult == AuthenticationManager.AuthenticationResult.AuthenticationSuccess
+                || currentResult == AuthenticationManager.AuthenticationResult.AuthenticationNotSet)
+        ) {
+            showAuthPrompt()
+        }
+    }
+
     when (authenticationResult) {
         is AuthenticationManager.AuthenticationResult.Loading,
         is AuthenticationManager.AuthenticationResult.Pending -> {
@@ -79,7 +94,11 @@ private fun RequireAuthentication(
         }
         is AuthenticationManager.AuthenticationResult.AuthenticationSuccess,
         is AuthenticationManager.AuthenticationResult.AuthenticationNotSet -> {
-            onAuthenticated()
+            if (hasValidSession) {
+                onAuthenticated()
+            } else {
+                LoadingIndicator("Waiting for authentication...")
+            }
         }
         else -> onFailed(authenticationResult)
     }
