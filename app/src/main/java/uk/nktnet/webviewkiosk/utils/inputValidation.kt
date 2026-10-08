@@ -4,6 +4,8 @@ import android.util.Patterns
 import android.webkit.URLUtil.isValidUrl
 import androidx.core.net.toUri
 import java.io.File
+import java.net.URI
+import java.net.URISyntaxException
 
 fun isDataSchemeUrl(url: String): Boolean {
     val dataUrlRegex = Regex(
@@ -31,7 +33,7 @@ fun validateUrl(input: String): Boolean {
             isValidUrl(trimmedInput)
             && (
                 Patterns.WEB_URL.matcher(trimmedInput).matches()
-                || uri.host?.matches(Regex("""\[[0-9a-fA-F:]+]""")) == true
+                || isIpv6Url(trimmedInput)
                 || uri.host.equals("localhost", ignoreCase = true)
             )
         }
@@ -39,6 +41,15 @@ fun validateUrl(input: String): Boolean {
             isDataSchemeUrl(trimmedInput)
         }
         else -> false
+    }
+}
+
+private fun isIpv6Url(url: String): Boolean {
+    // Older Android Uri implementations split IPv6 hosts at the first colon.
+    return try {
+        URI(url).host?.startsWith("[") == true
+    } catch (_: URISyntaxException) {
+        false
     }
 }
 
