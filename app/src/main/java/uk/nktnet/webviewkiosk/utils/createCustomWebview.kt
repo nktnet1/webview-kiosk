@@ -23,11 +23,9 @@ import android.webkit.SslErrorHandler
 import android.webkit.URLUtil
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
-import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,7 +39,9 @@ import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
+import androidx.webkit.WebResourceErrorCompat
 import androidx.webkit.WebViewAssetLoader
+import androidx.webkit.WebViewClientCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import uk.nktnet.webviewkiosk.R
@@ -86,7 +86,7 @@ import java.io.File
 
 private const val LOCAL_NETWORK_PERMISSION_ERROR = "ERR_LOCAL_NETWORK_PERMISSION_MISSING"
 
-private fun isLocalNetworkPermissionError(error: WebResourceError?): Boolean {
+private fun isLocalNetworkPermissionError(error: WebResourceErrorCompat?): Boolean {
     return (
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN
         && error?.description?.toString()?.contains(LOCAL_NETWORK_PERMISSION_ERROR) == true
@@ -360,7 +360,7 @@ fun createCustomWebview(
             fun isCurrentPdfSource(token: String): Boolean =
                 !disposed && getTag(R.id.pdf_source_token) == token
 
-            webViewClient = object : WebViewClient() {
+            webViewClient = object : WebViewClientCompat() {
                 override fun onReceivedClientCertRequest(
                     view: WebView?,
                     request: ClientCertRequest?
@@ -379,10 +379,21 @@ fun createCustomWebview(
                 }
 
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                    val pdfToken = getTag(R.id.pdf_source_token) as? String
+                    val isCurrentPdfNavigation = isPdfSourceNavigation(pdfToken, url)
+                    if (
+                        url != null
+                        && isPdfViewerUrl(url.toUri())
+                        && !isCurrentPdfNavigation
+                    ) {
+                        // loadDataWithBaseURL queues page-start callbacks. An older viewer
+                        // must not clear the newer viewer's token, authentication, or errors.
+                        return
+                    }
                     config.setLastErrorUrl("")
                     config.onHttpAuthRequest(null)
                     view?.let { completeFileChooser(null, it) }
-                    if (!isPdfSourceNavigation(getTag(R.id.pdf_source_token) as? String, url)) {
+                    if (!isCurrentPdfNavigation) {
                         setTag(R.id.pdf_source_token, null)
                     }
                     blobInterface?.abortAllDownloads()
@@ -526,23 +537,26 @@ fun createCustomWebview(
                 }
 
                 override fun shouldOverrideUrlLoading(
-                    view: WebView?,
-                    request: WebResourceRequest?
+                    view: WebView,
+                    request: WebResourceRequest
                 ): Boolean {
                     return handleUrlLoading(
-                        view, request?.url?.toString(), request?.isForMainFrame != false
+                        view, request.url.toString(), request.isForMainFrame
                     )
                 }
 
                 @Deprecated("For API < 24")
                 override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                    return handleUrlLoading(view, url)
+                    // Older WebViews without the compatibility callback omit frame metadata.
+                    // Only HTTP(S) overrides are guaranteed to target the main frame.
+                    val isMainFrame = url?.toUri()?.scheme?.lowercase() in setOf("http", "https")
+                    return handleUrlLoading(view, url, isMainFrame)
                 }
 
                 private fun handleUrlLoading(
                     view: WebView?,
                     requestUrl: String?,
-                    isMainFrame: Boolean = true,
+                    isMainFrame: Boolean,
                 ): Boolean {
                     if (requestUrl.isNullOrEmpty()) {
                         return false
@@ -698,17 +712,14 @@ fun createCustomWebview(
                 }
 
                 override fun onReceivedError(
-                    view: WebView?,
-                    request: WebResourceRequest?,
-                    error: WebResourceError?
+                    view: WebView,
+                    request: WebResourceRequest,
+                    error: WebResourceErrorCompat
                 ) {
                     if (isLocalNetworkPermissionError(error)) {
                         config.onLocalNetworkPermissionMissing()
                     }
-                    if (
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                        && request?.isForMainFrame == true
-                    ) {
+                    if (request.isForMainFrame) {
                         config.setLastErrorUrl(request.url.toString())
                         return
                     }
