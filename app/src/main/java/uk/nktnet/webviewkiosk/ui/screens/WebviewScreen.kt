@@ -431,15 +431,7 @@ fun WebviewScreen(navController: NavController) {
             schemeType == SchemeType.WEB
             && uri.path?.lowercase()?.endsWith(".pdf") == true
         )
-        val isDummyFallback = url.startsWith(Constants.PDF_JS_ASSETS_DUMMY_URL)
-
-        if (isDummyFallback) {
-            val pdfUrl = uri.getQueryParameter("wk_pdf_url") ?: ""
-            if (pdfUrl.isNotEmpty()) {
-                customLoadUrl(pdfUrl)
-                return
-            }
-        } else if (isPdfRenderingSupported && isWebPdf) {
+        if (isPdfRenderingSupported && isWebPdf) {
             handlePdfUrlRendering(
                 webView,
                 url,
@@ -807,6 +799,6 @@ private fun handlePdfUrlRendering(
         htmlContent,
         "text/html",
         "UTF-8",
-        null
+        targetPdfUrl
     )
 }

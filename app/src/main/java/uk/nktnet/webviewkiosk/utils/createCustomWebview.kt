@@ -68,6 +68,7 @@ import uk.nktnet.webviewkiosk.utils.webview.interfaces.BlobInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BrightnessInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.NfcInterface
 import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
+import uk.nktnet.webviewkiosk.utils.webview.isPdfViewerUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.webview.parseFileChooserResult
 import uk.nktnet.webviewkiosk.utils.webview.parseMutualTlsRules
@@ -215,12 +216,13 @@ fun createCustomWebview(
         return false
     }
 
-    fun buildWebView(dialogs: WebViewDialogController): Pair<WebView, BlobInterface?> {
+    fun buildWebView(dialogs: WebViewDialogController): WebViewCreation.Success {
         val blobInterface = if (userSettings.allowFileDownload) {
             BlobInterface(context)
         } else {
             null
         }
+        var hideFullscreen: () -> Unit = {}
 
         val webView = WebView(context).apply {
             layoutParams = ViewGroup.LayoutParams(
@@ -541,10 +543,20 @@ fun createCustomWebview(
                     if (url == null) {
                         return
                     }
+                    val isPdfViewer = isPdfViewerUrl(url.toUri())
+                    val navigationUrl = if (isPdfViewer) {
+                        resolveBlockPageUrl(
+                            url, config.blacklistRegexes, config.whitelistRegexes, userSettings
+                        ) ?: return
+                    } else {
+                        url
+                    }
+                    val historyOriginalUrl = if (isPdfViewer) navigationUrl else originalUrl
                     if (
-                        systemSettings.urlBeingHandled.trimEnd('/') == url.trimEnd('/')
+                        !isPdfViewer
+                        && systemSettings.urlBeingHandled.trimEnd('/') == navigationUrl.trimEnd('/')
                     ) {
-                        config.updateAddressBarAndHistory(url, originalUrl)
+                        config.updateAddressBarAndHistory(navigationUrl, historyOriginalUrl)
                         return
                     }
 
@@ -557,21 +569,21 @@ fun createCustomWebview(
                         systemSettings.urlBeforeNavigation = systemSettings.currentUrl
                     }
 
-                    systemSettings.urlBeingHandled = url
+                    systemSettings.urlBeingHandled = navigationUrl
 
                     val (schemeType, blockCause) = getBlockInfo(
-                        url = url,
+                        url = navigationUrl,
                         blacklistRegexes = config.blacklistRegexes,
                         whitelistRegexes = config.whitelistRegexes,
                         userSettings = userSettings
                     )
 
-                    val uri = url.toUri()
+                    val uri = navigationUrl.toUri()
                     if (isCustomBlockPageUrl(schemeType, uri)) {
                         // Already on custom block page.
                         val blockUrl = uri.getQueryParameter("url")
                         blockUrl?.let {
-                            config.updateAddressBarAndHistory(blockUrl, originalUrl)
+                            config.updateAddressBarAndHistory(blockUrl, historyOriginalUrl)
                         }
                         return
                     }
@@ -580,16 +592,16 @@ fun createCustomWebview(
                         loadBlockedPage(
                             view,
                             userSettings,
-                            url,
+                            navigationUrl,
                             blockCause,
                         )
-                        config.updateAddressBarAndHistory(url, originalUrl)
+                        config.updateAddressBarAndHistory(navigationUrl, historyOriginalUrl)
                         return
                     }
                     if (schemeType == SchemeType.OTHER) {
                         return
                     }
-                    config.updateAddressBarAndHistory(url, originalUrl)
+                    config.updateAddressBarAndHistory(navigationUrl, historyOriginalUrl)
                 }
 
                 override fun onReceivedHttpAuthRequest(
@@ -656,6 +668,7 @@ fun createCustomWebview(
                         Constants.APP_SCHEME,
                         "WebView renderer gone. crashed=${detail}"
                     )
+                    hideFullscreen()
                     dialogs.dispose()
                     (view.parent as? ViewGroup)?.removeView(view)
                     NfcBridgeManager.detachWebView(view)
@@ -670,6 +683,10 @@ fun createCustomWebview(
                 private var customView: View? = null
                 private var customViewCallback: CustomViewCallback? = null
                 private var fullScreenContainer: FrameLayout? = null
+
+                init {
+                    hideFullscreen = ::onHideCustomView
+                }
 
                 override fun onProgressChanged(view: WebView?, newProgress: Int) {
                     config.onProgressChanged(newProgress)
@@ -744,6 +761,9 @@ fun createCustomWebview(
                     val container = fullScreenContainer
                     val callback = customViewCallback
                     val view = customView
+                    if (container == null && callback == null && view == null) {
+                        return
+                    }
                     fullScreenContainer = null
                     customView = null
                     customViewCallback = null
@@ -758,7 +778,11 @@ fun createCustomWebview(
                             exitImmersiveMode(it)
                         }
                     }
-                    callback?.onCustomViewHidden()
+                    try {
+                        callback?.onCustomViewHidden()
+                    } catch (e: Exception) {
+                        Log.w(Constants.APP_SCHEME, "Unable to complete fullscreen cleanup", e)
+                    }
                 }
 
                 override fun onShowFileChooser(
@@ -895,17 +919,17 @@ fun createCustomWebview(
             }
         }
 
-        return webView to blobInterface
+        return WebViewCreation.Success(webView) {
+            hideFullscreen()
+            dialogs.dispose()
+            blobInterface?.dispose()
+        }
     }
 
     val webViewCreationResult = remember(recreationKey) {
         val dialogs = WebViewDialogController(context)
         try {
-            val (webView, blobInterface) = buildWebView(dialogs)
-            WebViewCreation.Success(webView) {
-                dialogs.dispose()
-                blobInterface?.dispose()
-            }
+            buildWebView(dialogs)
         } catch (e: Exception) {
             dialogs.dispose()
             Log.e(Constants.APP_SCHEME, "Failed to create WebView", e)
