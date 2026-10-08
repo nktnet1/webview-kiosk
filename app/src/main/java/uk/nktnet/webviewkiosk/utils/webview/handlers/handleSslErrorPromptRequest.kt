@@ -14,6 +14,7 @@ import android.view.ViewGroup.LayoutParams
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.utils.handleKeyEvent
+import uk.nktnet.webviewkiosk.utils.webview.SslErrorRequest
 import uk.nktnet.webviewkiosk.utils.webview.WebViewDialogController
 
 @SuppressLint("SetTextI18n")
@@ -22,7 +23,19 @@ fun handleSslErrorPromptRequest(
     handler: SslErrorHandler?,
     error: SslError?,
     dialogs: WebViewDialogController,
+) = handleSslErrorPromptRequest(
+    context,
+    SslErrorRequest(error, { handler?.proceed() }, { handler?.cancel() }),
+    dialogs,
+)
+
+@SuppressLint("SetTextI18n")
+fun handleSslErrorPromptRequest(
+    context: Context,
+    request: SslErrorRequest,
+    dialogs: WebViewDialogController,
 ) {
+    val error = request.error
     var resolved = false
     fun respond(proceed: Boolean = false) {
         if (resolved) {
@@ -31,9 +44,9 @@ fun handleSslErrorPromptRequest(
         resolved = true
         try {
             if (proceed && dialogs.isActive()) {
-                handler?.proceed()
+                request.proceed()
             } else {
-                handler?.cancel()
+                request.cancel()
             }
         } catch (e: Exception) {
             Log.w(Constants.APP_SCHEME, "Unable to complete WebView SSL request", e)

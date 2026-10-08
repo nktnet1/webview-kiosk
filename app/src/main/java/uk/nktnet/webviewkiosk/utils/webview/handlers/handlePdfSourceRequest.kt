@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.utils.webview.handlers
 import android.content.Context
 import android.util.Base64
 import android.util.Log
+import android.webkit.ClientCertRequest
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import androidx.core.net.toUri
@@ -11,6 +12,8 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.utils.isLocalFileLink
 import uk.nktnet.webviewkiosk.utils.resolveLocalFileLink
 import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
+import uk.nktnet.webviewkiosk.utils.webview.PdfTlsState
+import uk.nktnet.webviewkiosk.utils.webview.SslErrorRequest
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.webview.getWebViewRequestCookie
@@ -25,6 +28,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
+import javax.net.ssl.HttpsURLConnection
 
 private const val PDF_SOURCE_TTL_MS = 24 * 60 * 60 * 1000L
 private const val MAX_REDIRECTS = 5
@@ -33,7 +37,8 @@ private const val MAX_REGISTERED_PDF_SOURCES = 64
 private class RegisteredPdfSource(
     val url: String,
     @Volatile var expiresAt: Long,
-    val credentials: ConcurrentHashMap<PdfAuthScope, String> = ConcurrentHashMap()
+    val credentials: ConcurrentHashMap<PdfAuthScope, String> = ConcurrentHashMap(),
+    val tls: PdfTlsState = PdfTlsState(),
 ) {
     val pendingAuthentication = ConcurrentHashMap<PdfAuthScope, HttpAuthRequest>()
 }
@@ -58,9 +63,15 @@ fun registerPdfSource(sourceUrl: String, previousToken: String? = null): String 
         url = sourceUrl,
         expiresAt = System.currentTimeMillis() + PDF_SOURCE_TTL_MS,
         // Refresh credentials within this viewer, while giving every document its own event token.
-        credentials = ConcurrentHashMap(previousSource?.credentials.orEmpty())
+        credentials = ConcurrentHashMap(previousSource?.credentials.orEmpty()),
+        tls = PdfTlsState(previousSource?.tls),
     )
+    previousSource?.tls?.cancelPendingRequests()
     return token
+}
+
+fun cancelPdfSourceRequests(token: String?) {
+    token?.let { registeredPdfSources[it]?.tls?.cancelPendingRequests() }
 }
 
 fun isPdfSourceNavigation(token: String?, navigationUrl: String?): Boolean {
@@ -81,7 +92,11 @@ fun handlePdfSourceRequest(
     onAuthenticationRequired: (token: String, url: String, request: HttpAuthRequest) -> Unit =
         { _, _, request -> request.cancel() },
     onAuthenticated: (token: String, url: String) -> Unit = { _, _ -> },
-    onViewerEvent: (token: String, url: String, event: String) -> Unit = { _, _, _ -> }
+    onViewerEvent: (token: String, url: String, event: String) -> Unit = { _, _, _ -> },
+    onClientCertificateRequired: (token: String, url: String, request: ClientCertRequest) -> Unit =
+        { _, _, request -> request.ignore() },
+    onSslError: (token: String, url: String, request: SslErrorRequest) -> Unit =
+        { _, _, request -> request.cancel() },
 ): WebResourceResponse? {
     val requestUrl = request.url
     val expectedOrigin = Constants.PDF_JS_ASSETS_DUMMY_URL.toUri()
@@ -130,6 +145,7 @@ fun handlePdfSourceRequest(
                 sourceUri.path?.let(::File)
             )
             schemeType == SchemeType.WEB -> remotePdfResponse(
+                context = context,
                 sourceUrl = sourceUrl,
                 request = request,
                 userAgent = userAgent,
@@ -139,7 +155,9 @@ fun handlePdfSourceRequest(
                 sourceToken = sourceToken,
                 source = source,
                 onAuthenticationRequired = onAuthenticationRequired,
-                onAuthenticated = onAuthenticated
+                onAuthenticated = onAuthenticated,
+                onClientCertificateRequired = onClientCertificateRequired,
+                onSslError = onSslError,
             )
             else -> errorResponse(400, "Unsupported PDF URL")
         }
@@ -147,6 +165,9 @@ fun handlePdfSourceRequest(
         Log.w(Constants.APP_SCHEME, "Blocked PDF source request: ${e.message}")
         errorResponse(403, "PDF source is blocked")
     } catch (e: Exception) {
+        if (source?.tls?.hasPendingRequests == true) {
+            return errorResponse(401, "Waiting for TLS authentication")
+        }
         Log.e(Constants.APP_SCHEME, "Failed to load PDF source: ${source?.url}", e)
         errorResponse(502, "Failed to load PDF")
     }
@@ -165,6 +186,7 @@ private fun localPdfResponse(file: File?): WebResourceResponse {
 }
 
 private fun remotePdfResponse(
+    context: Context,
     sourceUrl: String,
     request: WebResourceRequest,
     userAgent: String?,
@@ -174,7 +196,9 @@ private fun remotePdfResponse(
     sourceToken: String,
     source: RegisteredPdfSource,
     onAuthenticationRequired: (String, String, HttpAuthRequest) -> Unit,
-    onAuthenticated: (String, String) -> Unit
+    onAuthenticated: (String, String) -> Unit,
+    onClientCertificateRequired: (String, String, ClientCertRequest) -> Unit,
+    onSslError: (String, String, SslErrorRequest) -> Unit,
 ): WebResourceResponse {
     var currentUrl = sourceUrl
     var redirectCount = 0
@@ -195,6 +219,18 @@ private fun remotePdfResponse(
         val connection = URL(currentUrl).openConnection() as HttpURLConnection
         var responseOwnsConnection = false
         try {
+            if (connection is HttpsURLConnection) {
+                source.tls.configureConnection(
+                    connection, context, userSettings,
+                    isActive = {
+                        registeredPdfSources[sourceToken] === source
+                            && source.expiresAt > System.currentTimeMillis()
+                    },
+                    onClientCertificateRequired = { onClientCertificateRequired(sourceToken, source.url, it) },
+                    onSslError = { onSslError(sourceToken, source.url, it) },
+                    onApproved = { onAuthenticated(sourceToken, source.url) },
+                )
+            }
             connection.instanceFollowRedirects = false
             connection.useCaches = false
             connection.connectTimeout = 15_000
@@ -377,6 +413,7 @@ private fun resolvePdfSource(token: String): RegisteredPdfSource? {
 private fun removePdfSource(token: String, source: RegisteredPdfSource) {
     if (registeredPdfSources.remove(token, source)) {
         source.pendingAuthentication.values.forEach { it.cancel() }
+        source.tls.cancelPendingRequests()
     }
 }
 

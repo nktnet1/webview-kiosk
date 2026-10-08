@@ -1,16 +1,23 @@
 package uk.nktnet.webviewkiosk.utils.webview.interfaces
 
+import android.content.ContentValues
 import android.content.Context
+import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
 import android.util.Base64
 import android.util.Log
 import android.webkit.JavascriptInterface
+import androidx.core.content.FileProvider
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
+import java.io.OutputStream
 import java.util.concurrent.ConcurrentHashMap
 
 class BlobInterface(
@@ -78,8 +85,10 @@ class BlobInterface(
     }
 
     private data class ActiveDownload(
-        val file: File,
-        val output: FileOutputStream,
+        val uri: Uri?,
+        val file: File?,
+        val filename: String,
+        val output: OutputStream,
         val mimeType: String?
     )
 
@@ -133,28 +142,7 @@ class BlobInterface(
             // Clean up an accidentally reused transfer ID.
             abortInternal(transferId)
 
-            val downloads =
-                Environment.getExternalStoragePublicDirectory(
-                    Environment.DIRECTORY_DOWNLOADS
-                )
-
-            if (!downloads.exists()) {
-                downloads.mkdirs()
-            }
-
-            val file = createDownloadFile(downloads, filename)
-            val output = try {
-                FileOutputStream(file)
-            } catch (e: Exception) {
-                file.delete()
-                throw e
-            }
-
-            activeDownloads[transferId] = ActiveDownload(
-                file = file,
-                output = output,
-                mimeType = mimeType
-            )
+            activeDownloads[transferId] = createDownload(filename, mimeType)
 
             true
         } catch (e: Exception) {
@@ -222,6 +210,17 @@ class BlobInterface(
                 } else {
                     download.output.flush()
                     download.output.close()
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && download.uri != null) {
+                        val published = context.contentResolver.update(
+                            download.uri,
+                            ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) },
+                            null,
+                            null
+                        )
+                        if (published != 1) {
+                            throw IOException("Unable to publish download")
+                        }
+                    }
                     activeDownloads.remove(transferId, download)
                 }
             }
@@ -232,7 +231,7 @@ class BlobInterface(
 
             ToastManager.show(
                 context,
-                "${download.file.name} downloaded"
+                "${download.filename} downloaded"
             )
 
             val userSettings = UserSettings(context)
@@ -241,8 +240,13 @@ class BlobInterface(
                 CustomNotificationManager
                     .sendBlobDownloadNotification(
                         context,
-                        download.file,
-                        download.mimeType
+                        download.uri ?: FileProvider.getUriForFile(
+                            context,
+                            "${context.packageName}.provider",
+                            requireNotNull(download.file)
+                        ),
+                        download.filename,
+                        download.mimeType,
                     )
             }
 
@@ -290,10 +294,55 @@ class BlobInterface(
             }
 
             try {
-                download.file.delete()
+                if (download.uri != null) {
+                    context.contentResolver.delete(download.uri, null, null)
+                } else {
+                    download.file?.delete()
+                }
             } catch (e: Exception) {
                 Log.e(javaClass.simpleName, "Failed to delete file during abort", e)
             }
+        }
+    }
+
+    private fun createDownload(filename: String, mimeType: String?): ActiveDownload {
+        val resolvedMimeType = mimeType?.takeIf { it.isNotBlank() } ?: "application/octet-stream"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val resolver = context.contentResolver
+            val uri = resolver.insert(
+                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                ContentValues().apply {
+                    put(MediaStore.Downloads.DISPLAY_NAME, filename)
+                    put(MediaStore.Downloads.MIME_TYPE, resolvedMimeType)
+                    put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                    put(MediaStore.Downloads.IS_PENDING, 1)
+                }
+            ) ?: throw IOException("Unable to create download")
+            try {
+                val savedName = resolver.query(
+                    uri, arrayOf(MediaStore.Downloads.DISPLAY_NAME), null, null, null
+                )?.use { cursor ->
+                    if (cursor.moveToFirst()) cursor.getString(0) else null
+                } ?: filename
+                val output = resolver.openOutputStream(uri)
+                    ?: throw IOException("Unable to open download")
+                return ActiveDownload(uri, null, savedName, output, resolvedMimeType)
+            } catch (e: Exception) {
+                resolver.delete(uri, null, null)
+                throw e
+            }
+        }
+
+        val downloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        if (!downloads.exists() && !downloads.mkdirs()) {
+            throw IOException("Unable to create Downloads directory")
+        }
+        val file = createDownloadFile(downloads, filename)
+        try {
+            return ActiveDownload(null, file, file.name, FileOutputStream(file), resolvedMimeType)
+        } catch (e: Exception) {
+            file.delete()
+            throw e
         }
     }
 

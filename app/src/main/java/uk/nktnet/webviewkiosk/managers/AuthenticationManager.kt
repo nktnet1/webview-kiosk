@@ -47,6 +47,7 @@ object AuthenticationManager {
 
     private var lastAuthTime = 0L
     private var authBypassUntil: Long = 0L
+    private var externalActivityRoundTrip = false
 
     fun init(activity: AppCompatActivity) {
         this.activity = activity
@@ -78,11 +79,19 @@ object AuthenticationManager {
             lastAuthTime = System.currentTimeMillis()
         }
         authBypassUntil = 0L
+        externalActivityRoundTrip = false
         return isValid
     }
 
-    fun resetAuthentication() {
+    fun resetAuthentication(preserveExternalActivitySession: Boolean = false) {
+        val preserveBypass = preserveExternalActivitySession
+            && externalActivityRoundTrip
+            && hasValidSession()
         lastAuthTime = 0
+        if (!preserveBypass) {
+            authBypassUntil = 0L
+        }
+        externalActivityRoundTrip = false
         if (
             !hasValidSession()
             && (_resultState.value == AuthenticationResult.AuthenticationSuccess
@@ -99,6 +108,7 @@ object AuthenticationManager {
             return
         }
         authBypassUntil = System.currentTimeMillis() + durationMs
+        externalActivityRoundTrip = true
     }
 
     fun showAuthenticationPrompt(
@@ -145,7 +155,8 @@ object AuthenticationManager {
     private fun handleAuthSuccess() {
         lastAuthTime = System.currentTimeMillis()
         _resultState.value = AuthenticationResult.AuthenticationSuccess
-        bypassAuthForWindow()
+        authBypassUntil = 0L
+        externalActivityRoundTrip = false
     }
 
     @RequiresApi(Build.VERSION_CODES.M)

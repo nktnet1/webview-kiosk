@@ -61,6 +61,7 @@ import uk.nktnet.webviewkiosk.utils.webview.WebViewDialogController
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.webview.handleMutualTlsRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleDownloadPrompt
+import uk.nktnet.webviewkiosk.utils.webview.handlers.cancelPdfSourceRequests
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePdfSourceRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
@@ -258,6 +259,7 @@ fun createCustomWebview(
 
             fun clearPdfNavigation() {
                 awaitingPdfPageStart = false
+                cancelPdfSourceRequests(getTag(R.id.pdf_source_token) as? String)
                 setTag(R.id.pdf_source_token, null)
             }
 
@@ -425,6 +427,7 @@ fun createCustomWebview(
                     config.onHttpAuthRequest(null)
                     view?.let { completeFileChooser(null, it) }
                     if (!isCurrentPdfNavigation) {
+                        cancelPdfSourceRequests(pdfToken)
                         setTag(R.id.pdf_source_token, null)
                     }
                     blobInterface?.abortAllDownloads()
@@ -545,6 +548,28 @@ fun createCustomWebview(
                                         }
                                     }
                                 }
+                            },
+                            onClientCertificateRequired = { token, _, certRequest ->
+                                if (!post {
+                                    if (isCurrentPdfSource(token) && dialogs.isActive()) {
+                                        handleMutualTlsRequest(
+                                            context as? Activity, context, certRequest,
+                                            parseMutualTlsRules(userSettings.mutualTls).orEmpty(),
+                                            systemSettings, scope,
+                                        )
+                                    } else {
+                                        certRequest.ignore()
+                                    }
+                                }) certRequest.ignore()
+                            },
+                            onSslError = { token, _, sslRequest ->
+                                if (!post {
+                                    if (isCurrentPdfSource(token)) {
+                                        handleSslErrorPromptRequest(context, sslRequest, dialogs)
+                                    } else {
+                                        sslRequest.cancel()
+                                    }
+                                }) sslRequest.cancel()
                             },
                         )?.let {
                             return it
@@ -797,6 +822,7 @@ fun createCustomWebview(
                     )
                     hideFullscreen()
                     disposed = true
+                    cancelPdfSourceRequests(view.getTag(R.id.pdf_source_token) as? String)
                     completeFileChooser(null, view)
                     config.onHttpAuthRequest(null)
                     dialogs.dispose()
@@ -1057,6 +1083,7 @@ fun createCustomWebview(
         return WebViewCreation.Success(webView) {
             hideFullscreen()
             disposed = true
+            cancelPdfSourceRequests(webView.getTag(R.id.pdf_source_token) as? String)
             completeFileChooser(null, webView)
             config.onHttpAuthRequest(null)
             dialogs.dispose()

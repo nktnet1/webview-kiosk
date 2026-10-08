@@ -500,7 +500,7 @@ open class MainActivity : AppCompatActivity() {
         super.onStop()
         startedHosts.remove(this)
         if (!isChangingConfigurations && startedHosts.isEmpty()) {
-            AuthenticationManager.resetAuthentication()
+            AuthenticationManager.resetAuthentication(preserveExternalActivitySession = true)
             if (userSettings.mqttUseForegroundService) {
                 if (MqttManager.isConnected()) {
                     MqttManager.publishAppBackgroundEvent()
