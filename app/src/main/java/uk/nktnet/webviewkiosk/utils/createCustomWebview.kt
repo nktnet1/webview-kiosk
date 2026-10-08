@@ -53,6 +53,7 @@ import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.managers.PdfJsManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
+import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.WebViewDialogController
@@ -63,6 +64,7 @@ import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePdfSourceRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorPromptRequest
+import uk.nktnet.webviewkiosk.utils.webview.handlers.isPdfSourceNavigation
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BatteryInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BlobInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BrightnessInterface
@@ -121,7 +123,7 @@ data class WebViewConfig(
     val finishSwipeRefresh: () -> Unit,
     val onProgressChanged: (newProgress: Int) -> Unit,
     val updateAddressBarAndHistory: (url: String, originalUrl: String?) -> Unit,
-    val onHttpAuthRequest: (handler: HttpAuthHandler?, host: String?, realm: String?) -> Unit,
+    val onHttpAuthRequest: (request: HttpAuthRequest?) -> Unit,
     val onLinkLongClick: (url: String) -> Unit,
     val onImageLongClick: (url: String) -> Unit,
     val onPdfUrlRequested: (webView: WebView, url: String) -> Unit,
@@ -223,6 +225,7 @@ fun createCustomWebview(
             null
         }
         var hideFullscreen: () -> Unit = {}
+        var disposed = false
 
         val webView = WebView(context).apply {
             layoutParams = ViewGroup.LayoutParams(
@@ -328,6 +331,8 @@ fun createCustomWebview(
             }
 
             val requestUserAgent = settings.userAgentString
+            fun isCurrentPdfSource(token: String): Boolean =
+                !disposed && getTag(R.id.pdf_source_token) == token
 
             webViewClient = object : WebViewClient() {
                 override fun onReceivedClientCertRequest(
@@ -349,6 +354,10 @@ fun createCustomWebview(
 
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     config.setLastErrorUrl("")
+                    config.onHttpAuthRequest(null)
+                    if (!isPdfSourceNavigation(getTag(R.id.pdf_source_token) as? String, url)) {
+                        setTag(R.id.pdf_source_token, null)
+                    }
                     blobInterface?.abortAllDownloads()
                     NfcBridgeManager.resetSession()
                     if (userSettings.requestFocusOnPageStart) {
@@ -440,6 +449,34 @@ fun createCustomWebview(
                             userSettings,
                             config.blacklistRegexes,
                             config.whitelistRegexes,
+                            onAuthenticationRequired = { token, _, authRequest ->
+                                if (!post {
+                                    if (isCurrentPdfSource(token)) {
+                                        config.onHttpAuthRequest(authRequest)
+                                    } else {
+                                        authRequest.cancel()
+                                    }
+                                }) authRequest.cancel()
+                            },
+                            onAuthenticated = { token, sourceUrl ->
+                                post {
+                                    if (isCurrentPdfSource(token)) {
+                                        config.onPdfUrlRequested(this@apply, sourceUrl)
+                                    }
+                                }
+                            },
+                            onViewerEvent = { token, sourceUrl, event ->
+                                post {
+                                    if (isCurrentPdfSource(token)) {
+                                        val targetUrl = sourceUrl.ifEmpty { systemSettings.currentUrl }
+                                        when (event) {
+                                            "error" -> config.setLastErrorUrl(targetUrl)
+                                            "loaded", "authentication" -> config.setLastErrorUrl("")
+                                            "retry" -> config.onPdfUrlRequested(this@apply, targetUrl)
+                                        }
+                                    }
+                                }
+                            },
                         )?.let {
                             return it
                         }
@@ -610,7 +647,16 @@ fun createCustomWebview(
                     host: String?,
                     realm: String?
                 ) {
-                    config.onHttpAuthRequest(handler, host, realm)
+                    if (handler == null) return
+                    if (disposed) {
+                        handler.cancel()
+                        return
+                    }
+                    config.onHttpAuthRequest(HttpAuthRequest(
+                        host, realm,
+                        onSubmit = { username, password -> handler.proceed(username, password) },
+                        onCancel = { handler.cancel() }
+                    ))
                 }
 
                 override fun onReceivedError(
@@ -669,6 +715,8 @@ fun createCustomWebview(
                         "WebView renderer gone. crashed=${detail}"
                     )
                     hideFullscreen()
+                    disposed = true
+                    config.onHttpAuthRequest(null)
                     dialogs.dispose()
                     (view.parent as? ViewGroup)?.removeView(view)
                     NfcBridgeManager.detachWebView(view)
@@ -921,6 +969,8 @@ fun createCustomWebview(
 
         return WebViewCreation.Success(webView) {
             hideFullscreen()
+            disposed = true
+            config.onHttpAuthRequest(null)
             dialogs.dispose()
             blobInterface?.dispose()
         }

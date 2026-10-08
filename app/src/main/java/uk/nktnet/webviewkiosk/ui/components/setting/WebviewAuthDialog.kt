@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.ui.components.setting
 
-import android.webkit.HttpAuthHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -25,16 +24,17 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
 
 @Composable
-fun BasicAuthDialog(authHandler: HttpAuthHandler?, host: String?, realm: String?, onDismiss: () -> Unit) {
-    var username by remember(authHandler, host, realm) { mutableStateOf("") }
-    var password by remember(authHandler, host, realm) { mutableStateOf("") }
-    var showPassword by remember(authHandler, host, realm) { mutableStateOf(false) }
-    var requestCompleted by remember(authHandler, host, realm) { mutableStateOf(false) }
+fun BasicAuthDialog(authRequest: HttpAuthRequest?, onDismiss: () -> Unit) {
+    var username by remember(authRequest) { mutableStateOf("") }
+    var password by remember(authRequest) { mutableStateOf("") }
+    var showPassword by remember(authRequest) { mutableStateOf(false) }
+    var requestCompleted by remember(authRequest) { mutableStateOf(false) }
 
-    if (authHandler != null) {
+    if (authRequest != null) {
         fun completeAuthentication(submit: Boolean) {
             if (requestCompleted) return
             requestCompleted = true
@@ -44,9 +44,9 @@ fun BasicAuthDialog(authHandler: HttpAuthHandler?, host: String?, realm: String?
             password = ""
             showPassword = false
             if (submit) {
-                authHandler.proceed(submittedUsername, submittedPassword)
+                authRequest.proceed(submittedUsername, submittedPassword)
             } else {
-                authHandler.cancel()
+                authRequest.cancel()
             }
             onDismiss()
         }
@@ -56,8 +56,8 @@ fun BasicAuthDialog(authHandler: HttpAuthHandler?, host: String?, realm: String?
             title = { Text("Authentication Required") },
             text = {
                 Column {
-                    Text("Host: ${host ?: ""}")
-                    Text("Realm: ${realm ?: ""}")
+                    Text("Host: ${authRequest.host ?: ""}")
+                    Text("Realm: ${authRequest.realm ?: ""}")
                     OutlinedTextField(
                         value = username,
                         onValueChange = { username = it },

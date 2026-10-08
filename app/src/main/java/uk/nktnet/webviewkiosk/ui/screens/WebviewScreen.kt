@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.webkit.CookieManager
-import android.webkit.HttpAuthHandler
 import android.webkit.URLUtil.isValidUrl
 import android.webkit.WebView
 import androidx.activity.compose.LocalActivity
@@ -49,6 +48,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.MainActivity
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -104,6 +104,7 @@ import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
+import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
@@ -183,9 +184,11 @@ fun WebviewScreen(navController: NavController) {
         FloatingToolbarModeOption.HIDDEN_WHEN_LOCKED -> !isLocked
     }
 
-    var authHandler by remember { mutableStateOf<HttpAuthHandler?>(null) }
-    var authHost by remember { mutableStateOf<String?>(null) }
-    var authRealm by remember { mutableStateOf<String?>(null) }
+    var authRequest by remember { mutableStateOf<HttpAuthRequest?>(null) }
+    DisposableEffect(authRequest) {
+        val request = authRequest
+        onDispose { request?.cancel() }
+    }
 
     var isActiveFindInPage by remember { mutableStateOf(false) }
     val findInPageFocusRequester = remember { FocusRequester() }
@@ -325,10 +328,14 @@ fun WebviewScreen(navController: NavController) {
                 isSwipeRefreshing = false
             },
             updateAddressBarAndHistory = ::updateAddressBarAndHistory,
-            onHttpAuthRequest = { handler, host, realm ->
-                authHandler = handler
-                authHost = host
-                authRealm = realm
+            onHttpAuthRequest = { request ->
+                authRequest?.cancel()
+                authRequest = if (request == null || canHandleEvents()) {
+                    request
+                } else {
+                    request.cancel()
+                    null
+                }
             },
             onLinkLongClick = { link ->
                 linkToOpen = link
@@ -708,7 +715,10 @@ fun WebviewScreen(navController: NavController) {
 
     BackPressHandler(::customLoadUrl, ::canHandleEvents)
 
-    BasicAuthDialog(authHandler, authHost, authRealm) { authHandler = null }
+    val displayedAuthRequest = authRequest
+    BasicAuthDialog(displayedAuthRequest) {
+        if (authRequest === displayedAuthRequest) authRequest = null
+    }
 
     LinkOptionsDialog(
         link = linkToOpen,
@@ -788,12 +798,14 @@ private fun handlePdfUrlRendering(
         return
     }
 
-    val sourceToken = registerPdfSource(targetPdfUrl)
+    val currentToken = webView.getTag(R.id.pdf_source_token) as? String
+    val sourceToken = registerPdfSource(targetPdfUrl, currentToken)
     val htmlContent = generatePdfRendererHtml(sourceToken)
     val encodedPdfUrl = java.net.URLEncoder.encode(targetPdfUrl, "UTF-8")
     val baseUrlWithFallback =
-        "${Constants.PDF_JS_ASSETS_DUMMY_URL}?wk_pdf_url=$encodedPdfUrl"
+        "${Constants.PDF_JS_ASSETS_DUMMY_URL}?wk_pdf_url=$encodedPdfUrl&wk_pdf_token=$sourceToken"
 
+    webView.setTag(R.id.pdf_source_token, sourceToken)
     webView.loadDataWithBaseURL(
         baseUrlWithFallback,
         htmlContent,

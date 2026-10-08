@@ -12,6 +12,13 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
         .build()
         .toString()
     val quotedPdfSourceUrl = JSONObject.quote(pdfSourceUrl)
+    val pdfStatusUrl = Constants.PDF_JS_ASSETS_DUMMY_URL.toUri()
+        .buildUpon()
+        .appendPath("pdf_status")
+        .appendQueryParameter("wk_pdf_token", pdfSourceToken)
+        .build()
+        .toString()
+    val quotedPdfStatusUrl = JSONObject.quote(pdfStatusUrl)
 
     return """
         <!DOCTYPE html>
@@ -35,10 +42,61 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
                     height: auto;
                     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
                 }
+                #pdf-status {
+                    padding: 24px;
+                    color: #ffffff;
+                    text-align: center;
+                    font-family: sans-serif;
+                }
+                #pdf-retry {
+                    padding: 10px 24px;
+                    font-size: 16px;
+                }
             </style>
         </head>
         <body>
+            <div id="pdf-status" role="status" aria-live="polite">
+                <p id="pdf-message">Loading PDF…</p>
+                <button id="pdf-retry" type="button">Retry</button>
+            </div>
             <div id="pdf-container"></div>
+            <script>
+                window.WKPdfViewer = (function() {
+                    var status = document.getElementById('pdf-status');
+                    var message = document.getElementById('pdf-message');
+                    var loaded = false;
+
+                    function report(event) {
+                        fetch($quotedPdfStatusUrl + '&event=' + event, { cache: 'no-store' })
+                            .catch(function(err) { console.error('PDF status error:', err); });
+                    }
+
+                    function failed(err) {
+                        if (loaded) return;
+                        message.textContent = 'Unable to load this PDF. Check your connection or sign in, then try again.';
+                        status.hidden = false;
+                        report(err && err.status === 401 ? 'authentication' : 'error');
+                    }
+
+                    document.getElementById('pdf-retry').onclick = function() {
+                        report('retry');
+                    };
+                    window.addEventListener('error', function(event) {
+                        if (event.target === window || event.target.tagName === 'SCRIPT') {
+                            failed();
+                        }
+                    }, true);
+
+                    return {
+                        failed: failed,
+                        loaded: function() {
+                            loaded = true;
+                            status.hidden = true;
+                            report('loaded');
+                        }
+                    };
+                })();
+            </script>
             <script type="module">
                 import * as pdfjsLib from '${Constants.PDF_JS_ASSETS_DUMMY_URL}/pdfjs_local/pdf.mjs';
                 pdfjsLib.GlobalWorkerOptions.workerSrc = '${Constants.PDF_JS_ASSETS_DUMMY_URL}/pdfjs_local/pdf.worker.mjs';
@@ -186,8 +244,10 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
                         container.appendChild(slot);
                         observer.observe(slot);
                     }
+                    window.WKPdfViewer.loaded();
                 }).catch(err => {
                     console.error('PDF.js error:', err);
+                    window.WKPdfViewer.failed(err);
                 });
             </script>
         </body>
