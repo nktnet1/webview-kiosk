@@ -36,6 +36,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
@@ -145,25 +146,46 @@ fun createCustomWebview(
         mutableStateOf<ValueCallback<Array<Uri>>?>(null)
     }
     var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingFileChooserOwner by remember { mutableStateOf<WebView?>(null) }
+    var pendingFileChooserInFlight by rememberSaveable { mutableStateOf(false) }
 
-    fun completeFileChooser(uris: Array<Uri>?) {
+    fun respondFileChooser(callback: ValueCallback<Array<Uri>>?, uris: Array<Uri>?) {
+        try {
+            callback?.onReceiveValue(uris)
+        } catch (e: Exception) {
+            Log.w(Constants.APP_SCHEME, "Unable to complete WebView file chooser request", e)
+        }
+    }
+
+    fun completeFileChooser(uris: Array<Uri>?, owner: WebView? = null) {
+        if (owner != null && pendingFileChooserOwner !== owner) return
         val callback = pendingFileChooserCallback
         pendingFileChooserCallback = null
         pendingCaptureUri = null
-        callback?.onReceiveValue(uris)
+        pendingFileChooserOwner = null
+        // An abandoned launch stays busy until its result arrives, so it cannot reach a new page.
+        respondFileChooser(callback, uris)
     }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        completeFileChooser(parseFileChooserResult(context, result.resultCode, result.data))
+        pendingFileChooserInFlight = false
+        completeFileChooser(
+            if (pendingFileChooserCallback != null) {
+                parseFileChooserResult(context, result.resultCode, result.data)
+            } else null
+        )
     }
 
     val captureLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
+        pendingFileChooserInFlight = false
         completeFileChooser(
-            parseFileChooserResult(context, result.resultCode, result.data, pendingCaptureUri)
+            if (pendingFileChooserCallback != null) {
+                parseFileChooserResult(context, result.resultCode, result.data, pendingCaptureUri)
+            } else null
         )
     }
 
@@ -173,8 +195,10 @@ fun createCustomWebview(
             if (fileChooserParams.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE) {
                 intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
             }
+            pendingFileChooserInFlight = true
             filePickerLauncher.launch(intent)
         }.onFailure {
+            pendingFileChooserInFlight = false
             Log.e(Constants.APP_SCHEME, "Failed to launch file picker", it)
             completeFileChooser(null)
             ToastManager.show(context, "Unable to open file picker.")
@@ -205,12 +229,14 @@ fun createCustomWebview(
                 addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
             }
             if (captureIntent.resolveActivity(context.packageManager) != null) {
+                pendingFileChooserInFlight = true
                 captureLauncher.launch(captureIntent)
                 return true
             } else {
                 Log.w(Constants.APP_SCHEME, "No activity available for capture action: $action")
             }
         }.onFailure {
+            pendingFileChooserInFlight = false
             Log.e(Constants.APP_SCHEME, "Failed to launch capture action: $action", it)
         }
         // Keep the callback pending so the file picker fallback can complete the upload.
@@ -355,6 +381,7 @@ fun createCustomWebview(
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
                     config.setLastErrorUrl("")
                     config.onHttpAuthRequest(null)
+                    view?.let { completeFileChooser(null, it) }
                     if (!isPdfSourceNavigation(getTag(R.id.pdf_source_token) as? String, url)) {
                         setTag(R.id.pdf_source_token, null)
                     }
@@ -502,7 +529,9 @@ fun createCustomWebview(
                     view: WebView?,
                     request: WebResourceRequest?
                 ): Boolean {
-                    return handleUrlLoading(view, request?.url?.toString())
+                    return handleUrlLoading(
+                        view, request?.url?.toString(), request?.isForMainFrame != false
+                    )
                 }
 
                 @Deprecated("For API < 24")
@@ -510,17 +539,23 @@ fun createCustomWebview(
                     return handleUrlLoading(view, url)
                 }
 
-                private fun handleUrlLoading(view: WebView?, requestUrl: String?): Boolean {
+                private fun handleUrlLoading(
+                    view: WebView?,
+                    requestUrl: String?,
+                    isMainFrame: Boolean = true,
+                ): Boolean {
                     if (requestUrl.isNullOrEmpty()) {
                         return false
                     }
                     val navigationUrl = resolveBlockPageUrl(
                         requestUrl, config.blacklistRegexes, config.whitelistRegexes, userSettings
                     ) ?: return true
-                    systemSettings.urlBeingHandled = navigationUrl
-                    if (systemSettings.urlBeforeNavigation.isEmpty()) {
-                        // [URL_BEFORE_NAVIGATION] first to run for native navigation (non-SPA)
-                        systemSettings.urlBeforeNavigation = systemSettings.currentUrl
+                    if (isMainFrame) {
+                        systemSettings.urlBeingHandled = navigationUrl
+                        if (systemSettings.urlBeforeNavigation.isEmpty()) {
+                            // [URL_BEFORE_NAVIGATION] first to run for native navigation (non-SPA)
+                            systemSettings.urlBeforeNavigation = systemSettings.currentUrl
+                        }
                     }
 
                     val (schemeType, blockCause) = getBlockInfo(
@@ -532,12 +567,14 @@ fun createCustomWebview(
                     if (blockCause != null) {
                         when (userSettings.overrideUrlLoadingBlockAction) {
                             OverrideUrlLoadingBlockActionOption.SHOW_BLOCK_PAGE -> {
-                                loadBlockedPage(
-                                    view,
-                                    userSettings,
-                                    navigationUrl,
-                                    blockCause,
-                                )
+                                if (isMainFrame) {
+                                    loadBlockedPage(
+                                        view,
+                                        userSettings,
+                                        navigationUrl,
+                                        blockCause,
+                                    )
+                                }
                             }
 
                             OverrideUrlLoadingBlockActionOption.SHOW_TOAST -> {
@@ -557,7 +594,8 @@ fun createCustomWebview(
                     }
 
                     if (
-                        view != null
+                        isMainFrame
+                        && view != null
                         && userSettings.supportPdfRendering
                         && PdfJsManager.areAssetsReady(context)
                         && isWebPdf(navigationUrl, null, null)
@@ -566,7 +604,7 @@ fun createCustomWebview(
                         return true
                     }
                     if (navigationUrl != requestUrl) {
-                        loadUrl(navigationUrl)
+                        if (isMainFrame) loadUrl(navigationUrl)
                         return true
                     }
                     return false
@@ -716,6 +754,7 @@ fun createCustomWebview(
                     )
                     hideFullscreen()
                     disposed = true
+                    completeFileChooser(null, view)
                     config.onHttpAuthRequest(null)
                     dialogs.dispose()
                     (view.parent as? ViewGroup)?.removeView(view)
@@ -838,16 +877,21 @@ fun createCustomWebview(
                     filePathCallback: ValueCallback<Array<Uri>>,
                     fileChooserParams: FileChooserParams
                 ): Boolean {
+                    if (disposed || pendingFileChooserInFlight || pendingFileChooserCallback != null) {
+                        respondFileChooser(filePathCallback, null)
+                        return true
+                    }
                     if (!config.userSettings.allowFilePicker) {
                         ToastManager.show(
                             context,
                             "File picker is disabled in ${context.getString(R.string.app_name)}'s Web Engine settings."
                         )
-                        filePathCallback.onReceiveValue(null)
+                        respondFileChooser(filePathCallback, null)
                         return true
                     }
 
                     pendingFileChooserCallback = filePathCallback
+                    pendingFileChooserOwner = webView
 
                     val acceptTypes = fileChooserParams.acceptTypes.filter { it.isNotBlank() }
                     val wantsImage = acceptTypes.any { it.startsWith("image/") }
@@ -970,6 +1014,7 @@ fun createCustomWebview(
         return WebViewCreation.Success(webView) {
             hideFullscreen()
             disposed = true
+            completeFileChooser(null, webView)
             config.onHttpAuthRequest(null)
             dialogs.dispose()
             blobInterface?.dispose()
