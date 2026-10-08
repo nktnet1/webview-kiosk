@@ -65,17 +65,25 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
                     var status = document.getElementById('pdf-status');
                     var message = document.getElementById('pdf-message');
                     var loaded = false;
+                    var pageFailed = false;
+                    var reports = Promise.resolve();
 
                     function report(event) {
-                        fetch($quotedPdfStatusUrl + '&event=' + event, { cache: 'no-store' })
+                        // Keep native status updates in order when rendering fails soon after loading.
+                        reports = reports.then(function() {
+                            return fetch($quotedPdfStatusUrl + '&event=' + event, { cache: 'no-store' });
+                        })
                             .catch(function(err) { console.error('PDF status error:', err); });
                     }
 
-                    function failed(err) {
-                        if (loaded) return;
+                    function showError(err) {
                         message.textContent = 'Unable to load this PDF. Check your connection or sign in, then try again.';
                         status.hidden = false;
                         report(err && err.status === 401 ? 'authentication' : 'error');
+                    }
+
+                    function failed(err) {
+                        if (!loaded) showError(err);
                     }
 
                     document.getElementById('pdf-retry').onclick = function() {
@@ -89,8 +97,13 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
 
                     return {
                         failed: failed,
+                        pageFailed: function(err) {
+                            pageFailed = true;
+                            showError(err);
+                        },
                         loaded: function() {
                             loaded = true;
+                            if (pageFailed) return;
                             status.hidden = true;
                             report('loaded');
                         }
@@ -188,6 +201,9 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
                     } catch (err) {
                         if (!err || err.name !== 'RenderingCancelledException') {
                             console.error('PDF.js page render error:', err);
+                            if (state.wanted && generation === state.generation) {
+                                window.WKPdfViewer.pageFailed(err);
+                            }
                         }
                     } finally {
                         state.renderTask = null;

@@ -9,7 +9,6 @@ import android.os.Environment
 import android.util.Log
 import android.view.Gravity
 import android.view.ViewGroup.LayoutParams
-import android.webkit.CookieManager
 import android.webkit.MimeTypeMap
 import android.webkit.URLUtil
 import android.webkit.WebView
@@ -28,6 +27,7 @@ import uk.nktnet.webviewkiosk.utils.extractFileNameFromContentDisposition
 import uk.nktnet.webviewkiosk.utils.getDownloadLocation
 import uk.nktnet.webviewkiosk.utils.handleKeyEvent
 import uk.nktnet.webviewkiosk.utils.webview.WebViewDialogController
+import uk.nktnet.webviewkiosk.utils.webview.getWebViewRequestCookie
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BlobInterface
 
 @SuppressLint("SetTextI18n")
@@ -167,8 +167,7 @@ fun downloadNormal(
     val request = DownloadManager.Request(url.toUri()).apply {
         setMimeType(mimeType)
         userAgent?.let { addRequestHeader("User-Agent", it) }
-        CookieManager.getInstance().getCookie(url)
-            ?.takeIf { it.isNotBlank() }
+        getWebViewRequestCookie(url)
             ?.let { addRequestHeader("Cookie", it) }
         setDescription("Downloading file...")
         setTitle(filename)

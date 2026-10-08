@@ -3,7 +3,6 @@ package uk.nktnet.webviewkiosk.utils.webview.handlers
 import android.content.Context
 import android.util.Base64
 import android.util.Log
-import android.webkit.CookieManager
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import androidx.core.net.toUri
@@ -14,7 +13,9 @@ import uk.nktnet.webviewkiosk.utils.resolveLocalFileLink
 import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
+import uk.nktnet.webviewkiosk.utils.webview.getWebViewRequestCookie
 import uk.nktnet.webviewkiosk.utils.webview.isPdfViewerUrl
+import uk.nktnet.webviewkiosk.utils.webview.storeWebViewResponseCookies
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileInputStream
@@ -202,8 +203,7 @@ private fun remotePdfResponse(
             userAgent?.takeIf { it.isNotBlank() }?.let {
                 connection.setRequestProperty("User-Agent", it)
             }
-            CookieManager.getInstance().getCookie(currentUrl)
-                ?.takeIf { it.isNotBlank() }
+            getWebViewRequestCookie(currentUrl)
                 ?.let { connection.setRequestProperty("Cookie", it) }
             authorization?.let { connection.setRequestProperty("Authorization", it) }
 
@@ -214,6 +214,7 @@ private fun remotePdfResponse(
             }
 
             val statusCode = connection.responseCode
+            storeWebViewResponseCookies(currentUrl, connection.headerFields)
             if (statusCode in setOf(301, 302, 303, 307, 308)) {
                 val location = connection.getHeaderField("Location")
 
@@ -269,7 +270,7 @@ private fun remotePdfResponse(
             }
             val responseHeaders = mutableMapOf<String, String>()
             connection.headerFields.forEach { (name, values) ->
-                if (name != null && values != null) {
+                if (name != null && values != null && !name.equals("Set-Cookie", ignoreCase = true)) {
                     responseHeaders[name] = values.joinToString(", ")
                 }
             }
