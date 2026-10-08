@@ -1,10 +1,13 @@
 package uk.nktnet.webviewkiosk.managers
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundCommandMessage
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundRequestMessage
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSettingsMessage
@@ -12,6 +15,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 object RemoteMessageManager {
     private val scope = CoroutineScope(Dispatchers.Default)
+    private val commandsMutex = Mutex()
+    private val settingsMutex = Mutex()
+    private val settingsAppliedMutex = Mutex()
+    private val requestsMutex = Mutex()
 
     data class RemoteMessage<T>(
         val message: T,
@@ -38,18 +45,28 @@ object RemoteMessageManager {
         field = MutableSharedFlow<RemoteMessage<InboundRequestMessage>>(extraBufferCapacity = 100)
 
     fun emitCommand(command: InboundCommandMessage, source: RemoteMessage.Source) {
-        scope.launch { commandsFlow.emit(RemoteMessage(command, source)) }
+        emitOrdered(commandsFlow, commandsMutex, RemoteMessage(command, source))
     }
 
     fun emitSettings(settings: InboundSettingsMessage, source: RemoteMessage.Source) {
-        scope.launch { settingsFlow.emit(RemoteMessage(settings, source)) }
+        emitOrdered(settingsFlow, settingsMutex, RemoteMessage(settings, source))
     }
 
     fun emitSettingsApplied(settings: InboundSettingsMessage, source: RemoteMessage.Source) {
-        scope.launch { settingsAppliedFlow.emit(RemoteMessage(settings, source)) }
+        emitOrdered(settingsAppliedFlow, settingsAppliedMutex, RemoteMessage(settings, source))
     }
 
     fun emitRequest(request: InboundRequestMessage, source: RemoteMessage.Source) {
-        scope.launch { requestsFlow.emit(RemoteMessage(request, source)) }
+        emitOrdered(requestsFlow, requestsMutex, RemoteMessage(request, source))
+    }
+
+    private fun <T> emitOrdered(flow: MutableSharedFlow<T>, mutex: Mutex, message: T) {
+        // Join this stream's FIFO queue before dispatching; other streams remain independent.
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            mutex.withLock {
+                // Emit in a dispatched child so a busy subscriber cannot block the callback.
+                launch { flow.emit(message) }.join()
+            }
+        }
     }
 }
