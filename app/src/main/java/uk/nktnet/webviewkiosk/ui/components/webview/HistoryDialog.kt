@@ -39,7 +39,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.HistoryEntry
@@ -52,7 +51,6 @@ import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import java.util.Date
 import java.util.concurrent.TimeUnit
-import kotlin.time.Duration.Companion.milliseconds
 
 private fun formatDatetime(context: Context, timestamp: Long): String {
     val now = System.currentTimeMillis()
@@ -110,8 +108,7 @@ fun HistoryDialog(
         RemoteMessageManager.commandsFlow.collect { commandMessage ->
             when (commandMessage.message) {
                 is InboundClearHistoryCommand -> {
-                    // The actual history is cleared in main activity
-                    delay(100.milliseconds)
+                    // Command dispatch has already completed the native history clear.
                     history = systemSettings.historyStack
                 }
                 else -> Unit

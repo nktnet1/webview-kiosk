@@ -253,7 +253,38 @@ fun createCustomWebview(
         var hideFullscreen: () -> Unit = {}
         var disposed = false
 
-        val webView = WebView(context).apply {
+        val webView = object : WebView(context) {
+            var awaitingPdfPageStart = false
+
+            fun clearPdfNavigation() {
+                awaitingPdfPageStart = false
+                setTag(R.id.pdf_source_token, null)
+            }
+
+            override fun loadUrl(url: String) {
+                clearPdfNavigation()
+                super.loadUrl(url)
+            }
+
+            override fun loadUrl(url: String, additionalHttpHeaders: Map<String, String>) {
+                clearPdfNavigation()
+                super.loadUrl(url, additionalHttpHeaders)
+            }
+
+            override fun loadDataWithBaseURL(
+                baseUrl: String?,
+                data: String,
+                mimeType: String?,
+                encoding: String?,
+                historyUrl: String?,
+            ) {
+                awaitingPdfPageStart = baseUrl != null
+                    && isPdfViewerUrl(baseUrl.toUri())
+                    && isPdfSourceNavigation(getTag(R.id.pdf_source_token) as? String, baseUrl)
+                if (!awaitingPdfPageStart) clearPdfNavigation()
+                super.loadDataWithBaseURL(baseUrl, data, mimeType, encoding, historyUrl)
+            }
+        }.apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
@@ -382,14 +413,14 @@ fun createCustomWebview(
                     val pdfToken = getTag(R.id.pdf_source_token) as? String
                     val isCurrentPdfNavigation = isPdfSourceNavigation(pdfToken, url)
                     if (
-                        url != null
-                        && isPdfViewerUrl(url.toUri())
+                        (awaitingPdfPageStart || (url != null && isPdfViewerUrl(url.toUri())))
                         && !isCurrentPdfNavigation
                     ) {
-                        // loadDataWithBaseURL queues page-start callbacks. An older viewer
-                        // must not clear the newer viewer's token, authentication, or errors.
+                        // An older ordinary page or viewer may start after the new PDF
+                        // load was requested. It must not clear the new viewer's state.
                         return
                     }
+                    awaitingPdfPageStart = false
                     config.setLastErrorUrl("")
                     config.onHttpAuthRequest(null)
                     view?.let { completeFileChooser(null, it) }
@@ -621,6 +652,7 @@ fun createCustomWebview(
                         if (isMainFrame) loadUrl(navigationUrl)
                         return true
                     }
+                    if (isMainFrame) clearPdfNavigation()
                     return false
                 }
 

@@ -2,16 +2,11 @@ package uk.nktnet.webviewkiosk.managers
 
 import android.content.Context
 import android.util.Log
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import org.unifiedpush.android.connector.FailedReason
 import org.unifiedpush.android.connector.INSTANCE_DEFAULT
@@ -22,7 +17,6 @@ import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundCommandJsonParser
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundCommandMessage
-import uk.nktnet.webviewkiosk.config.remote.inbound.InboundLockDeviceCommand
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSettingsMessage
 import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushEndpoint
 import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushVariableName
@@ -42,7 +36,6 @@ data class UnifiedPushLogEntry(
 
 object UnifiedPushManager {
     private val scope = CoroutineScope(Dispatchers.Default)
-    private val commandMutex = Mutex()
     private val logHistory = ArrayDeque<UnifiedPushLogEntry>(100)
     val debugLog: SharedFlow<UnifiedPushLogEntry>
         field = MutableSharedFlow<UnifiedPushLogEntry>(extraBufferCapacity = 100)
@@ -339,39 +332,19 @@ object UnifiedPushManager {
         instance: String,
     ) {
         val appContext = context.applicationContext
-        // The connector may destroy the service after its callback returns. Use the
-        // process scope so the Dhizuku retry and pending command survive that callback.
-        // Enter the mutex in callback order so later commands cannot overtake a lock
-        // while it waits for Dhizuku. Dispatch the work off the callback thread.
-        scope.launch(start = CoroutineStart.UNDISPATCHED) {
-            try {
-                commandMutex.withLock {
-                    withContext(Dispatchers.IO) {
-                        if (
-                            command is InboundLockDeviceCommand
-                            && !DeviceOwnerManager.hasOwnerPermission(appContext)
-                        ) {
-                            DeviceOwnerManager.initWithDhizukuRetry(appContext)
-                        }
-                        RemoteMessageManager.emitCommand(
-                            command,
-                            RemoteMessageManager.RemoteMessage.Source.UNIFIEDPUSH,
-                        )
-                        RemoteInboundHandler.handleInboundCommand(appContext, command)
-                    }
-                }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                addDebugLog(
-                    "command handler error",
-                    "instance: $instance\nreason: ${e.message}",
-                )
-                ToastManager.show(
-                    appContext,
-                    "UnifiedPush: failed to handle command. See debug logs for details.",
-                )
-            }
+        RemoteMessageManager.emitCommand(
+            command,
+            RemoteMessageManager.RemoteMessage.Source.UNIFIEDPUSH,
+            appContext,
+        ) { e ->
+            addDebugLog(
+                "command handler error",
+                "instance: $instance\nreason: ${e.message}",
+            )
+            ToastManager.show(
+                appContext,
+                "UnifiedPush: failed to handle command. See debug logs for details.",
+            )
         }
     }
 

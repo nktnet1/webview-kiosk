@@ -11,7 +11,6 @@ import android.nfc.NfcAdapter
 import android.nfc.Tag
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.KeyEvent
 import android.view.WindowManager
 import androidx.activity.compose.LocalActivity
@@ -23,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,7 +38,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -49,7 +48,6 @@ import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
-import uk.nktnet.webviewkiosk.config.remote.inbound.InboundLockDeviceCommand
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundDisconnectingEvent
 import uk.nktnet.webviewkiosk.handlers.RemoteInboundHandler
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
@@ -58,7 +56,6 @@ import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
-import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.services.MqttForegroundService
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
@@ -226,33 +223,11 @@ open class MainActivity : AppCompatActivity() {
                 true
             }
 
-            LaunchedEffect(Unit) {
-                RemoteMessageManager.commandsFlow.collect { command ->
-                    if (
-                        isApplicationEventHost()
-                        && command.source == RemoteMessageManager.RemoteMessage.Source.MQTT
-                        && !userSettings.mqttUseForegroundService
-                        && command.tryClaim()
-                    ) {
-                        try {
-                            if (
-                                command.message is InboundLockDeviceCommand
-                                && !DeviceOwnerManager.hasOwnerPermission(applicationContext)
-                            ) {
-                                DeviceOwnerManager.initWithDhizukuRetry(applicationContext)
-                            }
-                            RemoteInboundHandler.handleInboundCommand(context, command.message)
-                        } catch (e: CancellationException) {
-                            throw e
-                        } catch (e: Exception) {
-                            Log.e(javaClass.simpleName, "Failed to handle MQTT command", e)
-                            ToastManager.show(
-                                applicationContext,
-                                "MQTT: failed to handle command.",
-                            )
-                        }
-                    }
+            DisposableEffect(Unit) {
+                val unregister = RemoteMessageManager.registerMqttCommandHost(applicationContext) {
+                    isApplicationEventHost() && !userSettings.mqttUseForegroundService
                 }
+                onDispose(unregister)
             }
 
             LaunchedEffect(Unit) {
