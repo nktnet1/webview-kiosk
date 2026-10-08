@@ -70,6 +70,7 @@ import uk.nktnet.webviewkiosk.utils.webview.interfaces.NfcInterface
 import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.webview.parseMutualTlsRules
+import uk.nktnet.webviewkiosk.utils.webview.resolveBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDarkReaderScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDisableVibrationApiScript
@@ -481,34 +482,28 @@ fun createCustomWebview(
                     if (requestUrl.isNullOrEmpty()) {
                         return false
                     }
-                    systemSettings.urlBeingHandled = requestUrl
+                    val navigationUrl = resolveBlockPageUrl(
+                        requestUrl, config.blacklistRegexes, config.whitelistRegexes, userSettings
+                    ) ?: return true
+                    systemSettings.urlBeingHandled = navigationUrl
                     if (systemSettings.urlBeforeNavigation.isEmpty()) {
                         // [URL_BEFORE_NAVIGATION] first to run for native navigation (non-SPA)
                         systemSettings.urlBeforeNavigation = systemSettings.currentUrl
                     }
 
                     val (schemeType, blockCause) = getBlockInfo(
-                        url = requestUrl,
+                        url = navigationUrl,
                         blacklistRegexes = config.blacklistRegexes,
                         whitelistRegexes = config.whitelistRegexes,
                         userSettings = userSettings
                     )
-                    val uri = requestUrl.toUri()
-                    if (schemeType == SchemeType.APP_CUSTOM && uri.host == "block") {
-                        val blockUrl = uri.getQueryParameter("url")
-                        if (blockUrl != null) {
-                            loadUrl(blockUrl)
-                            return true
-                        }
-                    }
-
                     if (blockCause != null) {
                         when (userSettings.overrideUrlLoadingBlockAction) {
                             OverrideUrlLoadingBlockActionOption.SHOW_BLOCK_PAGE -> {
                                 loadBlockedPage(
                                     view,
                                     userSettings,
-                                    requestUrl,
+                                    navigationUrl,
                                     blockCause,
                                 )
                             }
@@ -524,7 +519,7 @@ fun createCustomWebview(
 
                     if (schemeType == SchemeType.OTHER) {
                         if (userSettings.allowOtherUrlSchemes) {
-                            handleExternalSchemeUrl(context, requestUrl)
+                            handleExternalSchemeUrl(context, navigationUrl)
                         }
                         return true
                     }
@@ -533,9 +528,13 @@ fun createCustomWebview(
                         view != null
                         && userSettings.supportPdfRendering
                         && PdfJsManager.areAssetsReady(context)
-                        && isWebPdf(requestUrl, null, null)
+                        && isWebPdf(navigationUrl, null, null)
                     ) {
-                        config.onPdfUrlRequested(view, requestUrl)
+                        config.onPdfUrlRequested(view, navigationUrl)
+                        return true
+                    }
+                    if (navigationUrl != requestUrl) {
+                        loadUrl(navigationUrl)
                         return true
                     }
                     return false

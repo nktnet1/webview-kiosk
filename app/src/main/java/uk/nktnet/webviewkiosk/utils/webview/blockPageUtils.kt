@@ -11,6 +11,7 @@ import uk.nktnet.webviewkiosk.utils.webview.html.generateBlockedPageHtml
 import java.net.URLEncoder
 
 const val BLOCK_HOST = "block"
+private const val MAX_BLOCK_PAGE_URL_DEPTH = 10
 
 enum class SchemeType {
     FILE,
@@ -55,6 +56,31 @@ fun getBlockInfo(
         else -> null
     }
     return schemeType to blockCause
+}
+
+fun resolveBlockPageUrl(
+    url: String,
+    blacklistRegexes: List<Regex>,
+    whitelistRegexes: List<Regex>,
+    userSettings: UserSettings,
+): String? {
+    var targetUrl = url
+    var depth = 0
+    while (true) {
+        val (schemeType, blockCause) = getBlockInfo(
+            targetUrl, blacklistRegexes, whitelistRegexes, userSettings
+        )
+        val uri = targetUrl.toUri()
+        // Keep a denied URL so the caller can apply its usual block action.
+        if (blockCause != null || !isCustomBlockPageUrl(schemeType, uri)) {
+            return targetUrl
+        }
+        // Do not let malformed or excessively nested wrappers trigger unchecked loads.
+        if (depth++ >= MAX_BLOCK_PAGE_URL_DEPTH) {
+            return null
+        }
+        targetUrl = uri.getQueryParameter("url")?.takeIf { it.isNotBlank() } ?: return null
+    }
 }
 
 fun loadBlockedPage(

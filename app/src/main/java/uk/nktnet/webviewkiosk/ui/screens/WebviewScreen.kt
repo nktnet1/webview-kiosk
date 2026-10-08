@@ -113,8 +113,8 @@ import uk.nktnet.webviewkiosk.utils.webview.handlers.registerPdfSource
 import uk.nktnet.webviewkiosk.utils.webview.html.generateFileMissingPage
 import uk.nktnet.webviewkiosk.utils.webview.html.generatePdfRendererHtml
 import uk.nktnet.webviewkiosk.utils.webview.html.generateUnsupportedMimeTypePage
-import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
+import uk.nktnet.webviewkiosk.utils.webview.resolveBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
@@ -365,9 +365,12 @@ fun WebviewScreen(navController: NavController) {
     }
 
     fun customLoadUrl(newUrl: String) {
-        systemSettings.urlBeingHandled = newUrl
+        val url = resolveBlockPageUrl(
+            newUrl, blacklistRegexes, whitelistRegexes, userSettings
+        ) ?: return
+        systemSettings.urlBeingHandled = url
         val (schemeType, blockCause) = getBlockInfo(
-            url = newUrl,
+            url = url,
             blacklistRegexes = blacklistRegexes,
             whitelistRegexes = whitelistRegexes,
             userSettings = userSettings
@@ -376,20 +379,14 @@ fun WebviewScreen(navController: NavController) {
             loadBlockedPage(
                 webView,
                 userSettings,
-                newUrl,
+                url,
                 blockCause,
             )
             return
         }
-        val uri = newUrl.toUri()
+        val uri = url.toUri()
 
-        if (isCustomBlockPageUrl(schemeType, uri)) {
-            val blockUrl = uri.getQueryParameter("url")
-            if (blockUrl != null) {
-                webView.loadUrl(blockUrl)
-                return
-            }
-        } else if (schemeType == SchemeType.FILE) {
+        if (schemeType == SchemeType.FILE) {
             val mimeType = getMimeType(context, uri)
             val file = File(uri.path ?: "")
             val isPdf = (
@@ -403,7 +400,7 @@ fun WebviewScreen(navController: NavController) {
                 && userSettings.supportPdfRendering
                 && PdfJsManager.areAssetsReady(context)
             ) {
-                handlePdfUrlRendering(webView, newUrl)
+                handlePdfUrlRendering(webView, url)
                 return
             }
 
@@ -416,7 +413,7 @@ fun WebviewScreen(navController: NavController) {
             }
             pageContent?.let {
                 webView.loadDataWithBaseURL(
-                    newUrl,
+                    url,
                     it,
                     "text/html",
                     "UTF-8",
@@ -434,7 +431,7 @@ fun WebviewScreen(navController: NavController) {
             schemeType == SchemeType.WEB
             && uri.path?.lowercase()?.endsWith(".pdf") == true
         )
-        val isDummyFallback = newUrl.startsWith(Constants.PDF_JS_ASSETS_DUMMY_URL)
+        val isDummyFallback = url.startsWith(Constants.PDF_JS_ASSETS_DUMMY_URL)
 
         if (isDummyFallback) {
             val pdfUrl = uri.getQueryParameter("wk_pdf_url") ?: ""
@@ -445,11 +442,11 @@ fun WebviewScreen(navController: NavController) {
         } else if (isPdfRenderingSupported && isWebPdf) {
             handlePdfUrlRendering(
                 webView,
-                newUrl,
+                url,
             )
             return
         }
-        webView.loadUrl(newUrl)
+        webView.loadUrl(url)
     }
 
     LaunchedEffect(webView, retryAfterLocalNetworkPermission) {
