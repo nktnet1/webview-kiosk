@@ -21,6 +21,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CancellationException
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.saveContentIntentToFile
 import java.io.File
@@ -31,9 +32,10 @@ fun UploadFileProgress(
     uri: Uri,
     targetDir: File,
     onProgress: (Float) -> Unit,
-    onComplete: (File) -> Unit
+    onComplete: (File) -> Unit,
+    onFailed: () -> Unit,
 ) {
-    var progress by remember { mutableFloatStateOf(0f) }
+    var progress by remember(uri) { mutableFloatStateOf(0f) }
 
     LaunchedEffect(uri) {
         try {
@@ -42,8 +44,11 @@ fun UploadFileProgress(
                 onProgress(p)
             }
             onComplete(file)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            ToastManager.show(context,  "Upload failed: ${e.message}")
+            onFailed()
+            ToastManager.show(context, "Upload failed: ${e.message}")
         }
     }
 

@@ -23,11 +23,9 @@ import android.webkit.SslErrorHandler
 import android.webkit.URLUtil
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
-import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
-import android.webkit.WebViewClient
 import android.widget.FrameLayout
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -36,11 +34,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
+import androidx.webkit.WebResourceErrorCompat
 import androidx.webkit.WebViewAssetLoader
+import androidx.webkit.WebViewClientCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import uk.nktnet.webviewkiosk.R
@@ -53,23 +54,29 @@ import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.managers.PdfJsManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
+import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.WebViewDialogController
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.webview.handleMutualTlsRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleDownloadPrompt
+import uk.nktnet.webviewkiosk.utils.webview.handlers.cancelPdfSourceRequests
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePdfSourceRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleSslErrorPromptRequest
+import uk.nktnet.webviewkiosk.utils.webview.handlers.isPdfSourceNavigation
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BatteryInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BlobInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BrightnessInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.NfcInterface
 import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
+import uk.nktnet.webviewkiosk.utils.webview.isPdfViewerUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
+import uk.nktnet.webviewkiosk.utils.webview.parseFileChooserResult
 import uk.nktnet.webviewkiosk.utils.webview.parseMutualTlsRules
+import uk.nktnet.webviewkiosk.utils.webview.resolveBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDarkReaderScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDisableVibrationApiScript
@@ -80,7 +87,7 @@ import java.io.File
 
 private const val LOCAL_NETWORK_PERMISSION_ERROR = "ERR_LOCAL_NETWORK_PERMISSION_MISSING"
 
-private fun isLocalNetworkPermissionError(error: WebResourceError?): Boolean {
+private fun isLocalNetworkPermissionError(error: WebResourceErrorCompat?): Boolean {
     return (
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN
         && error?.description?.toString()?.contains(LOCAL_NETWORK_PERMISSION_ERROR) == true
@@ -118,7 +125,7 @@ data class WebViewConfig(
     val finishSwipeRefresh: () -> Unit,
     val onProgressChanged: (newProgress: Int) -> Unit,
     val updateAddressBarAndHistory: (url: String, originalUrl: String?) -> Unit,
-    val onHttpAuthRequest: (handler: HttpAuthHandler?, host: String?, realm: String?) -> Unit,
+    val onHttpAuthRequest: (request: HttpAuthRequest?) -> Unit,
     val onLinkLongClick: (url: String) -> Unit,
     val onImageLongClick: (url: String) -> Unit,
     val onPdfUrlRequested: (webView: WebView, url: String) -> Unit,
@@ -139,34 +146,48 @@ fun createCustomWebview(
     var pendingFileChooserCallback by remember {
         mutableStateOf<ValueCallback<Array<Uri>>?>(null)
     }
+    var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingFileChooserOwner by remember { mutableStateOf<WebView?>(null) }
+    var pendingFileChooserInFlight by rememberSaveable { mutableStateOf(false) }
+
+    fun respondFileChooser(callback: ValueCallback<Array<Uri>>?, uris: Array<Uri>?) {
+        try {
+            callback?.onReceiveValue(uris)
+        } catch (e: Exception) {
+            Log.w(Constants.APP_SCHEME, "Unable to complete WebView file chooser request", e)
+        }
+    }
+
+    fun completeFileChooser(uris: Array<Uri>?, owner: WebView? = null) {
+        if (owner != null && pendingFileChooserOwner !== owner) return
+        val callback = pendingFileChooserCallback
+        pendingFileChooserCallback = null
+        pendingCaptureUri = null
+        pendingFileChooserOwner = null
+        // An abandoned launch stays busy until its result arrives, so it cannot reach a new page.
+        respondFileChooser(callback, uris)
+    }
+
     val filePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val uris = result.data?.let { intent ->
-            val clipData = intent.clipData
-            if (clipData != null) {
-                Array(clipData.itemCount) { i -> clipData.getItemAt(i).uri }
-            } else {
-                intent.data?.let { arrayOf(it) }
-            }
-        }
-        pendingFileChooserCallback?.onReceiveValue(uris)
-        pendingFileChooserCallback = null
+        pendingFileChooserInFlight = false
+        completeFileChooser(
+            if (pendingFileChooserCallback != null) {
+                parseFileChooserResult(context, result.resultCode, result.data)
+            } else null
+        )
     }
-
-    var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
 
     val captureLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val captured = result.data?.data ?: pendingCaptureUri
-        if (result.resultCode == Activity.RESULT_OK && captured != null) {
-            pendingFileChooserCallback?.onReceiveValue(arrayOf(captured))
-        } else {
-            pendingFileChooserCallback?.onReceiveValue(null)
-        }
-        pendingFileChooserCallback = null
-        pendingCaptureUri = null
+        pendingFileChooserInFlight = false
+        completeFileChooser(
+            if (pendingFileChooserCallback != null) {
+                parseFileChooserResult(context, result.resultCode, result.data, pendingCaptureUri)
+            } else null
+        )
     }
 
     fun launchFilePicker(fileChooserParams: WebChromeClient.FileChooserParams) {
@@ -175,11 +196,12 @@ fun createCustomWebview(
             if (fileChooserParams.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE) {
                 intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
             }
+            pendingFileChooserInFlight = true
             filePickerLauncher.launch(intent)
         }.onFailure {
+            pendingFileChooserInFlight = false
             Log.e(Constants.APP_SCHEME, "Failed to launch file picker", it)
-            pendingFileChooserCallback?.onReceiveValue(null)
-            pendingFileChooserCallback = null
+            completeFileChooser(null)
             ToastManager.show(context, "Unable to open file picker.")
         }
     }
@@ -208,12 +230,14 @@ fun createCustomWebview(
                 addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
             }
             if (captureIntent.resolveActivity(context.packageManager) != null) {
+                pendingFileChooserInFlight = true
                 captureLauncher.launch(captureIntent)
                 return true
             } else {
                 Log.w(Constants.APP_SCHEME, "No activity available for capture action: $action")
             }
         }.onFailure {
+            pendingFileChooserInFlight = false
             Log.e(Constants.APP_SCHEME, "Failed to launch capture action: $action", it)
         }
         // Keep the callback pending so the file picker fallback can complete the upload.
@@ -221,14 +245,48 @@ fun createCustomWebview(
         return false
     }
 
-    fun buildWebView(dialogs: WebViewDialogController): Pair<WebView, BlobInterface?> {
+    fun buildWebView(dialogs: WebViewDialogController): WebViewCreation.Success {
         val blobInterface = if (userSettings.allowFileDownload) {
             BlobInterface(context)
         } else {
             null
         }
+        var hideFullscreen: () -> Unit = {}
+        var disposed = false
 
-        val webView = WebView(context).apply {
+        val webView = object : WebView(context) {
+            var awaitingPdfPageStart = false
+
+            fun clearPdfNavigation() {
+                awaitingPdfPageStart = false
+                cancelPdfSourceRequests(getTag(R.id.pdf_source_token) as? String)
+                setTag(R.id.pdf_source_token, null)
+            }
+
+            override fun loadUrl(url: String) {
+                clearPdfNavigation()
+                super.loadUrl(url)
+            }
+
+            override fun loadUrl(url: String, additionalHttpHeaders: Map<String, String>) {
+                clearPdfNavigation()
+                super.loadUrl(url, additionalHttpHeaders)
+            }
+
+            override fun loadDataWithBaseURL(
+                baseUrl: String?,
+                data: String,
+                mimeType: String?,
+                encoding: String?,
+                historyUrl: String?,
+            ) {
+                awaitingPdfPageStart = baseUrl != null
+                    && isPdfViewerUrl(baseUrl.toUri())
+                    && isPdfSourceNavigation(getTag(R.id.pdf_source_token) as? String, baseUrl)
+                if (!awaitingPdfPageStart) clearPdfNavigation()
+                super.loadDataWithBaseURL(baseUrl, data, mimeType, encoding, historyUrl)
+            }
+        }.apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
@@ -332,8 +390,10 @@ fun createCustomWebview(
             }
 
             val requestUserAgent = settings.userAgentString
+            fun isCurrentPdfSource(token: String): Boolean =
+                !disposed && getTag(R.id.pdf_source_token) == token
 
-            webViewClient = object : WebViewClient() {
+            webViewClient = object : WebViewClientCompat() {
                 override fun onReceivedClientCertRequest(
                     view: WebView?,
                     request: ClientCertRequest?
@@ -352,7 +412,24 @@ fun createCustomWebview(
                 }
 
                 override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                    val pdfToken = getTag(R.id.pdf_source_token) as? String
+                    val isCurrentPdfNavigation = isPdfSourceNavigation(pdfToken, url)
+                    if (
+                        (awaitingPdfPageStart || (url != null && isPdfViewerUrl(url.toUri())))
+                        && !isCurrentPdfNavigation
+                    ) {
+                        // An older ordinary page or viewer may start after the new PDF
+                        // load was requested. It must not clear the new viewer's state.
+                        return
+                    }
+                    awaitingPdfPageStart = false
                     config.setLastErrorUrl("")
+                    config.onHttpAuthRequest(null)
+                    view?.let { completeFileChooser(null, it) }
+                    if (!isCurrentPdfNavigation) {
+                        cancelPdfSourceRequests(pdfToken)
+                        setTag(R.id.pdf_source_token, null)
+                    }
                     blobInterface?.abortAllDownloads()
                     NfcBridgeManager.resetSession()
                     if (userSettings.requestFocusOnPageStart) {
@@ -444,6 +521,56 @@ fun createCustomWebview(
                             userSettings,
                             config.blacklistRegexes,
                             config.whitelistRegexes,
+                            onAuthenticationRequired = { token, _, authRequest ->
+                                if (!post {
+                                    if (isCurrentPdfSource(token)) {
+                                        config.onHttpAuthRequest(authRequest)
+                                    } else {
+                                        authRequest.cancel()
+                                    }
+                                }) authRequest.cancel()
+                            },
+                            onAuthenticated = { token, sourceUrl ->
+                                post {
+                                    if (isCurrentPdfSource(token)) {
+                                        config.onPdfUrlRequested(this@apply, sourceUrl)
+                                    }
+                                }
+                            },
+                            onViewerEvent = { token, sourceUrl, event ->
+                                post {
+                                    if (isCurrentPdfSource(token)) {
+                                        val targetUrl = sourceUrl.ifEmpty { systemSettings.currentUrl }
+                                        when (event) {
+                                            "error" -> config.setLastErrorUrl(targetUrl)
+                                            "loaded", "authentication" -> config.setLastErrorUrl("")
+                                            "retry" -> config.onPdfUrlRequested(this@apply, targetUrl)
+                                        }
+                                    }
+                                }
+                            },
+                            onClientCertificateRequired = { token, _, certRequest ->
+                                if (!post {
+                                    if (isCurrentPdfSource(token) && dialogs.isActive()) {
+                                        handleMutualTlsRequest(
+                                            context as? Activity, context, certRequest,
+                                            parseMutualTlsRules(userSettings.mutualTls).orEmpty(),
+                                            systemSettings, scope,
+                                        )
+                                    } else {
+                                        certRequest.ignore()
+                                    }
+                                }) certRequest.ignore()
+                            },
+                            onSslError = { token, _, sslRequest ->
+                                if (!post {
+                                    if (isCurrentPdfSource(token)) {
+                                        handleSslErrorPromptRequest(context, sslRequest, dialogs)
+                                    } else {
+                                        sslRequest.cancel()
+                                    }
+                                }) sslRequest.cancel()
+                            },
                         )?.let {
                             return it
                         }
@@ -466,51 +593,58 @@ fun createCustomWebview(
                 }
 
                 override fun shouldOverrideUrlLoading(
-                    view: WebView?,
-                    request: WebResourceRequest?
+                    view: WebView,
+                    request: WebResourceRequest
                 ): Boolean {
-                    return handleUrlLoading(view, request?.url?.toString())
+                    return handleUrlLoading(
+                        view, request.url.toString(), request.isForMainFrame
+                    )
                 }
 
                 @Deprecated("For API < 24")
                 override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                    return handleUrlLoading(view, url)
+                    // Older WebViews without the compatibility callback omit frame metadata.
+                    // Only HTTP(S) overrides are guaranteed to target the main frame.
+                    val isMainFrame = url?.toUri()?.scheme?.lowercase() in setOf("http", "https")
+                    return handleUrlLoading(view, url, isMainFrame)
                 }
 
-                private fun handleUrlLoading(view: WebView?, requestUrl: String?): Boolean {
+                private fun handleUrlLoading(
+                    view: WebView?,
+                    requestUrl: String?,
+                    isMainFrame: Boolean,
+                ): Boolean {
                     if (requestUrl.isNullOrEmpty()) {
                         return false
                     }
-                    systemSettings.urlBeingHandled = requestUrl
-                    if (systemSettings.urlBeforeNavigation.isEmpty()) {
-                        // [URL_BEFORE_NAVIGATION] first to run for native navigation (non-SPA)
-                        systemSettings.urlBeforeNavigation = systemSettings.currentUrl
+                    val navigationUrl = resolveBlockPageUrl(
+                        requestUrl, config.blacklistRegexes, config.whitelistRegexes, userSettings
+                    ) ?: return true
+                    if (isMainFrame) {
+                        systemSettings.urlBeingHandled = navigationUrl
+                        if (systemSettings.urlBeforeNavigation.isEmpty()) {
+                            // [URL_BEFORE_NAVIGATION] first to run for native navigation (non-SPA)
+                            systemSettings.urlBeforeNavigation = systemSettings.currentUrl
+                        }
                     }
 
                     val (schemeType, blockCause) = getBlockInfo(
-                        url = requestUrl,
+                        url = navigationUrl,
                         blacklistRegexes = config.blacklistRegexes,
                         whitelistRegexes = config.whitelistRegexes,
                         userSettings = userSettings
                     )
-                    val uri = requestUrl.toUri()
-                    if (schemeType == SchemeType.APP_CUSTOM && uri.host == "block") {
-                        val blockUrl = uri.getQueryParameter("url")
-                        if (blockUrl != null) {
-                            loadUrl(blockUrl)
-                            return true
-                        }
-                    }
-
                     if (blockCause != null) {
                         when (userSettings.overrideUrlLoadingBlockAction) {
                             OverrideUrlLoadingBlockActionOption.SHOW_BLOCK_PAGE -> {
-                                loadBlockedPage(
-                                    view,
-                                    userSettings,
-                                    requestUrl,
-                                    blockCause,
-                                )
+                                if (isMainFrame) {
+                                    loadBlockedPage(
+                                        view,
+                                        userSettings,
+                                        navigationUrl,
+                                        blockCause,
+                                    )
+                                }
                             }
 
                             OverrideUrlLoadingBlockActionOption.SHOW_TOAST -> {
@@ -524,20 +658,26 @@ fun createCustomWebview(
 
                     if (schemeType == SchemeType.OTHER) {
                         if (userSettings.allowOtherUrlSchemes) {
-                            handleExternalSchemeUrl(context, requestUrl)
+                            handleExternalSchemeUrl(context, navigationUrl)
                         }
                         return true
                     }
 
                     if (
-                        view != null
+                        isMainFrame
+                        && view != null
                         && userSettings.supportPdfRendering
                         && PdfJsManager.areAssetsReady(context)
-                        && isWebPdf(requestUrl, null, null)
+                        && isWebPdf(navigationUrl, null, null)
                     ) {
-                        config.onPdfUrlRequested(view, requestUrl)
+                        config.onPdfUrlRequested(view, navigationUrl)
                         return true
                     }
+                    if (navigationUrl != requestUrl) {
+                        if (isMainFrame) loadUrl(navigationUrl)
+                        return true
+                    }
+                    if (isMainFrame) clearPdfNavigation()
                     return false
                 }
 
@@ -549,10 +689,20 @@ fun createCustomWebview(
                     if (url == null) {
                         return
                     }
+                    val isPdfViewer = isPdfViewerUrl(url.toUri())
+                    val navigationUrl = if (isPdfViewer) {
+                        resolveBlockPageUrl(
+                            url, config.blacklistRegexes, config.whitelistRegexes, userSettings
+                        ) ?: return
+                    } else {
+                        url
+                    }
+                    val historyOriginalUrl = if (isPdfViewer) navigationUrl else originalUrl
                     if (
-                        systemSettings.urlBeingHandled.trimEnd('/') == url.trimEnd('/')
+                        !isPdfViewer
+                        && systemSettings.urlBeingHandled.trimEnd('/') == navigationUrl.trimEnd('/')
                     ) {
-                        config.updateAddressBarAndHistory(url, originalUrl)
+                        config.updateAddressBarAndHistory(navigationUrl, historyOriginalUrl)
                         return
                     }
 
@@ -565,21 +715,21 @@ fun createCustomWebview(
                         systemSettings.urlBeforeNavigation = systemSettings.currentUrl
                     }
 
-                    systemSettings.urlBeingHandled = url
+                    systemSettings.urlBeingHandled = navigationUrl
 
                     val (schemeType, blockCause) = getBlockInfo(
-                        url = url,
+                        url = navigationUrl,
                         blacklistRegexes = config.blacklistRegexes,
                         whitelistRegexes = config.whitelistRegexes,
                         userSettings = userSettings
                     )
 
-                    val uri = url.toUri()
+                    val uri = navigationUrl.toUri()
                     if (isCustomBlockPageUrl(schemeType, uri)) {
                         // Already on custom block page.
                         val blockUrl = uri.getQueryParameter("url")
                         blockUrl?.let {
-                            config.updateAddressBarAndHistory(blockUrl, originalUrl)
+                            config.updateAddressBarAndHistory(blockUrl, historyOriginalUrl)
                         }
                         return
                     }
@@ -588,16 +738,16 @@ fun createCustomWebview(
                         loadBlockedPage(
                             view,
                             userSettings,
-                            url,
+                            navigationUrl,
                             blockCause,
                         )
-                        config.updateAddressBarAndHistory(url, originalUrl)
+                        config.updateAddressBarAndHistory(navigationUrl, historyOriginalUrl)
                         return
                     }
                     if (schemeType == SchemeType.OTHER) {
                         return
                     }
-                    config.updateAddressBarAndHistory(url, originalUrl)
+                    config.updateAddressBarAndHistory(navigationUrl, historyOriginalUrl)
                 }
 
                 override fun onReceivedHttpAuthRequest(
@@ -606,21 +756,27 @@ fun createCustomWebview(
                     host: String?,
                     realm: String?
                 ) {
-                    config.onHttpAuthRequest(handler, host, realm)
+                    if (handler == null) return
+                    if (disposed) {
+                        handler.cancel()
+                        return
+                    }
+                    config.onHttpAuthRequest(HttpAuthRequest(
+                        host, realm,
+                        onSubmit = { username, password -> handler.proceed(username, password) },
+                        onCancel = { handler.cancel() }
+                    ))
                 }
 
                 override fun onReceivedError(
-                    view: WebView?,
-                    request: WebResourceRequest?,
-                    error: WebResourceError?
+                    view: WebView,
+                    request: WebResourceRequest,
+                    error: WebResourceErrorCompat
                 ) {
                     if (isLocalNetworkPermissionError(error)) {
                         config.onLocalNetworkPermissionMissing()
                     }
-                    if (
-                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                        && request?.isForMainFrame == true
-                    ) {
+                    if (request.isForMainFrame) {
                         config.setLastErrorUrl(request.url.toString())
                         return
                     }
@@ -664,6 +820,11 @@ fun createCustomWebview(
                         Constants.APP_SCHEME,
                         "WebView renderer gone. crashed=${detail}"
                     )
+                    hideFullscreen()
+                    disposed = true
+                    cancelPdfSourceRequests(view.getTag(R.id.pdf_source_token) as? String)
+                    completeFileChooser(null, view)
+                    config.onHttpAuthRequest(null)
                     dialogs.dispose()
                     (view.parent as? ViewGroup)?.removeView(view)
                     NfcBridgeManager.detachWebView(view)
@@ -678,6 +839,10 @@ fun createCustomWebview(
                 private var customView: View? = null
                 private var customViewCallback: CustomViewCallback? = null
                 private var fullScreenContainer: FrameLayout? = null
+
+                init {
+                    hideFullscreen = ::onHideCustomView
+                }
 
                 override fun onProgressChanged(view: WebView?, newProgress: Int) {
                     config.onProgressChanged(newProgress)
@@ -717,7 +882,11 @@ fun createCustomWebview(
                         return
                     }
 
-                    val activity = context as? Activity ?: return
+                    val activity = context as? Activity
+                    if (activity == null) {
+                        callback.onCustomViewHidden()
+                        return
+                    }
                     fullScreenContainer = FrameLayout(activity).apply {
                         addView(
                             view,
@@ -745,18 +914,30 @@ fun createCustomWebview(
 
                 override fun onHideCustomView() {
                     val activity = context as? Activity
-
-                    fullScreenContainer?.removeView(customView)
-                    fullScreenContainer?.visibility = View.GONE
+                    val container = fullScreenContainer
+                    val callback = customViewCallback
+                    val view = customView
+                    if (container == null && callback == null && view == null) {
+                        return
+                    }
+                    fullScreenContainer = null
                     customView = null
+                    customViewCallback = null
+
+                    container?.removeView(view)
+                    (container?.parent as? ViewGroup)?.removeView(container)
                     visibility = View.VISIBLE
-                    customViewCallback?.onCustomViewHidden()
 
                     activity?.let {
                         val shouldExit = !shouldBeImmersed(activity, userSettings)
                         if (shouldExit) {
                             exitImmersiveMode(it)
                         }
+                    }
+                    try {
+                        callback?.onCustomViewHidden()
+                    } catch (e: Exception) {
+                        Log.w(Constants.APP_SCHEME, "Unable to complete fullscreen cleanup", e)
                     }
                 }
 
@@ -765,16 +946,21 @@ fun createCustomWebview(
                     filePathCallback: ValueCallback<Array<Uri>>,
                     fileChooserParams: FileChooserParams
                 ): Boolean {
+                    if (disposed || pendingFileChooserInFlight || pendingFileChooserCallback != null) {
+                        respondFileChooser(filePathCallback, null)
+                        return true
+                    }
                     if (!config.userSettings.allowFilePicker) {
                         ToastManager.show(
                             context,
                             "File picker is disabled in ${context.getString(R.string.app_name)}'s Web Engine settings."
                         )
-                        filePathCallback.onReceiveValue(null)
+                        respondFileChooser(filePathCallback, null)
                         return true
                     }
 
                     pendingFileChooserCallback = filePathCallback
+                    pendingFileChooserOwner = webView
 
                     val acceptTypes = fileChooserParams.acceptTypes.filter { it.isNotBlank() }
                     val wantsImage = acceptTypes.any { it.startsWith("image/") }
@@ -894,17 +1080,21 @@ fun createCustomWebview(
             }
         }
 
-        return webView to blobInterface
+        return WebViewCreation.Success(webView) {
+            hideFullscreen()
+            disposed = true
+            cancelPdfSourceRequests(webView.getTag(R.id.pdf_source_token) as? String)
+            completeFileChooser(null, webView)
+            config.onHttpAuthRequest(null)
+            dialogs.dispose()
+            blobInterface?.dispose()
+        }
     }
 
     val webViewCreationResult = remember(recreationKey) {
         val dialogs = WebViewDialogController(context)
         try {
-            val (webView, blobInterface) = buildWebView(dialogs)
-            WebViewCreation.Success(webView) {
-                dialogs.dispose()
-                blobInterface?.dispose()
-            }
+            buildWebView(dialogs)
         } catch (e: Exception) {
             dialogs.dispose()
             Log.e(Constants.APP_SCHEME, "Failed to create WebView", e)

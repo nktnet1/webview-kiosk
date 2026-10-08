@@ -272,11 +272,7 @@ object UnifiedPushManager {
                         )) {
                             return
                         }
-                        RemoteMessageManager.emitCommand(
-                            commandMessage,
-                            RemoteMessageManager.RemoteMessage.Source.UNIFIEDPUSH,
-                        )
-                        RemoteInboundHandler.handleInboundCommand(context, commandMessage)
+                        handleCommand(context, commandMessage, instance)
                     }
                     "settings" -> {
                         val settingsMessage = BaseJson
@@ -327,6 +323,28 @@ object UnifiedPushManager {
                     "UnifiedPush: failed to handle message. See debug logs for details."
                 )
             }
+        }
+    }
+
+    private fun handleCommand(
+        context: Context,
+        command: InboundCommandMessage,
+        instance: String,
+    ) {
+        val appContext = context.applicationContext
+        RemoteMessageManager.emitCommand(
+            command,
+            RemoteMessageManager.RemoteMessage.Source.UNIFIEDPUSH,
+            appContext,
+        ) { e ->
+            addDebugLog(
+                "command handler error",
+                "instance: $instance\nreason: ${e.message}",
+            )
+            ToastManager.show(
+                appContext,
+                "UnifiedPush: failed to handle command. See debug logs for details.",
+            )
         }
     }
 

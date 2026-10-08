@@ -40,6 +40,25 @@ fun SupportPdfRenderingSetting() {
     var assetsReady by remember {
         mutableStateOf(PdfJsManager.areAssetsReady(context))
     }
+    var assetsBusy by remember { mutableStateOf(false) }
+
+    fun updateAssets(download: Boolean) {
+        if (restricted || assetsBusy) return
+        assetsBusy = true
+        coroutineScope.launch {
+            try {
+                if (download) {
+                    ToastManager.show(context, "Downloading PDF.js...")
+                    PdfJsManager.downloadAssets(context)
+                } else {
+                    PdfJsManager.clearAssets(context)
+                }
+            } finally {
+                assetsReady = PdfJsManager.areAssetsReady(context)
+                assetsBusy = false
+            }
+        }
+    }
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_content_support_pdf_rendering_title),
@@ -82,37 +101,28 @@ fun SupportPdfRenderingSetting() {
                 if (assetsReady) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Button(
-                        enabled = !restricted,
+                        enabled = !restricted && !assetsBusy,
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.error,
                             contentColor = MaterialTheme.colorScheme.onError
                         ),
-                        onClick = {
-                            PdfJsManager.clearAssets(context)
-                            assetsReady = PdfJsManager.areAssetsReady(context)
-                        }
+                        onClick = { updateAssets(download = false) }
                     ) {
                         Text(
-                            text = "Delete PDF.js assets",
+                            text = if (assetsBusy) "Deleting PDF.js..." else "Delete PDF.js assets",
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.labelMedium
                         )
                     }
                 } else {
                     Button(
-                        enabled = !restricted,
+                        enabled = !restricted && !assetsBusy,
                         modifier = Modifier.fillMaxWidth(),
-                        onClick = {
-                            coroutineScope.launch {
-                                ToastManager.show(context, "Downloading PDF.js...")
-                                PdfJsManager.downloadAssets(context)
-                                assetsReady = PdfJsManager.areAssetsReady(context)
-                            }
-                        }
+                        onClick = { updateAssets(download = true) }
                     ) {
                         Text(
-                            text = "Download PDF.js assets",
+                            text = if (assetsBusy) "Downloading PDF.js..." else "Download PDF.js assets",
                             textAlign = TextAlign.Center,
                             style = MaterialTheme.typography.labelMedium
                         )

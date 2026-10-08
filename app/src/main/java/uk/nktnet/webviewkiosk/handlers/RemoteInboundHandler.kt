@@ -2,11 +2,11 @@ package uk.nktnet.webviewkiosk.handlers
 
 import android.content.Context
 import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import android.util.Log
 import android.webkit.WebView
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -41,12 +41,19 @@ import uk.nktnet.webviewkiosk.utils.wakeScreen
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 object RemoteInboundHandler {
-    fun handleInboundCommand(
+    suspend fun handleInboundCommand(
         context: Context,
         command: InboundCommandMessage,
     ) {
         val userSettings = UserSettings(context)
         val systemSettings = SystemSettings(context)
+
+        if (
+            command is InboundLockDeviceCommand
+            && !DeviceOwnerManager.hasOwnerPermission(context)
+        ) {
+            DeviceOwnerManager.initWithDhizukuRetry(context.applicationContext)
+        }
 
         if (command.interact) {
             UserInteractionStateSingleton.onUserInteraction()
@@ -65,9 +72,14 @@ object RemoteInboundHandler {
                 WebViewNavigation.clearHistory(systemSettings)
             }
             is InboundClearCacheCommand -> {
-                Handler(Looper.getMainLooper()).post {
+                withContext(Dispatchers.Main) {
                     try {
-                        WebView(context).clearCache(true)
+                        val webView = WebView(context)
+                        try {
+                            webView.clearCache(true)
+                        } finally {
+                            webView.destroy()
+                        }
                     } catch (e: Exception) {
                         ToastManager.show(
                             context,

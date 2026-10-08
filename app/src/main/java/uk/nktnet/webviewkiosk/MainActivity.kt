@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -65,7 +66,9 @@ import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
 import uk.nktnet.webviewkiosk.ui.screens.SetupNavHost
 import uk.nktnet.webviewkiosk.ui.theme.WebviewKioskTheme
+import uk.nktnet.webviewkiosk.utils.getBooleanExtraSafely
 import uk.nktnet.webviewkiosk.utils.getLocalFileLink
+import uk.nktnet.webviewkiosk.utils.getParcelableExtraSafely
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.handleKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleMainIntent
@@ -220,17 +223,11 @@ open class MainActivity : AppCompatActivity() {
                 true
             }
 
-            LaunchedEffect(Unit) {
-                RemoteMessageManager.commandsFlow.collect { command ->
-                    if (
-                        isApplicationEventHost()
-                        && command.source == RemoteMessageManager.RemoteMessage.Source.MQTT
-                        && !userSettings.mqttUseForegroundService
-                        && command.tryClaim()
-                    ) {
-                        RemoteInboundHandler.handleInboundCommand(context, command.message)
-                    }
+            DisposableEffect(Unit) {
+                val unregister = RemoteMessageManager.registerMqttCommandHost(applicationContext) {
+                    isApplicationEventHost() && !userSettings.mqttUseForegroundService
                 }
+                onDispose(unregister)
             }
 
             LaunchedEffect(Unit) {
@@ -388,7 +385,11 @@ open class MainActivity : AppCompatActivity() {
                             onComplete = { file ->
                                 systemSettings.intentUrl = file.getLocalFileLink()
                                 uploadingFileUri = null
-                            }
+                            },
+                            onFailed = {
+                                uploadingFileUri = null
+                                uploadProgress = 0f
+                            },
                         )
                     } ?: run {
                         if (handlesAuthentication) {
@@ -499,7 +500,7 @@ open class MainActivity : AppCompatActivity() {
         super.onStop()
         startedHosts.remove(this)
         if (!isChangingConfigurations && startedHosts.isEmpty()) {
-            AuthenticationManager.resetAuthentication()
+            AuthenticationManager.resetAuthentication(preserveExternalActivitySession = true)
             if (userSettings.mqttUseForegroundService) {
                 if (MqttManager.isConnected()) {
                     MqttManager.publishAppBackgroundEvent()
@@ -537,7 +538,7 @@ open class MainActivity : AppCompatActivity() {
             return
         }
         if (
-            intent.getBooleanExtra(
+            intent.getBooleanExtraSafely(
                 Constants.INTENT_NAVIGATE_TO_WEBVIEW_SCREEN,
                 false
             )
@@ -551,7 +552,7 @@ open class MainActivity : AppCompatActivity() {
             isAndroid6HomeIntent(intent)
                 || (
                     Build.VERSION.SDK_INT == Build.VERSION_CODES.M
-                        && intent.getBooleanExtra(Constants.INTENT_HOME_LAUNCH, false)
+                        && intent.getBooleanExtraSafely(Constants.INTENT_HOME_LAUNCH, false)
                     )
         if (
             System.currentTimeMillis() - lastOnStartTime > 100L
@@ -577,7 +578,7 @@ open class MainActivity : AppCompatActivity() {
     private fun consumeAndroid6LockRequest(intent: Intent?): Boolean {
         if (
             javaClass != Android6KioskActivity::class.java
-            || intent?.getBooleanExtra(Constants.INTENT_ANDROID6_LOCK_TASK, false) != true
+            || intent?.getBooleanExtraSafely(Constants.INTENT_ANDROID6_LOCK_TASK, false) != true
         ) {
             return false
         }
@@ -620,11 +621,15 @@ open class MainActivity : AppCompatActivity() {
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
-        return (
-            handleKeyEvent(this, event)
-            || backButtonService.onKeyDown(keyCode)
-            || super.onKeyDown(keyCode, event)
-        )
+        if (handleKeyEvent(this, event)) {
+            return true
+        }
+        if (backButtonService.onKeyDown(keyCode)) {
+            // The Huawei fallback consumes Back-down; retain framework tracking for short taps.
+            event.startTracking()
+            return true
+        }
+        return super.onKeyDown(keyCode, event)
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
@@ -699,15 +704,7 @@ open class MainActivity : AppCompatActivity() {
             return false
         }
 
-        val tag = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            intent.getParcelableExtra(
-                NfcAdapter.EXTRA_TAG,
-                Tag::class.java
-            )
-        } else {
-            @Suppress("DEPRECATION")
-            intent.getParcelableExtra(NfcAdapter.EXTRA_TAG)
-        }
+        val tag = intent.getParcelableExtraSafely(NfcAdapter.EXTRA_TAG, Tag::class.java)
 
         tag ?: return false
 

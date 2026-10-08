@@ -11,6 +11,7 @@ import uk.nktnet.webviewkiosk.utils.webview.html.generateBlockedPageHtml
 import java.net.URLEncoder
 
 const val BLOCK_HOST = "block"
+private const val MAX_WRAPPED_URL_DEPTH = 10
 
 enum class SchemeType {
     FILE,
@@ -55,6 +56,50 @@ fun getBlockInfo(
         else -> null
     }
     return schemeType to blockCause
+}
+
+fun resolveBlockPageUrl(
+    url: String,
+    blacklistRegexes: List<Regex>,
+    whitelistRegexes: List<Regex>,
+    userSettings: UserSettings,
+): String? {
+    var targetUrl = url
+    var depth = 0
+    while (true) {
+        val uri = targetUrl.toUri()
+        if (isPdfViewerUrl(uri)) {
+            // The viewer is an internal document. Apply URL policy to its source.
+            if (depth++ >= MAX_WRAPPED_URL_DEPTH) {
+                return null
+            }
+            targetUrl = uri.getQueryParameter("wk_pdf_url")
+                ?.takeIf { it.isNotBlank() } ?: return null
+            continue
+        }
+        val (schemeType, blockCause) = getBlockInfo(
+            targetUrl, blacklistRegexes, whitelistRegexes, userSettings
+        )
+        // Keep a denied URL so the caller can apply its usual block action.
+        if (blockCause != null || !isCustomBlockPageUrl(schemeType, uri)) {
+            return targetUrl
+        }
+        // Do not let malformed or excessively nested wrappers trigger unchecked loads.
+        if (depth++ >= MAX_WRAPPED_URL_DEPTH) {
+            return null
+        }
+        targetUrl = uri.getQueryParameter("url")?.takeIf { it.isNotBlank() } ?: return null
+    }
+}
+
+fun isPdfViewerUrl(uri: Uri): Boolean {
+    val viewerUri = Constants.PDF_JS_ASSETS_DUMMY_URL.toUri()
+    return uri.scheme.equals(viewerUri.scheme, ignoreCase = true)
+        && uri.host.equals(viewerUri.host, ignoreCase = true)
+        && uri.port in setOf(-1, 443)
+        && uri.userInfo == null
+        && uri.path.orEmpty() in setOf("", "/")
+        && uri.getQueryParameter("wk_pdf_url") != null
 }
 
 fun loadBlockedPage(

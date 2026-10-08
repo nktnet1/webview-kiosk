@@ -1,6 +1,5 @@
 package uk.nktnet.webviewkiosk.ui.components.setting
 
-import android.webkit.HttpAuthHandler
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -25,27 +24,40 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
 
 @Composable
-fun BasicAuthDialog(authHandler: HttpAuthHandler?, host: String?, realm: String?, onDismiss: () -> Unit) {
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var showPassword by remember { mutableStateOf(false) }
+fun BasicAuthDialog(authRequest: HttpAuthRequest?, onDismiss: () -> Unit) {
+    var username by remember(authRequest) { mutableStateOf("") }
+    var password by remember(authRequest) { mutableStateOf("") }
+    var showPassword by remember(authRequest) { mutableStateOf(false) }
+    var requestCompleted by remember(authRequest) { mutableStateOf(false) }
 
-    if (authHandler != null) {
+    if (authRequest != null) {
+        fun completeAuthentication(submit: Boolean) {
+            if (requestCompleted) return
+            requestCompleted = true
+            val submittedUsername = username
+            val submittedPassword = password
+            username = ""
+            password = ""
+            showPassword = false
+            if (submit) {
+                authRequest.proceed(submittedUsername, submittedPassword)
+            } else {
+                authRequest.cancel()
+            }
+            onDismiss()
+        }
+
         AlertDialog(
-            onDismissRequest = {
-                authHandler.cancel()
-                onDismiss()
-                username = ""
-                password = ""
-            },
+            onDismissRequest = { completeAuthentication(submit = false) },
             title = { Text("Authentication Required") },
             text = {
                 Column {
-                    Text("Host: ${host ?: ""}")
-                    Text("Realm: ${realm ?: ""}")
+                    Text("Host: ${authRequest.host ?: ""}")
+                    Text("Realm: ${authRequest.realm ?: ""}")
                     OutlinedTextField(
                         value = username,
                         onValueChange = { username = it },
@@ -74,8 +86,7 @@ fun BasicAuthDialog(authHandler: HttpAuthHandler?, host: String?, realm: String?
                         },
                         keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
                         keyboardActions = KeyboardActions(onDone = {
-                            authHandler.proceed(username, password)
-                            onDismiss()
+                            completeAuthentication(submit = true)
                         }),
                         modifier = Modifier.padding(top = 4.dp)
                     )
@@ -83,23 +94,13 @@ fun BasicAuthDialog(authHandler: HttpAuthHandler?, host: String?, realm: String?
             },
             confirmButton = {
                 Button(
-                    onClick = {
-                        authHandler.proceed(username, password)
-                        onDismiss()
-                        username = ""
-                        password = ""
-                    },
+                    onClick = { completeAuthentication(submit = true) },
                     modifier = Modifier.width(95.dp)
                 ) { Text("Login") }
             },
             dismissButton = {
                 Button(
-                    onClick = {
-                        authHandler.cancel()
-                        onDismiss()
-                        username = ""
-                        password = ""
-                    },
+                    onClick = { completeAuthentication(submit = false) },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error,
                         contentColor = MaterialTheme.colorScheme.onError

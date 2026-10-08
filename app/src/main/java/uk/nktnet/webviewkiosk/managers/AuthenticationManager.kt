@@ -4,6 +4,7 @@ import android.app.KeyguardManager
 import android.content.Context
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
 import android.util.Log
 import androidx.annotation.RequiresApi
@@ -46,6 +47,7 @@ object AuthenticationManager {
 
     private var lastAuthTime = 0L
     private var authBypassUntil: Long = 0L
+    private var externalActivityRoundTrip = false
 
     fun init(activity: AppCompatActivity) {
         this.activity = activity
@@ -77,11 +79,19 @@ object AuthenticationManager {
             lastAuthTime = System.currentTimeMillis()
         }
         authBypassUntil = 0L
+        externalActivityRoundTrip = false
         return isValid
     }
 
-    fun resetAuthentication() {
+    fun resetAuthentication(preserveExternalActivitySession: Boolean = false) {
+        val preserveBypass = preserveExternalActivitySession
+            && externalActivityRoundTrip
+            && hasValidSession()
         lastAuthTime = 0
+        if (!preserveBypass) {
+            authBypassUntil = 0L
+        }
+        externalActivityRoundTrip = false
         if (
             !hasValidSession()
             && (_resultState.value == AuthenticationResult.AuthenticationSuccess
@@ -98,6 +108,7 @@ object AuthenticationManager {
             return
         }
         authBypassUntil = System.currentTimeMillis() + durationMs
+        externalActivityRoundTrip = true
     }
 
     fun showAuthenticationPrompt(
@@ -144,7 +155,8 @@ object AuthenticationManager {
     private fun handleAuthSuccess() {
         lastAuthTime = System.currentTimeMillis()
         _resultState.value = AuthenticationResult.AuthenticationSuccess
-        bypassAuthForWindow()
+        authBypassUntil = 0L
+        externalActivityRoundTrip = false
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
@@ -169,7 +181,7 @@ object AuthenticationManager {
             promptInfoBuilder.setDeviceCredentialAllowed(true)
         }
 
-        val existingToken = encryptedAuthToken?.let { token ->
+        var existingToken = encryptedAuthToken?.let { token ->
             encryptedAuthTokenIv?.let { iv ->
                 token to iv
             }
@@ -202,17 +214,25 @@ object AuthenticationManager {
                             return
                         }
 
+                        val token = existingToken
                         try {
-                            if (existingToken == null) {
+                            if (token == null) {
                                 encryptedAuthToken = cipher.doFinal(
                                     "auth-token".toByteArray(Charsets.UTF_8)
                                 )
                                 encryptedAuthTokenIv = cipher.iv
                             } else {
-                                cipher.doFinal(existingToken.first)
+                                cipher.doFinal(token.first)
                             }
                             handleAuthSuccess()
                         } catch (e: Exception) {
+                            if (e is KeyPermanentlyInvalidatedException) {
+                                try {
+                                    clearInvalidatedAuthKey()
+                                } catch (cleanupError: Exception) {
+                                    Log.e(javaClass.simpleName, "Failed to remove invalidated key.", cleanupError)
+                                }
+                            }
                             Log.e(
                                 javaClass.simpleName,
                                 "Secure authentication validation failed.",
@@ -239,19 +259,15 @@ object AuthenticationManager {
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val decryptCipher = try {
-                val cipher = getCipher()
-
-                if (existingToken == null) {
-                    cipher.init(Cipher.ENCRYPT_MODE, generateOrGetSecretKey())
-                } else {
-                    cipher.init(
-                        Cipher.DECRYPT_MODE,
-                        getSecretKey(),
-                        GCMParameterSpec(128, existingToken.second)
-                    )
+                try {
+                    createAuthCipher(existingToken)
+                } catch (_: KeyPermanentlyInvalidatedException) {
+                    // The old token cannot be used with a replacement key. Prepare encryption
+                    // for a new token, but still require a fresh authentication prompt.
+                    clearInvalidatedAuthKey()
+                    existingToken = null
+                    createAuthCipher(null)
                 }
-
-                cipher
             } catch (e: Exception) {
                 Log.e(javaClass.simpleName, "Failed to create cipher.", e)
                 _resultState.value = AuthenticationResult.AuthenticationError(
@@ -273,6 +289,25 @@ object AuthenticationManager {
     }
 
     private fun getCipher(): Cipher = Cipher.getInstance(CIPHER_TRANSFORMATION)
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    private fun createAuthCipher(token: Pair<ByteArray, ByteArray>?): Cipher {
+        return getCipher().apply {
+            if (token == null) {
+                init(Cipher.ENCRYPT_MODE, generateOrGetSecretKey())
+            } else {
+                init(Cipher.DECRYPT_MODE, getSecretKey(), GCMParameterSpec(128, token.second))
+            }
+        }
+    }
+
+    private fun clearInvalidatedAuthKey() {
+        encryptedAuthToken = null
+        encryptedAuthTokenIv = null
+        val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
+        keyStore.load(null)
+        keyStore.deleteEntry(BIOMETRIC_KEY_ALIAS)
+    }
 
     @RequiresApi(Build.VERSION_CODES.M)
     private fun generateOrGetSecretKey(): SecretKey {

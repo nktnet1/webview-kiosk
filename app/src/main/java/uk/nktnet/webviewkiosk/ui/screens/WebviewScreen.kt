@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
 import android.webkit.CookieManager
-import android.webkit.HttpAuthHandler
 import android.webkit.URLUtil.isValidUrl
 import android.webkit.WebView
 import androidx.activity.compose.LocalActivity
@@ -49,6 +48,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.MainActivity
+import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -104,6 +104,7 @@ import uk.nktnet.webviewkiosk.utils.shouldBeImmersed
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.unlockWithAuthIfRequired
+import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.SchemeType
 import uk.nktnet.webviewkiosk.utils.webview.SearchSuggestionEngine
@@ -113,8 +114,8 @@ import uk.nktnet.webviewkiosk.utils.webview.handlers.registerPdfSource
 import uk.nktnet.webviewkiosk.utils.webview.html.generateFileMissingPage
 import uk.nktnet.webviewkiosk.utils.webview.html.generatePdfRendererHtml
 import uk.nktnet.webviewkiosk.utils.webview.html.generateUnsupportedMimeTypePage
-import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
+import uk.nktnet.webviewkiosk.utils.webview.resolveBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
@@ -183,9 +184,11 @@ fun WebviewScreen(navController: NavController) {
         FloatingToolbarModeOption.HIDDEN_WHEN_LOCKED -> !isLocked
     }
 
-    var authHandler by remember { mutableStateOf<HttpAuthHandler?>(null) }
-    var authHost by remember { mutableStateOf<String?>(null) }
-    var authRealm by remember { mutableStateOf<String?>(null) }
+    var authRequest by remember { mutableStateOf<HttpAuthRequest?>(null) }
+    DisposableEffect(authRequest) {
+        val request = authRequest
+        onDispose { request?.cancel() }
+    }
 
     var isActiveFindInPage by remember { mutableStateOf(false) }
     val findInPageFocusRequester = remember { FocusRequester() }
@@ -325,10 +328,14 @@ fun WebviewScreen(navController: NavController) {
                 isSwipeRefreshing = false
             },
             updateAddressBarAndHistory = ::updateAddressBarAndHistory,
-            onHttpAuthRequest = { handler, host, realm ->
-                authHandler = handler
-                authHost = host
-                authRealm = realm
+            onHttpAuthRequest = { request ->
+                authRequest?.cancel()
+                authRequest = if (request == null || canHandleEvents()) {
+                    request
+                } else {
+                    request.cancel()
+                    null
+                }
             },
             onLinkLongClick = { link ->
                 linkToOpen = link
@@ -365,9 +372,12 @@ fun WebviewScreen(navController: NavController) {
     }
 
     fun customLoadUrl(newUrl: String) {
-        systemSettings.urlBeingHandled = newUrl
+        val url = resolveBlockPageUrl(
+            newUrl, blacklistRegexes, whitelistRegexes, userSettings
+        ) ?: return
+        systemSettings.urlBeingHandled = url
         val (schemeType, blockCause) = getBlockInfo(
-            url = newUrl,
+            url = url,
             blacklistRegexes = blacklistRegexes,
             whitelistRegexes = whitelistRegexes,
             userSettings = userSettings
@@ -376,20 +386,14 @@ fun WebviewScreen(navController: NavController) {
             loadBlockedPage(
                 webView,
                 userSettings,
-                newUrl,
+                url,
                 blockCause,
             )
             return
         }
-        val uri = newUrl.toUri()
+        val uri = url.toUri()
 
-        if (isCustomBlockPageUrl(schemeType, uri)) {
-            val blockUrl = uri.getQueryParameter("url")
-            if (blockUrl != null) {
-                webView.loadUrl(blockUrl)
-                return
-            }
-        } else if (schemeType == SchemeType.FILE) {
+        if (schemeType == SchemeType.FILE) {
             val mimeType = getMimeType(context, uri)
             val file = File(uri.path ?: "")
             val isPdf = (
@@ -403,7 +407,7 @@ fun WebviewScreen(navController: NavController) {
                 && userSettings.supportPdfRendering
                 && PdfJsManager.areAssetsReady(context)
             ) {
-                handlePdfUrlRendering(webView, newUrl)
+                handlePdfUrlRendering(webView, url)
                 return
             }
 
@@ -416,7 +420,7 @@ fun WebviewScreen(navController: NavController) {
             }
             pageContent?.let {
                 webView.loadDataWithBaseURL(
-                    newUrl,
+                    url,
                     it,
                     "text/html",
                     "UTF-8",
@@ -434,22 +438,14 @@ fun WebviewScreen(navController: NavController) {
             schemeType == SchemeType.WEB
             && uri.path?.lowercase()?.endsWith(".pdf") == true
         )
-        val isDummyFallback = newUrl.startsWith(Constants.PDF_JS_ASSETS_DUMMY_URL)
-
-        if (isDummyFallback) {
-            val pdfUrl = uri.getQueryParameter("wk_pdf_url") ?: ""
-            if (pdfUrl.isNotEmpty()) {
-                customLoadUrl(pdfUrl)
-                return
-            }
-        } else if (isPdfRenderingSupported && isWebPdf) {
+        if (isPdfRenderingSupported && isWebPdf) {
             handlePdfUrlRendering(
                 webView,
-                newUrl,
+                url,
             )
             return
         }
-        webView.loadUrl(newUrl)
+        webView.loadUrl(url)
     }
 
     LaunchedEffect(webView, retryAfterLocalNetworkPermission) {
@@ -719,7 +715,10 @@ fun WebviewScreen(navController: NavController) {
 
     BackPressHandler(::customLoadUrl, ::canHandleEvents)
 
-    BasicAuthDialog(authHandler, authHost, authRealm) { authHandler = null }
+    val displayedAuthRequest = authRequest
+    BasicAuthDialog(displayedAuthRequest) {
+        if (authRequest === displayedAuthRequest) authRequest = null
+    }
 
     LinkOptionsDialog(
         link = linkToOpen,
@@ -733,23 +732,20 @@ fun WebviewScreen(navController: NavController) {
         onOpenImage = { url -> customLoadUrl(url) }
     )
 
-    LaunchedEffect(webView) {
-        RemoteMessageManager.commandsFlow.collect { command ->
+    DisposableEffect(webView) {
+        val unregister = RemoteMessageManager.registerWebViewCommandHandler(::canHandleEvents) { command ->
             // Navigation fades can keep both the outgoing and incoming WebViews composed.
-            if (!canHandleEvents()) {
-                return@collect
-            }
-            when (command.message) {
+            when (command) {
                 is InboundGoBackCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)
                 is InboundGoForwardCommand -> WebViewNavigation.goForward(::customLoadUrl, systemSettings)
                 is InboundGoHomeCommand -> WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings)
                 is InboundRefreshCommand -> WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
-                is InboundGoToUrlCommand -> customLoadUrl(command.message.data.url)
-                is InboundSearchCommand -> addressBarSearch(command.message.data.query)
+                is InboundGoToUrlCommand -> customLoadUrl(command.data.url)
+                is InboundSearchCommand -> addressBarSearch(command.data.query)
                 is InboundLockCommand -> tryLockTask(activity)
                 is InboundUnlockCommand -> tryUnlockTask(activity)
-                is InboundPageUpCommand -> { webView.pageUp(command.message.data.absolute) }
-                is InboundPageDownCommand -> { webView.pageDown(command.message.data.absolute) }
+                is InboundPageUpCommand -> { webView.pageUp(command.data.absolute) }
+                is InboundPageDownCommand -> { webView.pageDown(command.data.absolute) }
                 is InboundErrorCommand -> {
                     ToastManager.show(
                         context,
@@ -759,6 +755,7 @@ fun WebviewScreen(navController: NavController) {
                 else -> Unit
             }
         }
+        onDispose(unregister)
     }
 
     HistoryDialog(
@@ -799,17 +796,19 @@ private fun handlePdfUrlRendering(
         return
     }
 
-    val sourceToken = registerPdfSource(targetPdfUrl)
+    val currentToken = webView.getTag(R.id.pdf_source_token) as? String
+    val sourceToken = registerPdfSource(targetPdfUrl, currentToken)
     val htmlContent = generatePdfRendererHtml(sourceToken)
     val encodedPdfUrl = java.net.URLEncoder.encode(targetPdfUrl, "UTF-8")
     val baseUrlWithFallback =
-        "${Constants.PDF_JS_ASSETS_DUMMY_URL}?wk_pdf_url=$encodedPdfUrl"
+        "${Constants.PDF_JS_ASSETS_DUMMY_URL}?wk_pdf_url=$encodedPdfUrl&wk_pdf_token=$sourceToken"
 
+    webView.setTag(R.id.pdf_source_token, sourceToken)
     webView.loadDataWithBaseURL(
         baseUrlWithFallback,
         htmlContent,
         "text/html",
         "UTF-8",
-        null
+        targetPdfUrl
     )
 }

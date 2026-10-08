@@ -34,7 +34,7 @@ class MqttForegroundService : Service() {
     private var isServiceActive = true
     private val scope = CoroutineScope(Dispatchers.IO)
     private var pollLockTaskModeJob: Job? = null
-    private var mqttCommandJob: Job? = null
+    private var unregisterCommandHost: (() -> Unit)? = null
     private var mqttSettingsJob: Job? = null
     private var mqttRequestJob: Job? = null
     private var lastStatus: MqttClientState? = null
@@ -76,18 +76,8 @@ class MqttForegroundService : Service() {
         @SuppressLint("WakelockTimeout")
         wakeLock.acquire()
 
-        mqttCommandJob = scope.launch {
-            RemoteMessageManager.commandsFlow.collect { command ->
-                if (
-                    command.source == RemoteMessageManager.RemoteMessage.Source.MQTT
-                    && command.tryClaim()
-                ) {
-                    RemoteInboundHandler.handleInboundCommand(
-                        this@MqttForegroundService,
-                        command.message
-                    )
-                }
-            }
+        unregisterCommandHost = RemoteMessageManager.registerMqttCommandHost(applicationContext) {
+            isServiceActive
         }
         mqttSettingsJob = scope.launch {
             RemoteMessageManager.settingsFlow.collect { settings ->
@@ -201,7 +191,8 @@ class MqttForegroundService : Service() {
         try {
             isServiceActive = false
             pollLockTaskModeJob?.cancel()
-            mqttCommandJob?.cancel()
+            unregisterCommandHost?.invoke()
+            unregisterCommandHost = null
             mqttSettingsJob?.cancel()
             mqttRequestJob?.cancel()
             scope.cancel()

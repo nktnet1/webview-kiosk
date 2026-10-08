@@ -12,6 +12,13 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
         .build()
         .toString()
     val quotedPdfSourceUrl = JSONObject.quote(pdfSourceUrl)
+    val pdfStatusUrl = Constants.PDF_JS_ASSETS_DUMMY_URL.toUri()
+        .buildUpon()
+        .appendPath("pdf_status")
+        .appendQueryParameter("wk_pdf_token", pdfSourceToken)
+        .build()
+        .toString()
+    val quotedPdfStatusUrl = JSONObject.quote(pdfStatusUrl)
 
     return """
         <!DOCTYPE html>
@@ -35,10 +42,74 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
                     height: auto;
                     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
                 }
+                #pdf-status {
+                    padding: 24px;
+                    color: #ffffff;
+                    text-align: center;
+                    font-family: sans-serif;
+                }
+                #pdf-retry {
+                    padding: 10px 24px;
+                    font-size: 16px;
+                }
             </style>
         </head>
         <body>
+            <div id="pdf-status" role="status" aria-live="polite">
+                <p id="pdf-message">Loading PDF…</p>
+                <button id="pdf-retry" type="button">Retry</button>
+            </div>
             <div id="pdf-container"></div>
+            <script>
+                window.WKPdfViewer = (function() {
+                    var status = document.getElementById('pdf-status');
+                    var message = document.getElementById('pdf-message');
+                    var loaded = false;
+                    var pageFailed = false;
+                    var reports = Promise.resolve();
+
+                    function report(event) {
+                        // Keep native status updates in order when rendering fails soon after loading.
+                        reports = reports.then(function() {
+                            return fetch($quotedPdfStatusUrl + '&event=' + event, { cache: 'no-store' });
+                        })
+                            .catch(function(err) { console.error('PDF status error:', err); });
+                    }
+
+                    function showError(err) {
+                        message.textContent = 'Unable to load this PDF. Check your connection or sign in, then try again.';
+                        status.hidden = false;
+                        report(err && err.status === 401 ? 'authentication' : 'error');
+                    }
+
+                    function failed(err) {
+                        if (!loaded) showError(err);
+                    }
+
+                    document.getElementById('pdf-retry').onclick = function() {
+                        report('retry');
+                    };
+                    window.addEventListener('error', function(event) {
+                        if (event.target === window || event.target.tagName === 'SCRIPT') {
+                            failed();
+                        }
+                    }, true);
+
+                    return {
+                        failed: failed,
+                        pageFailed: function(err) {
+                            pageFailed = true;
+                            showError(err);
+                        },
+                        loaded: function() {
+                            loaded = true;
+                            if (pageFailed) return;
+                            status.hidden = true;
+                            report('loaded');
+                        }
+                    };
+                })();
+            </script>
             <script type="module">
                 import * as pdfjsLib from '${Constants.PDF_JS_ASSETS_DUMMY_URL}/pdfjs_local/pdf.mjs';
                 pdfjsLib.GlobalWorkerOptions.workerSrc = '${Constants.PDF_JS_ASSETS_DUMMY_URL}/pdfjs_local/pdf.worker.mjs';
@@ -77,6 +148,7 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
 
                 function unloadPage(state) {
                     state.wanted = false;
+                    state.generation++;
                     if (state.renderTask) {
                         try {
                             state.renderTask.cancel();
@@ -92,11 +164,12 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
 
                 async function renderPage(state) {
                     state.rendering = true;
+                    const generation = state.generation;
                     let page = null;
 
                     try {
                         page = await state.pdf.getPage(state.pageNumber);
-                        if (!state.wanted) {
+                        if (!state.wanted || generation !== state.generation) {
                             return;
                         }
 
@@ -120,8 +193,7 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
                         });
                         await state.renderTask.promise;
 
-                        if (!state.wanted) {
-                            unloadPage(state);
+                        if (!state.wanted || generation !== state.generation || state.canvas !== canvas) {
                             return;
                         }
 
@@ -129,6 +201,9 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
                     } catch (err) {
                         if (!err || err.name !== 'RenderingCancelledException') {
                             console.error('PDF.js page render error:', err);
+                            if (state.wanted && generation === state.generation) {
+                                window.WKPdfViewer.pageFailed(err);
+                            }
                         }
                     } finally {
                         state.renderTask = null;
@@ -137,6 +212,11 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
                             try {
                                 page.cleanup();
                             } catch (_) {}
+                        }
+                        // An observer batch can re-enter while cancellation is still settling.
+                        // Retry that obsolete render, but do not loop on ordinary PDF errors.
+                        if (state.wanted && generation !== state.generation) {
+                            queueRender(state);
                         }
                     }
                 }
@@ -173,14 +253,17 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
                             queued: false,
                             rendering: false,
                             rendered: false,
+                            generation: 0,
                             renderTask: null,
                             canvas: null
                         };
                         container.appendChild(slot);
                         observer.observe(slot);
                     }
+                    window.WKPdfViewer.loaded();
                 }).catch(err => {
                     console.error('PDF.js error:', err);
+                    window.WKPdfViewer.failed(err);
                 });
             </script>
         </body>
