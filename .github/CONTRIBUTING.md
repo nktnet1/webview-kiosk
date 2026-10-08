@@ -10,12 +10,18 @@ Run the relevant suites before opening a pull request.
 
 ### Android
 
-Use Java 21 and the Android SDK required by `app/build.gradle.kts`. Run from the
-repository root:
+Use JetBrains Java 21 (JBRSDK) and the Android SDK required by
+`app/build.gradle.kts`. Point `JAVA_HOME` at that JDK and run from the repository
+root:
 
 ```bash
 ./gradlew :app:testDebugUnitTest
 ```
+
+> [!NOTE]
+> `gradle/gradle-daemon-jvm.properties` requires both Java 21 and the JetBrains
+> vendor. The test and release workflows install a matching JDK before running
+> Gradle, so they can use it without provisioning a daemon JDK through Foojay.
 
 Tests live in `app/src/test/java/uk/nktnet/webviewkiosk`, mirroring the production
 packages. Pure logic uses JUnit; Android-dependent helpers use Robolectric with
