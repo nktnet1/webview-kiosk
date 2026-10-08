@@ -69,6 +69,7 @@ import uk.nktnet.webviewkiosk.utils.webview.interfaces.BrightnessInterface
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.NfcInterface
 import uk.nktnet.webviewkiosk.utils.webview.isCustomBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
+import uk.nktnet.webviewkiosk.utils.webview.parseFileChooserResult
 import uk.nktnet.webviewkiosk.utils.webview.parseMutualTlsRules
 import uk.nktnet.webviewkiosk.utils.webview.resolveBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDarkReaderScript
@@ -140,34 +141,27 @@ fun createCustomWebview(
     var pendingFileChooserCallback by remember {
         mutableStateOf<ValueCallback<Array<Uri>>?>(null)
     }
+    var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
+
+    fun completeFileChooser(uris: Array<Uri>?) {
+        val callback = pendingFileChooserCallback
+        pendingFileChooserCallback = null
+        pendingCaptureUri = null
+        callback?.onReceiveValue(uris)
+    }
+
     val filePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val uris = result.data?.let { intent ->
-            val clipData = intent.clipData
-            if (clipData != null) {
-                Array(clipData.itemCount) { i -> clipData.getItemAt(i).uri }
-            } else {
-                intent.data?.let { arrayOf(it) }
-            }
-        }
-        pendingFileChooserCallback?.onReceiveValue(uris)
-        pendingFileChooserCallback = null
+        completeFileChooser(parseFileChooserResult(context, result.resultCode, result.data))
     }
-
-    var pendingCaptureUri by remember { mutableStateOf<Uri?>(null) }
 
     val captureLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
-        val captured = result.data?.data ?: pendingCaptureUri
-        if (result.resultCode == Activity.RESULT_OK && captured != null) {
-            pendingFileChooserCallback?.onReceiveValue(arrayOf(captured))
-        } else {
-            pendingFileChooserCallback?.onReceiveValue(null)
-        }
-        pendingFileChooserCallback = null
-        pendingCaptureUri = null
+        completeFileChooser(
+            parseFileChooserResult(context, result.resultCode, result.data, pendingCaptureUri)
+        )
     }
 
     fun launchFilePicker(fileChooserParams: WebChromeClient.FileChooserParams) {
@@ -179,8 +173,7 @@ fun createCustomWebview(
             filePickerLauncher.launch(intent)
         }.onFailure {
             Log.e(Constants.APP_SCHEME, "Failed to launch file picker", it)
-            pendingFileChooserCallback?.onReceiveValue(null)
-            pendingFileChooserCallback = null
+            completeFileChooser(null)
             ToastManager.show(context, "Unable to open file picker.")
         }
     }
@@ -716,7 +709,11 @@ fun createCustomWebview(
                         return
                     }
 
-                    val activity = context as? Activity ?: return
+                    val activity = context as? Activity
+                    if (activity == null) {
+                        callback.onCustomViewHidden()
+                        return
+                    }
                     fullScreenContainer = FrameLayout(activity).apply {
                         addView(
                             view,
@@ -744,12 +741,16 @@ fun createCustomWebview(
 
                 override fun onHideCustomView() {
                     val activity = context as? Activity
-
-                    fullScreenContainer?.removeView(customView)
-                    fullScreenContainer?.visibility = View.GONE
+                    val container = fullScreenContainer
+                    val callback = customViewCallback
+                    val view = customView
+                    fullScreenContainer = null
                     customView = null
+                    customViewCallback = null
+
+                    container?.removeView(view)
+                    (container?.parent as? ViewGroup)?.removeView(container)
                     visibility = View.VISIBLE
-                    customViewCallback?.onCustomViewHidden()
 
                     activity?.let {
                         val shouldExit = !shouldBeImmersed(activity, userSettings)
@@ -757,6 +758,7 @@ fun createCustomWebview(
                             exitImmersiveMode(it)
                         }
                     }
+                    callback?.onCustomViewHidden()
                 }
 
                 override fun onShowFileChooser(

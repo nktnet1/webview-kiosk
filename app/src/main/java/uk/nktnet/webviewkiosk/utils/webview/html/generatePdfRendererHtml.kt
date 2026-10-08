@@ -77,6 +77,7 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
 
                 function unloadPage(state) {
                     state.wanted = false;
+                    state.generation++;
                     if (state.renderTask) {
                         try {
                             state.renderTask.cancel();
@@ -92,11 +93,12 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
 
                 async function renderPage(state) {
                     state.rendering = true;
+                    const generation = state.generation;
                     let page = null;
 
                     try {
                         page = await state.pdf.getPage(state.pageNumber);
-                        if (!state.wanted) {
+                        if (!state.wanted || generation !== state.generation) {
                             return;
                         }
 
@@ -120,8 +122,7 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
                         });
                         await state.renderTask.promise;
 
-                        if (!state.wanted) {
-                            unloadPage(state);
+                        if (!state.wanted || generation !== state.generation || state.canvas !== canvas) {
                             return;
                         }
 
@@ -137,6 +138,11 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
                             try {
                                 page.cleanup();
                             } catch (_) {}
+                        }
+                        // An observer batch can re-enter while cancellation is still settling.
+                        // Retry that obsolete render, but do not loop on ordinary PDF errors.
+                        if (state.wanted && generation !== state.generation) {
+                            queueRender(state);
                         }
                     }
                 }
@@ -173,6 +179,7 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
                             queued: false,
                             rendering: false,
                             rendered: false,
+                            generation: 0,
                             renderTask: null,
                             canvas: null
                         };
