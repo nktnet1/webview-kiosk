@@ -19,11 +19,38 @@ untested paths are defective. The app still declares `versionName = "0.26.21"`.
 - No `app/src/androidTest` instrumentation tests, device-emulator test job,
   browser E2E suite or coverage threshold are configured in this snapshot.
 
+## Authentication follow-up (v1.0.15)
+
+- `AuthenticationSessionTest` adds **15 deterministic session tests** covering
+  the exact five-minute timeout, refresh, clock zero, external-activity window
+  boundaries, unauthenticated/expired round trips, one-shot preservation and
+  explicit lock. Production intervals use `SystemClock.elapsedRealtime()` so
+  wall-clock changes cannot extend them and time asleep counts toward expiry.
+- `AuthenticationManagerTest` adds **28 tests** with a fake biometric prompt,
+  controllable session clock, credential-launch shadow and fake keystore
+  operations. They cover duplicate prompts, retryable scans, cancellation,
+  stale/duplicate callbacks, host cleanup, custom and legacy credential results,
+  credential fallback, missing crypto context, token validation and invalidated
+  key recovery. The cipher tests use JVM AES/GCM, not Android Keystore hardware.
+- The manager suite uses the exported **API 28** runtime. Where a test changes
+  `Build.VERSION.SDK_INT`, it exercises an SDK gate with fake platform operations;
+  this is not evidence of execution on API 21/22/23/29/30 devices or runtimes.
+- Verification in this patch environment: all 15 session test methods passed
+  in a standalone JDK 21 / Kotlin 2.4.10 harness with a minimal assertion shim,
+  and all four changed Kotlin files passed parsing. **The Gradle/JUnit/Robolectric
+  suite has not run**: the Gradle-cache attachment was unavailable; offline
+  configuration could not resolve `foojay-resolver-convention:1.0.0`.
+  The historical 197-test baseline above has not been re-certified for this patch.
+- Still required: run `:app:testDebugUnitTest` with the complete exported cache;
+  exercise `RequireAuthWrapper` lifecycle/rendering in Compose instrumentation;
+  and perform the biometric/credential/keystore device scenarios below. Added
+  tests and standalone checks do not close these release-readiness requirements.
+
 ## Next automated tests, ordered by regression risk
 
 | Priority | Area / main code | Recommended tests and assertions | Layer |
 | --- | --- | --- | --- |
-| **P0** | Authentication (`managers/AuthenticationManager.kt`, `RequireAuthWrapper.kt`) | Expired or unauthenticated sessions never unlock; pending prompt is not duplicated; external activity round-trip only preserves an already valid session; lock resets the session; no enrolled biometrics uses credential fallback; invalidated Android Keystore key requires new authentication. Use a controllable clock and fake prompt/keystore for deterministic tests. | Robolectric/unit for session logic; emulator/device for actual credential UI and keystore |
+| **P0** | Authentication (`managers/AuthenticationManager.kt`, `AuthenticationSession.kt`, `RequireAuthWrapper.kt`) | Run the added session/prompt regressions with the complete cache. Verify the Compose wrapper only renders protected content for a valid session, re-prompts on expired resume, and does not duplicate a pending prompt across lifecycle/recomposition. Verify actual credential fallback and invalidated Android Keystore keys on devices. See the authentication follow-up above for implemented cases and verification limits. | Unit/Robolectric for session/prompt logic; Compose instrumentation and emulator/device for actual credential UI and keystore |
 | **P0** | Navigation and active WebView (`utils/webview/WebviewNavigation.kt`, `ui/screens/WebviewScreen.kt`, `utils/createCustomWebview.kt`) | Back/forward after redirect, removal and clearing; rapid concurrent navigation; repeated WebView-route transitions; stale `onPageFinished`/error callbacks; iframe vs main-frame navigation; programmatic-navigation flag does not suppress the wrong screen; fullscreen cleanup after screen change. | Robolectric for history; real WebView instrumentation for ownership and callbacks |
 | **P0** | UnifiedPush and remote request/settings handoff (`managers/UnifiedPushManager.kt`, `RemoteMessageManager.kt`, `MainActivity.kt`, `MqttForegroundService.kt`) | Target instance/username filtering (including empty and mismatched sets); decrypted-message policy; malformed messages; command execution from a cold process; changing from activity host to service host; requests/settings claimed exactly once when both collectors exist; preserve per-stream order under concurrent deliveries. Existing command FIFO/claim tests need not be duplicated. | Robolectric with controlled collectors; one end-to-end transport test |
 | **P0** | Foreground services (`services/MqttForegroundService.kt`, `LockTaskService.kt`) | Null-intent sticky restart; notification creation/updates; denial of foreground-service start; repeated starts; wake-lock and receiver cleanup on error/stop; settings toggle during connect; foreground-service ownership and no double-processed remote requests. | Robolectric service tests plus emulator/device lifecycle scenarios |
