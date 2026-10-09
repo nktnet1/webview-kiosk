@@ -1057,8 +1057,11 @@ object MqttManager {
         if (
             c != null
             && ::config.isInitialized
-            && config.enabled
             && c.state.isConnected
+            && config.enabled
+            && !pendingCancelConnect.get()
+            && pendingDisconnect == null
+            && c === client
         ) {
             return c
         }
