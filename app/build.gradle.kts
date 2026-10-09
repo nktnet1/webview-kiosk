@@ -8,7 +8,11 @@ plugins {
 }
 
 android {
-    compileSdk = 37
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 0
+        }
+    }
     namespace = "uk.nktnet.webviewkiosk"
 
     defaultConfig {
