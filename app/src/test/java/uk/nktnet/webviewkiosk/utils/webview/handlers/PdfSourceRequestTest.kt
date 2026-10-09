@@ -12,6 +12,7 @@ import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -28,6 +29,7 @@ import java.net.InetSocketAddress
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 /** Checks actual PDF source routing and HTTP behaviour, not just URL helper functions. */
 @RunWith(RobolectricTestRunner::class)
@@ -478,6 +480,244 @@ class PdfSourceRequestTest {
         assertEquals(2, prompts.size)
         prompts.last().proceed("alice", "secret")
         assertEquals(200, load(token, onAuthenticationRequired = prompt)?.statusCode)
+        assertEquals(2, prompts.size)
+    }
+
+    @Test
+    fun changingTheRealmOnTheSameOriginRequiresNewCredentials() {
+        val realm = AtomicReference("first")
+        val authorization = CopyOnWriteArrayList<String?>()
+        server.createContext("/realms.pdf") { exchange ->
+            val header = exchange.requestHeaders.getFirst("Authorization")
+            authorization.add(header)
+            val expected = if (realm.get() == "first") "Basic YWxpY2U6c2VjcmV0" else "Basic Ym9iOnBhc3N3b3Jk"
+            if (header == expected) {
+                respond(exchange, 200, "private PDF")
+            } else {
+                respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"${realm.get()}\"")
+            }
+        }
+        val token = register("$remote/realms.pdf")
+        val prompts = mutableListOf<HttpAuthRequest>()
+        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request -> prompts.add(request) }
+
+        assertStatus(401, load(token, onAuthenticationRequired = prompt))
+        prompts.single().proceed("alice", "secret")
+        assertStatus(200, load(token, onAuthenticationRequired = prompt))
+        val previousRequests = authorization.size
+
+        realm.set("second")
+        assertStatus(401, load(token, onAuthenticationRequired = prompt))
+
+        assertEquals(listOf("first", "second"), prompts.map { it.realm })
+        assertEquals(listOf(null), authorization.drop(previousRequests))
+        prompts.last().proceed("bob", "password")
+        assertStatus(200, load(token, onAuthenticationRequired = prompt))
+        assertEquals(listOf(null, null, "Basic Ym9iOnBhc3N3b3Jk"), authorization.drop(previousRequests))
+        assertEquals(2, prompts.size)
+        assertEquals(setOf("Basic YWxpY2U6c2VjcmV0", "Basic Ym9iOnBhc3N3b3Jk"), credentials(source(token)).values.toSet())
+    }
+
+    @Test
+    fun theSameRealmOnAnotherPortDoesNotReuseTheSourcesCredentials() {
+        val destination = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
+        destination.start()
+        try {
+            val destinationAuthorization = CopyOnWriteArrayList<String?>()
+            destination.createContext("/final.pdf") { exchange ->
+                val header = exchange.requestHeaders.getFirst("Authorization")
+                destinationAuthorization.add(header)
+                if (header == "Basic Ym9iOnBhc3N3b3Jk") {
+                    respond(exchange, 200, "destination PDF")
+                } else {
+                    respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"shared\"")
+                }
+            }
+            server.createContext("/ports.pdf") { exchange ->
+                if (exchange.requestHeaders.getFirst("Authorization") == "Basic YWxpY2U6c2VjcmV0") {
+                    respond(exchange, 302, "redirect", "Location" to "http://127.0.0.1:${destination.address.port}/final.pdf")
+                } else {
+                    respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"shared\"")
+                }
+            }
+            val token = register("$remote/ports.pdf")
+            val prompts = mutableListOf<HttpAuthRequest>()
+            val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request -> prompts.add(request) }
+
+            assertStatus(401, load(token, onAuthenticationRequired = prompt))
+            prompts.single().proceed("alice", "secret")
+            assertStatus(401, load(token, onAuthenticationRequired = prompt))
+
+            assertEquals(listOf("shared", "shared"), prompts.map { it.realm })
+            assertEquals(listOf(null), destinationAuthorization.toList())
+            prompts.last().proceed("bob", "password")
+            assertStatus(200, load(token, onAuthenticationRequired = prompt))
+            assertEquals(listOf(null, null, "Basic Ym9iOnBhc3N3b3Jk"), destinationAuthorization.toList())
+            assertEquals(2, prompts.size)
+            assertEquals(2, credentials(source(token)).size)
+        } finally {
+            destination.stop(0)
+        }
+    }
+
+    @Test
+    fun aSameOriginRedirectReusesCredentialsOnlyAfterTheDestinationChallenges() {
+        val destinationAuthorization = CopyOnWriteArrayList<String?>()
+        server.createContext("/same-origin.pdf") { exchange ->
+            if (exchange.requestHeaders.getFirst("Authorization") == "Basic YWxpY2U6c2VjcmV0") {
+                respond(exchange, 302, "redirect", "Location" to "/final.pdf")
+            } else {
+                respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"shared\"")
+            }
+        }
+        server.createContext("/final.pdf") { exchange ->
+            val header = exchange.requestHeaders.getFirst("Authorization")
+            destinationAuthorization.add(header)
+            if (header == "Basic YWxpY2U6c2VjcmV0") {
+                respond(exchange, 200, "private PDF")
+            } else {
+                respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"shared\"")
+            }
+        }
+        val token = register("$remote/same-origin.pdf")
+        val prompts = mutableListOf<HttpAuthRequest>()
+        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request -> prompts.add(request) }
+
+        assertStatus(401, load(token, onAuthenticationRequired = prompt))
+        prompts.single().proceed("alice", "secret")
+        assertStatus(200, load(token, onAuthenticationRequired = prompt))
+
+        assertEquals(listOf(null, "Basic YWxpY2U6c2VjcmV0"), destinationAuthorization.toList())
+        assertEquals(1, prompts.size)
+        assertEquals(1, credentials(source(token)).size)
+    }
+
+    @Test
+    fun mixedChallengesPreserveEscapedRealmsAndUtf8Credentials() {
+        val authorization = CopyOnWriteArrayList<String?>()
+        server.createContext("/utf8.pdf") { exchange ->
+            val header = exchange.requestHeaders.getFirst("Authorization")
+            authorization.add(header)
+            if (header == "Basic am9zw6k6cMOkc3M=") {
+                respond(exchange, 200, "private PDF")
+            } else {
+                respond(
+                    exchange, 401, "authenticate",
+                    "WWW-Authenticate" to (
+                        "Digest realm=\"decoy\", nonce=\"opaque\", bAsIc realm=\"reports, \\\"private\\\"\", " +
+                            "charset=\"utf-8\", Bearer realm=\"ignored\""
+                    ),
+                )
+            }
+        }
+        val token = register("$remote/utf8.pdf")
+        val prompts = mutableListOf<HttpAuthRequest>()
+        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request -> prompts.add(request) }
+
+        assertStatus(401, load(token, onAuthenticationRequired = prompt))
+        assertEquals("reports, \"private\"", prompts.single().realm)
+        assertEquals("127.0.0.1", prompts.single().host)
+        prompts.single().proceed("josé", "päss")
+        assertStatus(200, load(token, onAuthenticationRequired = prompt))
+
+        assertEquals(listOf(null, null, "Basic am9zw6k6cMOkc3M="), authorization.toList())
+        assertEquals(1, prompts.size)
+    }
+
+    @Test
+    fun anotherChallengesUtf8CharsetDoesNotChangeBasicCredentials() {
+        val authorization = CopyOnWriteArrayList<String?>()
+        server.createContext("/legacy.pdf") { exchange ->
+            val header = exchange.requestHeaders.getFirst("Authorization")
+            authorization.add(header)
+            if (header == "Basic am9z6Tpw5HNz") {
+                respond(exchange, 200, "private PDF")
+            } else {
+                respond(
+                    exchange, 401, "authenticate",
+                    "WWW-Authenticate" to "Basic realm=\"legacy\", Digest realm=\"decoy\", charset=\"UTF-8\"",
+                )
+            }
+        }
+        val token = register("$remote/legacy.pdf")
+        val prompts = mutableListOf<HttpAuthRequest>()
+        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request -> prompts.add(request) }
+
+        assertStatus(401, load(token, onAuthenticationRequired = prompt))
+        assertEquals("legacy", prompts.single().realm)
+        prompts.single().proceed("josé", "päss")
+        assertStatus(200, load(token, onAuthenticationRequired = prompt))
+
+        assertEquals(listOf(null, null, "Basic am9z6Tpw5HNz"), authorization.toList())
+        assertEquals(1, prompts.size)
+    }
+
+    @Test
+    fun unsupportedOrIncompleteChallengesDoNotCreateAuthenticationPrompts() {
+        val challenges = listOf(
+            "Bearer realm=\"private\"",
+            "Digest realm=\"Basic decoy\", nonce=\"opaque\"",
+            "Basic",
+            "Basic charset=\"UTF-8\"",
+            "Basic realm=",
+            "NotBasic realm=\"private\"",
+        )
+        val prompts = mutableListOf<HttpAuthRequest>()
+        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request -> prompts.add(request) }
+        challenges.forEachIndexed { index, challenge ->
+            val path = "/unsupported-$index.pdf"
+            server.createContext(path) { exchange ->
+                respond(exchange, 401, "authenticate", "WWW-Authenticate" to challenge)
+            }
+            val token = register("$remote$path")
+
+            assertStatus(401, load(token, onAuthenticationRequired = prompt))
+
+            assertTrue(challenge, prompts.isEmpty())
+            assertTrue(challenge, pendingAuthentication(source(token)).isEmpty())
+            assertTrue(challenge, credentials(source(token)).isEmpty())
+        }
+    }
+
+    @Test
+    fun repeatedUnauthorizedLoadsShareOnePromptAndCancellationAllowsANewPrompt() {
+        server.createContext("/pending.pdf") { exchange ->
+            if (exchange.requestHeaders.getFirst("Authorization") == "Basic YWxpY2U6c2VjcmV0") {
+                respond(exchange, 200, "private PDF")
+            } else {
+                respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"private\"")
+            }
+        }
+        val url = "$remote/pending.pdf"
+        val token = register(url)
+        val prompts = mutableListOf<HttpAuthRequest>()
+        val authenticated = mutableListOf<String>()
+        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request -> prompts.add(request) }
+        val completed: (String, String) -> Unit = { callbackToken, callbackUrl ->
+            authenticated.add("$callbackToken:$callbackUrl")
+        }
+
+        repeat(2) {
+            assertStatus(401, load(token, onAuthenticationRequired = prompt, onAuthenticated = completed))
+        }
+        assertEquals(1, prompts.size)
+        assertEquals(1, pendingAuthentication(source(token)).size)
+        val cancelled = prompts.single()
+        cancelled.cancel()
+        cancelled.proceed("wrong", "password")
+        assertTrue(pendingAuthentication(source(token)).isEmpty())
+        assertTrue(credentials(source(token)).isEmpty())
+        assertTrue(authenticated.isEmpty())
+
+        assertStatus(401, load(token, onAuthenticationRequired = prompt, onAuthenticated = completed))
+        assertEquals(2, prompts.size)
+        assertNotSame(cancelled, prompts.last())
+        prompts.last().proceed("alice", "secret")
+        prompts.last().proceed("wrong", "password")
+        assertEquals(listOf("$token:$url"), authenticated)
+        assertTrue(pendingAuthentication(source(token)).isEmpty())
+        assertEquals(listOf("Basic YWxpY2U6c2VjcmV0"), credentials(source(token)).values.toList())
+        assertStatus(200, load(token, onAuthenticationRequired = prompt))
         assertEquals(2, prompts.size)
     }
 
