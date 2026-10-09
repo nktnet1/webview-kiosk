@@ -515,33 +515,45 @@ object MqttManager {
         connection = rb.applyRestrictions()
 
         @SuppressLint("NewApi")
-        connection
-            .send()
-            .whenComplete { _, throwable ->
-                if (throwable == null) {
-                    if (
-                        c !== client
-                        || pendingCancelConnect.get()
-                        || !config.enabled
-                        || !c.state.isConnected
-                    ) {
-                        onError?.invoke("MQTT connection cancelled.")
-                        return@whenComplete
-                    }
-                    try {
-                        subscribeToTopics()
-                        onConnected?.invoke()
-                    } catch (e: Exception) {
-                        addDebugLog("subscribe failed", e.message)
-                        Log.e(javaClass.simpleName, "Failed to subscribe after MQTT connection", e)
-                        onError?.invoke(e.message)
-                    }
-                } else {
-                    addDebugLog("connect failed", throwable.message)
-                    Log.e(javaClass.simpleName, "Failed to subscribe/connect", throwable)
-                    onError?.invoke(throwable.message)
-                }
+        connection.send().whenComplete { _, throwable ->
+            handleConnectResult(c, throwable, onConnected, onError, ::subscribeToTopics)
+        }
+    }
+
+    /**
+     * Handles a completed MQTT connection attempt. The CompletableFuture stays in
+     * connectClient because Android Retrofix rewrites its JVM type at runtime.
+     */
+    internal fun handleConnectResult(
+        c: Mqtt5AsyncClient,
+        failure: Throwable?,
+        onConnected: (() -> Unit)?,
+        onError: ((String?) -> Unit)?,
+        subscribe: () -> Unit,
+    ) {
+        if (failure == null) {
+            if (
+                c !== client
+                || pendingCancelConnect.get()
+                || !config.enabled
+                || !c.state.isConnected
+            ) {
+                onError?.invoke("MQTT connection cancelled.")
+                return
             }
+            try {
+                subscribe()
+                onConnected?.invoke()
+            } catch (e: Exception) {
+                addDebugLog("subscribe failed", e.message)
+                Log.e(javaClass.simpleName, "Failed to subscribe after MQTT connection", e)
+                onError?.invoke(e.message)
+            }
+        } else {
+            addDebugLog("connect failed", failure.message)
+            Log.e(javaClass.simpleName, "Failed to subscribe/connect", failure)
+            onError?.invoke(failure.message)
+        }
     }
 
     fun publishUrlChangedEvent(url: String) {
