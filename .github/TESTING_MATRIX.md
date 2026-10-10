@@ -35,23 +35,82 @@ untested paths are defective. The app still declares `versionName = "0.26.21"`.
 - The manager suite uses the exported **API 28** runtime. Where a test changes
   `Build.VERSION.SDK_INT`, it exercises an SDK gate with fake platform operations;
   this is not evidence of execution on API 21/22/23/29/30 devices or runtimes.
-- Verification in this patch environment: all 15 session test methods passed
-  in a standalone JDK 21 / Kotlin 2.4.10 harness with a minimal assertion shim,
-  and all four changed Kotlin files passed parsing. **The Gradle/JUnit/Robolectric
-  suite has not run**: the Gradle-cache attachment was unavailable; offline
-  configuration could not resolve `foojay-resolver-convention:1.0.0`.
-  The historical 197-test baseline above has not been re-certified for this patch.
-- Still required: run `:app:testDebugUnitTest` with the complete exported cache;
-  exercise `RequireAuthWrapper` lifecycle/rendering in Compose instrumentation;
+- Follow-up validation: the user reported **tests passed after applying v1.0.15**.
+  This updates the earlier local-only verification status; no new suite count,
+  device result or Compose instrumentation result was supplied.
+- Still required: exercise `RequireAuthWrapper` lifecycle/rendering in Compose instrumentation;
   and perform the biometric/credential/keystore device scenarios below. Added
-  tests and standalone checks do not close these release-readiness requirements.
+  tests and the reported pass do not close these release-readiness requirements.
+
+## Navigation and WebView ownership follow-up (v1.0.16)
+
+- `WebViewNavigationTest` adds **28 history regressions**, configured for
+  Robolectric **API 28**. They cover Back/Forward selection, first-callback and
+  chained redirects, forward-branch preservation/truncation, entry IDs/timestamps,
+  removal and both forms of clearing, corrupt indices, Home/refresh, SPA history,
+  separate settings wrappers, rapid traversal and failed/reentrant loaders.
+- `WebViewNavigationSessionTest` adds **27 pure state tests**. They cover loads
+  before commit, superseded start/history/finish/error callbacks, redirect chains
+  with and without override metadata, legacy new-document detection, PDF source
+  identity, POST page starts, SPA pushes before/after page finish, iframe errors,
+  same-route owners, renderer generations and idempotent disposal. These are
+  policy tests, not invocations of actual WebView callbacks.
+- The process-wide programmatic-navigation flag is removed. Each WebView tracks
+  its selected history entry and pending URL. Redirects can update that entry
+  without losing the forward branch, and rejected callbacks cannot change history
+  or screen state. Native history-index changes within one document distinguish
+  SPA entries from redirects, including pushes before the document finishes.
+  Outgoing views cannot open new prompts/pickers/fullscreen UI,
+  recreate the active renderer or reset the incoming view's HTTP-auth request.
+  Fullscreen teardown removes its own overlay without changing an incoming
+  screen's window mode. URL-event debounce survives recomposition, cancels its
+  previous job and checks ownership again after the delay.
+- Local verification: **27 session checks passed** in a standalone JDK 21 /
+  Kotlin 2.4.10 harness with a minimal assertion shim. **28 history checks passed**
+  against production navigation code using in-memory settings and URLUtil
+  stand-ins; this does not verify Android preferences, URLUtil or Robolectric.
+  Five targeted failures were reproduced against the pre-patch history code.
+  All six changed Kotlin files passed syntax checks; attached Biome `check --write`
+  passed on `docs/biome.json` (Biome does not check Kotlin).
+- Follow-up validation: the user ran the Android suite after v1.0.16 and reported
+  **295 tests, three failures**: `clearingAnEmptyHistoryRepairsTheCursor`,
+  `homeClearsHistoryBeforeLoadingEvenWhenAlreadyAtHome` and
+  `invalidTraversalIndicesNeverInvokeTheLoader`. The standalone settings
+  stand-in did not reproduce the real preference delegate's default minimum of
+  zero. It therefore missed the clamping of the empty-history cursor `-1` to `0`.
+- Still required: instrument repeated route transitions, rapid
+  navigation/redirects, queued callbacks, iframe failures, renderer death,
+  fullscreen teardown and delayed MQTT URL events in a real WebView. Include
+  API 21/23 legacy callbacks and a current WebView provider. URL callbacks expose
+  no load ID, so repeated loads of the exact same URL also require device evidence.
+
+## History cursor correction (v1.0.17)
+
+- `SystemSettings.historyIndex` explicitly permits the `-1` sentinel on reads
+  and writes. A missing preference, complete reset or wrong-type stored value
+  now leaves no selected history entry. Other integer-setting bounds are unchanged.
+- Forward traversal requires an existing selected entry. Both navigation menus
+  use the same cursor bounds so empty, unselected and out-of-range cursors cannot
+  enable Back/Forward actions. The existing invalid-traversal regression now
+  includes an explicit unselected `-1` cursor with a nonempty stack.
+- `SystemSettingsHistoryTest` adds **six Robolectric API 28 regressions** against
+  Android `SharedPreferences` and the production preference delegate. They cover
+  missing values, persisted unselected/selected cursors across settings wrappers,
+  complete reset, corrupt negative stored values and wrong-type recovery.
+- Full local Android validation: `:app:testDebugUnitTest --offline` passed with
+  **301 tests across 34 JUnit suites**, zero failures/errors/skips, including all
+  three reported v1.0.16 failures and the six new preference regressions. The
+  earlier uploaded SDK, Gradle cache and Robolectric API 28/29 runtimes were
+  restored. This run used attached **Gradle 9.8.0-milestone-1** and **JBR 21.0.11**;
+  the project wrapper requests Gradle 9.8.0. Attached Biome `check --write` passed
+  on `docs/biome.json` without changes; Biome does not check Kotlin.
 
 ## Next automated tests, ordered by regression risk
 
 | Priority | Area / main code | Recommended tests and assertions | Layer |
 | --- | --- | --- | --- |
-| **P0** | Authentication (`managers/AuthenticationManager.kt`, `AuthenticationSession.kt`, `RequireAuthWrapper.kt`) | Run the added session/prompt regressions with the complete cache. Verify the Compose wrapper only renders protected content for a valid session, re-prompts on expired resume, and does not duplicate a pending prompt across lifecycle/recomposition. Verify actual credential fallback and invalidated Android Keystore keys on devices. See the authentication follow-up above for implemented cases and verification limits. | Unit/Robolectric for session/prompt logic; Compose instrumentation and emulator/device for actual credential UI and keystore |
-| **P0** | Navigation and active WebView (`utils/webview/WebviewNavigation.kt`, `ui/screens/WebviewScreen.kt`, `utils/createCustomWebview.kt`) | Back/forward after redirect, removal and clearing; rapid concurrent navigation; repeated WebView-route transitions; stale `onPageFinished`/error callbacks; iframe vs main-frame navigation; programmatic-navigation flag does not suppress the wrong screen; fullscreen cleanup after screen change. | Robolectric for history; real WebView instrumentation for ownership and callbacks |
+| **P0** | Authentication (`managers/AuthenticationManager.kt`, `AuthenticationSession.kt`, `RequireAuthWrapper.kt`) | Session/prompt tests added in v1.0.15; user reported they passed. Verify the Compose wrapper only renders protected content for a valid session, re-prompts on expired resume, and does not duplicate a pending prompt across lifecycle/recomposition. Verify actual credential fallback and invalidated Android Keystore keys on devices. See the authentication follow-up above for verification limits. | Unit/Robolectric for session/prompt logic; Compose instrumentation and emulator/device for actual credential UI and keystore |
+| **P0** | Navigation and active WebView (`utils/webview/WebviewNavigation.kt`, `WebViewNavigationSession.kt`, `ui/screens/WebviewScreen.kt`, `utils/createCustomWebview.kt`) | The 61 added history/session/preference regressions passed in the Android suite after v1.0.17. Instrument repeated routes, rapid navigation and redirects, SPA pushes before page finish, stale/duplicate callbacks (including repeated identical URLs), iframe vs main-frame errors, renderer recreation, delayed MQTT URL events and fullscreen cleanup. See the navigation and cursor follow-ups above for implemented cases and verification limits. | Robolectric for history/preferences; pure state tests for policy; real WebView instrumentation for ownership and callbacks |
 | **P0** | UnifiedPush and remote request/settings handoff (`managers/UnifiedPushManager.kt`, `RemoteMessageManager.kt`, `MainActivity.kt`, `MqttForegroundService.kt`) | Target instance/username filtering (including empty and mismatched sets); decrypted-message policy; malformed messages; command execution from a cold process; changing from activity host to service host; requests/settings claimed exactly once when both collectors exist; preserve per-stream order under concurrent deliveries. Existing command FIFO/claim tests need not be duplicated. | Robolectric with controlled collectors; one end-to-end transport test |
 | **P0** | Foreground services (`services/MqttForegroundService.kt`, `LockTaskService.kt`) | Null-intent sticky restart; notification creation/updates; denial of foreground-service start; repeated starts; wake-lock and receiver cleanup on error/stop; settings toggle during connect; foreground-service ownership and no double-processed remote requests. | Robolectric service tests plus emulator/device lifecycle scenarios |
 | **P1** | Android 6 and owner initialisation (`Android6KioskActivity.kt`, `MainActivity.kt`, `utils/lockTaskUtils.kt`, `managers/DeviceOwnerManager.kt`) | HOME vs launcher intent detection, one-shot lock request, host selection, task-switch transition, Dhizuku delayed readiness/permission refusal and activity recreation. Do not regard Robolectric as proof of actual API 23 lock task. | Robolectric + API 23 device/emulator |

@@ -49,7 +49,8 @@ class SystemSettings(val context: Context) {
     var historyIndex by intPref(
         prefs = prefs,
         key = HISTORY_INDEX,
-        default = -1
+        default = -1,
+        min = -1,
     )
 
     val currentUrl

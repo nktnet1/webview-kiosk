@@ -245,8 +245,9 @@ fun KioskControlPanel(
         systemSettings.historyIndex,
         systemSettings.historyStack.size,
     ) {
-        val canGoForward = systemSettings.historyIndex < (systemSettings.historyStack.size - 1)
-        val canGoBack = systemSettings.historyIndex > 0
+        val lastIndex = systemSettings.historyStack.lastIndex
+        val canGoForward = systemSettings.historyIndex in 0 until lastIndex
+        val canGoBack = systemSettings.historyIndex in 1..lastIndex
 
         mapOf(
             WebviewControlActionOption.NAVIGATION to {

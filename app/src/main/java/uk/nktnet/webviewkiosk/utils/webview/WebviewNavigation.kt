@@ -6,26 +6,18 @@ import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 
 object WebViewNavigation {
-    private var isProgrammaticNavigation = false
-
     fun goBack(customLoadUrl: (newUrl: String) -> Unit, systemSettings: SystemSettings) {
         val index = systemSettings.historyIndex
-        if (index > 0) {
-            val newIndex = index - 1
-            val entry = systemSettings.historyStack.getOrNull(newIndex) ?: return
-            systemSettings.historyIndex = newIndex
-            isProgrammaticNavigation = true
-            customLoadUrl(entry.url)
+        if (index in 1..systemSettings.historyStack.lastIndex) {
+            navigateToIndex(customLoadUrl, systemSettings, index - 1)
         }
     }
 
     fun goForward(customLoadUrl: (newUrl: String) -> Unit, systemSettings: SystemSettings) {
         val index = systemSettings.historyIndex
+        if (index !in systemSettings.historyStack.indices) return
         val newIndex = index + 1
-        val entry = systemSettings.historyStack.getOrNull(newIndex) ?: return
-        systemSettings.historyIndex = newIndex
-        isProgrammaticNavigation = true
-        customLoadUrl(entry.url)
+        navigateToIndex(customLoadUrl, systemSettings, newIndex)
     }
 
     fun goHome(
@@ -58,38 +50,50 @@ object WebViewNavigation {
         index: Int,
     ) {
         val entry = systemSettings.historyStack.getOrNull(index) ?: return
-        isProgrammaticNavigation = true
+        val previousIndex = systemSettings.historyIndex
         systemSettings.historyIndex = index
-        customLoadUrl(entry.url)
+        try {
+            customLoadUrl(entry.url)
+        } catch (error: Throwable) {
+            if (
+                systemSettings.historyIndex == index
+                && systemSettings.historyStack.getOrNull(index)?.id == entry.id
+            ) {
+                systemSettings.historyIndex = previousIndex
+            }
+            throw error
+        }
     }
 
     fun appendWebviewHistory(
         systemSettings: SystemSettings,
         url: String,
         originalUrl: String?,
-        shouldReplaceRedirect: Boolean
+        shouldReplaceRedirect: Boolean,
+        traversalEntryId: String? = null,
     ) {
-        if (isProgrammaticNavigation) {
-            isProgrammaticNavigation = false
-            return
-        }
-
         val newUrl = url.trimEnd('/')
         val stack = systemSettings.historyStack.toMutableList()
-        val currentIndex = systemSettings.historyIndex
+        val currentIndex = systemSettings.historyIndex.coerceIn(-1, stack.lastIndex)
         val currentEntry = stack.getOrNull(currentIndex)
         val currentUrl = currentEntry?.url?.trimEnd('/')
 
         val replace = (
             shouldReplaceRedirect
-            && !originalUrl.isNullOrEmpty()
-            && isValidUrl(originalUrl)
-            && originalUrl.trimEnd('/') != newUrl
-            && systemSettings.urlBeforeNavigation != currentUrl
+            && (
+                (traversalEntryId != null && traversalEntryId == currentEntry?.id)
+                || (
+                    !originalUrl.isNullOrEmpty()
+                    && isValidUrl(originalUrl)
+                    && originalUrl.trimEnd('/') != newUrl
+                    && systemSettings.urlBeforeNavigation != currentUrl
+                )
+            )
         )
         if (replace && currentEntry != null) {
             stack[currentIndex] = currentEntry.copy(url = newUrl)
             systemSettings.historyStack = stack
+            systemSettings.historyIndex = currentIndex
             return
         }
 
@@ -111,6 +115,7 @@ object WebViewNavigation {
     fun clearHistory(systemSettings: SystemSettings) {
         val stack = systemSettings.historyStack
         if (stack.isEmpty()) {
+            systemSettings.historyIndex = -1
             return
         }
         val currentIndex = systemSettings.historyIndex.coerceIn(
