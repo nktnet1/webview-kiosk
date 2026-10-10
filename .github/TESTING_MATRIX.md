@@ -38,9 +38,10 @@ untested paths are defective. The app still declares `versionName = "0.26.21"`.
 - Follow-up validation: the user reported **tests passed after applying v1.0.15**.
   This updates the earlier local-only verification status; no new suite count,
   device result or Compose instrumentation result was supplied.
-- Still required: exercise `RequireAuthWrapper` lifecycle/rendering in Compose instrumentation;
-  and perform the biometric/credential/keystore device scenarios below. Added
-  tests and the reported pass do not close these release-readiness requirements.
+- Wrapper lifecycle/rendering now has Compose/Robolectric coverage in v1.0.22.
+  Still required: Compose instrumentation in the running APK and the
+  biometric/credential/keystore device scenarios below. Added tests and the
+  reported pass do not close these release-readiness requirements.
 
 ## Navigation and WebView ownership follow-up (v1.0.16)
 
@@ -235,12 +236,60 @@ untested paths are defective. The app still declares `versionName = "0.26.21"`.
   Retrofix-rewritten APK. Activity/service lifecycle handoff, TLS/WebSocket broker
   delivery, process restarts and Android 14+ restrictions remain unverified.
   Manual device checks remain scheduled after automated coverage work.
+- Follow-up validation: the user reported **v1.0.21 passes**, with the
+  `Configuration.setVisible(boolean)` Gradle deprecation noted below.
+
+## Compose authentication lifecycle and Gradle warning trace (v1.0.22)
+
+- The authentication gate rechecks session validity when protected content
+  changes. Its composables explicitly disable skipping because the clock is not
+  Compose state and a content lambda can retain its identity while captured
+  values change. Expired sessions cannot retain protected content through that
+  recomposition, and the replacement prompt is requested exactly once.
+- Lifecycle checks include `ON_RESUME`: a paused activity can resume without an
+  `ON_START`. Valid sessions refresh without remounting protected content;
+  expired sessions remove it and request authentication. Resuming after a user
+  cancellation keeps the error and explicit Retry action. Lifecycle-state
+  collection also refreshes rendering when an unsecured device establishes a
+  new valid session with the same `AuthenticationNotSet` result.
+- `RequireAuthWrapperTest` adds **18 test executions**: 17 scenarios on
+  **Robolectric API 28**, with the expired pause/resume case also on **API 29**.
+  They run the production wrapper in an attached `ComposeView`, assert its
+  semantics and protected-content mount/disposal effects, and invoke the real
+  Retry/Cancel semantics actions and navigation controller. A controlled frame
+  clock drives recomposition without waiting on the spinner's infinite animation.
+- Scenarios cover loading before start; successful, existing, expired and
+  unsecured sessions; explicit lock; pause/resume and stop/start; valid refresh;
+  changed content; repeated lifecycle/recomposition while a prompt is pending;
+  error/retry/cancel; custom-password pending/success; wrapper disposal; and
+  lifecycle-owner replacement. **Three API 28 failures were reproduced against
+  v1.0.21** before the wrapper fix: expired pause/resume, expired content
+  recomposition and renewal with an unchanged unsecured-authentication result.
+- Full local Android validation: `:app:testDebugUnitTest :app:assembleDebug
+  --offline` passed with **397 tests across 40 JUnit suites**, zero
+  failures/errors/skips, and a debug APK. This used the restored SDK/cache/API
+  28/29 runtimes, attached **Gradle 9.8.0-milestone-1** and **JBR 21.0.11**.
+  Kotlin compilation emitted no warnings. Attached Biome `check --write`
+  passed on `docs/biome.json` without changes; Biome does not check Kotlin.
+- `:app:help --no-configuration-cache --warning-mode all
+  -Dorg.gradle.deprecation.trace=true` traced `Configuration.setVisible(boolean)`
+  to **AGP 9.4.1 internals**, including `BasePlugin`, `SourceSetManager` and
+  `VariantDependenciesBuilder`. There is no project call to remove. An
+  [upstream AGP change](https://android.googlesource.com/platform/tools/base/+/b54a369d23f52967d0073cb715c70a9c998f51c6)
+  removes some deprecated usages, but that does not establish a complete fix in
+  the configured AGP version. The warning remains visible pending a verified
+  compatible plugin update; build-tool versions and warning settings are unchanged.
+- These are Compose/Robolectric tests with a fake prompt and session clock,
+  not APK instrumentation or biometric/credential hardware evidence. They do
+  not exercise the full `MainActivity` route lifecycle, Android Keystore,
+  process recreation or external-activity round trips in an installed app.
+  Manual device checks remain deferred until automated coverage work is complete.
 
 ## Next automated tests, ordered by regression risk
 
 | Priority | Area / main code | Recommended tests and assertions | Layer |
 | --- | --- | --- | --- |
-| **P0** | Authentication (`managers/AuthenticationManager.kt`, `AuthenticationSession.kt`, `RequireAuthWrapper.kt`) | Session/prompt tests added in v1.0.15; user reported they passed. Verify the Compose wrapper only renders protected content for a valid session, re-prompts on expired resume, and does not duplicate a pending prompt across lifecycle/recomposition. Verify actual credential fallback and invalidated Android Keystore keys on devices. See the authentication follow-up above for verification limits. | Unit/Robolectric for session/prompt logic; Compose instrumentation and emulator/device for actual credential UI and keystore |
+| **P0** | Authentication (`managers/AuthenticationManager.kt`, `AuthenticationSession.kt`, `RequireAuthWrapper.kt`) | Session/prompt tests added in v1.0.15 passed. The 18 Compose/Robolectric checks in v1.0.22 verify protected-content gating, expired resume/recomposition, prompt deduplication, retry/cancel and effect cleanup. Instrument the full APK's settings/navigation lifecycle, external-activity return and recreation; verify actual credential fallback and invalidated Android Keystore keys on devices. See the authentication follow-ups for verification limits. | Unit/Robolectric for sessions, prompts and Compose semantics/lifecycle; APK instrumentation and emulator/device for route integration, actual credential UI and keystore |
 | **P0** | Navigation and active WebView (`utils/webview/WebviewNavigation.kt`, `WebViewNavigationSession.kt`, `ui/screens/WebviewScreen.kt`, `utils/createCustomWebview.kt`) | The 61 added history/session/preference regressions passed in the Android suite after v1.0.17. Instrument repeated routes, rapid navigation and redirects, SPA pushes before page finish, stale/duplicate callbacks (including repeated identical URLs), iframe vs main-frame errors, renderer recreation, delayed MQTT URL events and fullscreen cleanup. See the navigation and cursor follow-ups above for implemented cases and verification limits. | Robolectric for history/preferences; pure state tests for policy; real WebView instrumentation for ownership and callbacks |
 | **P0** | UnifiedPush and remote request/settings handoff (`managers/UnifiedPushManager.kt`, `RemoteMessageManager.kt`, `MainActivity.kt`, `MqttForegroundService.kt`) | The 33 registration/filtering/settings/request regressions passed in v1.0.18. v1.0.21 additionally verifies MQTT TCP command/settings/request delivery through production service collectors. Exercise a real distributor, OS cold-process initialisation, device-owner commands and activity-to-service host transitions; verify exactly-once handling with actual activity lifecycle collectors and concurrent transport deliveries. Existing command FIFO/claim tests need not be duplicated. See the remote-stream and loopback follow-ups for limits. | Robolectric for manager/preferences and loopback MQTT; coroutine tests for flow mechanics; lifecycle instrumentation and on-device transport tests |
 | **P0** | Foreground services (`services/MqttForegroundService.kt`, `LockTaskService.kt`) | The 45 service checks passed through v1.0.21, covering lifecycle resources/notifications, uninitialised and disconnected MQTT restoration, repeated starts, connection rejection/recovery, disabling MQTT during connect and loopback delivery. Verify activity/service host transitions, broker reconnects and exactly-once handling through real transports; exercise Android 14+ foreground restrictions and OS process death. See the service/notification/loopback follow-ups for limits. | Robolectric service callbacks on API 28/29 and real JVM MQTT TCP; emulator/device lifecycle and transport scenarios |
