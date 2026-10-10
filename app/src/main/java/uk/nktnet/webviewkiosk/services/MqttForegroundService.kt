@@ -15,8 +15,10 @@ import android.util.Log
 import androidx.core.app.ServiceCompat
 import com.hivemq.client.mqtt.MqttClientState
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -31,13 +33,15 @@ import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import kotlin.time.Duration.Companion.milliseconds
 
 class MqttForegroundService : Service() {
-    private var isServiceActive = true
-    private val scope = CoroutineScope(Dispatchers.IO)
+    @Volatile
+    private var isServiceActive = false
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var pollLockTaskModeJob: Job? = null
     private var unregisterCommandHost: (() -> Unit)? = null
     private var mqttSettingsJob: Job? = null
     private var mqttRequestJob: Job? = null
     private var lastStatus: MqttClientState? = null
+    private var receiverRegistered = false
     private lateinit var wakeLock: PowerManager.WakeLock
 
     private val systemReceiver = object : BroadcastReceiver() {
@@ -57,72 +61,90 @@ class MqttForegroundService : Service() {
         }
     }
 
-    override fun onCreate() {
-        super.onCreate()
-        val filter = IntentFilter().apply {
-            addAction(Intent.ACTION_SCREEN_ON)
-            addAction(Intent.ACTION_SCREEN_OFF)
-            addAction(Intent.ACTION_USER_PRESENT)
+    private fun startProcessing() {
+        if (!receiverRegistered) {
+            val filter = IntentFilter().apply {
+                addAction(Intent.ACTION_SCREEN_ON)
+                addAction(Intent.ACTION_SCREEN_OFF)
+                addAction(Intent.ACTION_USER_PRESENT)
+            }
+            registerReceiver(systemReceiver, filter)
+            receiverRegistered = true
         }
-        registerReceiver(systemReceiver, filter)
-
-        val pm = getSystemService(POWER_SERVICE) as PowerManager
-        wakeLock = pm.newWakeLock(
-            PowerManager.PARTIAL_WAKE_LOCK,
-            "${MqttForegroundService::class.java.name}:partial-wakelock"
-        )
-        wakeLock.setReferenceCounted(false)
-
-        @SuppressLint("WakelockTimeout")
-        wakeLock.acquire()
-
-        unregisterCommandHost = RemoteMessageManager.registerMqttCommandHost(applicationContext) {
-            isServiceActive
+        if (!::wakeLock.isInitialized) {
+            val pm = getSystemService(POWER_SERVICE) as PowerManager
+            wakeLock = pm.newWakeLock(
+                PowerManager.PARTIAL_WAKE_LOCK,
+                "${MqttForegroundService::class.java.name}:partial-wakelock"
+            )
+            wakeLock.setReferenceCounted(false)
         }
-        mqttSettingsJob = scope.launch {
-            RemoteMessageManager.settingsFlow.collect { settings ->
-                if (
-                    settings.source == RemoteMessageManager.RemoteMessage.Source.MQTT
-                    && settings.tryClaim()
-                ) {
-                    RemoteInboundHandler.handleInboundSettings(
-                        this@MqttForegroundService,
-                        settings.message,
-                        settings.source,
-                    )
+        if (!wakeLock.isHeld) {
+            @SuppressLint("WakelockTimeout")
+            wakeLock.acquire()
+        }
+
+        isServiceActive = true
+        if (unregisterCommandHost == null) {
+            unregisterCommandHost = RemoteMessageManager.registerMqttCommandHost(applicationContext) {
+                canHandleRemoteMessages()
+            }
+        }
+        // Subscribe before restoring MQTT so its first delivery cannot race startup.
+        if (mqttSettingsJob?.isActive != true) {
+            mqttSettingsJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                RemoteMessageManager.settingsFlow.collect { settings ->
+                    if (
+                        canHandleRemoteMessages()
+                        && settings.source == RemoteMessageManager.RemoteMessage.Source.MQTT
+                        && settings.tryClaim()
+                    ) {
+                        RemoteInboundHandler.handleInboundSettings(
+                            this@MqttForegroundService,
+                            settings.message,
+                            settings.source,
+                        )
+                    }
                 }
             }
         }
-        mqttRequestJob = scope.launch {
-            RemoteMessageManager.requestsFlow.collect { request ->
-                if (
-                    request.source == RemoteMessageManager.RemoteMessage.Source.MQTT
-                    && request.tryClaim()
-                ) {
-                    RemoteInboundHandler.handleInboundMqttRequest(
-                        this@MqttForegroundService,
-                        request.message
-                    )
+        if (mqttRequestJob?.isActive != true) {
+            mqttRequestJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                RemoteMessageManager.requestsFlow.collect { request ->
+                    if (
+                        canHandleRemoteMessages()
+                        && request.source == RemoteMessageManager.RemoteMessage.Source.MQTT
+                        && request.tryClaim()
+                    ) {
+                        RemoteInboundHandler.handleInboundMqttRequest(
+                            this@MqttForegroundService,
+                            request.message
+                        )
+                    }
                 }
             }
         }
     }
 
+    private fun canHandleRemoteMessages(): Boolean {
+        if (!isServiceActive) return false
+        val userSettings = UserSettings(this)
+        return userSettings.mqttEnabled && userSettings.mqttUseForegroundService
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         val userSettings = UserSettings(this)
         if (!userSettings.mqttEnabled || !userSettings.mqttUseForegroundService) {
-            stopSelf(startId)
-            return START_NOT_STICKY
+            return stopAfterRejectedStart(startId)
         }
 
-        val contentIntent = PendingIntent.getActivity(
-            this,
-            0,
-            Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE
-        )
-
         try {
+            val contentIntent = PendingIntent.getActivity(
+                this,
+                0,
+                Intent(this, MainActivity::class.java),
+                PendingIntent.FLAG_IMMUTABLE
+            )
             // A sticky restart may be the first entry point in a fresh process.
             CustomNotificationManager.init(applicationContext)
             ServiceCompat.startForeground(
@@ -139,14 +161,14 @@ class MqttForegroundService : Service() {
                     0
                 }
             )
+            startProcessing()
         } catch (e: Exception) {
             Log.e(
                 javaClass.simpleName,
-                "MQTT foreground service is not allowed to enter the foreground",
+                "Unable to start MQTT foreground service",
                 e
             )
-            stopSelf(startId)
-            return START_NOT_STICKY
+            return stopAfterRejectedStart(startId)
         }
 
         if (!MqttManager.isInitialized()) {
@@ -155,12 +177,11 @@ class MqttForegroundService : Service() {
                 MqttManager.connect(applicationContext)
             } catch (e: Exception) {
                 Log.e(javaClass.simpleName, "Unable to restore MQTT after service restart", e)
-                stopSelf(startId)
-                return START_NOT_STICKY
+                return stopAfterRejectedStart(startId)
             }
         }
 
-        isServiceActive = true
+        if (!canHandleRemoteMessages()) return stopAfterRejectedStart(startId)
         if (pollLockTaskModeJob?.isActive != true) {
             pollLockTaskModeJob = scope.launch {
                 while (isServiceActive) {
@@ -179,26 +200,40 @@ class MqttForegroundService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onDestroy() {
-        stopForegroundService()
-        unregisterReceiver(systemReceiver)
-        if (::wakeLock.isInitialized && wakeLock.isHeld) {
-            wakeLock.release()
-        }
+        stopProcessing()
+        scope.cancel()
         super.onDestroy()
     }
 
-    private fun stopForegroundService() {
-        try {
-            isServiceActive = false
-            pollLockTaskModeJob?.cancel()
-            unregisterCommandHost?.invoke()
-            unregisterCommandHost = null
-            mqttSettingsJob?.cancel()
-            mqttRequestJob?.cancel()
-            scope.cancel()
-        } catch (e: Exception) {
-            Log.e(javaClass.simpleName, "Failed to stop foreground service", e)
+    private fun stopAfterRejectedStart(startId: Int): Int {
+        stopProcessing()
+        stopSelf(startId)
+        return START_NOT_STICKY
+    }
+
+    private fun stopProcessing() {
+        isServiceActive = false
+        pollLockTaskModeJob?.cancel()
+        pollLockTaskModeJob = null
+        lastStatus = null
+        unregisterCommandHost?.invoke()
+        unregisterCommandHost = null
+        mqttSettingsJob?.cancel()
+        mqttSettingsJob = null
+        mqttRequestJob?.cancel()
+        mqttRequestJob = null
+        if (receiverRegistered) {
+            receiverRegistered = false
+            try {
+                unregisterReceiver(systemReceiver)
+            } catch (e: IllegalArgumentException) {
+                Log.w(javaClass.simpleName, "MQTT receiver was already unregistered", e)
+            }
         }
+        if (::wakeLock.isInitialized && wakeLock.isHeld) {
+            wakeLock.release()
+        }
+        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
     }
 
     private fun updateNotification(newStatus: MqttClientState) {
