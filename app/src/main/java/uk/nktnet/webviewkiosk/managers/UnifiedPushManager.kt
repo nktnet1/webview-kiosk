@@ -199,6 +199,22 @@ object UnifiedPushManager {
         return instance
     }
 
+    private fun acceptsInstance(context: Context, instance: String, event: String): Boolean {
+        val expectedInstance = getInstance(context)
+        if (instance == expectedInstance) return true
+        addDebugLog(
+            "$event (ignored)",
+            """
+            instance: $instance
+            expected instance: $expectedInstance
+
+            Reason:
+            - callback belongs to a different registration instance
+            """.trimIndent(),
+        )
+        return false
+    }
+
     // ===================================================================== //
 
     fun handleMessage(context: Context, message: PushMessage, instance: String) {
@@ -218,6 +234,8 @@ object UnifiedPushManager {
             )
             return
         }
+
+        if (!acceptsInstance(context, instance, "message received")) return
 
         if (!(message.decrypted || userSettings.unifiedPushProcessUnencryptedMessages)) {
             addDebugLog(
@@ -349,6 +367,7 @@ object UnifiedPushManager {
     }
 
     fun handleNewEndpoint(context: Context, endpoint: PushEndpoint, instance: String) {
+        if (!acceptsInstance(context, instance, "new endpoint")) return
         ToastManager.show(context, "UnifiedPush: new endpoint.")
         val systemSettings = SystemSettings(context)
         val userSettings = UserSettings(context)
@@ -374,6 +393,7 @@ object UnifiedPushManager {
         )
     }
     fun handleUnregistered(context: Context, instance: String) {
+        if (!acceptsInstance(context, instance, "unregistered")) return
         val systemSettings = SystemSettings(context)
         systemSettings.unifiedpushEndpoint = null
         ToastManager.show(context, "UnifiedPush: unregistered called.")

@@ -104,6 +104,38 @@ untested paths are defective. The app still declares `versionName = "0.26.21"`.
   restored. This run used attached **Gradle 9.8.0-milestone-1** and **JBR 21.0.11**;
   the project wrapper requests Gradle 9.8.0. Attached Biome `check --write` passed
   on `docs/biome.json` without changes; Biome does not check Kotlin.
+- Follow-up validation: the user reported **v1.0.17 passes**.
+
+## UnifiedPush registration and remote streams (v1.0.18)
+
+- Message, endpoint and unregistration callbacks must match the currently
+  configured UnifiedPush registration instance. The comparison uses the same
+  default and variable expansion as registration. After an instance change,
+  late callbacks from the previous instance cannot execute commands, import
+  settings, replace endpoint credentials or erase the current endpoint.
+  Payload `targetInstances` still identifies the app instance, not the
+  UnifiedPush registration instance.
+- `UnifiedPushManagerTest` adds **28 Robolectric API 28 regressions** using real
+  connector messages/endpoints and Android preferences. They cover stale and
+  changed instances; default/template instances; enabled and decrypted-message
+  policy; omitted, null, empty, matching and mismatched targets; malformed
+  envelopes and recovery; native command execution without an activity/MQTT
+  host; settings notifications; and endpoint storage/redaction/unregistration.
+  Six stale-instance cases failed against v1.0.17 before the production fix.
+- `RemoteSettingsRequestDispatchTest` adds **five coroutine regressions** against
+  the production flows: FIFO delivery of 256 settings or requests while a
+  subscriber is blocked, one shared claim across two overlapping collectors for
+  128 deliveries in each stream, and independent request/applied-settings
+  progress while a settings subscriber is blocked. Source metadata is preserved.
+- Full local Android validation: `:app:testDebugUnitTest --offline` passed with
+  **334 tests across 36 JUnit suites**, zero failures/errors/skips, using the
+  restored SDK/cache/API 28/29 runtimes, attached **Gradle 9.8.0-milestone-1** and
+  **JBR 21.0.11**. Attached Biome `check --write` passed on `docs/biome.json`
+  without changes; Biome does not check Kotlin.
+- Still required: a real distributor/transport end-to-end test, true cold-process
+  service initialisation and device-owner commands, activity/service host
+  transitions, and foreground-service restart/cleanup. Controlled flow collectors
+  verify queue/claim mechanics, not actual activity or service lifecycles.
 
 ## Next automated tests, ordered by regression risk
 
@@ -111,7 +143,7 @@ untested paths are defective. The app still declares `versionName = "0.26.21"`.
 | --- | --- | --- | --- |
 | **P0** | Authentication (`managers/AuthenticationManager.kt`, `AuthenticationSession.kt`, `RequireAuthWrapper.kt`) | Session/prompt tests added in v1.0.15; user reported they passed. Verify the Compose wrapper only renders protected content for a valid session, re-prompts on expired resume, and does not duplicate a pending prompt across lifecycle/recomposition. Verify actual credential fallback and invalidated Android Keystore keys on devices. See the authentication follow-up above for verification limits. | Unit/Robolectric for session/prompt logic; Compose instrumentation and emulator/device for actual credential UI and keystore |
 | **P0** | Navigation and active WebView (`utils/webview/WebviewNavigation.kt`, `WebViewNavigationSession.kt`, `ui/screens/WebviewScreen.kt`, `utils/createCustomWebview.kt`) | The 61 added history/session/preference regressions passed in the Android suite after v1.0.17. Instrument repeated routes, rapid navigation and redirects, SPA pushes before page finish, stale/duplicate callbacks (including repeated identical URLs), iframe vs main-frame errors, renderer recreation, delayed MQTT URL events and fullscreen cleanup. See the navigation and cursor follow-ups above for implemented cases and verification limits. | Robolectric for history/preferences; pure state tests for policy; real WebView instrumentation for ownership and callbacks |
-| **P0** | UnifiedPush and remote request/settings handoff (`managers/UnifiedPushManager.kt`, `RemoteMessageManager.kt`, `MainActivity.kt`, `MqttForegroundService.kt`) | Target instance/username filtering (including empty and mismatched sets); decrypted-message policy; malformed messages; command execution from a cold process; changing from activity host to service host; requests/settings claimed exactly once when both collectors exist; preserve per-stream order under concurrent deliveries. Existing command FIFO/claim tests need not be duplicated. | Robolectric with controlled collectors; one end-to-end transport test |
+| **P0** | UnifiedPush and remote request/settings handoff (`managers/UnifiedPushManager.kt`, `RemoteMessageManager.kt`, `MainActivity.kt`, `MqttForegroundService.kt`) | The 33 added registration/filtering/settings/request regressions passed in v1.0.18. Exercise delivery through a real distributor, cold-process service initialisation, device-owner commands and activity-to-service host transitions; verify exactly-once handling with actual lifecycle collectors and concurrent transport deliveries. See the remote-stream follow-up above for verification limits. Existing command FIFO/claim tests need not be duplicated. | Robolectric for manager/preferences; coroutine tests for flow mechanics; lifecycle instrumentation and one end-to-end transport test |
 | **P0** | Foreground services (`services/MqttForegroundService.kt`, `LockTaskService.kt`) | Null-intent sticky restart; notification creation/updates; denial of foreground-service start; repeated starts; wake-lock and receiver cleanup on error/stop; settings toggle during connect; foreground-service ownership and no double-processed remote requests. | Robolectric service tests plus emulator/device lifecycle scenarios |
 | **P1** | Android 6 and owner initialisation (`Android6KioskActivity.kt`, `MainActivity.kt`, `utils/lockTaskUtils.kt`, `managers/DeviceOwnerManager.kt`) | HOME vs launcher intent detection, one-shot lock request, host selection, task-switch transition, Dhizuku delayed readiness/permission refusal and activity recreation. Do not regard Robolectric as proof of actual API 23 lock task. | Robolectric + API 23 device/emulator |
 | **P1** | Real PDF viewer + certificate paths (`handlers/handlePdfSourceRequest.kt`, `utils/webview/PdfTlsState.kt`, PDF HTML) | Load a PDF in an actual WebView with Range requests, redirects and auth; show real pages, recover on retry, close old viewer requests; validate untrusted/expired TLS decisions and a local HTTPS server requesting an mTLS certificate. HTTP helper unit cases are already extensive. | Instrumented WebView + controlled HTTP(S) test server |
