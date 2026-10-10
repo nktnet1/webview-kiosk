@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,6 +37,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -94,6 +94,7 @@ open class MainActivity : AppCompatActivity() {
     private var pendingAndroid6LockRequest = false
     private var pendingDhizukuPermissionRequest = false
     private var deviceOwnerInitJob: Job? = null
+    private var unregisterMqttCommandHost: (() -> Unit)? = null
 
     // Android 6 can keep the HOME routing activity and private kiosk host alive together.
     // Track their shared lifecycle on the main thread, retaining one event/UI host in background.
@@ -180,6 +181,7 @@ open class MainActivity : AppCompatActivity() {
         if (!MqttManager.isInitialized()) {
             MqttManager.updateConfig(applicationContext)
         }
+        startMqttMessageProcessing()
 
         val webContentDir = getWebContentFilesDir(this)
 
@@ -221,41 +223,6 @@ open class MainActivity : AppCompatActivity() {
                 handlesApplicationEvents && lifecycleState == Lifecycle.State.RESUMED
             } else {
                 true
-            }
-
-            DisposableEffect(Unit) {
-                val unregister = RemoteMessageManager.registerMqttCommandHost(applicationContext) {
-                    isApplicationEventHost() && !userSettings.mqttUseForegroundService
-                }
-                onDispose(unregister)
-            }
-
-            LaunchedEffect(Unit) {
-                RemoteMessageManager.requestsFlow.collect { request ->
-                    if (
-                        isApplicationEventHost()
-                        && request.source == RemoteMessageManager.RemoteMessage.Source.MQTT
-                        && !userSettings.mqttUseForegroundService
-                        && request.tryClaim()
-                    ) {
-                        RemoteInboundHandler.handleInboundMqttRequest(context, request.message)
-                    }
-                }
-            }
-
-            LaunchedEffect(Unit) {
-                RemoteMessageManager.settingsFlow.collect { settings ->
-                    if (
-                        isApplicationEventHost()
-                        && settings.source == RemoteMessageManager.RemoteMessage.Source.MQTT
-                        && !userSettings.mqttUseForegroundService
-                        && settings.tryClaim()
-                    ) {
-                        RemoteInboundHandler.handleInboundSettings(
-                            context, settings.message, settings.source
-                        )
-                    }
-                }
             }
 
             LaunchedEffect(Unit) {
@@ -405,6 +372,44 @@ open class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun canHandleMqttMessages(): Boolean =
+        isApplicationEventHost()
+            && this in startedHosts
+            && userSettings.mqttEnabled
+            && !MqttForegroundService.isHandlingMessages()
+
+    private fun startMqttMessageProcessing() {
+        unregisterMqttCommandHost = RemoteMessageManager.registerMqttCommandHost(applicationContext) {
+            canHandleMqttMessages()
+        }
+        // Subscribe before onStart connects MQTT; composition may not exist for its first delivery.
+        // Keep one pair for this activity and recheck eligibility before claiming queued messages.
+        lifecycleScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            RemoteMessageManager.requestsFlow.collect { request ->
+                if (
+                    canHandleMqttMessages()
+                    && request.source == RemoteMessageManager.RemoteMessage.Source.MQTT
+                    && request.tryClaim()
+                ) {
+                    RemoteInboundHandler.handleInboundMqttRequest(this@MainActivity, request.message)
+                }
+            }
+        }
+        lifecycleScope.launch(start = CoroutineStart.UNDISPATCHED) {
+            RemoteMessageManager.settingsFlow.collect { settings ->
+                if (
+                    canHandleMqttMessages()
+                    && settings.source == RemoteMessageManager.RemoteMessage.Source.MQTT
+                    && settings.tryClaim()
+                ) {
+                    RemoteInboundHandler.handleInboundSettings(
+                        this@MainActivity, settings.message, settings.source
+                    )
+                }
+            }
+        }
+    }
+
     @Composable
     private fun resolveTheme(theme: ThemeOption): Boolean {
         return when (theme) {
@@ -501,7 +506,7 @@ open class MainActivity : AppCompatActivity() {
         startedHosts.remove(this)
         if (!isChangingConfigurations && startedHosts.isEmpty()) {
             AuthenticationManager.resetAuthentication(preserveExternalActivitySession = true)
-            if (userSettings.mqttUseForegroundService) {
+            if (MqttForegroundService.isHandlingMessages()) {
                 if (MqttManager.isConnected()) {
                     MqttManager.publishAppBackgroundEvent()
                 }
@@ -594,19 +599,27 @@ open class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         createdHosts.remove(this)
         startedHosts.remove(this)
+        unregisterMqttCommandHost?.invoke()
+        unregisterMqttCommandHost = null
         if (android6EventHost === this) {
             android6EventHost = startedHosts.lastOrNull() ?: createdHosts.lastOrNull()
         }
         unregisterReceiver(broadcastReceiver)
-        if (!isChangingConfigurations && createdHosts.isEmpty()) {
-            if (userSettings.mqttUseForegroundService) {
+        if (
+            !isChangingConfigurations
+            && createdHosts.isEmpty()
+        ) {
+            if (!MqttForegroundService.isHandlingMessages()) {
                 MqttManager.disconnect(
                     cause = OutboundDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_DESTROYED
                 )
             }
-            stopService(
-                Intent(this, MqttForegroundService::class.java)
-            )
+            // Keep an opted-in start request queued; an accepted service can restore MQTT.
+            if (!(userSettings.mqttEnabled && userSettings.mqttUseForegroundService)) {
+                stopService(
+                    Intent(this, MqttForegroundService::class.java)
+                )
+            }
         }
         AuthenticationManager.clear(this)
         super.onDestroy()

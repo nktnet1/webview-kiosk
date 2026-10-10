@@ -8,7 +8,11 @@ plugins {
 }
 
 android {
-    compileSdk = 37
+    compileSdk {
+        version = release(37) {
+            minorApiLevel = 0
+        }
+    }
     namespace = "uk.nktnet.webviewkiosk"
 
     defaultConfig {
@@ -29,6 +33,12 @@ android {
         unitTests {
             isIncludeAndroidResources = true
             all {
+                // Retrofix rewrites app classes, but host-test dependencies stay on
+                // JVM APIs. Use the matching original classes for real HiveMQ calls.
+                val testedVariant = it.name.removePrefix("test").removeSuffix("UnitTest")
+                it.classpath = files(tasks.named("compile${testedVariant}Kotlin").map { task ->
+                    task.outputs.files
+                }) + it.classpath
                 it.jvmArgs(
                     "--add-opens=java.base/java.lang=ALL-UNNAMED",
                     "--add-opens=java.base/java.util=ALL-UNNAMED",
