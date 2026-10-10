@@ -175,7 +175,9 @@ class MqttForegroundService : Service() {
             return stopAfterRejectedStart(startId)
         }
 
-        if (!MqttManager.isInitialized()) {
+        // A configured manager may still be disconnected after a failed attempt.
+        // Preserve a live connect/reconnect, but restore a stopped connection.
+        if (MqttManager.getState() == MqttClientState.DISCONNECTED) {
             try {
                 DeviceOwnerManager.init(applicationContext)
                 MqttManager.connect(applicationContext)

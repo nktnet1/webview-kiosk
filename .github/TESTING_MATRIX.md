@@ -196,14 +196,54 @@ untested paths are defective. The app still declares `versionName = "0.26.21"`.
   activity/service handoff, real transports and Android 14+ foreground rules
   remain unverified by these tests.
 
+## MQTT restoration and loopback transport (v1.0.21)
+
+- Foreground-service starts restore a `DISCONNECTED` MQTT manager even when its
+  configuration was already initialised. A later start can recover after a broker
+  rejection or corrected client settings. Existing connections and pending
+  connect/reconnect attempts are preserved across repeated starts.
+- Connected listeners and connection completions recheck the current MQTT-enabled
+  preference. Disabling MQTT during a pending handshake closes a late success
+  without publishing the connected event or subscribing. Reconnect scheduling and
+  its delayed callback also recheck that preference.
+- Host tests prepend the Kotlin compiler's original app classes to match their
+  original JVM dependencies. Mixing Retrofix-rewritten app futures with HiveMQ's
+  unmodified JVM futures previously caused a `ClassCastException` on actual
+  connection completion. APK builds retain Retrofix and its backports.
+- `MqttServiceConnectionTest` adds **13 test executions**: 12 scenarios with the
+  cold-start case running on both **API 28 and 29**. A bounded MQTT 5 TCP peer
+  binds an ephemeral loopback port and gates CONNACK delivery. Tests use the real
+  HiveMQ client, production service callbacks and collectors, and Android
+  preferences. They cover uninitialised/configured starts, repeated starts,
+  rejected/invalid configuration recovery, native commands, settings application,
+  request replies, response-topic/correlation properties, malformed-message
+  recovery, disabling MQTT during connect and foreground-mode ownership changes.
+  Four restoration/late-success regressions failed against v1.0.20 after the host
+  test classpath was corrected, before the production fixes.
+- Notification regressions gate background polls separately from lifecycle reads.
+  Stale-result tests use a newer `CONNECTING` status so they preserve an in-flight
+  connection while verifying notification ownership.
+- Full local validation: `:app:testDebugUnitTest --offline` passed with **379 tests
+  across 39 JUnit suites**, zero failures/errors/skips, using the restored
+  SDK/cache/API 28/29 runtimes, attached **Gradle 9.8.0-milestone-1** and
+  **JBR 21.0.11**. `:app:assembleDebug --offline` also built the debug APK. Kotlin
+  compilation emitted no warnings. Attached Biome `check --write` passed on
+  `docs/biome.json` without changes; Biome does not check Kotlin.
+- This peer exercises plaintext MQTT 5 TCP with QoS 0/1, not a full external
+  broker or UnifiedPush distributor. Clearing singleton fields models MQTT
+  initialisation, not OS process death. JVM tests do not execute the installed,
+  Retrofix-rewritten APK. Activity/service lifecycle handoff, TLS/WebSocket broker
+  delivery, process restarts and Android 14+ restrictions remain unverified.
+  Manual device checks remain scheduled after automated coverage work.
+
 ## Next automated tests, ordered by regression risk
 
 | Priority | Area / main code | Recommended tests and assertions | Layer |
 | --- | --- | --- | --- |
 | **P0** | Authentication (`managers/AuthenticationManager.kt`, `AuthenticationSession.kt`, `RequireAuthWrapper.kt`) | Session/prompt tests added in v1.0.15; user reported they passed. Verify the Compose wrapper only renders protected content for a valid session, re-prompts on expired resume, and does not duplicate a pending prompt across lifecycle/recomposition. Verify actual credential fallback and invalidated Android Keystore keys on devices. See the authentication follow-up above for verification limits. | Unit/Robolectric for session/prompt logic; Compose instrumentation and emulator/device for actual credential UI and keystore |
 | **P0** | Navigation and active WebView (`utils/webview/WebviewNavigation.kt`, `WebViewNavigationSession.kt`, `ui/screens/WebviewScreen.kt`, `utils/createCustomWebview.kt`) | The 61 added history/session/preference regressions passed in the Android suite after v1.0.17. Instrument repeated routes, rapid navigation and redirects, SPA pushes before page finish, stale/duplicate callbacks (including repeated identical URLs), iframe vs main-frame errors, renderer recreation, delayed MQTT URL events and fullscreen cleanup. See the navigation and cursor follow-ups above for implemented cases and verification limits. | Robolectric for history/preferences; pure state tests for policy; real WebView instrumentation for ownership and callbacks |
-| **P0** | UnifiedPush and remote request/settings handoff (`managers/UnifiedPushManager.kt`, `RemoteMessageManager.kt`, `MainActivity.kt`, `MqttForegroundService.kt`) | The 33 added registration/filtering/settings/request regressions passed in v1.0.18. Exercise delivery through a real distributor, cold-process service initialisation, device-owner commands and activity-to-service host transitions; verify exactly-once handling with actual lifecycle collectors and concurrent transport deliveries. See the remote-stream follow-up above for verification limits. Existing command FIFO/claim tests need not be duplicated. | Robolectric for manager/preferences; coroutine tests for flow mechanics; lifecycle instrumentation and one end-to-end transport test |
-| **P0** | Foreground services (`services/MqttForegroundService.kt`, `LockTaskService.kt`) | The 32 service regressions passed in v1.0.20, covering null intents, notification/channel creation and updates, stale polls, shadowed start denial, repeated starts, ownership gates, runtime setting changes and cleanup. Verify cold MQTT connection restoration, settings toggles during connect, activity/service host transitions and exactly-once handling through real transports; exercise Android 14+ foreground restrictions and process death on devices. See the service/notification follow-ups above for verification limits. | Robolectric service callbacks on API 28/29; emulator/device lifecycle and transport scenarios |
+| **P0** | UnifiedPush and remote request/settings handoff (`managers/UnifiedPushManager.kt`, `RemoteMessageManager.kt`, `MainActivity.kt`, `MqttForegroundService.kt`) | The 33 registration/filtering/settings/request regressions passed in v1.0.18. v1.0.21 additionally verifies MQTT TCP command/settings/request delivery through production service collectors. Exercise a real distributor, OS cold-process initialisation, device-owner commands and activity-to-service host transitions; verify exactly-once handling with actual activity lifecycle collectors and concurrent transport deliveries. Existing command FIFO/claim tests need not be duplicated. See the remote-stream and loopback follow-ups for limits. | Robolectric for manager/preferences and loopback MQTT; coroutine tests for flow mechanics; lifecycle instrumentation and on-device transport tests |
+| **P0** | Foreground services (`services/MqttForegroundService.kt`, `LockTaskService.kt`) | The 45 service checks passed through v1.0.21, covering lifecycle resources/notifications, uninitialised and disconnected MQTT restoration, repeated starts, connection rejection/recovery, disabling MQTT during connect and loopback delivery. Verify activity/service host transitions, broker reconnects and exactly-once handling through real transports; exercise Android 14+ foreground restrictions and OS process death. See the service/notification/loopback follow-ups for limits. | Robolectric service callbacks on API 28/29 and real JVM MQTT TCP; emulator/device lifecycle and transport scenarios |
 | **P1** | Android 6 and owner initialisation (`Android6KioskActivity.kt`, `MainActivity.kt`, `utils/lockTaskUtils.kt`, `managers/DeviceOwnerManager.kt`) | HOME vs launcher intent detection, one-shot lock request, host selection, task-switch transition, Dhizuku delayed readiness/permission refusal and activity recreation. Do not regard Robolectric as proof of actual API 23 lock task. | Robolectric + API 23 device/emulator |
 | **P1** | Real PDF viewer + certificate paths (`handlers/handlePdfSourceRequest.kt`, `utils/webview/PdfTlsState.kt`, PDF HTML) | Load a PDF in an actual WebView with Range requests, redirects and auth; show real pages, recover on retry, close old viewer requests; validate untrusted/expired TLS decisions and a local HTTPS server requesting an mTLS certificate. HTTP helper unit cases are already extensive. | Instrumented WebView + controlled HTTP(S) test server |
 | **P1** | Picker/MediaStore bridge (`createCustomWebview.kt`, `interfaces/BlobInterface.kt`, `fileChooserUtils.kt`) | Actual file chooser cancellation and return; camera failure fallback returns exactly once; kill/swap WebView during pending selection; two simultaneous blob downloads leave correct bytes in the Android provider; failures do not leave pending MediaStore rows. Do not repeat the existing URI policy/transfer-helper tests. | Instrumentation with fake document provider and device camera smoke |

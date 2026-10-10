@@ -298,7 +298,10 @@ object MqttManager {
         return builder
             .addConnectedListener { connectedContext ->
                 val c = builtClient
-                if (c !== client || pendingCancelConnect.get() || !config.enabled) {
+                if (
+                    c !== client || pendingCancelConnect.get() || !config.enabled
+                    || !UserSettings(context).mqttEnabled
+                ) {
                     val operation = pendingDisconnect
                     if (operation != null && operation.client === c) {
                         disconnectClient(operation)
@@ -332,6 +335,7 @@ object MqttManager {
                 }
                 if (
                     config.enabled
+                    && UserSettings(context).mqttEnabled
                     && config.automaticReconnect
                     && disconnectedContext.source != MqttDisconnectSource.USER
                 ) {
@@ -346,7 +350,10 @@ object MqttManager {
                         .reconnectWhen(reconnectReady) { _, _ ->
                             // HiveMQ runs this callback on its event loop, where the
                             // reconnector may be updated before starting another attempt.
-                            if (builtClient !== client || pendingCancelConnect.get() || !config.enabled) {
+                            if (
+                                builtClient !== client || pendingCancelConnect.get() || !config.enabled
+                                || !UserSettings(context).mqttEnabled
+                            ) {
                                 disconnectedContext.reconnector.reconnect(false)
                             }
                         }
@@ -443,7 +450,7 @@ object MqttManager {
         )
 
         try {
-            connectClient(c, onConnected, onError)
+            connectClient(c, context.applicationContext, onConnected, onError)
         } catch (e: Exception) {
             addDebugLog("connect failed", e.message)
             Log.e(javaClass.simpleName, "Failed to build MQTT connection", e)
@@ -477,6 +484,7 @@ object MqttManager {
 
     private fun connectClient(
         c: Mqtt5AsyncClient,
+        context: Context,
         onConnected: (() -> Unit)?,
         onError: ((String?) -> Unit)?,
     ) {
@@ -516,7 +524,9 @@ object MqttManager {
 
         @SuppressLint("NewApi")
         connection.send().whenComplete { _, throwable ->
-            handleConnectResult(c, throwable, onConnected, onError, ::subscribeToTopics)
+            handleConnectResult(c, throwable, onConnected, onError, ::subscribeToTopics) {
+                UserSettings(context).mqttEnabled
+            }
         }
     }
 
@@ -530,12 +540,14 @@ object MqttManager {
         onConnected: (() -> Unit)?,
         onError: ((String?) -> Unit)?,
         subscribe: () -> Unit,
+        isEnabled: () -> Boolean = { config.enabled },
     ) {
         if (failure == null) {
             if (
                 c !== client
                 || pendingCancelConnect.get()
                 || !config.enabled
+                || !isEnabled()
                 || !c.state.isConnected
             ) {
                 onError?.invoke("MQTT connection cancelled.")

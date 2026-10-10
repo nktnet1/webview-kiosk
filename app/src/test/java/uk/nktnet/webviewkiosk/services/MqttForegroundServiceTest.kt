@@ -76,12 +76,14 @@ class MqttForegroundServiceTest {
     private lateinit var savedMqttFields: Map<String, Any?>
     private val publications = LinkedBlockingQueue<Pair<String, ByteArray>>()
     private val mqttState = AtomicReference(MqttClientState.CONNECTED)
-    private val stateReadCount = AtomicInteger()
-    private val stateReadGates = ConcurrentHashMap<Int, StateReadGate>()
+    private lateinit var lifecycleThread: Thread
+    private val pollReadCount = AtomicInteger()
+    private val pollReadGates = ConcurrentHashMap<Int, StateReadGate>()
     private val observedPollJobs = mutableListOf<Job>()
 
     @Before
     fun setUp() {
+        lifecycleThread = Thread.currentThread()
         context = RuntimeEnvironment.getApplication()
         context.getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
             .edit().clear().commit()
@@ -105,7 +107,10 @@ class MqttForegroundServiceTest {
         ) { proxy, method, args ->
             when (method.name) {
                 "getState" -> {
-                    val gate = stateReadGates[stateReadCount.incrementAndGet()]
+                    // Startup reads must not consume a background-poll gate.
+                    val gate = if (Thread.currentThread() !== lifecycleThread) {
+                        pollReadGates[pollReadCount.incrementAndGet()]
+                    } else null
                     val state = gate?.result ?: mqttState.get()
                     if (gate != null) {
                         gate.started.countDown()
@@ -129,7 +134,7 @@ class MqttForegroundServiceTest {
     fun tearDown() {
         currentPollJob()?.let { observedPollJobs.add(it) }
         if (!destroyed) controller.destroy()
-        stateReadGates.values.forEach { it.release.countDown() }
+        pollReadGates.values.forEach { it.release.countDown() }
         observedPollJobs.forEach(::awaitPollCompletion)
         awaitSubscriptions(0)
         savedMqttFields.forEach { (name, value) -> mqttField(name).set(MqttManager, value) }
@@ -365,24 +370,24 @@ class MqttForegroundServiceTest {
     fun aPollStartedBeforeARepeatedStartCannotOverwriteTheNewStartupStatus() {
         val oldRead = StateReadGate()
         val nextRead = StateReadGate()
-        stateReadGates[2] = oldRead
-        stateReadGates[4] = nextRead
+        pollReadGates[1] = oldRead
+        pollReadGates[2] = nextRead
         start()
         oldRead.awaitStarted()
 
-        mqttState.set(MqttClientState.DISCONNECTED)
+        mqttState.set(MqttClientState.CONNECTING)
         assertEquals(Service.START_STICKY, start(2))
         oldRead.release.countDown()
         // Reaching the next poll proves the old result has finished publication.
         awaitMainCondition { nextRead.started.count == 0L }
 
-        assertEquals("Status: DISCONNECTED", notificationText())
+        assertEquals("Status: CONNECTING", notificationText())
     }
 
     @Test
     fun aBlockedPollCannotRecreateTheNotificationAfterDestruction() {
         val read = StateReadGate()
-        stateReadGates[2] = read
+        pollReadGates[1] = read
         start()
         read.awaitStarted()
         val job = pollingJob()
@@ -399,7 +404,7 @@ class MqttForegroundServiceTest {
     @Test
     fun aBlockedPollCannotRecreateTheNotificationAfterARejectedStart() {
         val read = StateReadGate()
-        stateReadGates[2] = read
+        pollReadGates[1] = read
         start()
         read.awaitStarted()
         val job = pollingJob()
@@ -417,8 +422,8 @@ class MqttForegroundServiceTest {
     fun aCancelledPollCannotOverwriteAReenabledHostsNotification() {
         val oldRead = StateReadGate()
         val newRead = StateReadGate()
-        stateReadGates[2] = oldRead
-        stateReadGates[4] = newRead
+        pollReadGates[1] = oldRead
+        pollReadGates[2] = newRead
         start()
         oldRead.awaitStarted()
         val oldJob = pollingJob()
@@ -426,13 +431,13 @@ class MqttForegroundServiceTest {
         assertEquals(Service.START_NOT_STICKY, start(2))
 
         userSettings.mqttEnabled = true
-        mqttState.set(MqttClientState.DISCONNECTED)
+        mqttState.set(MqttClientState.CONNECTING)
         assertEquals(Service.START_STICKY, start(3))
         newRead.awaitStarted()
         oldRead.release.countDown()
         awaitPollCompletion(oldJob)
 
-        assertEquals("Status: DISCONNECTED", notificationText())
+        assertEquals("Status: CONNECTING", notificationText())
         assertTrue(ShadowPowerManager.getLatestWakeLock().isHeld)
     }
 
@@ -448,7 +453,7 @@ class MqttForegroundServiceTest {
 
     private fun assertDisabledDuringPoll(disable: () -> Unit) {
         val read = StateReadGate()
-        stateReadGates[2] = read
+        pollReadGates[1] = read
         start()
         read.awaitStarted()
         disable()
