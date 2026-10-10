@@ -31,9 +31,16 @@ import uk.nktnet.webviewkiosk.managers.CustomNotificationType
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.milliseconds
 
 class MqttForegroundService : Service() {
+    companion object {
+        private val messageHost = AtomicReference<MqttForegroundService?>(null)
+
+        fun isHandlingMessages(): Boolean = messageHost.get()?.canHandleRemoteMessages() == true
+    }
+
     @Volatile
     private var isServiceActive = false
     @Volatile
@@ -127,10 +134,13 @@ class MqttForegroundService : Service() {
                 }
             }
         }
+        // A start request alone is insufficient: keep the activity eligible until all
+        // service handlers are registered after a successful foreground promotion.
+        messageHost.set(this)
     }
 
     private fun canHandleRemoteMessages(): Boolean {
-        if (!isServiceActive) return false
+        if (!isServiceActive || messageHost.get() !== this) return false
         val userSettings = UserSettings(this)
         return userSettings.mqttEnabled && userSettings.mqttUseForegroundService
     }
@@ -231,6 +241,8 @@ class MqttForegroundService : Service() {
 
     private fun stopProcessing() {
         isServiceActive = false
+        // A late cleanup must not revoke a replacement service's ownership.
+        messageHost.compareAndSet(this, null)
         notificationGeneration++
         pollLockTaskModeJob?.cancel()
         pollLockTaskModeJob = null

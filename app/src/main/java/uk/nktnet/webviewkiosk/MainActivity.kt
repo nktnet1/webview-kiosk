@@ -376,7 +376,7 @@ open class MainActivity : AppCompatActivity() {
         isApplicationEventHost()
             && this in startedHosts
             && userSettings.mqttEnabled
-            && !userSettings.mqttUseForegroundService
+            && !MqttForegroundService.isHandlingMessages()
 
     private fun startMqttMessageProcessing() {
         unregisterMqttCommandHost = RemoteMessageManager.registerMqttCommandHost(applicationContext) {
@@ -506,7 +506,7 @@ open class MainActivity : AppCompatActivity() {
         startedHosts.remove(this)
         if (!isChangingConfigurations && startedHosts.isEmpty()) {
             AuthenticationManager.resetAuthentication(preserveExternalActivitySession = true)
-            if (userSettings.mqttEnabled && userSettings.mqttUseForegroundService) {
+            if (MqttForegroundService.isHandlingMessages()) {
                 if (MqttManager.isConnected()) {
                     MqttManager.publishAppBackgroundEvent()
                 }
@@ -608,14 +608,18 @@ open class MainActivity : AppCompatActivity() {
         if (
             !isChangingConfigurations
             && createdHosts.isEmpty()
-            && !(userSettings.mqttEnabled && userSettings.mqttUseForegroundService)
         ) {
-            MqttManager.disconnect(
-                cause = OutboundDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_DESTROYED
-            )
-            stopService(
-                Intent(this, MqttForegroundService::class.java)
-            )
+            if (!MqttForegroundService.isHandlingMessages()) {
+                MqttManager.disconnect(
+                    cause = OutboundDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_DESTROYED
+                )
+            }
+            // Keep an opted-in start request queued; an accepted service can restore MQTT.
+            if (!(userSettings.mqttEnabled && userSettings.mqttUseForegroundService)) {
+                stopService(
+                    Intent(this, MqttForegroundService::class.java)
+                )
+            }
         }
         AuthenticationManager.clear(this)
         super.onDestroy()

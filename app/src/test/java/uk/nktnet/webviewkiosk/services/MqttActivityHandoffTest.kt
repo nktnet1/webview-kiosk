@@ -2,7 +2,9 @@ package uk.nktnet.webviewkiosk.services
 
 import android.app.Application
 import android.app.Service
+import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.os.Looper
 import android.view.ViewGroup
 import androidx.compose.runtime.BroadcastFrameClock
@@ -74,6 +76,7 @@ class MqttActivityHandoffTest {
     private lateinit var broker: LoopbackMqttBroker
     private lateinit var connection: LoopbackMqttBroker.Connection
     private val activities = mutableListOf<ActivityHost>()
+    private val services = mutableListOf<ServiceController<MqttForegroundService>>()
     private var serviceController: ServiceController<MqttForegroundService>? = null
     private lateinit var savedFields: Map<String, Any?>
     private var savedCancellation = false
@@ -138,7 +141,7 @@ class MqttActivityHandoffTest {
     fun tearDown() {
         try {
             activities.asReversed().forEach { it.destroy() }
-            serviceController?.destroy()
+            services.asReversed().toList().forEach { destroyService(it) }
             MqttManager.disconnect(DisconnectCause.USER_INITIATED_DISCONNECT)
             if (::broker.isInitialized) {
                 broker.close()
@@ -211,6 +214,195 @@ class MqttActivityHandoffTest {
         assertSubscriptions(2)
         assertConnectionReused()
         assertTrue(ShadowPowerManager.getLatestWakeLock().isHeld)
+    }
+
+    @Test
+    fun aRequestedServiceLeavesTheActivityEligibleBeforeItsUiOrServiceStarts() {
+        settings.mqttUseForegroundService = true
+        createActivity(visible = false)
+        connect()
+
+        assertBatchHandledOnce("awaiting-service")
+
+        assertSubscriptions(1)
+        assertTrue(settings.mqttUseForegroundService)
+        assertConnectionReused()
+    }
+
+    @Test
+    @Config(sdk = [28, 29])
+    fun aDeniedPlatformStartRequestKeepsActualActivityHandlersAvailable() {
+        settings.mqttUseForegroundService = true
+        val host = createActivity(activityClass = DeniedMqttServiceActivity::class.java)
+        assertTrue((host.controller.get() as DeniedMqttServiceActivity).deniedServiceStarts > 0)
+        connect()
+
+        assertBatchHandledOnce("denied-request")
+
+        assertSubscriptions(1)
+        assertTrue(settings.mqttUseForegroundService)
+        assertConnectionReused()
+    }
+
+    @Test
+    @Config(sdk = [28, 29])
+    fun aDeniedForegroundPromotionHandsDeliveriesBackWithoutChangingThePreference() {
+        settings.mqttUseForegroundService = true
+        createActivity()
+        connect()
+        val service = createService().get()
+        shadowOf(service).setThrowInStartForeground(SecurityException("foreground denied"))
+
+        assertEquals(Service.START_NOT_STICKY, service.onStartCommand(null, 0, 7))
+        awaitSubscriptions(1)
+        assertEquals(7, shadowOf(service).stopSelfId)
+        assertTrue(shadowOf(service).isForegroundStopped)
+        assertBatchHandledOnce("denied-promotion")
+
+        assertTrue(settings.mqttUseForegroundService)
+        assertConnectionReused()
+    }
+
+    @Test
+    fun aRejectedRepeatedStartReleasesOwnershipAndTheSameServiceCanRecover() {
+        settings.mqttUseForegroundService = true
+        val host = createActivity()
+        connect()
+        startService()
+        awaitSubscriptions(2)
+        val service = serviceController!!.get()
+        val wakeLock = ShadowPowerManager.getLatestWakeLock()
+        shadowOf(service).setThrowInStartForeground(SecurityException("foreground revoked"))
+
+        assertEquals(Service.START_NOT_STICKY, service.onStartCommand(null, 0, 2))
+        awaitSubscriptions(1)
+        assertFalse(wakeLock.isHeld)
+        assertBatchHandledOnce("revoked")
+
+        shadowOf(service).setThrowInStartForeground(null)
+        assertEquals(Service.START_STICKY, service.onStartCommand(null, 0, 3))
+        awaitSubscriptions(2)
+        host.stop()
+        assertBatchHandledOnce("recovered-background")
+
+        assertTrue(wakeLock.isHeld)
+        assertTrue(settings.mqttUseForegroundService)
+        assertConnectionReused()
+    }
+
+    @Test
+    fun serviceDestructionReturnsToTheActivityAndAReplacementCanTakeOver() {
+        settings.mqttUseForegroundService = true
+        createActivity()
+        connect()
+        startService()
+        awaitSubscriptions(2)
+        val oldWakeLock = ShadowPowerManager.getLatestWakeLock()
+
+        destroyService()
+        awaitSubscriptions(1)
+        assertFalse(oldWakeLock.isHeld)
+        assertBatchHandledOnce("after-service-destroy")
+
+        startService()
+        awaitSubscriptions(2)
+        assertBatchHandledOnce("replacement-service")
+        assertTrue(ShadowPowerManager.getLatestWakeLock().isHeld)
+        assertTrue(settings.mqttUseForegroundService)
+        assertConnectionReused()
+    }
+
+    @Test
+    fun olderServiceCleanupCannotRevokeTheReplacementServiceConnection() {
+        settings.mqttUseForegroundService = true
+        val host = createActivity()
+        connect()
+        startService()
+        val oldService = serviceController!!
+        val replacement = createService()
+        assertEquals(Service.START_STICKY, replacement.get().onStartCommand(null, 0, 2))
+
+        destroyService(oldService)
+        awaitSubscriptions(2)
+        clearStoppedServiceIntents()
+        host.destroy()
+        awaitSubscriptions(1)
+        assertNull(shadowOf(context).nextStoppedService)
+        assertBatchHandledOnce("replacement-after-old-cleanup")
+
+        assertTrue(ShadowPowerManager.getLatestWakeLock().isHeld)
+        assertConnectionReused()
+    }
+
+    @Test
+    fun stoppingAFallbackActivityDisconnectsRejectsLateDeliveriesAndCanReconnect() {
+        settings.mqttUseForegroundService = true
+        val host = createActivity()
+        connect()
+
+        host.stop()
+        awaitCondition { MqttManager.getState() == MqttClientState.DISCONNECTED }
+        assertInactiveDeliveriesAreUnclaimed("fallback-stopped", RemoteMessage.Source.MQTT)
+        host.controller.start().resume()
+        connect()
+        assertBatchHandledOnce("fallback-restarted")
+
+        assertSubscriptions(1)
+        assertTrue(settings.mqttUseForegroundService)
+        assertEquals(2, broker.connectionCount)
+    }
+
+    @Test
+    fun destroyingAFallbackActivityCancelsItsUnownedPendingHandshake() {
+        settings.mqttUseForegroundService = true
+        val initialCommandHosts = commandHostCount()
+        val host = createActivity()
+        connection = broker.awaitConnection()
+
+        host.destroy()
+        connection.acknowledgeConnect()
+        awaitSubscriptions(0)
+        awaitCondition { connection.disconnected.count == 0L }
+        awaitCondition { MqttManager.getState() == MqttClientState.DISCONNECTED }
+
+        assertEquals(initialCommandHosts, commandHostCount())
+        assertTrue(connection.subscriptions.isEmpty())
+        assertTrue(connection.publications.isEmpty())
+        assertTrue(settings.mqttUseForegroundService)
+    }
+
+    @Test
+    fun configurationReplacementRemainsEligibleWhileTheServiceIsUnavailable() {
+        settings.mqttUseForegroundService = true
+        val oldHost = createActivity()
+        connect()
+        ReflectionHelpers.setField(oldHost.controller.get(), "mChangingConfigurations", true)
+        oldHost.destroy()
+        awaitSubscriptions(0)
+        assertTrue(MqttManager.isConnected())
+
+        createActivity(visible = false)
+        assertBatchHandledOnce("fallback-replacement-before-ui")
+
+        assertSubscriptions(1)
+        assertTrue(settings.mqttUseForegroundService)
+        assertConnectionReused()
+    }
+
+    @Test
+    fun disablingMqttPreventsAFallbackActivityFromClaimingQueuedDeliveries() {
+        settings.mqttUseForegroundService = true
+        val host = createActivity()
+        connect()
+        val service = createService().get()
+        shadowOf(service).setThrowInStartForeground(SecurityException("foreground denied"))
+        assertEquals(Service.START_NOT_STICKY, service.onStartCommand(null, 0, 1))
+        awaitSubscriptions(1)
+        settings.mqttEnabled = false
+
+        assertInactiveDeliveriesAreUnclaimed("fallback-disabled", RemoteMessage.Source.MQTT)
+        host.stop()
+        awaitCondition { MqttManager.getState() == MqttClientState.DISCONNECTED }
     }
 
     @Test
@@ -386,8 +578,11 @@ class MqttActivityHandoffTest {
         assertConnectionReused()
     }
 
-    private fun createActivity(visible: Boolean = true): ActivityHost {
-        val controller = Robolectric.buildActivity(MainActivity::class.java).create()
+    private fun createActivity(
+        visible: Boolean = true,
+        activityClass: Class<out MainActivity> = MainActivity::class.java,
+    ): ActivityHost {
+        val controller = Robolectric.buildActivity(activityClass).create()
         val content = controller.get().findViewById<ViewGroup>(android.R.id.content)
         val view = content.getChildAt(0) as ComposeView
         val frameClock = BroadcastFrameClock()
@@ -414,8 +609,21 @@ class MqttActivityHandoffTest {
 
     private fun startService() {
         check(serviceController == null)
-        serviceController = Robolectric.buildService(MqttForegroundService::class.java).create()
-        assertEquals(Service.START_STICKY, serviceController!!.get().onStartCommand(null, 0, 1))
+        assertEquals(Service.START_STICKY, createService().get().onStartCommand(null, 0, 1))
+    }
+
+    private fun createService(): ServiceController<MqttForegroundService> =
+        Robolectric.buildService(MqttForegroundService::class.java).create().also {
+            services.add(it)
+            serviceController = it
+        }
+
+    private fun destroyService(
+        controller: ServiceController<MqttForegroundService> = requireNotNull(serviceController),
+    ) {
+        controller.destroy()
+        services.remove(controller)
+        if (serviceController === controller) serviceController = null
     }
 
     private fun assertConnectionReused() {
@@ -588,7 +796,7 @@ class MqttActivityHandoffTest {
         .apply { isAccessible = true }
 
     private class ActivityHost(
-        val controller: ActivityController<MainActivity>,
+        val controller: ActivityController<out MainActivity>,
         private val view: ComposeView,
         private val frameClock: BroadcastFrameClock,
         private val scope: CoroutineScope,
@@ -617,5 +825,19 @@ class MqttActivityHandoffTest {
             scope.cancel()
             destroyed = true
         }
+    }
+}
+
+/** Exercises the production start helper's exception path from actual onStart callbacks. */
+class DeniedMqttServiceActivity : MainActivity() {
+    var deniedServiceStarts = 0
+        private set
+
+    override fun startForegroundService(service: Intent): ComponentName? {
+        if (service.component?.className == MqttForegroundService::class.java.name) {
+            deniedServiceStarts++
+            throw IllegalStateException("foreground service start denied")
+        }
+        return super.startForegroundService(service)
     }
 }
