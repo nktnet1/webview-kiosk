@@ -22,6 +22,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.handlers.RemoteInboundHandler
@@ -35,6 +36,8 @@ import kotlin.time.Duration.Companion.milliseconds
 class MqttForegroundService : Service() {
     @Volatile
     private var isServiceActive = false
+    @Volatile
+    private var notificationGeneration = 0L
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var pollLockTaskModeJob: Job? = null
     private var unregisterCommandHost: (() -> Unit)? = null
@@ -138,6 +141,7 @@ class MqttForegroundService : Service() {
             return stopAfterRejectedStart(startId)
         }
 
+        notificationGeneration++
         try {
             val contentIntent = PendingIntent.getActivity(
                 this,
@@ -185,10 +189,22 @@ class MqttForegroundService : Service() {
         if (pollLockTaskModeJob?.isActive != true) {
             pollLockTaskModeJob = scope.launch {
                 while (isServiceActive) {
+                    val generation = notificationGeneration
                     val status = MqttManager.getState()
-                    if (lastStatus == null || status != lastStatus) {
-                        lastStatus = status
-                        updateNotification(status)
+                    // Publish on the lifecycle thread so teardown cannot race notify().
+                    withContext(Dispatchers.Main) {
+                        if (!isServiceActive) return@withContext
+                        if (!canHandleRemoteMessages()) {
+                            stopProcessing()
+                            stopSelf()
+                            return@withContext
+                        }
+                        // A repeated start may have already shown a more recent status.
+                        if (generation != notificationGeneration) return@withContext
+                        if (lastStatus == null || status != lastStatus) {
+                            updateNotification(status)
+                            lastStatus = status
+                        }
                     }
                     delay(1000.milliseconds)
                 }
@@ -213,6 +229,7 @@ class MqttForegroundService : Service() {
 
     private fun stopProcessing() {
         isServiceActive = false
+        notificationGeneration++
         pollLockTaskModeJob?.cancel()
         pollLockTaskModeJob = null
         lastStatus = null

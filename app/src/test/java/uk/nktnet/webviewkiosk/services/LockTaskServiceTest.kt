@@ -27,7 +27,7 @@ import uk.nktnet.webviewkiosk.managers.CustomNotificationType
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
-@LooperMode(LooperMode.Mode.LEGACY)
+@LooperMode(LooperMode.Mode.PAUSED)
 class LockTaskServiceTest {
     private lateinit var context: Context
     private lateinit var controller: ServiceController<LockTaskService>
@@ -80,8 +80,7 @@ class LockTaskServiceTest {
         start()
         assertEquals(Service.START_STICKY, start(2))
 
-        assertEquals(1, shadowOf(RuntimeEnvironment.getApplication())
-            .getReceiversForIntent(Intent(LockTaskService.RETURN_ACTION)).size)
+        assertEquals(1, returnReceiverCount())
         assertEquals(CustomNotificationType.LOCK_TASK_MODE, shadowOf(service).lastForegroundNotificationId)
     }
 
@@ -129,6 +128,8 @@ class LockTaskServiceTest {
 
     private fun start(startId: Int = 1) = service.onStartCommand(null, 0, startId)
 
-    private fun hasReturnReceiver() = shadowOf(RuntimeEnvironment.getApplication())
-        .hasReceiverForIntent(Intent(LockTaskService.RETURN_ACTION))
+    private fun hasReturnReceiver() = returnReceiverCount() > 0
+
+    private fun returnReceiverCount() = shadowOf(RuntimeEnvironment.getApplication())
+        .registeredReceivers.count { it.intentFilter.hasAction(LockTaskService.RETURN_ACTION) }
 }

@@ -38,7 +38,7 @@ import javax.crypto.spec.SecretKeySpec
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], shadows = [CredentialKeyguardShadow::class])
-@LooperMode(LooperMode.Mode.LEGACY)
+@LooperMode(LooperMode.Mode.PAUSED)
 class AuthenticationManagerTest {
     private val manager = AuthenticationManager
     private val originalSession = manager.session

@@ -20,7 +20,7 @@ import org.robolectric.android.controller.ActivityController
 import org.robolectric.annotation.LooperMode
 
 @RunWith(RobolectricTestRunner::class)
-@LooperMode(LooperMode.Mode.LEGACY)
+@LooperMode(LooperMode.Mode.PAUSED)
 class WebViewDialogControllerTest {
     private lateinit var activityController: ActivityController<ComponentActivity>
     private lateinit var activity: ComponentActivity

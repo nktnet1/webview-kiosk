@@ -19,7 +19,7 @@ import uk.nktnet.webviewkiosk.config.remote.inbound.InboundGoBackCommand
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager.RemoteMessage.Source
 
 @RunWith(RobolectricTestRunner::class)
-@LooperMode(LooperMode.Mode.LEGACY)
+@LooperMode(LooperMode.Mode.PAUSED)
 class RemoteMessageDispatchTest {
     @Test
     fun commandsRunInSubmissionOrderAndFlowObservesCompletedUiWork() = runBlocking {

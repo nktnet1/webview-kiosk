@@ -51,7 +51,7 @@ import java.util.UUID
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
-@LooperMode(LooperMode.Mode.LEGACY)
+@LooperMode(LooperMode.Mode.PAUSED)
 class UnifiedPushManagerTest {
     private lateinit var context: Context
     private lateinit var settings: SystemSettings
