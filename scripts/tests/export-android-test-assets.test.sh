@@ -95,8 +95,10 @@ assert_contains "$TEMP_DIR/build.args" "$PROJECT_ROOT/scripts/Dockerfile.android
 assert_contains "$TEMP_DIR/run.args" 'linux/amd64'
 assert_contains "$TEMP_DIR/run.args" "$PROJECT_ROOT:/source:ro"
 assert_contains "$TEMP_DIR/run.args" "$output:/export"
+assert_contains "$TEMP_DIR/run.args" 'webview-kiosk-android-test-assets-deps:/var/cache/android-test-assets'
 assert_contains "$TEMP_DIR/run.args" 'HOME=/tmp/android-assets-home'
 grep -F -- '--sdk-root /opt/android-sdk' "$TEMP_DIR/run.args" >/dev/null
+grep -F -- '--gradle-user-home /var/cache/android-test-assets/gradle' "$TEMP_DIR/run.args" >/dev/null
 
 # Help does not require Docker, even on non-Linux hosts.
 rm "$TEMP_DIR/build.args" "$TEMP_DIR/run.args"
@@ -125,8 +127,8 @@ if FAKE_DOCKER_OS=windows bash "$EXPORTER" > "$TEMP_DIR/windows.log" 2>&1; then
 fi
 grep -F 'Docker must be configured to run Linux containers' "$TEMP_DIR/windows.log" >/dev/null
 
-# On Linux, run the full native exporter with a tiny SDK and a fake Gradle
-# task. This verifies the manifest and cleanup without downloading dependencies.
+# On Linux, run the full native exporter with a tiny SDK, fake Gradle
+# dependency resolution, and fake Maven downloads. No tests are executed.
 if [[ "$OSTYPE" == linux* ]]; then
     sdk="$TEMP_DIR/mock-sdk"
     output_dir="$TEMP_DIR/native output with spaces"
@@ -147,14 +149,15 @@ if [[ "${1:-}" == --version ]]; then
     printf 'Gradle 9.8.0\n'
     exit 0
 fi
-repo_dir="${JAVA_TOOL_OPTIONS##*-Dmaven.repo.local=}"
-repo_dir="${repo_dir#\"}"
-repo_dir="${repo_dir%\"}"
-for version in 9 10; do
-    jar_dir="$repo_dir/org/robolectric/android-all-instrumented/${version}-robolectric-test"
-    mkdir -p "$jar_dir"
-    printf 'test runtime' > "$jar_dir/android-all-instrumented.jar"
-done
+printf '%s\n' "$@" > "$CAPTURE_DIR/gradle-task.args"
+[[ " $* " == *' :app:resolveAndroidTestAssets '* ]] || {
+    printf 'Unexpected Gradle task: %s\n' "$*" >&2
+    exit 1
+}
+[[ " $* " != *':app:testDebugUnitTest'* ]] || exit 1
+[[ " $* " != *' --rerun-tasks '* ]] || exit 1
+[[ " $* " == *' --init-script '* ]] || exit 1
+[[ "${FAKE_GRADLE_FAILURE:-}" != 1 ]] || exit 23
 if [[ "${SKIP_FAKE_DEPS:-}" != 1 ]]; then
     modules="$GRADLE_USER_HOME/caches/modules-2"
     mkdir -p "$modules/files-2.1/example/tool/1.0/hash" "$modules/metadata-2.107"
@@ -167,11 +170,44 @@ if [[ "${SKIP_FAKE_DEPS:-}" != 1 ]]; then
     printf 'excluded' > "$GRADLE_USER_HOME/caches/transforms-4/cache.bin"
 fi
 GRADLE
-    chmod +x "$TEMP_DIR/bin/mock-gradle"
+    cat > "$TEMP_DIR/bin/curl" <<'CURL'
+#!/usr/bin/env bash
+set -euo pipefail
+url=''
+output=''
+while (($#)); do
+    case "$1" in
+        --output)
+            output="$2"
+            shift 2
+            ;;
+        https://*)
+            url="$1"
+            shift
+            ;;
+        *) shift ;;
+    esac
+done
+[[ -n "$url" && -n "$output" ]] || exit 2
+[[ "$url" == 'https://repo.maven.apache.org/maven2/org/robolectric/android-all-instrumented/'* ]] || exit 3
+printf '%s\n' "$url" >> "$CAPTURE_DIR/curl-requests.log"
+[[ "${FAKE_CURL_FAILURE:-}" != 1 ]] || exit 22
+case "$url" in
+    *.jar.sha512) printf 'test runtime' | sha512sum | cut -d ' ' -f 1 > "$output" ;;
+    *.pom.sha512) printf 'test pom' | sha512sum | cut -d ' ' -f 1 > "$output" ;;
+    *.jar) printf 'test runtime' > "$output" ;;
+    *.pom) printf 'test pom' > "$output" ;;
+    *) exit 4 ;;
+esac
+CURL
+    chmod +x "$TEMP_DIR/bin/mock-gradle" "$TEMP_DIR/bin/curl"
     FAKE_OS=Linux FAKE_ARCH=x86_64 bash "$EXPORTER" \
         --sdk-root "$sdk" --gradle-bin "$TEMP_DIR/bin/mock-gradle" \
         --output "$output_dir" > "$TEMP_DIR/export.log"
     [[ -f "$output_dir/android-sdk.tar.gz" && -f "$output_dir/gradle-deps.tar.gz" && -f "$output_dir/robolectric-maven.tar.gz" ]]
+    assert_contains "$TEMP_DIR/gradle-task.args" ':app:resolveAndroidTestAssets'
+    assert_contains "$TEMP_DIR/gradle-task.args" "$PROJECT_ROOT/scripts/resolve-android-test-assets.init.gradle"
+    grep -F 'Gradle test invocation: not run' "$output_dir/CONTENTS.txt" >/dev/null
     [[ ! -e "$output_dir/android-sdk.tar.gz.part-000" ]]
     [[ ! -e "$output_dir/gradle-deps.tar.gz.part-000" ]]
     [[ ! -e "$output_dir/robolectric-maven.tar.gz.part-000" ]]
@@ -181,6 +217,7 @@ GRADLE
     grep -F 'Gradle dependencies: caches/modules-2' "$output_dir/CONTENTS.txt" >/dev/null
     grep -F 'Gradle deps destination: $GRADLE_USER_HOME/caches/modules-2/' "$output_dir/CONTENTS.txt" >/dev/null
     grep -F 'gradle-deps.tar.gz' "$output_dir/SHA256SUMS" >/dev/null
+    [[ "$(wc -l < "$TEMP_DIR/curl-requests.log")" == 8 ]]
     (
         cd "$output_dir"
         sha256sum --check --status SHA256SUMS
@@ -192,6 +229,11 @@ GRADLE
         "$TEMP_DIR/gradle-deps-contents.txt" >/dev/null
     grep -Fx 'caches/modules-2/metadata-2.107/module-artifact.bin' \
         "$TEMP_DIR/gradle-deps-contents.txt" >/dev/null
+    tar -tzf "$output_dir/robolectric-maven.tar.gz" > "$TEMP_DIR/robolectric-contents.txt"
+    for version in 9-robolectric-4913185-2-i7 10-robolectric-5803371-i7; do
+        grep -F "android-all-instrumented-$version.jar" "$TEMP_DIR/robolectric-contents.txt" >/dev/null
+        grep -F "android-all-instrumented-$version.pom" "$TEMP_DIR/robolectric-contents.txt" >/dev/null
+    done
     if grep -Eq '(^|/)([^/]*\.lock|gc\.properties)$|gradle\.properties|transforms-4' \
         "$TEMP_DIR/gradle-deps-contents.txt"; then
         echo 'Gradle export included lock files, credentials or unrelated caches' >&2
@@ -214,6 +256,23 @@ GRADLE
     grep -Fx 'caches/modules-2/files-2.1/preexisting/library/1.0/hash/library.jar' \
         "$TEMP_DIR/existing-deps-contents.txt" >/dev/null
 
+    # Re-running against the same Gradle home reuses the Maven downloads.
+    previous_downloads="$(wc -l < "$TEMP_DIR/curl-requests.log")"
+    FAKE_OS=Linux FAKE_ARCH=x86_64 bash "$EXPORTER" \
+        --sdk-root "$sdk" --gradle-bin "$TEMP_DIR/bin/mock-gradle" \
+        --gradle-user-home "$existing_home" --output "$existing_output" \
+        > "$TEMP_DIR/reused-home.log"
+    [[ "$(wc -l < "$TEMP_DIR/curl-requests.log")" == "$previous_downloads" ]]
+
+    # Corrupted cache entries are fetched again rather than exported.
+    cached_jar="$existing_home/robolectric-maven/org/robolectric/android-all-instrumented/9-robolectric-4913185-2-i7/android-all-instrumented-9-robolectric-4913185-2-i7.jar"
+    printf 'corrupted' > "$cached_jar"
+    FAKE_OS=Linux FAKE_ARCH=x86_64 bash "$EXPORTER" \
+        --sdk-root "$sdk" --gradle-bin "$TEMP_DIR/bin/mock-gradle" \
+        --gradle-user-home "$existing_home" --output "$existing_output" \
+        > "$TEMP_DIR/refreshed-home.log"
+    [[ "$(wc -l < "$TEMP_DIR/curl-requests.log")" == "$((previous_downloads + 2))" ]]
+
     # Even if a fake Gradle task populates Robolectric, the export must fail
     # rather than claim to include dependencies when modules-2 is absent.
     if FAKE_OS=Linux FAKE_ARCH=x86_64 SKIP_FAKE_DEPS=1 bash "$EXPORTER" \
@@ -225,6 +284,29 @@ GRADLE
     fi
     grep -F 'Gradle dependency artifacts were not populated' "$TEMP_DIR/missing-deps.log" >/dev/null
     [[ ! -f "$TEMP_DIR/missing-deps-output/gradle-deps.tar.gz" ]]
+
+    # Fail early on Gradle resolution errors, even if a cache already exists.
+    if FAKE_OS=Linux FAKE_ARCH=x86_64 FAKE_GRADLE_FAILURE=1 bash "$EXPORTER" \
+        --sdk-root "$sdk" --gradle-bin "$TEMP_DIR/bin/mock-gradle" \
+        --output "$TEMP_DIR/resolve-failed-output" \
+        > "$TEMP_DIR/resolve-failed.log" 2>&1; then
+        echo 'Expected dependency resolution failure to abort the export' >&2
+        exit 1
+    fi
+    grep -F 'Gradle could not resolve the required Android JVM test dependencies' \
+        "$TEMP_DIR/resolve-failed.log" >/dev/null
+    [[ ! -f "$TEMP_DIR/resolve-failed-output/gradle-deps.tar.gz" ]]
+
+    # Failed downloads must not produce a purportedly complete export.
+    if FAKE_OS=Linux FAKE_ARCH=x86_64 FAKE_CURL_FAILURE=1 bash "$EXPORTER" \
+        --sdk-root "$sdk" --gradle-bin "$TEMP_DIR/bin/mock-gradle" \
+        --output "$TEMP_DIR/download-failed-output" \
+        > "$TEMP_DIR/download-failed.log" 2>&1; then
+        echo 'Expected a failed Maven download to abort the export' >&2
+        exit 1
+    fi
+    grep -F 'Could not download Robolectric' "$TEMP_DIR/download-failed.log" >/dev/null
+    [[ ! -f "$TEMP_DIR/download-failed-output/robolectric-maven.tar.gz" ]]
 fi
 
 # The native Linux x86_64 code path never shells out to Docker.

@@ -6,6 +6,12 @@ set -euo pipefail
 readonly MAX_ARCHIVE_BYTES=512000000
 readonly SDK_PLATFORM='android-37.0'
 readonly SDK_BUILD_TOOLS='36.0.0'
+# Matched to Robolectric 4.17 (API 28 and 29). Update with its SDK mappings.
+readonly ROBOLECTRIC_VERSIONS=(
+    '9-robolectric-4913185-2-i7'
+    '10-robolectric-5803371-i7'
+)
+readonly ROBOLECTRIC_MAVEN_URL='https://repo.maven.apache.org/maven2/org/robolectric/android-all-instrumented'
 # Pinned to the official Android Studio Linux download, with Google's SHA-256.
 # Used only when the installed sdkmanager is absent or too old to install API 37.0.
 readonly CMDLINE_TOOLS_ZIP='commandlinetools-linux-15859902_latest.zip'
@@ -36,9 +42,10 @@ Options:
   --gradle-bin FILE      Use this local Gradle executable (native Linux only).
   -h, --help             Show this help.
 
-Runs :app:testDebugUnitTest to resolve dependencies and download Robolectric
-API 28/29 runtimes, then exports Android SDK components, Gradle dependency
-artifacts and resolution metadata (caches/modules-2), and Robolectric jars.
+Resolves the Android JVM test configurations without compiling or running tests,
+downloads the pinned Robolectric API 28/29 Maven runtimes, then exports Android
+SDK components, Gradle dependency artifacts and resolution metadata
+(caches/modules-2), and Robolectric jars.
 Archives smaller than 512,000,000 bytes are ordinary .tar.gz files; larger
 ones use numbered .part-* files, each smaller than 512,000,000 bytes. Gradle
 credentials, keystores, and the Gradle distribution are not exported. Upload
@@ -46,8 +53,9 @@ the resulting archives (or parts) with SHA256SUMS and CONTENTS.txt.
 
 Docker mode builds scripts/Dockerfile.android-test-assets on first use, runs
 with an isolated project copy (ignoring host local.properties), and writes only
-the exported archives to --output. The image has the pinned Gradle, JetBrains
-JDK 21 and Linux Android SDK; host toolchain override flags are not accepted.
+the exported archives to --output. Its named volume caches resolved Gradle and
+Robolectric artifacts across runs. The image has pinned Gradle, JetBrains JDK
+21 and the Linux Android SDK; host toolchain overrides are not accepted.
 HELP
 }
 
@@ -139,6 +147,7 @@ run_in_docker() {
     local output_dir
     output_dir="$(cd -- "$OUTPUT_ARG" && pwd -P)"
     local image='webview-kiosk-android-test-assets:gradle-9.8.0-jbr21'
+    local cache_volume='webview-kiosk-android-test-assets-deps'
 
     say 'Building the Linux x86_64 Android test exporter image (cached after first use)'
     docker build --platform linux/amd64 --tag "$image" \
@@ -151,9 +160,11 @@ run_in_docker() {
         --env HOME=/tmp/android-assets-home \
         --volume "$PROJECT_ROOT:/source:ro" \
         --volume "$output_dir:/export" \
+        --volume "$cache_volume:/var/cache/android-test-assets" \
         --workdir /tmp "$image" bash -c '
             set -euo pipefail
-            mkdir -p /tmp/android-assets-home /tmp/project
+            mkdir -p /tmp/android-assets-home /tmp/project \
+                /var/cache/android-test-assets/gradle
             # Do not copy host build output, caches, credentials or SDK paths.
             tar -C /source \
                 --exclude=./.git --exclude=./.gradle --exclude=./.idea \
@@ -166,6 +177,7 @@ run_in_docker() {
             exec /tmp/project/scripts/export-android-test-assets.sh \
                 --sdk-root /opt/android-sdk \
                 --gradle-bin /opt/gradle/bin/gradle \
+                --gradle-user-home /var/cache/android-test-assets/gradle \
                 --output /export
         '
 }
@@ -174,7 +186,7 @@ if [[ "$(uname -s)" != Linux || "$(uname -m)" != x86_64 ]]; then
     run_in_docker
     exit 0
 fi
-for tool in tar split sha256sum grep mktemp java; do
+for tool in tar split sha256sum sha512sum grep mktemp java curl; do
     command -v "$tool" >/dev/null 2>&1 || fail "Missing command: $tool"
 done
 [[ -f "$PROJECT_ROOT/gradle/wrapper/gradle-wrapper.properties" ]] || \
@@ -257,20 +269,21 @@ STAGING_DIR="$(mktemp -d "$OUTPUT_DIR/.staging.XXXXXXXX")"
 if [[ -n "$GRADLE_HOME_ARG" ]]; then
     [[ -d "$GRADLE_HOME_ARG" ]] || fail "Gradle home does not exist: $GRADLE_HOME_ARG"
     CAPTURE_GRADLE_HOME="$(cd -- "$GRADLE_HOME_ARG" && pwd -P)"
-    printf 'Note: exporting all modules-2 dependencies in the supplied Gradle home, including any existing artifacts.\n'
+    printf 'Note: reusing the supplied Gradle home; its previously resolved modules may also be exported.\n'
 else
     CAPTURE_GRADLE_HOME="$WORK_DIR/gradle-home"
     mkdir -p -- "$CAPTURE_GRADLE_HOME"
 fi
 export GRADLE_USER_HOME="$CAPTURE_GRADLE_HOME"
 
-# Ensure Robolectric downloads into a private, exportable Maven repository.
-# JAVA_TOOL_OPTIONS is inherited by Gradle test workers as well as the launcher.
+# Cache the Robolectric Maven artifacts alongside an explicitly supplied
+# Gradle home (including the Docker named volume), but do not put them inside
+# caches/modules-2, which is exported separately.
 ROBOLECTRIC_MAVEN="$WORK_DIR/robolectric-maven"
+if [[ -n "$GRADLE_HOME_ARG" ]]; then
+    ROBOLECTRIC_MAVEN="$CAPTURE_GRADLE_HOME/robolectric-maven"
+fi
 mkdir -p -- "$ROBOLECTRIC_MAVEN"
-[[ "$ROBOLECTRIC_MAVEN" != *\"* && "$ROBOLECTRIC_MAVEN" != *$'\n'* ]] || \
-    fail 'The checkout path contains a quote/newline unsupported by JAVA_TOOL_OPTIONS.'
-export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:+$JAVA_TOOL_OPTIONS }-Dmaven.repo.local=\"$ROBOLECTRIC_MAVEN\""
 
 say "Checking Android SDK $SDK_PLATFORM and Build Tools $SDK_BUILD_TOOLS"
 if ! sdk_packages_installed; then
@@ -299,14 +312,12 @@ fi
 sdk_packages_installed || \
     fail "Android SDK $SDK_PLATFORM / Build Tools $SDK_BUILD_TOOLS are still missing after installation."
 
-say 'Resolving project dependencies and Robolectric runtimes with the test task'
-TEST_RESULT=passed
-if ! (cd "$PROJECT_ROOT" && "$GRADLE_EXEC" \
-    --no-daemon --no-configuration-cache --rerun-tasks --continue --console=plain \
-    :app:testDebugUnitTest); then
-    TEST_RESULT=failed
-    printf 'Warning: Gradle/test task failed; checking whether dependencies and Robolectric runtimes were populated.\n' >&2
-fi
+say 'Resolving Android JVM test dependencies (no compilation or test execution)'
+(cd "$PROJECT_ROOT" && "$GRADLE_EXEC" \
+    --no-daemon --no-configuration-cache --console=plain \
+    --init-script "$PROJECT_ROOT/scripts/resolve-android-test-assets.init.gradle" \
+    :app:resolveAndroidTestAssets) || \
+    fail 'Gradle could not resolve the required Android JVM test dependencies.'
 
 MODULES_DIR="$CAPTURE_GRADLE_HOME/caches/modules-2"
 [[ -d "$MODULES_DIR/files-2.1" ]] || \
@@ -315,24 +326,42 @@ metadata_dirs=("$MODULES_DIR"/metadata-2.*)
 [[ -d "${metadata_dirs[0]}" ]] || \
     fail 'Gradle dependency resolution metadata was not populated; resolve the build error above.'
 
-# The project runs Robolectric on API 28 by default and API 29 in selected tests.
-# These correspond to Robolectric Android versions 9 and 10, respectively.
+verify_maven_checksum() {
+    local target="$1"
+    [[ -s "$target" && -s "$target.sha512" ]] || return 1
+    local expected
+    expected="$(tr -d '[:space:]' < "$target.sha512")"
+    [[ "$expected" =~ ^[[:xdigit:]]{128}$ ]] || return 1
+    printf '%s  %s\n' "$expected" "$target" | sha512sum --check --status
+}
+
+download_robolectric_artifact() {
+    local version="$1" extension="$2"
+    local directory="$ROBOLECTRIC_MAVEN/org/robolectric/android-all-instrumented/$version"
+    local filename="android-all-instrumented-$version.$extension"
+    local target="$directory/$filename"
+    local url="$ROBOLECTRIC_MAVEN_URL/$version/$filename"
+    if verify_maven_checksum "$target"; then
+        return 0
+    fi
+    mkdir -p -- "$directory"
+    rm -f -- "$target.tmp" "$target.sha512.tmp"
+    curl --fail --location --silent --show-error --retry 3 \
+        "$url" --output "$target.tmp" || fail "Could not download Robolectric $filename"
+    curl --fail --location --silent --show-error --retry 3 \
+        "$url.sha512" --output "$target.sha512.tmp" || \
+        fail "Could not download Robolectric checksum for $filename"
+    mv -- "$target.tmp" "$target"
+    mv -- "$target.sha512.tmp" "$target.sha512"
+    verify_maven_checksum "$target" || fail "Robolectric checksum mismatch: $filename"
+}
+
+say 'Downloading missing Robolectric API 28/29 Maven runtimes (not running tests)'
 robolectric_paths=()
-for android_version in 9 10; do
-    found_instrumented=false
-    for artifact in android-all-instrumented android-all; do
-        for dir in "$ROBOLECTRIC_MAVEN/org/robolectric/$artifact/$android_version"-robolectric-*; do
-            [[ -d "$dir" ]] || continue
-            jars=("$dir"/*.jar)
-            [[ -f "${jars[0]}" ]] || continue
-            robolectric_paths+=("org/robolectric/$artifact/${dir##*/}")
-            if [[ "$artifact" == android-all-instrumented ]]; then
-                found_instrumented=true
-            fi
-        done
-    done
-    [[ "$found_instrumented" == true ]] || \
-        fail "Robolectric Android ${android_version} runtime was not downloaded. Resolve the test error above."
+for version in "${ROBOLECTRIC_VERSIONS[@]}"; do
+    download_robolectric_artifact "$version" pom
+    download_robolectric_artifact "$version" jar
+    robolectric_paths+=("org/robolectric/android-all-instrumented/$version")
 done
 
 say 'Exporting Android SDK components'
@@ -366,13 +395,13 @@ tar -C "$ROBOLECTRIC_MAVEN" -czf - "${robolectric_paths[@]}" | \
     sha256sum -- "${archives[@]}" > SHA256SUMS
 )
 cat > "$STAGING_DIR/CONTENTS.txt" <<CONTENTS
-Project task: :app:testDebugUnitTest
+Project task: :app:resolveAndroidTestAssets (resolves dependencies only)
 Platform: Linux x86_64
 Gradle distribution: not exported (keep separately; version pinned by Gradle wrapper)
 Android SDK: platforms/$SDK_PLATFORM, build-tools/$SDK_BUILD_TOOLS, optional licences/platform-tools
 Gradle dependencies: caches/modules-2 (artifacts and plugin resolution metadata; excludes *.lock and gc.properties)
 Robolectric: Android 9 / API 28 and Android 10 / API 29 Maven runtime artifacts
-Gradle test invocation: $TEST_RESULT
+Gradle test invocation: not run (no compilation or tests)
 Archives under 512000000 bytes: one .tar.gz file (no .part-000 suffix)
 Archives at or above 512000000 bytes: .part-* files smaller than 512000000 bytes
 Archive reconstruction: concatenate numbered parts in suffix order; use .tar.gz directly otherwise.
@@ -391,6 +420,3 @@ rm -f -- "$OUTPUT_DIR"/gradle-*-bin.zip.part-* \
 mv -- "$STAGING_DIR"/* "$OUTPUT_DIR"/
 say "Export complete: $OUTPUT_DIR"
 ls -lh "$OUTPUT_DIR"
-if [[ "$TEST_RESULT" == failed ]]; then
-    printf '\nWarning: tests failed; the exported dependencies may not be sufficient for a complete offline run.\n' >&2
-fi

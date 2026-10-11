@@ -41,6 +41,7 @@ RUN yes | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" \
         --sdk_root="${ANDROID_SDK_ROOT}" --channel=3 \
         'platforms;android-37.0' 'build-tools;36.0.0'
 
-# A runtime UID matching the host owns the ephemeral worktree and exported files.
-# Do not use the default Gradle image's root/user cache for the export.
+# The named Docker volume retains Gradle caches and Robolectric downloads.
+# Its root is writable by the host UID, with private cache subdirectories.
+RUN install -d -m 1777 /var/cache/android-test-assets
 WORKDIR /tmp
