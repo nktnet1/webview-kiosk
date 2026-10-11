@@ -54,8 +54,8 @@ timeouts.
 
 ### Exporting Android test assets
 
-To create Linux x86_64 SDK, Gradle dependency and Robolectric archives for
-an offline test run, use:
+To export Linux x86_64 Android SDK components and Robolectric runtime archives
+for use when running Android unit tests, use:
 
 ```bash
 scripts/export-android-test-assets.sh --output build/android-test-assets
@@ -75,3 +75,10 @@ Docker uses a disposable copy of the checkout without `local.properties`,
 keystores, or local build caches and writes the archive parts to the requested
 host output directory. Existing exports in that directory are replaced by the
 same rules as the native exporter.
+
+The exporter does **not** include the Gradle dependency cache or Gradle
+distribution. It writes `android-sdk.tar.gz` and `robolectric-maven.tar.gz`
+without a `.part-000` suffix if they are below 512,000,000 bytes. Larger
+archives are split into numbered `.part-*` files; concatenate those parts
+in order before extraction. `SHA256SUMS` verifies each exported file and
+`CONTENTS.txt` records what is included.

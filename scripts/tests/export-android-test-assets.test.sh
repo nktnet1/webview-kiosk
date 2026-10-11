@@ -41,6 +41,43 @@ if grep -Fq 'github.com/JetBrains/JetBrainsRuntime/releases/download' "$dockerfi
     exit 1
 fi
 
+# Exercise streaming archive output with a tiny test limit. The production
+# limit is 512,000,000 bytes: a single part must be renamed to .tar.gz, while
+# an archive equal to the limit must use numbered parts strictly below it.
+source "$PROJECT_ROOT/scripts/lib/android-test-asset-archive.sh"
+archives="$TEMP_DIR/archives with spaces"
+mkdir -p "$archives"
+printf '12345678901' | export_test_asset_archive "$archives/small.tar.gz" 12
+[[ -f "$archives/small.tar.gz" && ! -e "$archives/small.tar.gz.part-000" ]]
+[[ "$(cat "$archives/small.tar.gz")" == '12345678901' ]]
+
+printf '123456789012' | export_test_asset_archive "$archives/boundary.tar.gz" 12
+[[ ! -e "$archives/boundary.tar.gz" ]]
+boundary_parts=( "$archives"/boundary.tar.gz.part-* )
+[[ ${#boundary_parts[@]} -eq 2 ]]
+[[ "$(cat "${boundary_parts[@]}")" == '123456789012' ]]
+
+printf '12345678901234567890123' | export_test_asset_archive "$archives/large.tar.gz" 12
+[[ ! -e "$archives/large.tar.gz" ]]
+large_parts=( "$archives"/large.tar.gz.part-* )
+[[ ${#large_parts[@]} -eq 3 ]]
+[[ "$(cat "${large_parts[@]}")" == '12345678901234567890123' ]]
+for part in "${boundary_parts[@]}" "${large_parts[@]}"; do
+    (( $(wc -c < "$part") < 12 )) || {
+        printf 'Archive part exceeded the test limit: %s\n' "$part" >&2
+        exit 1
+    }
+done
+(
+    cd "$archives"
+    sha256sum -- *.tar.gz *.part-* > SHA256SUMS
+    sha256sum --check --status SHA256SUMS
+)
+if printf '' | export_test_asset_archive "$archives/empty.tar.gz" 12 > /dev/null 2>&1; then
+    echo 'Expected an empty archive stream to fail' >&2
+    exit 1
+fi
+
 export PATH="$TEMP_DIR/bin:$PATH" CAPTURE_DIR="$TEMP_DIR"
 assert_contains() {
     grep -Fx -- "$2" "$1" >/dev/null || {
@@ -88,8 +125,60 @@ if FAKE_DOCKER_OS=windows bash "$EXPORTER" > "$TEMP_DIR/windows.log" 2>&1; then
 fi
 grep -F 'Docker must be configured to run Linux containers' "$TEMP_DIR/windows.log" >/dev/null
 
+# On Linux, run the full native exporter with a tiny SDK and a fake Gradle
+# task. This verifies the manifest and cleanup without downloading dependencies.
+if [[ "$OSTYPE" == linux* ]]; then
+    sdk="$TEMP_DIR/mock-sdk"
+    output_dir="$TEMP_DIR/native output with spaces"
+    mkdir -p "$sdk/platforms/android-37.0" "$sdk/build-tools/36.0.0" "$output_dir"
+    printf 'sdk fixture' > "$sdk/platforms/android-37.0/android.jar"
+    printf 'build fixture' > "$sdk/build-tools/36.0.0/source.properties"
+    printf 'obsolete' > "$output_dir/gradle-cache.tar.gz.part-000"
+    printf 'obsolete' > "$output_dir/gradle-cache.tar.gz"
+    printf 'obsolete' > "$output_dir/android-sdk.tar.gz.part-000"
+    printf 'obsolete' > "$output_dir/robolectric-maven.tar.gz.part-000"
+    printf 'keep' > "$output_dir/unrelated.txt"
+    cat > "$TEMP_DIR/bin/mock-gradle" <<'GRADLE'
+#!/usr/bin/env bash
+set -euo pipefail
+if [[ "${1:-}" == --version ]]; then
+    printf 'Gradle 9.8.0\n'
+    exit 0
+fi
+repo_dir="${JAVA_TOOL_OPTIONS##*-Dmaven.repo.local=}"
+repo_dir="${repo_dir#\"}"
+repo_dir="${repo_dir%\"}"
+for version in 9 10; do
+    jar_dir="$repo_dir/org/robolectric/android-all-instrumented/${version}-robolectric-test"
+    mkdir -p "$jar_dir"
+    printf 'test runtime' > "$jar_dir/android-all-instrumented.jar"
+done
+GRADLE
+    chmod +x "$TEMP_DIR/bin/mock-gradle"
+    FAKE_OS=Linux FAKE_ARCH=x86_64 bash "$EXPORTER" \
+        --sdk-root "$sdk" --gradle-bin "$TEMP_DIR/bin/mock-gradle" \
+        --output "$output_dir" > "$TEMP_DIR/export.log"
+    [[ -f "$output_dir/android-sdk.tar.gz" && -f "$output_dir/robolectric-maven.tar.gz" ]]
+    [[ ! -e "$output_dir/android-sdk.tar.gz.part-000" ]]
+    [[ ! -e "$output_dir/robolectric-maven.tar.gz.part-000" ]]
+    [[ ! -e "$output_dir/gradle-cache.tar.gz" ]]
+    [[ ! -e "$output_dir/gradle-cache.tar.gz.part-000" ]]
+    [[ "$(cat "$output_dir/unrelated.txt")" == keep ]]
+    grep -F 'Gradle cache: not exported' "$output_dir/CONTENTS.txt" >/dev/null
+    if grep -Fq 'gradle-cache.tar.gz' "$output_dir/SHA256SUMS"; then
+        echo 'Gradle cache must not be included in checksums' >&2
+        exit 1
+    fi
+    (
+        cd "$output_dir"
+        sha256sum --check --status SHA256SUMS
+        tar -tzf android-sdk.tar.gz >/dev/null
+        tar -tzf robolectric-maven.tar.gz >/dev/null
+    )
+fi
+
 # The native Linux x86_64 code path never shells out to Docker.
 FAKE_OS=Linux FAKE_ARCH=x86_64 bash "$EXPORTER" --gradle-bin /missing/gradle \
     > "$TEMP_DIR/native.log" 2>&1 || true
 [[ ! -e "$TEMP_DIR/build.args" && ! -e "$TEMP_DIR/run.args" ]]
-printf 'Android test asset exporter OS dispatch: passed\n'
+printf 'Android test asset exporter OS dispatch and archive boundaries: passed\n'

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Export Linux x86_64 Android test dependencies, using Docker on other hosts.
-# Archives are streamed directly into chunks smaller than 512 MB.
+# Archives smaller than 512 MB remain whole; larger ones use numbered parts.
 set -euo pipefail
 
-readonly CHUNK_BYTES=480000000
+readonly MAX_ARCHIVE_BYTES=512000000
 readonly SDK_PLATFORM='android-37.0'
 readonly SDK_BUILD_TOOLS='36.0.0'
 # Pinned to the official Android Studio Linux download, with Google's SHA-256.
@@ -11,6 +11,8 @@ readonly SDK_BUILD_TOOLS='36.0.0'
 readonly CMDLINE_TOOLS_ZIP='commandlinetools-linux-15859902_latest.zip'
 readonly CMDLINE_TOOLS_SHA256='4e4c464f145a7512b57d088ac6c278c03c9eea610886b35a5e0804e74eedf583'
 readonly PROJECT_ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
+# The same stream writer is tested without requiring an Android SDK or Docker.
+source "$PROJECT_ROOT/scripts/lib/android-test-asset-archive.sh"
 OUTPUT_ARG="$PROJECT_ROOT/build/android-test-assets"
 SDK_ARG=""
 GRADLE_HOME_ARG=""
@@ -34,13 +36,13 @@ Options:
   --gradle-bin FILE      Use this local Gradle executable (native Linux only).
   -h, --help             Show this help.
 
-Runs :app:testDebugUnitTest to populate Gradle and Robolectric caches, then
-exports Android SDK components, Gradle dependency cache (including Foojay), and
-Robolectric API 28/29 runtime jars. All exported .part-* files are at most
-480,000,000 bytes. No keystores or Gradle credentials are exported. The Gradle
-wrapper is not invoked and its distribution ZIP is not downloaded or exported;
-keep that ZIP separately.
-Upload exported archive parts with SHA256SUMS/CONTENTS.txt as needed.
+Runs :app:testDebugUnitTest to download the Robolectric API 28/29 runtimes,
+then exports only those Maven artifacts and Android SDK components. The Gradle
+dependency cache is NOT exported. Archives smaller than 512,000,000 bytes are
+ordinary .tar.gz files; larger ones use numbered .part-* files, each smaller
+than 512,000,000 bytes. No credentials or keystores are exported. The Gradle
+wrapper and its distribution ZIP are not downloaded or exported. Upload the
+resulting archives (or their parts) with SHA256SUMS and CONTENTS.txt.
 
 Docker mode builds scripts/Dockerfile.android-test-assets on first use, runs
 with an isolated project copy (ignoring host local.properties), and writes only
@@ -255,7 +257,7 @@ STAGING_DIR="$(mktemp -d "$OUTPUT_DIR/.staging.XXXXXXXX")"
 if [[ -n "$GRADLE_HOME_ARG" ]]; then
     [[ -d "$GRADLE_HOME_ARG" ]] || fail "Gradle home does not exist: $GRADLE_HOME_ARG"
     CAPTURE_GRADLE_HOME="$(cd -- "$GRADLE_HOME_ARG" && pwd -P)"
-    printf 'Note: using an existing Gradle cache may export unrelated cached Maven artifacts.\n'
+    printf 'Note: using an existing Gradle cache for the test task; the cache will not be exported.\n'
 else
     CAPTURE_GRADLE_HOME="$WORK_DIR/gradle-home"
     mkdir -p -- "$CAPTURE_GRADLE_HOME"
@@ -303,15 +305,8 @@ if ! (cd "$PROJECT_ROOT" && "$GRADLE_EXEC" \
     --no-daemon --no-configuration-cache --rerun-tasks --continue --console=plain \
     :app:testDebugUnitTest); then
     TEST_RESULT=failed
-    printf 'Warning: Gradle/test task failed; checking whether dependencies were still populated.\n' >&2
+    printf 'Warning: Gradle/test task failed; checking whether Robolectric runtimes were still populated.\n' >&2
 fi
-
-MODULES_DIR="$CAPTURE_GRADLE_HOME/caches/modules-2"
-[[ -d "$MODULES_DIR/files-2.1" ]] || \
-    fail 'Gradle dependency artifacts were not populated; resolve the build error above.'
-metadata_dirs=("$MODULES_DIR"/metadata-2.*)
-[[ -d "${metadata_dirs[0]}" ]] || \
-    fail 'Gradle dependency metadata was not populated; resolve the build error above.'
 
 # The project runs Robolectric on API 28 by default and API 29 in selected tests.
 # These correspond to Robolectric Android versions 9 and 10, respectively.
@@ -333,54 +328,48 @@ for android_version in 9 10; do
         fail "Robolectric Android ${android_version} runtime was not downloaded. Resolve the test error above."
 done
 
-split_stream() {
-    local prefix="$1"
-    split -b "$CHUNK_BYTES" -d -a 3 - "$STAGING_DIR/${prefix}.part-"
-}
-
 say 'Exporting Android SDK components'
 sdk_paths=("platforms/$SDK_PLATFORM" "build-tools/$SDK_BUILD_TOOLS")
 [[ ! -d "$SDK_ROOT/licenses" ]] || sdk_paths+=(licenses)
 [[ ! -d "$SDK_ROOT/platform-tools" ]] || sdk_paths+=(platform-tools)
-tar -C "$SDK_ROOT" -czf - "${sdk_paths[@]}" | split_stream 'android-sdk.tar.gz'
-
-say 'Exporting Gradle dependency artifacts and metadata (excluding lock files)'
-tar --exclude='*.lock' --exclude='gc.properties' \
-    -C "$CAPTURE_GRADLE_HOME" -czf - caches/modules-2 | split_stream 'gradle-cache.tar.gz'
+tar -C "$SDK_ROOT" -czf - "${sdk_paths[@]}" | \
+    export_test_asset_archive "$STAGING_DIR/android-sdk.tar.gz" "$MAX_ARCHIVE_BYTES"
 
 say 'Exporting Robolectric API 28/29 Maven artifacts'
 tar -C "$ROBOLECTRIC_MAVEN" -czf - "${robolectric_paths[@]}" | \
-    split_stream 'robolectric-maven.tar.gz'
+    export_test_asset_archive "$STAGING_DIR/robolectric-maven.tar.gz" "$MAX_ARCHIVE_BYTES"
 
 (
     cd "$STAGING_DIR"
-    for part in *.part-*; do
-        [[ -f "$part" ]] || fail 'No archive parts were created.'
-        size="$(wc -c < "$part")"
-        ((size < 512000000)) || fail "Output exceeds 512 MB: $part"
+    shopt -s nullglob
+    archives=( *.tar.gz *.part-* )
+    ((${#archives[@]} >= 2)) || fail 'Expected both Android SDK and Robolectric archives.'
+    for archive in "${archives[@]}"; do
+        size="$(wc -c < "$archive")"
+        ((size < MAX_ARCHIVE_BYTES)) || fail "Output exceeds archive limit: $archive"
     done
-    sha256sum -- *.part-* > SHA256SUMS
+    sha256sum -- "${archives[@]}" > SHA256SUMS
 )
 cat > "$STAGING_DIR/CONTENTS.txt" <<CONTENTS
 Project task: :app:testDebugUnitTest
 Platform: Linux x86_64
 Gradle distribution: not exported (keep separately; version pinned by Gradle wrapper)
 Android SDK: platforms/$SDK_PLATFORM, build-tools/$SDK_BUILD_TOOLS, optional licences/platform-tools
-Gradle cache: caches/modules-2 (including plugin resolution metadata)
+Gradle cache: not exported (Gradle resolves dependencies during preparation)
 Robolectric: Android 9 / API 28 and Android 10 / API 29 Maven runtime artifacts
 Gradle test invocation: $TEST_RESULT
-Archive chunks: 480000000 bytes maximum; parts ordered by numeric suffix
-Archive reconstruction: concatenate matching .part-* files in suffix order.
-Gradle cache destination: \$GRADLE_USER_HOME/
+Archives under 512000000 bytes: one .tar.gz file (no .part-000 suffix)
+Archives at or above 512000000 bytes: .part-* files smaller than 512000000 bytes
+Archive reconstruction: concatenate numbered parts in suffix order; use .tar.gz directly otherwise.
 Android SDK destination: \$ANDROID_SDK_ROOT/
 Robolectric Maven destination: ~/.m2/repository/ (default)
 CONTENTS
 
-# Replace only files managed by this script; remove legacy Gradle ZIP exports.
+# Replace only files managed by this script, including obsolete cache exports.
 rm -f -- "$OUTPUT_DIR"/gradle-*-bin.zip.part-* \
-    "$OUTPUT_DIR"/android-sdk.tar.gz.part-* \
-    "$OUTPUT_DIR"/gradle-cache.tar.gz.part-* \
-    "$OUTPUT_DIR"/robolectric-maven.tar.gz.part-* \
+    "$OUTPUT_DIR"/android-sdk.tar.gz "$OUTPUT_DIR"/android-sdk.tar.gz.part-* \
+    "$OUTPUT_DIR"/gradle-cache.tar.gz "$OUTPUT_DIR"/gradle-cache.tar.gz.part-* \
+    "$OUTPUT_DIR"/robolectric-maven.tar.gz "$OUTPUT_DIR"/robolectric-maven.tar.gz.part-* \
     "$OUTPUT_DIR"/SHA256SUMS "$OUTPUT_DIR"/CONTENTS.txt
 mv -- "$STAGING_DIR"/* "$OUTPUT_DIR"/
 say "Export complete: $OUTPUT_DIR"
