@@ -36,13 +36,13 @@ Options:
   --gradle-bin FILE      Use this local Gradle executable (native Linux only).
   -h, --help             Show this help.
 
-Runs :app:testDebugUnitTest to download the Robolectric API 28/29 runtimes,
-then exports only those Maven artifacts and Android SDK components. The Gradle
-dependency cache is NOT exported. Archives smaller than 512,000,000 bytes are
-ordinary .tar.gz files; larger ones use numbered .part-* files, each smaller
-than 512,000,000 bytes. No credentials or keystores are exported. The Gradle
-wrapper and its distribution ZIP are not downloaded or exported. Upload the
-resulting archives (or their parts) with SHA256SUMS and CONTENTS.txt.
+Runs :app:testDebugUnitTest to resolve dependencies and download Robolectric
+API 28/29 runtimes, then exports Android SDK components, Gradle dependency
+artifacts and resolution metadata (caches/modules-2), and Robolectric jars.
+Archives smaller than 512,000,000 bytes are ordinary .tar.gz files; larger
+ones use numbered .part-* files, each smaller than 512,000,000 bytes. Gradle
+credentials, keystores, and the Gradle distribution are not exported. Upload
+the resulting archives (or parts) with SHA256SUMS and CONTENTS.txt.
 
 Docker mode builds scripts/Dockerfile.android-test-assets on first use, runs
 with an isolated project copy (ignoring host local.properties), and writes only
@@ -257,7 +257,7 @@ STAGING_DIR="$(mktemp -d "$OUTPUT_DIR/.staging.XXXXXXXX")"
 if [[ -n "$GRADLE_HOME_ARG" ]]; then
     [[ -d "$GRADLE_HOME_ARG" ]] || fail "Gradle home does not exist: $GRADLE_HOME_ARG"
     CAPTURE_GRADLE_HOME="$(cd -- "$GRADLE_HOME_ARG" && pwd -P)"
-    printf 'Note: using an existing Gradle cache for the test task; the cache will not be exported.\n'
+    printf 'Note: exporting all modules-2 dependencies in the supplied Gradle home, including any existing artifacts.\n'
 else
     CAPTURE_GRADLE_HOME="$WORK_DIR/gradle-home"
     mkdir -p -- "$CAPTURE_GRADLE_HOME"
@@ -305,8 +305,15 @@ if ! (cd "$PROJECT_ROOT" && "$GRADLE_EXEC" \
     --no-daemon --no-configuration-cache --rerun-tasks --continue --console=plain \
     :app:testDebugUnitTest); then
     TEST_RESULT=failed
-    printf 'Warning: Gradle/test task failed; checking whether Robolectric runtimes were still populated.\n' >&2
+    printf 'Warning: Gradle/test task failed; checking whether dependencies and Robolectric runtimes were populated.\n' >&2
 fi
+
+MODULES_DIR="$CAPTURE_GRADLE_HOME/caches/modules-2"
+[[ -d "$MODULES_DIR/files-2.1" ]] || \
+    fail 'Gradle dependency artifacts were not populated; resolve the build error above.'
+metadata_dirs=("$MODULES_DIR"/metadata-2.*)
+[[ -d "${metadata_dirs[0]}" ]] || \
+    fail 'Gradle dependency resolution metadata was not populated; resolve the build error above.'
 
 # The project runs Robolectric on API 28 by default and API 29 in selected tests.
 # These correspond to Robolectric Android versions 9 and 10, respectively.
@@ -335,6 +342,11 @@ sdk_paths=("platforms/$SDK_PLATFORM" "build-tools/$SDK_BUILD_TOOLS")
 tar -C "$SDK_ROOT" -czf - "${sdk_paths[@]}" | \
     export_test_asset_archive "$STAGING_DIR/android-sdk.tar.gz" "$MAX_ARCHIVE_BYTES"
 
+say 'Exporting Gradle dependency artifacts and resolution metadata (modules-2)'
+tar --exclude='*.lock' --exclude='gc.properties' \
+    -C "$CAPTURE_GRADLE_HOME" -czf - caches/modules-2 | \
+    export_test_asset_archive "$STAGING_DIR/gradle-deps.tar.gz" "$MAX_ARCHIVE_BYTES"
+
 say 'Exporting Robolectric API 28/29 Maven artifacts'
 tar -C "$ROBOLECTRIC_MAVEN" -czf - "${robolectric_paths[@]}" | \
     export_test_asset_archive "$STAGING_DIR/robolectric-maven.tar.gz" "$MAX_ARCHIVE_BYTES"
@@ -343,7 +355,10 @@ tar -C "$ROBOLECTRIC_MAVEN" -czf - "${robolectric_paths[@]}" | \
     cd "$STAGING_DIR"
     shopt -s nullglob
     archives=( *.tar.gz *.part-* )
-    ((${#archives[@]} >= 2)) || fail 'Expected both Android SDK and Robolectric archives.'
+    for name in android-sdk gradle-deps robolectric-maven; do
+        [[ -f "$name.tar.gz" || -f "$name.tar.gz.part-000" ]] || \
+            fail "Missing required export: $name"
+    done
     for archive in "${archives[@]}"; do
         size="$(wc -c < "$archive")"
         ((size < MAX_ARCHIVE_BYTES)) || fail "Output exceeds archive limit: $archive"
@@ -355,19 +370,21 @@ Project task: :app:testDebugUnitTest
 Platform: Linux x86_64
 Gradle distribution: not exported (keep separately; version pinned by Gradle wrapper)
 Android SDK: platforms/$SDK_PLATFORM, build-tools/$SDK_BUILD_TOOLS, optional licences/platform-tools
-Gradle cache: not exported (Gradle resolves dependencies during preparation)
+Gradle dependencies: caches/modules-2 (artifacts and plugin resolution metadata; excludes *.lock and gc.properties)
 Robolectric: Android 9 / API 28 and Android 10 / API 29 Maven runtime artifacts
 Gradle test invocation: $TEST_RESULT
 Archives under 512000000 bytes: one .tar.gz file (no .part-000 suffix)
 Archives at or above 512000000 bytes: .part-* files smaller than 512000000 bytes
 Archive reconstruction: concatenate numbered parts in suffix order; use .tar.gz directly otherwise.
+Gradle deps destination: \$GRADLE_USER_HOME/caches/modules-2/ (extract into \$GRADLE_USER_HOME/)
 Android SDK destination: \$ANDROID_SDK_ROOT/
 Robolectric Maven destination: ~/.m2/repository/ (default)
 CONTENTS
 
-# Replace only files managed by this script, including obsolete cache exports.
+# Replace only files managed by this script, including older cache archive names.
 rm -f -- "$OUTPUT_DIR"/gradle-*-bin.zip.part-* \
     "$OUTPUT_DIR"/android-sdk.tar.gz "$OUTPUT_DIR"/android-sdk.tar.gz.part-* \
+    "$OUTPUT_DIR"/gradle-deps.tar.gz "$OUTPUT_DIR"/gradle-deps.tar.gz.part-* \
     "$OUTPUT_DIR"/gradle-cache.tar.gz "$OUTPUT_DIR"/gradle-cache.tar.gz.part-* \
     "$OUTPUT_DIR"/robolectric-maven.tar.gz "$OUTPUT_DIR"/robolectric-maven.tar.gz.part-* \
     "$OUTPUT_DIR"/SHA256SUMS "$OUTPUT_DIR"/CONTENTS.txt
@@ -375,5 +392,5 @@ mv -- "$STAGING_DIR"/* "$OUTPUT_DIR"/
 say "Export complete: $OUTPUT_DIR"
 ls -lh "$OUTPUT_DIR"
 if [[ "$TEST_RESULT" == failed ]]; then
-    printf '\nWarning: tests failed, but all requested dependencies were captured.\n' >&2
+    printf '\nWarning: tests failed; the exported dependencies may not be sufficient for a complete offline run.\n' >&2
 fi

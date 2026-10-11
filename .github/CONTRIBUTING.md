@@ -76,9 +76,16 @@ keystores, or local build caches and writes the archive parts to the requested
 host output directory. Existing exports in that directory are replaced by the
 same rules as the native exporter.
 
-The exporter does **not** include the Gradle dependency cache or Gradle
-distribution. It writes `android-sdk.tar.gz` and `robolectric-maven.tar.gz`
-without a `.part-000` suffix if they are below 512,000,000 bytes. Larger
-archives are split into numbered `.part-*` files; concatenate those parts
-in order before extraction. `SHA256SUMS` verifies each exported file and
-`CONTENTS.txt` records what is included.
+The exporter always includes the Gradle dependencies and resolution metadata
+from `caches/modules-2` in `gradle-deps.tar.gz`, alongside
+`android-sdk.tar.gz` and `robolectric-maven.tar.gz`. It excludes Gradle lock
+files, credentials, keystores, and the Gradle distribution. By default, a fresh
+Gradle home keeps the exported dependencies specific to this project; passing
+`--gradle-user-home` on Linux also includes previously cached modules.
+
+Archives below 512,000,000 bytes have no `.part-000` suffix. Larger archives
+are split into numbered `.part-*` files; concatenate those parts in order
+before extraction. `SHA256SUMS` verifies each exported file, and
+`CONTENTS.txt` records their installation destinations. Extract
+`gradle-deps.tar.gz` into `$GRADLE_USER_HOME` (or `~/.gradle` by default)
+before running Gradle with `--offline`.

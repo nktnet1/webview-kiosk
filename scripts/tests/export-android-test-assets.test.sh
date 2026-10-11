@@ -135,6 +135,8 @@ if [[ "$OSTYPE" == linux* ]]; then
     printf 'build fixture' > "$sdk/build-tools/36.0.0/source.properties"
     printf 'obsolete' > "$output_dir/gradle-cache.tar.gz.part-000"
     printf 'obsolete' > "$output_dir/gradle-cache.tar.gz"
+    printf 'obsolete' > "$output_dir/gradle-deps.tar.gz.part-000"
+    printf 'obsolete' > "$output_dir/gradle-deps.tar.gz"
     printf 'obsolete' > "$output_dir/android-sdk.tar.gz.part-000"
     printf 'obsolete' > "$output_dir/robolectric-maven.tar.gz.part-000"
     printf 'keep' > "$output_dir/unrelated.txt"
@@ -153,28 +155,76 @@ for version in 9 10; do
     mkdir -p "$jar_dir"
     printf 'test runtime' > "$jar_dir/android-all-instrumented.jar"
 done
+if [[ "${SKIP_FAKE_DEPS:-}" != 1 ]]; then
+    modules="$GRADLE_USER_HOME/caches/modules-2"
+    mkdir -p "$modules/files-2.1/example/tool/1.0/hash" "$modules/metadata-2.107"
+    printf 'dependency' > "$modules/files-2.1/example/tool/1.0/hash/tool.jar"
+    printf 'metadata' > "$modules/metadata-2.107/module-artifact.bin"
+    printf 'excluded' > "$modules/modules-2.lock"
+    printf 'excluded' > "$modules/gc.properties"
+    printf 'credentials not for export' > "$GRADLE_USER_HOME/gradle.properties"
+    mkdir -p "$GRADLE_USER_HOME/caches/transforms-4"
+    printf 'excluded' > "$GRADLE_USER_HOME/caches/transforms-4/cache.bin"
+fi
 GRADLE
     chmod +x "$TEMP_DIR/bin/mock-gradle"
     FAKE_OS=Linux FAKE_ARCH=x86_64 bash "$EXPORTER" \
         --sdk-root "$sdk" --gradle-bin "$TEMP_DIR/bin/mock-gradle" \
         --output "$output_dir" > "$TEMP_DIR/export.log"
-    [[ -f "$output_dir/android-sdk.tar.gz" && -f "$output_dir/robolectric-maven.tar.gz" ]]
+    [[ -f "$output_dir/android-sdk.tar.gz" && -f "$output_dir/gradle-deps.tar.gz" && -f "$output_dir/robolectric-maven.tar.gz" ]]
     [[ ! -e "$output_dir/android-sdk.tar.gz.part-000" ]]
+    [[ ! -e "$output_dir/gradle-deps.tar.gz.part-000" ]]
     [[ ! -e "$output_dir/robolectric-maven.tar.gz.part-000" ]]
     [[ ! -e "$output_dir/gradle-cache.tar.gz" ]]
     [[ ! -e "$output_dir/gradle-cache.tar.gz.part-000" ]]
     [[ "$(cat "$output_dir/unrelated.txt")" == keep ]]
-    grep -F 'Gradle cache: not exported' "$output_dir/CONTENTS.txt" >/dev/null
-    if grep -Fq 'gradle-cache.tar.gz' "$output_dir/SHA256SUMS"; then
-        echo 'Gradle cache must not be included in checksums' >&2
-        exit 1
-    fi
+    grep -F 'Gradle dependencies: caches/modules-2' "$output_dir/CONTENTS.txt" >/dev/null
+    grep -F 'Gradle deps destination: $GRADLE_USER_HOME/caches/modules-2/' "$output_dir/CONTENTS.txt" >/dev/null
+    grep -F 'gradle-deps.tar.gz' "$output_dir/SHA256SUMS" >/dev/null
     (
         cd "$output_dir"
         sha256sum --check --status SHA256SUMS
         tar -tzf android-sdk.tar.gz >/dev/null
+        tar -tzf gradle-deps.tar.gz > "$TEMP_DIR/gradle-deps-contents.txt"
         tar -tzf robolectric-maven.tar.gz >/dev/null
     )
+    grep -Fx 'caches/modules-2/files-2.1/example/tool/1.0/hash/tool.jar' \
+        "$TEMP_DIR/gradle-deps-contents.txt" >/dev/null
+    grep -Fx 'caches/modules-2/metadata-2.107/module-artifact.bin' \
+        "$TEMP_DIR/gradle-deps-contents.txt" >/dev/null
+    if grep -Eq '(^|/)([^/]*\.lock|gc\.properties)$|gradle\.properties|transforms-4' \
+        "$TEMP_DIR/gradle-deps-contents.txt"; then
+        echo 'Gradle export included lock files, credentials or unrelated caches' >&2
+        exit 1
+    fi
+
+    # A caller may reuse a cache on native Linux. Verify those pre-existing
+    # dependencies are included, rather than exporting only newly downloaded
+    # modules, while unrelated Gradle home files remain excluded.
+    existing_home="$TEMP_DIR/existing-gradle-home"
+    existing_output="$TEMP_DIR/existing-home-output"
+    mkdir -p "$existing_home/caches/modules-2/files-2.1/preexisting/library/1.0/hash"
+    printf 'cached dependency' > \
+        "$existing_home/caches/modules-2/files-2.1/preexisting/library/1.0/hash/library.jar"
+    FAKE_OS=Linux FAKE_ARCH=x86_64 bash "$EXPORTER" \
+        --sdk-root "$sdk" --gradle-bin "$TEMP_DIR/bin/mock-gradle" \
+        --gradle-user-home "$existing_home" --output "$existing_output" \
+        > "$TEMP_DIR/existing-home.log"
+    tar -tzf "$existing_output/gradle-deps.tar.gz" > "$TEMP_DIR/existing-deps-contents.txt"
+    grep -Fx 'caches/modules-2/files-2.1/preexisting/library/1.0/hash/library.jar' \
+        "$TEMP_DIR/existing-deps-contents.txt" >/dev/null
+
+    # Even if a fake Gradle task populates Robolectric, the export must fail
+    # rather than claim to include dependencies when modules-2 is absent.
+    if FAKE_OS=Linux FAKE_ARCH=x86_64 SKIP_FAKE_DEPS=1 bash "$EXPORTER" \
+        --sdk-root "$sdk" --gradle-bin "$TEMP_DIR/bin/mock-gradle" \
+        --output "$TEMP_DIR/missing-deps-output" \
+        > "$TEMP_DIR/missing-deps.log" 2>&1; then
+        echo 'Expected missing Gradle dependencies to abort the export' >&2
+        exit 1
+    fi
+    grep -F 'Gradle dependency artifacts were not populated' "$TEMP_DIR/missing-deps.log" >/dev/null
+    [[ ! -f "$TEMP_DIR/missing-deps-output/gradle-deps.tar.gz" ]]
 fi
 
 # The native Linux x86_64 code path never shells out to Docker.
