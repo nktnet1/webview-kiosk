@@ -51,3 +51,27 @@ installation repositories.
 The suite covers source-specific version selection and fallback behavior,
 malformed metadata, HTTP and timeout failures, GitHub token scoping, and request
 timeouts.
+
+### Exporting Android test assets
+
+To create Linux x86_64 SDK, Gradle dependency and Robolectric archives for
+an offline test run, use:
+
+```bash
+scripts/export-android-test-assets.sh --output build/android-test-assets
+```
+
+On Linux x86_64, the script uses the locally installed Android SDK, JetBrains
+JDK 21 and version-matched Gradle executable. On macOS and other architectures,
+it automatically builds `scripts/Dockerfile.android-test-assets` and runs the
+Linux exporter inside Docker (Docker Desktop on macOS). The image downloads the
+pinned Gradle/JBR/SDK components; the export also requires network access to
+resolve the project's dependencies. No host Android SDK, Java or Gradle setup
+is necessary in Docker mode.
+
+Only `--output` carries over to Docker mode. The native-only `--sdk-root`,
+`--gradle-user-home` and `--gradle-bin` options are rejected on other hosts.
+Docker uses a disposable copy of the checkout without `local.properties`,
+keystores, or local build caches and writes the archive parts to the requested
+host output directory. Existing exports in that directory are replaced by the
+same rules as the native exporter.

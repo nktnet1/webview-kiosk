@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Export everything needed to rerun :app:testDebugUnitTest on Linux x86_64.
+# Export Linux x86_64 Android test dependencies, using Docker on other hosts.
 # Archives are streamed directly into chunks smaller than 512 MB.
 set -euo pipefail
 
@@ -22,15 +22,16 @@ usage() {
     cat <<'HELP'
 Usage: scripts/export-android-test-assets.sh [options]
 
-Run on a network-connected Linux x86_64 machine with Android SDK command-line
-tools, a working JDK (this project requires JetBrains JDK 21), and a locally
-installed Gradle executable matching the version pinned by the wrapper.
+On Linux x86_64, run with Android SDK command-line tools, JetBrains JDK 21,
+and a locally installed Gradle executable matching the wrapper. On other hosts
+(including macOS and Linux ARM64), Docker automatically runs the same export in
+a Linux x86_64 container; only Docker and network access are required.
 
 Options:
-  --sdk-root DIR         Android SDK directory (otherwise auto-detected).
+  --sdk-root DIR         Android SDK directory (native Linux only).
   --output DIR           Output directory (default: build/android-test-assets).
-  --gradle-user-home DIR Use an existing Gradle cache instead of a clean one.
-  --gradle-bin FILE      Use this local Gradle executable (never download Gradle).
+  --gradle-user-home DIR Use an existing Gradle cache (native Linux only).
+  --gradle-bin FILE      Use this local Gradle executable (native Linux only).
   -h, --help             Show this help.
 
 Runs :app:testDebugUnitTest to populate Gradle and Robolectric caches, then
@@ -40,6 +41,11 @@ Robolectric API 28/29 runtime jars. All exported .part-* files are at most
 wrapper is not invoked and its distribution ZIP is not downloaded or exported;
 keep that ZIP separately.
 Upload exported archive parts with SHA256SUMS/CONTENTS.txt as needed.
+
+Docker mode builds scripts/Dockerfile.android-test-assets on first use, runs
+with an isolated project copy (ignoring host local.properties), and writes only
+the exported archives to --output. The image has the pinned Gradle, JetBrains
+JDK 21 and Linux Android SDK; host toolchain override flags are not accepted.
 HELP
 }
 
@@ -113,8 +119,59 @@ while (($#)); do
     esac
 done
 
-[[ "$(uname -s)" == Linux && "$(uname -m)" == x86_64 ]] || \
-    fail 'Run this on Linux x86_64: Android Build Tools contain host executables.'
+# SDK Build Tools and Robolectric artifacts are Linux x86_64-specific. Keep
+# the existing native path unchanged, but provide a self-contained Docker path
+# on macOS, Windows (bash), and Linux systems running another architecture.
+run_in_docker() {
+    [[ -z "$SDK_ARG" && -z "$GRADLE_HOME_ARG" && -z "$GRADLE_BIN_ARG" ]] || \
+        fail '--sdk-root, --gradle-user-home and --gradle-bin are native Linux options; Docker supplies its own Linux toolchain.'
+    command -v docker >/dev/null 2>&1 || \
+        fail 'Docker is required to export Linux x86_64 test assets on this host.'
+    local docker_os
+    docker_os="$(docker info --format '{{.OSType}}')" || \
+        fail 'The Docker daemon is unavailable; start Docker and try again.'
+    [[ "$docker_os" == linux ]] || fail 'Docker must be configured to run Linux containers.'
+    command -v id >/dev/null 2>&1 || fail 'Missing command: id'
+
+    mkdir -p -- "$OUTPUT_ARG"
+    local output_dir
+    output_dir="$(cd -- "$OUTPUT_ARG" && pwd -P)"
+    local image='webview-kiosk-android-test-assets:gradle-9.8.0-jbr21'
+
+    say 'Building the Linux x86_64 Android test exporter image (cached after first use)'
+    docker build --platform linux/amd64 --tag "$image" \
+        --file "$PROJECT_ROOT/scripts/Dockerfile.android-test-assets" \
+        "$PROJECT_ROOT/scripts"
+
+    say "Exporting with Docker to $output_dir"
+    docker run --rm --platform linux/amd64 \
+        --user "$(id -u):$(id -g)" \
+        --env HOME=/tmp/android-assets-home \
+        --volume "$PROJECT_ROOT:/source:ro" \
+        --volume "$output_dir:/export" \
+        --workdir /tmp "$image" bash -c '
+            set -euo pipefail
+            mkdir -p /tmp/android-assets-home /tmp/project
+            # Do not copy host build output, caches, credentials or SDK paths.
+            tar -C /source \
+                --exclude=./.git --exclude=./.gradle --exclude=./.idea \
+                --exclude=./build --exclude=./app/build \
+                --exclude=./docs --exclude=./local.properties \
+                --exclude=./app/release --exclude=./app/keystore.jks \
+                --exclude=./.env* --exclude='*.jks' \
+                --exclude='*.bundle' --exclude='*.patch' \
+                -cf - . | tar -C /tmp/project -xf -
+            exec /tmp/project/scripts/export-android-test-assets.sh \
+                --sdk-root /opt/android-sdk \
+                --gradle-bin /opt/gradle/bin/gradle \
+                --output /export
+        '
+}
+
+if [[ "$(uname -s)" != Linux || "$(uname -m)" != x86_64 ]]; then
+    run_in_docker
+    exit 0
+fi
 for tool in tar split sha256sum grep mktemp java; do
     command -v "$tool" >/dev/null 2>&1 || fail "Missing command: $tool"
 done

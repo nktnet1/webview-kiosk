@@ -1,0 +1,46 @@
+# The export is deliberately linux/amd64 even when Docker runs on Apple Silicon.
+# Gradle comes preinstalled: the exporter never invokes the wrapper download.
+FROM gradle:9.8.0-jdk21-jammy
+
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates curl unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# The project pins the Gradle daemon vendor to JetBrains. A generic JDK 21
+# would cause Gradle to provision another JDK through Foojay at runtime.
+ARG JBR_ARCHIVE=jbrsdk-21.0.11-linux-x64-b1163.116.tar.gz
+ARG JBR_SHA256=097bf328b5bf5a236c095b8c8e5204c0eda91e5baa06b37383a7754b10671d8b
+RUN curl --fail --location --silent --show-error --retry 3 \
+        "https://github.com/JetBrains/JetBrainsRuntime/releases/download/jbr-release-21.0.11b1163.116/${JBR_ARCHIVE}" \
+        --output /tmp/jbrsdk.tar.gz \
+    && echo "${JBR_SHA256}  /tmp/jbrsdk.tar.gz" | sha256sum --check \
+    && mkdir -p /opt/jbr \
+    && tar -xzf /tmp/jbrsdk.tar.gz --strip-components=1 -C /opt/jbr \
+    && rm /tmp/jbrsdk.tar.gz
+ENV JAVA_HOME=/opt/jbr
+ENV PATH="/opt/jbr/bin:${PATH}"
+
+# Supply Linux SDK binaries rather than mounting a macOS/ARM SDK. Install only
+# the packages exported by the script. Pinned checksums match the native path.
+ENV ANDROID_SDK_ROOT=/opt/android-sdk
+ENV ANDROID_HOME=/opt/android-sdk
+ARG CMDLINE_TOOLS_ZIP=commandlinetools-linux-15859902_latest.zip
+ARG CMDLINE_TOOLS_SHA256=4e4c464f145a7512b57d088ac6c278c03c9eea610886b35a5e0804e74eedf583
+RUN curl --fail --location --silent --show-error --retry 3 \
+        "https://dl.google.com/android/repository/${CMDLINE_TOOLS_ZIP}" \
+        --output /tmp/android-tools.zip \
+    && echo "${CMDLINE_TOOLS_SHA256}  /tmp/android-tools.zip" | sha256sum --check \
+    && mkdir -p "${ANDROID_SDK_ROOT}/cmdline-tools/latest" \
+    && unzip -q /tmp/android-tools.zip -d /tmp/android-tools \
+    && mv /tmp/android-tools/cmdline-tools/* "${ANDROID_SDK_ROOT}/cmdline-tools/latest/" \
+    && rm -rf /tmp/android-tools /tmp/android-tools.zip
+RUN yes | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" \
+        --sdk_root="${ANDROID_SDK_ROOT}" --licenses > /dev/null \
+    && "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" \
+        --sdk_root="${ANDROID_SDK_ROOT}" --channel=3 \
+        'platforms;android-37.0' 'build-tools;36.0.0'
+
+# A runtime UID matching the host owns the ephemeral worktree and exported files.
+# Do not use the default Gradle image's root/user cache for the export.
+WORKDIR /tmp
