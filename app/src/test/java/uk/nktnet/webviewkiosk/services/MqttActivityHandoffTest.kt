@@ -266,8 +266,12 @@ class MqttActivityHandoffTest {
     @Test
     fun aRejectedRepeatedStartReleasesOwnershipAndTheSameServiceCanRecover() {
         settings.mqttUseForegroundService = true
-        val host = createActivity()
+        // Do not leave CONNACK gated while a cold Compose view attaches. UI setup can take
+        // longer than the loopback peer's bounded handshake on an overloaded test worker.
+        val host = createActivity(visible = false)
         connect()
+        host.controller.visible()
+        pumpFrames()
         startService()
         awaitSubscriptions(2)
         val service = serviceController!!.get()

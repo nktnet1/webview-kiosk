@@ -380,6 +380,38 @@ untested paths are defective. The app still declares `versionName = "0.26.21"`.
   delivery and device-owner restrictions remain unverified. Manual device checks
   remain deferred until automated coverage work is complete.
 
+## Android 6 private-task routing and active-host transfer (v1.0.25)
+
+- `MainActivity.onStop` now transfers the API 23 application-event owner to the
+  most recently started *remaining* activity when its current owner stops. A
+  stopped HOME/private-task host no longer suppresses the still-started host's
+  MQTT claim gate, broadcast handling or Compose host. Stopping a non-owner does
+  not steal ownership; when no activity remains started, the previous owner is
+  retained for background UI/event policy as before.
+- `Android6KioskLifecycleTest` adds **18 Robolectric API 28 executions** with
+  the Android 6 SDK gate overridden to 23. Actual `MainActivity` and
+  `Android6KioskActivity` lifecycle callbacks cover HOME vs launcher selection,
+  deferral until resume, routing to the distinct task with correct flags and
+  extras, explicit/manual/launch locking, HOME priority, queued-intent
+  coalescing, one-shot consumption after unlock/restart and no private-to-private
+  redirects. Overlapping tasks exercise start/stop/destroy ownership,
+  reassignment, background retention, non-owner stop, and exactly one eligible
+  MQTT activity host. Two host-transfer regressions **failed against v1.0.24**
+  before the fix. The existing MQTT handoff fixture also connects its loopback
+  peer before attaching the Compose UI in the first rejection/recovery case,
+  removing a cold-rendering race with the peer's bounded CONNACK gate.
+- Full local validation: `:app:testDebugUnitTest :app:assembleDebug --offline
+  --no-configuration-cache` passed with **442 tests across 42 JUnit suites**,
+  zero failures/errors/skips, and a debug APK. This used the restored SDK/cache
+  and Robolectric API 28/29 runtimes, attached **Gradle 9.8.0-milestone-1** and
+  **JBR 21.0.11**. Attached Biome `check --write` passed on `docs/biome.json`
+  without changes; Biome does not check Kotlin.
+- The tests use the API **28** Robolectric framework with only the SDK decision
+  gate set to 23; they do **not** execute an API 23 framework, device-owner
+  provisioning, actual Android HOME task transitions or physical lock-task
+  enforcement. API 23 OEM/device checks remain required. Dhizuku readiness and
+  permission-refusal scenarios on API 28+ remain untested.
+
 ## Next automated tests, ordered by regression risk
 
 | Priority | Area / main code | Recommended tests and assertions | Layer |
@@ -388,7 +420,7 @@ untested paths are defective. The app still declares `versionName = "0.26.21"`.
 | **P0** | Navigation and active WebView (`utils/webview/WebviewNavigation.kt`, `WebViewNavigationSession.kt`, `ui/screens/WebviewScreen.kt`, `utils/createCustomWebview.kt`) | The 61 added history/session/preference regressions passed in the Android suite after v1.0.17. Instrument repeated routes, rapid navigation and redirects, SPA pushes before page finish, stale/duplicate callbacks (including repeated identical URLs), iframe vs main-frame errors, renderer recreation, delayed MQTT URL events and fullscreen cleanup. See the navigation and cursor follow-ups above for implemented cases and verification limits. | Robolectric for history/preferences; pure state tests for policy; real WebView instrumentation for ownership and callbacks |
 | **P0** | UnifiedPush and remote request/settings handoff (`managers/UnifiedPushManager.kt`, `RemoteMessageManager.kt`, `MainActivity.kt`, `MqttForegroundService.kt`) | The 33 registration/filtering/settings/request regressions passed in v1.0.18. v1.0.21 verifies MQTT TCP delivery through service collectors; v1.0.23 adds 15 actual activity/service handoff executions, and v1.0.24 adds 12 for start denial, activity fallback and service recovery. Instrument the installed APK's UI commands/settings reload, OS cold-process initialisation and device-owner commands; exercise a real UnifiedPush distributor and TLS/WebSocket brokers. Existing command FIFO/claim tests need not be duplicated. See the remote-stream/loopback/handoff/fallback follow-ups for limits. | Robolectric activity/Compose/service lifecycle and real JVM MQTT TCP; coroutine tests for flows; APK instrumentation and on-device transport tests |
 | **P0** | Foreground services (`services/MqttForegroundService.kt`, `LockTaskService.kt`) | The 45 service checks passed through v1.0.21, covering resources/notifications, MQTT restoration, repeated starts, connection rejection/recovery, disabling MQTT during connect and loopback delivery. The 27 handoff executions through v1.0.24 verify live/pending connection ownership, service toggles, actual activity collector cleanup, modeled start denial/fallback/recovery and older-service cleanup. Verify external broker reconnects, Android 14+ foreground restrictions and OS process death. See the service/notification/loopback/handoff/fallback follow-ups for limits. | Robolectric activity/service callbacks on API 28/29 and real JVM MQTT TCP; APK instrumentation and emulator/device lifecycle/transport scenarios |
-| **P1** | Android 6 and owner initialisation (`Android6KioskActivity.kt`, `MainActivity.kt`, `utils/lockTaskUtils.kt`, `managers/DeviceOwnerManager.kt`) | HOME vs launcher intent detection, one-shot lock request, host selection, task-switch transition, Dhizuku delayed readiness/permission refusal and activity recreation. Do not regard Robolectric as proof of actual API 23 lock task. | Robolectric + API 23 device/emulator |
+| **P1** | Android 6 and owner initialisation (`Android6KioskActivity.kt`, `MainActivity.kt`, `utils/lockTaskUtils.kt`, `managers/DeviceOwnerManager.kt`) | v1.0.25 adds 18 SDK-gate/Robolectric checks for HOME vs launcher, one-shot lock requests, selected host and handoff on stop. Still instrument *real* API 23 task switching, unlock/HOME/recreation, owner permission/refusal and pinned-to-locked transitions; test Dhizuku delayed readiness/permission refusal on API 28+. Do not regard an overridden SDK gate as an API 23 runtime. | Robolectric API 28 policy + API 23 device/emulator |
 | **P1** | Real PDF viewer + certificate paths (`handlers/handlePdfSourceRequest.kt`, `utils/webview/PdfTlsState.kt`, PDF HTML) | Load a PDF in an actual WebView with Range requests, redirects and auth; show real pages, recover on retry, close old viewer requests; validate untrusted/expired TLS decisions and a local HTTPS server requesting an mTLS certificate. HTTP helper unit cases are already extensive. | Instrumented WebView + controlled HTTP(S) test server |
 | **P1** | Picker/MediaStore bridge (`createCustomWebview.kt`, `interfaces/BlobInterface.kt`, `fileChooserUtils.kt`) | Actual file chooser cancellation and return; camera failure fallback returns exactly once; kill/swap WebView during pending selection; two simultaneous blob downloads leave correct bytes in the Android provider; failures do not leave pending MediaStore rows. Do not repeat the existing URI policy/transfer-helper tests. | Instrumentation with fake document provider and device camera smoke |
 | **P1** | Settings, external intents and Compose UI (`ui/components/setting/dialog/ImportSettingDialog.kt`, `utils/intentUtils.kt`, `SystemSafeDialogs.kt`, `SystemSafeClipboard.kt`) | Invalid parcelables/intent extras, oversized or interrupted settings import, denial/cancellation, focus request after layout, IME dismissal on Android 6, and clipboard access while a restricted window is active. | Unit/Robolectric for parsers; Compose instrumentation for UI |

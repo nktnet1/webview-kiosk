@@ -504,6 +504,16 @@ open class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         startedHosts.remove(this)
+        if (
+            Build.VERSION.SDK_INT == Build.VERSION_CODES.M
+            && android6EventHost === this
+            && startedHosts.isNotEmpty()
+        ) {
+            // The separate HOME and kiosk tasks may both stay alive. If the active owner
+            // stops while the other remains started, do not strand event/MQTT handling on
+            // the stopped activity until it is eventually destroyed or started again.
+            android6EventHost = startedHosts.last()
+        }
         if (!isChangingConfigurations && startedHosts.isEmpty()) {
             AuthenticationManager.resetAuthentication(preserveExternalActivitySession = true)
             if (MqttForegroundService.isHandlingMessages()) {
