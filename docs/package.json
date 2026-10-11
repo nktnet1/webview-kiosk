@@ -13,6 +13,7 @@
     "preview": "vite preview",
     "test": "vitest run --config config/vitest.config.ts",
     "test:watch": "vitest --config config/vitest.config.ts",
+    "test:e2e": "playwright test --config config/playwright.config.ts",
     "typecheck": "fumadocs-mdx && tsc --noEmit",
     "postinstall": "fumadocs-mdx",
     "lint": "biome lint",
@@ -43,6 +44,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
+    "@playwright/test": "1.56.1",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/react-router-devtools": "1.167.2",
     "@types/mdast": "4.0.4",

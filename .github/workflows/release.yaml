@@ -10,7 +10,17 @@ on:
   workflow_dispatch:
 
 jobs:
-  release:
+  # A tag must pass the same checks as a PR. These jobs check out the tagged
+  # commit; green tests on main from an earlier commit are not sufficient.
+  verify:
+    name: Required test matrix
+    permissions:
+      contents: read
+    uses: ./.github/workflows/tests.yaml
+
+  build:
+    name: Build minified release APK
+    needs: verify
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -27,40 +37,104 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
       - name: Prepare keystore
+        env:
+          RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
         run: |
-          # Decode keystore
-          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 --decode > app/keystore.jks
+          test -n "$RELEASE_KEYSTORE_BASE64" || { echo "Release signing secret is missing" >&2; exit 1; }
+          printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > app/keystore.jks
 
       - name: Build release APK
-        run: sh gradlew assembleRelease --stacktrace
+        run: sh gradlew :app:assembleRelease --stacktrace
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Rename APK and Add Version Code Changelog
+      - name: Store exact release APK for smoke test and publication
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: app/build/outputs/apk/release/
+          if-no-files-found: error
+          retention-days: 7
+
+  smoke:
+    name: Install and launch minified APK
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Download release APK
+        uses: actions/download-artifact@v4
+        with:
+          name: release-apk
+          path: app/build/outputs/apk/release/
+
+      - name: Enable hardware acceleration
         run: |
-          # Rename APK
-          VERSION_NAME="$(jq -r ".elements[0].versionName" "app/build/outputs/apk/release/output-metadata.json")"
+          if [ -e /dev/kvm ]; then
+            sudo chmod 666 /dev/kvm
+          fi
+
+      - name: Install and launch the release artifact
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-boot-timeout: 900
+          script: sh scripts/smoke-release-apk.sh
+
+      - name: Save release smoke logs
+        if: always()
+        run: adb logcat -d > release-smoke-logcat.txt || true
+
+      - name: Upload release smoke logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-smoke-logs
+          path: release-smoke-logcat.txt
+          if-no-files-found: ignore
+
+  release:
+    name: Create draft release
+    needs: [verify, build, smoke]
+    # workflow_dispatch on a branch can exercise the release build without
+    # accidentally creating a release named "main".
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Download tested release APK
+        uses: actions/download-artifact@v4
+        with:
+          name: release-apk
+          path: app/build/outputs/apk/release/
+
+      - name: Rename APK and select changelog
+        run: |
+          VERSION_NAME="$(jq -r '.elements[0].versionName' app/build/outputs/apk/release/output-metadata.json)"
+          VERSION_CODE="$(jq -r '.elements[0].versionCode' app/build/outputs/apk/release/output-metadata.json)"
+          test "$VERSION_NAME" != null && test "$VERSION_CODE" != null
           echo "Version name: $VERSION_NAME" >> "$GITHUB_STEP_SUMMARY"
           echo '```json' >> "$GITHUB_STEP_SUMMARY"
-          cat "app/build/outputs/apk/release/output-metadata.json" >> "$GITHUB_STEP_SUMMARY"
-          echo >> "$GITHUB_STEP_SUMMARY"
+          cat app/build/outputs/apk/release/output-metadata.json >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           mv app/build/outputs/apk/release/*.apk "app/build/outputs/apk/release/WebviewKiosk_v$VERSION_NAME.apk"
-
-          # Get version code from output-metadata.json
-          VERSION_CODE=$(jq -r ".elements[0].versionCode" app/build/outputs/apk/release/output-metadata.json 2>/dev/null || echo "0")
-          echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
-
-          # Ensure changelog exists
-          if [[ ! -f "metadata/en-US/changelogs/${VERSION_CODE}.txt" ]]; then
-            echo "Changelog not found for version $VERSION_CODE, creating empty file."
-            touch metadata/en-US/changelogs/${VERSION_CODE}.txt
+          echo "VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
+          if [ ! -f "metadata/en-US/changelogs/$VERSION_CODE.txt" ]; then
+            touch "metadata/en-US/changelogs/$VERSION_CODE.txt"
           fi
 
       - name: Create Draft GitHub Release
-        id: create_release
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ github.ref_name }}

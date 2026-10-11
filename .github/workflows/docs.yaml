@@ -44,6 +44,9 @@ jobs:
       - name: Check lint and format
         run: pnpm check
 
+      - name: Run documentation unit tests
+        run: pnpm test
+
       - name: Setup Pages
         id: setup_pages
         uses: actions/configure-pages@v5
@@ -52,6 +55,14 @@ jobs:
         run: pnpm build
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          PUBLIC_DOCS_BASE_PATH: ${{ steps.setup_pages.outputs.base_path }}
+
+      - name: Install Chromium for browser tests
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run documentation browser tests
+        run: pnpm test:e2e
+        env:
           PUBLIC_DOCS_BASE_PATH: ${{ steps.setup_pages.outputs.base_path }}
 
       - name: Upload artifact

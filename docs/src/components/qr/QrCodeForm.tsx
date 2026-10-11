@@ -291,7 +291,11 @@ export default function QRCodeForm() {
       {qrValue && (
         <div className="flex flex-col w-full">
           <div className="mt-10 flex flex-col items-center gap-4">
-            <div className="border-10 border-white">
+            <div
+              className="border-10 border-white"
+              data-testid="provisioning-qr"
+              data-provisioning-payload={JSON.stringify(qrValue)}
+            >
               <QRCode className="max-w-full" value={JSON.stringify(qrValue)} />
             </div>
             <p className="text-sm opacity-70 break-all">
