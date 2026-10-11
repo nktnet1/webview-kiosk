@@ -31,6 +31,16 @@ esac
 DOCKER
 chmod +x "$TEMP_DIR/bin/uname" "$TEMP_DIR/bin/docker"
 
+# JetBrains hosts JBR binaries on its distribution CDN, not GitHub release
+# attachments. This regression guard catches the broken URL before a Docker
+# build spends time downloading the base image and installing system packages.
+dockerfile="$PROJECT_ROOT/scripts/Dockerfile.android-test-assets"
+grep -Fq 'https://cache-redirector.jetbrains.com/intellij-jbr/${JBR_ARCHIVE}' "$dockerfile"
+if grep -Fq 'github.com/JetBrains/JetBrainsRuntime/releases/download' "$dockerfile"; then
+    echo 'The JBR SDK must be downloaded from the JetBrains distribution CDN' >&2
+    exit 1
+fi
+
 export PATH="$TEMP_DIR/bin:$PATH" CAPTURE_DIR="$TEMP_DIR"
 assert_contains() {
     grep -Fx -- "$2" "$1" >/dev/null || {

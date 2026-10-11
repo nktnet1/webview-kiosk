@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 ARG JBR_ARCHIVE=jbrsdk-21.0.11-linux-x64-b1163.116.tar.gz
 ARG JBR_SHA256=097bf328b5bf5a236c095b8c8e5204c0eda91e5baa06b37383a7754b10671d8b
 RUN curl --fail --location --silent --show-error --retry 3 \
-        "https://github.com/JetBrains/JetBrainsRuntime/releases/download/jbr-release-21.0.11b1163.116/${JBR_ARCHIVE}" \
+        "https://cache-redirector.jetbrains.com/intellij-jbr/${JBR_ARCHIVE}" \
         --output /tmp/jbrsdk.tar.gz \
     && echo "${JBR_SHA256}  /tmp/jbrsdk.tar.gz" | sha256sum --check \
     && mkdir -p /opt/jbr \
