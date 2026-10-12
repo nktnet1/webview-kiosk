@@ -4,7 +4,7 @@ Snapshot: post-merge `additional-tests` at `b51ab06d` compared with the v0.26.21
 release commit `aa7ceca9`. This is an assessment of test *coverage*, not a finding that the
 untested paths are defective. The app still declares `versionName = "0.26.21"`.
 
-## Current automated-test gate status (12 October 2026; v1.0.46)
+## Current automated-test gate status (13 October 2026; v1.0.47)
 
 **Testing policy:** Keep automated JVM/Robolectric, CI-script, Vitest and
 Chromium Playwright tests. All Android APK instrumentation, AVD/emulator jobs,
@@ -13,10 +13,10 @@ acceptance checks are **manual-only** and are not CI release gates.
 
 | Gate | Most recent evidence | Status |
 | --- | --- | --- |
-| Android JVM/Robolectric | Last full local run: **v1.0.45, 510 tests in 44 JUnit suites**, zero failures/errors/skips. v1.0.46 adds three MediaStore stale-transfer/reentrancy regression methods but the Android SDK, offline Gradle dependencies and Robolectric runtime artifacts from that run were not supplied in this session | **v1.0.46 full Gradle gate pending**; v1.0.45 pass is historical, not evidence of a v1.0.46 pass |
-| Isolated blob bridge JVM regression | v1.0.46: compiled the actual `BlobInterface.kt` with minimal temporary Android API stubs using local `kotlinc` and exercised four stale-transfer write/flush scenarios: **4/4 passed**. The same harness against the unchanged v1.0.45 implementation failed because its failed write deleted the replacement download | **Verified narrowly**, not a substitute for Android/Robolectric, hosted CI or a device |
+| Android JVM/Robolectric | Last full local run: **v1.0.45, 510 tests in 44 JUnit suites**, zero failures/errors/skips. v1.0.46 adds 3 MediaStore regressions and v1.0.47 adds **4 unlock-flow Robolectric methods and 3 pure JVM JUnit methods**; these 10 new methods have **not** run together through the Android Gradle test task | **v1.0.47 full Gradle gate pending**; historical 510 passes must not be reported as a v1.0.47 pass |
+| Isolated Kotlin JVM regressions | v1.0.47: production `DeviceOwnerManager.kt` **9/9** mocked Dhizuku permission scenarios, production `lockTaskUtils.kt` **4/4** Android-version-gate success/denial scenarios, and 3/3 actual permission-token JUnit methods compiled/run with minimal JUnit shims. Both former failure classes were reproduced against v1.0.46. v1.0.46 independently passed 4/4 blob transport scenarios | **Verified narrowly** with temporary JVM stubs, not an Android runtime or full Robolectric suite |
 | Docs Vitest / Chromium Playwright | Jobs remain configured; no passing CI output supplied | Unverified |
-| Offline CI checks / local runner | v1.0.46: all **11** Python CI-script tests and Android asset-exporter shell tests passed; attached Biome `check --write` passed on the docs workspace with no fixes. The full Gradle JVM suite and dependency-only Gradle resolver were **not** rerun in v1.0.46 | Verified local script/Biome checks only for this increment; hosted CI pending |
+| Offline CI checks / local runner | v1.0.47: **11/11** Python CI-script tests and Android asset-exporter shell tests passed; attached Biome `check --write` passed on the docs workspace with no changes. No Android SDK, Gradle dependency cache, or Robolectric runtime was supplied for a fresh full Gradle run | Verified local script/Biome checks only; hosted CI and Gradle gate pending |
 | Gradle/pnpm caching | v1.0.31 Gradle build cache and pnpm store caching retained; no measured post-change timings | Speedup unverified |
 | Installed APK, API 23 / API 35 | Instrumentation suites and CI jobs removed in v1.0.33 | Manual-only; **not** passing automated gates |
 | Release APK launch | AVD smoke job removed; release build still depends on JVM/docs test gate | Manual-only; release APK not runtime-certified by CI |
@@ -25,6 +25,52 @@ acceptance checks are **manual-only** and are not CI release gates.
 failed the custom-password dialog visibility assertion after v1.0.30. Removing
 that automation does **not** fix the underlying UI, nor confirm that the
 password dialog works on a device. Verify it during manual device acceptance.
+
+## Device-owner permission and lock-task failure ownership (v1.0.47)
+
+Two lock-task exit paths could falsely notify the WebView controls that a kiosk
+was unlocked: the no-authentication shortcut emitted `unlockSuccess` after
+`tryUnlockTask()` returned `false`, and the non-Android-6 authenticated path
+similarly emitted success when `stopLockTask()` was denied. Both now send the
+success notification **only** after `tryUnlockTask()` succeeds. The existing
+Android 6 authenticated guard and the authentication prompt's wait-state
+semantics are unchanged. Failure still uses the existing error toast.
+
+Dhizuku permission requests could finish out of order: an old granted or
+denied callback could act after a replacement request, be delivered twice, or
+report success after the device owner/permission was lost. Reentrant transport
+failures could also invalidate the replacement binder state. The request path
+now uses a thread-safe single-use token, checks that the owner is still Dhizuku,
+verifies effective permission before reporting a grant, and isolates consumer
+callback exceptions. Switching to actual platform device ownership and
+invalidating a broken Dhizuku wrapper discard pending tokens. No SDK or device
+policy bypass, additional permission or dependency was introduced.
+
+- Four new `UnlockFailureNotificationTest` Robolectric cases cover denied
+  unlocks, Android 6's SDK-gated path (using an API-28 Robolectric runtime with
+  a temporary SDK override), successful unlock exactly once and retry after
+  failure. This override **does not emulate a real Android 6 device**.
+- Three new `PendingDhizukuPermissionRequestsTest` JUnit cases cover stale
+  replacements, duplicate results and invalidation. The tests exercise the
+  production request-token class without Android framework dependencies.
+- **Verified locally:** `DeviceOwnerManager.kt` compiled against temporary
+  Android/Dhizuku stubs and passed **9/9** permission callback scenarios,
+  including revoked permission, stale grants, repeated callbacks, replacement
+  during a remote exception and a throwing consumer. The actual
+  `lockTaskUtils.kt` compiled against temporary JVM shims passed **4/4**
+  denial/success/retry checks at SDK gates 23 and 28. Both classes of defect
+  reproduced **red on v1.0.46** and passed **green on v1.0.47**. All 3 pure
+  JUnit methods compiled and passed using minimal JUnit stubs. Python CI
+  tests **11/11**, shell asset-exporter tests, attached Biome `check --write`
+  (no modifications), and Git patch checks passed.
+- **Pending:** all 7 new JUnit methods under Android Gradle/Robolectric,
+  cumulative Android JVM suite, Android Lint, docs Vitest/browser, hosted CI,
+  and manual Android 6/Dhizuku/device-owner acceptance. The actual Android SDK,
+  Gradle dependency cache and Robolectric runtime files needed for Gradle
+  weren't in this handover; no dependencies were installed.
+
+No AVD, instrumentation, APK smoke test, dependency or generated-file
+modification, non-Kotlin/Java inspection cleanup, or PDF TLS change.
 
 ## Blob download stale-transfer ownership (v1.0.46)
 

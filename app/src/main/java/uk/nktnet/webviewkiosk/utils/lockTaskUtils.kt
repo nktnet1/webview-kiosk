@@ -360,8 +360,8 @@ fun unlockWithAuthIfRequired(activity: Activity) {
             title = "Authentication Required",
             description = "Please authenticate to unlock ${activity.getString(R.string.app_name)}"
         )
-    } else {
-        tryUnlockTask(activity)
+    } else if (tryUnlockTask(activity)) {
+        // A rejected stopLockTask must not dismiss the controls as if the kiosk unlocked.
         CoroutineScope(Dispatchers.Main).launch {
             WaitingForUnlockStateSingleton.emitUnlockSuccess()
         }
