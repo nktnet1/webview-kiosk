@@ -384,6 +384,47 @@ class AuthenticationManagerTest {
     }
 
     @Test
+    fun anExpiredSuccessfulSessionClearsItsResultBeforeRequestingFreshCredentials() {
+        showPrompt()
+        val original = prompts.single()
+        original.succeed()
+        assertEquals(AuthenticationResult.AuthenticationSuccess, manager.promptResults.value)
+
+        time += 300_000
+        assertFalse(manager.checkAuthAndRefreshSession())
+        assertEquals(AuthenticationResult.Loading, manager.promptResults.value)
+        assertFalse(manager.hasValidSession())
+
+        showPrompt()
+        val replacement = prompts.last()
+        assertEquals(2, prompts.size)
+        assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
+        original.succeed()
+        assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
+        replacement.succeed()
+        assertEquals(AuthenticationResult.AuthenticationSuccess, manager.promptResults.value)
+        assertTrue(manager.hasValidSession())
+    }
+
+    @Test
+    fun anExpiredExternalGracePeriodClearsTheResultWithoutExtendingTheSession() {
+        showPrompt()
+        prompts.single().succeed()
+        manager.bypassAuthForWindow()
+        manager.resetAuthentication(preserveExternalActivitySession = true)
+
+        time += 5_000
+        assertFalse(manager.checkAuthAndRefreshSession())
+        assertEquals(AuthenticationResult.Loading, manager.promptResults.value)
+        assertFalse(manager.hasValidSession())
+        assertFalse(manager.checkAuthAndRefreshSession())
+
+        showPrompt()
+        assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
+        assertEquals(2, prompts.size)
+    }
+
+    @Test
     fun aSessionTimestampWithoutASuccessfulResultDoesNotUnlock() {
         showPrompt()
         manager.session.authenticate()

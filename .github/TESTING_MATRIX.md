@@ -4,7 +4,7 @@ Snapshot: post-merge `additional-tests` at `b51ab06d` compared with the v0.26.21
 release commit `aa7ceca9`. This is an assessment of test *coverage*, not a finding that the
 untested paths are defective. The app still declares `versionName = "0.26.21"`.
 
-## Current automated-test gate status (12 October 2026; v1.0.41)
+## Current automated-test gate status (12 October 2026; v1.0.42)
 
 **Testing policy:** Keep automated JVM/Robolectric, CI-script, Vitest and
 Chromium Playwright tests. All Android APK instrumentation, AVD/emulator jobs,
@@ -13,9 +13,9 @@ acceptance checks are **manual-only** and are not CI release gates.
 
 | Gate | Most recent evidence | Status |
 | --- | --- | --- |
-| Android JVM/Robolectric | v1.0.41 on the post-merge `additional-tests` bundle: **493 tests in 43 JUnit suites**, zero failures/errors/skips, passed locally with Gradle 9.8.0-milestone-1, JBR 21.0.11, supplied Android SDK, offline dependency cache and Robolectric API 28/29 runtimes. Restores v1.0.34–40 and includes six new shutdown tests | **Verified local full Gradle pass**; hosted CI and installed APK remain unverified |
+| Android JVM/Robolectric | v1.0.42 on the post-merge `additional-tests` bundle plus v1.0.41: **500 tests in 43 JUnit suites**, zero failures/errors/skips, passed locally with Gradle 9.8.0-milestone-1, JBR 21.0.11, supplied Android SDK, offline dependency cache and Robolectric API 28/29 runtimes. Includes two authentication expiry and five WebView completion-ownership regressions | **Verified local full Gradle pass**; hosted CI and installed APK remain unverified |
 | Docs Vitest / Chromium Playwright | Jobs remain configured; no passing CI output supplied | Unverified |
-| Offline CI checks / local runner | v1.0.41: all **11** Python CI-script tests and Android asset-exporter shell tests passed; **493/493 full Android tests** passed, including the recovered authentication/navigation and new MQTT shutdown regressions. The recovered focused suites passed **90/90** | Verified local JVM and script checks; hosted CI pending |
+| Offline CI checks / local runner | v1.0.42: all **11** Python CI-script tests and Android asset-exporter shell tests passed; **500/500 full Android tests** passed. Authentication-manager and WebView navigation-session focused suites passed **81/81** | Verified local JVM and script checks; hosted CI pending |
 | Gradle/pnpm caching | v1.0.31 Gradle build cache and pnpm store caching retained; no measured post-change timings | Speedup unverified |
 | Installed APK, API 23 / API 35 | Instrumentation suites and CI jobs removed in v1.0.33 | Manual-only; **not** passing automated gates |
 | Release APK launch | AVD smoke job removed; release build still depends on JVM/docs test gate | Manual-only; release APK not runtime-certified by CI |
@@ -286,6 +286,33 @@ Two small, independent P0 gaps were combined into one focused increment:
 - **Remaining limitations:** Hosted CI, real MQTT broker/distributor, Android
   background/notification rules and on-device event ordering remain to be
   checked separately. No AVD/instrumentation jobs or generated lockfile edits.
+
+## Authentication expiry and WebView completion ownership (v1.0.42)
+
+- **Expired authentication result:** `AuthenticationManager.checkAuthAndRefreshSession`
+  now clears `AuthenticationSuccess`/`AuthenticationNotSet` back to `Loading`
+  whenever the monotonic session or one-shot external grace window is no longer
+  valid. A stale successful prompt cannot refresh an expired session, and the
+  wrapper observes the invalidated result before presenting a fresh prompt.
+- **Reentrant WebView completion:** `WebViewNavigationSession` returns an opaque
+  identity token for a matching `onPageFinished` callback. The finish path
+  consumes the token only while the same load and WebView owner remain active.
+  A new navigation or a reload of the *identical URL* between acceptance and
+  cleanup cannot be cleared by the prior callback or receive its completion
+  side effects. Existing non-reentrant state fixtures retain their helper.
+- **New tests:** Two clock-controlled authentication manager tests, plus five
+  pure navigation-session tests for cross-URL replacement, same-URL reload,
+  exactly-once completion, retired renderers and invalid callback URLs. The
+  two authentication tests **failed against v1.0.41** (39 tests, two failures)
+  and passed after the correction. Focused combined Robolectric pass: **81/81**.
+- **Validation:** All **500 Android JVM/Robolectric tests** in **43 suites**
+  passed with zero failures, errors or skips using the supplied offline SDK,
+  Gradle dependencies and Robolectric jars. All **11** Python CI-script tests,
+  the Android asset-exporter shell tests and Biome `check --write` in `docs/`
+  passed. Full Gradle command and results are local-only; no hosted CI or docs
+  browser/test results are asserted.
+- **Scope:** Only automated lifecycle regressions. No AVD/instrumentation
+  tests, dependency or lockfile edits, and no changes to manual device checks.
 
 ## Post-merge regression recovery and MQTT shutdown races (v1.0.41)
 

@@ -508,7 +508,8 @@ fun createCustomWebview(
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    if (!navigation.acceptsCompletion(url, this@apply.url)) return
+                    val completedLoad = navigation.acceptedCompletionToken(url, this@apply.url)
+                        ?: return
                     config.finishSwipeRefresh()
 
                     url?.let {
@@ -518,8 +519,7 @@ fun createCustomWebview(
                          * gets called multiple times.
                          * https://issuetracker.google.com/issues/36983315
                          */
-                        if (progress == 100) {
-                            navigation.finishLoad()
+                        if (progress == 100 && navigation.finishLoad(completedLoad)) {
                             if (
                                 userSettings.applyDesktopViewportWidth >= Constants.MIN_DESKTOP_WIDTH
                             ) {

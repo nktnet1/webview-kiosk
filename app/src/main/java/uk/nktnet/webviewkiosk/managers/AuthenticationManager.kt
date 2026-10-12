@@ -118,11 +118,20 @@ object AuthenticationManager {
     }
 
     fun checkAuthAndRefreshSession(): Boolean {
-        if (!hasValidSession()) {
+        if (!hasValidSession() || !session.refreshIfValid()) {
             session.reset()
+            // Session time is not observable Compose state. Expiration must
+            // invalidate the success result as well as the clock so the auth
+            // wrapper can reliably start a fresh prompt after resuming.
+            if (
+                _resultState.value == AuthenticationResult.AuthenticationSuccess
+                || _resultState.value == AuthenticationResult.AuthenticationNotSet
+            ) {
+                _resultState.value = AuthenticationResult.Loading
+            }
             return false
         }
-        return session.refreshIfValid()
+        return true
     }
 
     fun resetAuthentication(preserveExternalActivitySession: Boolean = false) {

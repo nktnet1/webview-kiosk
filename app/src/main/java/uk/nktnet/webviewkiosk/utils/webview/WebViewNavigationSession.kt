@@ -111,27 +111,38 @@ internal class WebViewNavigationSession(private val isOwnerActive: () -> Boolean
 
     fun isSameDocumentNavigation(): Boolean = sameDocumentNavigation
 
-    fun acceptsCompletion(url: String?, currentUrl: String?): Boolean {
-        // A completed load has no owner. WebView can deliver onPageFinished
-        // more than once (even at 100% progress); do not repeat injected scripts,
-        // clear another load's state, or consume a newer navigation's history.
-        val pending = load ?: return false
-        return isActive() && !url.isNullOrEmpty() && (
-            (
-                sameNavigationUrl(url, currentUrl)
+    /** A completion token belongs to the exact load active at callback entry. */
+    fun acceptedCompletionToken(url: String?, currentUrl: String?): Any? {
+        // An older onPageFinished can be reentrant with UI callbacks that load
+        // another page (including a reload of the exact same URL). Comparing
+        // URLs alone after those callbacks cannot identify the owning load.
+        val pending = load ?: return null
+        if (!isActive() || url.isNullOrEmpty()) return null
+        val matches = (
+            sameNavigationUrl(url, currentUrl)
                 && sameNavigationUrl(url, pending.latestUrl)
-            )
-            || (
-                sameDocumentNavigation && sameNavigationUrl(url, pending.requestedUrl)
+            ) || (
+            sameDocumentNavigation && sameNavigationUrl(url, pending.requestedUrl)
                 && sameNavigationUrl(currentUrl, pending.latestUrl)
             )
-        )
+        return pending.takeIf { matches }
     }
+
+    fun acceptsCompletion(url: String?, currentUrl: String?): Boolean =
+        acceptedCompletionToken(url, currentUrl) != null
 
     fun acceptsError(url: String?, currentUrl: String?, isMainFrame: Boolean): Boolean =
         isMainFrame && isActive() && !url.isNullOrEmpty()
             && sameNavigationUrl(url, load?.latestUrl ?: currentUrl)
 
+    /** Finish only the load accepted before any potentially reentrant callbacks. */
+    fun finishLoad(expectedLoad: Any): Boolean {
+        if (!isActive() || load !== expectedLoad) return false
+        load = null
+        return true
+    }
+
+    // Used by the non-reentrant state-machine fixtures.
     fun finishLoad() {
         load = null
     }

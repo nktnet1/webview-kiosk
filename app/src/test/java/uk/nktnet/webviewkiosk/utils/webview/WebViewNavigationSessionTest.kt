@@ -522,6 +522,75 @@ class WebViewNavigationSessionTest {
     }
 
     @Test
+    fun aReentrantNewNavigationCannotBeClearedByAnOlderCompletion() {
+        val session = session()
+        session.beginLoad(first, "first-entry", first)
+        val finishing = session.acceptedCompletionToken(first, first)
+        assertTrue(finishing != null)
+
+        // An onPageFinished side effect can trigger a new load before cleanup.
+        session.beginLoad(second, "second-entry", second)
+        assertFalse(session.finishLoad(finishing!!))
+        assertEquals("second-entry", session.traversalEntryId())
+        assertTrue(session.acceptsCompletion(second, second))
+        assertFalse(session.acceptsCompletion(first, first))
+    }
+
+    @Test
+    fun aReentrantReloadOfTheSameUrlKeepsItsOwnCompletion() {
+        val session = session()
+        session.beginLoad(first, "original-entry", first)
+        val original = session.acceptedCompletionToken(first, first)!!
+
+        session.beginLoad(first, "new-entry", first)
+        assertFalse(session.finishLoad(original))
+        assertEquals("new-entry", session.traversalEntryId())
+        val replacement = session.acceptedCompletionToken(first, first)!!
+        assertTrue(session.finishLoad(replacement))
+        assertFalse(session.acceptsCompletion(first, first))
+    }
+
+    @Test
+    fun aCompletionTokenCanBeConsumedOnlyOnce() {
+        val session = session()
+        session.beginLoad(first, "entry", first)
+        val token = session.acceptedCompletionToken(first, first)!!
+
+        assertTrue(session.finishLoad(token))
+        assertFalse(session.finishLoad(token))
+        assertFalse(session.acceptsCompletion(first, first))
+        session.beginLoad(second, "next-entry", second)
+        assertFalse(session.finishLoad(token))
+        assertEquals("next-entry", session.traversalEntryId())
+    }
+
+    @Test
+    fun retiringTheRendererBeforeCompletionRejectsTheOldToken() {
+        var active = true
+        val session = WebViewNavigationSession { active }
+        session.beginLoad(first, "entry", first)
+        val token = session.acceptedCompletionToken(first, first)!!
+        active = false
+
+        assertFalse(session.finishLoad(token))
+        assertFalse(session.acceptsCompletion(first, first))
+        assertTrue(session.dispose())
+        assertFalse(session.finishLoad(token))
+    }
+
+    @Test
+    fun anUnacceptedCompletionNeverProvidesAToken() {
+        val session = session()
+        session.beginLoad(second, "entry", second)
+
+        assertNull(session.acceptedCompletionToken(first, first))
+        assertNull(session.acceptedCompletionToken(null, second))
+        assertNull(session.acceptedCompletionToken(second, first))
+        assertEquals("entry", session.traversalEntryId())
+        assertTrue(session.acceptedCompletionToken(second, second) != null)
+    }
+
+    @Test
     fun nullAndEmptyCallbackUrlsCannotChangeNavigationState() {
         val session = session()
         for (url in listOf(null, "")) {
