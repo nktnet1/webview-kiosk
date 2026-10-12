@@ -142,30 +142,37 @@ object DeviceOwnerManager {
         onGranted: () -> Unit = {},
         onDenied: () -> Unit = {},
     ) {
+        // Claim ownership before any Dhizuku preflight can reenter or suspend.
+        val request = pendingPermissionRequests.replace()
         if (
             Build.VERSION.SDK_INT < Build.VERSION_CODES.P
             || status.value.mode != DeviceOwnerMode.Dhizuku
         ) {
-            pendingPermissionRequests.invalidate()
-            deliverDhizukuPermissionResult(context, false, onGranted, onDenied)
+            if (pendingPermissionRequests.consume(request)) {
+                deliverDhizukuPermissionResult(context, false, onGranted, onDenied)
+            }
             return
         }
 
         val alreadyGranted = try {
             Dhizuku.isPermissionGranted()
         } catch (e: Throwable) {
-            invalidateDhizuku(context)
+            if (pendingPermissionRequests.consume(request)) {
+                invalidateDhizuku(context)
+                deliverDhizukuPermissionResult(context, false, onGranted, onDenied)
+            }
             Log.e(javaClass.simpleName, "Failed to check Dhizuku permission", e)
-            deliverDhizukuPermissionResult(context, false, onGranted, onDenied)
             return
         }
         if (alreadyGranted) {
-            pendingPermissionRequests.invalidate()
-            deliverDhizukuPermissionResult(context, true, onGranted, onDenied)
+            if (pendingPermissionRequests.consume(request)) {
+                deliverDhizukuPermissionResult(context, true, onGranted, onDenied)
+            }
             return
         }
 
-        val request = pendingPermissionRequests.replace()
+        // Do not launch a prompt if a newer request won during preflight.
+        if (!pendingPermissionRequests.isCurrent(request)) return
         try {
             Dhizuku.requestPermission(object : DhizukuRequestPermissionListener() {
                 @Throws(RemoteException::class)

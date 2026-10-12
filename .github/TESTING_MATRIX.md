@@ -4,7 +4,11 @@ Snapshot: post-merge `additional-tests` at `b51ab06d` compared with the v0.26.21
 release commit `aa7ceca9`. This is an assessment of test *coverage*, not a finding that the
 untested paths are defective. The app still declares `versionName = "0.26.21"`.
 
-## Current automated-test gate status (13 October 2026; v1.0.47)
+## Current automated-test gate status (13 October 2026; v1.0.48)
+
+**v1.0.48 verification:** proposed source/test changes have not been compiled or
+executed; the local command runtime is unavailable. The v1.0.45 Gradle pass and
+v1.0.47 isolated checks are historical, not evidence for this increment.
 
 **Testing policy:** Keep automated JVM/Robolectric, CI-script, Vitest and
 Chromium Playwright tests. All Android APK instrumentation, AVD/emulator jobs,

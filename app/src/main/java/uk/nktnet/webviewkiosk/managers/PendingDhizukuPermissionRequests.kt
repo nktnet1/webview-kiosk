@@ -11,6 +11,9 @@ internal class PendingDhizukuPermissionRequests {
     /** Consuming the token before invoking a callback also rejects duplicate deliveries. */
     fun consume(token: Any): Boolean = active.compareAndSet(token, null)
 
+    /** A replaced request must not begin an obsolete binder permission prompt. */
+    fun isCurrent(token: Any): Boolean = active.get() === token
+
     fun invalidate() {
         active.set(null)
     }

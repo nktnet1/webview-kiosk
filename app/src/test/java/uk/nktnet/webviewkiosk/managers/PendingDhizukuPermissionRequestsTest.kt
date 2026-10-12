@@ -16,6 +16,19 @@ class PendingDhizukuPermissionRequestsTest {
     }
 
     @Test
+    fun obsoletePreflightCannotBeginRequestAfterReplacement() {
+        val requests = PendingDhizukuPermissionRequests()
+        val first = requests.replace()
+        val replacement = requests.replace()
+
+        assertFalse(requests.isCurrent(first))
+        assertTrue(requests.isCurrent(replacement))
+        assertFalse(requests.consume(first))
+        assertTrue(requests.consume(replacement))
+        assertFalse(requests.isCurrent(replacement))
+    }
+
+    @Test
     fun duplicateBinderCallbackCanCompleteOnlyOnce() {
         val requests = PendingDhizukuPermissionRequests()
         val request = requests.replace()
