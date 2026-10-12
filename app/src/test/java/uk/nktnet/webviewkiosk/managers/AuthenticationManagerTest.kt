@@ -87,6 +87,130 @@ class AuthenticationManagerTest {
     }
 
     @Test
+    fun reinitializingTheSameHostKeepsItsSinglePendingPrompt() {
+        showPrompt()
+        val prompt = prompts.single()
+
+        manager.init(activity)
+        showPrompt()
+
+        assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
+        assertEquals(1, prompts.size)
+        assertEquals(1, prompt.authenticateCalls)
+        assertEquals(0, prompt.cancelCalls)
+    }
+
+    @Test
+    fun replacingTheHostCancelsAnUnfinishedPromptAndRejectsItsLateCallbacks() {
+        showPrompt()
+        val oldPrompt = prompts.single()
+
+        withReplacementActivity {
+            assertEquals(1, oldPrompt.cancelCalls)
+            assertEquals(AuthenticationResult.Loading, manager.promptResults.value)
+            assertFalse(manager.hasValidSession())
+
+            showPrompt()
+            val newPrompt = prompts.last()
+            assertEquals(2, prompts.size)
+            assertEquals(1, newPrompt.authenticateCalls)
+
+            // Cancelling the old prompt can deliver a callback inline or late.
+            // Neither it nor the previous host's destruction can unlock or
+            // cancel the replacement host.
+            oldPrompt.succeed()
+            oldPrompt.callback.onAuthenticationError(1, "stale cancellation")
+            manager.clear(activity)
+            assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
+            assertFalse(manager.hasValidSession())
+            assertEquals(0, newPrompt.cancelCalls)
+
+            newPrompt.succeed()
+            assertEquals(AuthenticationResult.AuthenticationSuccess, manager.promptResults.value)
+            assertTrue(manager.hasValidSession())
+        }
+    }
+
+    @Test
+    fun replacingTheHostPreservesAnAlreadyAuthenticatedSession() {
+        showPrompt()
+        val prompt = prompts.single()
+        prompt.succeed()
+        time += 12_345
+
+        withReplacementActivity {
+            assertEquals(0, prompt.cancelCalls)
+            assertEquals(AuthenticationResult.AuthenticationSuccess, manager.promptResults.value)
+            assertTrue(manager.hasValidSession())
+            manager.clear(activity)
+            assertTrue(manager.hasValidSession())
+        }
+    }
+
+    @Test
+    fun replacingTheHostRequiresAFreshCustomPasswordPrompt() {
+        UserSettings(activity).customAuthPassword = "1234"
+        showPrompt()
+        assertTrue(manager.showCustomAuth.value)
+
+        withReplacementActivity {
+            assertFalse(manager.showCustomAuth.value)
+            assertEquals(AuthenticationResult.Loading, manager.promptResults.value)
+            assertFalse(manager.hasValidSession())
+
+            showPrompt()
+            showPrompt()
+            assertTrue(manager.showCustomAuth.value)
+            assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
+            assertTrue(prompts.isEmpty())
+
+            manager.customAuthCancel(manager.customAuthRequest.value)
+            assertFalse(manager.showCustomAuth.value)
+            assertFalse(manager.hasValidSession())
+            assertEquals(
+                AuthenticationResult.AuthenticationError("Authentication cancelled."),
+                manager.promptResults.value
+            )
+        }
+    }
+
+    @Test
+    fun credentialResultFromReplacedHostCannotAuthenticateItsSuccessor() {
+        // Build both Robolectric activities on the configured API 28 framework;
+        // only the production SDK gate is overridden to exercise API 21/22 logic.
+        val replacementController = Robolectric.buildActivity(AuthTestActivity::class.java).setup()
+        val replacement = replacementController.get()
+        val replacementKeyguard = replacement.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        shadowOf(replacementKeyguard).setIsKeyguardSecure(true)
+        try {
+            setSdk(22)
+            showPrompt()
+            val oldRequestCode = activity.credentialRequests.single()
+
+            manager.init(replacement)
+            assertEquals(AuthenticationResult.Loading, manager.promptResults.value)
+            assertFalse(manager.hasValidSession())
+
+            showPrompt()
+            val replacementRequestCode = replacement.credentialRequests.single()
+            assertTrue(oldRequestCode != replacementRequestCode)
+            manager.handleLollipopDeviceCredentialResult(oldRequestCode, AppCompatActivity.RESULT_OK)
+            assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
+            assertFalse(manager.hasValidSession())
+
+            manager.handleLollipopDeviceCredentialResult(
+                replacementRequestCode,
+                AppCompatActivity.RESULT_OK
+            )
+            assertTrue(manager.hasValidSession())
+        } finally {
+            manager.clear(replacement)
+            setSdk(originalSdk)
+            replacementController.pause().stop().destroy()
+        }
+    }
+
+    @Test
     fun pendingAuthenticationDoesNotStartAnotherPrompt() {
         showPrompt()
         repeat(3) { showPrompt() }
@@ -279,8 +403,9 @@ class AuthenticationManagerTest {
         assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
         assertTrue(prompts.isEmpty())
 
+        val cancelledRequest = manager.customAuthRequest.value
         manager.resetAuthentication()
-        manager.customAuthSuccess()
+        manager.customAuthSuccess(cancelledRequest)
         assertFalse(manager.showCustomAuth.value)
         assertFalse(manager.hasValidSession())
         assertEquals(AuthenticationResult.Loading, manager.promptResults.value)
@@ -290,19 +415,112 @@ class AuthenticationManagerTest {
     fun customAuthenticationSuccessAndCancellationHaveIndependentSessions() {
         UserSettings(activity).customAuthPassword = "1234"
         showPrompt()
-        manager.customAuthSuccess()
+        val successfulRequest = manager.customAuthRequest.value
+        manager.customAuthSuccess(successfulRequest)
         assertTrue(manager.hasValidSession())
         assertFalse(manager.showCustomAuth.value)
 
         showPrompt()
-        manager.customAuthCancel()
-        manager.customAuthSuccess()
+        val cancelledRequest = manager.customAuthRequest.value
+        manager.customAuthCancel(cancelledRequest)
+        manager.customAuthSuccess(cancelledRequest)
         assertFalse(manager.hasValidSession())
         assertFalse(manager.showCustomAuth.value)
         assertEquals(
             AuthenticationResult.AuthenticationError("Authentication cancelled."),
             manager.promptResults.value
         )
+    }
+
+    @Test
+    fun aStaleCustomDialogCannotCompleteOrCancelTheReplacementRequest() {
+        UserSettings(activity).customAuthPassword = "secret"
+        showPrompt()
+        val oldRequest = manager.customAuthRequest.value
+        assertTrue(manager.isCurrentCustomAuthRequest(oldRequest))
+
+        manager.resetAuthentication()
+        showPrompt()
+        val replacement = manager.customAuthRequest.value
+        assertTrue(oldRequest !== replacement)
+
+        manager.customAuthSuccess(oldRequest)
+        manager.customAuthCancel(oldRequest)
+        manager.customAuthSuccess(null)
+        manager.customAuthCancel(null)
+        assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
+        assertTrue(manager.showCustomAuth.value)
+        assertTrue(manager.isCurrentCustomAuthRequest(replacement))
+        assertFalse(manager.hasValidSession())
+
+        manager.customAuthSuccess(replacement)
+        assertTrue(manager.hasValidSession())
+        assertFalse(manager.showCustomAuth.value)
+        assertNull(manager.customAuthRequest.value)
+        manager.customAuthCancel(oldRequest)
+        assertTrue(manager.hasValidSession())
+    }
+
+    @Test
+    fun retryingCustomPasswordAfterCancelCreatesANewDialogIdentity() {
+        UserSettings(activity).customAuthPassword = "secret"
+        showPrompt()
+        val firstRequest = manager.customAuthRequest.value
+        showPrompt()
+        assertSame(firstRequest, manager.customAuthRequest.value)
+
+        manager.customAuthCancel(firstRequest)
+        assertNull(manager.customAuthRequest.value)
+        assertFalse(manager.hasValidSession())
+        assertEquals(
+            AuthenticationResult.AuthenticationError("Authentication cancelled."),
+            manager.promptResults.value
+        )
+
+        showPrompt()
+        val retry = manager.customAuthRequest.value
+        assertTrue(firstRequest !== retry)
+        manager.customAuthSuccess(firstRequest)
+        manager.customAuthCancel(firstRequest)
+        assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
+        manager.customAuthSuccess(retry)
+        assertTrue(manager.hasValidSession())
+    }
+
+    @Test
+    fun aCustomDialogFromThePreviousActivityCannotDismissTheNewHostPrompt() {
+        UserSettings(activity).customAuthPassword = "secret"
+        showPrompt()
+        val oldRequest = manager.customAuthRequest.value
+
+        withReplacementActivity {
+            showPrompt()
+            val replacement = manager.customAuthRequest.value
+            manager.customAuthCancel(oldRequest)
+            manager.customAuthSuccess(oldRequest)
+            assertSame(replacement, manager.customAuthRequest.value)
+            assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
+            assertFalse(manager.hasValidSession())
+            manager.customAuthSuccess(replacement)
+            assertTrue(manager.hasValidSession())
+        }
+    }
+
+    @Test
+    fun anExternalCredentialRoundTripPreservesTheSameCustomPrompt() {
+        UserSettings(activity).customAuthPassword = "secret"
+        showPrompt()
+        val request = manager.customAuthRequest.value
+        manager.resetAuthentication(preserveExternalActivitySession = true)
+        assertSame(request, manager.customAuthRequest.value)
+        assertTrue(manager.showCustomAuth.value)
+        assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
+
+        manager.customAuthCancel(request)
+        assertFalse(manager.hasValidSession())
+        showPrompt()
+        val retry = manager.customAuthRequest.value
+        assertTrue(request !== retry)
     }
 
     @Test
@@ -560,6 +778,21 @@ class AuthenticationManagerTest {
         showPrompt()
         assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
         assertEquals(1, prompts.single().authenticateCalls)
+    }
+
+    private fun withReplacementActivity(assertions: (AuthTestActivity) -> Unit) {
+        val replacementController = Robolectric.buildActivity(AuthTestActivity::class.java).setup()
+        val replacement = replacementController.get()
+        val replacementKeyguard = replacement.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        shadowOf(replacementKeyguard).setIsDeviceSecure(true)
+        shadowOf(replacementKeyguard).setIsKeyguardSecure(true)
+        try {
+            manager.init(replacement)
+            assertions(replacement)
+        } finally {
+            manager.clear(replacement)
+            replacementController.pause().stop().destroy()
+        }
     }
 
     private fun showPrompt() = manager.showAuthenticationPrompt("Authentication Required", "Test authentication")

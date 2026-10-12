@@ -30,6 +30,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -58,9 +59,6 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun CustomAuthPasswordDialog() {
-    val context = LocalContext.current
-    val userSettings = remember { UserSettings(context) }
-
     val state by AuthenticationManager.promptResults.collectAsState()
 
     if (
@@ -69,7 +67,16 @@ fun CustomAuthPasswordDialog() {
     ) {
         return
     }
+    val request = AuthenticationManager.customAuthRequest.value ?: return
+    key(request) {
+        CustomAuthPasswordDialogContent(request)
+    }
+}
 
+@Composable
+private fun CustomAuthPasswordDialogContent(request: Any) {
+    val context = LocalContext.current
+    val userSettings = remember(context) { UserSettings(context) }
     val focusRequester = remember { FocusRequester() }
     var password by remember { mutableStateOf("") }
     var showPassword by remember { mutableStateOf(false) }
@@ -78,7 +85,7 @@ fun CustomAuthPasswordDialog() {
     var isError by remember { mutableStateOf(false) }
 
     Dialog(
-        onDismissRequest = { AuthenticationManager.customAuthCancel() }
+        onDismissRequest = { AuthenticationManager.customAuthCancel(request) }
     ) {
         val focusManager = LocalFocusManager.current
         val keyboardController = LocalSoftwareKeyboardController.current
@@ -101,23 +108,27 @@ fun CustomAuthPasswordDialog() {
         }
 
         fun handleUnlock() {
+            if (waiting || !AuthenticationManager.isCurrentCustomAuthRequest(request)) return
+            waiting = true
+            val enteredPassword = password
             scope.launch {
-                waiting = true
                 val start = System.currentTimeMillis()
-                if (password == userSettings.customAuthPassword) {
-                    password = ""
-                    dismissKeyboard()
-                    AuthenticationManager.customAuthSuccess()
-                } else {
-                    val elapsed = System.currentTimeMillis() - start
-                    val remaining = 1000L - elapsed
-                    if (remaining > 0) {
-                        delay(remaining.milliseconds)
+                try {
+                    if (!AuthenticationManager.isCurrentCustomAuthRequest(request)) return@launch
+                    if (enteredPassword == userSettings.customAuthPassword) {
+                        password = ""
+                        dismissKeyboard()
+                        AuthenticationManager.customAuthSuccess(request)
+                    } else {
+                        val remaining = 1000L - (System.currentTimeMillis() - start)
+                        if (remaining > 0) delay(remaining.milliseconds)
+                        if (!AuthenticationManager.isCurrentCustomAuthRequest(request)) return@launch
+                        isError = true
+                        ToastManager.show(context, "Incorrect password")
                     }
-                    isError = true
-                    ToastManager.show(context, "Incorrect password")
+                } finally {
+                    waiting = false
                 }
-                waiting = false
             }
         }
 
@@ -224,7 +235,7 @@ fun CustomAuthPasswordDialog() {
                         onClick = {
                             password = ""
                             dismissKeyboard()
-                            AuthenticationManager.customAuthCancel()
+                            AuthenticationManager.customAuthCancel(request)
                         },
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(

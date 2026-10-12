@@ -32,6 +32,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.LooperMode
 import org.unifiedpush.android.connector.INSTANCE_DEFAULT
+import org.unifiedpush.android.connector.FailedReason
 import org.unifiedpush.android.connector.data.PublicKeySet
 import org.unifiedpush.android.connector.data.PushEndpoint
 import org.unifiedpush.android.connector.data.PushMessage
@@ -367,6 +368,34 @@ class UnifiedPushManagerTest {
         UnifiedPushManager.handleUnregistered(context, "old-registration")
 
         assertEquals(initialEndpoint, settings.unifiedpushEndpoint)
+    }
+
+    @Test
+    fun obsoleteRegistrationErrorsAreIgnoredWithoutChangingTheCurrentRegistration() {
+        UnifiedPushManager.handleTempUnavailable(context, "retired-registration")
+        UnifiedPushManager.handleRegistrationFailed(
+            context,
+            FailedReason.NETWORK,
+            "retired-registration",
+        )
+
+        assertEquals(initialEndpoint, settings.unifiedpushEndpoint)
+        assertTrue(UnifiedPushManager.debugLogHistory.any { it.tag == "temp unavailable (ignored)" })
+        assertTrue(UnifiedPushManager.debugLogHistory.any { it.tag == "register failed (ignored)" })
+        assertTrue(UnifiedPushManager.debugLogHistory.none {
+            it.tag == "temp unavailable" || it.tag == "register failed"
+        })
+    }
+
+    @Test
+    fun currentRegistrationErrorsStillReachTheDebugLog() {
+        UnifiedPushManager.handleTempUnavailable(context, currentInstance)
+        UnifiedPushManager.handleRegistrationFailed(context, FailedReason.NETWORK, currentInstance)
+
+        assertTrue(UnifiedPushManager.debugLogHistory.any { it.tag == "temp unavailable" })
+        assertTrue(UnifiedPushManager.debugLogHistory.any {
+            it.tag == "register failed" && it.message.orEmpty().contains("NETWORK")
+        })
     }
 
     @Test

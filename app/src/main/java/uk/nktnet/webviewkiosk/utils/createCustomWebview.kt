@@ -79,6 +79,7 @@ import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.webview.parseFileChooserResult
 import uk.nktnet.webviewkiosk.utils.webview.parseMutualTlsRules
 import uk.nktnet.webviewkiosk.utils.webview.resolveBlockPageUrl
+import uk.nktnet.webviewkiosk.utils.webview.sameNavigationUrl
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDarkReaderScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDisableVibrationApiScript
@@ -744,7 +745,7 @@ fun createCustomWebview(
                     }
                     val nativeHistory = copyBackForwardList()
                     val nativeIndex = nativeHistory.currentItem?.url
-                        ?.takeIf { it.trimEnd('/') == url.trimEnd('/') }
+                        ?.takeIf { sameNavigationUrl(it, url) }
                         ?.let { nativeHistory.currentIndex }
                     navigation.historyCommitted(url, originalUrl, nativeIndex)
                     val isPdfViewer = isPdfViewerUrl(url.toUri())
@@ -758,7 +759,7 @@ fun createCustomWebview(
                     val historyOriginalUrl = if (isPdfViewer) navigationUrl else originalUrl
                     if (
                         !isPdfViewer
-                        && systemSettings.urlBeingHandled.trimEnd('/') == navigationUrl.trimEnd('/')
+                        && sameNavigationUrl(systemSettings.urlBeingHandled, navigationUrl)
                     ) {
                         updateAddressBarAndHistory(navigationUrl, historyOriginalUrl)
                         return

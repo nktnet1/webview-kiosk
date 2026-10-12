@@ -188,6 +188,27 @@ class MqttServiceConnectionTest {
     }
 
     @Test
+    fun automaticReconnectRestoresSubscriptionsOnTheSameClient() {
+        settings.mqttAutomaticReconnect = true
+        val first = connect()
+        val client = field("client").get(MqttManager)
+        assertEquals(3, first.subscriptionCount.get())
+
+        first.close() // Unplanned socket failure: the broker starts with an empty session.
+        awaitCondition { first.disconnected.count == 0L }
+        val second = broker.awaitConnection()
+        assertSame("Automatic reconnect must retain the configured client", client, field("client").get(MqttManager))
+        second.acknowledgeConnect()
+
+        awaitCondition { second.subscriptions.size == 3 }
+        assertEquals(setOf("test/commands", "test/settings", "test/requests"), second.subscriptions)
+        assertEquals(3, second.subscriptionCount.get())
+        second.publish("test/requests", """{"requestType":"get_settings","messageId":"reconnected-request"}""")
+        assertEquals("test/responses", awaitResponse(second, "reconnected-request").topic)
+        assertEquals(2, broker.connectionCount)
+    }
+
+    @Test
     fun aLaterStartRetriesAfterTheBrokerRejectsTheConnection() {
         start()
         val rejected = broker.awaitConnection()

@@ -1,10 +1,10 @@
 # Regression-testing matrix after v0.26.21
 
-Snapshot: `further-testing` at `ba7cb40a` compared with the v0.26.21 release commit
-`aa7ceca9`. This is an assessment of test *coverage*, not a finding that the
+Snapshot: post-merge `additional-tests` at `b51ab06d` compared with the v0.26.21
+release commit `aa7ceca9`. This is an assessment of test *coverage*, not a finding that the
 untested paths are defective. The app still declares `versionName = "0.26.21"`.
 
-## Current automated-test gate status (12 October 2026; v1.0.33)
+## Current automated-test gate status (12 October 2026; v1.0.41)
 
 **Testing policy:** Keep automated JVM/Robolectric, CI-script, Vitest and
 Chromium Playwright tests. All Android APK instrumentation, AVD/emulator jobs,
@@ -13,9 +13,9 @@ acceptance checks are **manual-only** and are not CI release gates.
 
 | Gate | Most recent evidence | Status |
 | --- | --- | --- |
-| Android JVM/Robolectric | 442 tests across 42 suites passed at v1.0.25; no newer complete JVM CI result was supplied | Last verified pass is historical; current CI outcome unknown |
+| Android JVM/Robolectric | v1.0.41 on the post-merge `additional-tests` bundle: **493 tests in 43 JUnit suites**, zero failures/errors/skips, passed locally with Gradle 9.8.0-milestone-1, JBR 21.0.11, supplied Android SDK, offline dependency cache and Robolectric API 28/29 runtimes. Restores v1.0.34–40 and includes six new shutdown tests | **Verified local full Gradle pass**; hosted CI and installed APK remain unverified |
 | Docs Vitest / Chromium Playwright | Jobs remain configured; no passing CI output supplied | Unverified |
-| Offline CI checks / local runner | v1.0.33 regression suite and asset-exporter shell checks run locally (see validation below) | Verified locally, CI pending |
+| Offline CI checks / local runner | v1.0.41: all **11** Python CI-script tests and Android asset-exporter shell tests passed; **493/493 full Android tests** passed, including the recovered authentication/navigation and new MQTT shutdown regressions. The recovered focused suites passed **90/90** | Verified local JVM and script checks; hosted CI pending |
 | Gradle/pnpm caching | v1.0.31 Gradle build cache and pnpm store caching retained; no measured post-change timings | Speedup unverified |
 | Installed APK, API 23 / API 35 | Instrumentation suites and CI jobs removed in v1.0.33 | Manual-only; **not** passing automated gates |
 | Release APK launch | AVD smoke job removed; release build still depends on JVM/docs test gate | Manual-only; release APK not runtime-certified by CI |
@@ -49,6 +49,279 @@ password dialog works on a device. Verify it during manual device acceptance.
 - Older v1.0.26–v1.0.32 entries below remain as **historical evidence** for
   why this choice was made; their emulator automation and CI wiring are no
   longer present. Do not treat retired device tests as passed coverage.
+
+## P0 authentication host-replacement regressions (v1.0.34)
+
+- A native biometric or legacy credential prompt opened on one activity must not
+  leave a new activity waiting on a callback bound to the old host. When
+  `AuthenticationManager.init` receives a **different** activity while an
+  authentication is pending, it now invalidates the old pending request before
+  cancelling it. A subsequent prompt may be initiated by the new host. The
+  callback-invalidation ordering prevents synchronous cancellation errors and
+  stale successes from affecting the replacement request.
+- Added **five Robolectric tests** to `AuthenticationManagerTest`: idempotent
+  `init` on the same host; replacement during biometric authentication with
+  stale success/error callbacks and delayed old-host cleanup; preservation of
+  an already authenticated session; cancellation/retry for an unfinished custom
+  password prompt; and rejection of the old activity's legacy credential result
+  after the new host has a distinct request code. The legacy case changes only
+  the SDK gate on an API 28 Robolectric runtime, not the installed platform.
+- **Remaining P0 automated coverage:** stress session expiry, lifecycle
+  transitions and prompt retry/cancel order with controlled clocks/callbacks;
+  then continue the navigation, remote-message ownership and foreground-service
+  rows below. These five tests target host ownership, not real credential UI.
+- **Validation:** 11 offline Python CI regression tests and the Android
+  asset-exporter shell checks passed; shell syntax, Biome `check --write` in
+  `docs/` and patch whitespace checks passed. Kotlin/Robolectric execution and
+  APK runtime behaviour are **not verified locally** (Android SDK/dependency
+  cache unavailable). The five new JVM tests must pass in CI before being
+  counted as verified. No instrumentation tests, AVD jobs, lockfile changes or
+  emulator gates added.
+- **Manual-only finding remains open:** API 35 custom-password dialog visibility
+  timed out in run 38190273493. New host-replacement tests do not prove that
+  dialog was displayed or fix the historical failure.
+
+## P0 WebView navigation and stale-callback regressions (v1.0.35)
+
+- After a redirect has **committed a different URL**, a delayed `onPageStarted`
+  or `doUpdateVisitedHistory` callback for the *original request* must not
+  rewind the active load or reset the new page's error/authentication state.
+  `WebViewNavigationSession` now records this transition and rejects the stale
+  original callback. A new explicit redirect back to the original URL and an
+  intentional new load still work. Redirects continuing to **new URLs** without
+  an override callback remain supported for legacy WebViews.
+- URL equality previously used `trimEnd('/')` on the entire string, which
+  confused distinct query values such as `?return=/` vs `?return=` and SPA
+  fragment routes such as `#/route/` vs `#/route`. The shared comparison now
+  trims only the **path's** trailing slash, preserving query/fragment data in
+  both callback acceptance and persisted history. It also prevents a previous
+  URL ending in a path slash from incorrectly treating a new SPA entry as a
+  redirect and retaining the wrong forward-history branch.
+- Added **six** pure `WebViewNavigationSessionTest` scenarios, **five** new
+  pure `NavigationUrlTest` scenarios, and **four** Robolectric
+  `WebViewNavigationTest` cases. The new tests cover stale page starts/history,
+  explicit redirect-back, legacy continuation, reentrant new loads, query and
+  fragment slash identity, path-slash equivalence and history metadata.
+- **Validation:** All **70 navigation tests** (33 session, five URL, and 32
+  history cases) passed in a standalone Kotlin/JDK harness with lightweight
+  JUnit assertions. History cases used in-memory settings and URLUtil stand-ins,
+  **not Robolectric**. The 10 new regressions that exercise previously existing
+  functions **failed against the v1.0.34 baseline**, then passed with this fix;
+  five new standalone normalization-helper tests also passed. Eleven offline
+  Python CI checks and the Android asset-exporter script passed, and Biome
+  `check --write` passed in `docs/`. Full Gradle/Robolectric execution, the
+  new createCustomWebview wiring, and real-Android callbacks require CI/manual
+  verification respectively.
+- **Still open:** without a WebView load token, two overlapping loads of the
+  exact same URL cannot always be distinguished from callback URLs alone.
+  Redirects back to the original URL **without any new override callback**
+  remain ambiguous, particularly on legacy WebViews. Real renderer death,
+  iframe failures, fullscreen teardown, user-driven redirects and SDK-specific
+  callback ordering remain **manual-only** per v1.0.33. This patch adds no
+  instrumentation tests, emulator jobs or lockfile changes.
+
+## P0 MQTT connection completion and retired-subscription callbacks (v1.0.36)
+
+- `MqttManager.handleConnectResult` previously decided whether a successful
+  connection was current **before** setting up subscriptions, then reported
+  success even if that setup coincided with cancellation, client replacement,
+  a configuration disable, a pending disconnect or a socket disconnect. The
+  completion now checks the *current ready client* both before and after
+  subscriptions, with the latter check outside the exception handler for
+  subscription setup. A superseded attempt reports cancellation rather than
+  a stale `onConnected` callback. A pending disconnect also prevents initial
+  success independently of its cancellation flag.
+- HiveMQ may deliver a previously registered subscription callback after a
+  stop or client replacement. The inbound callback in `subscribeTopic` now
+  checks the owning client against the current ready connection **before**
+  decoding or dispatching the payload. That prevents stale subscriptions from
+  submitting extra commands, settings or requests after handoff. Deliveries
+  already admitted before a concurrent stop are not retroactively cancelled,
+  nor is MQTT QoS redelivery deduplicated by this guard.
+- Added **six Robolectric tests** in `MqttConnectedCallbacksTest`: controlled
+  five-way transitions *inside* subscription setup (cancel/replacement/
+  disable/pending disconnect/socket loss), rejection of a pending disconnect
+  before its cancellation flag is set, delivery ownership after replacement,
+  stale callbacks through stop and reconnection states, and cancellation
+  arising during the client state read, plus an observer exception that must
+  not be misreported as a second connection-error callback. Assertions check
+  missing **and** duplicate/late notifications; no emulator/instrumentation coverage added.
+- **Validation:** The v1.0.35 connection-completion source failed a focused
+  baseline Kotlin/JDK harness (`cancel` reported `connected`); extracted
+  v1.0.36 production methods passed **seven connection-completion scenarios**
+  and **eight subscription-delivery state assertions** with minimal HiveMQ
+  client/config stand-ins on JDK 21. This proves only those JVM method branches,
+  **not** that Robolectric or actual HiveMQ callbacks were run. All 11 offline
+  Python CI checks and the Android test-asset exporter passed. Attached Biome
+  `check --write` checked 70 docs files without changes; Biome does not validate
+  Kotlin. Full Android Gradle/Robolectric tests remain **pending** (Android SDK
+  and cached Android/Gradle dependencies unavailable in this session).
+- **Still open:** actual asynchronous subscription acknowledgement/duplicate
+  MQTT QoS deliveries, callbacks accepted immediately *before* a stop,
+  automatic reconnect with an external broker and real UnifiedPush distributor
+  behaviour. Retain JVM loopback coverage where useful; real transport/device
+  runtime is manual-only per v1.0.33.
+
+## P0 MQTT topic-batch ownership and subscription-ack races (v1.0.38)
+
+- `connectClient` now supplies the exact owning `Mqtt5AsyncClient` to the
+  command/settings/request subscription batch. Each topic checks that **same**
+  client for readiness before building the subscription. Previously a client
+  replacement during the first topic could cause the *remaining two topics*
+  to be registered on the replacement, even though the superseded connect
+  attempt would report cancellation. An initial state-read replacement could
+  also leak subscriptions to the replacement. The replacement must set up its
+  own topics via its own connection completion.
+- Subscription `whenComplete` callbacks ignore SUBACK/failure completions from
+  a client that was replaced, disabled, cancelled or entered a pending
+  disconnect. They no longer log stale `subscribe success`/`subscribe error`
+  results as if they describe the active session. Current-client success and
+  failure acknowledgements still produce one log entry each; this **does not**
+  delay `onConnected` until subscription acknowledgement or interpret MQTT
+  SUBACK reason codes as an application-level subscription guarantee.
+- Added **five** Robolectric cases in `MqttOperationStateTest` for replacement
+  during the first subscription builder and its initial client-state read,
+  current acknowledgement success/error counts, retired-client acknowledgements,
+  and stop/disable/cancellation during delayed completions. Existing event,
+  response, MQTT lifecycle and subscription readiness tests are retained.
+- **Red/green evidence:** Against the v1.0.37 production code, the corrected
+  fixture ran 15 `MqttOperationStateTest` methods and **four failed** on the
+  above stale ownership/ack behavior. After this fix, **15/15 passed** and
+  the **full local `:app:testDebugUnitTest` run passed 473 tests in 43 suites**
+  (no failures, errors or skips). Verification used the supplied offline
+  Gradle dependencies, Robolectric API 28/29 Maven runtimes, Android SDK 37,
+  JBR 21.0.11 and attached Gradle **9.8.0-milestone-1**. An SDK build-tools
+  AAPT2 override and an external Robolectric offline init script were used
+  only for local execution, not added to the repository. All **11 Python CI
+  regression tests** and the **Android asset-exporter shell checks** passed.
+- **Still open:** Hosted CI (including its pinned stable Gradle distribution),
+  MQTT SUBACK reason-code failures, automatic reconnect of the *same* client,
+  QoS redelivery deduplication and callbacks already admitted before stop.
+  Real-broker, distributor, Android foreground and APK behavior remain manual
+  device acceptance only. No AVD/instrumentation tests or lockfile edits.
+
+## P0 custom-password retry ownership and WebView duplicate finish (v1.0.39)
+
+Two small, independent P0 gaps were combined into one focused increment:
+
+- **Custom-password ownership:** A queued password submission or dismiss action
+  from an old Compose dialog used to invoke the no-argument
+  `customAuthSuccess`/`customAuthCancel` functions. After lock, retry or host
+  replacement, these could act on a **new** custom-password request. Custom
+  prompts now expose an observable, opaque per-request identity; success and
+  cancellation require that exact request. Reset, error and success invalidate
+  the identity before any late callbacks can affect the next prompt. `key` in
+  `CustomAuthPasswordDialog` discards entered password, `waiting` and error
+  state between requests, even if reset/retry coalesces in a single frame.
+  While waiting for an incorrect-password delay, an obsolete request can no
+  longer display the old error toast or affect the current prompt. A rapid
+  double-submit is ignored while `waiting` is true.
+- **WebView finish idempotence:** `WebViewNavigationSession.acceptsCompletion`
+  previously accepted a page-finish callback whenever its URL matched the
+  current view, **even with no active load**. Some WebViews send duplicate
+  `onPageFinished` at 100% progress; this could repeat injected scripts and
+  completion side effects. A finish now requires a live load. `finishLoad`
+  consumes that load, and a subsequent explicit reload or `onPageStarted`
+  creates a new one. Redirect and SPA completion checks remain tied to their
+  pending document.
+- **Tests:** Added **four** Robolectric manager cases for old/new custom prompt
+  identity, cancel/retry, replacement activity and preserved pending prompts.
+  Added **four** JVM navigation-session cases for repeated finish, same-URL
+  explicit reload, a POST-like page start without an override callback, and
+  stale finishes during a later redirect. Existing Compose wrapper tests now
+  complete the specific request rather than invoking a no-argument success.
+- **Verification:** The focused three-suite Gradle run passed **92/92 tests**.
+  The full offline `:app:testDebugUnitTest` run passed **481 tests across 43
+  JUnit suites**, zero failures/errors/skips, with the supplied Android SDK,
+  Robolectric API 28/29 artifacts, JBR 21.0.11 and Gradle
+  9.8.0-milestone-1. As in v1.0.38, the local AAPT2 SDK override and offline
+  Robolectric init script are not committed. All 11 Python CI tests and the
+  Android asset-exporter shell tests passed; Biome `check --write` passed for
+  the `docs/` root (the top-level Biome invocation rejects the nested config).
+- **Still open:** Real dialog rendering and keyboard/credential fallback on
+  Android remain manual. In particular, the historical API 35 custom-password
+  visibility failure is **not** verified fixed. Overlapping identical-URL
+  WebView loads without a native generation token remain ambiguous, as do
+  actual WebView renderer death and OEM-specific callbacks. Hosted CI and
+  installed APK validation have not been supplied. No AVD/instrumentation,
+  generated-file or lockfile changes were made.
+
+## P0 MQTT SUBACK/session ownership, UnifiedPush errors and service screen events (v1.0.40)
+
+- **Same-client reconnect proof:** A real HiveMQ MQTT 5 client reconnects to the loopback
+  broker and restores exactly three command/settings/request subscriptions, then
+  answers an inbound request on the new TCP connection. This passed against
+  v1.0.39: HiveMQ retains and restores subscription registrations. **Do not
+  manually subscribe again on reconnect**; that would duplicate work/deliveries.
+- **Subscription acknowledgement correctness:** A normally completed SUBACK
+  carrying a rejection reason (code >= `0x80`) is now reported as `subscribe
+  error`, rather than `subscribe success`. Missing acknowledgements and
+  exceptional completions also produce an error. A broker-session generation
+  prevents a late SUBACK for an earlier session being counted for its
+  successor even when the HiveMQ client object is unchanged. HiveMQ's restored
+  **message callbacks** remain valid across an automatic reconnect, and are
+  still gated on current client readiness.
+- **Foreground-service queued broadcast:** A screen/user-present receiver
+  callback already queued when the service is stopped, disabled or replaced
+  no longer publishes an MQTT event. Events resume after a later accepted
+  service start without recreating duplicate receiver registrations.
+- **UnifiedPush registration ownership:** Temporary-unavailability and
+  registration-failure callbacks for an obsolete registration instance are now
+  ignored, as endpoint/message/unregistration callbacks already were. Current
+  registration failures are still reported.
+- **Regression tests:** Two `MqttOperationStateTest` methods for negative
+  SUBACK and late same-client ACKs; one real-broker reconnect test, one service
+  late-broadcast test, and two UnifiedPush registration-error tests. Existing
+  MQTT/foreground ownership and dispatch suites are retained.
+- **Red/green evidence:** Against v1.0.39, the two SUBACK tests, the service
+  late-broadcast test and the obsolete-registration test **failed**; the
+  real-broker same-client reconnect test already **passed**. After the fixes,
+  the full offline `:app:testDebugUnitTest` passed **487 tests in 43 JUnit
+  suites**, zero failures/errors/skips, with the supplied Android SDK,
+  Robolectric API 28/29 jars, JBR 21.0.11, Gradle 9.8.0-milestone-1 and
+  offline dependency cache. The local AAPT2 override and Robolectric init
+  script were not committed. All 11 CI-script tests, the Android asset-exporter
+  shell tests, Biome `check --write` in `docs/`, and patch whitespace checks
+  passed. Hosted CI and real-device behavior remain unverified.
+- **Remaining limitations:** Hosted CI, real MQTT broker/distributor, Android
+  background/notification rules and on-device event ordering remain to be
+  checked separately. No AVD/instrumentation jobs or generated lockfile edits.
+
+## Post-merge regression recovery and MQTT shutdown races (v1.0.41)
+
+- **Authoritative baseline:** `additional-tests` at `b51ab06d` (from the newly
+  supplied bundle). Diffing this branch against the original `further-testing`
+  work and the v1.0.36–v1.0.40 patches revealed lost v1.0.34–v1.0.40
+  protections. Restore only the missing changes, retaining the post-merge
+  WebView/PDF improvements, Kotlin source and existing Android test fixtures.
+- **Recovered authentication and navigation:** Host-replacement invalidation,
+  request-scoped custom password submissions/cancellation, WebView URL
+  normalization, redirect handling and exactly-once completion. Restore the
+  original Robolectric regressions for these paths; do not silently drop the
+  v1.0.35 redirect tests that were absent in the merged branch.
+- **Recovered MQTT/remote-service ownership:** Connection completion guards,
+  three-topic subscription batch ownership, inactive-client deliveries,
+  negative or obsolete subscription acknowledgements, retired UnifiedPush
+  registration errors and foreground-service screen-event ownership. Also
+  recover the external-only Gradle test-asset dependency resolver change.
+- **New shutdown regressions:** A completed disconnect operation no longer
+  issues another DISCONNECT on a late PUBACK or a later timeout, even if HiveMQ
+  reused the same client for a new session. Successful wire acknowledgements
+  cannot report a disconnected state while the client is still connected.
+  Delayed publish acknowledgements from a replaced client **or an older
+  session on the same client** cannot populate the current publish log.
+  Internal disconnect-event callbacks still run so cleanup completes.
+- **Test evidence:** Four new shutdown ownership assertions failed against the
+  recovered v1.0.40 implementation and passed with the correction. The focused
+  MQTT shutdown suite passed **16/16**; authentication, WebView navigation
+  session and MQTT shutdown combined passed **90/90**. Offline CI-script tests
+  passed **11/11**, plus Android asset-exporter shell checks. Biome
+  `check --write` passed on the 70 supported docs files. A fresh full-suite
+  run against the corrected post-merge state is recorded in the gate table.
+- **Scope:** No AVD tests, dependency changes or generated lockfile edits. The
+  historical API 35 authentication-dialog problem remains manual-only and
+  unverified; Robolectric results do not certify a running APK, HTTPS MQTT,
+  device-owner behaviour or hosted CI.
 
 ## Existing baseline
 
@@ -564,10 +837,10 @@ instrumentation test or diagnostic tool remains in the current CI workflow.
 
 | Priority | Area / main code | Recommended tests and assertions | Layer |
 | --- | --- | --- | --- |
-| **P0** | Authentication (`managers/AuthenticationManager.kt`, `AuthenticationSession.kt`, `RequireAuthWrapper.kt`) | Retain the passing session, prompt and 18 Compose/Robolectric regressions from v1.0.15/v1.0.22. Extend mocked lifecycle, expired-session, callback ordering and retry/cancel assertions where coverage is missing. Actual custom-password dialog visibility, input, biometric/credential fallback and Keystore behaviour are **manual**; the historical API 35 dialog failure remains unresolved. | JVM/Robolectric and deterministic Compose host tests; manual on-device UI |
-| **P0** | Navigation and active WebView (`utils/webview/WebviewNavigation.kt`, `WebViewNavigationSession.kt`, `ui/screens/WebviewScreen.kt`, `utils/createCustomWebview.kt`) | Retain the 61 history/session/preference regressions. Add deterministic tests for duplicate/superseded callbacks, same-URL navigation, page errors and renderer-generation ownership where feasible without a real WebView. Actual redirects, iframe failures, fullscreen teardown and renderer-death behaviour are **manual**. | Pure state and Robolectric; manual WebView UI |
-| **P0** | UnifiedPush and remote request/settings handoff (`managers/UnifiedPushManager.kt`, `RemoteMessageManager.kt`, `MainActivity.kt`, `MqttForegroundService.kt`) | Keep 33 registration/stream tests, JVM loopback MQTT TCP and activity/service ownership/fallback coverage through v1.0.24. Add controlled connect/reconnect, dispatch and cancellation races without duplicating existing claim/FIFO cases. Actual broker integrations, system backgrounding, TLS/WebSocket and distributor behavior remain manual. | JVM MQTT TCP, coroutine and Robolectric; manual transport/device |
-| **P0** | Foreground services (`services/MqttForegroundService.kt`, `LockTaskService.kt`) | Retain 45 service/notification tests and 27 ownership/handoff executions. Extend deterministic tests for late connection, settings changes, notifications after stop and service cleanup as needed. Android 14+ foreground-start restrictions, OS process death and notification behaviour on real devices are **manual**. | Robolectric API 28/29 and JVM TCP; manual device |
+| **P0** | Authentication (`managers/AuthenticationManager.kt`, `AuthenticationSession.kt`, `RequireAuthWrapper.kt`) | v1.0.34 host-replacement tests and v1.0.39's four custom-dialog identity/cancel/retry regressions are included in the **481-test local Gradle pass**; hosted CI remains pending. Continue expiry/lifecycle and native credential tests only where a deterministic coverage gap is identified. Actual custom-password dialog visibility, input, biometric/credential fallback and Keystore behaviour are **manual**; the historical API 35 dialog failure remains unresolved. | JVM/Robolectric and deterministic Compose host tests; manual on-device UI |
+| **P0** | Navigation and active WebView (`utils/webview/WebviewNavigation.kt`, `WebViewNavigationSession.kt`, `ui/screens/WebviewScreen.kt`, `utils/createCustomWebview.kt`) | v1.0.35 URL/redirect regressions and v1.0.39's four idempotent-completion cases are included in the **481-test local Gradle pass**. Continue overlapping same-URL and renderer-generation coverage where deterministic; overlapping identical URLs without tokens remain ambiguous. Actual redirects, iframe failures, fullscreen teardown and renderer-death behaviour are **manual**. | Pure state and Robolectric; manual WebView UI |
+| **P0** | UnifiedPush and MQTT/remote request/settings handoff (`managers/UnifiedPushManager.kt`, `MqttManager.kt`, `RemoteMessageManager.kt`, `MainActivity.kt`, `MqttForegroundService.kt`) | Keep 33 UnifiedPush registration/stream tests, JVM loopback MQTT TCP and ownership/fallback coverage through v1.0.24. v1.0.36–40 MQTT callback and subscription ownership regressions are included in the **487-test local Gradle pass** (hosted CI pending). v1.0.40 verifies same-client auto-resubscription against a real loopback TCP broker, logs rejected SUBACK codes, and rejects obsolete UnifiedPush registration errors. Continue cross-transport cancellation/flow tests only where real gaps remain, without duplicating claim/FIFO tests. Actual brokers, backgrounding, TLS/WebSocket and distributor behavior remain manual. | JVM MQTT TCP, coroutine and Robolectric; manual transport/device |
+| **P0** | Foreground services (`services/MqttForegroundService.kt`, `LockTaskService.kt`) | Retain existing service/notification and ownership/handoff tests, plus v1.0.40's new delayed screen-broadcast suppression after service stop/disable. Extend deterministic tests for late connection or notification cleanup only where missing. Android 14+ foreground-start restrictions, OS process death and notification behaviour on real devices are **manual**. | Robolectric API 28/29 and JVM TCP; manual device |
 | **P1** | Android 6 and owner initialisation (`Android6KioskActivity.kt`, `MainActivity.kt`, `utils/lockTaskUtils.kt`, `managers/DeviceOwnerManager.kt`) | Keep v1.0.25's 18 Robolectric SDK-gate tests; add modeled denial/retry and Dhizuku readiness/permission cases where practical. API 23 HOME/private task separation, provisioning and lock-task enforcement are manual. Overriding `SDK_INT` is not an API 23 runtime. | Robolectric policy; manual API 23/device owner |
 | **P1** | PDF request/TLS paths (`handlers/handlePdfSourceRequest.kt`, `utils/webview/PdfTlsState.kt`) | Extend helper/unit regressions only for uncovered Range requests, redirects, cancellation, retry or certificate-state isolation. Actual PDF page rendering, Android KeyChain, HTTPS client certificates and WebView dialogs are manual. | JVM HTTP/TLS helpers; manual WebView/KeyChain |
 | **P1** | Picker/MediaStore bridge (`createCustomWebview.kt`, `interfaces/BlobInterface.kt`, `fileChooserUtils.kt`) | Test URL/URI policy, transfer errors, cleanup and exactly-once callback state with fakes where possible. Actual camera intents, Android document provider, simultaneous downloads and pending MediaStore rows are manual. | Unit/Robolectric helpers; manual device |

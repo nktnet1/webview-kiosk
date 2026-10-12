@@ -404,6 +404,7 @@ object UnifiedPushManager {
     }
 
     fun handleTempUnavailable(context: Context, instance: String) {
+        if (!acceptsInstance(context, instance, "temp unavailable")) return
         ToastManager.show(context, "UnifiedPush: temporarily unavailable.")
         addDebugLog(
             "temp unavailable",
@@ -412,6 +413,7 @@ object UnifiedPushManager {
     }
 
     fun handleRegistrationFailed(context: Context, reason: FailedReason, instance: String) {
+        if (!acceptsInstance(context, instance, "register failed")) return
         ToastManager.show(context, "UnifiedPush: registration failed.")
         addDebugLog(
             "register failed",

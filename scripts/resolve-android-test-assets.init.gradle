@@ -32,7 +32,14 @@ gradle.beforeProject { project ->
                     }
                     // Resolve artifact files, not just the dependency graph: the
                     // latter does not download the JARs/AARs needed offline.
-                    def files = configuration.incoming.artifacts.artifactFiles.files
+                    // Android unit-test configurations include a dependency on the
+                    // application project itself. Resolving that project as a
+                    // library is ambiguous with AGP 9.4.x; the exporter only
+                    // needs external artifacts, not the app's build outputs.
+                    def externalOnly = configuration.copyRecursive { dependency ->
+                        !(dependency instanceof org.gradle.api.artifacts.ProjectDependency)
+                    }
+                    def files = externalOnly.incoming.artifacts.artifactFiles.files
                     logger.lifecycle("Resolved ${configurationName}: ${files.size()} files")
                 }
             }

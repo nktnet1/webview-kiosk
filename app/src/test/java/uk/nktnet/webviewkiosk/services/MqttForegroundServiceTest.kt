@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Context
+import android.content.BroadcastReceiver
 import android.content.Intent
 import android.os.Looper
 import android.os.PowerManager
@@ -179,6 +180,31 @@ class MqttForegroundServiceTest {
         assertNoPowerOrReceiver()
         dispatchClearHistory()
         assertEquals(2, settings.historyStack.size)
+    }
+
+    @Test
+    fun queuedScreenBroadcastsCannotPublishAfterServiceOwnershipIsLost() {
+        assertEquals(Service.START_STICKY, start())
+        val receiver = service.javaClass.getDeclaredField("systemReceiver").apply {
+            isAccessible = true
+        }.get(service) as BroadcastReceiver
+        val screenOn = Intent(Intent.ACTION_SCREEN_ON)
+        receiver.onReceive(context, screenOn)
+        assertNotNull("An active service should publish the screen event", publications.poll(2, TimeUnit.SECONDS))
+
+        // Preference changes take effect before the periodic status poll runs.
+        userSettings.mqttUseForegroundService = false
+        receiver.onReceive(context, screenOn)
+        assertTrue("A service that lost ownership must not publish", publications.isEmpty())
+
+        assertEquals(Service.START_NOT_STICKY, start(2))
+        receiver.onReceive(context, screenOn) // Already dequeued before unregisterReceiver().
+        assertTrue("A stopped service must not publish", publications.isEmpty())
+
+        userSettings.mqttUseForegroundService = true
+        assertEquals(Service.START_STICKY, start(3))
+        receiver.onReceive(context, screenOn)
+        assertNotNull("A later accepted start should restore events", publications.poll(2, TimeUnit.SECONDS))
     }
 
     @Test

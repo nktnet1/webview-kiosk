@@ -7,6 +7,7 @@ internal class WebViewNavigationSession(private val isOwnerActive: () -> Boolean
         var latestUrl: String,
         var historyEntryId: String?,
         var awaitingRedirectCommit: Boolean = false,
+        var hasCommittedDifferentUrl: Boolean = false,
     )
 
     private var load: Load? = null
@@ -31,7 +32,7 @@ internal class WebViewNavigationSession(private val isOwnerActive: () -> Boolean
             requestedUrl = url,
             latestUrl = url,
             historyEntryId = currentEntryId.takeIf {
-                sameUrl(historyUrl, currentEntryUrl)
+                sameNavigationUrl(historyUrl, currentEntryUrl)
             },
         )
     }
@@ -49,10 +50,13 @@ internal class WebViewNavigationSession(private val isOwnerActive: () -> Boolean
         }
     }
 
-    fun acceptsPageStart(url: String?): Boolean =
-        isActive() && !url.isNullOrEmpty() && (
-            load == null || sameUrl(url, load?.latestUrl) || sameUrl(url, load?.requestedUrl)
+    fun acceptsPageStart(url: String?): Boolean {
+        if (!isActive() || url.isNullOrEmpty()) return false
+        val pending = load ?: return true
+        return sameNavigationUrl(url, pending.latestUrl) || (
+            !pending.hasCommittedDifferentUrl && sameNavigationUrl(url, pending.requestedUrl)
         )
+    }
 
     fun pageStarted(url: String) {
         // POST loads can start without a shouldOverrideUrlLoading callback.
@@ -61,10 +65,14 @@ internal class WebViewNavigationSession(private val isOwnerActive: () -> Boolean
 
     fun acceptsHistory(url: String?, originalUrl: String?, currentUrl: String?): Boolean {
         if (!isActive() || url.isNullOrEmpty()) return false
-        val pending = load ?: return sameUrl(url, currentUrl)
-        return sameUrl(url, pending.latestUrl) || (
+        val pending = load ?: return sameNavigationUrl(url, currentUrl)
+        return sameNavigationUrl(url, pending.latestUrl) || (
             !pending.awaitingRedirectCommit
-            && sameUrl(originalUrl, pending.requestedUrl) && sameUrl(url, currentUrl)
+            // After a redirect commits, a delayed callback for the original
+            // request must not rewind the active navigation to that document.
+            && !(pending.hasCommittedDifferentUrl && sameNavigationUrl(url, pending.requestedUrl))
+            && sameNavigationUrl(originalUrl, pending.requestedUrl)
+            && sameNavigationUrl(url, currentUrl)
         )
     }
 
@@ -72,7 +80,7 @@ internal class WebViewNavigationSession(private val isOwnerActive: () -> Boolean
         if (
             nativeHistoryIndex != null && committedHistoryIndex != null
             && nativeHistoryIndex != committedHistoryIndex
-            && sameUrl(originalUrl, committedOriginalUrl)
+            && sameNavigationUrl(originalUrl, committedOriginalUrl)
         ) {
             // pushState/fragment navigation creates a native history entry in the
             // same document; it must not borrow a still-loading traversal's entry.
@@ -86,8 +94,8 @@ internal class WebViewNavigationSession(private val isOwnerActive: () -> Boolean
         val pending = load ?: return
         if (
             !originalUrl.isNullOrEmpty()
-            && !sameUrl(originalUrl, pending.requestedUrl)
-            && !sameUrl(url, pending.requestedUrl)
+            && !sameNavigationUrl(originalUrl, pending.requestedUrl)
+            && !sameNavigationUrl(url, pending.requestedUrl)
         ) {
             // A legacy override can be a new user navigation rather than a redirect.
             pending.historyEntryId = null
@@ -95,6 +103,7 @@ internal class WebViewNavigationSession(private val isOwnerActive: () -> Boolean
             sameDocumentNavigation = false
         }
         pending.latestUrl = url
+        pending.hasCommittedDifferentUrl = !sameNavigationUrl(url, pending.requestedUrl)
         pending.awaitingRedirectCommit = false
     }
 
@@ -102,18 +111,26 @@ internal class WebViewNavigationSession(private val isOwnerActive: () -> Boolean
 
     fun isSameDocumentNavigation(): Boolean = sameDocumentNavigation
 
-    fun acceptsCompletion(url: String?, currentUrl: String?): Boolean =
-        isActive() && !url.isNullOrEmpty() && (
-            (sameUrl(url, currentUrl) && (load == null || sameUrl(url, load?.latestUrl)))
+    fun acceptsCompletion(url: String?, currentUrl: String?): Boolean {
+        // A completed load has no owner. WebView can deliver onPageFinished
+        // more than once (even at 100% progress); do not repeat injected scripts,
+        // clear another load's state, or consume a newer navigation's history.
+        val pending = load ?: return false
+        return isActive() && !url.isNullOrEmpty() && (
+            (
+                sameNavigationUrl(url, currentUrl)
+                && sameNavigationUrl(url, pending.latestUrl)
+            )
             || (
-                sameDocumentNavigation && sameUrl(url, load?.requestedUrl)
-                && sameUrl(currentUrl, load?.latestUrl)
+                sameDocumentNavigation && sameNavigationUrl(url, pending.requestedUrl)
+                && sameNavigationUrl(currentUrl, pending.latestUrl)
             )
         )
+    }
 
     fun acceptsError(url: String?, currentUrl: String?, isMainFrame: Boolean): Boolean =
         isMainFrame && isActive() && !url.isNullOrEmpty()
-            && sameUrl(url, load?.latestUrl ?: currentUrl)
+            && sameNavigationUrl(url, load?.latestUrl ?: currentUrl)
 
     fun finishLoad() {
         load = null
@@ -126,7 +143,4 @@ internal class WebViewNavigationSession(private val isOwnerActive: () -> Boolean
         load = null
         return true
     }
-
-    private fun sameUrl(first: String?, second: String?): Boolean =
-        first != null && second != null && first.trimEnd('/') == second.trimEnd('/')
 }

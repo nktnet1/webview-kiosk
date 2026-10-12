@@ -93,6 +93,104 @@ class WebViewNavigationSessionTest {
     }
 
     @Test
+    fun aCommittedRedirectRejectsLateOriginalPageStartAndHistoryCallbacks() {
+        val session = session()
+        session.beginLoad(first, "first-entry", first)
+        session.mainFrameNavigation(second, isRedirect = true)
+
+        // The initial page may still start while the redirect is in flight.
+        assertTrue(session.acceptsPageStart(first))
+        assertTrue(session.acceptsHistory(second, first, second))
+        session.historyCommitted(second, first)
+
+        // Even if WebView briefly reports the outgoing URL, its callbacks
+        // must not reset the newer page's security/error/navigation state.
+        assertFalse(session.acceptsPageStart(first))
+        assertFalse(session.acceptsHistory(first, first, first))
+        assertTrue(session.acceptsPageStart(second))
+        assertTrue(session.acceptsHistory(second, first, second))
+        assertEquals("first-entry", session.traversalEntryId())
+    }
+
+    @Test
+    fun aSecondRedirectBackToTheOriginalUrlIsAllowedWhenWebViewAnnouncesIt() {
+        val session = session()
+        session.beginLoad(first, "first-entry", first)
+        session.mainFrameNavigation(second, isRedirect = true)
+        session.historyCommitted(second, first)
+        assertFalse(session.acceptsHistory(first, first, first))
+
+        // An explicit redirect to the original URL is a new navigation event,
+        // unlike a late callback left over from the original request.
+        session.mainFrameNavigation(first, isRedirect = true)
+        assertTrue(session.acceptsPageStart(first))
+        assertTrue(session.acceptsHistory(first, first, first))
+        session.historyCommitted(first, first)
+        assertTrue(session.acceptsCompletion(first, first))
+        assertEquals("first-entry", session.traversalEntryId())
+    }
+
+    @Test
+    fun aLegacyRedirectChainCanContinueToADifferentUrlAfterCommit() {
+        val session = session()
+        session.beginLoad(first, "first-entry", first)
+        session.mainFrameNavigation(second, isRedirect = null)
+        session.historyCommitted(second, first)
+
+        assertFalse(session.acceptsHistory(first, first, first))
+        assertTrue(session.acceptsHistory(third, first, third))
+        session.historyCommitted(third, first)
+        assertEquals("first-entry", session.traversalEntryId())
+        assertTrue(session.acceptsCompletion(third, third))
+    }
+
+    @Test
+    fun aNewLoadClearsTheOldRedirectCommitGuard() {
+        val session = session()
+        session.beginLoad(first, "first-entry", first)
+        session.mainFrameNavigation(second, isRedirect = true)
+        session.historyCommitted(second, first)
+        assertFalse(session.acceptsPageStart(first))
+
+        session.beginLoad(first, "first-entry", first)
+        assertTrue(session.acceptsPageStart(first))
+        assertTrue(session.acceptsHistory(first, first, first))
+    }
+
+    @Test
+    fun queryAndFragmentTrailingSlashesAreNotEquivalentCallbackUrls() {
+        val querySlash = "$first?return=/"
+        val queryNoSlash = "$first?return="
+        val session = session()
+        session.beginLoad(querySlash, null, null)
+        assertFalse(session.acceptsPageStart(queryNoSlash))
+        assertFalse(session.acceptsHistory(queryNoSlash, queryNoSlash, queryNoSlash))
+        assertFalse(session.acceptsCompletion(queryNoSlash, queryNoSlash))
+        assertFalse(session.acceptsError(queryNoSlash, queryNoSlash, isMainFrame = true))
+
+        val fragmentSlash = "$first#/route/"
+        val fragmentNoSlash = "$first#/route"
+        session.beginLoad(fragmentSlash, null, null)
+        assertFalse(session.acceptsPageStart(fragmentNoSlash))
+        assertFalse(session.acceptsHistory(fragmentNoSlash, fragmentNoSlash, fragmentNoSlash))
+        assertTrue(session.acceptsPageStart(fragmentSlash))
+    }
+
+    @Test
+    fun pathTrailingSlashesRemainEquivalentDuringNavigation() {
+        val session = session()
+        val withPathSlash = "$first/path/?token=value"
+        val withoutPathSlash = "$first/path?token=value"
+        session.beginLoad(withPathSlash, "entry", withoutPathSlash)
+
+        assertEquals("entry", session.traversalEntryId())
+        assertTrue(session.acceptsPageStart(withoutPathSlash))
+        assertTrue(session.acceptsHistory(withoutPathSlash, withPathSlash, withoutPathSlash))
+        session.historyCommitted(withoutPathSlash, withPathSlash)
+        assertTrue(session.acceptsCompletion(withPathSlash, withoutPathSlash))
+    }
+
+    @Test
     fun aPendingRedirectCannotBeOverwrittenByThePreviousDocumentsLateHistoryCallback() {
         val session = session()
         session.beginLoad(first, "first-entry", first)
@@ -130,6 +228,65 @@ class WebViewNavigationSessionTest {
         assertTrue(session.acceptsCompletion(second, second))
         session.finishLoad()
         assertNull(session.traversalEntryId())
+    }
+
+    @Test
+    fun aCompletedLoadCannotRerunPageFinishEffectsOnDuplicateCallbacks() {
+        val session = session()
+        session.beginLoad(first, "entry", first)
+        session.historyCommitted(first, first)
+        assertTrue(session.acceptsCompletion(first, first))
+        session.finishLoad()
+
+        // Several Android WebView versions emit onPageFinished twice at 100%.
+        repeat(3) { assertFalse(session.acceptsCompletion(first, first)) }
+        assertFalse(session.acceptsCompletion(second, second))
+        assertNull(session.traversalEntryId())
+    }
+
+    @Test
+    fun explicitlyReloadingTheSameUrlCanCompleteAfterAnEarlierFinish() {
+        val session = session()
+        session.beginLoad(first, null, first)
+        assertTrue(session.acceptsCompletion(first, first))
+        session.finishLoad()
+        assertFalse(session.acceptsCompletion(first, first))
+
+        session.beginLoad(first, null, first)
+        assertTrue(session.acceptsCompletion(first, first))
+        session.finishLoad()
+        assertFalse(session.acceptsCompletion(first, first))
+    }
+
+    @Test
+    fun aNewPageStartWithoutAnOverrideCreatesItsOwnCompletion() {
+        val session = session()
+        session.beginLoad(first, null, first)
+        session.finishLoad()
+        assertFalse(session.acceptsCompletion(second, second))
+
+        session.pageStarted(second)
+        assertTrue(session.acceptsCompletion(second, second))
+        session.finishLoad()
+        assertFalse(session.acceptsCompletion(second, second))
+    }
+
+    @Test
+    fun staleFinishFromPreviousRedirectDoesNotConsumeItsSuccessor() {
+        val session = session()
+        session.beginLoad(first, null, null)
+        session.historyCommitted(first, first)
+        session.finishLoad()
+        session.beginLoad(second, "second-entry", second)
+        session.mainFrameNavigation(third, isRedirect = true)
+
+        assertFalse(session.acceptsCompletion(first, first))
+        assertFalse(session.acceptsCompletion(second, second))
+        assertEquals("second-entry", session.traversalEntryId())
+        session.historyCommitted(third, second)
+        assertTrue(session.acceptsCompletion(third, third))
+        session.finishLoad()
+        assertFalse(session.acceptsCompletion(third, third))
     }
 
     @Test
