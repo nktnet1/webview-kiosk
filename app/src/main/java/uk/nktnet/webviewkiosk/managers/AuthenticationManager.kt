@@ -114,15 +114,10 @@ object AuthenticationManager {
         }
     }
 
-    fun hasValidSession(): Boolean {
-        if (
-            _resultState.value != AuthenticationResult.AuthenticationSuccess
-            && _resultState.value != AuthenticationResult.AuthenticationNotSet
-        ) {
-            return false
-        }
-        return session.isValid()
-    }
+    fun hasValidSession(): Boolean =
+        (_resultState.value == AuthenticationResult.AuthenticationSuccess
+            || _resultState.value == AuthenticationResult.AuthenticationNotSet)
+            && session.isValid()
 
     fun checkAuthAndRefreshSession(): Boolean {
         if (!hasValidSession() || !session.refreshIfValid()) {

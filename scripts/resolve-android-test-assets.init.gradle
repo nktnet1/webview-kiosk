@@ -1,3 +1,5 @@
+import org.gradle.api.artifacts.ProjectDependency
+
 // Resolve only the artifacts needed for the Android JVM/Robolectric test suite.
 // This init script deliberately registers no dependency on a build or test task.
 gradle.beforeProject { project ->
@@ -37,7 +39,7 @@ gradle.beforeProject { project ->
                     // library is ambiguous with AGP 9.4.x; the exporter only
                     // needs external artifacts, not the app's build outputs.
                     def externalOnly = configuration.copyRecursive { dependency ->
-                        !(dependency instanceof org.gradle.api.artifacts.ProjectDependency)
+                        !(dependency instanceof ProjectDependency)
                     }
                     def files = externalOnly.incoming.artifacts.artifactFiles.files
                     logger.lifecycle("Resolved ${configurationName}: ${files.size()} files")

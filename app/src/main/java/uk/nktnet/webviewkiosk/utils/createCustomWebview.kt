@@ -96,8 +96,9 @@ internal fun matchesLocalNetworkPermissionError(
     supportsDescription: () -> Boolean,
     getDescription: () -> CharSequence?,
 ): Boolean {
-    if (sdkInt < Build.VERSION_CODES.CINNAMON_BUN || !supportsDescription()) return false
-    return getDescription()?.contains(LOCAL_NETWORK_PERMISSION_ERROR) == true
+    return sdkInt >= Build.VERSION_CODES.CINNAMON_BUN
+        && supportsDescription()
+        && getDescription()?.contains(LOCAL_NETWORK_PERMISSION_ERROR) == true
 }
 
 private fun isLocalNetworkPermissionError(error: WebResourceErrorCompat?): Boolean =
@@ -106,7 +107,15 @@ private fun isLocalNetworkPermissionError(error: WebResourceErrorCompat?): Boole
         supportsDescription = {
             WebViewFeature.isFeatureSupported(WebViewFeature.WEB_RESOURCE_ERROR_GET_DESCRIPTION)
         },
-        getDescription = { error?.description },
+        // Keep the capability check at the getter itself too: compat access
+        // must remain safe even if the outer predicate is refactored.
+        getDescription = {
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_RESOURCE_ERROR_GET_DESCRIPTION)) {
+                error?.description
+            } else {
+                null
+            }
+        },
     )
 
 private fun isWebPdf(

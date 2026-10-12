@@ -41,7 +41,8 @@ val supportedMimeTypesArray = arrayOf(
 
 private const val MAX_EDITABLE_TEXT_FILE_BYTES = 1024 * 1024
 
-private fun readFileBytesUpTo(file: File, maxBytes: Int): ByteArray? {
+private fun readFileBytesUpTo(file: File): ByteArray? {
+    val maxBytes = MAX_EDITABLE_TEXT_FILE_BYTES
     if (!file.isFile || file.length() > maxBytes) {
         return null
     }
@@ -76,7 +77,7 @@ private fun readFileBytesUpTo(file: File, maxBytes: Int): ByteArray? {
  */
 fun readEditableTextFile(file: File): String? {
     val bytes = try {
-        readFileBytesUpTo(file, MAX_EDITABLE_TEXT_FILE_BYTES)
+        readFileBytesUpTo(file)
     } catch (e: Exception) {
         Log.e(Constants.APP_SCHEME, "Failed to inspect local file for editing", e)
         null
@@ -204,7 +205,7 @@ private suspend fun copyInputStreamToFile(
     targetFile: File,
     totalBytes: Long? = null,
     onProgress: ((Float) -> Unit)? = null
-): File {
+): File = withContext(Dispatchers.IO) {
     var copiedBytes = 0L
     val tempFile = File.createTempFile(".wk-import-", ".tmp", targetFile.parentFile)
     try {
@@ -229,7 +230,7 @@ private suspend fun copyInputStreamToFile(
         }
         currentCoroutineContext().ensureActive()
         Os.rename(tempFile.absolutePath, targetFile.absolutePath)
-        return targetFile
+        targetFile
     } finally {
         tempFile.delete()
     }

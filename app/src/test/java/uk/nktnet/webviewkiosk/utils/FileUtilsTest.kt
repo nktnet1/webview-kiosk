@@ -7,6 +7,8 @@ import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNotSame
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -107,6 +109,28 @@ class FileUtilsTest {
         assertTrue("Import did not publish ${imported.absolutePath}", imported.exists())
         assertArrayEquals(source.readBytes(), imported.readBytes())
         assertEquals(source.name, imported.getDisplayName())
+        assertEquals(listOf(imported), destination.listFiles().orEmpty().toList())
+    }
+
+    @Test
+    @Config(shadows = [ShadowOsWithRename::class])
+    fun contentImportDoesNotBlockTheCallerThreadWhileCopying() = runBlocking {
+        val source = temporaryFolder.newFile("thread-check.bin").apply {
+            writeBytes(ByteArray(16 * 1024) { 42 })
+        }
+        val destination = temporaryFolder.newFolder("thread-check")
+        val callerThread = Thread.currentThread()
+        var copyThread: Thread? = null
+
+        val imported = saveContentIntentToFile(
+            RuntimeEnvironment.getApplication(), Uri.fromFile(source), destination,
+        ) {
+            copyThread = Thread.currentThread()
+        }
+
+        assertNotNull("Import should report progress", copyThread)
+        assertNotSame("File copying must run on the IO dispatcher", callerThread, copyThread)
+        assertArrayEquals(source.readBytes(), imported.readBytes())
         assertEquals(listOf(imported), destination.listFiles().orEmpty().toList())
     }
 

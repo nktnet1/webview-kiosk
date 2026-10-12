@@ -118,7 +118,6 @@ class BlobInterface(
         )
     }
 
-    @Suppress("unused")
     @Synchronized
     @JavascriptInterface
     fun startDownload(
@@ -154,7 +153,6 @@ class BlobInterface(
         }
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun appendChunk(
         transferId: String,
@@ -194,7 +192,6 @@ class BlobInterface(
         }
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun finishDownload(
         transferId: String
@@ -263,7 +260,6 @@ class BlobInterface(
         }
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun abortDownload(
         transferId: String

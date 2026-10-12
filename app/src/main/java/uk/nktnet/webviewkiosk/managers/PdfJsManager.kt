@@ -36,7 +36,7 @@ object PdfJsManager {
         }.getOrDefault(false)
     }
 
-    private suspend fun downloadAsset(url: String, outputFile: File) {
+    private suspend fun downloadAsset(url: String, outputFile: File) = withContext(Dispatchers.IO) {
         val tempFile = File(outputFile.parentFile, "${outputFile.name}.part")
         tempFile.delete()
 

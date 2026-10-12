@@ -4,7 +4,7 @@ Snapshot: post-merge `additional-tests` at `b51ab06d` compared with the v0.26.21
 release commit `aa7ceca9`. This is an assessment of test *coverage*, not a finding that the
 untested paths are defective. The app still declares `versionName = "0.26.21"`.
 
-## Current automated-test gate status (12 October 2026; v1.0.44)
+## Current automated-test gate status (12 October 2026; v1.0.45)
 
 **Testing policy:** Keep automated JVM/Robolectric, CI-script, Vitest and
 Chromium Playwright tests. All Android APK instrumentation, AVD/emulator jobs,
@@ -13,9 +13,9 @@ acceptance checks are **manual-only** and are not CI release gates.
 
 | Gate | Most recent evidence | Status |
 | --- | --- | --- |
-| Android JVM/Robolectric | v1.0.44 on the post-merge `additional-tests` bundle plus v1.0.41–43: **509 tests in 44 JUnit suites**, zero failures/errors/skips, passed locally with Gradle 9.8.0-milestone-1, JBR 21.0.11, supplied Android SDK, offline dependency cache and Robolectric API 28/29 runtimes. Adds four API-compatibility/WebView feature-guard tests and fixes an asynchronous MQTT assertion | **Verified local full Gradle pass**; hosted CI and installed APK remain unverified |
+| Android JVM/Robolectric | v1.0.45 on the post-merge `additional-tests` bundle plus v1.0.41–44: **510 tests in 44 JUnit suites**, zero failures/errors/skips, passed locally with Gradle 9.8.0-milestone-1, JBR 21.0.11, supplied Android SDK, offline dependency cache and Robolectric API 28/29 runtimes. Adds one file-import IO-thread regression and preserves the earlier API/feature-gate, cancellation and MQTT tests | **Verified local full Gradle pass**; hosted CI and installed APK remain unverified |
 | Docs Vitest / Chromium Playwright | Jobs remain configured; no passing CI output supplied | Unverified |
-| Offline CI checks / local runner | v1.0.44: all **11** Python CI-script tests and Android asset-exporter shell tests passed; **509/509 full Android tests** passed. Authentication, MQTT shutdown and WebView feature-guard focused suites passed **59/59** | Verified local JVM and script checks; hosted CI pending |
+| Offline CI checks / local runner | v1.0.45: all **11** Python CI-script tests and Android asset-exporter shell tests passed; **510/510 full Android tests** passed. The offline Gradle `:app:resolveAndroidTestAssets` task also passed using the exporter's `--no-configuration-cache` flag | Verified local JVM and script checks; hosted CI pending |
 | Gradle/pnpm caching | v1.0.31 Gradle build cache and pnpm store caching retained; no measured post-change timings | Speedup unverified |
 | Installed APK, API 23 / API 35 | Instrumentation suites and CI jobs removed in v1.0.33 | Manual-only; **not** passing automated gates |
 | Release APK launch | AVD smoke job removed; release build still depends on JVM/docs test gate | Manual-only; release APK not runtime-certified by CI |
@@ -24,6 +24,56 @@ acceptance checks are **manual-only** and are not CI release gates.
 failed the custom-password dialog visibility assertion after v1.0.30. Removing
 that automation does **not** fix the underlying UI, nor confirm that the
 password dialog works on a device. Verify it during manual device acceptance.
+
+## IDE inspection follow-up: correctness and Kotlin/Java diagnostics (v1.0.45)
+
+The updated Android Studio inspection export (supplied after v1.0.44) no
+longer lists the two older minimum-API errors. It still flags one compat
+WebView getter and the intentional custom PDF TLS trust manager, plus
+Kotlin/Java, general and Groovy inspections. This increment is scoped to
+safe corrections and existing behavior preservation:
+
+- **Android correctness:** Places the `WEB_RESOURCE_ERROR_GET_DESCRIPTION`
+  feature guard directly around the `WebResourceErrorCompat.description`
+  read, in addition to the existing short-circuiting helper. This makes
+  the feature requirement independently explicit at the access site.
+- **Kotlin threading:** Both PDF.js asset transfer and file import copy
+  helpers now independently enforce `Dispatchers.IO` for blocking network
+  and file operations, instead of relying solely on their current callers.
+  Existing cancellation and temporary-file cleanup behavior is preserved.
+- **Kotlin/general cleanup:** Simplifies two equivalent boolean checks;
+  keeps the editable-text cap unchanged while removing an always-constant
+  private helper parameter; removes six IDE-reported redundant `unused`
+  suppressions from `@JavascriptInterface` methods (the public JavaScript
+  bridge annotations and signatures are unchanged).
+- **Groovy:** Uses an explicit `ProjectDependency` import in the Android
+  test-asset resolver; dependency filtering behavior remains unchanged.
+- **Automated coverage:** Adds an import regression that checks copy
+  progress runs off the calling thread and verifies the complete file is
+  published without temporary files. Retains API/feature-gating,
+  authentication, file-size and cancellation regressions.
+
+**Warnings retained intentionally:** `PdfTlsState` installs a per-viewer
+`X509TrustManager` that first delegates platform/hostname verification to
+Android; configured `BLOCK`/`PROMPT`/`PROCEED` error handling is a deliberate
+trust-policy feature. Its `CustomX509TrustManager` security inspection should
+remain visible until a dedicated security-policy review, not be silenced
+by a broad suppression. The apparently unused MQTT subscription helper is
+used by reflection in tests; lock-task action lambdas are called via their
+Activity receiver; Kotlin property-delegate override parameters, JavaScript
+bridge methods, Android lifecycle entry points and a service method returning
+`START_NOT_STICKY` have intentional signatures. These should not be deleted
+or rewritten simply to make an IDE inspection counter fall.
+
+Non-code style, Gradle-dependency-pruning, module-layout, markdown, HTML and
+spelling findings remain outside this increment. No Android instrumentation
+or AVD tests, generated files, dependency changes or TLS trust-policy change.
+The dependency-only Gradle asset task is deliberately invoked with
+`--no-configuration-cache` by the exporter; running it without that flag
+fails task-state serialization, even when dependency resolution succeeds.
+Android Gradle Lint cannot be rerun fully offline without the previously
+missing `com.android.tools.lint:lint-gradle:32.4.1` cache artifact, so the
+updated IDE inspection still requires an independent rescan.
 
 ## Kotlin/Java inspection follow-up (v1.0.44)
 
