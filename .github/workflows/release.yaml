@@ -50,7 +50,7 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
 
-      - name: Store exact release APK for smoke test and publication
+      - name: Store release APK for publication
         uses: actions/upload-artifact@v4
         with:
           name: release-apk
@@ -58,53 +58,9 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
-  smoke:
-    name: Install and launch minified APK
-    needs: build
-    runs-on: ubuntu-latest
-    timeout-minutes: 35
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Download release APK
-        uses: actions/download-artifact@v4
-        with:
-          name: release-apk
-          path: app/build/outputs/apk/release/
-
-      - name: Enable hardware acceleration
-        run: |
-          if [ -e /dev/kvm ]; then
-            sudo chmod 666 /dev/kvm
-          fi
-
-      - name: Install and launch the release artifact
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 35
-          target: google_apis
-          arch: x86_64
-          profile: pixel_2
-          disable-animations: true
-          emulator-boot-timeout: 900
-          script: sh scripts/smoke-release-apk.sh
-
-      - name: Save release smoke logs
-        if: always()
-        run: adb logcat -d > release-smoke-logcat.txt || true
-
-      - name: Upload release smoke logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-smoke-logs
-          path: release-smoke-logcat.txt
-          if-no-files-found: ignore
-
   release:
     name: Create draft release
-    needs: [verify, build, smoke]
+    needs: [verify, build]
     # workflow_dispatch on a branch can exercise the release build without
     # accidentally creating a release named "main".
     if: startsWith(github.ref, 'refs/tags/v')
@@ -113,7 +69,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Download tested release APK
+      - name: Download built release APK
         uses: actions/download-artifact@v4
         with:
           name: release-apk

@@ -9,51 +9,45 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 TESTS = (ROOT / ".github/workflows/tests.yaml").read_text(encoding="utf-8")
 DOCS = (ROOT / ".github/workflows/docs.yaml").read_text(encoding="utf-8")
-RUNNER = (ROOT / "scripts/ci/run-android-instrumentation.sh").read_text(
-    encoding="utf-8"
-)
+RELEASE = (ROOT / ".github/workflows/release.yaml").read_text(encoding="utf-8")
 
 
 class CiCachingTest(unittest.TestCase):
     def test_gradle_cache_is_enabled_without_competing_java_cache(self):
-        self.assertEqual(2, TESTS.count("uses: gradle/actions/setup-gradle@v6"))
+        self.assertEqual(1, TESTS.count("uses: gradle/actions/setup-gradle@v6"))
         self.assertNotIn("cache: gradle", TESTS)
         self.assertIn("cache-read-only:", TESTS)
         self.assertIn("head.repo.full_name != github.repository", TESTS)
-        self.assertIn("--build-cache --profile --stacktrace", RUNNER)
         self.assertIn(
             "run: sh gradlew :app:testDebugUnitTest --build-cache --profile --stacktrace",
             TESTS,
         )
-        self.assertEqual(2, TESTS.count("build/reports/profile/"))
+        self.assertEqual(1, TESTS.count("build/reports/profile/"))
 
-    def test_each_emulator_variant_keeps_its_own_clean_snapshot(self):
-        self.assertIn("api: 23\n            image: default\n            arch: x86", TESTS)
-        self.assertIn("api: 35\n            image: google_apis\n            arch: x86_64", TESTS)
-        for segment in (
-            "${{ runner.os }}",
-            "${{ matrix.api }}",
-            "${{ matrix.image }}",
-            "${{ matrix.arch }}",
-            "pixel_2",
-        ):
-            self.assertIn(segment, TESTS)
+    def test_no_avd_or_installed_apk_automated_jobs_remain(self):
+        self.assertNotIn("  emulator:", TESTS)
+        self.assertNotIn("  smoke:", RELEASE)
+        self.assertNotIn("reactivecircus/android-emulator-runner", TESTS)
+        self.assertNotIn("reactivecircus/android-emulator-runner", RELEASE)
+        self.assertNotIn("connectedDebugAndroidTest", TESTS)
+        self.assertNotIn("avd-cache", TESTS)
+        self.assertIn("needs: [verify, build]", RELEASE)
+        self.assertIn("  docs-browser:", TESTS)
+        self.assertIn("  android:\n", TESTS)
+        self.assertIn("  docs:\n", TESTS)
 
-        restore = TESTS.index("name: Restore clean Android emulator snapshot")
-        seed = TESTS.index("name: Create clean emulator snapshot")
-        save = TESTS.index("name: Cache clean emulator snapshot")
-        tests = TESTS.index("name: Run installed-APK tests")
-        self.assertLess(restore, seed)
-        self.assertLess(seed, save)
-        self.assertLess(save, tests)
-        self.assertIn("uses: actions/cache/restore@v4", TESTS[restore:seed])
-        self.assertIn("uses: actions/cache/save@v4", TESTS[save:tests])
-        self.assertIn("continue-on-error: true", TESTS[restore:seed])
-        self.assertIn("continue-on-error: true", TESTS[save:tests])
-        self.assertNotIn("-no-snapshot", TESTS[seed:save])
-        self.assertIn("-no-snapshot-save", TESTS[tests:])
-        self.assertEqual(2, TESTS.count("force-avd-creation: false"))
-        self.assertIn("script: sh scripts/ci/run-android-instrumentation.sh", TESTS)
+    def test_instrumentation_source_and_runner_dependencies_are_retired(self):
+        self.assertFalse((ROOT / "app/src/androidTest").exists())
+        self.assertFalse((ROOT / "scripts/smoke-release-apk.sh").exists())
+        self.assertFalse((ROOT / "scripts/ci/run-android-instrumentation.sh").exists())
+        self.assertFalse((ROOT / "scripts/ci/report_android_instrumentation.py").exists())
+        gradle_build = (ROOT / "app/build.gradle.kts").read_text(encoding="utf-8")
+        versions = (ROOT / "gradle/libs.versions.toml").read_text(encoding="utf-8")
+        for obsolete in ("testInstrumentationRunner", "androidTestImplementation"):
+            self.assertNotIn(obsolete, gradle_build)
+        self.assertNotIn("androidx-test-runner", versions)
+        self.assertNotIn("androidx-test-ext-junit", versions)
+        self.assertNotIn("androidx-test-core", versions)
 
     def test_docs_test_gate_caches_pnpm_after_installing_pnpm(self):
         docs_tests = TESTS.split("  docs:\n", 1)[1].split(

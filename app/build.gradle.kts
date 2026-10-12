@@ -19,7 +19,6 @@ android {
         applicationId = "uk.nktnet.webviewkiosk"
         minSdk = 21
         targetSdk = 37
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         versionCode = 135
         versionName = "0.26.21"
         buildConfigField("int", "MIN_SDK_VERSION", "$minSdk")
@@ -31,7 +30,6 @@ android {
     }
 
     testOptions {
-        animationsDisabled = true
         unitTests {
             isIncludeAndroidResources = true
             all {
@@ -139,7 +137,4 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.androidx.test.ext.junit)
-    androidTestImplementation(libs.androidx.test.core)
 }

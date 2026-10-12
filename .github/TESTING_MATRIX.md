@@ -4,16 +4,51 @@ Snapshot: `further-testing` at `ba7cb40a` compared with the v0.26.21 release com
 `aa7ceca9`. This is an assessment of test *coverage*, not a finding that the
 untested paths are defective. The app still declares `versionName = "0.26.21"`.
 
-## Current automated-test gate status (12 October 2026)
+## Current automated-test gate status (12 October 2026; v1.0.33)
+
+**Testing policy:** Keep automated JVM/Robolectric, CI-script, Vitest and
+Chromium Playwright tests. All Android APK instrumentation, AVD/emulator jobs,
+and the release APK emulator smoke test have been removed. Device and AVD
+acceptance checks are **manual-only** and are not CI release gates.
 
 | Gate | Most recent evidence | Status |
 | --- | --- | --- |
-| Android JVM/Robolectric | 442 tests across 42 suites passed at v1.0.25; no newer JVM-job result was supplied | Last verified pass is historical; current CI outcome unknown |
-| Installed APK, API 23 | API 23 matrix is defined, but no completed job report was supplied | Unverified |
-| Installed APK, API 35 | [CI run 38190273493](https://github.com/nktnet1/webview-kiosk/actions/runs/38190273493), after v1.0.30: one failing custom-password dialog visibility assertion | **Failing**, not fixed in v1.0.31 or v1.0.32 |
-| Docs Vitest / Chromium Playwright | Jobs are defined; their passing output was not supplied | Unverified |
-| Caching / speed | v1.0.31 configuration is staged; no post-change run timings were supplied | Unverified speedup |
-| Local parity | v1.0.32 offline mocked dispatch/regression checks pass; emulator absent in this environment | Local orchestration verified, on-device runs pending |
+| Android JVM/Robolectric | 442 tests across 42 suites passed at v1.0.25; no newer complete JVM CI result was supplied | Last verified pass is historical; current CI outcome unknown |
+| Docs Vitest / Chromium Playwright | Jobs remain configured; no passing CI output supplied | Unverified |
+| Offline CI checks / local runner | v1.0.33 regression suite and asset-exporter shell checks run locally (see validation below) | Verified locally, CI pending |
+| Gradle/pnpm caching | v1.0.31 Gradle build cache and pnpm store caching retained; no measured post-change timings | Speedup unverified |
+| Installed APK, API 23 / API 35 | Instrumentation suites and CI jobs removed in v1.0.33 | Manual-only; **not** passing automated gates |
+| Release APK launch | AVD smoke job removed; release build still depends on JVM/docs test gate | Manual-only; release APK not runtime-certified by CI |
+
+**Known historical failure retained:** [API 35 CI run 38190273493](https://github.com/nktnet1/webview-kiosk/actions/runs/38190273493)
+failed the custom-password dialog visibility assertion after v1.0.30. Removing
+that automation does **not** fix the underlying UI, nor confirm that the
+password dialog works on a device. Verify it during manual device acceptance.
+
+## AVD retirement and retained automated coverage (v1.0.33)
+
+- Removed the API 23/35 Android instrumentation matrix, emulator boot/snapshot
+  caching, instrumentation report/logcat tooling and all eight files under
+  `app/src/androidTest`. Removed AndroidJUnitRunner configuration and its
+  instrumentation-only dependencies. No APK UI or device test is run in CI.
+- Removed the API 35 **release smoke** job, emulator launch script and its
+  dependency in `.github/workflows/release.yaml`. A draft release now depends
+  on successful Android JVM/docs checks and a successful minified APK build;
+  on-device installation, launch, permissions and behaviour need manual sign-off.
+- `scripts/ci/test-local.sh` supports `checks`, `jvm`, `docs`, `docs-browser`
+  and `all` (those four suites only). The AVD test selector and filters are
+  intentionally removed. Robolectric and JVM MQTT/HTTP tests do **not** require
+  an AVD; docs Playwright still runs Chromium and is unaffected.
+- Preserved the Gradle task-output cache, build profiles, pnpm store caches,
+  docs Vitest/Chromium E2E and existing JVM/Robolectric regressions.
+- **Validation:** 11 offline Python regression tests and the Android test-asset
+  exporter shell checks pass. Both workflows parse as YAML; the version catalog
+  parses as TOML, shell syntax passes, and the attached Biome `check --write`
+  passes in `docs/` (Biome does not format Kotlin, Python or these workflows).
+  None establishes an on-device pass. Post-v1.0.33 CI results are unavailable.
+- Older v1.0.26–v1.0.32 entries below remain as **historical evidence** for
+  why this choice was made; their emulator automation and CI wiring are no
+  longer present. Do not treat retired device tests as passed coverage.
 
 ## Existing baseline
 
@@ -423,7 +458,11 @@ untested paths are defective. The app still declares `versionName = "0.26.21"`.
   enforcement. API 23 OEM/device checks remain required. Dhizuku readiness and
   permission-refusal scenarios on API 28+ remain untested.
 
-## First installed-APK and browser automation phase (v1.0.26)
+## First installed-APK and browser automation phase (v1.0.26; historical)
+
+The AndroidJUnitRunner sources, CI emulator jobs and release smoke test
+introduced here were **removed in v1.0.33**. Only the docs Playwright tests
+remain. The bullets below record what was attempted at that time.
 
 - Added `app/src/androidTest` with AndroidJUnitRunner and a **disposable
   emulator-only** HTTP/WebView fixture. `RealWebViewTest` exercises a real
@@ -458,11 +497,14 @@ untested paths are defective. The app still declares `versionName = "0.26.21"`.
   dependency cache nor installed docs packages/browser; no installed APK or
   browser run was possible here. Static YAML and shell checks and the attached
   Biome `check --write` have been run. `docs/pnpm-lock.yaml` was deliberately
-  left unchanged; it must be regenerated for the new `@playwright/test` dev
-  dependency before CI's frozen install can succeed. The 442-test JVM pass above
+  left unchanged in that patch; the later-checked lockfile **already contains**
+  `@playwright/test@1.56.1`. The 442-test JVM pass above
   is historical v1.0.25 evidence, **not** a v1.0.26 test result.
 
-## Installed-APK CI findings and diagnostics (v1.0.27–v1.0.30)
+## Installed-APK CI findings and diagnostics (v1.0.27–v1.0.30; historical)
+
+These findings are preserved to inform manual acceptance, not to imply any
+instrumentation test or diagnostic tool remains in the current CI workflow.
 
 - v1.0.27 adds JUnit failure extraction and best-effort device logcat capture;
   v1.0.28 moves the instrumentation command into a POSIX shell script because
@@ -485,129 +527,90 @@ untested paths are defective. The app still declares `versionName = "0.26.21"`.
   reporting worked on API 35. They do not establish that API 23 or docs E2E
   passed, nor do they prove physical-device behaviour.
 
-## Local automated CI parity and open authentication failure (v1.0.32)
+## Local automated CI parity (v1.0.32; updated v1.0.33)
 
-- **Latest supplied CI evidence (12 October 2026, 01:09 UTC): API 35 is still RED.**
-  `AuthenticationRouteDeviceTest.settingsRemainProtectedBeforeUnlockAndRequireAuthAfterRecreation`
-  times out waiting for the `visible custom-password dialog`, despite the
-  v1.0.30 accessibility-window change. Its earlier pending-authentication
-  precondition passed, but the XML/log excerpt does not establish whether the
-  Compose dialog was rendered, obscured by the keyboard, or undetectable via
-  accessibility. This is **not fixed** by the v1.0.31 CI cache changes or by
-  this local test-runner patch. Do not count the instrumentation gate as green.
-- `scripts/ci/test-local.sh` provides dependency-free *orchestration* of the same
-  local test tasks as CI, without downloading tools or replacing GitHub Actions.
-  Run its `--help` for prerequisites and supported test selectors. Its suites:
-  `checks` (exporter shell tests plus all Python regressions), `jvm`
-  (`:app:testDebugUnitTest --build-cache --profile --stacktrace`), `android`
-  (the **same CI wrapper**, `:app:connectedDebugAndroidTest`), `docs` (Biome
-  check and Vitest), `docs-browser` (production docs build and Playwright), and
-  `all` (all five, sequentially). The Android suite can filter one class or
-  method using `--class` and require `--api 23` / `--api 35`.
-- For the current API 35 failure, first boot an **isolated disposable API 35**
-  emulator with Android Studio Device Manager, then run
-  `sh scripts/ci/test-local.sh android --api 35 --class AuthenticationRouteDeviceTest`.
-  To limit even further, use `--class AuthenticationRouteDeviceTest#settingsRemainProtectedBeforeUnlockAndRequireAuthAfterRecreation`.
-  The runner refuses to mutate a host with zero or multiple connected devices,
-  validates the requested SDK level, and keeps JUnit extraction and logcat on
-  failure. It does not launch an AVD, install Android/Node tooling or select a
-  hardware ABI. An API 35 arm64 emulator on Apple Silicon exercises the same
-  Android API but **not** CI's `google_apis/x86_64` system image. CI's API 23
-  target is `default/x86`; reproducing its ABI may require a Linux/Intel host.
-- A local Gradle/Playwright run does not reproduce GitHub-hosted secrets,
-  release-signing gates, pristine VM images, runner action code or emulator
-  snapshot caching. `act` can run some workflow steps via Docker, but emulator
-  acceleration is often unavailable in nested containers. Prefer native AVD +
-  Gradle for debugging instrumentation. The script is intentionally not used to
-  skip or weaken existing CI gates.
-- **Validation:** 22 offline Python checks pass, including local CLI dispatch,
-  API mismatch and multiple-device guards, class-filter forwarding, and CI
-  wrapper exit-code preservation. Android instrumented tests, docs dependencies
-  and AVD parity could not be executed in this local environment. API 35 remains
-  an outstanding failure pending a real emulator run and further diagnostic
-  evidence; v1.0.31 cache-hit and wall-clock improvements remain unmeasured.
+- v1.0.32 originally introduced `scripts/ci/test-local.sh` with an optional
+  emulator/device instrumentation mode. **v1.0.33 removes that mode**; only
+  `checks`, `jvm`, `docs`, `docs-browser` and `all` remain. These run the same
+  non-AVD test classes as CI without installing dependencies or needing AVDs.
+- Local Gradle/Playwright tests cannot replicate GitHub-hosted signing secrets,
+  pristine hosted images or runner action implementations. They can exercise
+  Kotlin/Robolectric and docs tests before pushing, without an emulator.
+- The API 35 authentication-dialog timeout seen in run 38190273493 is still
+  unresolved, but **no longer an automated CI failure gate**. The actual
+  custom-password dialog, recreation and unlock path must be assessed manually.
 
-## CI test-run performance work (v1.0.31)
+## CI test-run performance work (v1.0.31; updated v1.0.33)
 
-- The supplied API 35 CI log (`12 October 2026`, 01:01:43–01:09:29 UTC)
-  shows about **7m 46s wall time**: roughly **5m 55s Gradle** (including
-  **1m 35s device tests**), **1m 23s emulator installation/boot**, and the
-  remainder for Java/cache setup and reporting. All 73 Gradle tasks executed;
-  Gradle was configured for configuration caching but **task-output build
-  caching was not enabled**.
-- Gradle jobs now use `gradle/actions/setup-gradle@v6` enhanced caching rather
-  than also caching Gradle User Home with `actions/setup-java`. The unit and
-  installed-APK commands request `--build-cache` and `--profile`. The
-  generated Gradle timing profile is uploaded with test reports, so task-cache
-  hits and elapsed times can be compared before claiming any speedup.
-  Same-repository PRs may write Gradle cache entries; fork PRs are read-only.
-- Both emulator variants cache a **clean, pre-test AVD snapshot** keyed by
-  OS/API/system-image target/architecture/profile. A cache miss first boots a
-  disposable AVD to create the snapshot, saves it **before** instrumentation,
-  then runs with `-no-snapshot-save` so test state is not persisted. The
-  cache restore/save steps are best-effort and never suppress test failures.
-  First runs can therefore be **slower**. Snapshot caches may be evicted or become
-  stale when the emulator binary or Android image changes; increment the
-  `avd-v1` prefix to force a clean snapshot if that occurs.
-- The reusable docs unit/browser jobs and docs-deployment test gate now cache
-  pnpm's package store keyed by `docs/pnpm-lock.yaml`. They still run a frozen
-  install, Vitest and/or Playwright as before. Chromium binaries and Linux
-  system packages are deliberately **not** cached: Playwright advises that
-  binary-cache restore time is often comparable to downloading them.
-- **Verification:** 10 offline Python regression checks (including three
-  new caching invariants) and the Android asset-exporter shell tests pass;
-  both workflow files parse as YAML with their step ordering intact. Biome
-  `check --write` on the docs config passes (Biome does not format YAML or
-  Kotlin). Runtime speedups, cache-hit rates, emulator
-  snapshot compatibility (API 23 and API 35), and fully green CI **remain
-  unverified** until subsequent GitHub Actions runs. The v1.0.30 API 35
-  password-dialog failure remains open independently of these changes.
-- **Current scope:** prioritise repeatable automated tests, instrumentation,
-  browser E2E, test diagnostics and CI efficiency. Manual/OEM device checks
-  below remain a deferred release-readiness backlog, not active tasks.
+- The last supplied API 35 log (12 October 2026, 01:01:43–01:09:29 UTC)
+  recorded about 7m 46s, including 5m 55s of Gradle build/testing and 1m 23s
+  of emulator setup. This is **historical**, not a benchmark for the new CI
+  pipeline; removing emulator execution eliminates that entire job.
+- The Android **JVM** job retains `gradle/actions/setup-gradle@v6` enhanced
+  caching, `--build-cache`, `--profile` and an uploaded Gradle timing profile.
+  Fork PRs are read-only for the Gradle cache. Dependency-cache hits alone do
+  not prove task-output reuse or a wall-time improvement.
+- v1.0.31 introduced API 23/35 clean AVD snapshot caching; **those jobs and
+  snapshots are removed in v1.0.33** and no longer relevant to CI speed.
+- Docs unit, browser and deployment jobs retain pnpm store caching keyed by
+  `docs/pnpm-lock.yaml`, frozen installs and Chromium E2E. Browser binaries
+  and system packages are intentionally not cached here.
+- **Current scope:** improve and extend only non-AVD automated tests. Keep
+  device, emulator, OEM and release-APK runtime checks as manual acceptance
+  scenarios below. Do not claim a green CI run or measured speedup without
+  post-v1.0.33 CI evidence.
 
 ## Remaining automated tests, ordered by regression risk
 
 | Priority | Area / main code | Recommended tests and assertions | Layer |
 | --- | --- | --- | --- |
-| **P0** | Authentication (`managers/AuthenticationManager.kt`, `AuthenticationSession.kt`, `RequireAuthWrapper.kt`) | Session/prompt tests added in v1.0.15 passed. The 18 Compose/Robolectric checks in v1.0.22 verify protected-content gating, expired resume/recomposition, prompt deduplication, retry/cancel and effect cleanup. v1.0.26 instruments the installed settings route and custom-password gate. API 35 CI has executed it but the password-dialog visibility assertion still times out after v1.0.30; this automated test is open, not passing. Still test the actual custom-password UI, cancellation/retry, external-activity return, device-credential fallback and invalidated Android Keystore keys on devices. See the authentication follow-ups for verification limits. | Unit/Robolectric for sessions, prompts and Compose semantics/lifecycle; APK instrumentation and emulator/device for route integration, actual credential UI and keystore |
-| **P0** | Navigation and active WebView (`utils/webview/WebviewNavigation.kt`, `WebViewNavigationSession.kt`, `ui/screens/WebviewScreen.kt`, `utils/createCustomWebview.kt`) | The 61 added history/session/preference regressions passed in the Android suite after v1.0.17. v1.0.26 adds real WebView redirects, SPA pushState, iframe errors, remote Home/navigation and recreation. The supplied post-v1.0.29 API 35 run reports no failures in these test cases, while the full instrumentation job remains red from authentication. Still test rapid repeated routes, SPA pushes *before* page finish, stale/duplicate callbacks (including same-URL), renderer death, delayed URL events and fullscreen teardown. See the navigation and cursor follow-ups above for implemented cases and verification limits. | Robolectric for history/preferences; pure state tests for policy; real WebView instrumentation for ownership and callbacks |
-| **P0** | UnifiedPush and remote request/settings handoff (`managers/UnifiedPushManager.kt`, `RemoteMessageManager.kt`, `MainActivity.kt`, `MqttForegroundService.kt`) | The 33 registration/filtering/settings/request regressions passed in v1.0.18. v1.0.21 verifies MQTT TCP delivery through service collectors; v1.0.23 adds 15 actual activity/service handoff executions, and v1.0.24 adds 12 for start denial, activity fallback and service recovery. v1.0.26 adds installed-APK MQTT/TCP navigation, settings import and correlated request replies, plus background service command ownership; the supplied post-v1.0.29 API 35 run reports no failures in these cases, but the overall job still fails authentication. Still test settings-triggered UI reload, cold-process startup, device-owner commands, a real UnifiedPush distributor and TLS/WebSocket brokers. Existing command FIFO/claim tests need not be duplicated. See the remote-stream/loopback/handoff/fallback follow-ups for limits. | Robolectric activity/Compose/service lifecycle and real JVM MQTT TCP; coroutine tests for flows; APK instrumentation and on-device transport tests |
-| **P0** | Foreground services (`services/MqttForegroundService.kt`, `LockTaskService.kt`) | The 45 service checks passed through v1.0.21, covering resources/notifications, MQTT restoration, repeated starts, connection rejection/recovery, disabling MQTT during connect and loopback delivery. The 27 handoff executions through v1.0.24 verify live/pending connection ownership, service toggles, actual activity collector cleanup, modeled start denial/fallback/recovery and older-service cleanup. v1.0.26 exercises one real Android foreground-service handoff, background command/request delivery and notification teardown. The supplied post-v1.0.29 API 35 run reports no failures in these cases, but overall instrumentation is still red. Still verify live reconnection, denied starts, Android 14+ background-start restrictions and OS process death/restart. See the service/notification/loopback/handoff/fallback follow-ups for limits. | Robolectric activity/service callbacks on API 28/29 and real JVM MQTT TCP; APK instrumentation and emulator/device lifecycle/transport scenarios |
-| **P1** | Android 6 and owner initialisation (`Android6KioskActivity.kt`, `MainActivity.kt`, `utils/lockTaskUtils.kt`, `managers/DeviceOwnerManager.kt`) | v1.0.25 adds 18 SDK-gate/Robolectric checks for HOME vs launcher, one-shot lock requests, selected host and handoff on stop. v1.0.26 adds actual API 23 HOME/private task-ID separation (pending CI execution). Still test unlock/HOME/recreation, owner permission/refusal and pinned-to-locked transitions; test Dhizuku delayed readiness/permission refusal on API 28+. Do not regard an overridden SDK gate as an API 23 runtime. | Robolectric API 28 policy + API 23 device/emulator |
-| **P1** | Real PDF viewer + certificate paths (`handlers/handlePdfSourceRequest.kt`, `utils/webview/PdfTlsState.kt`, PDF HTML) | Load a PDF in an actual WebView with Range requests, redirects and auth; show real pages, recover on retry, close old viewer requests; validate untrusted/expired TLS decisions and a local HTTPS server requesting an mTLS certificate. HTTP helper unit cases are already extensive. | Instrumented WebView + controlled HTTP(S) test server |
-| **P1** | Picker/MediaStore bridge (`createCustomWebview.kt`, `interfaces/BlobInterface.kt`, `fileChooserUtils.kt`) | Actual file chooser cancellation and return; camera failure fallback returns exactly once; kill/swap WebView during pending selection; two simultaneous blob downloads leave correct bytes in the Android provider; failures do not leave pending MediaStore rows. Do not repeat the existing URI policy/transfer-helper tests. | Instrumentation with fake document provider and device camera smoke |
-| **P1** | Settings, external intents and Compose UI (`ui/components/setting/dialog/ImportSettingDialog.kt`, `utils/intentUtils.kt`, `SystemSafeDialogs.kt`, `SystemSafeClipboard.kt`) | Invalid parcelables/intent extras, oversized or interrupted settings import, denial/cancellation, focus request after layout, IME dismissal on Android 6, and clipboard access while a restricted window is active. | Unit/Robolectric for parsers; Compose instrumentation for UI |
-| **P1** | Docs QR UI (`docs/src/components/qr/`) | v1.0.26 adds Chromium assertions for source URLs, encoded payload, checksum and invalid JSON warning (pending CI execution). Still cover unreachable upstream endpoints at build/discovery time and scanned QR provisioning on hardware. | Vitest existing helpers + Playwright/browser E2E |
-| **P1** | CI and release (`.github/workflows/tests.yaml`, `release.yaml`, `docs.yaml`) | v1.0.26 wires tag release to reusable unit/emulator/browser checks, docs Vitest+E2E deployment gates, minified APK install/launch and report uploads. API 35 CI executes but is red on the custom-password visibility test after v1.0.30; API 23 and docs CI results were not supplied. The existing `docs/pnpm-lock.yaml` contains `@playwright/test@1.56.1`; do not regenerate it only for that dependency. v1.0.31 adds Gradle build caching/profiles, clean AVD snapshots, and pnpm store caches; runtime savings are not yet measured. | CI |
+| **P0** | Authentication (`managers/AuthenticationManager.kt`, `AuthenticationSession.kt`, `RequireAuthWrapper.kt`) | Retain the passing session, prompt and 18 Compose/Robolectric regressions from v1.0.15/v1.0.22. Extend mocked lifecycle, expired-session, callback ordering and retry/cancel assertions where coverage is missing. Actual custom-password dialog visibility, input, biometric/credential fallback and Keystore behaviour are **manual**; the historical API 35 dialog failure remains unresolved. | JVM/Robolectric and deterministic Compose host tests; manual on-device UI |
+| **P0** | Navigation and active WebView (`utils/webview/WebviewNavigation.kt`, `WebViewNavigationSession.kt`, `ui/screens/WebviewScreen.kt`, `utils/createCustomWebview.kt`) | Retain the 61 history/session/preference regressions. Add deterministic tests for duplicate/superseded callbacks, same-URL navigation, page errors and renderer-generation ownership where feasible without a real WebView. Actual redirects, iframe failures, fullscreen teardown and renderer-death behaviour are **manual**. | Pure state and Robolectric; manual WebView UI |
+| **P0** | UnifiedPush and remote request/settings handoff (`managers/UnifiedPushManager.kt`, `RemoteMessageManager.kt`, `MainActivity.kt`, `MqttForegroundService.kt`) | Keep 33 registration/stream tests, JVM loopback MQTT TCP and activity/service ownership/fallback coverage through v1.0.24. Add controlled connect/reconnect, dispatch and cancellation races without duplicating existing claim/FIFO cases. Actual broker integrations, system backgrounding, TLS/WebSocket and distributor behavior remain manual. | JVM MQTT TCP, coroutine and Robolectric; manual transport/device |
+| **P0** | Foreground services (`services/MqttForegroundService.kt`, `LockTaskService.kt`) | Retain 45 service/notification tests and 27 ownership/handoff executions. Extend deterministic tests for late connection, settings changes, notifications after stop and service cleanup as needed. Android 14+ foreground-start restrictions, OS process death and notification behaviour on real devices are **manual**. | Robolectric API 28/29 and JVM TCP; manual device |
+| **P1** | Android 6 and owner initialisation (`Android6KioskActivity.kt`, `MainActivity.kt`, `utils/lockTaskUtils.kt`, `managers/DeviceOwnerManager.kt`) | Keep v1.0.25's 18 Robolectric SDK-gate tests; add modeled denial/retry and Dhizuku readiness/permission cases where practical. API 23 HOME/private task separation, provisioning and lock-task enforcement are manual. Overriding `SDK_INT` is not an API 23 runtime. | Robolectric policy; manual API 23/device owner |
+| **P1** | PDF request/TLS paths (`handlers/handlePdfSourceRequest.kt`, `utils/webview/PdfTlsState.kt`) | Extend helper/unit regressions only for uncovered Range requests, redirects, cancellation, retry or certificate-state isolation. Actual PDF page rendering, Android KeyChain, HTTPS client certificates and WebView dialogs are manual. | JVM HTTP/TLS helpers; manual WebView/KeyChain |
+| **P1** | Picker/MediaStore bridge (`createCustomWebview.kt`, `interfaces/BlobInterface.kt`, `fileChooserUtils.kt`) | Test URL/URI policy, transfer errors, cleanup and exactly-once callback state with fakes where possible. Actual camera intents, Android document provider, simultaneous downloads and pending MediaStore rows are manual. | Unit/Robolectric helpers; manual device |
+| **P1** | Settings, external intents and Compose UI (`ui/components/setting/dialog/ImportSettingDialog.kt`, `utils/intentUtils.kt`, `SystemSafeDialogs.kt`, `SystemSafeClipboard.kt`) | Unit/Robolectric tests for malformed extras, invalid imports, denied actions and modeled lifecycle/state transitions. Actual keyboard focus, IME dismissal, dialogs and clipboard restrictions are manual. | Unit/Robolectric; manual UI |
+| **P1** | Docs QR UI (`docs/src/components/qr/`) | Preserve v1.0.26 Chromium/Playwright and existing Vitest tests; add testable upstream-discovery error/fallback cases. Actual Android setup wizard and QR provisioning are manual. | Vitest and Playwright Chromium; manual QR scan |
+| **P1** | CI and release (`.github/workflows/tests.yaml`, `release.yaml`, `docs.yaml`) | CI now runs JVM/Robolectric plus docs Vitest/Playwright and scripts; release builds the minified APK after the required reusable test workflow. No automated device/AVD test or release APK launch gate remains. Preserve Gradle/pnpm caches, capture current CI timings and track manual release sign-off independently. `docs/pnpm-lock.yaml` already contains Playwright and is unchanged. | Non-AVD CI; manual release runtime |
 
 Prioritise the first four P0 items **before broadening already strong MQTT or
 PDF HTTP helper suites**. Any new asynchronous test should control scheduling
 and assert not just final state but absence of duplicate calls/events.
 
-## Device-level checks that cannot be certified by JVM tests
+## Manual device/AVD acceptance (outside automated CI)
 
-| Priority | Device / environment | Manual acceptance scenario (automate the repeatable portion where possible) |
+All scenarios below require a human tester. They are not optional implied CI
+passes; maintain evidence independently before claiming hardware/runtime
+release readiness. No AVD tests are created or scheduled in the automated
+workstream.
+
+| Priority | Device / environment | Manual acceptance scenario (not run by CI) |
 | --- | --- | --- |
 | **P0** | Real Android 6 / API 23, preferably the affected OEM | Provision as device owner; HOME launches the private kiosk task; locking does not immediately exit; unlock and HOME do not relock unexpectedly; hardware Back/Home and soft keyboard/system bars remain usable as configured. Reboot and repeat. |
-| **P0** | Actual biometric/credential hardware, Android 6-10 and a modern Android version | No biometrics enrolled but secure PIN/pattern/password configured; cancel and retry; change enrollment to invalidate key; return from camera/file picker/external activity without bypassing auth; timeout while backgrounded. |
+| **P0** | Actual biometric/credential hardware, Android 6-10 and a modern Android version | Confirm that the **custom-password dialog is visible and unlocks** on API 35 (historical automation timed out); use secure PIN/pattern/password with no biometrics enrolled; cancel and retry; change enrollment to invalidate key; return from camera/file picker/external activity without bypassing auth; timeout while backgrounded. |
 | **P0** | Android 14+ foreground-service restrictions, active MQTT broker and UnifiedPush distributor | Deny notifications/foreground start where supported; kill process then restart; disconnect/reconnect network; enable/disable service; verify one persistent notification, no stale wake lock, exactly-once command/settings handling and no background crash. |
 | **P0** | Android 17 / API 37 device or compatible emulator | Deny then grant local-network permission; navigate to a LAN URL; retry after grant, while switching WebViews and after activity recreation. Check target-SDK permission behaviour rather than trusting API 28 Robolectric. |
 | **P1** | API 21 (supported minimum), API 29, and a current Android release | Smoke core navigation, external file picker/camera, shared-storage access (legacy vs scoped), PDF viewer, download visibility and permissions. |
 | **P1** | HTTPS server with real server/client certificates and a protected PDF | Correct TLS warning, cancel/proceed behaviour, certificate selection via Android KeyChain, no leaked approvals to a different host/viewer, credential prompt, reload and close. Check visual PDF page/background rendering. |
+| **P1** | Minified release APK on a clean test device/emulator | Install the exact release artifact produced by CI, launch `MainActivity`, check that the process stays alive and the kiosk renders, and record device/API/version/signing evidence. This replaced the removed release-AVD smoke gate. |
 | **P1** | Factory-reset provisionable device and live QR source | Scan the generated QR with Android Setup Wizard; validate actual APK URL, signature checksum, device-owner setup and resulting policy. Static QR JSON tests cannot establish successful provisioning. |
 | **P1** | OEM devices with alternate IME, WebView and camera apps | Focus/dialog rendering, keyboard visibility, clipboard, fullscreen video, NFC/share intents and camera cancellation during lock/unlock and app switching. |
 
 ## Release readiness definition
 
-1. Android JVM suite passes, docs Vitest suite passes, and both run in CI on the
-   commit being released. Do not infer docs-test success from Android-test results.
-2. P0 regression tests above are added and pass; at least one instrumented
-   end-to-end test covers real WebView navigation and remote message delivery.
-3. Physical API 23 lock-task, credential/keystore, foreground-service and API 37
-   permission scenarios have recorded pass/fail evidence with OS, WebView and
-   device-owner configuration. An emulator cannot replace the OEM-specific checks.
-4. A minified release APK builds, installs and launches, and the tag-triggered
-   release cannot publish a draft before required test gates have passed.
+1. Android JVM/Robolectric and docs Vitest/Chromium Playwright suites pass in
+   CI on the commit being released; CI script checks pass too. Do not infer
+   browser-test success from Android-test results.
+2. P0 **non-AVD** regression tests above run successfully. The historical
+   authentication-dialog timeout is not silently reclassified as fixed.
+3. Manual device/AVD checks above have separately recorded pass/fail evidence,
+   including API 23 lock-task, credentials/Keystore, foreground-service and
+   API 37 permissions. No automated run substitutes for an OEM-specific check.
+4. CI builds a minified release APK only after its non-AVD test gates pass.
+   Installation and real launch must be **manually signed off**: the release
+   workflow no longer performs the API 35 smoke test. Creating a draft release
+   does not certify runtime readiness.
 5. Record failures separately from **not yet tested**. A passing unit suite is
-   not a quantitative statement of runtime or branch coverage.
+   not a quantitative statement of device, runtime or branch coverage.
