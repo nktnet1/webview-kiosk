@@ -71,26 +71,19 @@ internal object InstalledAppHarness {
         fail("Timed out waiting for $description${lastFailure?.let { ": $it" } ?: ""}")
     }
 
-    fun currentWebView(scenario: ActivityScenario<MainActivity>): WebView? {
-        var found: WebView? = null
+    private fun currentWebViewUrl(scenario: ActivityScenario<MainActivity>): String? {
+        var observedUrl: String? = null
+        // onActivity runs on the main thread. Never return a WebView to the test thread:
+        // even reading WebView.url there violates Android's WebView thread confinement.
         scenario.onActivity { activity ->
-            fun find(view: View): WebView? {
-                if (view is WebView) return view
-                if (view is ViewGroup) {
-                    for (index in 0 until view.childCount) {
-                        find(view.getChildAt(index))?.let { return it }
-                    }
-                }
-                return null
-            }
-            found = find(activity.window.decorView)
+            observedUrl = currentWebViewUnsafe(activity.window.decorView)?.url
         }
-        return found
+        return observedUrl
     }
 
     fun awaitUrl(scenario: ActivityScenario<MainActivity>, url: String) {
         eventually("a real WebView at $url") {
-            SystemSettings(context).currentUrl == url && currentWebView(scenario)?.url == url
+            SystemSettings(context).currentUrl == url && currentWebViewUrl(scenario) == url
         }
     }
 
