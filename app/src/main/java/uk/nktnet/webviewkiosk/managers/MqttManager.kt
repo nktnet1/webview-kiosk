@@ -8,10 +8,10 @@ import com.hivemq.client.mqtt.MqttClientState
 import com.hivemq.client.mqtt.MqttWebSocketConfig
 import com.hivemq.client.mqtt.lifecycle.MqttDisconnectSource
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
-import com.hivemq.client.mqtt.mqtt5.message.subscribe.suback.Mqtt5SubAck
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PayloadFormatIndicator
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PublishResult
+import com.hivemq.client.mqtt.mqtt5.message.subscribe.suback.Mqtt5SubAck
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -926,6 +926,7 @@ object MqttManager {
     // Capture the owning client before the batch. A concurrent replacement must not
     // receive leftover topics from a superseded connect attempt.
     // Invoked reflectively by MQTT operation-state regression tests.
+    @Suppress("unused")
     private fun subscribeToTopics() {
         val subscribingClient = getReadyClient() ?: return
         subscribeToTopics(subscribingClient)

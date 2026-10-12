@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.net.http.SslCertificate
 import android.net.http.SslError
@@ -101,7 +102,8 @@ internal class PdfTlsState(previous: PdfTlsState? = null) {
             }
         }
 
-        val trust = object : X509TrustManager {
+        val trust = @SuppressLint("CustomX509TrustManager")
+        object : X509TrustManager {
             override fun getAcceptedIssuers(): Array<X509Certificate> = platformTrust.acceptedIssuers
             override fun checkClientTrusted(chain: Array<X509Certificate>, authType: String) =
                 platformTrust.checkClientTrusted(chain, authType)

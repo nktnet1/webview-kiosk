@@ -236,6 +236,7 @@ class MqttForegroundService : Service() {
         super.onDestroy()
     }
 
+    @Suppress("SameReturnValue")
     private fun stopAfterRejectedStart(startId: Int): Int {
         stopProcessing()
         stopSelf(startId)
