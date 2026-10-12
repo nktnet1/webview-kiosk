@@ -4,6 +4,17 @@ Snapshot: `further-testing` at `ba7cb40a` compared with the v0.26.21 release com
 `aa7ceca9`. This is an assessment of test *coverage*, not a finding that the
 untested paths are defective. The app still declares `versionName = "0.26.21"`.
 
+## Current automated-test gate status (12 October 2026)
+
+| Gate | Most recent evidence | Status |
+| --- | --- | --- |
+| Android JVM/Robolectric | 442 tests across 42 suites passed at v1.0.25; no newer JVM-job result was supplied | Last verified pass is historical; current CI outcome unknown |
+| Installed APK, API 23 | API 23 matrix is defined, but no completed job report was supplied | Unverified |
+| Installed APK, API 35 | [CI run 38190273493](https://github.com/nktnet1/webview-kiosk/actions/runs/38190273493), after v1.0.30: one failing custom-password dialog visibility assertion | **Failing**, not fixed in v1.0.31 or v1.0.32 |
+| Docs Vitest / Chromium Playwright | Jobs are defined; their passing output was not supplied | Unverified |
+| Caching / speed | v1.0.31 configuration is staged; no post-change run timings were supplied | Unverified speedup |
+| Local parity | v1.0.32 offline mocked dispatch/regression checks pass; emulator absent in this environment | Local orchestration verified, on-device runs pending |
+
 ## Existing baseline
 
 - `:app:testDebugUnitTest` passed offline with **197 tests across 29 JUnit suites**,
@@ -473,6 +484,48 @@ untested paths are defective. The app still declares `versionName = "0.26.21"`.
 - The supplied logs establish that compilation, emulator boot and JUnit
   reporting worked on API 35. They do not establish that API 23 or docs E2E
   passed, nor do they prove physical-device behaviour.
+
+## Local automated CI parity and open authentication failure (v1.0.32)
+
+- **Latest supplied CI evidence (12 October 2026, 01:09 UTC): API 35 is still RED.**
+  `AuthenticationRouteDeviceTest.settingsRemainProtectedBeforeUnlockAndRequireAuthAfterRecreation`
+  times out waiting for the `visible custom-password dialog`, despite the
+  v1.0.30 accessibility-window change. Its earlier pending-authentication
+  precondition passed, but the XML/log excerpt does not establish whether the
+  Compose dialog was rendered, obscured by the keyboard, or undetectable via
+  accessibility. This is **not fixed** by the v1.0.31 CI cache changes or by
+  this local test-runner patch. Do not count the instrumentation gate as green.
+- `scripts/ci/test-local.sh` provides dependency-free *orchestration* of the same
+  local test tasks as CI, without downloading tools or replacing GitHub Actions.
+  Run its `--help` for prerequisites and supported test selectors. Its suites:
+  `checks` (exporter shell tests plus all Python regressions), `jvm`
+  (`:app:testDebugUnitTest --build-cache --profile --stacktrace`), `android`
+  (the **same CI wrapper**, `:app:connectedDebugAndroidTest`), `docs` (Biome
+  check and Vitest), `docs-browser` (production docs build and Playwright), and
+  `all` (all five, sequentially). The Android suite can filter one class or
+  method using `--class` and require `--api 23` / `--api 35`.
+- For the current API 35 failure, first boot an **isolated disposable API 35**
+  emulator with Android Studio Device Manager, then run
+  `sh scripts/ci/test-local.sh android --api 35 --class AuthenticationRouteDeviceTest`.
+  To limit even further, use `--class AuthenticationRouteDeviceTest#settingsRemainProtectedBeforeUnlockAndRequireAuthAfterRecreation`.
+  The runner refuses to mutate a host with zero or multiple connected devices,
+  validates the requested SDK level, and keeps JUnit extraction and logcat on
+  failure. It does not launch an AVD, install Android/Node tooling or select a
+  hardware ABI. An API 35 arm64 emulator on Apple Silicon exercises the same
+  Android API but **not** CI's `google_apis/x86_64` system image. CI's API 23
+  target is `default/x86`; reproducing its ABI may require a Linux/Intel host.
+- A local Gradle/Playwright run does not reproduce GitHub-hosted secrets,
+  release-signing gates, pristine VM images, runner action code or emulator
+  snapshot caching. `act` can run some workflow steps via Docker, but emulator
+  acceleration is often unavailable in nested containers. Prefer native AVD +
+  Gradle for debugging instrumentation. The script is intentionally not used to
+  skip or weaken existing CI gates.
+- **Validation:** 22 offline Python checks pass, including local CLI dispatch,
+  API mismatch and multiple-device guards, class-filter forwarding, and CI
+  wrapper exit-code preservation. Android instrumented tests, docs dependencies
+  and AVD parity could not be executed in this local environment. API 35 remains
+  an outstanding failure pending a real emulator run and further diagnostic
+  evidence; v1.0.31 cache-hit and wall-clock improvements remain unmeasured.
 
 ## CI test-run performance work (v1.0.31)
 

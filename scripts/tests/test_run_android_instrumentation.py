@@ -12,7 +12,9 @@ SCRIPT = ROOT / "scripts/ci/run-android-instrumentation.sh"
 
 
 class RunAndroidInstrumentationTest(unittest.TestCase):
-    def run_instrumentation(self, gradle_exit: int, adb_exit: int = 0):
+    def run_instrumentation(
+        self, gradle_exit: int, adb_exit: int = 0, test_class: str | None = None
+    ):
         with tempfile.TemporaryDirectory() as directory:
             project = Path(directory)
             (project / "gradlew").write_text(
@@ -30,6 +32,9 @@ class RunAndroidInstrumentationTest(unittest.TestCase):
             )
             adb.chmod(0o755)
             env = os.environ.copy()
+            env.pop("ANDROID_TEST_CLASS", None)
+            if test_class is not None:
+                env["ANDROID_TEST_CLASS"] = test_class
             env["PATH"] = f"{directory}:{env.get('PATH', '')}"
             result = subprocess.run(
                 ["sh", str(SCRIPT)],
@@ -65,6 +70,19 @@ class RunAndroidInstrumentationTest(unittest.TestCase):
     def test_logcat_failure_does_not_mask_gradle_failure(self):
         status, _, _ = self.run_instrumentation(23, adb_exit=7)
         self.assertEqual(23, status)
+
+    def test_optional_class_filter_runs_only_the_requested_instrumentation(self):
+        classname = "uk.nktnet.webviewkiosk.instrumentation.AuthenticationRouteDeviceTest"
+        status, arguments, _ = self.run_instrumentation(
+            0, test_class=f"{classname}#settingsRemainProtectedBeforeUnlockAndRequireAuthAfterRecreation"
+        )
+        self.assertEqual(0, status)
+        self.assertEqual(
+            ":app:connectedDebugAndroidTest\n--build-cache\n--profile\n--stacktrace\n"
+            f"-Pandroid.testInstrumentationRunnerArguments.class={classname}"
+            "#settingsRemainProtectedBeforeUnlockAndRequireAuthAfterRecreation\n",
+            arguments,
+        )
 
     def test_runner_script_is_a_single_command(self):
         workflow = (ROOT / ".github/workflows/tests.yaml").read_text(encoding="utf-8")

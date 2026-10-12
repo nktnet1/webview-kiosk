@@ -1,7 +1,13 @@
 #!/bin/sh
 set -eu
 
-if sh gradlew :app:connectedDebugAndroidTest --build-cache --profile --stacktrace; then
+# A filter is optional. Without one, run the entire installed-APK test suite as CI does.
+set --
+if [ -n "${ANDROID_TEST_CLASS:-}" ]; then
+  set -- "-Pandroid.testInstrumentationRunnerArguments.class=$ANDROID_TEST_CLASS"
+fi
+
+if sh gradlew :app:connectedDebugAndroidTest --build-cache --profile --stacktrace "$@"; then
   exit 0
 else
   status=$?
