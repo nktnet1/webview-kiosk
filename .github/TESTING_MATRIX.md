@@ -4,7 +4,7 @@ Snapshot: post-merge `additional-tests` at `b51ab06d` compared with the v0.26.21
 release commit `aa7ceca9`. This is an assessment of test *coverage*, not a finding that the
 untested paths are defective. The app still declares `versionName = "0.26.21"`.
 
-## Current automated-test gate status (12 October 2026; v1.0.42)
+## Current automated-test gate status (12 October 2026; v1.0.43)
 
 **Testing policy:** Keep automated JVM/Robolectric, CI-script, Vitest and
 Chromium Playwright tests. All Android APK instrumentation, AVD/emulator jobs,
@@ -13,9 +13,9 @@ acceptance checks are **manual-only** and are not CI release gates.
 
 | Gate | Most recent evidence | Status |
 | --- | --- | --- |
-| Android JVM/Robolectric | v1.0.42 on the post-merge `additional-tests` bundle plus v1.0.41: **500 tests in 43 JUnit suites**, zero failures/errors/skips, passed locally with Gradle 9.8.0-milestone-1, JBR 21.0.11, supplied Android SDK, offline dependency cache and Robolectric API 28/29 runtimes. Includes two authentication expiry and five WebView completion-ownership regressions | **Verified local full Gradle pass**; hosted CI and installed APK remain unverified |
+| Android JVM/Robolectric | v1.0.43 on the post-merge `additional-tests` bundle plus v1.0.41–42: **505 tests in 43 JUnit suites**, zero failures/errors/skips, passed locally with Gradle 9.8.0-milestone-1, JBR 21.0.11, supplied Android SDK, offline dependency cache and Robolectric API 28/29 runtimes. Includes five new command-dispatch callback-isolation regressions | **Verified local full Gradle pass**; hosted CI and installed APK remain unverified |
 | Docs Vitest / Chromium Playwright | Jobs remain configured; no passing CI output supplied | Unverified |
-| Offline CI checks / local runner | v1.0.42: all **11** Python CI-script tests and Android asset-exporter shell tests passed; **500/500 full Android tests** passed. Authentication-manager and WebView navigation-session focused suites passed **81/81** | Verified local JVM and script checks; hosted CI pending |
+| Offline CI checks / local runner | v1.0.43: all **11** Python CI-script tests and Android asset-exporter shell tests passed; **505/505 full Android tests** passed. Remote-command dispatcher focused suite passed **8/8** | Verified local JVM and script checks; hosted CI pending |
 | Gradle/pnpm caching | v1.0.31 Gradle build cache and pnpm store caching retained; no measured post-change timings | Speedup unverified |
 | Installed APK, API 23 / API 35 | Instrumentation suites and CI jobs removed in v1.0.33 | Manual-only; **not** passing automated gates |
 | Release APK launch | AVD smoke job removed; release build still depends on JVM/docs test gate | Manual-only; release APK not runtime-certified by CI |
@@ -286,6 +286,33 @@ Two small, independent P0 gaps were combined into one focused increment:
 - **Remaining limitations:** Hosted CI, real MQTT broker/distributor, Android
   background/notification rules and on-device event ordering remain to be
   checked separately. No AVD/instrumentation jobs or generated lockfile edits.
+
+## P0 Remote command eligibility and failure-observer isolation (v1.0.43)
+
+- `RemoteMessageManager.emitCommand` previously let exceptions from a stale MQTT
+  activity/service `canHandle` callback cancel dispatch before the active native
+  host could be selected. A throwing WebView eligibility callback similarly
+  prevented fallback to another registered screen.
+- Both host and screen selection now isolate eligibility failures, preserve
+  coroutine cancellation and check registration membership after the callback.
+  A callback that unregisters its own obsolete host or screen cannot win that
+  dispatch. Command handling remains first-eligible-wins (no retrying a handler
+  that already started executing a command).
+- A failure observer or error toast throwing during error reporting no longer
+  discards command-completion events or blocks subsequent commands from either
+  MQTT or UnifiedPush. Secondary reporting errors are logged instead. The
+  shared FIFO completion flow still emits after attempted execution.
+- **New tests:** Five Robolectric tests in `RemoteMessageDispatchTest` for
+  failed MQTT/screen eligibility, same-callback unregister handoffs and a
+  throwing failure observer across transport sources. All five failed against
+  v1.0.42; the three existing dispatcher tests remained green (**5 failures
+  among 8 tests**). The fixed dispatcher passed **8/8**.
+- **Validation:** Full offline `:app:testDebugUnitTest` passed **505 tests in
+  43 suites** with zero failures/errors/skips, plus all **11** Python CI-script
+  tests, Android asset-exporter shell checks and Biome `check --write` on the
+  supported docs files. Host/device behavior, docs Vitest/Chromium and hosted
+  CI have not been verified in this local run. No AVD/instrumentation tests,
+  lockfile changes or dependencies added.
 
 ## Authentication expiry and WebView completion ownership (v1.0.42)
 

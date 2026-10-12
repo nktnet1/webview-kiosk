@@ -87,23 +87,46 @@ object RemoteMessageManager {
         scope.launch(start = CoroutineStart.UNDISPATCHED) {
             commandsMutex.withLock {
                 withContext(Dispatchers.Main) {
-                    val nativeContext = appContext ?: mqttCommandHosts
-                        .firstOrNull { source == RemoteMessage.Source.MQTT && it.canHandle() }
-                        ?.context
+                    var nativeContext = appContext
 
                     fun reportFailure(e: Exception) {
                         Log.e(javaClass.simpleName, "Failed to handle $source command", e)
-                        if (onFailure != null) {
-                            onFailure(e)
-                        } else if (nativeContext != null) {
-                            ToastManager.show(nativeContext, "$source: failed to handle command.")
+                        // A retired observer must not turn a handled command error into a
+                        // dropped completion event or prevent the next queued command.
+                        try {
+                            if (onFailure != null) {
+                                onFailure(e)
+                            } else {
+                                nativeContext?.let { ToastManager.show(it, "$source: failed to handle command.") }
+                            }
+                        } catch (reportError: Exception) {
+                            Log.e(javaClass.simpleName, "Failed to report $source command error", reportError)
+                        }
+                    }
+
+                    if (nativeContext == null && source == RemoteMessage.Source.MQTT) {
+                        for (host in mqttCommandHosts) {
+                            val eligible = try {
+                                host.canHandle()
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                reportFailure(e)
+                                false
+                            }
+                            // canHandle may synchronously unregister its activity/service.
+                            if (eligible && mqttCommandHosts.contains(host)) {
+                                nativeContext = host.context
+                                break
+                            }
                         }
                     }
 
                     try {
-                        if (nativeContext != null) {
+                        val selectedNativeContext = nativeContext
+                        if (selectedNativeContext != null) {
                             withContext(Dispatchers.IO) {
-                                RemoteInboundHandler.handleInboundCommand(nativeContext, command)
+                                RemoteInboundHandler.handleInboundCommand(selectedNativeContext, command)
                             }
                         }
                     } catch (e: CancellationException) {
@@ -114,7 +137,20 @@ object RemoteMessageManager {
                     try {
                         // Resolve the active screen after native work, since it may have changed
                         // while device-owner initialization was suspended.
-                        webViewCommandHandlers.firstOrNull { it.canHandle() }?.handle(command)
+                        for (handler in webViewCommandHandlers) {
+                            val eligible = try {
+                                handler.canHandle()
+                            } catch (e: CancellationException) {
+                                throw e
+                            } catch (e: Exception) {
+                                reportFailure(e)
+                                false
+                            }
+                            if (eligible && webViewCommandHandlers.contains(handler)) {
+                                handler.handle(command)
+                                break
+                            }
+                        }
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
