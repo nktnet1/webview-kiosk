@@ -4,7 +4,7 @@ Snapshot: post-merge `additional-tests` at `b51ab06d` compared with the v0.26.21
 release commit `aa7ceca9`. This is an assessment of test *coverage*, not a finding that the
 untested paths are defective. The app still declares `versionName = "0.26.21"`.
 
-## Current automated-test gate status (12 October 2026; v1.0.45)
+## Current automated-test gate status (12 October 2026; v1.0.46)
 
 **Testing policy:** Keep automated JVM/Robolectric, CI-script, Vitest and
 Chromium Playwright tests. All Android APK instrumentation, AVD/emulator jobs,
@@ -13,9 +13,10 @@ acceptance checks are **manual-only** and are not CI release gates.
 
 | Gate | Most recent evidence | Status |
 | --- | --- | --- |
-| Android JVM/Robolectric | v1.0.45 on the post-merge `additional-tests` bundle plus v1.0.41–44: **510 tests in 44 JUnit suites**, zero failures/errors/skips, passed locally with Gradle 9.8.0-milestone-1, JBR 21.0.11, supplied Android SDK, offline dependency cache and Robolectric API 28/29 runtimes. Adds one file-import IO-thread regression and preserves the earlier API/feature-gate, cancellation and MQTT tests | **Verified local full Gradle pass**; hosted CI and installed APK remain unverified |
+| Android JVM/Robolectric | Last full local run: **v1.0.45, 510 tests in 44 JUnit suites**, zero failures/errors/skips. v1.0.46 adds three MediaStore stale-transfer/reentrancy regression methods but the Android SDK, offline Gradle dependencies and Robolectric runtime artifacts from that run were not supplied in this session | **v1.0.46 full Gradle gate pending**; v1.0.45 pass is historical, not evidence of a v1.0.46 pass |
+| Isolated blob bridge JVM regression | v1.0.46: compiled the actual `BlobInterface.kt` with minimal temporary Android API stubs using local `kotlinc` and exercised four stale-transfer write/flush scenarios: **4/4 passed**. The same harness against the unchanged v1.0.45 implementation failed because its failed write deleted the replacement download | **Verified narrowly**, not a substitute for Android/Robolectric, hosted CI or a device |
 | Docs Vitest / Chromium Playwright | Jobs remain configured; no passing CI output supplied | Unverified |
-| Offline CI checks / local runner | v1.0.45: all **11** Python CI-script tests and Android asset-exporter shell tests passed; **510/510 full Android tests** passed. The offline Gradle `:app:resolveAndroidTestAssets` task also passed using the exporter's `--no-configuration-cache` flag | Verified local JVM and script checks; hosted CI pending |
+| Offline CI checks / local runner | v1.0.46: all **11** Python CI-script tests and Android asset-exporter shell tests passed; attached Biome `check --write` passed on the docs workspace with no fixes. The full Gradle JVM suite and dependency-only Gradle resolver were **not** rerun in v1.0.46 | Verified local script/Biome checks only for this increment; hosted CI pending |
 | Gradle/pnpm caching | v1.0.31 Gradle build cache and pnpm store caching retained; no measured post-change timings | Speedup unverified |
 | Installed APK, API 23 / API 35 | Instrumentation suites and CI jobs removed in v1.0.33 | Manual-only; **not** passing automated gates |
 | Release APK launch | AVD smoke job removed; release build still depends on JVM/docs test gate | Manual-only; release APK not runtime-certified by CI |
@@ -24,6 +25,42 @@ acceptance checks are **manual-only** and are not CI release gates.
 failed the custom-password dialog visibility assertion after v1.0.30. Removing
 that automation does **not** fix the underlying UI, nor confirm that the
 password dialog works on a device. Verify it during manual device acceptance.
+
+## Blob download stale-transfer ownership (v1.0.46)
+
+When a MediaStore output stream fails while a page replaces its transfer ID,
+`appendChunk` and `finishDownload` previously caught the old stream's failure
+and aborted by ID alone. That cleanup could close and delete the *new* pending
+MediaStore row instead. A reentrant provider write/flush could also cause a
+successful but obsolete write to be acknowledged, or attempt to publish a
+row that had already been abandoned. The regression tests use controlled
+write/flush callbacks to reproduce this ordering deterministically.
+
+- Failure cleanup now removes a download only when the active map still holds
+  the precise `ActiveDownload` instance that failed; explicit abort and ID
+  reuse still target the current transfer as before. Stale failure callbacks
+  no longer display an error toast for a newer transfer.
+- Append verifies that its transfer remains active after the write. Finish
+  verifies ownership after flush/close and before making a MediaStore item
+  visible. Already completed downloads and unrelated transfer IDs are unchanged.
+- Three new `BlobMediaStoreTest` cases cover a stale write failure, successful
+  write after reentrant replacement, and both successful and failed flushes
+  after replacement. They also check that obsolete failures do not replace
+  a pending user notification. Existing normal completion, explicit abort,
+  publication failure, and disposal cases remain in the same suite.
+- **Local evidence:** a no-dependency Kotlin/JVM harness compiled the actual
+  production bridge against temporary Android shims and passed four relevant
+  scenarios; running the same harness against v1.0.45 failed on the stale-write
+  deletion assertion. Python CI tests **11/11**, asset-exporter shell tests,
+  Biome `check --write` (no modifications), and `git diff --check` passed.
+  **Not verified:** running the added Robolectric methods or the full Android
+  Gradle suite in this session (SDK/dependency cache absent), docs Vitest/
+  Chromium Playwright, hosted CI, Android Lint and manual device acceptance.
+  The three new tests must pass in an Android-capable environment before the
+  previous 510-test passing count can be updated.
+
+No AVD, instrumentation, release-APK smoke job, dependency/lockfile change,
+PDF TLS trust-policy modification or non-Kotlin/Java inspection cleanup.
 
 ## IDE inspection follow-up: correctness and Kotlin/Java diagnostics (v1.0.45)
 
