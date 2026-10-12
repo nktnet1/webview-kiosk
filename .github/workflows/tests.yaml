@@ -36,6 +36,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
+      - name: Verify Android test report diagnostics
+        run: python3 -m unittest discover -s scripts/tests -p 'test_report_android_instrumentation.py'
+
       - name: Run unit tests
         run: sh gradlew :app:testDebugUnitTest --stacktrace
 
@@ -86,6 +89,7 @@ jobs:
           fi
 
       - name: Run installed-APK tests
+        id: instrumented_tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api }}
@@ -94,7 +98,16 @@ jobs:
           profile: pixel_2
           disable-animations: true
           emulator-boot-timeout: 900
-          script: sh gradlew :app:connectedDebugAndroidTest --stacktrace
+          script: |
+            sh gradlew :app:connectedDebugAndroidTest --stacktrace || {
+              mkdir -p app/build/outputs/androidTest-results/connected
+              adb logcat -d -v threadtime > app/build/outputs/androidTest-results/connected/device-logcat.txt || true
+              exit 1
+            }
+
+      - name: Print instrumentation failures
+        if: ${{ failure() && steps.instrumented_tests.outcome == 'failure' }}
+        run: python3 scripts/ci/report_android_instrumentation.py
 
       - name: Upload emulator reports
         if: always()
