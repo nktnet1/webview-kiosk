@@ -1,7 +1,7 @@
 #!/bin/sh
 set -eu
 
-if sh gradlew :app:connectedDebugAndroidTest --stacktrace; then
+if sh gradlew :app:connectedDebugAndroidTest --build-cache --profile --stacktrace; then
   exit 0
 else
   status=$?

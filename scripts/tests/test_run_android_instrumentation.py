@@ -51,7 +51,10 @@ class RunAndroidInstrumentationTest(unittest.TestCase):
     def test_success_skips_logcat(self):
         status, arguments, logcat = self.run_instrumentation(0)
         self.assertEqual(0, status)
-        self.assertEqual(":app:connectedDebugAndroidTest\n--stacktrace\n", arguments)
+        self.assertEqual(
+            ":app:connectedDebugAndroidTest\n--build-cache\n--profile\n--stacktrace\n",
+            arguments,
+        )
         self.assertIsNone(logcat)
 
     def test_failure_collects_logcat_and_preserves_gradle_exit(self):

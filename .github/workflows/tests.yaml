@@ -32,15 +32,22 @@ jobs:
           distribution: jetbrains
           java-version: 21
           java-package: jdk
-          cache: gradle
         env:
           GITHUB_TOKEN: ${{ github.token }}
 
+      # Gradle's build cache must be enabled in Gradle itself as well as saved
+      # between runners. Trusted same-repository PRs can warm their own cache.
+      - name: Configure Gradle build cache
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: enhanced
+          cache-read-only: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+
       - name: Verify Android test report diagnostics
-        run: python3 -m unittest discover -s scripts/tests -p 'test_*android_instrumentation.py'
+        run: python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 
       - name: Run unit tests
-        run: sh gradlew :app:testDebugUnitTest --stacktrace
+        run: sh gradlew :app:testDebugUnitTest --build-cache --profile --stacktrace
 
       - name: Upload JVM test reports
         if: always()
@@ -50,6 +57,7 @@ jobs:
           path: |
             app/build/test-results/testDebugUnitTest/
             app/build/reports/tests/testDebugUnitTest/
+            build/reports/profile/
           if-no-files-found: ignore
 
   emulator:
@@ -78,15 +86,62 @@ jobs:
           distribution: jetbrains
           java-version: 21
           java-package: jdk
-          cache: gradle
         env:
           GITHUB_TOKEN: ${{ github.token }}
+
+      # Gradle's build cache must be enabled in Gradle itself as well as saved
+      # between runners. Trusted same-repository PRs can warm their own cache.
+      - name: Configure Gradle build cache
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: enhanced
+          cache-read-only: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
 
       - name: Enable hardware acceleration
         run: |
           if [ -e /dev/kvm ]; then
             sudo chmod 666 /dev/kvm
           fi
+
+      # Build a clean boot snapshot without the application installed. AVDs are
+      # segregated by API, system image, architecture and hardware profile.
+      # Change avd-v1 when the emulator/image configuration is intentionally
+      # changed. Cache misses perform one extra boot to seed later runs.
+      - name: Restore clean Android emulator snapshot
+        id: avd-cache
+        uses: actions/cache/restore@v4
+        continue-on-error: true
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-v1-${{ runner.os }}-${{ matrix.api }}-${{ matrix.image }}-${{ matrix.arch }}-pixel_2
+
+      - name: Create clean emulator snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          target: ${{ matrix.image }}
+          arch: ${{ matrix.arch }}
+          profile: pixel_2
+          force-avd-creation: false
+          disable-animations: true
+          emulator-boot-timeout: 900
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: echo 'Clean emulator snapshot prepared'
+
+      # Save before installing the test APK so failed tests cannot pollute the
+      # cached image. The cache is only an optimisation, not a test requirement.
+      - name: Cache clean emulator snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: ${{ steps.avd-cache.outputs.cache-primary-key }}
 
       - name: Run installed-APK tests
         id: instrumented_tests
@@ -96,8 +151,10 @@ jobs:
           target: ${{ matrix.image }}
           arch: ${{ matrix.arch }}
           profile: pixel_2
+          force-avd-creation: false
           disable-animations: true
           emulator-boot-timeout: 900
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           script: sh scripts/ci/run-android-instrumentation.sh
 
       - name: Print instrumentation failures
@@ -112,6 +169,7 @@ jobs:
           path: |
             app/build/reports/androidTests/connected/
             app/build/outputs/androidTest-results/connected/
+            build/reports/profile/
           if-no-files-found: ignore
 
   docs:
@@ -124,15 +182,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
           package_json_file: docs/package.json
+
+      - name: Setup Node.js and cache pnpm store
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: docs/pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -150,15 +210,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v6
         with:
           package_json_file: docs/package.json
+
+      - name: Setup Node.js and cache pnpm store
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: docs/pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
