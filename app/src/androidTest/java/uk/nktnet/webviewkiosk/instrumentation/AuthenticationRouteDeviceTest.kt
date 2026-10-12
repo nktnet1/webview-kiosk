@@ -1,5 +1,7 @@
 package uk.nktnet.webviewkiosk.instrumentation
 
+import android.accessibilityservice.AccessibilityServiceInfo
+import android.view.accessibility.AccessibilityWindowInfo
 import androidx.navigation.NavHostController
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -34,12 +36,7 @@ class AuthenticationRouteDeviceTest {
                         (field.get(activity) as NavHostController).navigate(Screen.Settings.route)
                     }
                     val protectedTitle = context.getString(R.string.settings_web_content_title)
-                    InstalledAppHarness.eventually("real custom-password window") {
-                        AuthenticationManager.showCustomAuth.value &&
-                            AuthenticationManager.promptResults.value ==
-                                AuthenticationManager.AuthenticationResult.Pending &&
-                            visibleText("Unlock")
-                    }
+                    awaitCustomPasswordDialog()
                     assertFalse(AuthenticationManager.hasValidSession())
                     assertFalse(visibleText(protectedTitle))
 
@@ -52,12 +49,7 @@ class AuthenticationRouteDeviceTest {
                     assertFalse(visibleText("Unlock"))
 
                     scenario.recreate()
-                    InstalledAppHarness.eventually("authentication after activity recreation") {
-                        AuthenticationManager.showCustomAuth.value &&
-                            AuthenticationManager.promptResults.value ==
-                                AuthenticationManager.AuthenticationResult.Pending &&
-                            visibleText("Unlock")
-                    }
+                    awaitCustomPasswordDialog()
                     assertFalse(AuthenticationManager.hasValidSession())
                     assertFalse(visibleText(protectedTitle))
                 }
@@ -67,11 +59,37 @@ class AuthenticationRouteDeviceTest {
         }
     }
 
-    private fun visibleText(value: String): Boolean {
-        val root = InstrumentationRegistry.getInstrumentation().uiAutomation.rootInActiveWindow
-            ?: return false
-        return root.findAccessibilityNodeInfosByText(value).any {
-            it.isVisibleToUser && it.text?.toString() == value
+    private fun awaitCustomPasswordDialog() {
+        // Distinguish a missing authentication request from an accessibility lookup failure.
+        InstalledAppHarness.eventually("pending custom-password authentication") {
+            AuthenticationManager.showCustomAuth.value &&
+                AuthenticationManager.promptResults.value ==
+                    AuthenticationManager.AuthenticationResult.Pending
         }
+        InstalledAppHarness.eventually("visible custom-password dialog") {
+            visibleText("Password") && visibleText("Unlock")
+        }
+    }
+
+    private fun visibleText(value: String): Boolean {
+        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        val windowFlag = AccessibilityServiceInfo.FLAG_RETRIEVE_INTERACTIVE_WINDOWS
+        val serviceInfo = automation.serviceInfo
+        if (serviceInfo.flags and windowFlag == 0) {
+            serviceInfo.flags = serviceInfo.flags or windowFlag
+            automation.serviceInfo = serviceInfo
+        }
+
+        // The dialog focuses its password field, which can make the IME the active window.
+        // Search application windows rather than only rootInActiveWindow (often the keyboard).
+        return automation.windows
+            .filter { it.type == AccessibilityWindowInfo.TYPE_APPLICATION }
+            .mapNotNull { it.root }
+            .any { root ->
+                root.findAccessibilityNodeInfosByText(value).any { node ->
+                    node.packageName?.toString() == InstalledAppHarness.context.packageName &&
+                        node.isVisibleToUser && node.text?.toString() == value
+                }
+            }
     }
 }
