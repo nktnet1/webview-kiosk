@@ -157,7 +157,6 @@ fun WebviewScreen(navController: NavController) {
         )
     }
 
-    var mqttLastPublishedUrlJob: Job? = null
     var mqttLastPublishedUrl by remember { mutableStateOf(lastVisitedUrl) }
 
     var isOpenBookmarkDialog by remember { mutableStateOf(false) }
@@ -225,6 +224,11 @@ fun WebviewScreen(navController: NavController) {
 
     var suggestions by remember { mutableStateOf(listOf<String>()) }
     var webViewRecreationKey by remember { mutableIntStateOf(0) }
+    val creationKey = webViewRecreationKey
+    var mqttLastPublishedUrlJob by remember(creationKey) { mutableStateOf<Job?>(null) }
+
+    fun isCurrentWebView(): Boolean =
+        canHandleEvents() && creationKey == webViewRecreationKey
 
     if (userSettings.searchSuggestionEngine != SearchSuggestionEngineOption.NONE) {
         LaunchedEffect(addressBarHasFocus, urlBarText.text) {
@@ -271,30 +275,26 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
-    fun updateAddressBarAndHistory(url: String, originalUrl: String?) {
-        if (!canHandleEvents()) {
+    fun updateAddressBar(url: String) {
+        if (!isCurrentWebView()) {
             return
         }
         if (!addressBarHasFocus) {
             urlBarText = urlBarText.copy(text = url)
         }
+        mqttLastPublishedUrlJob?.cancel()
         if (
             userSettings.mqttEnabled
             && url.trimEnd('/') != mqttLastPublishedUrl.trimEnd('/')
         ) {
-            mqttLastPublishedUrlJob?.cancel()
             mqttLastPublishedUrlJob = scope.launch {
                 delay(1000.milliseconds)
-                MqttManager.publishUrlChangedEvent(url)
-                mqttLastPublishedUrl = url
+                if (isCurrentWebView() && userSettings.mqttEnabled) {
+                    MqttManager.publishUrlChangedEvent(url)
+                    mqttLastPublishedUrl = url
+                }
             }
         }
-        WebViewNavigation.appendWebviewHistory(
-            systemSettings,
-            url,
-            originalUrl,
-            userSettings.replaceHistoryUrlOnRedirect
-        )
     }
 
     val webViewCreation = createCustomWebview(
@@ -304,6 +304,7 @@ fun WebviewScreen(navController: NavController) {
             userSettings = userSettings,
             blacklistRegexes = blacklistRegexes,
             whitelistRegexes = whitelistRegexes,
+            isActive = ::isCurrentWebView,
             setLastErrorUrl = { errorUrl ->
                 lastErrorUrl = errorUrl
             },
@@ -327,14 +328,13 @@ fun WebviewScreen(navController: NavController) {
             finishSwipeRefresh = {
                 isSwipeRefreshing = false
             },
-            updateAddressBarAndHistory = ::updateAddressBarAndHistory,
+            updateAddressBarAndHistory = { url, _ -> updateAddressBar(url) },
             onHttpAuthRequest = { request ->
-                authRequest?.cancel()
-                authRequest = if (request == null || canHandleEvents()) {
-                    request
+                if (isCurrentWebView()) {
+                    authRequest?.cancel()
+                    authRequest = request
                 } else {
-                    request.cancel()
-                    null
+                    request?.cancel()
                 }
             },
             onLinkLongClick = { link ->
@@ -363,6 +363,7 @@ fun WebviewScreen(navController: NavController) {
 
     DisposableEffect(webView) {
         onDispose {
+            mqttLastPublishedUrlJob?.cancel()
             (webViewCreation as? WebViewCreation.Success)?.onDispose?.invoke()
             NfcBridgeManager.detachWebView(webView)
             runCatching { webView.stopLoading() }
@@ -372,6 +373,7 @@ fun WebviewScreen(navController: NavController) {
     }
 
     fun customLoadUrl(newUrl: String) {
+        if (!isCurrentWebView()) return
         val url = resolveBlockPageUrl(
             newUrl, blacklistRegexes, whitelistRegexes, userSettings
         ) ?: return
@@ -451,7 +453,7 @@ fun WebviewScreen(navController: NavController) {
     LaunchedEffect(webView, retryAfterLocalNetworkPermission) {
         if (retryAfterLocalNetworkPermission) {
             retryAfterLocalNetworkPermission = false
-            if (canHandleEvents() && !LockStateSingleton.isLocked.value) {
+            if (isCurrentWebView() && !LockStateSingleton.isLocked.value) {
                 webView.reload()
             }
         }
@@ -463,7 +465,7 @@ fun WebviewScreen(navController: NavController) {
     var previousOnline by remember { mutableStateOf<Boolean?>(null) }
 
     LaunchedEffect(webView, isOnline) {
-        if (canHandleEvents() && previousOnline != null && previousOnline != isOnline) {
+        if (isCurrentWebView() && previousOnline != null && previousOnline != isOnline) {
             if (isOnline) {
                 when (userSettings.refreshOnNetworkAvailable) {
                     RefreshOnNetworkAvailableOption.ALWAYS -> {
@@ -505,7 +507,7 @@ fun WebviewScreen(navController: NavController) {
                 delay(
                     (userSettings.refreshOnLoadingErrorIntervalSeconds * 1000L).milliseconds
                 )
-                if (canHandleEvents()) {
+                if (isCurrentWebView()) {
                     WebViewNavigation.refresh(
                         ::customLoadUrl, systemSettings, userSettings
                     )
@@ -691,7 +693,7 @@ fun WebviewScreen(navController: NavController) {
         isCurrentEntry
         && userSettings.resetOnInactivitySeconds >= Constants.MIN_INACTIVITY_TIMEOUT_SECONDS
     ) {
-        ResetOnInactivityTimeoutHandler(::customLoadUrl, ::canHandleEvents)
+        ResetOnInactivityTimeoutHandler(::customLoadUrl, ::isCurrentWebView)
     }
 
     if (
@@ -713,7 +715,7 @@ fun WebviewScreen(navController: NavController) {
         customLoadUrl = ::customLoadUrl,
     )
 
-    BackPressHandler(::customLoadUrl, ::canHandleEvents)
+    BackPressHandler(::customLoadUrl, ::isCurrentWebView)
 
     val displayedAuthRequest = authRequest
     BasicAuthDialog(displayedAuthRequest) {
@@ -733,7 +735,7 @@ fun WebviewScreen(navController: NavController) {
     )
 
     DisposableEffect(webView) {
-        val unregister = RemoteMessageManager.registerWebViewCommandHandler(::canHandleEvents) { command ->
+        val unregister = RemoteMessageManager.registerWebViewCommandHandler(::isCurrentWebView) { command ->
             // Navigation fades can keep both the outgoing and incoming WebViews composed.
             when (command) {
                 is InboundGoBackCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)

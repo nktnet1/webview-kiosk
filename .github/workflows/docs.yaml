@@ -28,21 +28,26 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Set up Node.js
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: docs/package.json
+
+      - name: Set up Node.js and cache pnpm store
         uses: actions/setup-node@v6
         with:
           node-version: 24
-
-      - uses: pnpm/action-setup@v6
-        name: Install pnpm
-        with:
-          package_json_file: docs/package.json
+          cache: pnpm
+          cache-dependency-path: docs/pnpm-lock.yaml
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
       - name: Check lint and format
         run: pnpm check
+
+      - name: Run documentation unit tests
+        run: pnpm test
 
       - name: Setup Pages
         id: setup_pages
@@ -52,6 +57,14 @@ jobs:
         run: pnpm build
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          PUBLIC_DOCS_BASE_PATH: ${{ steps.setup_pages.outputs.base_path }}
+
+      - name: Install Chromium for browser tests
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run documentation browser tests
+        run: pnpm test:e2e
+        env:
           PUBLIC_DOCS_BASE_PATH: ${{ steps.setup_pages.outputs.base_path }}
 
       - name: Upload artifact

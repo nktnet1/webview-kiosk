@@ -1,0 +1,41 @@
+// Resolve only the artifacts needed for the Android JVM/Robolectric test suite.
+// This init script deliberately registers no dependency on a build or test task.
+gradle.beforeProject { project ->
+    if (project.path == ':app') {
+        project.tasks.register('resolveAndroidTestAssets') {
+            group = 'help'
+            description = 'Download debug JVM test dependencies without compiling or running tests.'
+
+            doLast {
+                def required = [
+                    'debugCompileClasspath',
+                    'debugRuntimeClasspath',
+                    'debugUnitTestCompileClasspath',
+                    'debugUnitTestRuntimeClasspath',
+                ]
+                // Kotlin compiler/compiler-plugin configurations are resolved
+                // lazily during compilation. Pre-fetch them for offline tests,
+                // without executing a Kotlin or Android compile task.
+                def optional = [
+                    'kotlinCompilerClasspath',
+                    'kotlinCompilerPluginClasspath',
+                    'kotlinCompilerPluginClasspathDebug',
+                    'kotlinCompilerPluginClasspathDebugUnitTest',
+                ]
+                (required + optional).each { configurationName ->
+                    def configuration = project.configurations.findByName(configurationName)
+                    if (configuration == null || !configuration.canBeResolved) {
+                        if (required.contains(configurationName)) {
+                            throw new GradleException("Cannot resolve required configuration: ${configurationName}")
+                        }
+                        return
+                    }
+                    // Resolve artifact files, not just the dependency graph: the
+                    // latter does not download the JARs/AARs needed offline.
+                    def files = configuration.incoming.artifacts.artifactFiles.files
+                    logger.lifecycle("Resolved ${configurationName}: ${files.size()} files")
+                }
+            }
+        }
+    }
+}

@@ -47,7 +47,7 @@ class LockTaskService: Service() {
             startForegroundNotification()
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, "Unable to start lock task foreground service", e)
-            stopSelf(startId)
+            stopLockTaskService(startId)
             return START_NOT_STICKY
         }
 
@@ -73,15 +73,8 @@ class LockTaskService: Service() {
     }
 
     private fun startForegroundNotification() {
-        if (!receiverRegistered) {
-            ContextCompat.registerReceiver(
-                this,
-                returnReceiver,
-                IntentFilter(RETURN_ACTION),
-                ContextCompat.RECEIVER_NOT_EXPORTED,
-            )
-            receiverRegistered = true
-        }
+        // Sticky restarts can run before any activity has created the channels.
+        CustomNotificationManager.init(applicationContext)
 
         val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
             ?: Intent(this, MainActivity::class.java)
@@ -105,15 +98,31 @@ class LockTaskService: Service() {
                 0
             }
         )
+        if (!receiverRegistered) {
+            ContextCompat.registerReceiver(
+                this,
+                returnReceiver,
+                IntentFilter(RETURN_ACTION),
+                ContextCompat.RECEIVER_NOT_EXPORTED,
+            )
+            receiverRegistered = true
+        }
     }
 
-    private fun stopLockTaskService() {
-        stopSelf()
+    private fun stopLockTaskService(startId: Int? = null) {
+        releaseResources()
+        if (startId == null) stopSelf() else stopSelf(startId)
     }
 
     override fun onDestroy() {
-        updateJob?.cancel()
+        releaseResources()
         scope.cancel()
+        super.onDestroy()
+    }
+
+    private fun releaseResources() {
+        updateJob?.cancel()
+        updateJob = null
         if (receiverRegistered) {
             receiverRegistered = false
             try {
@@ -122,7 +131,7 @@ class LockTaskService: Service() {
                 Log.w(javaClass.simpleName, "Lock task receiver was already unregistered", e)
             }
         }
-        super.onDestroy()
+        ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
     }
 
     companion object {

@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.managers
 import android.app.KeyguardManager
 import android.content.Context
 import android.os.Build
+import android.os.SystemClock
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
@@ -27,7 +28,6 @@ import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
 
 object AuthenticationManager {
-    private const val AUTH_TIMEOUT_MS = 5 * 60 * 1000L
     private const val ANDROID_KEYSTORE = "AndroidKeyStore"
     private const val BIOMETRIC_KEY_ALIAS = "WebViewKioskBiometricKey"
     private const val CIPHER_TRANSFORMATION = "AES/GCM/NoPadding"
@@ -45,9 +45,44 @@ object AuthenticationManager {
 
     val showCustomAuth: MutableState<Boolean> = mutableStateOf(false)
 
-    private var lastAuthTime = 0L
-    private var authBypassUntil: Long = 0L
-    private var externalActivityRoundTrip = false
+    internal var session = AuthenticationSession(SystemClock::elapsedRealtime)
+    internal var authCipherFactory: (Pair<ByteArray, ByteArray>?) -> Cipher = ::createAuthCipher
+    internal var authKeyInvalidator: () -> Unit = ::deleteAuthKey
+    internal var biometricPromptFactory:
+        (AppCompatActivity, BiometricPrompt.AuthenticationCallback) -> AuthenticationPrompt =
+        ::AndroidAuthenticationPrompt
+
+    internal interface AuthenticationPrompt {
+        fun authenticate(info: PromptInfo, cryptoObject: BiometricPrompt.CryptoObject?)
+        fun cancelAuthentication()
+    }
+
+    private class AndroidAuthenticationPrompt(
+        activity: AppCompatActivity,
+        callback: BiometricPrompt.AuthenticationCallback
+    ) : AuthenticationPrompt {
+        private val prompt = BiometricPrompt(activity, callback)
+
+        override fun authenticate(info: PromptInfo, cryptoObject: BiometricPrompt.CryptoObject?) {
+            if (cryptoObject == null) {
+                prompt.authenticate(info)
+            } else {
+                prompt.authenticate(info, cryptoObject)
+            }
+        }
+
+        override fun cancelAuthentication() = prompt.cancelAuthentication()
+    }
+
+    private enum class PromptKind { CUSTOM, BIOMETRIC, DEVICE_CREDENTIAL }
+
+    private class PendingAuthentication(val kind: PromptKind) {
+        var cancel: (() -> Unit)? = null
+        var credentialRequestCode: Int? = null
+    }
+
+    private var pendingAuthentication: PendingAuthentication? = null
+    private var nextCredentialRequestCode = Constants.REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL
 
     fun init(activity: AppCompatActivity) {
         this.activity = activity
@@ -56,6 +91,7 @@ object AuthenticationManager {
     fun clear(activity: AppCompatActivity) {
         if (this.activity === activity) {
             this.activity = null
+            resetAuthentication()
         }
     }
 
@@ -66,36 +102,36 @@ object AuthenticationManager {
         ) {
             return false
         }
-        val now = System.currentTimeMillis()
-        return (
-            now <= authBypassUntil
-            || (lastAuthTime in 1..now && now - lastAuthTime < AUTH_TIMEOUT_MS)
-        )
+        return session.isValid()
     }
 
     fun checkAuthAndRefreshSession(): Boolean {
-        val isValid = hasValidSession()
-        if (isValid) {
-            lastAuthTime = System.currentTimeMillis()
+        if (!hasValidSession()) {
+            session.reset()
+            return false
         }
-        authBypassUntil = 0L
-        externalActivityRoundTrip = false
-        return isValid
+        return session.refreshIfValid()
     }
 
     fun resetAuthentication(preserveExternalActivitySession: Boolean = false) {
-        val preserveBypass = preserveExternalActivitySession
-            && externalActivityRoundTrip
-            && hasValidSession()
-        lastAuthTime = 0
-        if (!preserveBypass) {
-            authBypassUntil = 0L
+        session.reset(preserveExternalActivitySession && hasValidSession())
+        if (!preserveExternalActivitySession) {
+            val pending = pendingAuthentication
+            // Invalidate the callback before cancellation, which can deliver an error inline.
+            pendingAuthentication = null
+            hideCustomAuthPrompt()
+            try {
+                pending?.cancel?.invoke()
+            } catch (e: Exception) {
+                Log.e(javaClass.simpleName, "Failed to cancel authentication prompt.", e)
+            }
         }
-        externalActivityRoundTrip = false
         if (
             !hasValidSession()
             && (_resultState.value == AuthenticationResult.AuthenticationSuccess
-                || _resultState.value == AuthenticationResult.AuthenticationNotSet)
+                || _resultState.value == AuthenticationResult.AuthenticationNotSet
+                || (!preserveExternalActivitySession
+                    && _resultState.value == AuthenticationResult.Pending))
         ) {
             _resultState.value = AuthenticationResult.Loading
         }
@@ -107,23 +143,25 @@ object AuthenticationManager {
         if (!hasValidSession()) {
             return
         }
-        authBypassUntil = System.currentTimeMillis() + durationMs
-        externalActivityRoundTrip = true
+        session.preserveForExternalActivity(durationMs)
     }
 
     fun showAuthenticationPrompt(
         title: String,
         description: String,
     ) {
+        if (pendingAuthentication != null) {
+            return
+        }
         val activity = this.activity ?: run {
             _resultState.value = AuthenticationResult.AuthenticationError("Activity is null")
             return
         }
 
-        _resultState.value = AuthenticationResult.Pending
-
         val customAuthPassword = UserSettings(activity).customAuthPassword
         if (customAuthPassword.isNotEmpty()) {
+            pendingAuthentication = PendingAuthentication(PromptKind.CUSTOM)
+            _resultState.value = AuthenticationResult.Pending
             showCustomAuthPrompt()
             return
         }
@@ -140,28 +178,64 @@ object AuthenticationManager {
         }
 
         if (!deviceSecure) {
-            lastAuthTime = System.currentTimeMillis()
+            session.authenticate()
             _resultState.value = AuthenticationResult.AuthenticationNotSet
             return
         }
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            showBiometricPromptModern(title, description)
-        } else {
-            showDeviceCredentialLollipop(keyguardManager, title, description)
+        val pending = PendingAuthentication(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                PromptKind.BIOMETRIC
+            } else {
+                PromptKind.DEVICE_CREDENTIAL
+            }
+        )
+        pendingAuthentication = pending
+        _resultState.value = AuthenticationResult.Pending
+
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                showBiometricPromptModern(activity, title, description, pending)
+            } else {
+                showDeviceCredentialLollipop(activity, keyguardManager, title, description, pending)
+            }
+        } catch (e: Exception) {
+            handleAuthError(pending, "Failed to show authentication prompt: ${e.message}")
+            try {
+                pending.cancel?.invoke()
+            } catch (cancelError: Exception) {
+                Log.e(javaClass.simpleName, "Failed to cancel authentication prompt.", cancelError)
+            }
         }
     }
 
-    private fun handleAuthSuccess() {
-        lastAuthTime = System.currentTimeMillis()
+    private fun handleAuthSuccess(pending: PendingAuthentication) {
+        if (pendingAuthentication !== pending) {
+            return
+        }
+        pendingAuthentication = null
+        session.authenticate()
         _resultState.value = AuthenticationResult.AuthenticationSuccess
-        authBypassUntil = 0L
-        externalActivityRoundTrip = false
+        hideCustomAuthPrompt()
+    }
+
+    private fun handleAuthError(pending: PendingAuthentication, error: String) {
+        if (pendingAuthentication !== pending) {
+            return
+        }
+        pendingAuthentication = null
+        session.reset()
+        _resultState.value = AuthenticationResult.AuthenticationError(error)
+        hideCustomAuthPrompt()
     }
 
     @RequiresApi(Build.VERSION_CODES.M)
-    private fun showBiometricPromptModern(title: String, description: String) {
-        val activity = this.activity ?: return
+    private fun showBiometricPromptModern(
+        activity: AppCompatActivity,
+        title: String,
+        description: String,
+        pending: PendingAuthentication
+    ) {
         val authenticators = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             BIOMETRIC_STRONG or DEVICE_CREDENTIAL
         } else {
@@ -187,30 +261,27 @@ object AuthenticationManager {
             }
         }
 
-        val prompt = BiometricPrompt(
+        val prompt = biometricPromptFactory(
             activity,
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
                     super.onAuthenticationError(errorCode, errString)
-                    _resultState.value = AuthenticationResult.AuthenticationError(
-                        errString.toString()
-                    )
-                    resetAuthentication()
+                    handleAuthError(pending, errString.toString())
                 }
 
                 override fun onAuthenticationSucceeded(
                     result: BiometricPrompt.AuthenticationResult
                 ) {
                     super.onAuthenticationSucceeded(result)
+                    if (pendingAuthentication !== pending) {
+                        return
+                    }
 
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                         val cipher = result.cryptoObject?.cipher
 
                         if (cipher == null) {
-                            _resultState.value = AuthenticationResult.AuthenticationError(
-                                "Missing cryptographic context."
-                            )
-                            resetAuthentication()
+                            handleAuthError(pending, "Missing cryptographic context.")
                             return
                         }
 
@@ -224,7 +295,7 @@ object AuthenticationManager {
                             } else {
                                 cipher.doFinal(token.first)
                             }
-                            handleAuthSuccess()
+                            handleAuthSuccess(pending)
                         } catch (e: Exception) {
                             if (e is KeyPermanentlyInvalidatedException) {
                                 try {
@@ -238,43 +309,36 @@ object AuthenticationManager {
                                 "Secure authentication validation failed.",
                                 e
                             )
-                            _resultState.value =
-                                AuthenticationResult.AuthenticationError(
-                                    "Secure authentication validation failed."
-                                )
-                            resetAuthentication()
+                            handleAuthError(pending, "Secure authentication validation failed.")
                         }
                     } else {
-                        handleAuthSuccess()
+                        handleAuthSuccess(pending)
                     }
                 }
 
                 override fun onAuthenticationFailed() {
                     super.onAuthenticationFailed()
-                    _resultState.value = AuthenticationResult.AuthenticationFailed
-                    resetAuthentication()
+                    // An unrecognised scan is retryable; the same native prompt remains open.
                 }
             }
         )
+        pending.cancel = prompt::cancelAuthentication
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             val decryptCipher = try {
                 try {
-                    createAuthCipher(existingToken)
+                    authCipherFactory(existingToken)
                 } catch (_: KeyPermanentlyInvalidatedException) {
                     // The old token cannot be used with a replacement key. Prepare encryption
                     // for a new token, but still require a fresh authentication prompt.
                     clearInvalidatedAuthKey()
                     existingToken = null
-                    createAuthCipher(null)
+                    authCipherFactory(null)
                 }
             } catch (e: Exception) {
                 Log.e(javaClass.simpleName, "Failed to create cipher.", e)
-                _resultState.value = AuthenticationResult.AuthenticationError(
-                    "Failed to create cipher: ${e.message}"
-                )
+                handleAuthError(pending, "Failed to create cipher: ${e.message}")
                 ToastManager.show(activity, "Failed to create cipher: ${e.message}")
-                resetAuthentication()
                 return
             }
             prompt.authenticate(
@@ -284,6 +348,7 @@ object AuthenticationManager {
         } else {
             prompt.authenticate(
                 promptInfoBuilder.build(),
+                null,
             )
         }
     }
@@ -304,6 +369,10 @@ object AuthenticationManager {
     private fun clearInvalidatedAuthKey() {
         encryptedAuthToken = null
         encryptedAuthTokenIv = null
+        authKeyInvalidator()
+    }
+
+    private fun deleteAuthKey() {
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE)
         keyStore.load(null)
         keyStore.deleteEntry(BIOMETRIC_KEY_ALIAS)
@@ -353,45 +422,57 @@ object AuthenticationManager {
     }
 
     private fun showDeviceCredentialLollipop(
+        activity: AppCompatActivity,
         keyguardManager: KeyguardManager,
         title: String,
-        description: String
+        description: String,
+        pending: PendingAuthentication
     ) {
-        val activity = this.activity ?: return
         try {
             @Suppress("DEPRECATION")
             val intent = keyguardManager.createConfirmDeviceCredentialIntent(title, description)
             if (intent != null) {
+                // A result from a credential activity opened before a lock must not
+                // authenticate a newer request. Activity request codes use 16 bits.
+                val requestCode = nextCredentialRequestCode
+                nextCredentialRequestCode = if (requestCode == 0xffff) {
+                    Constants.REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL
+                } else {
+                    requestCode + 1
+                }
+                pending.credentialRequestCode = requestCode
                 @Suppress("DEPRECATION")
                 activity.startActivityForResult(
                     intent,
-                    Constants.REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL
+                    requestCode
                 )
             } else {
-                _resultState.value = AuthenticationResult.AuthenticationError(
-                    "Failed to create device credential intent"
-                )
+                handleAuthError(pending, "Failed to create device credential intent")
             }
         } catch (e: Exception) {
-            _resultState.value = AuthenticationResult.AuthenticationError(e.toString())
+            handleAuthError(pending, e.toString())
         }
     }
 
     fun handleLollipopDeviceCredentialResult(requestCode: Int, resultCode: Int) {
-        if (requestCode != Constants.REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL) {
-            return
-        }
+        val pending = pendingAuthentication
+            ?.takeIf {
+                it.kind == PromptKind.DEVICE_CREDENTIAL
+                    && it.credentialRequestCode == requestCode
+            } ?: return
         if (resultCode == AppCompatActivity.RESULT_OK) {
-            lastAuthTime = System.currentTimeMillis()
-            _resultState.value = AuthenticationResult.AuthenticationSuccess
+            handleAuthSuccess(pending)
         } else {
+            pendingAuthentication = null
             _resultState.value = AuthenticationResult.AuthenticationFailed
-            resetAuthentication()
+            session.reset()
         }
     }
 
     fun showCustomAuthPrompt() {
-        showCustomAuth.value = true
+        if (pendingAuthentication?.kind == PromptKind.CUSTOM) {
+            showCustomAuth.value = true
+        }
     }
 
     fun hideCustomAuthPrompt() {
@@ -399,15 +480,15 @@ object AuthenticationManager {
     }
 
     fun customAuthSuccess() {
-        lastAuthTime = System.currentTimeMillis()
-        _resultState.value = AuthenticationResult.AuthenticationSuccess
-        hideCustomAuthPrompt()
+        val pending = pendingAuthentication
+            ?.takeIf { it.kind == PromptKind.CUSTOM } ?: return
+        handleAuthSuccess(pending)
     }
 
     fun customAuthCancel() {
-        _resultState.value = AuthenticationResult.AuthenticationError("Authentication cancelled.")
-        resetAuthentication()
-        hideCustomAuthPrompt()
+        val pending = pendingAuthentication
+            ?.takeIf { it.kind == PromptKind.CUSTOM } ?: return
+        handleAuthError(pending, "Authentication cancelled.")
     }
 
     sealed interface AuthenticationResult {

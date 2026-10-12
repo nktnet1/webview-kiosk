@@ -1,9 +1,13 @@
 package uk.nktnet.webviewkiosk.utils
 
 import android.net.Uri
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.runBlocking
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -11,8 +15,11 @@ import org.junit.runner.RunWith
 import org.junit.rules.TemporaryFolder
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import org.robolectric.annotation.Config
 import java.io.File
+import java.io.FileNotFoundException
 import java.nio.file.Files
+import uk.nktnet.webviewkiosk.testing.ShadowOsWithRename
 
 @RunWith(RobolectricTestRunner::class)
 class FileUtilsTest {
@@ -85,6 +92,63 @@ class FileUtilsTest {
 
         assertEquals(listOf(recent, ordinaryTemp, old), listLocalFiles(temporaryFolder.root))
         assertEquals(emptyList<File>(), listLocalFiles(File(temporaryFolder.root, "missing")))
+    }
+
+    @Test
+    @Config(shadows = [ShadowOsWithRename::class])
+    fun successfulContentImportPublishesCompleteFileAndCleansTemporaryFiles() = runBlocking {
+        val source = temporaryFolder.newFile("source.json").apply { writeText("{\"ready\":true}") }
+        val destination = temporaryFolder.newFolder("imported")
+
+        val imported = saveContentIntentToFile(
+            RuntimeEnvironment.getApplication(), Uri.fromFile(source), destination,
+        )
+
+        assertTrue("Import did not publish ${imported.absolutePath}", imported.exists())
+        assertArrayEquals(source.readBytes(), imported.readBytes())
+        assertEquals(source.name, imported.getDisplayName())
+        assertEquals(listOf(imported), destination.listFiles().orEmpty().toList())
+    }
+
+    @Test
+    fun cancellationDuringContentImportLeavesNoPartialOrTemporaryFiles() {
+        val source = temporaryFolder.newFile("large.bin").apply {
+            writeBytes(ByteArray(5 * 1024 * 1024) { 42 })
+        }
+        val destination = temporaryFolder.newFolder("cancelled")
+        val existing = File(destination, "existing.txt").apply { writeText("keep") }
+        var progressCallbacks = 0
+
+        assertThrows(CancellationException::class.java) {
+            runBlocking {
+                saveContentIntentToFile(
+                    RuntimeEnvironment.getApplication(), Uri.fromFile(source), destination,
+                ) {
+                    progressCallbacks++
+                    throw CancellationException("user cancelled the upload")
+                }
+            }
+        }
+
+        assertTrue("Import must have started copying", progressCallbacks > 0)
+        assertEquals("keep", existing.readText())
+        assertEquals(listOf(existing), destination.listFiles().orEmpty().toList())
+    }
+
+    @Test
+    fun missingImportSourceDoesNotCreateAnEmptyDestinationFile() {
+        val destination = temporaryFolder.newFolder("missing-import")
+        val missing = File(temporaryFolder.root, "not-found.txt")
+
+        assertThrows(FileNotFoundException::class.java) {
+            runBlocking {
+                saveContentIntentToFile(
+                    RuntimeEnvironment.getApplication(), Uri.fromFile(missing), destination,
+                )
+            }
+        }
+
+        assertTrue(destination.listFiles().isNullOrEmpty())
     }
 
     @Test

@@ -35,11 +35,13 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
                     width: 95%;
                     min-height: 70vh;
                     margin: 16px auto;
+                    background-color: #ffffff;
                 }
                 canvas {
                     display: block;
                     width: 100%;
                     height: auto;
+                    background-color: #ffffff;
                     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
                 }
                 #pdf-status {
@@ -189,7 +191,8 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
 
                         state.renderTask = page.render({
                             canvasContext: context,
-                            viewport: viewport
+                            viewport: viewport,
+                            background: '#ffffff'
                         });
                         await state.renderTask.promise;
 
