@@ -90,12 +90,24 @@ import java.io.File
 
 private const val LOCAL_NETWORK_PERMISSION_ERROR = "ERR_LOCAL_NETWORK_PERMISSION_MISSING"
 
-private fun isLocalNetworkPermissionError(error: WebResourceErrorCompat?): Boolean {
-    return (
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN
-        && error?.description?.toString()?.contains(LOCAL_NETWORK_PERMISSION_ERROR) == true
-    )
+/** Only read a compat error description after both the OS and WebView allow it. */
+internal fun matchesLocalNetworkPermissionError(
+    sdkInt: Int,
+    supportsDescription: () -> Boolean,
+    getDescription: () -> CharSequence?,
+): Boolean {
+    if (sdkInt < Build.VERSION_CODES.CINNAMON_BUN || !supportsDescription()) return false
+    return getDescription()?.contains(LOCAL_NETWORK_PERMISSION_ERROR) == true
 }
+
+private fun isLocalNetworkPermissionError(error: WebResourceErrorCompat?): Boolean =
+    matchesLocalNetworkPermissionError(
+        sdkInt = Build.VERSION.SDK_INT,
+        supportsDescription = {
+            WebViewFeature.isFeatureSupported(WebViewFeature.WEB_RESOURCE_ERROR_GET_DESCRIPTION)
+        },
+        getDescription = { error?.description },
+    )
 
 private fun isWebPdf(
     url: String,

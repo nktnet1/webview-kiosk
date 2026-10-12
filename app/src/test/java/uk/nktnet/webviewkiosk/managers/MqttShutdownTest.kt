@@ -330,6 +330,15 @@ class MqttShutdownTest {
         manager.publishScreenOnEvent()
         client.event.succeed()
 
+        // The runtime future may schedule completion on an executor instead of
+        // invoking whenComplete inline. Wait for this acknowledgement to be logged.
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2)
+        while (
+            manager.debugLogHistory.count { it.tag == "publish success" } < successes + 1
+            && System.nanoTime() < deadline
+        ) {
+            Thread.sleep(5)
+        }
         assertEquals(successes + 1, manager.debugLogHistory.count { it.tag == "publish success" })
     }
 

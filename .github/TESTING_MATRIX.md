@@ -4,7 +4,7 @@ Snapshot: post-merge `additional-tests` at `b51ab06d` compared with the v0.26.21
 release commit `aa7ceca9`. This is an assessment of test *coverage*, not a finding that the
 untested paths are defective. The app still declares `versionName = "0.26.21"`.
 
-## Current automated-test gate status (12 October 2026; v1.0.43)
+## Current automated-test gate status (12 October 2026; v1.0.44)
 
 **Testing policy:** Keep automated JVM/Robolectric, CI-script, Vitest and
 Chromium Playwright tests. All Android APK instrumentation, AVD/emulator jobs,
@@ -13,9 +13,9 @@ acceptance checks are **manual-only** and are not CI release gates.
 
 | Gate | Most recent evidence | Status |
 | --- | --- | --- |
-| Android JVM/Robolectric | v1.0.43 on the post-merge `additional-tests` bundle plus v1.0.41–42: **505 tests in 43 JUnit suites**, zero failures/errors/skips, passed locally with Gradle 9.8.0-milestone-1, JBR 21.0.11, supplied Android SDK, offline dependency cache and Robolectric API 28/29 runtimes. Includes five new command-dispatch callback-isolation regressions | **Verified local full Gradle pass**; hosted CI and installed APK remain unverified |
+| Android JVM/Robolectric | v1.0.44 on the post-merge `additional-tests` bundle plus v1.0.41–43: **509 tests in 44 JUnit suites**, zero failures/errors/skips, passed locally with Gradle 9.8.0-milestone-1, JBR 21.0.11, supplied Android SDK, offline dependency cache and Robolectric API 28/29 runtimes. Adds four API-compatibility/WebView feature-guard tests and fixes an asynchronous MQTT assertion | **Verified local full Gradle pass**; hosted CI and installed APK remain unverified |
 | Docs Vitest / Chromium Playwright | Jobs remain configured; no passing CI output supplied | Unverified |
-| Offline CI checks / local runner | v1.0.43: all **11** Python CI-script tests and Android asset-exporter shell tests passed; **505/505 full Android tests** passed. Remote-command dispatcher focused suite passed **8/8** | Verified local JVM and script checks; hosted CI pending |
+| Offline CI checks / local runner | v1.0.44: all **11** Python CI-script tests and Android asset-exporter shell tests passed; **509/509 full Android tests** passed. Authentication, MQTT shutdown and WebView feature-guard focused suites passed **59/59** | Verified local JVM and script checks; hosted CI pending |
 | Gradle/pnpm caching | v1.0.31 Gradle build cache and pnpm store caching retained; no measured post-change timings | Speedup unverified |
 | Installed APK, API 23 / API 35 | Instrumentation suites and CI jobs removed in v1.0.33 | Manual-only; **not** passing automated gates |
 | Release APK launch | AVD smoke job removed; release build still depends on JVM/docs test gate | Manual-only; release APK not runtime-certified by CI |
@@ -24,6 +24,38 @@ acceptance checks are **manual-only** and are not CI release gates.
 failed the custom-password dialog visibility assertion after v1.0.30. Removing
 that automation does **not** fix the underlying UI, nor confirm that the
 password dialog works on a device. Verify it during manual device acceptance.
+
+## Kotlin/Java inspection follow-up (v1.0.44)
+
+The supplied Android Studio inspection export reported two min-API errors and an
+AndroidX WebView feature-gate warning in Kotlin production code. This patch:
+
+- Guards the API 23 AndroidKeyStore authentication cipher factory on Android 5.x;
+  the existing credential fallback remains unchanged. A new regression covers the
+  unsupported API boundary without creating an AVD test.
+- Removes the API 24 `CompletableFuture.isDone` call from the MQTT disconnect
+  hot path. The identity guard is sufficient because completion clears
+  `pendingDisconnect` under the same monitor before completing its future.
+- Checks `WEB_RESOURCE_ERROR_GET_DESCRIPTION` support before obtaining a
+  WebView compat error description. Three new tests cover short-circuiting on
+  old Android, unsupported WebView, and matching/nonmatching error descriptions.
+- Removes a redundant biometric callback override; retains the otherwise
+  apparently unused MQTT subscription helper, which tests call reflectively.
+- Waits for asynchronous MQTT publication logging in an existing Robolectric
+  regression instead of assuming completion callbacks execute inline.
+
+**Inspection findings reviewed but deliberately unchanged:** The per-viewer PDF
+`X509TrustManager` delegates default server validation to Android's
+`X509TrustManagerExtensions`, with separate configured SSL-error approval paths;
+its security warning should not be silenced without a dedicated trust-policy
+review. The reported blocking PDF.js and file-import calls are already reached
+through `Dispatchers.IO`. Android entry-point and JavaScript-bridge reflection,
+unused delegate signature parameters, and minor style/suppression inspections
+were not treated as production defects. No non-Kotlin/Java inspection fixes,
+generated artifacts, or dependency changes were made. An attempted offline
+`:app:lintDebug` run was blocked because `lint-gradle:32.4.1` is absent from
+the supplied Gradle cache; the IDE inspection was not independently rerun.
+Hosted CI remains unverified.
 
 ## AVD retirement and retained automated coverage (v1.0.33)
 

@@ -52,7 +52,14 @@ object AuthenticationManager {
     val customAuthRequest: State<Any?> = _customAuthRequest
 
     internal var session = AuthenticationSession(SystemClock::elapsedRealtime)
-    internal var authCipherFactory: (Pair<ByteArray, ByteArray>?) -> Cipher = ::createAuthCipher
+    internal var authCipherFactory: (Pair<ByteArray, ByteArray>?) -> Cipher = { token ->
+        // Method references to the API 23 Keystore implementation must not be
+        // resolved unconditionally on the supported Android 5.x runtimes.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            throw UnsupportedOperationException("Authentication cipher requires Android 6 or newer")
+        }
+        createAuthCipher(token)
+    }
     internal var authKeyInvalidator: () -> Unit = ::deleteAuthKey
     internal var biometricPromptFactory:
         (AppCompatActivity, BiometricPrompt.AuthenticationCallback) -> AuthenticationPrompt =
@@ -342,10 +349,6 @@ object AuthenticationManager {
                     }
                 }
 
-                override fun onAuthenticationFailed() {
-                    super.onAuthenticationFailed()
-                    // An unrecognised scan is retryable; the same native prompt remains open.
-                }
             }
         )
         pending.cancel = prompt::cancelAuthentication

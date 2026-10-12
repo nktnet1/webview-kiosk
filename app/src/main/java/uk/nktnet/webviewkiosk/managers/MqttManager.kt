@@ -925,6 +925,7 @@ object MqttManager {
 
     // Capture the owning client before the batch. A concurrent replacement must not
     // receive leftover topics from a superseded connect attempt.
+    // Invoked reflectively by MQTT operation-state regression tests.
     private fun subscribeToTopics() {
         val subscribingClient = getReadyClient() ?: return
         subscribeToTopics(subscribingClient)
@@ -1246,7 +1247,10 @@ object MqttManager {
         // The event PUBACK or its timeout can outlive a shutdown. A reconnect
         // may reuse the same HiveMQ client, so checking its state alone would
         // disconnect the *new* session on behalf of a retired operation.
-        if (pendingDisconnect !== operation || operation.completion.isDone) return
+        // finishDisconnect clears the operation under this same monitor before
+        // completing its future; ownership therefore also guards completion.
+        // Avoid CompletableFuture.isDone (API 24) on the API 21+ code path.
+        if (pendingDisconnect !== operation) return
         val c = operation.client
         if (!c.state.isConnected || !operation.started.compareAndSet(false, true)) {
             return

@@ -87,6 +87,19 @@ class AuthenticationManagerTest {
     }
 
     @Test
+    fun cipherFactoryDoesNotResolveMarshmallowKeystoreCodeOnAndroidFive() {
+        manager.authCipherFactory = originalCipherFactory
+        setSdk(Build.VERSION_CODES.LOLLIPOP)
+        try {
+            val failure = runCatching { manager.authCipherFactory(null) }.exceptionOrNull()
+            assertTrue(failure is UnsupportedOperationException)
+            assertEquals("Authentication cipher requires Android 6 or newer", failure?.message)
+        } finally {
+            setSdk(originalSdk)
+        }
+    }
+
+    @Test
     fun reinitializingTheSameHostKeepsItsSinglePendingPrompt() {
         showPrompt()
         val prompt = prompts.single()
