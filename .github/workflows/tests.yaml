@@ -37,7 +37,7 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
 
       - name: Verify Android test report diagnostics
-        run: python3 -m unittest discover -s scripts/tests -p 'test_report_android_instrumentation.py'
+        run: python3 -m unittest discover -s scripts/tests -p 'test_*android_instrumentation.py'
 
       - name: Run unit tests
         run: sh gradlew :app:testDebugUnitTest --stacktrace
@@ -98,12 +98,7 @@ jobs:
           profile: pixel_2
           disable-animations: true
           emulator-boot-timeout: 900
-          script: |
-            sh gradlew :app:connectedDebugAndroidTest --stacktrace || {
-              mkdir -p app/build/outputs/androidTest-results/connected
-              adb logcat -d -v threadtime > app/build/outputs/androidTest-results/connected/device-logcat.txt || true
-              exit 1
-            }
+          script: sh scripts/ci/run-android-instrumentation.sh
 
       - name: Print instrumentation failures
         if: ${{ failure() && steps.instrumented_tests.outcome == 'failure' }}
