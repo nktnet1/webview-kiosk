@@ -6,7 +6,6 @@ import {
 } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import {
-  createCurlCommand,
   generateVapidKeys,
   MAX_PUSH_PAYLOAD_BYTES,
   type PushCredentials,
@@ -181,17 +180,5 @@ describe("Web Push builder", () => {
         `{ "type":"command", "command":"toast", "wakeScreen":true }`,
       ),
     ).toBe('{"type":"command","command":"toast","wakeScreen":true}');
-  });
-
-  it("shell-quotes the destination without disclosing private keys in a cURL command", async () => {
-    const { credentials } = await createCredentials();
-    credentials.endpoint = "https://push.example.org/token'quoted";
-    const request = await prepareWebPush(credentials, message, 60);
-    const command = createCurlCommand(request);
-    expect(command).toContain("--data-binary @unifiedpush-message.bin");
-    expect(command).toContain("Content-Encoding: aes128gcm");
-    expect(command).toContain("'\\''");
-    expect(command).not.toContain(credentials.vapidPrivateKey);
-    expect(command).not.toContain(credentials.auth);
   });
 });

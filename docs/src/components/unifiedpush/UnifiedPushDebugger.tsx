@@ -4,6 +4,7 @@ import { useForm } from "@tanstack/react-form";
 import { Callout } from "fumadocs-ui/components/callout";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { CredentialJsonTransfer } from "#/components/remote-control/CredentialJsonTransfer";
 import {
   createRemotePayload,
   type MessageKind,
@@ -11,6 +12,17 @@ import {
   validateRemotePayload,
 } from "#/components/remote-control/payload";
 import { RemoteMessageEditor } from "#/components/remote-control/RemoteMessageEditor";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "#/components/ui/alert-dialog";
 import { Button } from "#/components/ui/button";
 import {
   Card,
@@ -35,11 +47,9 @@ import {
   STORAGE_KEY,
 } from "./storage";
 import {
-  createCurlCommand,
   generateVapidKeys,
   MAX_PUSH_PAYLOAD_BYTES,
   MAX_PUSH_TTL,
-  type PreparedPush,
   type PushCredentials,
   parsePushEndpoint,
   prepareWebPush,
@@ -113,17 +123,6 @@ function describeError(error: unknown): string {
     : "An unexpected error occurred.";
 }
 
-function saveEncryptedBody(push: PreparedPush) {
-  const url = URL.createObjectURL(
-    new Blob([push.body], { type: "application/octet-stream" }),
-  );
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = "unifiedpush-message.bin";
-  anchor.click();
-  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
-}
-
 export default function UnifiedPushDebugger() {
   const [loaded, setLoaded] = useState(false);
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
@@ -134,7 +133,6 @@ export default function UnifiedPushDebugger() {
   );
   const [busy, setBusy] = useState(false);
   const [generatingKeys, setGeneratingKeys] = useState(false);
-  const [prepared, setPrepared] = useState<PreparedPush | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
   // Keep fields, validation and submit values in TanStack Form. Only the
@@ -174,7 +172,6 @@ export default function UnifiedPushDebugger() {
   }
 
   function invalidateRequest() {
-    setPrepared(null);
     setFeedback(null);
   }
 
@@ -215,53 +212,18 @@ export default function UnifiedPushDebugger() {
     }
   }
 
-  async function createRequest(
-    values: DebugFormValues,
-  ): Promise<PreparedPush | null> {
-    try {
-      const request = await prepareWebPush(
-        values.credentials,
-        validateRemotePayload(payload, "unifiedpush", messageKind),
-        values.ttl.trim() ? Number(values.ttl) : Number.NaN,
-      );
-      setPrepared(request);
-      return request;
-    } catch (error) {
-      setPrepared(null);
-      setFeedback({ kind: "error", message: describeError(error) });
-      return null;
-    }
-  }
-
-  async function handlePrepare() {
-    if (busy || generatingKeys) return;
-    setBusy(true);
-    setFeedback(null);
-    setPrepared(null);
-    try {
-      const request = await createRequest(form.state.values);
-      if (request) {
-        setFeedback({
-          kind: "success",
-          message:
-            "Encrypted request prepared locally. Download the binary body and copy the cURL command below.",
-        });
-      }
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function handleSend(values: DebugFormValues) {
     if (busy || generatingKeys) return;
     setBusy(true);
     setFeedback(null);
-    setPrepared(null);
 
     try {
       if (values.mode === "encrypted") {
-        const request = await createRequest(values);
-        if (!request) return;
+        const request = await prepareWebPush(
+          values.credentials,
+          validateRemotePayload(payload, "unifiedpush", messageKind),
+          values.ttl.trim() ? Number(values.ttl) : Number.NaN,
+        );
 
         let response: Response;
         try {
@@ -278,7 +240,7 @@ export default function UnifiedPushDebugger() {
           setFeedback({
             kind: "warning",
             message:
-              "The browser could not complete the request (often because the push server blocks CORS). No delivery is confirmed. Use the encrypted cURL fallback below.",
+              "The browser could not complete the request (often because the push server blocks CORS). No delivery is confirmed. Use an endpoint that allows browser-origin requests.",
           });
           return;
         }
@@ -291,7 +253,7 @@ export default function UnifiedPushDebugger() {
               }
             : {
                 kind: "error",
-                message: `Push server rejected the request (HTTP ${response.status}). Check the endpoint and keys; you can also retry using cURL.`,
+                message: `Push server rejected the request (HTTP ${response.status}). Check the endpoint and keys.`,
               },
         );
       } else {
@@ -341,25 +303,28 @@ export default function UnifiedPushDebugger() {
 
   function clearCredentials() {
     form.setFieldValue("credentials", { ...EMPTY_CREDENTIALS });
+    setShowSecrets(false);
     invalidateRequest();
     try {
       window.localStorage.removeItem(STORAGE_KEY);
+      setStorageWarning(null);
       toast.success("Saved credentials cleared");
     } catch {
+      setStorageWarning(
+        "Browser storage is unavailable; credentials may still be saved.",
+      );
       toast.warning(
         "Fields cleared, but browser storage could not be accessed.",
       );
     }
   }
 
-  async function copyCurl() {
-    if (!prepared) return;
-    try {
-      await navigator.clipboard.writeText(createCurlCommand(prepared));
-      toast.success("cURL command copied");
-    } catch {
-      toast.error("Unable to copy. Check the browser clipboard permissions.");
-    }
+  function applyImportedCredentials(credentials: PushCredentials) {
+    form.setFieldValue("credentials", credentials);
+    persistEditedCredentials(credentials);
+    setShowSecrets(false);
+    invalidateRequest();
+    toast.success("Credential fields imported");
   }
 
   return (
@@ -513,15 +478,54 @@ export default function UnifiedPushDebugger() {
                             : "Generate VAPID keys"}
                         </Button>
                       )}
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        className="w-full sm:w-48 shrink-0"
-                        onClick={clearCredentials}
-                      >
-                        Clear credentials
-                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            className="w-full sm:w-48 shrink-0"
+                          >
+                            Clear credentials
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>
+                              Clear saved credentials?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This permanently clears the push endpoint, auth
+                              secret, and VAPID keys stored in this browser.
+                              This cannot be undone unless you have an exported
+                              backup. You may need to register the device again.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel asChild>
+                              <Button type="button" variant="outline">
+                                Cancel
+                              </Button>
+                            </AlertDialogCancel>
+                            <AlertDialogAction asChild>
+                              <Button
+                                type="button"
+                                variant="destructive"
+                                onClick={clearCredentials}
+                              >
+                                Clear credentials
+                              </Button>
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
+                    <CredentialJsonTransfer
+                      filename="unifiedpush-credentials.json"
+                      template={EMPTY_CREDENTIALS}
+                      getCredentials={() => form.state.values.credentials}
+                      onImport={applyImportedCredentials}
+                      warning="JSON exports include your private VAPID key, auth secret, and endpoint. Store them securely. Importing replaces all six credential fields; missing fields are cleared."
+                    />
                     {mode === "encrypted" && (
                       <p className="text-xs text-muted-foreground">
                         New VAPID keys require updating the public key in the
@@ -616,15 +620,6 @@ export default function UnifiedPushDebugger() {
                       >
                         {busy ? "Sending…" : "Send test push"}
                       </Button>
-                      {mode === "encrypted" && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handlePrepare}
-                        >
-                          Prepare cURL fallback
-                        </Button>
-                      )}
                     </div>
                     {feedback
                       && (feedback.kind === "warning" ? (
@@ -641,35 +636,6 @@ export default function UnifiedPushDebugger() {
                           {feedback.message}
                         </div>
                       ))}
-                    {mode === "encrypted" && prepared && (
-                      <div className="space-y-3 rounded-lg border border-border p-3 text-sm">
-                        <h2 className="font-semibold">
-                          Encrypted cURL fallback
-                        </h2>
-                        <p className="text-muted-foreground">
-                          Download the encrypted binary, place it beside your
-                          terminal and run the copied command. The command
-                          contains a short-lived VAPID token. Do not share it or
-                          the endpoint URL.
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => saveEncryptedBody(prepared)}
-                          >
-                            Download .bin
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={copyCurl}
-                          >
-                            Copy cURL command
-                          </Button>
-                        </div>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               </div>

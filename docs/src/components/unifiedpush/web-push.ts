@@ -354,15 +354,3 @@ export async function prepareWebPush(
     body: encrypted,
   };
 }
-
-export function createCurlCommand(push: PreparedPush): string {
-  const quote = (value: string) => `'${value.replaceAll("'", "'\\''")}'`;
-  return [
-    "curl --fail-with-body -i -X POST",
-    ...Object.entries(push.headers).map(
-      ([name, value]) => `  -H ${quote(`${name}: ${value}`)}`,
-    ),
-    "  --data-binary @unifiedpush-message.bin",
-    `  ${quote(push.endpoint)}`,
-  ].join(" \\\n");
-}

@@ -9,8 +9,8 @@ Open the [UnifiedPush Debugger](/debugger/unifiedpush) to test commands and sett
 updates without a separate application server. Use the shared form editor or
 switch to raw JSON for custom payloads. Credentials are saved **unencrypted** in
 this browser's local storage; avoid shared computers and clear them after use.
-Some push servers block browser requests (CORS), so an encrypted cURL fallback
-is available.
+Some push servers block direct browser requests (CORS), so delivery may
+require an endpoint that supports browser-origin requests.
 
 </Callout>
 

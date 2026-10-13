@@ -1,4 +1,16 @@
-import { expect, test } from "@playwright/test";
+import { readFile } from "node:fs/promises";
+import { expect, type Page, test } from "@playwright/test";
+
+async function uploadCredentials(page: Page, content: string) {
+  const choosing = page.waitForEvent("filechooser");
+  await page.getByRole("button", { name: "Import credentials JSON" }).click();
+  const chooser = await choosing;
+  await chooser.setFiles({
+    name: "unifiedpush-credentials.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(content),
+  });
+}
 
 test("UnifiedPush documentation links to the debugger from a top-level tip", async ({
   page,
@@ -83,6 +95,16 @@ test("UnifiedPush debugger saves local credentials and clears them", async ({
     "auth-secret",
   );
   await page.getByRole("button", { name: "Clear credentials" }).click();
+  const dialog = page.getByRole("alertdialog", {
+    name: "Clear saved credentials?",
+  });
+  await expect(dialog).toContainText("cannot be undone");
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(page.getByLabel("Push endpoint URL")).toHaveValue(
+    "https://push.example.org/secret",
+  );
+  await page.getByRole("button", { name: "Clear credentials" }).click();
+  await dialog.getByRole("button", { name: "Clear credentials" }).click();
   await expect(page.getByLabel("Push endpoint URL")).toBeEmpty();
   await expect(page.getByLabel("Endpoint auth secret")).toBeEmpty();
   await expect
@@ -92,6 +114,71 @@ test("UnifiedPush debugger saves local credentials and clears them", async ({
       ),
     )
     .toBeNull();
+});
+
+test("UnifiedPush credential JSON export and import are safe and reversible", async ({
+  page,
+}) => {
+  await page.goto("/debugger/unifiedpush");
+  const endpoint = page.getByLabel("Push endpoint URL");
+  const auth = page.getByLabel("Endpoint auth secret");
+  const vapidKey = page.getByLabel("VAPID private key");
+  await endpoint.fill("https://push.example.org/initial");
+  await auth.fill("private-auth");
+  await vapidKey.fill("private-vapid-key");
+
+  const downloading = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export credentials JSON" }).click();
+  const download = await downloading;
+  expect(download.suggestedFilename()).toBe("unifiedpush-credentials.json");
+  const exported = await readFile(await download.path(), "utf8");
+  expect(JSON.parse(exported)).toEqual({
+    endpoint: "https://push.example.org/initial",
+    p256dh: "",
+    auth: "private-auth",
+    vapidPublicKey: "",
+    vapidPrivateKey: "private-vapid-key",
+    vapidSubject: "",
+  });
+
+  await uploadCredentials(page, "not JSON");
+  await expect(
+    page.getByText(/credentials file must contain valid JSON/),
+  ).toBeVisible();
+  await expect(endpoint).toHaveValue("https://push.example.org/initial");
+
+  await uploadCredentials(page, '{"endpoint":"https://push.example.org/new"}');
+  const dialog = page.getByRole("alertdialog", {
+    name: "Replace existing credentials?",
+  });
+  await expect(dialog).toContainText("Missing fields will be cleared");
+  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(endpoint).toHaveValue("https://push.example.org/initial");
+  await expect(auth).toHaveValue("private-auth");
+
+  await uploadCredentials(page, '{"endpoint":"https://push.example.org/new"}');
+  await dialog.getByRole("button", { name: "Replace credentials" }).click();
+  await expect(endpoint).toHaveValue("https://push.example.org/new");
+  await expect(auth).toBeEmpty();
+  await expect(vapidKey).toBeEmpty();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () =>
+          JSON.parse(
+            localStorage.getItem("webview-kiosk:unifiedpush-debug:v1") ?? "{}",
+          ).endpoint,
+      ),
+    )
+    .toBe("https://push.example.org/new");
+
+  // Exported files can be imported unchanged and restore all secrets.
+  await uploadCredentials(page, exported);
+  await dialog.getByRole("button", { name: "Replace credentials" }).click();
+  await expect(auth).toHaveValue("private-auth");
+  await expect(vapidKey).toHaveValue("private-vapid-key");
+  await page.reload();
+  await expect(auth).toHaveValue("private-auth");
 });
 
 test("UnifiedPush debugger uses form controls and preserves raw JSON edits", async ({
@@ -124,7 +211,7 @@ test("UnifiedPush debugger uses form controls and preserves raw JSON edits", asy
   await page.getByRole("tab", { name: "Form" }).click();
   await expect(page.getByRole("alert")).toContainText("valid JSON");
   await expect(page.getByLabel("JSON payload")).toHaveValue("invalid");
-  await page.getByRole("button", { name: "Prepare cURL fallback" }).click();
+  await page.getByRole("button", { name: "Send test push" }).click();
   await expect(page.getByRole("status")).toContainText("valid JSON");
 });
 
@@ -209,16 +296,38 @@ test("UnifiedPush debugger prepares an encrypted request entirely in the browser
   await expect(page.getByLabel("VAPID public key")).toHaveValue(
     /^[a-zA-Z0-9_-]{87}$/,
   );
-  await page.getByRole("button", { name: "Prepare cURL fallback" }).click();
+  await page.route("https://push.example.org/token", async (route) => {
+    if (route.request().method() === "OPTIONS") {
+      await route.fulfill({
+        status: 204,
+        headers: {
+          "access-control-allow-origin": "*",
+          "access-control-allow-methods": "POST, OPTIONS",
+          "access-control-allow-headers":
+            "authorization, content-encoding, content-type, ttl",
+        },
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 201,
+      headers: { "access-control-allow-origin": "*" },
+      body: "accepted",
+    });
+  });
+  const sent = page.waitForRequest(
+    (request) =>
+      request.url() === "https://push.example.org/token"
+      && request.method() === "POST",
+  );
+  await page.getByRole("button", { name: "Send test push" }).click();
+  const request = await sent;
+  expect(request.headers().ttl).toBe("60");
+  expect(request.headers()["content-encoding"]).toBe("aes128gcm");
+  expect(request.headers().authorization).toContain("vapid t=");
+  expect(request.postDataBuffer()?.length).toBeGreaterThan(86);
   await expect(page.getByRole("status")).toContainText(
-    "Encrypted request prepared locally",
+    "Push server accepted the request (HTTP 201)",
   );
-  await expect(
-    page.getByRole("button", { name: "Copy cURL command" }),
-  ).toBeVisible();
-  const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Download .bin" }).click();
-  expect((await downloadPromise).suggestedFilename()).toBe(
-    "unifiedpush-message.bin",
-  );
+  await expect(page.getByRole("button", { name: /cURL/i })).toHaveCount(0);
 });
