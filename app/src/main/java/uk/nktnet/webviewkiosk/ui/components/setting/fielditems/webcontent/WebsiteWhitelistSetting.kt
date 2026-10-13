@@ -31,8 +31,8 @@ fun WebsiteWhitelistSetting() {
         """.trimIndent(),
         placeholder = """
             e.g.
-                ^https://trusted\.org/?$
-                ^https://.*\.trusted\.org/.*
+                ^https://trusted\.org(/.*)?$
+                ^https://.*\.trusted\.org(/.*)?$
         """.trimIndent(),
         initialValue = userSettings.websiteWhitelist,
         settingKey = settingKey,

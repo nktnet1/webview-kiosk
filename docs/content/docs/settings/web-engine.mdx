@@ -45,10 +45,10 @@ This is important for services like embedded analytics or login widgets.
 
 Controls how the WebView uses its cache when loading pages. Options:
 
-- **Default (`LOAD_DEFAULT`)** - Normal caching behavior; the WebView decides when to use cached content.
-- **Cache else network (`LOAD_CACHE_ELSE_NETWORK`)** - Uses cached content if available; otherwise fetches from network.
-- **No cache (`LOAD_NO_CACHE`)** - Always fetches from the network; ignores cached content.
-- **Cache only (`LOAD_CACHE_ONLY`)** - Only loads content from cache; network requests are skipped.
+- **Default (`LOAD_DEFAULT`)** - Normal caching behavior. The WebView decides when to use cached content.
+- **Cache else network (`LOAD_CACHE_ELSE_NETWORK`)** - Uses cached content if available, otherwise fetches from the network.
+- **No cache (`LOAD_NO_CACHE`)** - Always fetches from the network instead of using cached content.
+- **Cache only (`LOAD_CACHE_ONLY`)** - Loads only cached content without making network requests.
 
 **Android API:** [WebSettings#LOAD_CACHE_ELSE_NETWORK](https://developer.android.com/reference/android/webkit/WebSettings#LOAD_CACHE_ELSE_NETWORK)
 
@@ -267,6 +267,23 @@ managed.example.com=work-client-cert
 **Android APIs:** [WebViewClient#onReceivedClientCertRequest](https://developer.android.com/reference/android/webkit/WebViewClient#onReceivedClientCertRequest(android.webkit.WebView,%20android.webkit.ClientCertRequest)), [KeyChain](https://developer.android.com/reference/android/security/KeyChain)
 
 **Default:** (blank)
+
+### Installing a private CA for HTTPS
+
+Mutual TLS client certificates are different from the CA certificates used to
+verify a website's HTTPS server certificate. The **Install client certificate**
+action accepts a PKCS#12 client identity with a private key. It does not
+install a root CA or make the app trust a private HTTPS server.
+
+To access a website signed by a private CA, install that CA through **Android
+Settings**. Webview Kiosk trusts Android's system CAs and user-installed CAs
+for WebView HTTPS connections. This trust is **app-wide**, including websites
+outside the local network. It is not restricted to the hosts listed in Mutual
+TLS, and it cannot be switched on or off in the app.
+
+The server must still present a valid certificate matching its hostname.
+Installing a CA does not bypass certificate expiration, hostname or chain
+validation. The separate **SSL Error Mode** setting remains in effect.
 
 ## 16. SSL Error Mode
 

@@ -71,9 +71,9 @@ up mutual TLS for ordinary HTTPS server verification.
 **Security scope:** Android-installed user CAs are trusted **app-wide**, not
 only for the configured kiosk site or local network. This is a build-time trust
 policy, **not a runtime switch**. An installed CA may issue certificates for
-other sites that the app visits. Standard TLS validation, including hostname,
-validity dates and certificate-chain checks, still applies; an invalid server
-certificate can still produce an SSL error.
+other sites that the app visits. The app still checks certificate chains,
+hostnames and validity dates. An invalid server certificate can still produce
+an SSL error.
 
 The **Mutual TLS > Install client certificate** action serves a different
 purpose: it installs a PKCS#12 client identity (including its private key) for

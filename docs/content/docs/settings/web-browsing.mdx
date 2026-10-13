@@ -39,7 +39,7 @@ This also enables forward navigation.
 
 Set to true to allow the user to go home using one of:
 
-1. Tapping the top-left quadrant of the screen 10 times in quick succession (opens Kiosk Control Panel)
+1. Tapping the configured Kiosk Control Panel region 10 times in quick succession (top-left by default), then selecting `Home`
 1. Holding the back button (long-pressed). For more details, see `Settings -> Device`
 1. Clicking the <span className="inline-flex">(<EllipsisVertical />)</span> icon on the right of the address bar (top-right corner of screen) and selecting `Home`
 1. Clicking the floating toolbar <span className="inline-flex">(<Wrench className="-rotate-90"/>)</span> icon and selecting `Home`
@@ -82,7 +82,7 @@ on the right of the address bar (top-right corner of screen) and selecting `Book
 ## 9. Allow Other URL Schemes
 
 Allow the handling of non-http/https URL schemes (i.e. intents) such as
-`intent:`, `mailto:`, `sms:`, `tel`:, `spotify:`, `whatsapp:`, `unifiedpush:`,
+`intent:`, `mailto:`, `sms:`, `tel:`, `spotify:`, `whatsapp:`, `unifiedpush:`,
 etc in other apps.
 
 When in Lock Task Mode, the apps responsible for handling these intents needs
@@ -202,13 +202,14 @@ Available regions are:
         are true:
         <ol>
           <li>
-              <b>Web Browsing -> Kiosk Control Panel Region</b> is <i>disabled</i>
+              <b>Appearance → Floating Toolbar Mode</b> is set to <i>Hidden</i>
           </li>
           <li>
               <b>Device -> Back Button Hold Action</b> is not set to <i>Open Kiosk Control Panel</i>
           </li>
         </ol>
-        Then this option cannot be disabled, and will default to Top Left.
+        In this case, disabling the multi-tap region would remove both ways
+        to open the control panel. The app keeps the region at Top Left.
       </td>
     </tr>
   </tbody>
