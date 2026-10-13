@@ -252,8 +252,9 @@ abstract class BuildNativeAdblockTask : DefaultTask() {
             } catch (error: Exception) {
                 throw GradleException(
                     "Rust compilation failed for $triple using ${cargoExecutable.get()}. " +
-                        "Check Cargo's output and ensure Rust Android target '$triple' is installed " +
-                        "(rustup target add $triple).",
+                        "Check Cargo's output. If it reports E0463 (missing Rust core), " +
+                        "ensure the Android targets are installed for the active rustup toolchain " +
+                        "(rustup target add ${targets.joinToString(" ") { it.second }}).",
                     error,
                 )
             }
@@ -277,7 +278,11 @@ val buildNativeAdblock = tasks.register<BuildNativeAdblockTask>("buildNativeAdbl
     group = "build"
     description = "Compile the Rust content-blocking engine for all Android ABIs"
     crateDirectory.set(nativeAdblockSource)
-    sourceFiles.from(nativeAdblockSource.file("Cargo.toml"), nativeAdblockSource.dir("src"))
+    sourceFiles.from(
+        nativeAdblockSource.file("Cargo.toml"),
+        nativeAdblockSource.file("rust-toolchain.toml"),
+        nativeAdblockSource.dir("src"),
+    )
     cargoTargetDirectory.set(layout.buildDirectory.dir("native-adblock/target"))
     jniLibsDirectory.set(nativeAdblockJniLibs)
     ndkRevision.set(android.ndkVersion)

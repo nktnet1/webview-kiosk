@@ -31,12 +31,26 @@ be selected with `ANDROID_NDK_HOME` or `ANDROID_NDK_ROOT` pointing to its root
 NDK produces an actionable error rather than building an APK without the
 native engine.
 
-Install the standard Rust toolchain with [rustup](https://rustup.rs/), then
-provision its Android targets:
+Install Rust with [rustup](https://rustup.rs/). The
+`app/native-adblock/rust-toolchain.toml` file selects the **stable** toolchain
+(with a minimal installation profile) and lists all four Android targets.
+When Gradle invokes rustup-managed Cargo from the crate directory, rustup
+automatically installs any missing toolchain components, including the Android
+Rust standard libraries, on first use. This requires an internet connection.
+It does **not** install the NDK, which is handled separately above.
+
+If automatic installation is disabled (`RUSTUP_AUTO_INSTALL=0`), the Rust
+installation is not managed by rustup, or a download fails, provision the
+Android targets for the toolchain used by Cargo:
 
 ```sh
 rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
 ```
+
+A manual Cargo invocation should be made from `app/native-adblock` so rustup
+can discover its `rust-toolchain.toml` toolchain configuration. The file is a
+Gradle task input: changing the toolchain declaration invalidates the native
+library task's up-to-date state.
 
 The Gradle `buildNativeAdblock` task runs Cargo with the NDK clang linker for
 each target and includes the resulting `.so` files in the APK. On macOS,

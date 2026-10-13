@@ -1,0 +1,11 @@
+# Cargo runs from this directory when Gradle builds the JNI library.
+# rustup installs these standard libraries for the selected toolchain on first use.
+[toolchain]
+channel = "stable"
+profile = "minimal"
+targets = [
+    "aarch64-linux-android",
+    "armv7-linux-androideabi",
+    "i686-linux-android",
+    "x86_64-linux-android",
+]
