@@ -7,7 +7,9 @@ import {
 
 const APPLICATION_ID = "uk.nktnet.webviewkiosk";
 const GITHUB_REPOSITORY = "nktnet1/webview-kiosk";
-const FETCH_TIMEOUT_MS = 30_000;
+const FETCH_TIMEOUT_MS = 8_000;
+const MAX_RETRIES = 2;
+const RETRY_DELAY_MS = 100;
 
 const GITHUB_LATEST_RELEASE_URL = urlJoin(
   "https://api.github.com/repos/",
@@ -257,6 +259,24 @@ const discoverers: Record<
   IzzyOnDroid: discoverIzzyOnDroidVersion,
 };
 
+/** Retry each source independently so one unavailable registry does not block the others. */
+async function withTwoRetries<T>(operation: () => Promise<T>): Promise<T> {
+  let attempt = 0;
+  while (true) {
+    try {
+      return await operation();
+    } catch (error) {
+      if (attempt === MAX_RETRIES) {
+        throw error;
+      }
+      attempt++;
+      await new Promise<void>((resolve) => {
+        setTimeout(resolve, RETRY_DELAY_MS * attempt);
+      });
+    }
+  }
+}
+
 export async function discoverQrInstallationVersions(
   options: { fetchImpl?: FetchLike; githubToken?: string } = {},
 ): Promise<
@@ -270,11 +290,14 @@ export async function discoverQrInstallationVersions(
     QR_INSTALLATION_SOURCES.map(async (source) => {
       try {
         console.log(`Fetching latest version for ${source}...`);
-        return [source, await discoverers[source](context)] as const;
+        return [
+          source,
+          await withTwoRetries(() => discoverers[source](context)),
+        ] as const;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         console.warn(
-          `[qr] Failed to discover latest ${source} version; using QR_INSTALLATION_FALLBACK_VERSION: ${message}`,
+          `[qr] Failed to discover latest ${source} version after ${MAX_RETRIES + 1} attempts; using QR_INSTALLATION_FALLBACK_VERSION: ${message}`,
         );
         return [source, undefined] as const;
       }

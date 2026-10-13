@@ -3,11 +3,14 @@ import { tanstackStart } from "@tanstack/react-start/plugin/vite";
 import react from "@vitejs/plugin-react";
 import mdx from "fumadocs-mdx/vite";
 import { defineConfig, type Plugin } from "vite";
-import { discoverQrInstallationVersions } from "#/components/qr/version.discovery";
+import {
+  resolveBuildQrInstallationVersions,
+  shouldFetchQrInstallationVersions,
+} from "#/components/qr/version.build";
 import { CLIENT_ENV_PREFIX, env } from "#/lib/env";
 
 type QrInstallationVersionsPromise = ReturnType<
-  typeof discoverQrInstallationVersions
+  typeof resolveBuildQrInstallationVersions
 >;
 
 const qrInstallationVersionsCache = globalThis as typeof globalThis & {
@@ -19,7 +22,10 @@ function getQrInstallationVersions(): QrInstallationVersionsPromise {
     !qrInstallationVersionsCache.__webviewKioskQrInstallationVersionsPromise
   ) {
     qrInstallationVersionsCache.__webviewKioskQrInstallationVersionsPromise =
-      discoverQrInstallationVersions({
+      resolveBuildQrInstallationVersions({
+        enableNetwork: shouldFetchQrInstallationVersions(
+          process.env.DOCS_FETCH_QR_VERSIONS,
+        ),
         githubToken: process.env.GITHUB_TOKEN,
       });
   }
@@ -34,6 +40,10 @@ export default defineConfig(async ({ command }) => {
     server: {
       port: 3000,
     },
+    preview: {
+      // The build's prerender server only needs loopback, not an external host.
+      host: "127.0.0.1",
+    },
     envPrefix: CLIENT_ENV_PREFIX,
     base: env.PUBLIC_DOCS_BASE_PATH,
     plugins: [
@@ -46,6 +56,8 @@ export default defineConfig(async ({ command }) => {
             outputPath: "index.html",
             enabled: true,
             crawlLinks: true,
+            retryCount: 3,
+            retryDelay: 1000,
           },
         },
         pages: [

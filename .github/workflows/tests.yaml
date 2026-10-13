@@ -85,6 +85,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Typecheck documentation
+        run: pnpm typecheck
+
       - name: Run unit tests
         run: pnpm test
 
@@ -118,8 +121,6 @@ jobs:
 
       - name: Build site
         run: pnpm build
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Run QR browser tests
         run: pnpm test:e2e

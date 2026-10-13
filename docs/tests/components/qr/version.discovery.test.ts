@@ -133,7 +133,7 @@ describe("discoverQrInstallationVersions", () => {
       }
     }
     expect(
-      timeout.mock.calls.every(([milliseconds]) => milliseconds === 30_000),
+      timeout.mock.calls.every(([milliseconds]) => milliseconds === 8_000),
     ).toBe(true);
   });
 
@@ -216,12 +216,53 @@ describe("discoverQrInstallationVersions", () => {
     });
   });
 
+  it("retries a transient source failure twice and keeps successful sources", async () => {
+    const { fetchImpl, routes } = createDiscovery();
+    const originalFdroidRoute = routes[fdroidUrl];
+    let attempts = 0;
+    const fdroidRoute = vi.fn(async () => {
+      attempts++;
+      if (attempts < 3) {
+        throw new Error("Temporary F-Droid failure");
+      }
+      return originalFdroidRoute();
+    });
+    routes[fdroidUrl] = fdroidRoute;
+
+    await expect(
+      discoverQrInstallationVersions({ fetchImpl }),
+    ).resolves.toEqual(expectedVersions);
+    expect(fdroidRoute).toHaveBeenCalledTimes(3);
+    expect(fetchImpl).toHaveBeenCalledTimes(6);
+    expect(console.warn).not.toHaveBeenCalled();
+  });
+
+  it("uses only the failing source's fallback after two retries", async () => {
+    const { fetchImpl, routes } = createDiscovery();
+    const failingRoute = vi.fn(async () => {
+      throw new Error("F-Droid unavailable");
+    });
+    routes[fdroidUrl] = failingRoute;
+
+    await expect(
+      discoverQrInstallationVersions({ fetchImpl }),
+    ).resolves.toEqual({
+      GitHub: expectedVersions.GitHub,
+      IzzyOnDroid: expectedVersions.IzzyOnDroid,
+    });
+    expect(failingRoute).toHaveBeenCalledTimes(3);
+    expect(console.warn).toHaveBeenCalledWith(
+      expect.stringContaining("after 3 attempts"),
+    );
+  });
+
   it("returns an empty discovery result when all sources fail", async () => {
     const fetchImpl = vi.fn<typeof fetch>().mockRejectedValue("offline");
 
     await expect(
       discoverQrInstallationVersions({ fetchImpl }),
     ).resolves.toEqual({});
+    expect(fetchImpl).toHaveBeenCalledTimes(9);
     expect(console.warn).toHaveBeenCalledTimes(3);
   });
 

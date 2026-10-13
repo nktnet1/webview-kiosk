@@ -46,6 +46,9 @@ jobs:
       - name: Check lint and format
         run: pnpm check
 
+      - name: Typecheck documentation
+        run: pnpm typecheck
+
       - name: Run documentation unit tests
         run: pnpm test
 
