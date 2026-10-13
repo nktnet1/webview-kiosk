@@ -5,8 +5,11 @@
 Run the relevant suites before opening a pull request.
 
 > [!NOTE]
-> Both suites run on pull requests and pushes to `main` through the
-> [tests workflow](./workflows/tests.yaml).
+> Android tests run on pull requests, pushes to `main`, and release tags
+> through the [tests workflow](./workflows/tests.yaml). Documentation checks
+> run through the [docs workflow](./workflows/docs.yaml) only for docs changes
+> on pull requests and `main`, or when started manually. Chromium browser tests
+> run for browser-relevant docs changes and manual workflow runs.
 
 ### Android
 

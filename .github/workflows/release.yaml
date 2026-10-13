@@ -19,7 +19,7 @@ jobs:
     uses: ./.github/workflows/tests.yaml
 
   build:
-    name: Build minified release APK
+    name: Build release and debug APKs
     needs: verify
     runs-on: ubuntu-latest
     steps:
@@ -43,8 +43,8 @@ jobs:
           test -n "$RELEASE_KEYSTORE_BASE64" || { echo "Release signing secret is missing" >&2; exit 1; }
           printf '%s' "$RELEASE_KEYSTORE_BASE64" | base64 --decode > app/keystore.jks
 
-      - name: Build release APK
-        run: sh gradlew :app:assembleRelease --stacktrace
+      - name: Build release and debug APKs
+        run: sh gradlew :app:assembleRelease :app:assembleDebug --stacktrace
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
@@ -55,6 +55,14 @@ jobs:
         with:
           name: release-apk
           path: app/build/outputs/apk/release/
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Store debug APK for publication
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 7
 
@@ -74,6 +82,12 @@ jobs:
         with:
           name: release-apk
           path: app/build/outputs/apk/release/
+
+      - name: Download built debug APK
+        uses: actions/download-artifact@v4
+        with:
+          name: debug-apk
+          path: app/build/outputs/apk/debug/
 
       - name: Rename APK and select changelog
         run: |
@@ -96,5 +110,6 @@ jobs:
           tag: ${{ github.ref_name }}
           name: ${{ github.ref_name }}
           bodyFile: metadata/en-US/changelogs/${{ env.VERSION_CODE }}.txt
-          artifacts: app/build/outputs/apk/release/*.apk
+          artifacts: app/build/outputs/apk/release/*.apk,app/build/outputs/apk/debug/app-debug.apk
+          artifactErrorsFailBuild: true
           draft: true
