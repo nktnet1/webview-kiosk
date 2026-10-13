@@ -19,17 +19,17 @@ internal object SuggestedFilterLists {
     val all = listOf(
         SuggestedFilterList(
             name = "EasyList",
-            description = "Ads and advertising networks",
+            description = "Ads",
             url = "https://easylist.to/easylist/easylist.txt",
         ),
         SuggestedFilterList(
             name = "EasyPrivacy",
-            description = "Trackers and analytics",
+            description = "Trackers",
             url = "https://easylist.to/easylist/easyprivacy.txt",
         ),
         SuggestedFilterList(
             name = "AdGuard Base",
-            description = "Ads (includes EasyList; choose either ads list to avoid overlap)",
+            description = "Ads · overlaps EasyList",
             url = "https://filters.adtidy.org/extension/ublock/filters/2.txt",
         ),
     )

@@ -74,8 +74,8 @@ native load **allows requests** and surfaces the error in the settings screen.
 
 ## Import safeguards
 
-- Import a `.txt` list through Android's document picker or explicitly tap
-  **Download** for one of three suggested lists: [EasyList](https://easylist.to/easylist/easylist.txt)
+- In **Content Blocking**, tap **Add list**. Choose a `.txt` file via Android's
+  document picker or tap **Download** for one of three suggested lists: [EasyList](https://easylist.to/easylist/easylist.txt)
   (ads), [EasyPrivacy](https://easylist.to/easylist/easyprivacy.txt) (trackers), or
   [AdGuard Base](https://filters.adtidy.org/extension/ublock/filters/2.txt) (ads).
   AdGuard Base includes EasyList rules; avoid enabling both ads lists unnecessarily.
