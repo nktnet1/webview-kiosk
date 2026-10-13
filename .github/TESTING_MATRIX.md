@@ -4,17 +4,17 @@ Snapshot: post-merge `additional-tests` at `b51ab06d` compared with the v0.26.21
 release commit `aa7ceca9`. This is an assessment of test *coverage*, not a finding that the
 untested paths are defective. The app still declares `versionName = "0.26.21"`.
 
-## Current automated-test gate status (13 October 2026; v1.0.52)
+## Current automated-test gate status (13 October 2026; v1.0.53)
 
-**v1.0.52 verification:** The supplied offline JetBrains JDK 21, Gradle,
-Android SDK and Robolectric dependencies were used for the complete
-`:app:testDebugUnitTest` suite: **551/551 tests in 52 JUnit suites**, with zero
-failures, errors or skips. Nine new methods in two suites cover the production
-Compose navigation host's keyed WebView content, real MainActivity URL/settings
-refreshes, stale WebView callbacks, temporary NavHost removal, navigation
-transitions and activity/controller restoration. The prior v1.0.51 suite
-passed 542/542 in 50 suites. Robolectric does not simulate a physical
-predictive-back gesture.
+**v1.0.53 verification:** The supplied offline JetBrains JDK 21, Gradle,
+Android SDK and Robolectric dependencies passed the complete
+`:app:testDebugUnitTest` suite: **557/557 tests in 54 JUnit suites**, with zero
+failures, errors or skips. Six new methods cover bounded, Unicode-safe dialog
+labels and asynchronous WebView startup ownership/failure handling. The
+MainActivity integration fixture supplies a deterministic provider-startup
+callback because Robolectric cannot reliably complete native WebView warmup
+under the entire test suite. The previous v1.0.52 suite passed 551/551 in 52
+suites. Native Android/Chromium ANR resolution is not established by JVM tests.
 
 **Testing policy:** Keep automated JVM/Robolectric, CI-script, Vitest and
 Chromium Playwright tests. All Android APK instrumentation, AVD/emulator jobs,
@@ -23,10 +23,10 @@ acceptance checks are **manual-only** and are not CI release gates.
 
 | Gate | Most recent evidence | Status |
 | --- | --- | --- |
-| Android JVM/Robolectric | v1.0.52 offline `:app:testDebugUnitTest`: **551/551 tests in 52 JUnit suites**, zero failures/errors/skips; 9 new regressions passed (5 production Compose host tests, 4 real activity integration tests). Uses supplied offline toolchain, SDK 37.0, Robolectric jars and AAPT2 | **Verified locally**; physical predictive-back gesture not emulated |
+| Android JVM/Robolectric | v1.0.53 offline `:app:testDebugUnitTest`: **557/557 tests in 54 JUnit suites**, zero failures/errors/skips; 6 new ANR-hardening regressions alongside the existing navigation and activity regressions. Uses supplied offline toolchain, SDK 37.0, Robolectric jars and AAPT2 | **Verified locally**; physical predictive-back gesture not emulated |
 | Isolated Kotlin JVM regressions | v1.0.47: production `DeviceOwnerManager.kt` **9/9** mocked Dhizuku permission scenarios, production `lockTaskUtils.kt` **4/4** Android-version-gate success/denial scenarios, and 3/3 actual permission-token JUnit methods compiled/run with minimal JUnit shims. Both former failure classes were reproduced against v1.0.46. v1.0.46 independently passed 4/4 blob transport scenarios | **Verified narrowly** with temporary JVM stubs, not an Android runtime or full Robolectric suite |
 | Docs Vitest / Chromium Playwright | Jobs remain configured; no passing CI output supplied | Unverified |
-| Offline CI checks / local runner | v1.0.52: **11/11** Python CI-script tests and Android asset-exporter Bash tests passed. No TypeScript, dependency or generated-file changes | Verified local CI scripts |
+| Offline CI checks / local runner | v1.0.53: **11/11** Python CI-script tests and Android asset-exporter Bash tests passed. No TypeScript, dependency or generated-file changes | Verified local CI scripts |
 | Gradle/pnpm caching | v1.0.31 Gradle build cache and pnpm store caching retained; no measured post-change timings | Speedup unverified |
 | Installed APK, API 23 / API 35 | Instrumentation suites and CI jobs removed in v1.0.33 | Manual-only; **not** passing automated gates |
 | Release APK launch | AVD smoke job removed; release build still depends on JVM/docs test gate | Manual-only; release APK not runtime-certified by CI |
@@ -35,6 +35,49 @@ acceptance checks are **manual-only** and are not CI release gates.
 failed the custom-password dialog visibility assertion after v1.0.30. Removing
 that automation does **not** fix the underlying UI, nor confirm that the
 password dialog works on a device. Verify it during manual device acceptance.
+
+## Historical Android ANR mitigations (v1.0.53)
+
+The five supplied ANR traces describe **four classes** seen around v0.26.21.
+They do not establish that those issues still reproduce in the current code.
+Earlier patches had already bounded link/image previews, protected WebView
+navigation lifetime and provided a configurable `allowDefaultLongPress` setting.
+This patch targets only remaining plausible application-level contributors:
+
+- **ANRs 1 and 2, Android Minikin/Compose text layout:** History, Bookmarks and
+  Local Files dialogs previously inserted a zero-width separator after every
+  UTF-16 code unit in unbounded labels. Display text is now bounded to 256
+  UTF-16 units *before* inserting separators between Unicode code points; the
+  underlying full URL, bookmark and filename remain unchanged. The shortcut
+  dialog now bounds its displayed current URL. The existing settings-export
+  preview is reduced from 8192 to 2048 characters; copying/exporting still
+  uses the complete value. This only reduces worst-case shaping cost; it
+  does not fix defects inside Android's native text layout.
+- **ANR 3, Chromium selection action toolbar:** Existing
+  `allowDefaultLongPress` already offers an opt-out. No silent disabling of
+  native text selection or speculative icon-decoding workaround was added.
+- **ANR 4, Chromium native frame rendering:** No Kotlin-specific defect was
+  demonstrated, so no changes were made to graphics, renderer or frame timing.
+- **ANR 5, WebView native library startup:** `MainActivity` now kicks off the
+  existing AndroidX WebKit 1.14 experimental async warmup before Compose mounts
+  its navigation host. Startup coordination is one-shot and non-blocking; the
+  host shows a progress indicator until the callback, then performs ordinary
+  WebView construction on the main thread. UI-thread-required WebView startup
+  work is not attempted during warmup. An eventual failure or a missing native
+  callback falls back to normal construction (12-second bounded safeguard)
+  rather than leaving an indefinitely blank host. Remote clear-cache WebView
+  creation waits for the same one-shot startup gate. Android API 21 minimum and
+  the existing WebKit dependency are preserved.
+
+Three pure JVM tests validate the startup gate's callback ordering, failure
+fallback and concurrent requests. Three tests validate bounded display text,
+including long input and surrogate pairs. Existing real MainActivity refresh
+and navigation tests now inject a deterministic provider-startup completion,
+preventing Robolectric's native Chromium startup limitations from introducing
+order-dependent failures. **The full offline Android JVM/Robolectric suite
+passed 557/557 across 54 suites.** CI-script Python tests **11/11** and asset
+exporter shell tests passed. These tests do not emulate native Android Minikin
+or Chromium ANRs, and no physical-device or hosted CI result is claimed.
 
 ## WebView recreation and navigation regression suite (v1.0.52)
 

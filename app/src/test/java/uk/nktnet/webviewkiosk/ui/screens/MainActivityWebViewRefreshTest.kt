@@ -41,6 +41,8 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSettingsMessage
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.utils.WEBVIEW_RECREATION_REQUEST_KEY
+import uk.nktnet.webviewkiosk.utils.webview.WebViewStartup
+import uk.nktnet.webviewkiosk.utils.webview.WebViewStartupGate
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager.RemoteMessage.Source
 
@@ -62,6 +64,9 @@ class MainActivityWebViewRefreshTest {
         val context = RuntimeEnvironment.getApplication()
         context.getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE).edit().clear().commit()
         context.getSharedPreferences("system_settings", Context.MODE_PRIVATE).edit().clear().commit()
+        // Test navigation and WebView behaviour, not Robolectric's native Chromium startup.
+        // The real asynchronous completion/failure contract is tested separately.
+        WebViewStartup.setGateForTests(WebViewStartupGate(beginStartup = { complete -> complete() }))
         UserSettings(context).apply {
             homeUrl = "about:blank"
             mqttEnabled = false
@@ -77,6 +82,9 @@ class MainActivityWebViewRefreshTest {
         view = content.getChildAt(0) as ComposeView
         attachRecomposer()
         activityController.start().resume().visible()
+        // A cold WebView is now mounted only after the async provider-startup callback.
+        // Never assert immediate native construction on the activity's first frame.
+        awaitCondition { WebViewStartup.ready.value }
         frames()
     }
 
@@ -86,6 +94,7 @@ class MainActivityWebViewRefreshTest {
         view.disposeComposition()
         recomposer.cancel()
         scope.cancel()
+        WebViewStartup.setGateForTests(null)
     }
 
     @Test

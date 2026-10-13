@@ -36,6 +36,7 @@ import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog as Dialog
 import uk.nktnet.webviewkiosk.utils.getDisplayName
 import uk.nktnet.webviewkiosk.utils.getLocalFileLink
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
+import uk.nktnet.webviewkiosk.utils.boundedBreakableTextPreview
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.listLocalFiles
@@ -114,7 +115,7 @@ fun LocalFilesDialog(
                                                 append("[$index] ")
                                             }
                                             append(
-                                                displayName.toCharArray().joinToString("\u200B")
+                                                boundedBreakableTextPreview(displayName)
                                             )
                                         },
                                         maxLines = 2,

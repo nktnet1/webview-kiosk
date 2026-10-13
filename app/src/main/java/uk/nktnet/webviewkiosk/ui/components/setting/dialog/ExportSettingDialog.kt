@@ -50,7 +50,7 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog as Dialog
 import uk.nktnet.webviewkiosk.utils.boundedTextPreview
 
-private const val EXPORT_PREVIEW_MAX_CHARS = 8192
+private const val EXPORT_PREVIEW_MAX_CHARS = 2048
 
 /** SAF providers may block or reject an output stream; success requires a completed close. */
 internal suspend fun writeSettingsExport(text: String, openOutput: () -> OutputStream?) {

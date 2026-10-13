@@ -18,7 +18,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Alignment
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -78,6 +81,7 @@ import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
+import uk.nktnet.webviewkiosk.utils.webview.WebViewStartup
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
 import uk.nktnet.webviewkiosk.utils.webview.getNfcAdapterOrNull
 import kotlin.time.Duration.Companion.milliseconds
@@ -140,6 +144,7 @@ open class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        WebViewStartup.start(applicationContext)
         createdHosts.add(this)
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
             // On API 23, enableEdgeToEdge() uses legacy systemUiVisibility layout flags.
@@ -207,6 +212,7 @@ open class MainActivity : AppCompatActivity() {
 
         setContent {
             navController = rememberNavController()
+            val webViewReady by WebViewStartup.ready.collectAsState()
 
             KeepScreenOnOption()
 
@@ -363,8 +369,15 @@ open class MainActivity : AppCompatActivity() {
                             CustomAuthPasswordDialog()
                         }
                         if (handlesApplicationEvents) {
-                            // Dispose the inactive host's WebView, timers and global command collectors.
-                            SetupNavHost(navController)
+                            if (webViewReady) {
+                                // Avoid racing the first WebView constructor against native startup.
+                                // Keep the controller alive while the provider initializes.
+                                SetupNavHost(navController)
+                            } else {
+                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator()
+                                }
+                            }
                         }
                     }
                 }

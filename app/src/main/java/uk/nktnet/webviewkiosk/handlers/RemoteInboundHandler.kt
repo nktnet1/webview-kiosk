@@ -38,6 +38,7 @@ import uk.nktnet.webviewkiosk.utils.getStatus
 import uk.nktnet.webviewkiosk.utils.getSystemInfo
 import uk.nktnet.webviewkiosk.utils.openPackage
 import uk.nktnet.webviewkiosk.utils.wakeScreen
+import uk.nktnet.webviewkiosk.utils.webview.WebViewStartup
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 
 object RemoteInboundHandler {
@@ -72,6 +73,7 @@ object RemoteInboundHandler {
                 WebViewNavigation.clearHistory(systemSettings)
             }
             is InboundClearCacheCommand -> {
+                WebViewStartup.awaitReady(context.applicationContext)
                 withContext(Dispatchers.Main) {
                     try {
                         val webView = WebView(context)
