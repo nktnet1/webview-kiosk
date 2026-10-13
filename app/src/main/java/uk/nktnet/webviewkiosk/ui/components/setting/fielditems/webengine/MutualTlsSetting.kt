@@ -41,6 +41,11 @@ fun MutualTlsSetting() {
         infoText = """
             Configure exact sites that may use a client certificate for Mutual TLS (mTLS).
 
+            The client certificate installer accepts PKCS#12 credentials with a private key.
+            It does not install a root CA for HTTPS server verification. To trust a private
+            HTTPS server, install its CA certificate through Android Settings. WebView Kiosk
+            trusts Android-installed user CAs throughout the app, not only for these sites.
+
             Add one entry per line in the format:
 
                 host[:port][=KeyChain alias]

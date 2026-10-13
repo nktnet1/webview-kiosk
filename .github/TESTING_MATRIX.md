@@ -4,7 +4,17 @@ Snapshot: post-merge `additional-tests` at `b51ab06d` compared with the v0.26.21
 release commit `aa7ceca9`. This is an assessment of test *coverage*, not a finding that the
 untested paths are defective. The app still declares `versionName = "0.26.21"`.
 
-## Current automated-test gate status (13 October 2026; v1.0.55)
+## Current automated-test gate status (13 October 2026; v1.0.56)
+
+**v1.0.56 verification:** The complete offline `:app:testDebugUnitTest`
+suite passed **572/572 tests across 57 JUnit suites**, zero failures, errors
+or skips. Four new Robolectric tests inspect the packaged Android network
+security configuration and assert the app-wide `system` + `user` trust
+anchors, retained cleartext policy, no pin overrides or debug override CAs,
+and the unchanged default `BLOCK` SSL-error setting. Python CI tests passed
+**11/11**, and the Android asset-exporter tests passed. These checks do not
+install a real CA certificate or exercise Android's TLS implementation on a
+physical device. No dependencies were changed.
 
 **v1.0.55 verification:** The supplied offline JetBrains JDK 21, Gradle,
 Android SDK and Robolectric dependencies passed the complete
@@ -22,11 +32,11 @@ acceptance checks are **manual-only** and are not CI release gates.
 
 | Gate | Most recent evidence | Status |
 | --- | --- | --- |
-| Android JVM/Robolectric | v1.0.55 offline `:app:testDebugUnitTest`: **568/568 tests in 56 JUnit suites**, zero failures/errors/skips; 11 new client-certificate lifecycle regressions plus existing navigation/ANR tests. Uses supplied offline toolchain, SDK 37.0, Robolectric jars and AAPT2 | **Verified locally** |
+| Android JVM/Robolectric | v1.0.56 offline `:app:testDebugUnitTest`: **572/572 tests in 57 JUnit suites**, zero failures/errors/skips; four new Android user-CA trust-policy tests plus existing client-certificate, navigation and ANR regressions. Uses supplied offline toolchain, SDK 37.0, Robolectric jars and AAPT2 | **Verified locally** |
 | Kotlin/Java Android Lint | v1.0.54 `:app:lintDebug` attempted, but offline Gradle lacks `com.android.tools.lint:lint-gradle:32.4.1`; source analysis did not run. User SARIF reports 7 `UnsafeOptInUsageError` findings at the v1.0.53 property-level opt-in | **Recheck with installed Lint runtime**; no source result claimed |
 | Isolated Kotlin JVM regressions | v1.0.47: production `DeviceOwnerManager.kt` **9/9** mocked Dhizuku permission scenarios, production `lockTaskUtils.kt` **4/4** Android-version-gate success/denial scenarios, and 3/3 actual permission-token JUnit methods compiled/run with minimal JUnit shims. Both former failure classes were reproduced against v1.0.46. v1.0.46 independently passed 4/4 blob transport scenarios | **Verified narrowly** with temporary JVM stubs, not an Android runtime or full Robolectric suite |
 | Docs Vitest / Chromium Playwright | Jobs remain configured; no passing CI output supplied | Unverified |
-| Offline CI checks / local runner | v1.0.55: **11/11** Python CI-script tests and Android asset-exporter Bash tests passed. No TypeScript, dependency or generated-file changes | Verified local CI scripts |
+| Offline CI checks / local runner | v1.0.56: **11/11** Python CI-script tests and Android asset-exporter Bash tests passed. No TypeScript, dependency or generated-file changes | Verified local CI scripts |
 | Gradle/pnpm caching | v1.0.31 Gradle build cache and pnpm store caching retained; no measured post-change timings | Speedup unverified |
 | Installed APK, API 23 / API 35 | Instrumentation suites and CI jobs removed in v1.0.33 | Manual-only; **not** passing automated gates |
 | Release APK launch | AVD smoke job removed; release build still depends on JVM/docs test gate | Manual-only; release APK not runtime-certified by CI |
@@ -35,6 +45,32 @@ acceptance checks are **manual-only** and are not CI release gates.
 failed the custom-password dialog visibility assertion after v1.0.30. Removing
 that automation does **not** fix the underlying UI, nor confirm that the
 password dialog works on a device. Verify it during manual device acceptance.
+
+## Android-installed user CA trust (v1.0.56)
+
+The app already referenced `@xml/network_security_config` in its manifest.
+The previous base config preserved cleartext access but did not opt in to the
+Android user-installed CA store for modern target SDKs. Its `<trust-anchors>`
+now lists both `system` and `user`, enabling ordinary Android WebView HTTPS
+verification of private/local server certificates signed by a CA that the
+user installed through Android Settings. This intentionally applies **app-wide**:
+it is not restricted to the kiosk URL and is **not** a runtime toggle. The
+original cleartext-traffic policy remains unchanged. No blanket SSL-error
+approval is introduced; hostname, validity and certificate-chain checks still
+apply, and the default SSL-error mode remains `BLOCK`.
+
+The Mutual TLS setting now explains that its PKCS#12 client-identity installer
+is distinct from Android CA installation. README documents the broader trust
+scope and expected setup. The PDF-specific TLS policy and client-certificate
+lifecycle code remain untouched.
+
+Four Robolectric tests parse the **compiled** XML resource to verify CA sources,
+unchanged cleartext policy, and lack of pin overrides/debug-only exceptions,
+and assert that the default SSL-error mode still blocks invalid certificates.
+The full Android JVM suite passed **572/572 tests across 57 suites**; Python
+CI tests passed **11/11** and asset-exporter tests passed. Android Lint was
+not rerun because the offline cache lacks `lint-gradle:32.4.1`; actual device
+CA installation and trust resolution remain unverified.
 
 ## Activity-owned mutual-TLS certificate installation (v1.0.55)
 

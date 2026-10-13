@@ -3,5 +3,11 @@
     <base-config
         cleartextTrafficPermitted="true"
         tools:ignore="InsecureBaseConfiguration"
-    />
+    >
+        <!-- Applies app-wide: Android-installed CA trust is not limited to local hosts. -->
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
 </network-security-config>
