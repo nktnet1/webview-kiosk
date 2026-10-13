@@ -14,15 +14,43 @@ availability).
 Do not bundle filter lists. The native engine is lazy-loaded and holds no
 compiled rules when all lists are disabled.
 
-Building an APK requires an Android NDK installation, a Rust toolchain, Cargo,
-and Rust's Android cross-compilation targets. The Gradle `buildNativeAdblock`
-task builds these targets and includes the resulting `.so` files in the APK.
-It reads `ANDROID_NDK_HOME`, `ANDROID_NDK_ROOT`, or an SDK `ndk` directory.
-The build is deliberately not allowed to silently package an APK with a
-missing native engine. The release GitHub Actions workflow provisions Rust
-Android targets and a pinned Android NDK; for local builds use an NDK and
-Rust targets installed for the host OS. Host JVM/Robolectric tests can run
-without an NDK.
+Building an APK requires **Android NDK 28.2.13676358**, a Rust toolchain, Cargo,
+and Rust's four Android cross-compilation targets. The NDK version is pinned in
+`app/build.gradle.kts` and CI. For local builds, install it with **Android Studio →
+Settings → Languages & Frameworks → Android SDK → SDK Tools → Show Package Details →
+NDK (Side by side)** (select **28.2.13676358**), or with:
+
+```sh
+sdkmanager --install "ndk;28.2.13676358"
+```
+
+Gradle reads the Android SDK directory through AGP, including the SDK from
+`local.properties`, not only `ANDROID_HOME`. An externally installed NDK may
+be selected with `ANDROID_NDK_HOME` or `ANDROID_NDK_ROOT` pointing to its root
+(the directory containing `toolchains/llvm/prebuilt`). An incomplete/missing
+NDK produces an actionable error rather than building an APK without the
+native engine.
+
+Install the standard Rust toolchain with [rustup](https://rustup.rs/), then
+provision its Android targets:
+
+```sh
+rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+```
+
+The Gradle `buildNativeAdblock` task runs Cargo with the NDK clang linker for
+each target and includes the resulting `.so` files in the APK. On macOS,
+`~/.cargo/bin/cargo` is used even when Android Studio is launched without a
+shell `PATH`; `CARGO` or `CARGO_HOME` can override its location. Gradle's
+configuration cache is supported: source changes cause a rebuild, while a
+second unchanged build reuses the cached task graph. JVM/Robolectric tests
+do not require native tools.
+
+The native outputs are not Gradle **build-cache relocatable**, because external
+Cargo dependencies and the Rust toolchain are not fully declared as Gradle
+inputs. Standard up-to-date checks are still used; reinstalling or upgrading
+Rust or NDK may require a native rebuild. The release GitHub Actions workflow
+installs matching NDK and Rust Android targets.
 
 The engine is compiled on a single background executor and then swapped into
 use under a short native write lock. Request matching takes a native read lock

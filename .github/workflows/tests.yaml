@@ -46,6 +46,13 @@ jobs:
       - name: Verify Android test report diagnostics
         run: python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 
+      - name: Verify native build task configuration-cache compatibility
+        # Dry-run never needs Rust or the NDK; it still serializes the native task.
+        # A second invocation verifies that Gradle can reuse the stored task graph.
+        run: |
+          sh gradlew :app:buildNativeAdblock --configuration-cache --dry-run
+          sh gradlew :app:buildNativeAdblock --configuration-cache --dry-run
+
       - name: Run unit tests
         run: sh gradlew :app:testDebugUnitTest --build-cache --profile --stacktrace
 
