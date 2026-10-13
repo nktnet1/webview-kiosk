@@ -60,28 +60,6 @@ and standalone Kiosk solution.
    - For fully-managed (company-owned) devices, settings can be configured via an MDM/EMM provider
    - Advanced users with a device policy controller (e.g. Test DPC or OwnDroid) can also enforce configurations locally
 
-## HTTPS certificates on local networks
-
-Webview Kiosk uses both Android's system CA store and the **user-installed CA
-store** to validate WebView HTTPS server certificates. To open a local HTTPS
-site signed by a private CA, install that **CA certificate through Android
-Settings** on the device. You do not need to enable device-owner mode or set
-up mutual TLS for ordinary HTTPS server verification.
-
-**Security scope:** Android-installed user CAs are trusted **app-wide**, not
-only for the configured kiosk site or local network. This is a build-time trust
-policy, **not a runtime switch**. An installed CA may issue certificates for
-other sites that the app visits. The app still checks certificate chains,
-hostnames and validity dates. An invalid server certificate can still produce
-an SSL error.
-
-The **Mutual TLS > Install client certificate** action serves a different
-purpose: it installs a PKCS#12 client identity (including its private key) for
-sites that request client authentication. It does not install CA trust anchors.
-The existing SSL Error Mode setting remains separate and defaults to blocking
-certificate errors. The PDF viewer's separate TLS error handling policy is not changed by
-this feature.
-
 ## Permissions
 
 - <b>INTERNET</b>: for general web browsing
