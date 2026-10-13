@@ -4,14 +4,17 @@ Snapshot: post-merge `additional-tests` at `b51ab06d` compared with the v0.26.21
 release commit `aa7ceca9`. This is an assessment of test *coverage*, not a finding that the
 untested paths are defective. The app still declares `versionName = "0.26.21"`.
 
-## Current automated-test gate status (13 October 2026; v1.0.50)
+## Current automated-test gate status (13 October 2026; v1.0.52)
 
-**v1.0.50 verification:** The supplied JetBrains JDK 21, Android SDK, offline
-Gradle cache and Robolectric runtime were used for the complete v1.0.50
-`:app:testDebugUnitTest` suite: **537/537 tests in 49 JUnit suites**, with
-zero failures, errors or skips. The 11 new methods in three suites test incoming
-intents, settings file export and Compose window-flag lifecycle. The prior
-v1.0.49 full-suite result was 526/526 in 46 suites.
+**v1.0.52 verification:** The supplied offline JetBrains JDK 21, Gradle,
+Android SDK and Robolectric dependencies were used for the complete
+`:app:testDebugUnitTest` suite: **551/551 tests in 52 JUnit suites**, with zero
+failures, errors or skips. Nine new methods in two suites cover the production
+Compose navigation host's keyed WebView content, real MainActivity URL/settings
+refreshes, stale WebView callbacks, temporary NavHost removal, navigation
+transitions and activity/controller restoration. The prior v1.0.51 suite
+passed 542/542 in 50 suites. Robolectric does not simulate a physical
+predictive-back gesture.
 
 **Testing policy:** Keep automated JVM/Robolectric, CI-script, Vitest and
 Chromium Playwright tests. All Android APK instrumentation, AVD/emulator jobs,
@@ -20,10 +23,10 @@ acceptance checks are **manual-only** and are not CI release gates.
 
 | Gate | Most recent evidence | Status |
 | --- | --- | --- |
-| Android JVM/Robolectric | v1.0.50 offline `:app:testDebugUnitTest`: **537 tests in 49 JUnit suites**, zero failures/errors/skips; 11 newly added intent, settings export and keep-awake lifecycle tests passed. Used supplied Gradle 9.8.0 milestone 1, JetBrains JDK 21, Android SDK 37.0, offline cache, local AAPT2 and Robolectric jars | **Verified locally**; hosted CI, Lint and physical-device acceptance still pending |
+| Android JVM/Robolectric | v1.0.52 offline `:app:testDebugUnitTest`: **551/551 tests in 52 JUnit suites**, zero failures/errors/skips; 9 new regressions passed (5 production Compose host tests, 4 real activity integration tests). Uses supplied offline toolchain, SDK 37.0, Robolectric jars and AAPT2 | **Verified locally**; physical predictive-back gesture not emulated |
 | Isolated Kotlin JVM regressions | v1.0.47: production `DeviceOwnerManager.kt` **9/9** mocked Dhizuku permission scenarios, production `lockTaskUtils.kt` **4/4** Android-version-gate success/denial scenarios, and 3/3 actual permission-token JUnit methods compiled/run with minimal JUnit shims. Both former failure classes were reproduced against v1.0.46. v1.0.46 independently passed 4/4 blob transport scenarios | **Verified narrowly** with temporary JVM stubs, not an Android runtime or full Robolectric suite |
 | Docs Vitest / Chromium Playwright | Jobs remain configured; no passing CI output supplied | Unverified |
-| Offline CI checks / local runner | v1.0.50: **11/11** Python CI-script tests and Android asset-exporter Bash tests passed. Biome `check --write` at v1.0.47 is historical; no TypeScript files were modified in v1.0.50 | Verified local CI scripts; hosted CI and docs browser pending |
+| Offline CI checks / local runner | v1.0.52: **11/11** Python CI-script tests and Android asset-exporter Bash tests passed. No TypeScript, dependency or generated-file changes | Verified local CI scripts |
 | Gradle/pnpm caching | v1.0.31 Gradle build cache and pnpm store caching retained; no measured post-change timings | Speedup unverified |
 | Installed APK, API 23 / API 35 | Instrumentation suites and CI jobs removed in v1.0.33 | Manual-only; **not** passing automated gates |
 | Release APK launch | AVD smoke job removed; release build still depends on JVM/docs test gate | Manual-only; release APK not runtime-certified by CI |
@@ -32,6 +35,65 @@ acceptance checks are **manual-only** and are not CI release gates.
 failed the custom-password dialog visibility assertion after v1.0.30. Removing
 that automation does **not** fix the underlying UI, nor confirm that the
 password dialog works on a device. Verify it during manual device acceptance.
+
+## WebView recreation and navigation regression suite (v1.0.52)
+
+v1.0.51 preserves a single WebView `NavBackStackEntry`, using its
+`SavedStateHandle` to recompose the WebView content instead of replacing the
+root. v1.0.52 extracts the existing keyed destination content into
+`WebViewRootDestination` and provides an internal content-only `SetupNavHost`
+overload. The public application's `SetupNavHost(navController)` still renders
+the production `WebviewScreen`; the content seam permits isolated Compose
+lifecycle assertions without replacing the graph or loading a real browser.
+
+- Five Robolectric tests mount **the production SetupNavHost graph** in a
+  `ComposeView` and drive recomposition with a frame clock. They assert exactly
+  one disposal per replaced WebView composition, no recreation on unrelated
+  recomposition, identity and graph retention across file-import-like temporary
+  host removal, rapid settings/root navigation, returns during an actual
+  composed administrator transition, and `NavController` saved-state restore.
+- Four additional Robolectric tests mount **real MainActivity + WebviewScreen**.
+  They assert an external URL creates a new WebView and loads its URL, remote
+  settings reload creates a WebView with the updated JavaScript policy,
+  replaced WebViews are destroyed, delayed retired-WebView callbacks cannot
+  rewrite the replacement's browsing history,
+  and activity recreation remounts a single functional root and permits another
+  refresh. The v1.0.51 settings-to-root assertions remain in place.
+- The nine new focused methods passed and the **full Android JVM/Robolectric
+  suite passed 551/551 tests in 52 suites**. CI-script tests passed 11/11 and
+  asset-exporter tests passed. Robolectric does not emulate a device
+  predictive-back gesture; these tests
+  protect observable navigation and WebView lifecycles, not the exact original
+  framework animation race. No dependency or generated-file changes.
+
+## Predictive-back navigation entry ownership (v1.0.51)
+
+`navigateToWebViewScreen()` used `popUpTo(WebView) { inclusive = true }`
+followed by `navigate(WebView)`. This replaced the start destination with a new
+`NavBackStackEntry` even if the current screen was already WebView. When this
+interleaves with Navigation Compose predictive back, the host can prepare a
+transition for an entry already removed from its back stack. The app also built
+its navigation graph through a fresh builder closure, making graph identity
+sensitive to recomposition and temporary NavHost removal.
+
+- Returning from settings and the administrator notice now pops **to but not
+  including** the existing WebView entry; repeated return requests leave its
+  identity unchanged. In unusual graphs where no WebView entry exists (e.g.
+  isolated authentication tests), navigation still creates the WebView entry.
+- Every intentional WebView recreation is signalled through the destination's
+  `SavedStateHandle`; a Compose `key` recreates the screen content while retaining
+  its navigation entry. This keeps refresh/settings/intent behaviour without
+  replacing the root destination during a back gesture.
+- The graph is remembered by controller and reuses its existing graph across
+  NavHost disposal/recreation, avoiding graph replacement during in-flight
+  navigation animations.
+- Five new Robolectric/JUnit tests exercise nested settings, root refresh
+  identity, administrator notice, missing-root fallback and repeated returns.
+  The existing 18 authentication-wrapper cases still pass, including cancel
+  navigation. The **full Android JVM/Robolectric suite passed 542/542 tests in
+  50 suites**. Python CI tests passed 11/11; asset-exporter tests passed.
+  Predictive-back gesture race conditions are not directly emulated by the
+  Robolectric tests, so field confirmation of crash resolution remains separate.
 
 ## Incoming intents, settings documents and keep-awake lifecycle (v1.0.50)
 
