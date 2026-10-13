@@ -33,7 +33,7 @@ android {
     }
     namespace = "uk.nktnet.webviewkiosk"
     // Match the native toolchain used by CI. AGP can provision this version via the SDK manager.
-    ndkVersion = "28.2.13676358"
+    ndkVersion = "29.0.14206865"
 
     defaultConfig {
         applicationId = "uk.nktnet.webviewkiosk"

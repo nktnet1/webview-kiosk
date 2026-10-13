@@ -14,14 +14,14 @@ availability).
 Do not bundle filter lists. The native engine is lazy-loaded and holds no
 compiled rules when all lists are disabled.
 
-Building an APK requires **Android NDK 28.2.13676358**, a Rust toolchain, Cargo,
+Building an APK requires **Android NDK 29.0.14206865**, a Rust toolchain, Cargo,
 and Rust's four Android cross-compilation targets. The NDK version is pinned in
 `app/build.gradle.kts` and CI. For local builds, install it with **Android Studio →
 Settings → Languages & Frameworks → Android SDK → SDK Tools → Show Package Details →
-NDK (Side by side)** (select **28.2.13676358**), or with:
+NDK (Side by side)** (select **29.0.14206865**), or with:
 
 ```sh
-sdkmanager --install "ndk;28.2.13676358"
+sdkmanager --install "ndk;29.0.14206865"
 ```
 
 Gradle reads the Android SDK directory through AGP, including the SDK from
