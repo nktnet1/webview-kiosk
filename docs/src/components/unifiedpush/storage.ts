@@ -1,3 +1,4 @@
+import { sanitizeStoredCredentials } from "../remote-control/credential-json";
 import type { PushCredentials } from "./web-push";
 
 export const STORAGE_KEY = "webview-kiosk:unifiedpush-debug:v1";
@@ -14,17 +15,7 @@ export const EMPTY_CREDENTIALS: PushCredentials = {
 export function parseStoredCredentials(raw: string | null): PushCredentials {
   if (!raw) return { ...EMPTY_CREDENTIALS };
   try {
-    const parsed: unknown = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      return { ...EMPTY_CREDENTIALS };
-    }
-    const values = parsed as Record<string, unknown>;
-    return Object.fromEntries(
-      Object.keys(EMPTY_CREDENTIALS).map((key) => [
-        key,
-        typeof values[key] === "string" ? values[key] : "",
-      ]),
-    ) as PushCredentials;
+    return sanitizeStoredCredentials(JSON.parse(raw), EMPTY_CREDENTIALS);
   } catch {
     return { ...EMPTY_CREDENTIALS };
   }

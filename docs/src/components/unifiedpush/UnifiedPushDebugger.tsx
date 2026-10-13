@@ -43,6 +43,7 @@ import {
 } from "./storage";
 import {
   generateVapidKeys,
+  isValidPushTtlInput,
   MAX_PUSH_PAYLOAD_BYTES,
   MAX_PUSH_TTL,
   type PushCredentials,
@@ -631,11 +632,7 @@ export default function UnifiedPushDebugger() {
                         name="ttl"
                         validators={{
                           onBlur: ({ value }) => {
-                            const seconds = Number(value);
-                            return value.trim()
-                              && Number.isInteger(seconds)
-                              && seconds >= 0
-                              && seconds <= MAX_PUSH_TTL
+                            return isValidPushTtlInput(value)
                               ? undefined
                               : `TTL must be a whole number between 0 and ${MAX_PUSH_TTL} seconds.`;
                           },

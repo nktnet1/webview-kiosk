@@ -7,6 +7,7 @@ import {
 import { describe, expect, it } from "vitest";
 import {
   generateVapidKeys,
+  isValidPushTtlInput,
   MAX_PUSH_PAYLOAD_BYTES,
   type PushCredentials,
   prepareWebPush,
@@ -172,6 +173,46 @@ describe("Web Push builder", () => {
         60,
       ),
     ).rejects.toThrow(/3993/);
+  });
+
+  it("uses identical TTL limits in the form and request builder", () => {
+    for (const valid of ["0", "60", "2419200", " 90 "]) {
+      expect(isValidPushTtlInput(valid)).toBe(true);
+    }
+    for (const invalid of [
+      "",
+      "  ",
+      "-1",
+      "1.5",
+      "2419201",
+      "Infinity",
+      "NaN",
+    ]) {
+      expect(isValidPushTtlInput(invalid)).toBe(false);
+    }
+  });
+
+  it("rejects unsafe endpoints and contact subjects", async () => {
+    const { credentials } = await createCredentials();
+    for (const endpoint of [
+      "not a URL",
+      "https://user:pass@push.example.org/push",
+      "https://push.example.org/push#fragment",
+      "http://push.example.org/push",
+    ]) {
+      await expect(
+        prepareWebPush({ ...credentials, endpoint }, message, 30),
+      ).rejects.toThrow(/HTTPS|endpoint/);
+    }
+    for (const vapidSubject of [
+      "javascript:alert(1)",
+      "mailto:no-at-sign",
+      "http://push.example.org",
+    ]) {
+      await expect(
+        prepareWebPush({ ...credentials, vapidSubject }, message, 30),
+      ).rejects.toThrow(/contact/);
+    }
   });
 
   it("minifies JSON while keeping custom command fields", () => {

@@ -2,20 +2,72 @@
  * Web Push (RFC 8291) and VAPID (RFC 8292), implemented with Web Crypto so
  * private keys never have to leave the browser for this debugging tool.
  */
+import * as v from "valibot";
+import {
+  isJsonObject,
+  parseJsonObject,
+} from "../remote-control/json-validation";
 
 export const MAX_PUSH_PAYLOAD_BYTES = 3993;
 export const MAX_PUSH_TTL = 2_419_200;
 
 const encoder = new TextEncoder();
+const Base64UrlSchema = v.pipe(v.string(), v.trim(), v.regex(/^[\w-]+={0,2}$/));
+const UrlSchema = v.pipe(v.string(), v.trim(), v.url());
+const SecureEndpointSchema = v.pipe(
+  UrlSchema,
+  v.check((value) => {
+    const url = new URL(value);
+    return (
+      url.protocol === "https:"
+      && !!url.hostname
+      && !url.username
+      && !url.password
+      && !url.hash
+    );
+  }),
+);
+const PushKindSchema = v.picklist(["command", "settings"]);
+const NonEmptyCommandSchema = v.pipe(v.string(), v.nonEmpty());
+const VapidSubjectSchema = v.pipe(
+  v.string(),
+  v.trim(),
+  v.check((subject) => {
+    if (!subject) return true;
+    if (subject.startsWith("mailto:")) {
+      return /^mailto:[^\s@]+@[^\s@]+$/.test(subject);
+    }
+    const url = v.safeParse(UrlSchema, subject);
+    if (!url.success) return false;
+    const parsed = new URL(url.output);
+    return parsed.protocol === "https:" && !parsed.username && !parsed.password;
+  }),
+);
 
-export type PushCredentials = {
-  endpoint: string;
-  p256dh: string;
-  auth: string;
-  vapidPublicKey: string;
-  vapidPrivateKey: string;
-  vapidSubject: string;
-};
+export const PushCredentialsSchema = v.object({
+  endpoint: v.string(),
+  p256dh: v.string(),
+  auth: v.string(),
+  vapidPublicKey: v.string(),
+  vapidPrivateKey: v.string(),
+  vapidSubject: v.string(),
+});
+export type PushCredentials = v.InferOutput<typeof PushCredentialsSchema>;
+
+export const PushTtlSchema = v.pipe(
+  v.number(),
+  v.safeInteger(),
+  v.minValue(0),
+  v.maxValue(MAX_PUSH_TTL),
+);
+
+const NonBlankInputSchema = v.pipe(v.string(), v.trim(), v.nonEmpty());
+
+/** Validate TanStack Form's string input with the same bounds as Web Push. */
+export function isValidPushTtlInput(value: string): boolean {
+  const result = v.safeParse(NonBlankInputSchema, value);
+  return result.success && v.is(PushTtlSchema, Number(result.output));
+}
 
 export type PreparedPush = {
   endpoint: string;
@@ -31,15 +83,13 @@ function encodeBase64Url(bytes: Uint8Array): string {
 }
 
 function decodeBase64Url(value: string, expectedLength: number, name: string) {
-  const trimmed = value.trim();
-  if (!/^[\w-]+={0,2}$/.test(trimmed)) {
-    throw new Error(`${name} must be base64url-encoded.`);
-  }
+  const result = v.safeParse(Base64UrlSchema, value);
+  if (!result.success) throw new Error(`${name} must be base64url-encoded.`);
 
   let bytes: Uint8Array<ArrayBuffer>;
   try {
     bytes = Uint8Array.from(
-      atob(trimmed.replaceAll("-", "+").replaceAll("_", "/")),
+      atob(result.output.replaceAll("-", "+").replaceAll("_", "/")),
       (character) => character.charCodeAt(0),
     );
   } catch {
@@ -69,59 +119,36 @@ function utf8(value: string): Uint8Array<ArrayBuffer> {
 }
 
 export function parsePushEndpoint(value: string): URL {
-  let url: URL;
-  try {
-    url = new URL(value.trim());
-  } catch {
+  const result = v.safeParse(UrlSchema, value);
+  if (!result.success)
     throw new Error("Enter a valid HTTPS push endpoint URL.");
-  }
-
-  if (
-    url.protocol !== "https:"
-    || !url.hostname
-    || url.username
-    || url.password
-    || url.hash
-  ) {
+  if (!v.is(SecureEndpointSchema, result.output)) {
     throw new Error(
       "The push endpoint must be an HTTPS URL without embedded credentials or a fragment.",
     );
   }
-  return url;
+  return new URL(result.output);
 }
 
 export function validatePushPayload(value: string): string {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(value);
-  } catch {
-    throw new Error("Enter a valid JSON payload.");
-  }
-
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error("The payload must be a JSON object.");
-  }
-
-  const message = parsed as Record<string, unknown>;
-  if (message.type !== "command" && message.type !== "settings") {
+  const message = parseJsonObject(
+    value,
+    "Enter a valid JSON payload.",
+    "The payload must be a JSON object.",
+  );
+  if (!v.is(PushKindSchema, message.type)) {
     throw new Error('The payload type must be "command" or "settings".');
   }
   if (
     message.type === "command"
-    && (typeof message.command !== "string" || !message.command)
+    && !v.is(NonEmptyCommandSchema, message.command)
   ) {
     throw new Error('A command payload needs a non-empty "command" string.');
   }
-  if (
-    message.type === "settings"
-    && (!message.data
-      || typeof message.data !== "object"
-      || Array.isArray(message.data))
-  ) {
+  if (message.type === "settings" && !isJsonObject(message.data)) {
     throw new Error('A settings payload needs a "data" object.');
   }
-
-  return JSON.stringify(parsed);
+  return JSON.stringify(message);
 }
 
 async function hkdf(
@@ -197,25 +224,13 @@ async function encryptPayload(
 }
 
 function vapidSubjectClaim(value: string): string | undefined {
-  const subject = value.trim();
-  if (!subject) return undefined;
-  if (
-    subject.startsWith("mailto:")
-    && /^mailto:[^\s@]+@[^\s@]+$/.test(subject)
-  ) {
-    return subject;
+  const result = v.safeParse(VapidSubjectSchema, value);
+  if (!result.success) {
+    throw new Error(
+      "VAPID contact must be a mailto: email address or an HTTPS URL.",
+    );
   }
-  try {
-    const url = new URL(subject);
-    if (url.protocol === "https:" && !url.username && !url.password) {
-      return subject;
-    }
-  } catch {
-    // Reject invalid subjects below.
-  }
-  throw new Error(
-    "VAPID contact must be a mailto: email address or an HTTPS URL.",
-  );
+  return result.output || undefined;
 }
 
 async function createVapidAuthorization(
@@ -307,8 +322,12 @@ export async function prepareWebPush(
   if (!globalThis.crypto?.subtle) {
     throw new Error("Web Push encryption requires HTTPS or localhost.");
   }
-  const endpoint = parsePushEndpoint(credentials.endpoint);
-  if (!Number.isSafeInteger(ttl) || ttl < 0 || ttl > MAX_PUSH_TTL) {
+  const parsedCredentials = v.safeParse(PushCredentialsSchema, credentials);
+  if (!parsedCredentials.success) {
+    throw new Error("Push credential fields must be strings.");
+  }
+  const endpoint = parsePushEndpoint(parsedCredentials.output.endpoint);
+  if (!v.is(PushTtlSchema, ttl)) {
     throw new Error(`TTL must be an integer between 0 and ${MAX_PUSH_TTL}.`);
   }
 
@@ -319,13 +338,21 @@ export async function prepareWebPush(
     );
   }
 
-  const p256dh = decodeBase64Url(credentials.p256dh, 65, "Endpoint public key");
+  const p256dh = decodeBase64Url(
+    parsedCredentials.output.p256dh,
+    65,
+    "Endpoint public key",
+  );
   if (p256dh[0] !== 4) {
     throw new Error("Endpoint public key must be an uncompressed P-256 point.");
   }
-  const auth = decodeBase64Url(credentials.auth, 16, "Endpoint auth secret");
+  const auth = decodeBase64Url(
+    parsedCredentials.output.auth,
+    16,
+    "Endpoint auth secret",
+  );
   const vapidPublicKey = decodeBase64Url(
-    credentials.vapidPublicKey,
+    parsedCredentials.output.vapidPublicKey,
     65,
     "VAPID public key",
   );
@@ -333,7 +360,7 @@ export async function prepareWebPush(
     throw new Error("VAPID public key must be an uncompressed P-256 point.");
   }
   const vapidPrivateKey = decodeBase64Url(
-    credentials.vapidPrivateKey,
+    parsedCredentials.output.vapidPrivateKey,
     32,
     "VAPID private key",
   );
@@ -341,7 +368,7 @@ export async function prepareWebPush(
     endpoint,
     vapidPublicKey,
     vapidPrivateKey,
-    credentials.vapidSubject,
+    parsedCredentials.output.vapidSubject,
   );
   const encrypted = await encryptPayload(body, p256dh, auth);
   return {

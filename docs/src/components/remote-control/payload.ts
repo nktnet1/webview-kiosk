@@ -1,9 +1,18 @@
 /** Shared command/settings message format used by both MQTT and UnifiedPush. */
+import * as v from "valibot";
+import {
+  isJsonObject,
+  type JsonObject,
+  JsonObjectSchema,
+  parseJsonObject,
+} from "./json-validation";
 import { defaultSettingValue, SETTINGS_BY_KEY } from "./settings-catalog";
+
+export type { JsonObject } from "./json-validation";
+export { isJsonObject };
 
 export type RemoteTransport = "mqtt" | "unifiedpush";
 export type MessageKind = "command" | "settings";
-export type JsonObject = Record<string, unknown>;
 
 export type CommandField = {
   key: string;
@@ -186,10 +195,6 @@ export const COMMANDS: readonly CommandDefinition[] = [
   },
 ];
 
-export function isJsonObject(value: unknown): value is JsonObject {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 export function commandDefinition(name: string): CommandDefinition | undefined {
   return COMMANDS.find((command) => command.name === name);
 }
@@ -216,33 +221,45 @@ export function stringifyPayload(message: JsonObject): string {
   return JSON.stringify(message, null, 2);
 }
 
+const NonEmptyStringSchema = v.pipe(v.string(), v.nonEmpty());
+const NonBlankStringSchema = v.pipe(v.string(), v.trim(), v.nonEmpty());
+const SettingsDataSchema = v.looseObject({ settings: JsonObjectSchema });
+const NonEmptySettingsSchema = v.pipe(JsonObjectSchema, v.minEntries(1));
+const IntegerSchema = v.pipe(v.number(), v.safeInteger());
+
+const CommandMetadataSchema = v.looseObject({
+  messageId: v.optional(v.string()),
+  targetInstances: v.optional(v.array(v.string())),
+  targetUsernames: v.optional(v.array(v.string())),
+  interact: v.optional(v.boolean()),
+  wakeScreen: v.optional(v.boolean()),
+});
+const SettingsMetadataSchema = v.looseObject({
+  messageId: v.optional(v.string()),
+  targetInstances: v.optional(v.array(v.string())),
+  targetUsernames: v.optional(v.array(v.string())),
+  showToast: v.optional(v.boolean()),
+  reloadActivity: v.optional(v.boolean()),
+});
+
 /** Parses arbitrary JSON without dropping custom fields, so raw edits are lossless. */
 export function parseRemotePayload(
   value: string,
   transport: RemoteTransport,
   kind: MessageKind,
 ): JsonObject {
-  let message: unknown;
-  try {
-    message = JSON.parse(value);
-  } catch {
-    throw new Error("Enter a valid JSON payload.");
-  }
-  if (!isJsonObject(message))
-    throw new Error("The payload must be a JSON object.");
-  if (transport === "unifiedpush" && message.type !== kind) {
+  const message = parseJsonObject(
+    value,
+    "Enter a valid JSON payload.",
+    "The payload must be a JSON object.",
+  );
+  if (transport === "unifiedpush" && !v.is(v.literal(kind), message.type)) {
     throw new Error(`UnifiedPush payload type must be "${kind}".`);
   }
-  if (
-    kind === "command"
-    && (typeof message.command !== "string" || !message.command)
-  ) {
+  if (kind === "command" && !v.is(NonEmptyStringSchema, message.command)) {
     throw new Error('A command payload needs a non-empty "command" string.');
   }
-  if (
-    kind === "settings"
-    && (!isJsonObject(message.data) || !isJsonObject(message.data.settings))
-  ) {
+  if (kind === "settings" && !v.is(SettingsDataSchema, message.data)) {
     throw new Error('A settings payload needs a "data.settings" object.');
   }
   return message;
@@ -298,19 +315,28 @@ function isFieldValue(
     case "text":
     case "textarea":
     case "string":
-      return typeof value === "string";
+      return v.is(v.string(), value);
     case "boolean":
-      return typeof value === "boolean";
+      return v.is(v.boolean(), value);
     case "integer":
-      return typeof value === "number" && Number.isSafeInteger(value);
+      return v.is(IntegerSchema, value);
     case "choice":
-      return typeof value === "string" && (options?.includes(value) ?? false);
+      return v.is(
+        v.pipe(
+          v.string(),
+          v.check((item) => options?.includes(item) ?? false),
+        ),
+        value,
+      );
     case "multi-select":
-      return (
-        Array.isArray(value)
-        && value.every(
-          (item) => typeof item === "string" && options?.includes(item),
-        )
+      return v.is(
+        v.array(
+          v.pipe(
+            v.string(),
+            v.check((item) => options?.includes(item) ?? false),
+          ),
+        ),
+        value,
       );
     default:
       return false;
@@ -391,38 +417,25 @@ export function validateRemotePayload(
   kind: MessageKind,
 ): string {
   const message = parseRemotePayload(value, transport, kind);
-  if (
-    message.messageId !== undefined
-    && typeof message.messageId !== "string"
-  ) {
-    throw new Error("Message ID must be a string.");
-  }
-  for (const field of ["targetInstances", "targetUsernames"] as const) {
-    const targets = message[field];
-    if (
-      targets !== undefined
-      && (!Array.isArray(targets)
-        || !targets.every((item) => typeof item === "string"))
-    ) {
-      throw new Error(`${field} must be an array of strings.`);
+  const metadata = v.safeParse(
+    kind === "command" ? CommandMetadataSchema : SettingsMetadataSchema,
+    message,
+  );
+  if (!metadata.success) {
+    const key = metadata.issues[0]?.path?.[0]?.key;
+    if (key === "messageId") throw new Error("Message ID must be a string.");
+    if (key === "targetInstances" || key === "targetUsernames") {
+      throw new Error(`${key} must be an array of strings.`);
     }
-  }
-  for (const field of kind === "command"
-    ? ["interact", "wakeScreen"]
-    : ["showToast", "reloadActivity"]) {
-    if (message[field] !== undefined && typeof message[field] !== "boolean") {
-      throw new Error(`${field} must be a boolean.`);
-    }
+    if (typeof key === "string") throw new Error(`${key} must be a boolean.`);
+    throw new Error(v.summarize(metadata.issues));
   }
   if (kind === "command") {
     const command = commandDefinition(message.command as string);
     const data = isJsonObject(message.data) ? message.data : {};
     for (const field of command?.fields ?? []) {
       const fieldValue = data[field.key];
-      if (
-        field.required
-        && (typeof fieldValue !== "string" || !fieldValue.trim())
-      ) {
+      if (field.required && !v.is(NonBlankStringSchema, fieldValue)) {
         throw new Error(`${field.label} is required for ${command?.label}.`);
       }
       if (
@@ -433,9 +446,11 @@ export function validateRemotePayload(
       }
     }
   } else {
-    const settings = (message.data as JsonObject).settings as JsonObject;
-    if (Object.keys(settings).length === 0)
+    const settings = (message.data as JsonObject).settings;
+    // The structural parser already guarantees this object is present.
+    if (!v.is(NonEmptySettingsSchema, settings)) {
       throw new Error("Add at least one setting to update.");
+    }
     for (const [key, settingValue] of Object.entries(settings)) {
       const setting = SETTINGS_BY_KEY.get(key);
       if (

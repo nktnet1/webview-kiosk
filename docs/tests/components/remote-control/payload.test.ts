@@ -190,6 +190,47 @@ describe("shared remote message editor", () => {
     ).toThrow("array of strings");
   });
 
+  it("checks shared metadata without dropping unknown fields or commands", () => {
+    const accepted = {
+      command: "future_command",
+      targetInstances: ["one", "two"],
+      wakeScreen: false,
+      futureFlag: { nested: true },
+    };
+    expect(
+      validateRemotePayload(JSON.stringify(accepted), "mqtt", "command"),
+    ).toBe(JSON.stringify(accepted));
+    for (const invalid of [
+      { command: "toast", messageId: 3 },
+      { command: "toast", targetUsernames: ["ok", false] },
+      { command: "toast", wakeScreen: "true" },
+      { command: "toast", interact: 1 },
+    ]) {
+      expect(() =>
+        validateRemotePayload(JSON.stringify(invalid), "mqtt", "command"),
+      ).toThrow();
+    }
+    expect(() =>
+      validateRemotePayload(
+        JSON.stringify({
+          data: { settings: { "mqtt.connection.server_port": 1.5 } },
+        }),
+        "mqtt",
+        "settings",
+      ),
+    ).toThrow("mqtt.connection.server_port");
+    expect(() =>
+      validateRemotePayload(
+        JSON.stringify({
+          data: { settings: { "mqtt.enabled": true } },
+          showToast: "yes",
+        }),
+        "mqtt",
+        "settings",
+      ),
+    ).toThrow("showToast must be a boolean");
+  });
+
   it("normalises target lists without duplicates or blank entries", () => {
     expect(splitTargets(" abc, def\nabc, \n")).toEqual(["abc", "def"]);
   });

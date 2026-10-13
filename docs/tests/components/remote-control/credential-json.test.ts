@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   credentialsDiffer,
   parseCredentialJson,
+  sanitizeStoredCredentials,
   serializeCredentialJson,
 } from "#/components/remote-control/credential-json";
 import { EMPTY_CREDENTIALS } from "#/components/unifiedpush/storage";
@@ -49,6 +50,23 @@ describe("Shared credential JSON backups", () => {
     );
   });
 
+  it("uses the same credential schema for MQTT-style backups and local storage", () => {
+    const template = { brokerUrl: "", username: "", password: "" };
+    expect(
+      parseCredentialJson(
+        '{"brokerUrl":"wss://broker.example/mqtt","unknown":123}',
+        template,
+      ),
+    ).toEqual({ ...template, brokerUrl: "wss://broker.example/mqtt" });
+    expect(
+      sanitizeStoredCredentials(
+        { brokerUrl: "wss://broker.example/mqtt", password: null, extra: 1 },
+        template,
+      ),
+    ).toEqual({ ...template, brokerUrl: "wss://broker.example/mqtt" });
+    expect(sanitizeStoredCredentials([], template)).toEqual(template);
+  });
+
   it("rejects malformed JSON, non-string values, and unknown-only files", () => {
     expect(() => parseCredentialJson("not json", EMPTY_CREDENTIALS)).toThrow(
       /valid JSON/,
@@ -71,5 +89,11 @@ describe("Shared credential JSON backups", () => {
     expect(() =>
       parseCredentialJson('{"endpoint":1}', EMPTY_CREDENTIALS),
     ).toThrow(/"endpoint" must be a string/);
+    expect(() =>
+      parseCredentialJson(
+        '{"auth":"value","vapidPrivateKey":false}',
+        EMPTY_CREDENTIALS,
+      ),
+    ).toThrow(/"vapidPrivateKey" must be a string/);
   });
 });
