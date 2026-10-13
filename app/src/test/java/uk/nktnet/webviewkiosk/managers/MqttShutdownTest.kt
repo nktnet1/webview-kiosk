@@ -27,6 +27,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
 /** Exercises the connected-client shutdown path, including delayed and failed acknowledgements. */
@@ -225,6 +226,120 @@ class MqttShutdownTest {
             connectOutcomes,
         )
         assertEquals(1, client.count("disconnect.send"))
+    }
+
+    @Test
+    fun lateDisconnectEventAcknowledgementCannotDisconnectAReconnectedSession() {
+        val client = installClient()
+        val firstStop = StopProbe()
+        stop(firstStop)
+        assertWaitingForEvent(client)
+
+        // The state observer can finish shutdown before the event's PUBACK.
+        client.state.set(MqttClientState.DISCONNECTED)
+        assertOutcome(firstStop, "disconnected")
+        assertNull(field("pendingDisconnect").get(manager))
+        assertFalse(cancellation().get())
+        assertEquals(0, client.count("disconnect.send"))
+
+        // Simulate the same HiveMQ client becoming connected again before the old PUBACK.
+        client.state.set(MqttClientState.CONNECTED)
+        client.event.succeed()
+
+        assertEquals("A retired disconnect must not close a new session", 0, client.count("disconnect.send"))
+        assertEquals(listOf("publish.build", "publish.send"), client.operations())
+    }
+
+    @Test
+    fun lateDisconnectEventFailureCannotDisconnectAReplacedClient() {
+        val original = installClient()
+        val stopped = StopProbe()
+        stop(stopped)
+        assertWaitingForEvent(original)
+
+        original.state.set(MqttClientState.DISCONNECTED)
+        assertOutcome(stopped, "disconnected")
+        val replacement = installClient()
+        // A disconnected old client may become connected again before the late callback.
+        original.state.set(MqttClientState.CONNECTED)
+        original.event.fail(IOException("late failure"))
+
+        assertSame(replacement.api, field("client").get(manager))
+        assertEquals(0, original.count("disconnect.send"))
+        assertEquals(0, replacement.count("disconnect.send"))
+        assertNull(field("pendingDisconnect").get(manager))
+    }
+
+    @Test
+    fun shutdownFutureSuccessCannotClaimDisconnectionWhileTheClientIsStillConnected() {
+        val client = installClient()
+        val stopped = StopProbe()
+        stop(stopped)
+        client.event.succeed()
+        assertEquals(1, client.count("disconnect.send"))
+
+        // A success callback is not sufficient if the connection has not closed.
+        client.shutdown.succeed()
+
+        assertOutcome(stopped, "error:MQTT disconnect completed while the client is still connected.")
+        assertTrue(cancellation().get())
+        assertEquals(MqttClientState.CONNECTED, client.state.get())
+        assertNull(field("pendingDisconnect").get(manager))
+    }
+
+    @Test
+    fun latePublishAcknowledgementsFromReplacedClientsAreNotLoggedAsCurrent() {
+        val original = installClient()
+        manager.publishScreenOnEvent()
+        assertEquals(1, original.count("publish.send"))
+        val successes = manager.debugLogHistory.count { it.tag == "publish success" }
+        val errors = manager.debugLogHistory.count { it.tag == "publish error" }
+
+        installClient()
+        original.event.succeed()
+
+        assertEquals(successes, manager.debugLogHistory.count { it.tag == "publish success" })
+        assertEquals(errors, manager.debugLogHistory.count { it.tag == "publish error" })
+    }
+
+    @Test
+    fun latePublishAcknowledgementFromAnEarlierSessionOfTheSameClientIsIgnored() {
+        val client = installClient()
+        manager.publishScreenOnEvent()
+        val successes = manager.debugLogHistory.count { it.tag == "publish success" }
+        val errors = manager.debugLogHistory.count { it.tag == "publish error" }
+        val epoch = field("subscriptionEpoch").get(manager) as AtomicLong
+        val initialEpoch = epoch.get()
+        try {
+            // HiveMQ keeps the client instance when reconnecting but emits a
+            // new connected-listener callback for the new broker session.
+            epoch.incrementAndGet()
+            client.event.succeed()
+
+            assertEquals(successes, manager.debugLogHistory.count { it.tag == "publish success" })
+            assertEquals(errors, manager.debugLogHistory.count { it.tag == "publish error" })
+        } finally {
+            epoch.set(initialEpoch)
+        }
+    }
+
+    @Test
+    fun currentClientPublishAcknowledgementsRemainVisible() {
+        val client = installClient()
+        val successes = manager.debugLogHistory.count { it.tag == "publish success" }
+        manager.publishScreenOnEvent()
+        client.event.succeed()
+
+        // The runtime future may schedule completion on an executor instead of
+        // invoking whenComplete inline. Wait for this acknowledgement to be logged.
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2)
+        while (
+            manager.debugLogHistory.count { it.tag == "publish success" } < successes + 1
+            && System.nanoTime() < deadline
+        ) {
+            Thread.sleep(5)
+        }
+        assertEquals(successes + 1, manager.debugLogHistory.count { it.tag == "publish success" })
     }
 
     @Test

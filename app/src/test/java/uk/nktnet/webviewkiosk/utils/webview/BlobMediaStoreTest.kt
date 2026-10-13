@@ -209,6 +209,83 @@ class BlobMediaStoreTest {
     }
 
     @Test
+    fun failedWriteFromAnObsoleteTransferDoesNotDeleteItsReplacement() {
+        assertTrue(blob.startDownload("reused", null, "original.bin"))
+        val original = provider.created.single()
+        original.output.onWrite = {
+            assertTrue(blob.startDownload("reused", null, "replacement.bin"))
+            throw IOException("Old output failed after replacement")
+        }
+        ToastManager.show(context, "replacement in progress")
+        shadowOf(Looper.getMainLooper()).idle()
+
+        assertFalse(blob.appendChunk("reused", encode("old bytes".toByteArray())))
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals("replacement in progress", ShadowToast.getTextOfLatestToast())
+
+        val replacement = provider.created.last()
+        assertTrue(original.output.closed)
+        assertEquals(listOf(original.uri), provider.deleted)
+        assertEquals(setOf(replacement.uri), provider.rows.keys)
+        assertEquals(1, pending(replacement))
+
+        assertTrue(blob.appendChunk("reused", encode("new bytes".toByteArray())))
+        assertTrue(blob.finishDownload("reused"))
+        assertArrayEquals("new bytes".toByteArray(), replacement.output.bytes())
+        assertEquals(0, pending(replacement))
+    }
+
+    @Test
+    fun successfulWriteFromAnObsoleteTransferDoesNotAcknowledgeStaleBytes() {
+        assertTrue(blob.startDownload("reused", null, "original.bin"))
+        val original = provider.created.single()
+        original.output.onWrite = {
+            assertTrue(blob.startDownload("reused", null, "replacement.bin"))
+        }
+
+        assertFalse(blob.appendChunk("reused", encode("old bytes".toByteArray())))
+
+        val replacement = provider.created.last()
+        assertEquals(listOf(original.uri), provider.deleted)
+        assertEquals(setOf(replacement.uri), provider.rows.keys)
+        assertTrue(blob.appendChunk("reused", encode("new bytes".toByteArray())))
+        assertTrue(blob.finishDownload("reused"))
+        assertArrayEquals("new bytes".toByteArray(), replacement.output.bytes())
+    }
+
+    @Test
+    fun obsoleteFinishCannotDeleteOrPublishItsReplacement() {
+        for (flushFails in listOf(false, true)) {
+            val id = if (flushFails) "failed-flush" else "completed-flush"
+            assertTrue(blob.startDownload(id, null, "original.bin"))
+            val original = provider.created.last()
+            assertTrue(blob.appendChunk(id, encode("partial".toByteArray())))
+            original.output.onFlush = {
+                assertTrue(blob.startDownload(id, null, "replacement.bin"))
+                if (flushFails) throw IOException("Old flush failed after replacement")
+            }
+            ToastManager.show(context, "replacement in progress")
+            shadowOf(Looper.getMainLooper()).idle()
+
+            assertFalse(blob.finishDownload(id))
+            shadowOf(Looper.getMainLooper()).idle()
+            assertEquals("replacement in progress", ShadowToast.getTextOfLatestToast())
+
+            val replacement = provider.created.last()
+            assertTrue(original.output.closed)
+            assertEquals(1, provider.deleted.count { it == original.uri })
+            assertEquals(0, provider.deleted.count { it == replacement.uri })
+            assertTrue(provider.publicationAttempts.none { it == original.uri })
+            assertEquals(1, pending(replacement))
+
+            assertTrue(blob.appendChunk(id, encode("new bytes".toByteArray())))
+            assertTrue(blob.finishDownload(id))
+            assertArrayEquals("new bytes".toByteArray(), replacement.output.bytes())
+            assertEquals(0, pending(replacement))
+        }
+    }
+
+    @Test
     fun flushAndCloseFailuresAbortWithoutPublishing() {
         for (flushFailure in listOf(true, false)) {
             val id = if (flushFailure) "flush-failed" else "close-failed"
@@ -415,17 +492,21 @@ class BlobMediaStoreTest {
         var failWrite = false
         var failFlush = false
         var failNextClose = false
+        var onWrite: (() -> Unit)? = null
+        var onFlush: (() -> Unit)? = null
 
         override fun write(value: Int) = write(byteArrayOf(value.toByte()), 0, 1)
 
         override fun write(bytes: ByteArray, offset: Int, length: Int) {
             if (closed || failWrite) throw IOException("Write failed")
+            onWrite?.invoke()
             events.add("write")
             contents.write(bytes, offset, length)
         }
 
         override fun flush() {
             events.add("flush")
+            onFlush?.invoke()
             if (failFlush) throw IOException("Flush failed")
         }
 

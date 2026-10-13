@@ -1,47 +1,56 @@
 package uk.nktnet.webviewkiosk.ui.components.webview
 
+import android.view.Window
 import android.view.WindowManager
-import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.platform.LocalView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import uk.nktnet.webviewkiosk.states.KeepScreenOnStateSingleton
 
 @Composable
 fun KeepScreenOnOption() {
-    val view = LocalView.current
+    val activity = LocalActivity.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val keepOn = KeepScreenOnStateSingleton.isKeepScreenOn.value
 
-    DisposableEffect(keepOn, lifecycleOwner) {
-        val window = (view.context as? ComponentActivity)?.window
+    DisposableEffect(keepOn, lifecycleOwner, activity) {
+        val controller = KeepScreenOnWindowController(activity?.window, lifecycleOwner.lifecycle, keepOn)
+        controller.attach()
+        onDispose { controller.detach() }
+    }
+}
 
-        fun setKeepScreenOn(enabled: Boolean) {
-            if (enabled) {
-                window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            } else {
-                window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            }
+/** Window flags must follow the visible activity, not just the current Compose setting. */
+internal class KeepScreenOnWindowController(
+    private val window: Window?,
+    private val lifecycle: Lifecycle,
+    private val keepOn: Boolean,
+) : LifecycleEventObserver {
+    private val flag = WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+
+    fun attach() {
+        lifecycle.addObserver(this)
+        syncWindowFlag()
+    }
+
+    override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+        syncWindowFlag()
+    }
+
+    private fun syncWindowFlag() {
+        if (keepOn && lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+            window?.addFlags(flag)
+        } else {
+            window?.clearFlags(flag)
         }
+    }
 
-        setKeepScreenOn(keepOn)
-
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_RESUME -> setKeepScreenOn(keepOn)
-                Lifecycle.Event.ON_PAUSE -> setKeepScreenOn(false)
-                else -> {}
-            }
-        }
-
-        lifecycleOwner.lifecycle.addObserver(observer)
-
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-            setKeepScreenOn(false)
-        }
+    fun detach() {
+        lifecycle.removeObserver(this)
+        window?.clearFlags(flag)
     }
 }

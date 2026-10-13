@@ -72,11 +72,11 @@ object WebViewNavigation {
         shouldReplaceRedirect: Boolean,
         traversalEntryId: String? = null,
     ) {
-        val newUrl = url.trimEnd('/')
+        val newUrl = normalizedNavigationUrl(url)
         val stack = systemSettings.historyStack.toMutableList()
         val currentIndex = systemSettings.historyIndex.coerceIn(-1, stack.lastIndex)
         val currentEntry = stack.getOrNull(currentIndex)
-        val currentUrl = currentEntry?.url?.trimEnd('/')
+        val currentUrl = currentEntry?.url?.let(::normalizedNavigationUrl)
 
         val replace = (
             shouldReplaceRedirect
@@ -85,8 +85,8 @@ object WebViewNavigation {
                 || (
                     !originalUrl.isNullOrEmpty()
                     && isValidUrl(originalUrl)
-                    && originalUrl.trimEnd('/') != newUrl
-                    && systemSettings.urlBeforeNavigation != currentUrl
+                    && !sameNavigationUrl(originalUrl, newUrl)
+                    && !sameNavigationUrl(systemSettings.urlBeforeNavigation, currentUrl)
                 )
             )
         )

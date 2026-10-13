@@ -2,6 +2,8 @@ package uk.nktnet.webviewkiosk.managers
 
 import com.hivemq.client.mqtt.MqttClientState
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
+import com.hivemq.client.mqtt.mqtt5.message.subscribe.suback.Mqtt5SubAck
+import com.hivemq.client.mqtt.mqtt5.message.subscribe.suback.Mqtt5SubAckReasonCode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
@@ -11,6 +13,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -24,9 +27,12 @@ import uk.nktnet.webviewkiosk.config.remote.inbound.InboundLockTaskPackagesReque
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSettingsRequest
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundStatusRequest
 import uk.nktnet.webviewkiosk.utils.WebviewKioskStatus
+import java.io.IOException
 import java.lang.reflect.Proxy
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.AtomicLong
 
 /** Checks event, response and subscription entry points against the manager's current lifecycle. */
 @RunWith(RobolectricTestRunner::class)
@@ -178,13 +184,145 @@ class MqttOperationStateTest {
 
             assertEquals(operation.name, emptyList<String>(), original.operations())
             assertSame(operation.name, replacement.api, field("client").get(manager))
-            // subscribeToTopics may use the replacement for its remaining topics after the first check.
+            // A separate subscription batch on the replacement is still permitted.
             replacement.clearOperations()
             operation.run()
             assertEquals(operation.name, operation.expectedCalls, replacement.operations())
             replacement.clearOperations()
         }
     }
+
+    @Test
+    fun subscriptionSetupCannotSwitchToReplacementAfterItsFirstTopic() {
+        val original = installClient()
+        val replacement = RecordingClient()
+        original.onSubscribeAttempt = { field("client").set(manager, replacement.api) }
+
+        subscribeToTopics()
+
+        assertEquals(listOf("subscribe.build"), original.operations())
+        assertEquals(emptyList<String>(), replacement.operations())
+        assertSame(replacement.api, field("client").get(manager))
+    }
+
+    @Test
+    fun subscriptionSetupCannotSwitchToReplacementDuringTheInitialStateRead() {
+        val original = installClient()
+        val replacement = RecordingClient()
+        original.onStateRead = { field("client").set(manager, replacement.api) }
+
+        subscribeToTopics()
+
+        assertEquals(emptyList<String>(), original.operations())
+        assertEquals(emptyList<String>(), replacement.operations())
+        assertSame(replacement.api, field("client").get(manager))
+    }
+
+    @Test
+    fun currentSubscriptionAcknowledgementsAreLoggedOnce() {
+        val client = installClient().apply { acceptSubscriptions = true }
+        val successesBefore = logCount("subscribe success")
+        val errorsBefore = logCount("subscribe error")
+
+        subscribeToTopics()
+        assertEquals(3, client.subscriptionAcks.size)
+        assertEquals(3, client.operations().count { it == "subscribe.send" })
+
+        assertTrue(client.subscriptionAcks[0].complete(subAck(Mqtt5SubAckReasonCode.GRANTED_QOS_0)))
+        assertFalse(client.subscriptionAcks[0].complete(null))
+        assertTrue(client.subscriptionAcks[1].completeExceptionally(IOException("suback rejected")))
+
+        assertEquals(successesBefore + 1, logCount("subscribe success"))
+        assertEquals(errorsBefore + 1, logCount("subscribe error"))
+    }
+
+    @Test
+    fun rejectedSubAckReasonCodeIsNotLoggedAsASuccess() {
+        val client = installClient().apply { acceptSubscriptions = true }
+        val successesBefore = logCount("subscribe success")
+        val errorsBefore = logCount("subscribe error")
+        subscribeToTopics()
+
+        client.subscriptionAcks[0].complete(subAck(Mqtt5SubAckReasonCode.NOT_AUTHORIZED))
+        client.subscriptionAcks[1].complete(subAck(Mqtt5SubAckReasonCode.GRANTED_QOS_1))
+
+        assertEquals(successesBefore + 1, logCount("subscribe success"))
+        assertEquals(errorsBefore + 1, logCount("subscribe error"))
+        assertTrue(manager.debugLogHistory.any {
+            it.tag == "subscribe error" && it.message.orEmpty().contains("NOT_AUTHORIZED")
+        })
+    }
+
+    @Test
+    fun oldSessionSubAckIsDiscardedAfterTheSameClientReconnects() {
+        val client = installClient().apply { acceptSubscriptions = true }
+        val epoch = field("subscriptionEpoch").get(manager) as AtomicLong
+        val beforeEpoch = epoch.get()
+        try {
+            subscribeToTopics()
+            val successesBefore = logCount("subscribe success")
+            val errorsBefore = logCount("subscribe error")
+
+            // An accepted reconnect reuses the client object but advances its session.
+            epoch.incrementAndGet()
+            client.subscriptionAcks[0].complete(subAck(Mqtt5SubAckReasonCode.GRANTED_QOS_0))
+            client.subscriptionAcks[1].complete(subAck(Mqtt5SubAckReasonCode.NOT_AUTHORIZED))
+            assertEquals(successesBefore, logCount("subscribe success"))
+            assertEquals(errorsBefore, logCount("subscribe error"))
+
+            subscribeToTopics()
+            client.subscriptionAcks.last().complete(subAck(Mqtt5SubAckReasonCode.GRANTED_QOS_0))
+            assertEquals(successesBefore + 1, logCount("subscribe success"))
+        } finally {
+            epoch.set(beforeEpoch)
+        }
+    }
+
+    @Test
+    fun retiredSubscriptionAcknowledgementsCannotReportSuccessOrFailure() {
+        val original = installClient().apply { acceptSubscriptions = true }
+        val successesBefore = logCount("subscribe success")
+        val errorsBefore = logCount("subscribe error")
+        subscribeToTopics()
+        assertEquals(3, original.subscriptionAcks.size)
+
+        field("client").set(manager, RecordingClient().api)
+        original.subscriptionAcks[0].complete(null)
+        original.subscriptionAcks[1].completeExceptionally(IOException("late suback"))
+        original.subscriptionAcks[2].complete(null)
+
+        assertEquals(successesBefore, logCount("subscribe success"))
+        assertEquals(errorsBefore, logCount("subscribe error"))
+    }
+
+    @Test
+    fun subscriptionAcknowledgementsAreIgnoredDuringDisconnectOrDisable() {
+        val client = installClient().apply { acceptSubscriptions = true }
+        val successesBefore = logCount("subscribe success")
+        val errorsBefore = logCount("subscribe error")
+        subscribeToTopics()
+        assertEquals(3, client.subscriptionAcks.size)
+
+        setPendingDisconnect(client)
+        client.subscriptionAcks[0].complete(null)
+        field("pendingDisconnect").set(manager, null)
+        setEnabled(false)
+        client.subscriptionAcks[1].completeExceptionally(IOException("late suback"))
+        cancellation().set(true)
+        setEnabled(true)
+        client.subscriptionAcks[2].complete(null)
+
+        assertEquals(successesBefore, logCount("subscribe success"))
+        assertEquals(errorsBefore, logCount("subscribe error"))
+    }
+
+    private fun subscribeToTopics() {
+        manager.javaClass.getDeclaredMethod("subscribeToTopics")
+            .apply { isAccessible = true }
+            .invoke(manager)
+    }
+
+    private fun logCount(tag: String) = manager.debugLogHistory.count { it.tag == tag }
 
     @Test
     fun operationsResumeAfterCancellationAndDisconnectGuardsAreCleared() {
@@ -214,6 +352,17 @@ class MqttOperationStateTest {
             assertEquals(operation.name, operation.expectedCalls, client.operations())
         }
     }
+
+    private fun subAck(reason: Mqtt5SubAckReasonCode): Mqtt5SubAck =
+        Proxy.newProxyInstance(
+            Mqtt5SubAck::class.java.classLoader,
+            arrayOf(Mqtt5SubAck::class.java),
+        ) { _, method, _ ->
+            when (method.name) {
+                "getReasonCodes" -> listOf(reason)
+                else -> throw AssertionError("Unexpected SUBACK property: ${method.name}")
+            }
+        } as Mqtt5SubAck
 
     private class Operation(
         val name: String,
@@ -298,6 +447,9 @@ class MqttOperationStateTest {
     private inner class RecordingClient {
         val state = AtomicReference(MqttClientState.CONNECTED)
         var onStateRead: (() -> Unit)? = null
+        var onSubscribeAttempt: (() -> Unit)? = null
+        var acceptSubscriptions = false
+        val subscriptionAcks = mutableListOf<CompletableFuture<Any?>>()
         private val calls = mutableListOf<String>()
 
         val api: Mqtt5AsyncClient = Proxy.newProxyInstance(
@@ -320,10 +472,16 @@ class MqttOperationStateTest {
                 }
                 "subscribeWith" -> {
                     calls.add("subscribe.build")
-                    // Stop at the boundary being tested: JVM HiveMQ uses java.util.function.Consumer,
-                    // while the Retrofix-transformed manager calls the java9 callback signature.
-                    // subscribeTopic catches this fixture exception and attempts the remaining topics.
-                    throw IllegalStateException("Subscription attempt recorded by state-gate fixture")
+                    onSubscribeAttempt?.also { callback ->
+                        onSubscribeAttempt = null
+                        callback()
+                    }
+                    if (acceptSubscriptions) {
+                        builder(method.returnType, "subscribe")
+                    } else {
+                        // State-gate cases stop at the first subscription builder method.
+                        throw IllegalStateException("Subscription attempt recorded by state-gate fixture")
+                    }
                 }
                 else -> throw AssertionError("Unexpected MQTT client operation: ${method.name}")
             }
@@ -344,14 +502,20 @@ class MqttOperationStateTest {
                     "equals" -> proxy === arguments?.firstOrNull()
                     "hashCode" -> System.identityHashCode(proxy)
                     "toString" -> "RecordingOperationMqttBuilder/$operation"
-                    "topic", "correlationData", "qos", "retain", "payloadFormatIndicator",
+                    "topic", "topicFilter", "correlationData", "qos", "retain", "retainHandling",
+                    "retainAsPublished", "noLocal", "payloadFormatIndicator",
                     "contentType", "payload", "add" -> proxy
+                    "callback" -> builder(method.returnType, operation)
                     "userProperties" -> builder(method.returnType, operation, parent = proxy)
                     "applyUserProperties" -> requireNotNull(parent)
                     "send" -> {
                         check(parent == null) { "Nested user-property builder must not send" }
                         calls.add("$operation.send")
-                        completedFuture()
+                        if (operation == "subscribe") {
+                            CompletableFuture<Any?>().also(subscriptionAcks::add)
+                        } else {
+                            completedFuture()
+                        }
                     }
                     else -> throw AssertionError("Unexpected MQTT builder operation: ${method.name}")
                 }

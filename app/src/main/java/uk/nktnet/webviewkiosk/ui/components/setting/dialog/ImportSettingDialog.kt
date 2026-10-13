@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -108,6 +109,8 @@ fun ImportSettingsDialog(
                     importText = loadedText
                     importError = false
                     ToastManager.show(context, "Loaded file successfully.")
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     importError = true
                     Log.e(Constants.APP_SCHEME, "Loading imported file failed", e)

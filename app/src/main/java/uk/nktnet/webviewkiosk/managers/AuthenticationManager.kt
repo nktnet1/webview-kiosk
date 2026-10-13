@@ -15,6 +15,7 @@ import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
 import androidx.biometric.BiometricPrompt.PromptInfo
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -44,9 +45,21 @@ object AuthenticationManager {
     val promptResults: StateFlow<AuthenticationResult?> = _resultState.asStateFlow()
 
     val showCustomAuth: MutableState<Boolean> = mutableStateOf(false)
+    // Each custom dialog must complete only the request that displayed it. This
+    // observable token also causes Compose to discard credentials from an old
+    // dialog even when reset/retry happens between two recompositions.
+    private val _customAuthRequest = mutableStateOf<Any?>(null)
+    val customAuthRequest: State<Any?> = _customAuthRequest
 
     internal var session = AuthenticationSession(SystemClock::elapsedRealtime)
-    internal var authCipherFactory: (Pair<ByteArray, ByteArray>?) -> Cipher = ::createAuthCipher
+    internal var authCipherFactory: (Pair<ByteArray, ByteArray>?) -> Cipher = { token ->
+        // Method references to the API 23 Keystore implementation must not be
+        // resolved unconditionally on the supported Android 5.x runtimes.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            throw UnsupportedOperationException("Authentication cipher requires Android 6 or newer")
+        }
+        createAuthCipher(token)
+    }
     internal var authKeyInvalidator: () -> Unit = ::deleteAuthKey
     internal var biometricPromptFactory:
         (AppCompatActivity, BiometricPrompt.AuthenticationCallback) -> AuthenticationPrompt =
@@ -85,6 +98,12 @@ object AuthenticationManager {
     private var nextCredentialRequestCode = Constants.REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL
 
     fun init(activity: AppCompatActivity) {
+        // An unfinished prompt belongs to its original host. Its callbacks may
+        // never arrive after activity replacement, blocking the successor's prompt.
+        // Invalidate before cancellation, which can itself call back inline.
+        if (this.activity != null && this.activity !== activity && pendingAuthentication != null) {
+            resetAuthentication()
+        }
         this.activity = activity
     }
 
@@ -95,22 +114,26 @@ object AuthenticationManager {
         }
     }
 
-    fun hasValidSession(): Boolean {
-        if (
-            _resultState.value != AuthenticationResult.AuthenticationSuccess
-            && _resultState.value != AuthenticationResult.AuthenticationNotSet
-        ) {
-            return false
-        }
-        return session.isValid()
-    }
+    fun hasValidSession(): Boolean =
+        (_resultState.value == AuthenticationResult.AuthenticationSuccess
+            || _resultState.value == AuthenticationResult.AuthenticationNotSet)
+            && session.isValid()
 
     fun checkAuthAndRefreshSession(): Boolean {
-        if (!hasValidSession()) {
+        if (!hasValidSession() || !session.refreshIfValid()) {
             session.reset()
+            // Session time is not observable Compose state. Expiration must
+            // invalidate the success result as well as the clock so the auth
+            // wrapper can reliably start a fresh prompt after resuming.
+            if (
+                _resultState.value == AuthenticationResult.AuthenticationSuccess
+                || _resultState.value == AuthenticationResult.AuthenticationNotSet
+            ) {
+                _resultState.value = AuthenticationResult.Loading
+            }
             return false
         }
-        return session.refreshIfValid()
+        return true
     }
 
     fun resetAuthentication(preserveExternalActivitySession: Boolean = false) {
@@ -119,6 +142,7 @@ object AuthenticationManager {
             val pending = pendingAuthentication
             // Invalidate the callback before cancellation, which can deliver an error inline.
             pendingAuthentication = null
+            _customAuthRequest.value = null
             hideCustomAuthPrompt()
             try {
                 pending?.cancel?.invoke()
@@ -160,7 +184,9 @@ object AuthenticationManager {
 
         val customAuthPassword = UserSettings(activity).customAuthPassword
         if (customAuthPassword.isNotEmpty()) {
-            pendingAuthentication = PendingAuthentication(PromptKind.CUSTOM)
+            val pending = PendingAuthentication(PromptKind.CUSTOM)
+            pendingAuthentication = pending
+            _customAuthRequest.value = pending
             _resultState.value = AuthenticationResult.Pending
             showCustomAuthPrompt()
             return
@@ -214,6 +240,7 @@ object AuthenticationManager {
             return
         }
         pendingAuthentication = null
+        _customAuthRequest.value = null
         session.authenticate()
         _resultState.value = AuthenticationResult.AuthenticationSuccess
         hideCustomAuthPrompt()
@@ -224,6 +251,7 @@ object AuthenticationManager {
             return
         }
         pendingAuthentication = null
+        _customAuthRequest.value = null
         session.reset()
         _resultState.value = AuthenticationResult.AuthenticationError(error)
         hideCustomAuthPrompt()
@@ -316,10 +344,6 @@ object AuthenticationManager {
                     }
                 }
 
-                override fun onAuthenticationFailed() {
-                    super.onAuthenticationFailed()
-                    // An unrecognised scan is retryable; the same native prompt remains open.
-                }
             }
         )
         pending.cancel = prompt::cancelAuthentication
@@ -479,16 +503,18 @@ object AuthenticationManager {
         showCustomAuth.value = false
     }
 
-    fun customAuthSuccess() {
-        val pending = pendingAuthentication
-            ?.takeIf { it.kind == PromptKind.CUSTOM } ?: return
-        handleAuthSuccess(pending)
+    fun isCurrentCustomAuthRequest(request: Any?): Boolean =
+        request != null && pendingAuthentication === request
+            && pendingAuthentication?.kind == PromptKind.CUSTOM
+
+    fun customAuthSuccess(request: Any?) {
+        if (!isCurrentCustomAuthRequest(request)) return
+        handleAuthSuccess(pendingAuthentication ?: return)
     }
 
-    fun customAuthCancel() {
-        val pending = pendingAuthentication
-            ?.takeIf { it.kind == PromptKind.CUSTOM } ?: return
-        handleAuthError(pending, "Authentication cancelled.")
+    fun customAuthCancel(request: Any?) {
+        if (!isCurrentCustomAuthRequest(request)) return
+        handleAuthError(pendingAuthentication ?: return, "Authentication cancelled.")
     }
 
     sealed interface AuthenticationResult {

@@ -188,6 +188,54 @@ class WebViewNavigationTest {
     }
 
     @Test
+    fun queryTrailingSlashDifferencesCreateDistinctHistoryEntries() {
+        seed()
+        val withSlash = "$third?return=/"
+        val withoutSlash = "$third?return="
+
+        append(withSlash)
+        append(withoutSlash)
+
+        assertHistory(4, first, second, third, withSlash, withoutSlash)
+    }
+
+    @Test
+    fun fragmentTrailingSlashDifferencesCreateDistinctSpaHistoryEntries() {
+        seed()
+        val withSlash = "$third#/route/"
+        val withoutSlash = "$third#/route"
+
+        append(withSlash)
+        append(withoutSlash)
+
+        assertHistory(4, first, second, third, withSlash, withoutSlash)
+    }
+
+    @Test
+    fun pathTrailingSlashNormalizationPreservesTheCurrentHistoryMetadata() {
+        seed()
+        val withSlash = "$third/path/?return=/"
+        val withoutSlash = "$third/path?return=/"
+
+        append(withSlash)
+        val entry = settings.historyStack.last()
+        append(withoutSlash)
+
+        assertHistory(3, first, second, third, withoutSlash)
+        assertEquals(entry, settings.historyStack.last())
+    }
+
+    @Test
+    fun aPathSlashInThePreviousUrlCannotMisclassifyASpaPushAsARedirect() {
+        seed(index = 0)
+        settings.urlBeforeNavigation = "$first/"
+
+        append(next, first)
+
+        assertHistory(1, first, next)
+    }
+
+    @Test
     fun aNewNavigationAfterBackTruncatesOnlyTheForwardBranch() {
         seed()
         val retained = settings.historyStack.take(2)

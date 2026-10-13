@@ -56,6 +56,9 @@ class MqttForegroundService : Service() {
 
     private val systemReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
+            // A broadcast already queued by Android can arrive after a stop or
+            // activity/service handoff even though the receiver was unregistered.
+            if (!canHandleRemoteMessages()) return
             when (intent.action) {
                 Intent.ACTION_SCREEN_ON -> {
                     MqttManager.publishScreenOnEvent()
@@ -233,6 +236,7 @@ class MqttForegroundService : Service() {
         super.onDestroy()
     }
 
+    @Suppress("SameReturnValue")
     private fun stopAfterRejectedStart(startId: Int): Int {
         stopProcessing()
         stopSelf(startId)

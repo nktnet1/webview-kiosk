@@ -201,6 +201,153 @@ class MqttConnectedCallbacksTest {
         assertEquals(listOf("error:subscription failed"), callbacks)
     }
 
+    @Test
+    fun aThrowingConnectedObserverDoesNotAlsoReportAConnectionFailure() {
+        val fake = FakeClient(MqttClientState.CONNECTED)
+        field("client").set(manager, fake.api)
+        var connectedCallbacks = 0
+        val errors = mutableListOf<String?>()
+
+        val thrown = runCatching {
+            manager.handleConnectResult(
+                fake.api,
+                null,
+                onConnected = {
+                    connectedCallbacks++
+                    throw IllegalStateException("observer failed")
+                },
+                onError = errors::add,
+                subscribe = { fake.record("subscribe") },
+            )
+        }.exceptionOrNull()
+
+        assertTrue(thrown is IllegalStateException)
+        assertEquals("observer failed", thrown?.message)
+        assertEquals(1, connectedCallbacks)
+        assertTrue(errors.isEmpty())
+        assertEquals(listOf("subscribe"), fake.operations())
+    }
+
+    @Test
+    fun connectionStoppedWhileSubscriptionsAreSetUpCannotReportSuccess() {
+        val transitions = listOf<Pair<String, (FakeClient) -> Unit>>(
+            "cancel" to { cancellation().set(true) },
+            "replace" to { field("client").set(manager, FakeClient(MqttClientState.CONNECTED).api) },
+            "disable" to { updateEnabled(false) },
+            "disconnect" to { setPendingDisconnect(it) },
+            "socket lost" to { it.state.set(MqttClientState.DISCONNECTED) },
+        )
+
+        for ((name, transition) in transitions) {
+            cancellation().set(false)
+            field("pendingDisconnect").set(manager, null)
+            updateEnabled(true)
+            val fake = FakeClient(MqttClientState.CONNECTED)
+            field("client").set(manager, fake.api)
+            val events = mutableListOf<String>()
+
+            manager.handleConnectResult(
+                fake.api,
+                null,
+                onConnected = { events.add("connected") },
+                onError = { events.add("error:$it") },
+                subscribe = {
+                    events.add("subscribe")
+                    transition(fake)
+                },
+            )
+
+            assertEquals(name, listOf("subscribe", "error:MQTT connection cancelled."), events)
+        }
+    }
+
+    @Test
+    fun pendingDisconnectRejectsConnectedResultEvenBeforeCancellationFlagIsSet() {
+        val fake = FakeClient(MqttClientState.CONNECTED)
+        field("client").set(manager, fake.api)
+        setPendingDisconnect(fake)
+        val events = mutableListOf<String>()
+
+        manager.handleConnectResult(
+            fake.api,
+            null,
+            onConnected = { events.add("connected") },
+            onError = { events.add("error:$it") },
+            subscribe = { events.add("subscribe") },
+        )
+
+        assertEquals(listOf("error:MQTT connection cancelled."), events)
+    }
+
+    @Test
+    fun onlyTheCurrentConnectedClientCanDispatchSubscriptionCallbacks() {
+        val oldClient = FakeClient(MqttClientState.CONNECTED)
+        val replacement = FakeClient(MqttClientState.CONNECTED)
+        val deliveries = mutableListOf<String>()
+        field("client").set(manager, oldClient.api)
+
+        manager.dispatchSubscriptionIfActive(oldClient.api) { deliveries.add("old:initial") }
+        assertEquals(listOf("old:initial"), deliveries)
+
+        field("client").set(manager, replacement.api)
+        repeat(3) {
+            manager.dispatchSubscriptionIfActive(oldClient.api) { deliveries.add("old:late") }
+        }
+        manager.dispatchSubscriptionIfActive(replacement.api) { deliveries.add("new:initial") }
+        assertEquals(listOf("old:initial", "new:initial"), deliveries)
+    }
+
+    @Test
+    fun lateSubscriptionCallbacksAreDroppedThroughoutShutdownAndReconnect() {
+        val fake = FakeClient(MqttClientState.CONNECTED)
+        field("client").set(manager, fake.api)
+        var delivered = 0
+        fun deliver() = manager.dispatchSubscriptionIfActive(fake.api) { delivered++ }
+
+        cancellation().set(true)
+        repeat(3) { deliver() }
+        cancellation().set(false)
+        setPendingDisconnect(fake)
+        repeat(3) { deliver() }
+        field("pendingDisconnect").set(manager, null)
+        fake.state.set(MqttClientState.DISCONNECTED)
+        deliver()
+        fake.state.set(MqttClientState.CONNECTING)
+        deliver()
+        updateEnabled(false)
+        fake.state.set(MqttClientState.CONNECTED)
+        deliver()
+        assertEquals(0, delivered)
+
+        updateEnabled(true)
+        deliver()
+        assertEquals(1, delivered)
+    }
+
+    @Test
+    fun cancellationDuringSubscriptionStateLookupPreventsDelivery() {
+        val fake = FakeClient(MqttClientState.CONNECTED)
+        field("client").set(manager, fake.api)
+        var delivered = 0
+        fake.onStateRead = { cancellation().set(true) }
+
+        manager.dispatchSubscriptionIfActive(fake.api) { delivered++ }
+
+        assertEquals(0, delivered)
+        assertTrue(cancellation().get())
+        assertTrue(fake.operations().isEmpty())
+    }
+
+    private fun setPendingDisconnect(fake: FakeClient) {
+        val pending = field("pendingDisconnect")
+        val operation = pending.type.getDeclaredConstructor(Mqtt5AsyncClient::class.java)
+            .apply { isAccessible = true }
+            .newInstance(fake.api)
+        pending.set(manager, operation)
+    }
+
+    private fun cancellation() = field("pendingCancelConnect").get(manager) as AtomicBoolean
+
     private fun updateEnabled(enabled: Boolean) {
         val previous = field("config").get(manager) as MqttConfig
         field("config").set(manager, previous.copy(enabled = enabled))
@@ -225,6 +372,7 @@ class MqttConnectedCallbacksTest {
 
     private class FakeClient(initialState: MqttClientState = MqttClientState.CONNECTING) {
         val state = AtomicReference(initialState)
+        var onStateRead: (() -> Unit)? = null
         val connectResult = CompletableFuture<Any?>()
         private val calls = Collections.synchronizedList(mutableListOf<String>())
 
@@ -233,7 +381,12 @@ class MqttConnectedCallbacksTest {
             arrayOf(Mqtt5AsyncClient::class.java),
         ) { proxy, method, arguments ->
             when (method.name) {
-                "getState" -> state.get()
+                "getState" -> {
+                    val onRead = onStateRead
+                    onStateRead = null
+                    onRead?.invoke()
+                    state.get()
+                }
                 "equals" -> proxy === arguments?.firstOrNull()
                 "hashCode" -> System.identityHashCode(proxy)
                 "toString" -> "RecordingMqttClient"

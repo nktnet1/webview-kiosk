@@ -11,6 +11,7 @@ import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PayloadFormatIndicator
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5Publish
 import com.hivemq.client.mqtt.mqtt5.message.publish.Mqtt5PublishResult
+import com.hivemq.client.mqtt.mqtt5.message.subscribe.suback.Mqtt5SubAck
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -79,6 +80,7 @@ import java.util.UUID
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.jvm.optionals.getOrNull
 import kotlin.text.Charsets.UTF_8
 import kotlin.time.Duration.Companion.milliseconds
@@ -105,6 +107,9 @@ object MqttManager {
     val debugLog: SharedFlow<MqttLogEntry>
         field = MutableSharedFlow<MqttLogEntry>(extraBufferCapacity = 100)
     private val pendingCancelConnect: AtomicBoolean = AtomicBoolean(false)
+    // A reconnect can reuse the same HiveMQ client while replacing its broker session.
+    // Late callbacks from the earlier session must not be treated as current.
+    private val subscriptionEpoch = AtomicLong()
 
     @SuppressLint("NewApi")
     private class DisconnectOperation(val client: Mqtt5AsyncClient) {
@@ -310,6 +315,10 @@ object MqttManager {
                     }
                     return@addConnectedListener
                 }
+                // HiveMQ automatically restores registered subscriptions on reconnect.
+                // Advance only the acknowledgement generation; original message
+                // callbacks remain valid for that restored broker session.
+                subscriptionEpoch.incrementAndGet()
                 addDebugLog(
                     "connect success",
                     "Client ID: ${connectedContext.clientConfig.clientIdentifier.getOrNull()}"
@@ -524,7 +533,7 @@ object MqttManager {
 
         @SuppressLint("NewApi")
         connection.send().whenComplete { _, throwable ->
-            handleConnectResult(c, throwable, onConnected, onError, ::subscribeToTopics) {
+            handleConnectResult(c, throwable, onConnected, onError, { subscribeToTopics(c) }) {
                 UserSettings(context).mqttEnabled
             }
         }
@@ -543,24 +552,25 @@ object MqttManager {
         isEnabled: () -> Boolean = { config.enabled },
     ) {
         if (failure == null) {
-            if (
-                c !== client
-                || pendingCancelConnect.get()
-                || !config.enabled
-                || !isEnabled()
-                || !c.state.isConnected
-            ) {
+            if (!isEnabled() || getReadyClient() !== c) {
                 onError?.invoke("MQTT connection cancelled.")
                 return
             }
             try {
                 subscribe()
-                onConnected?.invoke()
             } catch (e: Exception) {
                 addDebugLog("subscribe failed", e.message)
                 Log.e(javaClass.simpleName, "Failed to subscribe after MQTT connection", e)
                 onError?.invoke(e.message)
+                return
             }
+            // Subscription setup can race with a stop, disable or replacement.
+            // Never report a successful connection for a client lost meanwhile.
+            if (!isEnabled() || getReadyClient() !== c) {
+                onError?.invoke("MQTT connection cancelled.")
+                return
+            }
+            onConnected?.invoke()
         } else {
             addDebugLog("connect failed", failure.message)
             Log.e(javaClass.simpleName, "Failed to subscribe/connect", failure)
@@ -864,6 +874,9 @@ object MqttManager {
             return
         }
 
+        // A completion can arrive after this client was replaced, disconnected, or
+        // transparently reconnected with a different broker session.
+        val publishingEpoch = subscriptionEpoch.get()
         try {
             @SuppressLint("NewApi")
             c.publishWith()
@@ -880,7 +893,12 @@ object MqttManager {
                     .applyUserProperties()
                 .send()
                 .whenComplete { result, throwable ->
+                    // Internal shutdown progress must be delivered even if the
+                    // publish result no longer belongs to the active session.
                     whenComplete?.invoke(result, throwable)
+                    if (getReadyClient() !== c || subscriptionEpoch.get() != publishingEpoch) {
+                        return@whenComplete
+                    }
                     if (throwable == null) {
                         addDebugLog(
                             "publish success",
@@ -905,8 +923,20 @@ object MqttManager {
         }
     }
 
+    // Capture the owning client before the batch. A concurrent replacement must not
+    // receive leftover topics from a superseded connect attempt.
+    // Invoked reflectively by MQTT operation-state regression tests.
+    @Suppress("unused")
     private fun subscribeToTopics() {
+        val subscribingClient = getReadyClient() ?: return
+        subscribeToTopics(subscribingClient)
+    }
+
+    private fun subscribeToTopics(subscribingClient: Mqtt5AsyncClient) {
+        val epoch = subscriptionEpoch.get()
         subscribeTopic(
+            subscribingClient,
+            epoch = epoch,
             topic = config.subscribeCommandTopic,
             qos = config.subscribeCommandQos,
             retainHandling = config.subscribeCommandRetainHandling,
@@ -948,6 +978,8 @@ object MqttManager {
         )
 
         subscribeTopic(
+            subscribingClient,
+            epoch = epoch,
             topic = config.subscribeSettingsTopic,
             qos = config.subscribeSettingsQos,
             retainHandling = config.subscribeSettingsRetainHandling,
@@ -990,6 +1022,8 @@ object MqttManager {
         )
 
         subscribeTopic(
+            subscribingClient,
+            epoch = epoch,
             topic = config.subscribeRequestTopic,
             qos = config.subscribeRequestQos,
             retainHandling = config.subscribeRequestRetainHandling,
@@ -1080,14 +1114,43 @@ object MqttManager {
         return null
     }
 
+    /** The HiveMQ callback is retained across automatic reconnect of this client. */
+    internal fun dispatchSubscriptionIfActive(c: Mqtt5AsyncClient, dispatch: () -> Unit) {
+        if (getReadyClient() === c) {
+            dispatch()
+        }
+    }
+
+    internal fun handleSubscriptionAck(
+        c: Mqtt5AsyncClient,
+        epoch: Long,
+        topic: String,
+        ack: Mqtt5SubAck?,
+        failure: Throwable?,
+    ) {
+        if (getReadyClient() !== c || subscriptionEpoch.get() != epoch) return
+        val rejected = ack?.reasonCodes?.filter { it.code >= 0x80 }.orEmpty()
+        when {
+            failure != null -> addDebugLog("subscribe error", "topic: $topic\nerror: $failure")
+            ack == null -> addDebugLog("subscribe error", "topic: $topic\nerror: Missing SUBACK")
+            rejected.isNotEmpty() -> addDebugLog(
+                "subscribe error",
+                "topic: $topic\nrejected reason codes: ${rejected.joinToString()}",
+            )
+            else -> addDebugLog("subscribe success", "topic: $topic")
+        }
+    }
+
     private fun subscribeTopic(
+        c: Mqtt5AsyncClient,
+        epoch: Long,
         topic: String,
         qos: MqttQosOption,
         retainHandling: MqttRetainHandlingOption,
         retainAsPublished: Boolean,
         onMessage: (publish: Mqtt5Publish, payloadStr: String) -> Unit
     ) {
-        val c = getReadyClient() ?: return
+        if (getReadyClient() !== c || subscriptionEpoch.get() != epoch) return
         val subscribeTopic = mqttVariableReplacement(topic)
         if (!isValidMqttSubscribeTopic(subscribeTopic)) {
             addDebugLog("subscribe failed", "topic: $subscribeTopic\nerror: Invalid topic name")
@@ -1106,16 +1169,14 @@ object MqttManager {
                     .add("appInstanceId", config.appInstanceId)
                     .applyUserProperties()
                 .callback { publish ->
-                    val payloadStr = publish.payloadAsBytes.toString(UTF_8)
-                    onMessage(publish, payloadStr)
+                    dispatchSubscriptionIfActive(c) {
+                        val payloadStr = publish.payloadAsBytes.toString(UTF_8)
+                        onMessage(publish, payloadStr)
+                    }
                 }
                 .send()
-                .whenComplete { _, throwable ->
-                    if (throwable == null) {
-                        addDebugLog("subscribe success", "topic: $subscribeTopic")
-                    } else {
-                        addDebugLog("subscribe error", "topic: $subscribeTopic\nerror: $throwable")
-                    }
+                .whenComplete { ack, throwable ->
+                    handleSubscriptionAck(c, epoch, subscribeTopic, ack, throwable)
                 }
         } catch (e: Exception) {
             addDebugLog("subscribe failed", "topic: $subscribeTopic\nerror: $e")
@@ -1182,7 +1243,15 @@ object MqttManager {
         }
     }
 
+    @Synchronized
     private fun disconnectClient(operation: DisconnectOperation) {
+        // The event PUBACK or its timeout can outlive a shutdown. A reconnect
+        // may reuse the same HiveMQ client, so checking its state alone would
+        // disconnect the *new* session on behalf of a retired operation.
+        // finishDisconnect clears the operation under this same monitor before
+        // completing its future; ownership therefore also guards completion.
+        // Avoid CompletableFuture.isDone (API 24) on the API 21+ code path.
+        if (pendingDisconnect !== operation) return
         val c = operation.client
         if (!c.state.isConnected || !operation.started.compareAndSet(false, true)) {
             return
@@ -1198,7 +1267,13 @@ object MqttManager {
                 .whenComplete { _, throwable ->
                     finishDisconnect(
                         operation,
-                        if (c.state == MqttClientState.DISCONNECTED) null else throwable
+                        if (c.state == MqttClientState.DISCONNECTED) {
+                            null
+                        } else {
+                            throwable ?: IllegalStateException(
+                                "MQTT disconnect completed while the client is still connected."
+                            )
+                        }
                     )
                 }
         } catch (e: Exception) {
@@ -1256,9 +1331,13 @@ object MqttManager {
 
         val eventTimeout = scope.launch {
             delay(DISCONNECT_EVENT_TIMEOUT_MS.milliseconds)
+            if (synchronized(this@MqttManager) { pendingDisconnect !== operation }) return@launch
             addDebugLog("disconnect event timed out", "Disconnecting without waiting for the event acknowledgement.")
             disconnectClient(operation)
         }
+        // Cancellation also covers shutdowns that completed while the PUBACK
+        // was still pending (the normal acknowledgement callback never ran).
+        operation.completion.whenComplete { _, _ -> eventTimeout.cancel() }
         try {
             publishEventMessage(
                 c,

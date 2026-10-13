@@ -414,7 +414,7 @@ class RequireAuthWrapperTest {
             pumpFrames()
         }
         assertLoading()
-        manager.customAuthSuccess()
+        manager.customAuthSuccess(manager.customAuthRequest.value)
         pumpFrames()
 
         assertProtectedContent()

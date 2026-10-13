@@ -282,7 +282,7 @@ open class MainActivity : AppCompatActivity() {
                                     WaitingForUnlockStateSingleton.emitUnlockSuccess()
                                 }
                             }
-                        } else {
+                        } else if (unlocked) {
                             WaitingForUnlockStateSingleton.emitUnlockSuccess()
                         }
                     }

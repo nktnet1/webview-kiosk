@@ -15,8 +15,10 @@ data class IntentResult(
 private fun <T> readIntentExtra(read: () -> T): T? {
     return try {
         read()
-    } catch (e: BadParcelableException) {
-        // Reading any extra may deserialize an unrelated, unreadable parcelable in the bundle.
+    } catch (e: RuntimeException) {
+        // A caller can supply extras with the wrong type or an unreadable Parcelable.
+        // Android versions differ in whether they return null or throw for a type mismatch.
+        if (e !is BadParcelableException && e !is ClassCastException) throw e
         Log.w("IntentUtils", "Ignoring unreadable intent extras", e)
         null
     }
@@ -42,13 +44,21 @@ fun <T : Parcelable> Intent.getParcelableExtraSafely(name: String, type: Class<T
 fun handleMainIntent(intent: Intent): IntentResult {
     return when (intent.action) {
         Intent.ACTION_VIEW -> {
-            intent.data?.let { dataUri ->
-                if (dataUri.scheme == "content") {
-                    IntentResult(uploadUri = dataUri)
-                } else {
-                    IntentResult(url = dataUri.toString())
+            // This exported activity registers VIEW only for HTTP(S) links and content
+            // attachments. An explicit intent must not bypass that scheme policy (for
+            // example, javascript: would otherwise reach WebView.loadUrl directly).
+            when (val uri = intent.data) {
+                null -> IntentResult()
+                else -> when (uri.scheme) {
+                    "content" -> IntentResult(uploadUri = uri)
+                    "http", "https" -> if (!uri.host.isNullOrBlank()) {
+                        IntentResult(url = uri.toString())
+                    } else {
+                        IntentResult()
+                    }
+                    else -> IntentResult()
                 }
-            } ?: IntentResult()
+            }
         }
         Intent.ACTION_SEND -> {
             if (intent.type == "text/plain") {
@@ -56,13 +66,16 @@ fun handleMainIntent(intent: Intent): IntentResult {
                 if (textUrl != null && validateUrl(textUrl)) {
                     return IntentResult(url = textUrl.trim())
                 }
-                return IntentResult()
+                // Some apps share text/plain documents using EXTRA_STREAM rather than text.
+                // An invalid or absent URL should still allow a genuine file attachment.
             }
 
             val uri = intent.getParcelableExtraSafely(Intent.EXTRA_STREAM, Uri::class.java)
                 ?: intent.data
 
-            IntentResult(uploadUri = uri)
+            IntentResult(uploadUri = uri?.takeIf {
+                it.scheme == "content" || it.scheme == "file"
+            })
         }
         else -> IntentResult()
     }

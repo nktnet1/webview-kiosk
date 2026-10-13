@@ -363,13 +363,11 @@ class NfcInterface(private val context: android.content.Context) {
         NfcBridgeManager.setScanActive(false)
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun reset() {
         NfcBridgeManager.resetSession()
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun write(messageJson: String?, optionsJson: String?): String {
         if (!isNfcEnabled(context)) {

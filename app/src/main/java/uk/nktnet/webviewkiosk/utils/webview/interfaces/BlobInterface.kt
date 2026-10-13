@@ -107,7 +107,7 @@ class BlobInterface(
     @Synchronized
     @JavascriptInterface
     fun abortAllDownloads() {
-        activeDownloads.keys.toList().forEach(::abortInternal)
+        activeDownloads.keys.toList().forEach { abortInternal(it) }
     }
 
     @JavascriptInterface
@@ -118,7 +118,6 @@ class BlobInterface(
         )
     }
 
-    @Suppress("unused")
     @Synchronized
     @JavascriptInterface
     fun startDownload(
@@ -154,7 +153,6 @@ class BlobInterface(
         }
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun appendChunk(
         transferId: String,
@@ -179,22 +177,22 @@ class BlobInterface(
                     return false
                 }
                 download.output.write(bytes)
+                // A provider may invoke a callback while writing; never acknowledge
+                // bytes sent to a transfer that was replaced during the write.
+                isActive && activeDownloads[transferId] === download
             }
-
-            true
         } catch (e: Exception) {
-            abortInternal(transferId)
-
-            ToastManager.show(
-                context,
-                "Download failed: ${e.message}"
-            )
+            if (abortInternal(transferId, download)) {
+                ToastManager.show(
+                    context,
+                    "Download failed: ${e.message}"
+                )
+            }
 
             false
         }
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun finishDownload(
         transferId: String
@@ -210,18 +208,23 @@ class BlobInterface(
                 } else {
                     download.output.flush()
                     download.output.close()
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && download.uri != null) {
-                        val published = context.contentResolver.update(
-                            download.uri,
-                            ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) },
-                            null,
-                            null
-                        )
-                        if (published != 1) {
-                            throw IOException("Unable to publish download")
+                    if (!isActive || activeDownloads[transferId] !== download) {
+                        // A reentrant close/flush may have invalidated this transfer.
+                        false
+                    } else {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && download.uri != null) {
+                            val published = context.contentResolver.update(
+                                download.uri,
+                                ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) },
+                                null,
+                                null
+                            )
+                            if (published != 1) {
+                                throw IOException("Unable to publish download")
+                            }
                         }
+                        activeDownloads.remove(transferId, download)
                     }
-                    activeDownloads.remove(transferId, download)
                 }
             }
 
@@ -252,18 +255,17 @@ class BlobInterface(
 
             true
         } catch (e: Exception) {
-            abortInternal(transferId)
-
-            ToastManager.show(
-                context,
-                "Failed to finish download: ${e.message}"
-            )
+            if (abortInternal(transferId, download)) {
+                ToastManager.show(
+                    context,
+                    "Failed to finish download: ${e.message}"
+                )
+            }
 
             false
         }
     }
 
-    @Suppress("unused")
     @JavascriptInterface
     fun abortDownload(
         transferId: String
@@ -272,15 +274,16 @@ class BlobInterface(
     }
 
     private fun abortInternal(
-        transferId: String
-    ) {
+        transferId: String,
+        expectedDownload: ActiveDownload? = null,
+    ): Boolean {
         val download =
-            activeDownloads[transferId]
-                ?: return
+            expectedDownload ?: activeDownloads[transferId]
+                ?: return false
 
         synchronized(download) {
             if (!activeDownloads.remove(transferId, download)) {
-                return
+                return false
             }
 
             try {
@@ -303,6 +306,7 @@ class BlobInterface(
                 Log.e(javaClass.simpleName, "Failed to delete file during abort", e)
             }
         }
+        return true
     }
 
     private fun createDownload(filename: String, mimeType: String?): ActiveDownload {

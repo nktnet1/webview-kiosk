@@ -79,6 +79,7 @@ import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.webview.parseFileChooserResult
 import uk.nktnet.webviewkiosk.utils.webview.parseMutualTlsRules
 import uk.nktnet.webviewkiosk.utils.webview.resolveBlockPageUrl
+import uk.nktnet.webviewkiosk.utils.webview.sameNavigationUrl
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDarkReaderScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDesktopViewportScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDisableVibrationApiScript
@@ -89,12 +90,33 @@ import java.io.File
 
 private const val LOCAL_NETWORK_PERMISSION_ERROR = "ERR_LOCAL_NETWORK_PERMISSION_MISSING"
 
-private fun isLocalNetworkPermissionError(error: WebResourceErrorCompat?): Boolean {
-    return (
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN
-        && error?.description?.toString()?.contains(LOCAL_NETWORK_PERMISSION_ERROR) == true
-    )
+/** Only read a compat error description after both the OS and WebView allow it. */
+internal fun matchesLocalNetworkPermissionError(
+    sdkInt: Int,
+    supportsDescription: () -> Boolean,
+    getDescription: () -> CharSequence?,
+): Boolean {
+    return sdkInt >= Build.VERSION_CODES.CINNAMON_BUN
+        && supportsDescription()
+        && getDescription()?.contains(LOCAL_NETWORK_PERMISSION_ERROR) == true
 }
+
+private fun isLocalNetworkPermissionError(error: WebResourceErrorCompat?): Boolean =
+    matchesLocalNetworkPermissionError(
+        sdkInt = Build.VERSION.SDK_INT,
+        supportsDescription = {
+            WebViewFeature.isFeatureSupported(WebViewFeature.WEB_RESOURCE_ERROR_GET_DESCRIPTION)
+        },
+        // Keep the capability check at the getter itself too: compat access
+        // must remain safe even if the outer predicate is refactored.
+        getDescription = {
+            if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_RESOURCE_ERROR_GET_DESCRIPTION)) {
+                error?.description
+            } else {
+                null
+            }
+        },
+    )
 
 private fun isWebPdf(
     url: String,
@@ -507,7 +529,8 @@ fun createCustomWebview(
                 }
 
                 override fun onPageFinished(view: WebView?, url: String?) {
-                    if (!navigation.acceptsCompletion(url, this@apply.url)) return
+                    val completedLoad = navigation.acceptedCompletionToken(url, this@apply.url)
+                        ?: return
                     config.finishSwipeRefresh()
 
                     url?.let {
@@ -517,8 +540,7 @@ fun createCustomWebview(
                          * gets called multiple times.
                          * https://issuetracker.google.com/issues/36983315
                          */
-                        if (progress == 100) {
-                            navigation.finishLoad()
+                        if (progress == 100 && navigation.finishLoad(completedLoad)) {
                             if (
                                 userSettings.applyDesktopViewportWidth >= Constants.MIN_DESKTOP_WIDTH
                             ) {
@@ -744,7 +766,7 @@ fun createCustomWebview(
                     }
                     val nativeHistory = copyBackForwardList()
                     val nativeIndex = nativeHistory.currentItem?.url
-                        ?.takeIf { it.trimEnd('/') == url.trimEnd('/') }
+                        ?.takeIf { sameNavigationUrl(it, url) }
                         ?.let { nativeHistory.currentIndex }
                     navigation.historyCommitted(url, originalUrl, nativeIndex)
                     val isPdfViewer = isPdfViewerUrl(url.toUri())
@@ -758,7 +780,7 @@ fun createCustomWebview(
                     val historyOriginalUrl = if (isPdfViewer) navigationUrl else originalUrl
                     if (
                         !isPdfViewer
-                        && systemSettings.urlBeingHandled.trimEnd('/') == navigationUrl.trimEnd('/')
+                        && sameNavigationUrl(systemSettings.urlBeingHandled, navigationUrl)
                     ) {
                         updateAddressBarAndHistory(navigationUrl, historyOriginalUrl)
                         return
