@@ -447,8 +447,8 @@ export function validateRemotePayload(
     }
   } else {
     const settings = (message.data as JsonObject).settings;
-    // The structural parser already guarantees this object is present.
-    if (!v.is(NonEmptySettingsSchema, settings)) {
+    // Narrow the unknown settings field before enumerating its entries.
+    if (!isJsonObject(settings) || !v.is(NonEmptySettingsSchema, settings)) {
       throw new Error("Add at least one setting to update.");
     }
     for (const [key, settingValue] of Object.entries(settings)) {
