@@ -25,10 +25,10 @@ fun KioskControlPanelRegionSetting() {
 
             The default is Top Left (upper-left quadrant of the screen).
 
-            If both of the following are true:
-              1. [Web Browsing -> Kiosk Control Panel Region] is disabled
+            You cannot disable the multi-tap region when both of these apply:
+              1. [Appearance -> Floating Toolbar Mode] is set to Hidden
               2. [Device -> Back Button Hold Action] is not set to "Open Kiosk Control Panel"
-            Then this option cannot be disabled, and will default to Top Left.
+            In that case, the region stays at Top Left so the panel remains accessible.
         """.trimIndent(),
         options = KioskControlPanelRegionOption.entries,
         initialValue = userSettings.kioskControlPanelRegion,
@@ -40,9 +40,9 @@ fun KioskControlPanelRegionSetting() {
             || canDisableKioskControlPanelRegion(userSettings)
         },
         validationMessage = """
-            You cannot disable this option because:
-              1. [Web Browsing -> Kiosk Control Panel Region] is disabled
-              2. [Device -> Back Button Hold Action] is not set to "Open Kiosk Control Panel"
+            The Kiosk Control Panel needs a way to open. You cannot disable
+            this region while the floating toolbar is Hidden and Back Button
+            Hold Action is not set to "Open Kiosk Control Panel".
             """.trimIndent(),
         itemText = {
             if (

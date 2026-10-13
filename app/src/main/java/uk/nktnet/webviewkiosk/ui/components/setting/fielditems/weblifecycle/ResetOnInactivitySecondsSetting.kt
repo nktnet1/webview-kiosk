@@ -24,7 +24,7 @@ fun ResetOnInactivitySecondsSetting() {
             When there is 5 seconds left, a warning countdown will be shown on
             the screen.
 
-            User interactions the screen will reset the timer.
+            User interactions with the screen reset the timer.
 
             The navigation history will be cleared when resetting.
 

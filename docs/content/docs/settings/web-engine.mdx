@@ -45,10 +45,10 @@ This is important for services like embedded analytics or login widgets.
 
 Controls how the WebView uses its cache when loading pages. Options:
 
-- **Default (`LOAD_DEFAULT`)** - Normal caching behavior; the WebView decides when to use cached content.
-- **Cache else network (`LOAD_CACHE_ELSE_NETWORK`)** - Uses cached content if available; otherwise fetches from network.
-- **No cache (`LOAD_NO_CACHE`)** - Always fetches from the network; ignores cached content.
-- **Cache only (`LOAD_CACHE_ONLY`)** - Only loads content from cache; network requests are skipped.
+- **Default (`LOAD_DEFAULT`)** - Normal caching behavior. The WebView decides when to use cached content.
+- **Cache else network (`LOAD_CACHE_ELSE_NETWORK`)** - Uses cached content if available, otherwise fetches from the network.
+- **No cache (`LOAD_NO_CACHE`)** - Always fetches from the network instead of using cached content.
+- **Cache only (`LOAD_CACHE_ONLY`)** - Loads only cached content without making network requests.
 
 **Android API:** [WebSettings#LOAD_CACHE_ELSE_NETWORK](https://developer.android.com/reference/android/webkit/WebSettings#LOAD_CACHE_ELSE_NETWORK)
 

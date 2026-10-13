@@ -43,8 +43,9 @@ fun HomeUrlSetting() {
         label = stringResource(R.string.web_content_home_url_title),
         infoText = """
             The URL that can be returned to by:
-              1. tapping the screen 10 times in quick succession
-              2. using the floating toolbar icon
+              1. tapping the configured Kiosk Control Panel region 10 times
+                 to open the panel, then choosing Home
+              2. using the floating toolbar menu
               3. using the address bar menu
 
             This is also controlled by the "Allow Go Home" setting under web browsing.

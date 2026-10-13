@@ -19,9 +19,9 @@ fun ApplyDesktopViewportWidthSetting() {
     NumberSettingFieldItem(
         label = stringResource(R.string.js_scripts_apply_desktop_viewport_width_title),
         infoText = """
-            This script injects JavaScript code that sets
-            document.meta.content to 'width=YOUR_WIDTH_VALUE',
-            simulating web browsing on a Desktop.
+            This script creates or updates the page's viewport meta element,
+            setting its content to 'width=YOUR_WIDTH_VALUE' to request a
+            desktop-sized viewport.
 
             JS history state changes will also be subscribed to
             (e.g. from Single Page Applications), and the script

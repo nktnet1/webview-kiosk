@@ -33,7 +33,7 @@ fun UserAgentSetting() {
             "(KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
     val mobileAgent = "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 " +
             "(KHTML, like Gecko) Chrome/118.0.0.0 Mobile Safari/537.36"
-    val restricted = userSettings.isRestricted(UserSettingsKeys.WebEngine.LOAD_WITH_OVERVIEW_MODE)
+    val restricted = userSettings.isRestricted(settingKey)
 
     TextSettingFieldItem(
         label = stringResource(R.string.web_engine_user_agent_title),
@@ -46,7 +46,7 @@ fun UserAgentSetting() {
         placeholder = "(leave blank for system default)",
         initialValue = userSettings.userAgent,
         settingKey = settingKey,
-        restricted = userSettings.isRestricted(settingKey),
+        restricted = restricted,
         isMultiline = false,
         onSave = { userSettings.userAgent = it },
         extraContent = { _, setValue ->

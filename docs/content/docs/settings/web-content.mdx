@@ -8,7 +8,7 @@ import RegexPlayground from '#/components/RegexPlayground';
 
 ## 1. Home URL
 
-Configure the Home URL, which can be returned to as per <a href="/docs/settings/web-browsing/#allow-go-home">`Web Browsing -> Allow Go Home`</a>.
+Configure the Home URL, which can be returned to as per <a href="/docs/settings/web-browsing/#4-allow-go-home">`Web Browsing -> Allow Go Home`</a>.
 
 **Default:** https://webviewkiosk.nktnet.uk
 
@@ -40,10 +40,10 @@ Block google, including all subdomains and paths:
 
 ### 2.2. Whitelist Example
 
-Allow `https://allowsite.com` home page and all subdomains and paths for `https://trusted.org` to bypass rules in the blacklist:
+Allow the `https://trusted.org` home page, as well as its subdomains and paths, to bypass the blacklist:
 ```
-^https://trusted\.org/?$
-^https://.*\.trusted\.org/?.*
+^https://trusted\.org(/.*)?$
+^https://.*\.trusted\.org(/.*)?$
 ```
 
 ### 2.3. Regex Playground
@@ -92,8 +92,12 @@ WebViewAssetLoader API:
 
 ## 5. Allow Local Files
 
-Set to true to enable access to local files (pdf, html, image, video, text) that were uploaded
-in the app settings via the 3-dot icon <span className="inline-flex">(<EllipsisVertical />)</span>
-on the right of the address bar.
+Allow the WebView to open local files such as HTML, PDF, images, audio, video
+and text. Upload and manage these files under
+**Settings → Web Content → Manage Local Files**.
+
+When this setting is enabled, open the uploaded files from the **Files** action
+in the address bar menu <span className="inline-flex">(<EllipsisVertical />)</span>
+or the kiosk control panel (if that action is configured).
 
 **Default:** true

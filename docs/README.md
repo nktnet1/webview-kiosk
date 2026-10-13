@@ -1,14 +1,14 @@
-# docs-tanstack
+# Webview Kiosk documentation
 
-This is a Tanstack Start application generated with
-[Create Fumadocs](https://github.com/fuma-nama/fumadocs).
+The documentation site is built with TanStack Start and Fumadocs.
 
-Run development server:
+Use Node.js 24 and the pnpm version specified in `package.json`.
+
+To run the development server from this directory:
 
 ```bash
-npm run dev
-# or
 pnpm dev
-# or
-yarn dev
 ```
+
+Pages are in `content/docs/`. Keep the descriptions consistent with the
+corresponding setting help in the Android app.
