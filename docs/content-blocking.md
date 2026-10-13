@@ -1,8 +1,9 @@
 # Native content blocking (first increment)
 
-**Status:** Network-only baseline. No default subscriptions, no automatic downloads,
-no cosmetic injection, no bundled scriptlets. Import lists in **Settings → Content blocking**.
-Blocking is enabled when at least one user-imported list is enabled.
+**Status:** Network-only baseline. No automatic downloads or updates, no cosmetic
+injection, no bundled filter rules or scriptlets. Manage lists in **Settings → Web Content →
+Content Blocking**. Blocking is enabled when at least one user-imported or explicitly
+downloaded list is enabled.
 
 ## Engine and build
 
@@ -73,8 +74,18 @@ native load **allows requests** and surfaces the error in the settings screen.
 
 ## Import safeguards
 
-- Lists are selected explicitly through Android's document picker, copied to
-  the app's private directory, and never fetched automatically.
+- Import a `.txt` list through Android's document picker or explicitly tap
+  **Download** for one of three suggested lists: [EasyList](https://easylist.to/easylist/easylist.txt)
+  (ads), [EasyPrivacy](https://easylist.to/easylist/easyprivacy.txt) (trackers), or
+  [AdGuard Base](https://filters.adtidy.org/extension/ublock/filters/2.txt) (ads).
+  AdGuard Base includes EasyList rules; avoid enabling both ads lists unnecessarily.
+  The app bundles only shortcut URLs, never list content, and makes **no automatic
+  network requests** for filters. Downloads are currently **one-time imports**, not
+  periodically refreshed subscriptions.
+- Suggested downloads require successful HTTPS responses (no redirect downgrade),
+  are performed on a background dispatcher with timeouts, and use the **same
+  private-file, UTF-8 and size validation** as local file imports. Duplicate
+  downloads of the same suggestion are rejected until the imported list is removed.
 - Each file must be UTF-8, nonempty, and no larger than 8 MiB. Storage is
   bounded to 16 lists / 32 MiB total; imports are written to temporary files
   and committed with the list metadata.
@@ -95,12 +106,14 @@ Service worker fetches are not covered in this increment.
 
 Network blocking and exception rules can work today; cosmetic filters,
 scriptlets, `$redirect` resources, response-body modification, per-site
-allowlists, subscriptions, and downloads are intentionally out of scope.
+allowlists, periodically refreshed subscriptions, and arbitrary list URLs
+are intentionally out of scope.
 
 ## Verification
 
-Robolectric tests exercise persistence, import limits, enable/disable/reload,
-and resource classification with a fake native matcher. Native Rust tests
+Robolectric tests exercise persistence, import limits, user-triggered suggested
+list downloads, duplicate/rejection handling, enable/disable/reload, and resource
+classification with a fake native matcher. Native Rust tests
 cover blocking, exceptions, hosts lists, and malformed requests; Android
 cross-compilation and real-device WebView tests are still required before
 claiming production-level compatibility or latency.

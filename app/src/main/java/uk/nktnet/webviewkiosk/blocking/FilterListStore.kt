@@ -17,6 +17,8 @@ internal data class ImportedFilterList(
     val id: String,
     val name: String,
     val enabled: Boolean,
+    /** Populated only when a user explicitly downloads a suggested list. */
+    val sourceUrl: String? = null,
 )
 
 /** Stores only user-imported plain-text lists in private app storage. No built-in rules. */
@@ -39,14 +41,25 @@ internal class FilterListStore(context: Context) {
                 id = id,
                 name = entry.optString("name").take(MAX_NAME_LENGTH),
                 enabled = entry.optBoolean("enabled", true),
+                sourceUrl = entry.optString("sourceUrl").takeIf { it.isNotBlank() },
             )
         }
     }
 
     /** Called on Dispatchers.IO, never from the Compose or request-interception thread. */
     @Synchronized
-    fun importFrom(name: String, input: InputStream): ImportedFilterList {
+    fun containsSource(sourceUrl: String): Boolean = list().any { it.sourceUrl == sourceUrl }
+
+    @Synchronized
+    fun importFrom(
+        name: String,
+        input: InputStream,
+        sourceUrl: String? = null,
+    ): ImportedFilterList {
         val existing = list()
+        require(sourceUrl == null || existing.none { it.sourceUrl == sourceUrl }) {
+            "This filter list has already been downloaded"
+        }
         require(existing.size < MAX_LISTS) { "At most $MAX_LISTS filter lists are supported" }
         val currentBytes = existing.sumOf { fileFor(it.id).length() }
         require(currentBytes < MAX_TOTAL_BYTES) { "Filter-list storage is full" }
@@ -89,6 +102,7 @@ internal class FilterListStore(context: Context) {
                 name = name.substringAfterLast('/').substringAfterLast('\\')
                     .ifBlank { "Imported filter list" }.take(MAX_NAME_LENGTH),
                 enabled = true,
+                sourceUrl = sourceUrl,
             )
             val destination = fileFor(item.id)
             if (!temporary.renameTo(destination)) {
@@ -138,8 +152,10 @@ internal class FilterListStore(context: Context) {
     private fun save(lists: List<ImportedFilterList>) {
         val array = JSONArray()
         lists.forEach { list ->
-            array.put(JSONObject().put("id", list.id).put("name", list.name)
-                .put("enabled", list.enabled))
+            val entry = JSONObject().put("id", list.id).put("name", list.name)
+                .put("enabled", list.enabled)
+            list.sourceUrl?.let { entry.put("sourceUrl", it) }
+            array.put(entry)
         }
         if (!preferences.edit().putString(INDEX_KEY, array.toString()).commit()) {
             throw IOException("Cannot persist filter-list settings")
@@ -150,7 +166,7 @@ internal class FilterListStore(context: Context) {
         private const val INDEX_KEY = "imports"
         private const val MAX_NAME_LENGTH = 100
         private const val MAX_LISTS = 16
-        private const val MAX_LIST_BYTES = 8L * 1024 * 1024
+        internal const val MAX_LIST_BYTES = 8L * 1024 * 1024
         private const val MAX_TOTAL_BYTES = 32L * 1024 * 1024
         private val UUID_PATTERN = Regex("[0-9a-fA-F-]{36}")
     }

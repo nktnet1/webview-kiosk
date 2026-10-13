@@ -43,11 +43,6 @@ fun SettingsListScreen(
             Screen.SettingsWebEngine.route
         ),
         Triple(
-            "Content blocking",
-            "Import and manage your own ad-blocking filter lists",
-            Screen.SettingsContentBlocking.route
-        ),
-        Triple(
             stringResource(R.string.settings_web_lifecycle_title),
             stringResource(R.string.settings_web_lifecycle_description),
             Screen.SettingsWebLifecycle.route
