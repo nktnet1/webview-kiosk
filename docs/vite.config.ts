@@ -65,6 +65,9 @@ export default defineConfig(async ({ command }) => {
             path: "/docs",
           },
           {
+            path: "/unifiedpush",
+          },
+          {
             path: "/privacy",
           },
           {
