@@ -1,9 +1,65 @@
 import { expect, test } from "@playwright/test";
 
+test("UnifiedPush documentation links to the debugger from a top-level tip", async ({
+  page,
+}) => {
+  await page.goto("/docs/settings/unifiedpush");
+  await expect(
+    page.getByText("Tip: Test UnifiedPush from your browser"),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "UnifiedPush Debugger" }),
+  ).toHaveAttribute("href", "/debugger/unifiedpush");
+});
+
+test("Credential actions keep equal widths", async ({ page }) => {
+  await page.goto("/debugger/unifiedpush");
+  const labels = [
+    "Reveal credentials",
+    "Generate VAPID keys",
+    "Clear credentials",
+  ];
+  const widths = await Promise.all(
+    labels.map(async (label) => {
+      const button = page.getByRole("button", { name: label });
+      await expect(button).toBeVisible();
+      const bounds = await button.boundingBox();
+      expect(bounds).not.toBeNull();
+      return bounds?.width;
+    }),
+  );
+  expect(widths[0]).toBe(widths[1]);
+  expect(widths[1]).toBe(widths[2]);
+});
+
+test("Delivery mode uses an accessible select and TTL is validated", async ({
+  page,
+}) => {
+  await page.goto("/debugger/unifiedpush");
+  await page.getByRole("combobox", { name: "Delivery mode" }).click();
+  await page
+    .getByRole("option", { name: "Plaintext (ntfy-compatible only)" })
+    .click();
+  await expect(page.getByLabel("Endpoint auth secret")).not.toBeVisible();
+  await expect(page.getByLabel("Time to live (seconds)")).not.toBeVisible();
+
+  await page.getByRole("combobox", { name: "Delivery mode" }).click();
+  await page
+    .getByRole("option", { name: "Encrypted Web Push (recommended)" })
+    .click();
+  const ttl = page.getByLabel("Time to live (seconds)");
+  await ttl.fill("2419201");
+  await ttl.blur();
+  await expect(page.getByText(/TTL must be a whole number/)).toBeVisible();
+  await ttl.fill("60");
+  await ttl.blur();
+  await expect(page.getByText(/TTL must be a whole number/)).toHaveCount(0);
+});
+
 test("UnifiedPush debugger saves local credentials and clears them", async ({
   page,
 }) => {
-  await page.goto("/unifiedpush");
+  await page.goto("/debugger/unifiedpush");
   await expect(
     page.getByRole("heading", { name: "UnifiedPush Debugger" }),
   ).toBeVisible();
@@ -41,9 +97,9 @@ test("UnifiedPush debugger saves local credentials and clears them", async ({
 test("UnifiedPush debugger uses form controls and preserves raw JSON edits", async ({
   page,
 }) => {
-  await page.goto("/unifiedpush");
-  await expect(page.getByLabel("Command", { exact: true })).toHaveValue(
-    "toast",
+  await page.goto("/debugger/unifiedpush");
+  await expect(page.getByRole("combobox", { name: "Command" })).toContainText(
+    "Toast",
   );
   await page.getByLabel("Message", { exact: true }).fill("A device toast");
   await page.getByRole("tab", { name: "JSON" }).click();
@@ -54,8 +110,8 @@ test("UnifiedPush debugger uses form controls and preserves raw JSON edits", asy
       '{ "type": "command", "command": "go_to_url", "data": { "url": "https://example.net", "custom": true }, "messageId": "abc-123" }',
     );
   await page.getByRole("tab", { name: "Form" }).click();
-  await expect(page.getByLabel("Command", { exact: true })).toHaveValue(
-    "go_to_url",
+  await expect(page.getByRole("combobox", { name: "Command" })).toContainText(
+    "Go to URL",
   );
   await page.getByLabel("URL", { exact: true }).fill("https://example.org");
   await page.getByRole("tab", { name: "JSON" }).click();
@@ -75,17 +131,21 @@ test("UnifiedPush debugger uses form controls and preserves raw JSON edits", asy
 test("UnifiedPush debugger builds settings updates with typed controls", async ({
   page,
 }) => {
-  await page.goto("/unifiedpush");
-  await page.getByLabel("Message type").selectOption("settings");
-  await page.getByLabel("appearance.theme value").selectOption("DARK");
+  await page.goto("/debugger/unifiedpush");
+  await page.getByRole("combobox", { name: "Message type" }).click();
+  await page.getByRole("option", { name: "Settings update" }).click();
+  await page.getByRole("combobox", { name: "appearance.theme value" }).click();
+  await page.getByRole("option", { name: "Dark", exact: true }).click();
+  await page.getByRole("combobox", { name: "Setting to add" }).click();
   await page
-    .getByLabel("Setting to add")
-    .selectOption("web_browsing.allow_refresh");
+    .getByRole("option", { name: /web_browsing\.allow_refresh/ })
+    .click();
   await page.getByRole("button", { name: "Add setting" }).click();
   await page.getByLabel("Enabled").click();
+  await page.getByRole("combobox", { name: "Setting to add" }).click();
   await page
-    .getByLabel("Setting to add")
-    .selectOption("web_browsing.address_bar_actions");
+    .getByRole("option", { name: /web_browsing\.address_bar_actions/ })
+    .click();
   await page.getByRole("button", { name: "Add setting" }).click();
   await page.getByLabel("Back", { exact: true }).click();
   await page.getByRole("tab", { name: "JSON" }).click();
@@ -109,7 +169,8 @@ test("UnifiedPush debugger builds settings updates with typed controls", async (
     );
   await page.getByRole("tab", { name: "Form" }).click();
   await expect(page.getByText("future.key")).toBeVisible();
-  await page.getByLabel("appearance.theme value").selectOption("SYSTEM");
+  await page.getByRole("combobox", { name: "appearance.theme value" }).click();
+  await page.getByRole("option", { name: "System", exact: true }).click();
   await page.getByRole("tab", { name: "JSON" }).click();
   const preserved = JSON.parse(
     await page.getByLabel("JSON payload").inputValue(),
@@ -121,7 +182,7 @@ test("UnifiedPush debugger builds settings updates with typed controls", async (
 test("UnifiedPush debugger prepares an encrypted request entirely in the browser", async ({
   page,
 }) => {
-  await page.goto("/unifiedpush");
+  await page.goto("/debugger/unifiedpush");
   const { p256dh, auth } = await page.evaluate(async () => {
     const pair = await crypto.subtle.generateKey(
       { name: "ECDH", namedCurve: "P-256" },

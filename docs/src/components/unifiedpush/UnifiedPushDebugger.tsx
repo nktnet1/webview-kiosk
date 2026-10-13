@@ -1,7 +1,8 @@
 "use client";
 
+import { useForm } from "@tanstack/react-form";
 import { Callout } from "fumadocs-ui/components/callout";
-import { type FormEvent, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import {
   createRemotePayload,
@@ -21,6 +22,13 @@ import {
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "#/components/ui/select";
+import {
   EMPTY_CREDENTIALS,
   parseStoredCredentials,
   persistCredentials,
@@ -38,6 +46,11 @@ import {
 } from "./web-push";
 
 type DeliveryMode = "encrypted" | "plaintext";
+type DebugFormValues = {
+  credentials: PushCredentials;
+  mode: DeliveryMode;
+  ttl: string;
+};
 type Feedback = { kind: "success" | "error" | "warning"; message: string };
 
 const fields: {
@@ -112,26 +125,33 @@ function saveEncryptedBody(push: PreparedPush) {
 }
 
 export default function UnifiedPushDebugger() {
-  const [credentials, setCredentials] = useState<PushCredentials>({
-    ...EMPTY_CREDENTIALS,
-  });
   const [loaded, setLoaded] = useState(false);
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
   const [showSecrets, setShowSecrets] = useState(false);
-  const [mode, setMode] = useState<DeliveryMode>("encrypted");
   const [messageKind, setMessageKind] = useState<MessageKind>("command");
   const [payload, setPayload] = useState(() =>
     stringifyPayload(createRemotePayload("unifiedpush", "command")),
   );
-  const [ttl, setTtl] = useState("60");
   const [busy, setBusy] = useState(false);
   const [generatingKeys, setGeneratingKeys] = useState(false);
   const [prepared, setPrepared] = useState<PreparedPush | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
+  // Keep fields, validation and submit values in TanStack Form. Only the
+  // credentials (not TTL or delivery mode) are saved to browser storage.
+  const form = useForm({
+    defaultValues: {
+      credentials: { ...EMPTY_CREDENTIALS },
+      mode: "encrypted",
+      ttl: "60",
+    } as DebugFormValues,
+    onSubmit: async ({ value }) => handleSend(value),
+  });
+
   useEffect(() => {
     try {
-      setCredentials(
+      form.setFieldValue(
+        "credentials",
         parseStoredCredentials(window.localStorage.getItem(STORAGE_KEY)),
       );
     } catch {
@@ -140,10 +160,9 @@ export default function UnifiedPushDebugger() {
       );
     }
     setLoaded(true);
-  }, []);
+  }, [form]);
 
-  useEffect(() => {
-    if (!loaded) return;
+  function persistEditedCredentials(credentials: PushCredentials) {
     try {
       persistCredentials(window.localStorage, credentials);
       setStorageWarning(null);
@@ -152,16 +171,11 @@ export default function UnifiedPushDebugger() {
         "Browser storage is unavailable; credentials will not persist.",
       );
     }
-  }, [credentials, loaded]);
+  }
 
   function invalidateRequest() {
     setPrepared(null);
     setFeedback(null);
-  }
-
-  function changeCredential(key: keyof PushCredentials, value: string) {
-    setCredentials((current) => ({ ...current, [key]: value }));
-    invalidateRequest();
   }
 
   function changePayload(value: string) {
@@ -171,6 +185,7 @@ export default function UnifiedPushDebugger() {
 
   async function createKeys() {
     if (generatingKeys || busy) return;
+    const credentials = form.state.values.credentials;
     if (
       (credentials.vapidPublicKey || credentials.vapidPrivateKey)
       && !window.confirm(
@@ -182,11 +197,13 @@ export default function UnifiedPushDebugger() {
     setGeneratingKeys(true);
     try {
       const keys = await generateVapidKeys();
-      setCredentials((current) => ({
-        ...current,
+      const nextCredentials = {
+        ...form.state.values.credentials,
         vapidPublicKey: keys.publicKey,
         vapidPrivateKey: keys.privateKey,
-      }));
+      };
+      form.setFieldValue("credentials", nextCredentials);
+      persistEditedCredentials(nextCredentials);
       invalidateRequest();
       toast.success(
         "VAPID key pair generated. Register the device with this public key.",
@@ -198,12 +215,14 @@ export default function UnifiedPushDebugger() {
     }
   }
 
-  async function createRequest(): Promise<PreparedPush | null> {
+  async function createRequest(
+    values: DebugFormValues,
+  ): Promise<PreparedPush | null> {
     try {
       const request = await prepareWebPush(
-        credentials,
+        values.credentials,
         validateRemotePayload(payload, "unifiedpush", messageKind),
-        ttl.trim() ? Number(ttl) : Number.NaN,
+        values.ttl.trim() ? Number(values.ttl) : Number.NaN,
       );
       setPrepared(request);
       return request;
@@ -220,7 +239,7 @@ export default function UnifiedPushDebugger() {
     setFeedback(null);
     setPrepared(null);
     try {
-      const request = await createRequest();
+      const request = await createRequest(form.state.values);
       if (request) {
         setFeedback({
           kind: "success",
@@ -233,16 +252,15 @@ export default function UnifiedPushDebugger() {
     }
   }
 
-  async function handleSend(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSend(values: DebugFormValues) {
     if (busy || generatingKeys) return;
     setBusy(true);
     setFeedback(null);
     setPrepared(null);
 
     try {
-      if (mode === "encrypted") {
-        const request = await createRequest();
+      if (values.mode === "encrypted") {
+        const request = await createRequest(values);
         if (!request) return;
 
         let response: Response;
@@ -277,7 +295,7 @@ export default function UnifiedPushDebugger() {
               },
         );
       } else {
-        const endpoint = parsePushEndpoint(credentials.endpoint);
+        const endpoint = parsePushEndpoint(values.credentials.endpoint);
         const message = validateRemotePayload(
           payload,
           "unifiedpush",
@@ -322,7 +340,7 @@ export default function UnifiedPushDebugger() {
   }
 
   function clearCredentials() {
-    setCredentials({ ...EMPTY_CREDENTIALS });
+    form.setFieldValue("credentials", { ...EMPTY_CREDENTIALS });
     invalidateRequest();
     try {
       window.localStorage.removeItem(STORAGE_KEY);
@@ -372,215 +390,292 @@ export default function UnifiedPushDebugger() {
         </p>
       )}
 
-      <form onSubmit={handleSend}>
-        <fieldset
-          disabled={busy || generatingKeys}
-          className="space-y-6 disabled:opacity-70"
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <Card>
-              <CardHeader>
-                <CardTitle>Connection &amp; credentials</CardTitle>
-                <CardDescription>
-                  Paste the values from the device registration screen.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                <div className="space-y-2">
-                  <Label htmlFor="push-mode">Delivery mode</Label>
-                  <select
-                    id="push-mode"
-                    className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
-                    value={mode}
-                    onChange={(event) => {
-                      setMode(event.target.value as DeliveryMode);
-                      invalidateRequest();
-                    }}
-                  >
-                    <option value="encrypted">
-                      Encrypted Web Push (recommended)
-                    </option>
-                    <option value="plaintext">
-                      Plaintext (ntfy-compatible only)
-                    </option>
-                  </select>
-                </div>
-                {mode === "plaintext" && (
-                  <Callout title="Unencrypted delivery" type="warning">
-                    This mode is not encrypted. Enable{" "}
-                    <strong>Process Unencrypted Messages</strong> in the app.
-                    The browser cannot read the server response in no-CORS mode.
-                  </Callout>
-                )}
-                {fields
-                  .filter(
-                    (field) => mode === "encrypted" || !field.encryptedOnly,
-                  )
-                  .map((field) => (
-                    <div className="space-y-2" key={field.key}>
-                      <Label htmlFor={`push-${field.key}`}>{field.label}</Label>
-                      <Input
-                        id={`push-${field.key}`}
-                        type={
-                          field.secret && !showSecrets ? "password" : "text"
-                        }
-                        value={credentials[field.key]}
-                        placeholder={field.placeholder}
-                        autoComplete="off"
-                        spellCheck={false}
-                        onChange={(event) =>
-                          changeCredential(field.key, event.target.value)
-                        }
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        {field.hint}
-                      </p>
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          void form.handleSubmit();
+        }}
+      >
+        <form.Subscribe selector={(state) => state.values.mode}>
+          {(mode) => (
+            <fieldset
+              disabled={!loaded || busy || generatingKeys}
+              className="space-y-6 disabled:opacity-70"
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Connection &amp; credentials</CardTitle>
+                    <CardDescription>
+                      Paste the values from the device registration screen.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-5">
+                    <div className="space-y-2">
+                      <Label htmlFor="push-mode">Delivery mode</Label>
+                      <form.Field name="mode">
+                        {(field) => (
+                          <Select
+                            value={field.state.value}
+                            onValueChange={(value) => {
+                              field.handleChange(value as DeliveryMode);
+                              invalidateRequest();
+                            }}
+                          >
+                            <SelectTrigger id="push-mode" className="w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="encrypted">
+                                Encrypted Web Push (recommended)
+                              </SelectItem>
+                              <SelectItem value="plaintext">
+                                Plaintext (ntfy-compatible only)
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </form.Field>
                     </div>
-                  ))}
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowSecrets((value) => !value)}
-                  >
-                    {showSecrets ? "Hide credentials" : "Reveal credentials"}
-                  </Button>
-                  {mode === "encrypted" && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={createKeys}
-                    >
-                      {generatingKeys ? "Generating…" : "Generate VAPID keys"}
-                    </Button>
-                  )}
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    onClick={clearCredentials}
-                  >
-                    Clear credentials
-                  </Button>
-                </div>
-                {mode === "encrypted" && (
-                  <p className="text-xs text-muted-foreground">
-                    New VAPID keys require updating the public key in the app
-                    and re-registering before sending a push notification.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Message</CardTitle>
-                <CardDescription>
-                  Configure a command or settings update, or edit raw JSON.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                <RemoteMessageEditor
-                  transport="unifiedpush"
-                  kind={messageKind}
-                  value={payload}
-                  onChange={changePayload}
-                  onKindChange={(kind) => {
-                    setMessageKind(kind);
-                    invalidateRequest();
-                  }}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Maximum {MAX_PUSH_PAYLOAD_BYTES} UTF-8 bytes after JSON
-                  minification. See{" "}
-                  <a
-                    className="underline"
-                    href="/docs/settings/unifiedpush/messages"
-                  >
-                    message formats
-                  </a>
-                  .
-                </p>
-                {mode === "encrypted" && (
-                  <div className="space-y-2">
-                    <Label htmlFor="push-ttl">Time to live (seconds)</Label>
-                    <Input
-                      id="push-ttl"
-                      type="number"
-                      min="0"
-                      max={MAX_PUSH_TTL}
-                      step="1"
-                      value={ttl}
-                      onChange={(event) => {
-                        setTtl(event.target.value);
-                        invalidateRequest();
-                      }}
-                    />
-                  </div>
-                )}
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    type="submit"
-                    className="min-h-10"
-                    disabled={!loaded || busy || generatingKeys}
-                  >
-                    {busy ? "Sending…" : "Send test push"}
-                  </Button>
-                  {mode === "encrypted" && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={handlePrepare}
-                    >
-                      Prepare cURL fallback
-                    </Button>
-                  )}
-                </div>
-                {feedback
-                  && (feedback.kind === "warning" ? (
-                    <div role="status">
-                      <Callout title="Delivery warning" type="warning">
-                        {feedback.message}
+                    {mode === "plaintext" && (
+                      <Callout title="Unencrypted delivery" type="warning">
+                        This mode is not encrypted. Enable{" "}
+                        <strong>Process Unencrypted Messages</strong> in the
+                        app. The browser cannot read the server response in
+                        no-CORS mode.
                       </Callout>
-                    </div>
-                  ) : (
-                    <div
-                      role="status"
-                      className={`rounded-md border p-3 text-sm ${feedback.kind === "error" ? "border-destructive text-destructive" : "border-border"}`}
-                    >
-                      {feedback.message}
-                    </div>
-                  ))}
-                {mode === "encrypted" && prepared && (
-                  <div className="space-y-3 rounded-lg border border-border p-3 text-sm">
-                    <h2 className="font-semibold">Encrypted cURL fallback</h2>
-                    <p className="text-muted-foreground">
-                      Download the encrypted binary, place it beside your
-                      terminal and run the copied command. The command contains
-                      a short-lived VAPID token. Do not share it or the endpoint
-                      URL.
-                    </p>
+                    )}
+                    {fields
+                      .filter(
+                        (field) => mode === "encrypted" || !field.encryptedOnly,
+                      )
+                      .map((entry) => (
+                        <form.Field
+                          key={entry.key}
+                          name={`credentials.${entry.key}`}
+                        >
+                          {(field) => (
+                            <div className="space-y-2">
+                              <Label htmlFor={`push-${entry.key}`}>
+                                {entry.label}
+                              </Label>
+                              <Input
+                                id={`push-${entry.key}`}
+                                name={field.name}
+                                type={
+                                  entry.secret && !showSecrets
+                                    ? "password"
+                                    : "text"
+                                }
+                                value={field.state.value}
+                                placeholder={entry.placeholder}
+                                autoComplete="off"
+                                spellCheck={false}
+                                onBlur={field.handleBlur}
+                                onChange={(event) => {
+                                  const next = event.target.value;
+                                  field.handleChange(next);
+                                  persistEditedCredentials({
+                                    ...form.state.values.credentials,
+                                    [entry.key]: next,
+                                  });
+                                  invalidateRequest();
+                                }}
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                {entry.hint}
+                              </p>
+                            </div>
+                          )}
+                        </form.Field>
+                      ))}
                     <div className="flex flex-wrap gap-2">
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => saveEncryptedBody(prepared)}
+                        className="w-full sm:w-48 shrink-0"
+                        onClick={() => setShowSecrets((value) => !value)}
                       >
-                        Download .bin
+                        {showSecrets
+                          ? "Hide credentials"
+                          : "Reveal credentials"}
                       </Button>
+                      {mode === "encrypted" && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full sm:w-48 shrink-0"
+                          onClick={createKeys}
+                        >
+                          {generatingKeys
+                            ? "Generating…"
+                            : "Generate VAPID keys"}
+                        </Button>
+                      )}
                       <Button
                         type="button"
-                        variant="outline"
-                        onClick={copyCurl}
+                        variant="destructive"
+                        className="w-full sm:w-48 shrink-0"
+                        onClick={clearCredentials}
                       >
-                        Copy cURL command
+                        Clear credentials
                       </Button>
                     </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </fieldset>
+                    {mode === "encrypted" && (
+                      <p className="text-xs text-muted-foreground">
+                        New VAPID keys require updating the public key in the
+                        app and re-registering before sending a push
+                        notification.
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Message</CardTitle>
+                    <CardDescription>
+                      Configure a command or settings update, or edit raw JSON.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-5">
+                    <RemoteMessageEditor
+                      transport="unifiedpush"
+                      kind={messageKind}
+                      value={payload}
+                      onChange={changePayload}
+                      onKindChange={(kind) => {
+                        setMessageKind(kind);
+                        invalidateRequest();
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Maximum {MAX_PUSH_PAYLOAD_BYTES} UTF-8 bytes after JSON
+                      minification. See{" "}
+                      <a
+                        className="underline"
+                        href="/docs/settings/unifiedpush/messages"
+                      >
+                        message formats
+                      </a>
+                      .
+                    </p>
+                    {mode === "encrypted" && (
+                      <form.Field
+                        name="ttl"
+                        validators={{
+                          onBlur: ({ value }) => {
+                            const seconds = Number(value);
+                            return value.trim()
+                              && Number.isInteger(seconds)
+                              && seconds >= 0
+                              && seconds <= MAX_PUSH_TTL
+                              ? undefined
+                              : `TTL must be a whole number between 0 and ${MAX_PUSH_TTL} seconds.`;
+                          },
+                        }}
+                      >
+                        {(field) => (
+                          <div className="space-y-2">
+                            <Label htmlFor="push-ttl">
+                              Time to live (seconds)
+                            </Label>
+                            <Input
+                              id="push-ttl"
+                              name={field.name}
+                              type="number"
+                              min={0}
+                              max={MAX_PUSH_TTL}
+                              step={1}
+                              value={field.state.value}
+                              aria-invalid={!field.state.meta.isValid}
+                              onBlur={field.handleBlur}
+                              onChange={(event) => {
+                                field.handleChange(event.target.value);
+                                invalidateRequest();
+                              }}
+                            />
+                            {!field.state.meta.isValid && (
+                              <p
+                                role="alert"
+                                className="text-xs text-destructive"
+                              >
+                                {field.state.meta.errors.join(", ")}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </form.Field>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="submit"
+                        className="min-h-10"
+                        disabled={!loaded || busy || generatingKeys}
+                      >
+                        {busy ? "Sending…" : "Send test push"}
+                      </Button>
+                      {mode === "encrypted" && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handlePrepare}
+                        >
+                          Prepare cURL fallback
+                        </Button>
+                      )}
+                    </div>
+                    {feedback
+                      && (feedback.kind === "warning" ? (
+                        <div role="status">
+                          <Callout title="Delivery warning" type="warning">
+                            {feedback.message}
+                          </Callout>
+                        </div>
+                      ) : (
+                        <div
+                          role="status"
+                          className={`rounded-md border p-3 text-sm ${feedback.kind === "error" ? "border-destructive text-destructive" : "border-border"}`}
+                        >
+                          {feedback.message}
+                        </div>
+                      ))}
+                    {mode === "encrypted" && prepared && (
+                      <div className="space-y-3 rounded-lg border border-border p-3 text-sm">
+                        <h2 className="font-semibold">
+                          Encrypted cURL fallback
+                        </h2>
+                        <p className="text-muted-foreground">
+                          Download the encrypted binary, place it beside your
+                          terminal and run the copied command. The command
+                          contains a short-lived VAPID token. Do not share it or
+                          the endpoint URL.
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => saveEncryptedBody(prepared)}
+                          >
+                            Download .bin
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={copyCurl}
+                          >
+                            Copy cURL command
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </fieldset>
+          )}
+        </form.Subscribe>
       </form>
     </div>
   );

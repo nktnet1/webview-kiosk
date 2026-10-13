@@ -1,16 +1,20 @@
 "use client";
 
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "fumadocs-ui/components/tabs";
 import { useEffect, useState } from "react";
 import { Button } from "#/components/ui/button";
 import { Checkbox } from "#/components/ui/checkbox";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "#/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "#/components/ui/tabs";
 import { Textarea } from "#/components/ui/textarea";
 import {
   addDefaultSetting,
@@ -120,20 +124,21 @@ function CommandControls({
     <div className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="remote-command">Command</Label>
-        <select
-          id="remote-command"
-          className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
+        <Select
           value={commandName}
-          onChange={(event) =>
-            onChange(changeCommand(message, event.target.value))
-          }
+          onValueChange={(value) => onChange(changeCommand(message, value))}
         >
-          {COMMANDS.map((command) => (
-            <option key={command.name} value={command.name}>
-              {command.label}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger id="remote-command" className="w-full">
+            <SelectValue placeholder="Choose a command" />
+          </SelectTrigger>
+          <SelectContent>
+            {COMMANDS.map((command) => (
+              <SelectItem key={command.name} value={command.name}>
+                {command.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <p className="text-xs text-muted-foreground">
           {definition.description}
         </p>
@@ -158,22 +163,25 @@ function CommandControls({
           return (
             <div className="space-y-2" key={id}>
               <Label htmlFor={id}>{field.label}</Label>
-              <select
-                id={id}
-                className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
+              <Select
                 value={
                   typeof fieldValue === "string"
                     ? fieldValue
                     : (field.options?.[0] ?? "")
                 }
-                onChange={(event) => setField(event.target.value)}
+                onValueChange={setField}
               >
-                {field.options?.map((option) => (
-                  <option key={option} value={option}>
-                    {formatSettingLabel(option)}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id={id} className="w-full">
+                  <SelectValue placeholder="Choose an option" />
+                </SelectTrigger>
+                <SelectContent>
+                  {field.options?.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {formatSettingLabel(option)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           );
         }
@@ -250,19 +258,25 @@ function SettingControl({
   }
   if (setting.kind === "choice") {
     return (
-      <select
-        id={id}
-        aria-label={`${setting.key} value`}
-        className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
+      <Select
         value={typeof value === "string" ? value : ""}
-        onChange={(event) => onChange(event.target.value)}
+        onValueChange={onChange}
       >
-        {setting.options?.map((option) => (
-          <option key={option} value={option}>
-            {formatSettingLabel(option)}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger
+          id={id}
+          aria-label={`${setting.key} value`}
+          className="w-full"
+        >
+          <SelectValue placeholder="Choose a value" />
+        </SelectTrigger>
+        <SelectContent>
+          {setting.options?.map((option) => (
+            <SelectItem key={option} value={option}>
+              {formatSettingLabel(option)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     );
   }
   if (setting.kind === "multi-select") {
@@ -395,26 +409,32 @@ function SettingsControls({
             setNewKey("");
           }}
         />
-        <select
-          id="remote-setting-select"
-          aria-label="Setting to add"
-          className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
-          value={newKey}
-          onChange={(event) => setNewKey(event.target.value)}
-        >
-          <option value="">
-            {available.length > 0 ? "Choose a setting" : "No matching settings"}
-          </option>
-          {[...groups].map(([group, entries]) => (
-            <optgroup key={group} label={group}>
-              {entries.map((setting) => (
-                <option key={setting.key} value={setting.key}>
-                  {setting.label} ({setting.key})
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
+        <Select value={newKey} onValueChange={setNewKey}>
+          <SelectTrigger
+            id="remote-setting-select"
+            aria-label="Setting to add"
+            className="w-full"
+            disabled={available.length === 0}
+          >
+            <SelectValue
+              placeholder={
+                available.length ? "Choose a setting" : "No matching settings"
+              }
+            />
+          </SelectTrigger>
+          <SelectContent>
+            {[...groups].map(([group, entries]) => (
+              <SelectGroup key={group}>
+                <SelectLabel>{group}</SelectLabel>
+                {entries.map((setting) => (
+                  <SelectItem key={setting.key} value={setting.key}>
+                    {setting.label} ({setting.key})
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            ))}
+          </SelectContent>
+        </Select>
         <Button
           type="button"
           variant="outline"
@@ -594,19 +614,22 @@ export function RemoteMessageEditor({
             <>
               <div className="space-y-2">
                 <Label htmlFor="remote-message-kind">Message type</Label>
-                <select
-                  id="remote-message-kind"
+                <Select
                   value={kind}
-                  className="border-input bg-background h-9 w-full rounded-md border px-3 text-sm"
-                  onChange={(event) => {
-                    const nextKind = event.target.value as MessageKind;
+                  onValueChange={(next) => {
+                    const nextKind = next as MessageKind;
                     onKindChange(nextKind);
                     updateMessage(createRemotePayload(transport, nextKind));
                   }}
                 >
-                  <option value="command">Command</option>
-                  <option value="settings">Settings update</option>
-                </select>
+                  <SelectTrigger id="remote-message-kind" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="command">Command</SelectItem>
+                    <SelectItem value="settings">Settings update</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               {kind === "command" ? (
                 <CommandControls

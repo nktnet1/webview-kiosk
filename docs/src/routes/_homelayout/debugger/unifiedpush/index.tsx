@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import UnifiedPushDebugger from "#/components/unifiedpush/UnifiedPushDebugger";
 
-export const Route = createFileRoute("/_homelayout/unifiedpush/")({
+export const Route = createFileRoute("/_homelayout/debugger/unifiedpush/")({
   component: UnifiedPushPage,
 });
 

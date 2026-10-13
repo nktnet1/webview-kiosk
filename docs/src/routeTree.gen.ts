@@ -19,7 +19,7 @@ import { Route as ApiSearchRouteImport } from './routes/api/search'
 import { Route as DocsSplatRouteImport } from './routes/docs/$'
 import { Route as DocsChar123Char125DotmdRouteImport } from './routes/docs/{$}[.]md'
 import { Route as HomelayoutProvisionDeviceIndexRouteImport } from './routes/_homelayout/provision-device/index'
-import { Route as HomelayoutUnifiedpushIndexRouteImport } from './routes/_homelayout/unifiedpush/index'
+import { Route as HomelayoutDebuggerUnifiedpushIndexRouteImport } from './routes/_homelayout/debugger/unifiedpush/index'
 
 const HomelayoutRouteRoute = HomelayoutRouteRouteImport.update({
   id: '/_homelayout',
@@ -71,10 +71,10 @@ const HomelayoutProvisionDeviceIndexRoute =
     path: '/provision-device/',
     getParentRoute: () => HomelayoutRouteRoute,
   } as any)
-const HomelayoutUnifiedpushIndexRoute =
-  HomelayoutUnifiedpushIndexRouteImport.update({
-    id: '/unifiedpush/',
-    path: '/unifiedpush/',
+const HomelayoutDebuggerUnifiedpushIndexRoute =
+  HomelayoutDebuggerUnifiedpushIndexRouteImport.update({
+    id: '/debugger/unifiedpush/',
+    path: '/debugger/unifiedpush/',
     getParentRoute: () => HomelayoutRouteRoute,
   } as any)
 
@@ -88,7 +88,7 @@ export interface FileRoutesByFullPath {
   '/docs/$': typeof DocsSplatRoute
   '/docs/{$}.md': typeof DocsChar123Char125DotmdRoute
   '/provision-device/': typeof HomelayoutProvisionDeviceIndexRoute
-  '/unifiedpush/': typeof HomelayoutUnifiedpushIndexRoute
+  '/debugger/unifiedpush/': typeof HomelayoutDebuggerUnifiedpushIndexRoute
 }
 export interface FileRoutesByTo {
   '/llms-full.txt': typeof LlmsFullDottxtRoute
@@ -100,7 +100,7 @@ export interface FileRoutesByTo {
   '/docs/{$}.md': typeof DocsChar123Char125DotmdRoute
   '/': typeof HomelayoutIndexRoute
   '/provision-device': typeof HomelayoutProvisionDeviceIndexRoute
-  '/unifiedpush': typeof HomelayoutUnifiedpushIndexRoute
+  '/debugger/unifiedpush': typeof HomelayoutDebuggerUnifiedpushIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -114,7 +114,7 @@ export interface FileRoutesById {
   '/docs/{$}.md': typeof DocsChar123Char125DotmdRoute
   '/_homelayout/': typeof HomelayoutIndexRoute
   '/_homelayout/provision-device/': typeof HomelayoutProvisionDeviceIndexRoute
-  '/_homelayout/unifiedpush/': typeof HomelayoutUnifiedpushIndexRoute
+  '/_homelayout/debugger/unifiedpush/': typeof HomelayoutDebuggerUnifiedpushIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -128,7 +128,7 @@ export interface FileRouteTypes {
     | '/docs/$'
     | '/docs/{$}.md'
     | '/provision-device/'
-    | '/unifiedpush/'
+    | '/debugger/unifiedpush/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/llms-full.txt'
@@ -140,7 +140,7 @@ export interface FileRouteTypes {
     | '/docs/{$}.md'
     | '/'
     | '/provision-device'
-    | '/unifiedpush'
+    | '/debugger/unifiedpush'
   id:
     | '__root__'
     | '/_homelayout'
@@ -153,7 +153,7 @@ export interface FileRouteTypes {
     | '/docs/{$}.md'
     | '/_homelayout/'
     | '/_homelayout/provision-device/'
-    | '/_homelayout/unifiedpush/'
+    | '/_homelayout/debugger/unifiedpush/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -238,11 +238,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomelayoutProvisionDeviceIndexRouteImport
       parentRoute: typeof HomelayoutRouteRoute
     }
-    '/_homelayout/unifiedpush/': {
-      id: '/_homelayout/unifiedpush/'
-      path: '/unifiedpush'
-      fullPath: '/unifiedpush/'
-      preLoaderRoute: typeof HomelayoutUnifiedpushIndexRouteImport
+    '/_homelayout/debugger/unifiedpush/': {
+      id: '/_homelayout/debugger/unifiedpush/'
+      path: '/debugger/unifiedpush'
+      fullPath: '/debugger/unifiedpush/'
+      preLoaderRoute: typeof HomelayoutDebuggerUnifiedpushIndexRouteImport
       parentRoute: typeof HomelayoutRouteRoute
     }
   }
@@ -252,14 +252,15 @@ interface HomelayoutRouteRouteChildren {
   HomelayoutSplatRoute: typeof HomelayoutSplatRoute
   HomelayoutIndexRoute: typeof HomelayoutIndexRoute
   HomelayoutProvisionDeviceIndexRoute: typeof HomelayoutProvisionDeviceIndexRoute
-  HomelayoutUnifiedpushIndexRoute: typeof HomelayoutUnifiedpushIndexRoute
+  HomelayoutDebuggerUnifiedpushIndexRoute: typeof HomelayoutDebuggerUnifiedpushIndexRoute
 }
 
 const HomelayoutRouteRouteChildren: HomelayoutRouteRouteChildren = {
   HomelayoutSplatRoute: HomelayoutSplatRoute,
   HomelayoutIndexRoute: HomelayoutIndexRoute,
   HomelayoutProvisionDeviceIndexRoute: HomelayoutProvisionDeviceIndexRoute,
-  HomelayoutUnifiedpushIndexRoute: HomelayoutUnifiedpushIndexRoute,
+  HomelayoutDebuggerUnifiedpushIndexRoute:
+    HomelayoutDebuggerUnifiedpushIndexRoute,
 }
 
 const HomelayoutRouteRouteWithChildren = HomelayoutRouteRoute._addFileChildren(
