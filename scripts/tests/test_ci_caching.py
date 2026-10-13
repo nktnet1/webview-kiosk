@@ -1,4 +1,4 @@
-"""Static regression checks for automated test workflow caching semantics.
+"""Static regression checks for test workflow scope and caching.
 
 Uses only the standard library so these checks run before Gradle or pnpm.
 """
@@ -32,9 +32,7 @@ class CiCachingTest(unittest.TestCase):
         self.assertNotIn("connectedDebugAndroidTest", TESTS)
         self.assertNotIn("avd-cache", TESTS)
         self.assertIn("needs: [verify, build]", RELEASE)
-        self.assertIn("  docs-browser:", TESTS)
         self.assertIn("  android:\n", TESTS)
-        self.assertIn("  docs:\n", TESTS)
 
     def test_instrumentation_source_and_runner_dependencies_are_retired(self):
         self.assertFalse((ROOT / "app/src/androidTest").exists())
@@ -49,21 +47,53 @@ class CiCachingTest(unittest.TestCase):
         self.assertNotIn("androidx-test-ext-junit", versions)
         self.assertNotIn("androidx-test-core", versions)
 
-    def test_docs_test_gate_caches_pnpm_after_installing_pnpm(self):
-        docs_tests = TESTS.split("  docs:\n", 1)[1].split(
-            "  docs-browser:\n", 1
-        )[0]
-        docs_browser = TESTS.split("  docs-browser:\n", 1)[1]
-        for section in (docs_tests, docs_browser, DOCS):
-            self.assertIn("uses: pnpm/action-setup@v6", section)
-            self.assertIn("cache: pnpm", section)
-            self.assertIn("cache-dependency-path: docs/pnpm-lock.yaml", section)
-            self.assertLess(
-                section.index("uses: pnpm/action-setup@v6"),
-                section.index("uses: actions/setup-node@v6"),
-            )
-        self.assertEqual(2, TESTS.count("cache: pnpm"))
-        self.assertNotIn("ms-playwright", TESTS)
+    def test_android_release_no_longer_waits_for_docs(self):
+        self.assertIn("uses: ./.github/workflows/tests.yaml", RELEASE)
+        self.assertNotIn("  docs:\n", TESTS)
+        self.assertNotIn("  docs-browser:\n", TESTS)
+        self.assertNotIn("cache: pnpm", TESTS)
+        self.assertNotIn("playwright", TESTS)
+
+    def test_docs_validation_installs_and_caches_once(self):
+        self.assertEqual(1, DOCS.count("uses: pnpm/action-setup@v6"))
+        self.assertEqual(1, DOCS.count("uses: actions/setup-node@v6"))
+        self.assertEqual(1, DOCS.count("cache: pnpm"))
+        self.assertIn("cache-dependency-path: docs/pnpm-lock.yaml", DOCS)
+        self.assertLess(
+            DOCS.index("uses: pnpm/action-setup@v6"),
+            DOCS.index("uses: actions/setup-node@v6"),
+        )
+        for command in ("pnpm check", "pnpm typecheck", "pnpm test", "pnpm build"):
+            self.assertEqual(1, DOCS.count(f"run: {command}\n"))
+
+    def test_docs_validation_runs_on_relevant_prs_and_main_pushes(self):
+        self.assertIn("  push:\n    branches:\n      - main", DOCS)
+        self.assertIn("  pull_request:\n    paths:\n", DOCS)
+        self.assertIn("  workflow_dispatch:\n", DOCS)
+        self.assertEqual(2, DOCS.count("      - 'docs/**'"))
+        self.assertIn("if: github.event_name != 'pull_request'", DOCS)
+        self.assertIn("PUBLIC_DOCS_BASE_PATH: ${{ steps.setup_pages.outputs.base_path || '/' }}", DOCS)
+        self.assertIn("    needs: build", DOCS)
+
+    def test_browser_checks_only_when_relevant_or_manual(self):
+        self.assertIn("uses: dorny/paths-filter@v3", DOCS)
+        self.assertIn("pull-requests: read", DOCS)
+        for path in (
+            "docs/src/**",
+            "docs/tests/e2e/**",
+            "docs/vite.config.ts",
+            "docs/config/playwright.config.ts",
+            "docs/package.json",
+            "docs/pnpm-lock.yaml",
+        ):
+            self.assertIn(f"- '{path}'", DOCS)
+        browser_condition = (
+            "if: github.event_name == 'workflow_dispatch' "
+            "|| steps.browser_changes.outputs.browser == 'true'"
+        )
+        self.assertEqual(2, DOCS.count(browser_condition))
+        self.assertIn("pnpm exec playwright install --with-deps chromium", DOCS)
+        self.assertIn("run: pnpm test:e2e", DOCS)
 
 
 if __name__ == "__main__":
