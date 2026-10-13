@@ -45,6 +45,7 @@ internal class WebViewStartupGate(
  * synchronously while the Activity is being created. Actual WebView construction
  * remains on the UI thread after the callback, as required by WebKit.
  */
+@androidx.annotation.OptIn(markerClass = [WebViewCompat.ExperimentalAsyncStartUp::class])
 internal object WebViewStartup {
     private const val TAG = "WebViewStartup"
     // WebKit 1.14's experimental callback has no failure callback. Never strand the
@@ -54,7 +55,6 @@ internal object WebViewStartup {
     private val mainHandler = Handler(Looper.getMainLooper())
     @Volatile private var testGate: WebViewStartupGate? = null
 
-    @androidx.annotation.OptIn(markerClass = [WebViewCompat.ExperimentalAsyncStartUp::class])
     private val gate = WebViewStartupGate(
         beginStartup = { onComplete ->
             val backgroundExecutor = Executor { runnable ->
