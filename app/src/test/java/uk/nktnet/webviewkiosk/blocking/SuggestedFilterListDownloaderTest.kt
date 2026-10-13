@@ -7,6 +7,7 @@ import okhttp3.Response
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -133,5 +134,82 @@ class SuggestedFilterListDownloaderTest {
         val imported = store.importFrom("custom.txt", "||ads.example^".byteInputStream())
         assertEquals(null, imported.sourceUrl)
         assertEquals(imported, FilterListStore(RuntimeEnvironment.getApplication()).list().single())
+    }
+
+    @Test
+    fun refreshDownloadsInPlaceAndPreservesRenamedDisabledLists() {
+        val original = store.importFrom(
+            "EasyList.txt", "||old.example^".byteInputStream(), sourceUrl = preset.url,
+        )
+        store.rename(original.id, "My filters")
+        store.setEnabled(original.id, false)
+        val calls = AtomicInteger()
+        val refreshed = downloader(content = "||new.example^", requests = calls)
+            .refresh(original, store)
+
+        assertEquals(1, calls.get())
+        assertEquals(original.id, refreshed.id)
+        assertEquals("My filters", refreshed.name)
+        assertFalse(refreshed.enabled)
+        assertEquals(preset.url, refreshed.sourceUrl)
+        assertEquals(listOf(refreshed), store.list())
+        assertTrue(store.enabledTexts().isEmpty())
+        store.setEnabled(original.id, true)
+        assertEquals(listOf("||new.example^"), store.enabledTexts())
+    }
+
+    @Test
+    fun refreshSupportsOlderCustomSourceUrls() {
+        val legacyUrl = "https://filters.adtidy.org/extension/ublock/filters/2.txt"
+        val legacy = SuggestedFilterList("Previously downloaded", "", legacyUrl)
+        val old = store.importFrom(
+            "AdGuard Base.txt", "||old.example^".byteInputStream(), sourceUrl = legacyUrl,
+        )
+        downloader(content = "||updated.example^", suggestion = legacy).refresh(old, store)
+        assertEquals(listOf("||updated.example^"), store.enabledTexts())
+        assertEquals(old, store.list().single())
+    }
+
+    @Test
+    fun failedRefreshKeepsOriginalRulesAndMetadata() {
+        val original = store.importFrom(
+            "Original.txt", "||old.example^".byteInputStream(), sourceUrl = preset.url,
+        )
+        val invalid = listOf(
+            downloader(status = 503),
+            downloader(content = "<html>oops</html>", mime = "text/html"),
+            downloader(content = ""),
+            downloader(content = "||ads.example^\n".repeat(600_000)),
+        )
+        invalid.forEach { client ->
+            assertTrue(runCatching { client.refresh(original, store) }.isFailure)
+            assertEquals(original, store.list().single())
+            assertEquals(listOf("||old.example^"), store.enabledTexts())
+        }
+    }
+
+    @Test
+    fun refreshNeverFetchesLocalOrMissingLists() {
+        val local = store.importFrom("Local.txt", "||old.example^".byteInputStream())
+        val calls = AtomicInteger()
+        val client = downloader(requests = calls)
+        assertThrows(IllegalArgumentException::class.java) { client.refresh(local, store) }
+        assertThrows(IllegalArgumentException::class.java) {
+            client.refresh(local.copy(id = "missing"), store)
+        }
+        assertEquals(0, calls.get())
+        assertEquals(listOf("||old.example^"), store.enabledTexts())
+    }
+
+    @Test
+    fun refreshRejectsInsecureSourceUrlsWithoutNetworkAccess() {
+        val old = store.importFrom(
+            "Unsafe.txt", "||old.example^".byteInputStream(), sourceUrl = "http://example.org/list.txt",
+        )
+        val calls = AtomicInteger()
+        val client = downloader(requests = calls)
+        assertThrows(IllegalArgumentException::class.java) { client.refresh(old, store) }
+        assertEquals(0, calls.get())
+        assertEquals(listOf("||old.example^"), store.enabledTexts())
     }
 }

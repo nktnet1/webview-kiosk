@@ -17,7 +17,7 @@ internal data class ImportedFilterList(
     val id: String,
     val name: String,
     val enabled: Boolean,
-    /** Populated only when a user explicitly downloads a suggested list. */
+    /** The original HTTPS download URL, if this list was imported from a link. */
     val sourceUrl: String? = null,
 )
 
@@ -63,40 +63,8 @@ internal class FilterListStore(context: Context) {
         require(existing.size < MAX_LISTS) { "At most $MAX_LISTS filter lists are supported" }
         val currentBytes = existing.sumOf { fileFor(it.id).length() }
         require(currentBytes < MAX_TOTAL_BYTES) { "Filter-list storage is full" }
-        if (!directory.isDirectory && !directory.mkdirs()) {
-            throw IOException("Cannot create filter-list directory")
-        }
-        val temporary = File.createTempFile("import-", ".tmp", directory)
+        val temporary = writeValidatedTempFile(input, currentBytes)
         try {
-            var written = 0L
-            input.use { source ->
-                temporary.outputStream().buffered().use { output ->
-                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-                    while (true) {
-                        val count = source.read(buffer)
-                        if (count < 0) break
-                        written += count
-                        require(written <= MAX_LIST_BYTES) { "Filter list exceeds 8 MiB" }
-                        require(currentBytes + written <= MAX_TOTAL_BYTES) {
-                            "Total filter lists exceed 32 MiB"
-                        }
-                        output.write(buffer, 0, count)
-                    }
-                }
-            }
-            require(written > 0L) { "Filter list is empty" }
-            // Reject malformed text/binary files rather than silently replacing bad UTF-8.
-            val data = temporary.readBytes()
-            try {
-                StandardCharsets.UTF_8.newDecoder()
-                    .onMalformedInput(CodingErrorAction.REPORT)
-                    .onUnmappableCharacter(CodingErrorAction.REPORT)
-                    .decode(ByteBuffer.wrap(data))
-            } catch (_: CharacterCodingException) {
-                throw IllegalArgumentException("Filter list must be UTF-8 text")
-            }
-            require(!data.contains(0)) { "Filter list must be plain text" }
-
             val item = ImportedFilterList(
                 id = UUID.randomUUID().toString(),
                 name = name.substringAfterLast('/').substringAfterLast('\\')
@@ -117,6 +85,84 @@ internal class FilterListStore(context: Context) {
             return item
         } finally {
             temporary.delete()
+        }
+    }
+
+    /** Renaming is metadata-only: it must not cause recompilation or modify the source URL. */
+    @Synchronized
+    fun rename(id: String, name: String) {
+        val normalized = name.trim()
+        require(normalized.isNotEmpty()) { "List name cannot be empty" }
+        require(normalized.length <= MAX_NAME_LENGTH) { "List name must be at most $MAX_NAME_LENGTH characters" }
+        require(normalized.none { it.isISOControl() }) { "List name contains invalid characters" }
+        val existing = list()
+        require(existing.any { it.id == id }) { "Unknown filter list" }
+        save(existing.map { if (it.id == id) it.copy(name = normalized) else it })
+    }
+
+    /** Replace a downloaded list in-place; failed downloads cannot damage existing rules. */
+    @Synchronized
+    fun replaceFromSource(id: String, sourceUrl: String, input: InputStream): ImportedFilterList {
+        val existing = list()
+        val item = existing.firstOrNull { it.id == id }
+            ?: throw IllegalArgumentException("Unknown filter list")
+        require(item.sourceUrl != null && item.sourceUrl == sourceUrl) {
+            "This list does not have the specified download URL"
+        }
+        val destination = fileFor(id)
+        if (!destination.isFile) throw IOException("Original filter list is missing")
+        // Exclude the old copy from the quota so a full store can still refresh a list.
+        val otherBytes = existing.filterNot { it.id == id }.sumOf { fileFor(it.id).length() }
+        val temporary = writeValidatedTempFile(input, otherBytes)
+        try {
+            // Same-directory rename replaces the old file atomically on Android filesystems.
+            // Existing metadata (including name, ID and enabled state) is untouched.
+            if (!temporary.renameTo(destination)) throw IOException("Failed to update filter list")
+            return item
+        } finally {
+            temporary.delete()
+        }
+    }
+
+    /** Shared import/refresh validation, writing new bytes before changing the active file. */
+    private fun writeValidatedTempFile(input: InputStream, otherBytes: Long): File {
+        if (!directory.isDirectory && !directory.mkdirs()) {
+            throw IOException("Cannot create filter-list directory")
+        }
+        val temporary = File.createTempFile("import-", ".tmp", directory)
+        try {
+            var written = 0L
+            input.use { source ->
+                temporary.outputStream().buffered().use { output ->
+                    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                    while (true) {
+                        val count = source.read(buffer)
+                        if (count < 0) break
+                        written += count
+                        require(written <= MAX_LIST_BYTES) { "Filter list exceeds 8 MiB" }
+                        require(otherBytes + written <= MAX_TOTAL_BYTES) {
+                            "Total filter lists exceed 32 MiB"
+                        }
+                        output.write(buffer, 0, count)
+                    }
+                }
+            }
+            require(written > 0L) { "Filter list is empty" }
+            // Reject malformed text/binary files rather than silently loading bad UTF-8.
+            val data = temporary.readBytes()
+            try {
+                StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(data))
+            } catch (_: CharacterCodingException) {
+                throw IllegalArgumentException("Filter list must be UTF-8 text")
+            }
+            require(!data.contains(0)) { "Filter list must be plain text" }
+            return temporary
+        } catch (e: Exception) {
+            temporary.delete()
+            throw e
         }
     }
 

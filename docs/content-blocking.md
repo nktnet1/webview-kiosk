@@ -81,11 +81,17 @@ native load **allows requests** and surfaces the error in the settings screen.
   (ads, trackers and threats). HaGeZi overlaps the other lists, so choose only
   those you need. Previously imported AdGuard Base lists are left untouched.
   The app bundles only shortcut URLs, never list content, and makes **no automatic
-  network requests** for filters. Downloads are currently **one-time imports**, not
-  periodically refreshed subscriptions.
-- The main list shows an enable switch and a three-dot menu per list. Removal
-  requires confirmation. Progress and errors appear only when relevant; an
-  active-state label is not shown during normal use.
+  network requests** for filters. Downloads are manual, not periodically
+  refreshed subscriptions.
+- The main list has a switch on the left and a delete icon on the right.
+  Tap a list's name/pencil to rename it. Downloaded lists also have a refresh
+  icon to refetch their original HTTPS URL, including previously imported
+  AdGuard lists. Local-file imports do not offer refresh. Removal requires
+  confirmation, and the progress indicator reserves its height even when idle.
+- Renaming updates only list metadata; it does not recompile rules. A refresh
+  validates and stages the new file before replacing the old content, preserving
+  the list ID, custom name, enablement and source URL. If the fetch or validation
+  fails, the existing list remains intact. A successful refresh recompiles rules.
 - Suggested downloads require successful HTTPS responses (no redirect downgrade),
   are performed on a background dispatcher with timeouts, and use the **same
   private-file, UTF-8 and size validation** as local file imports. Duplicate
@@ -115,8 +121,9 @@ are intentionally out of scope.
 
 ## Verification
 
-Robolectric tests exercise persistence, import limits, user-triggered suggested
-list downloads, duplicate/rejection handling, enable/disable/reload, and resource
+Robolectric tests exercise persistence, import and refresh limits, list renaming,
+successful and failed manual HTTPS updates, duplicate/rejection handling,
+enable/disable/reload, and resource
 classification with a fake native matcher. Native Rust tests
 cover blocking, exceptions, hosts lists, and malformed requests; Android
 cross-compilation and real-device WebView tests are still required before

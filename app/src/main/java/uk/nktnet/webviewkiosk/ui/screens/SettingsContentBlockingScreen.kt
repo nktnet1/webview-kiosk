@@ -4,6 +4,7 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -21,14 +23,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -46,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -64,6 +66,7 @@ import uk.nktnet.webviewkiosk.blocking.SuggestedFilterList
 import uk.nktnet.webviewkiosk.blocking.SuggestedFilterListDownloader
 import uk.nktnet.webviewkiosk.blocking.SuggestedFilterLists
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
+import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import java.io.IOException
@@ -81,10 +84,17 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     var pendingRemoval by remember { mutableStateOf<ImportedFilterList?>(null) }
+    var pendingRename by remember { mutableStateOf<ImportedFilterList?>(null) }
+    var renameDraft by remember { mutableStateOf("") }
     var downloadingUrl by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
 
-    fun update(downloadUrl: String? = null, block: () -> Unit) {
+    fun update(
+        downloadUrl: String? = null,
+        reloadRules: Boolean = true,
+        successMessage: String? = null,
+        block: () -> Unit,
+    ) {
         if (busy) return
         busy = true
         downloadingUrl = downloadUrl
@@ -94,9 +104,10 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 lists = withContext(Dispatchers.IO) {
                     block()
                     // Ensure the engine reload is queued even if navigation cancels the UI.
-                    blocker.reload()
+                    if (reloadRules) blocker.reload()
                     store.list()
                 }
+                successMessage?.let { ToastManager.show(context, it) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -152,8 +163,11 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 ) { Text("Add list") }
             }
 
-            if (busy || blockingStatus == BlockingStatus.LOADING) {
-                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            // Reserve the indicator's height to prevent a layout jump on each toggle.
+            Box(modifier = Modifier.fillMaxWidth().height(4.dp)) {
+                if (busy || blockingStatus == BlockingStatus.LOADING) {
+                    LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                }
             }
             if (!showAddDialog) {
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
@@ -175,6 +189,15 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                         item = item,
                         busy = busy,
                         onEnabledChange = { enabled -> update { store.setEnabled(item.id, enabled) } },
+                        onRefresh = {
+                            update(reloadRules = item.enabled, successMessage = "List updated") {
+                                downloader.refresh(item, store)
+                            }
+                        },
+                        onRename = {
+                            renameDraft = if (item.sourceUrl == null) item.name else item.name.removeSuffix(".txt")
+                            pendingRename = item
+                        },
                         onRemove = { pendingRemoval = item },
                     )
                 }
@@ -198,6 +221,39 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             },
             dismissButton = {
                 TextButton(onClick = { pendingRemoval = null }) { Text("Cancel") }
+            },
+        )
+    }
+
+    pendingRename?.let { item ->
+        val normalized = renameDraft.trim()
+        val displayedName = if (item.sourceUrl == null) item.name else item.name.removeSuffix(".txt")
+        AlertDialog(
+            onDismissRequest = { pendingRename = null },
+            title = { Text("Rename list") },
+            text = {
+                OutlinedTextField(
+                    value = renameDraft,
+                    onValueChange = { renameDraft = it },
+                    label = { Text("Name") },
+                    singleLine = true,
+                    isError = normalized.isEmpty() || normalized.length > 100,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingRename = null
+                        update(reloadRules = false, successMessage = "List renamed") {
+                            store.rename(item.id, normalized)
+                        }
+                    },
+                    enabled = !busy && normalized.isNotEmpty() && normalized.length <= 100 &&
+                        normalized.none { it.isISOControl() } && normalized != displayedName,
+                ) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingRename = null }) { Text("Cancel") }
             },
         )
     }
@@ -226,9 +282,10 @@ private fun FilterListRow(
     item: ImportedFilterList,
     busy: Boolean,
     onEnabledChange: (Boolean) -> Unit,
+    onRefresh: () -> Unit,
+    onRename: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    var menuExpanded by remember { mutableStateOf(false) }
     // Preserve local filenames; hide the .txt suffix for downloaded preset lists.
     val name = if (item.sourceUrl != null) item.name.removeSuffix(".txt") else item.name
 
@@ -236,48 +293,52 @@ private fun FilterListRow(
         Row(
             modifier = Modifier.fillMaxWidth()
                 .heightIn(min = 64.dp)
-                .padding(start = 16.dp, end = 4.dp),
+                .padding(start = 12.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            Text(
-                name,
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.bodyLarge,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
             Switch(
                 checked = item.enabled,
                 enabled = !busy,
                 onCheckedChange = onEnabledChange,
                 modifier = Modifier.semantics { contentDescription = "Filter $name" },
             )
-            Box {
-                IconButton(onClick = { menuExpanded = true }, enabled = !busy) {
+            Row(
+                modifier = Modifier.weight(1f)
+                    .clickable(enabled = !busy, role = Role.Button, onClick = onRename)
+                    .semantics { contentDescription = "Rename $name" },
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    name,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Icon(
+                    painter = painterResource(R.drawable.baseline_edit_24),
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (item.sourceUrl != null) {
+                IconButton(onClick = onRefresh, enabled = !busy) {
                     Icon(
-                        painter = painterResource(R.drawable.outline_more_vert_24),
-                        contentDescription = "Options for $name",
+                        painter = painterResource(R.drawable.baseline_refresh_24),
+                        contentDescription = "Update $name",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false },
-                ) {
-                    DropdownMenuItem(
-                        text = { Text("Remove") },
-                        onClick = {
-                            menuExpanded = false
-                            onRemove()
-                        },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(R.drawable.baseline_clear_24),
-                                contentDescription = null,
-                            )
-                        },
-                    )
-                }
+            }
+            IconButton(onClick = onRemove, enabled = !busy) {
+                Icon(
+                    painter = painterResource(R.drawable.baseline_delete_24),
+                    contentDescription = "Remove $name",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }

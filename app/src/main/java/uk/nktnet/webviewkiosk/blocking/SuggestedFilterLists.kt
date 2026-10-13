@@ -35,7 +35,7 @@ internal object SuggestedFilterLists {
     )
 }
 
-/** Performs one user-initiated HTTPS download; storage validation is shared with local imports. */
+/** Performs user-initiated HTTPS downloads and refreshes, never background subscriptions. */
 internal class SuggestedFilterListDownloader(
     private val client: OkHttpClient = sharedClient,
 ) {
@@ -55,11 +55,29 @@ internal class SuggestedFilterListDownloader(
     /** Call on Dispatchers.IO. No automatic refreshing or silent list activation. */
     fun download(suggestion: SuggestedFilterList, store: FilterListStore): ImportedFilterList {
         require(suggestion in SuggestedFilterLists.all) { "Unknown suggested filter list" }
-        require(suggestion.url.startsWith("https://")) { "HTTPS is required for filter lists" }
         require(!store.containsSource(suggestion.url)) { "This filter list has already been downloaded" }
+        return fetch(suggestion.url) { stream ->
+            store.importFrom(
+                name = "${suggestion.name}.txt",
+                input = stream,
+                sourceUrl = suggestion.url,
+            )
+        }
+    }
+
+    /** Refetches any previously downloaded list, including older non-preset URLs. */
+    fun refresh(item: ImportedFilterList, store: FilterListStore): ImportedFilterList {
+        val current = store.list().firstOrNull { it.id == item.id }
+            ?: throw IllegalArgumentException("Unknown filter list")
+        val url = current.sourceUrl ?: throw IllegalArgumentException("Local lists cannot be refreshed")
+        return fetch(url) { stream -> store.replaceFromSource(current.id, url, stream) }
+    }
+
+    private inline fun <T> fetch(url: String, save: (java.io.InputStream) -> T): T {
+        require(url.startsWith("https://", ignoreCase = true)) { "HTTPS is required for filter lists" }
 
         val request = Request.Builder()
-            .url(suggestion.url)
+            .url(url)
             .header("Accept", "text/plain")
             .build()
         client.newCall(request).execute().use { response ->
@@ -78,11 +96,7 @@ internal class SuggestedFilterListDownloader(
                 } == true) {
                 throw IOException("The server returned an HTML page instead of a filter list")
             }
-            return store.importFrom(
-                name = "${suggestion.name}.txt",
-                input = body.byteStream(),
-                sourceUrl = suggestion.url,
-            )
+            return save(body.byteStream())
         }
     }
 }
