@@ -1,5 +1,3 @@
-"use client";
-
 import { ClipboardCopy, Download, FileUp, Import, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";

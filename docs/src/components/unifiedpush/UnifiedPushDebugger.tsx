@@ -1,5 +1,3 @@
-"use client";
-
 import { useForm } from "@tanstack/react-form";
 import { Callout } from "fumadocs-ui/components/callout";
 import { Eye, EyeOff, KeyRound, Send, Trash2 } from "lucide-react";

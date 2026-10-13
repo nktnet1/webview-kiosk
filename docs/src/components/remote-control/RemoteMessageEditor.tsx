@@ -1,5 +1,3 @@
-"use client";
-
 import { useEffect, useState } from "react";
 import { InfoTooltip } from "#/components/remote-control/InfoTooltip";
 import { Button } from "#/components/ui/button";
