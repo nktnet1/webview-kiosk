@@ -1,0 +1,8 @@
+## Changes
+
+- Improved MQTT, push notifications and remote command reliability.
+- Fixed back navigation and reduced WebView freezes.
+- Improved kiosk stability on older Android devices.
+- Improved PDF viewing, including protected documents.
+- Fixed file uploads and downloads.
+- Improved settings authentication, certificate handling and device-owner startup.
