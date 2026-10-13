@@ -2,14 +2,18 @@ import { readFile } from "node:fs/promises";
 import { expect, type Page, test } from "@playwright/test";
 
 async function uploadCredentials(page: Page, content: string) {
+  await page.getByRole("button", { name: "Import JSON" }).click();
+  const dialog = page.getByRole("dialog", { name: "Import credentials" });
   const choosing = page.waitForEvent("filechooser");
-  await page.getByRole("button", { name: "Import credentials JSON" }).click();
+  await dialog.getByRole("button", { name: "Choose file" }).click();
   const chooser = await choosing;
   await chooser.setFiles({
     name: "unifiedpush-credentials.json",
     mimeType: "application/json",
     buffer: Buffer.from(content),
   });
+  await expect(dialog.getByLabel("Credentials JSON")).toHaveValue(content);
+  await dialog.getByRole("button", { name: "Import credentials" }).click();
 }
 
 test("UnifiedPush documentation links to the debugger from a top-level tip", async ({
@@ -116,7 +120,7 @@ test("UnifiedPush debugger saves local credentials and clears them", async ({
     .toBeNull();
 });
 
-test("UnifiedPush credential JSON export and import are safe and reversible", async ({
+test("UnifiedPush credential JSON dialogs support clipboard, files, paste and replacement", async ({
   page,
 }) => {
   await page.goto("/debugger/unifiedpush");
@@ -127,11 +131,12 @@ test("UnifiedPush credential JSON export and import are safe and reversible", as
   await auth.fill("private-auth");
   await vapidKey.fill("private-vapid-key");
 
-  const downloading = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Export credentials JSON" }).click();
-  const download = await downloading;
-  expect(download.suggestedFilename()).toBe("unifiedpush-credentials.json");
-  const exported = await readFile(await download.path(), "utf8");
+  await page.getByRole("button", { name: "Export JSON" }).click();
+  const exportDialog = page.getByRole("dialog", { name: "Export credentials" });
+  await expect(exportDialog).toBeVisible();
+  const exportText = exportDialog.getByLabel("Credentials JSON");
+  await expect(exportText).toHaveAttribute("readonly", "");
+  const exported = await exportText.inputValue();
   expect(JSON.parse(exported)).toEqual({
     endpoint: "https://push.example.org/initial",
     p256dh: "",
@@ -140,24 +145,52 @@ test("UnifiedPush credential JSON export and import are safe and reversible", as
     vapidPrivateKey: "private-vapid-key",
     vapidSubject: "",
   });
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await exportDialog.getByRole("button", { name: "Copy JSON" }).click();
+  await expect
+    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+    .toBe(exported);
 
-  await uploadCredentials(page, "not JSON");
-  await expect(
-    page.getByText(/credentials file must contain valid JSON/),
-  ).toBeVisible();
+  const downloading = page.waitForEvent("download");
+  await exportDialog.getByRole("button", { name: "Download file" }).click();
+  const download = await downloading;
+  expect(download.suggestedFilename()).toBe("unifiedpush-credentials.json");
+  expect(await readFile(await download.path(), "utf8")).toBe(exported);
+  await exportDialog.getByRole("button", { name: "Close dialog" }).click();
+  await expect(page.getByRole("button", { name: "Export JSON" })).toBeFocused();
+
+  await page.getByRole("button", { name: "Import JSON" }).click();
+  let importDialog = page.getByRole("dialog", { name: "Import credentials" });
+  await importDialog.getByLabel("Credentials JSON").fill("not JSON");
+  await importDialog
+    .getByRole("button", { name: "Import credentials" })
+    .click();
+  await expect(importDialog.getByRole("alert")).toContainText("valid JSON");
   await expect(endpoint).toHaveValue("https://push.example.org/initial");
 
-  await uploadCredentials(page, '{"endpoint":"https://push.example.org/new"}');
-  const dialog = page.getByRole("alertdialog", {
+  // Pasted JSON is reviewed before any existing credentials are replaced.
+  await importDialog
+    .getByLabel("Credentials JSON")
+    .fill('{"endpoint":"https://push.example.org/new"}');
+  await importDialog
+    .getByRole("button", { name: "Import credentials" })
+    .click();
+  const confirmation = page.getByRole("dialog", {
     name: "Replace existing credentials?",
   });
-  await expect(dialog).toContainText("Missing fields will be cleared");
-  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await expect(confirmation).toContainText(
+    "Missing JSON fields will be cleared",
+  );
+  await confirmation.getByRole("button", { name: "Cancel" }).click();
   await expect(endpoint).toHaveValue("https://push.example.org/initial");
   await expect(auth).toHaveValue("private-auth");
-
-  await uploadCredentials(page, '{"endpoint":"https://push.example.org/new"}');
-  await dialog.getByRole("button", { name: "Replace credentials" }).click();
+  importDialog = page.getByRole("dialog", { name: "Import credentials" });
+  await importDialog
+    .getByRole("button", { name: "Import credentials" })
+    .click();
+  await confirmation
+    .getByRole("button", { name: "Replace credentials" })
+    .click();
   await expect(endpoint).toHaveValue("https://push.example.org/new");
   await expect(auth).toBeEmpty();
   await expect(vapidKey).toBeEmpty();
@@ -172,13 +205,32 @@ test("UnifiedPush credential JSON export and import are safe and reversible", as
     )
     .toBe("https://push.example.org/new");
 
-  // Exported files can be imported unchanged and restore all secrets.
+  // A downloaded JSON backup can also be loaded from a file.
   await uploadCredentials(page, exported);
-  await dialog.getByRole("button", { name: "Replace credentials" }).click();
+  await confirmation
+    .getByRole("button", { name: "Replace credentials" })
+    .click();
   await expect(auth).toHaveValue("private-auth");
   await expect(vapidKey).toHaveValue("private-vapid-key");
   await page.reload();
   await expect(auth).toHaveValue("private-auth");
+});
+
+test("Credential help uses focusable info tooltips", async ({ page }) => {
+  await page.goto("/debugger/unifiedpush");
+  await expect(
+    page.getByText(
+      "The capability URL supplied by the UnifiedPush distributor.",
+    ),
+  ).toHaveCount(0);
+  const info = page
+    .locator('label[for="push-endpoint"]')
+    .locator("..")
+    .getByRole("button", { name: "More information" });
+  await info.focus();
+  await expect(page.getByRole("tooltip")).toContainText(
+    "The capability URL supplied by the UnifiedPush distributor.",
+  );
 });
 
 test("UnifiedPush debugger uses form controls and preserves raw JSON edits", async ({

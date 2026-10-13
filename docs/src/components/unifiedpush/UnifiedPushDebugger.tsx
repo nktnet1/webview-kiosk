@@ -2,9 +2,11 @@
 
 import { useForm } from "@tanstack/react-form";
 import { Callout } from "fumadocs-ui/components/callout";
+import { Eye, EyeOff, KeyRound, Send, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { CredentialJsonTransfer } from "#/components/remote-control/CredentialJsonTransfer";
+import { InfoTooltip } from "#/components/remote-control/InfoTooltip";
 import {
   createRemotePayload,
   type MessageKind,
@@ -24,13 +26,7 @@ import {
   AlertDialogTrigger,
 } from "#/components/ui/alert-dialog";
 import { Button } from "#/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "#/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import {
@@ -329,25 +325,15 @@ export default function UnifiedPushDebugger() {
 
   return (
     <div className="bg-fd-muted rounded-2xl p-5 md:p-10 w-full max-w-6xl space-y-6">
-      <div className="text-center space-y-3">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
+      <div className="space-y-2 text-center">
+        <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
           UnifiedPush Debugger
         </h1>
-        <p className="mx-auto max-w-3xl text-sm md:text-base text-muted-foreground">
-          Send test commands and settings to Webview Kiosk. Copy the
-          registration credentials from{" "}
-          <a className="underline" href="/docs/settings/unifiedpush">
-            Settings → UnifiedPush
-          </a>
-          . Encryption and VAPID signing are performed on this device.
-        </p>
       </div>
 
       <Callout title="Privacy warning" type="warning">
-        Credentials are automatically saved, unencrypted, in this browser's
-        local storage. They are never uploaded to the docs site. Web Push
-        requests go directly to your selected endpoint. Avoid using this
-        debugger on a shared device and clear credentials when finished.
+        Credentials, including private keys, are stored unencrypted in this
+        browser. Avoid shared devices.
       </Callout>
       {storageWarning && (
         <p role="alert" className="text-sm text-destructive">
@@ -372,13 +358,16 @@ export default function UnifiedPushDebugger() {
                 <Card>
                   <CardHeader>
                     <CardTitle>Connection &amp; credentials</CardTitle>
-                    <CardDescription>
-                      Paste the values from the device registration screen.
-                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-5">
                     <div className="space-y-2">
-                      <Label htmlFor="push-mode">Delivery mode</Label>
+                      <div className="flex items-center gap-1">
+                        <Label htmlFor="push-mode">Delivery mode</Label>
+                        <InfoTooltip>
+                          Encrypted Web Push uses the endpoint keys and VAPID.
+                          Plaintext requires an ntfy-compatible distributor.
+                        </InfoTooltip>
+                      </div>
                       <form.Field name="mode">
                         {(field) => (
                           <Select
@@ -405,10 +394,8 @@ export default function UnifiedPushDebugger() {
                     </div>
                     {mode === "plaintext" && (
                       <Callout title="Unencrypted delivery" type="warning">
-                        This mode is not encrypted. Enable{" "}
-                        <strong>Process Unencrypted Messages</strong> in the
-                        app. The browser cannot read the server response in
-                        no-CORS mode.
+                        Enable <strong>Process Unencrypted Messages</strong> in
+                        the app. Delivery cannot be verified in no-CORS mode.
                       </Callout>
                     )}
                     {fields
@@ -422,9 +409,12 @@ export default function UnifiedPushDebugger() {
                         >
                           {(field) => (
                             <div className="space-y-2">
-                              <Label htmlFor={`push-${entry.key}`}>
-                                {entry.label}
-                              </Label>
+                              <div className="flex items-center gap-1">
+                                <Label htmlFor={`push-${entry.key}`}>
+                                  {entry.label}
+                                </Label>
+                                <InfoTooltip>{entry.hint}</InfoTooltip>
+                              </div>
                               <Input
                                 id={`push-${entry.key}`}
                                 name={field.name}
@@ -448,100 +438,114 @@ export default function UnifiedPushDebugger() {
                                   invalidateRequest();
                                 }}
                               />
-                              <p className="text-xs text-muted-foreground">
-                                {entry.hint}
-                              </p>
                             </div>
                           )}
                         </form.Field>
                       ))}
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="w-full sm:w-48 shrink-0"
-                        onClick={() => setShowSecrets((value) => !value)}
+                    <div className="space-y-4 border-t pt-4">
+                      <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                        Credential actions
+                        <InfoTooltip>
+                          Generating new VAPID keys requires registering the
+                          device again with the new public key.
+                        </InfoTooltip>
+                      </div>
+                      <div
+                        className={`grid gap-2 ${mode === "encrypted" ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
                       >
-                        {showSecrets
-                          ? "Hide credentials"
-                          : "Reveal credentials"}
-                      </Button>
-                      {mode === "encrypted" && (
                         <Button
                           type="button"
                           variant="outline"
-                          className="w-full sm:w-48 shrink-0"
-                          onClick={createKeys}
+                          className="w-full"
+                          aria-label={
+                            showSecrets
+                              ? "Hide credentials"
+                              : "Reveal credentials"
+                          }
+                          onClick={() => setShowSecrets((value) => !value)}
                         >
-                          {generatingKeys
-                            ? "Generating…"
-                            : "Generate VAPID keys"}
+                          {showSecrets ? (
+                            <EyeOff aria-hidden="true" />
+                          ) : (
+                            <Eye aria-hidden="true" />
+                          )}
+                          {showSecrets ? "Hide secrets" : "Show secrets"}
                         </Button>
-                      )}
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
+                        {mode === "encrypted" && (
                           <Button
                             type="button"
-                            variant="destructive"
-                            className="w-full sm:w-48 shrink-0"
+                            variant="outline"
+                            className="w-full"
+                            aria-label="Generate VAPID keys"
+                            onClick={createKeys}
                           >
-                            Clear credentials
+                            <KeyRound aria-hidden="true" />
+                            {generatingKeys ? "Generating…" : "Generate keys"}
                           </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              Clear saved credentials?
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This permanently clears the push endpoint, auth
-                              secret, and VAPID keys stored in this browser.
-                              This cannot be undone unless you have an exported
-                              backup. You may need to register the device again.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel asChild>
-                              <Button type="button" variant="outline">
-                                Cancel
-                              </Button>
-                            </AlertDialogCancel>
-                            <AlertDialogAction asChild>
-                              <Button
-                                type="button"
-                                variant="destructive"
-                                onClick={clearCredentials}
-                              >
-                                Clear credentials
-                              </Button>
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                        )}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              className="w-full"
+                              aria-label="Clear credentials"
+                            >
+                              <Trash2 aria-hidden="true" /> Clear
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Clear saved credentials?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This permanently clears the push endpoint, auth
+                                secret, and VAPID keys stored in this browser.
+                                This cannot be undone unless you have an
+                                exported backup. You may need to register the
+                                device again.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel asChild>
+                                <Button type="button" variant="outline">
+                                  Cancel
+                                </Button>
+                              </AlertDialogCancel>
+                              <AlertDialogAction asChild>
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  onClick={clearCredentials}
+                                >
+                                  Clear credentials
+                                </Button>
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                      <CredentialJsonTransfer
+                        filename="unifiedpush-credentials.json"
+                        template={EMPTY_CREDENTIALS}
+                        getCredentials={() => form.state.values.credentials}
+                        onImport={applyImportedCredentials}
+                        warning="Exported JSON contains your private VAPID key, auth secret and endpoint. Importing replaces all six credential fields, including missing values."
+                      />
                     </div>
-                    <CredentialJsonTransfer
-                      filename="unifiedpush-credentials.json"
-                      template={EMPTY_CREDENTIALS}
-                      getCredentials={() => form.state.values.credentials}
-                      onImport={applyImportedCredentials}
-                      warning="JSON exports include your private VAPID key, auth secret, and endpoint. Store them securely. Importing replaces all six credential fields; missing fields are cleared."
-                    />
-                    {mode === "encrypted" && (
-                      <p className="text-xs text-muted-foreground">
-                        New VAPID keys require updating the public key in the
-                        app and re-registering before sending a push
-                        notification.
-                      </p>
-                    )}
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Message</CardTitle>
-                    <CardDescription>
-                      Configure a command or settings update, or edit raw JSON.
-                    </CardDescription>
+                    <CardTitle className="flex items-center gap-1">
+                      Message
+                      <InfoTooltip>
+                        Maximum {MAX_PUSH_PAYLOAD_BYTES} UTF-8 bytes after JSON
+                        minification.
+                      </InfoTooltip>
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-5">
                     <RemoteMessageEditor
@@ -554,17 +558,6 @@ export default function UnifiedPushDebugger() {
                         invalidateRequest();
                       }}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      Maximum {MAX_PUSH_PAYLOAD_BYTES} UTF-8 bytes after JSON
-                      minification. See{" "}
-                      <a
-                        className="underline"
-                        href="/docs/settings/unifiedpush/messages"
-                      >
-                        message formats
-                      </a>
-                      .
-                    </p>
                     {mode === "encrypted" && (
                       <form.Field
                         name="ttl"
@@ -582,9 +575,16 @@ export default function UnifiedPushDebugger() {
                       >
                         {(field) => (
                           <div className="space-y-2">
-                            <Label htmlFor="push-ttl">
-                              Time to live (seconds)
-                            </Label>
+                            <div className="flex items-center gap-1">
+                              <Label htmlFor="push-ttl">
+                                Time to live (seconds)
+                              </Label>
+                              <InfoTooltip>
+                                How long the push server may retain an
+                                undelivered notification (0–{MAX_PUSH_TTL}{" "}
+                                seconds).
+                              </InfoTooltip>
+                            </div>
                             <Input
                               id="push-ttl"
                               name={field.name}
@@ -612,12 +612,13 @@ export default function UnifiedPushDebugger() {
                         )}
                       </form.Field>
                     )}
-                    <div className="flex flex-wrap gap-2">
+                    <div className="flex justify-end border-t pt-4">
                       <Button
                         type="submit"
-                        className="min-h-10"
+                        className="w-full sm:w-48"
                         disabled={!loaded || busy || generatingKeys}
                       >
+                        <Send aria-hidden="true" />
                         {busy ? "Sending…" : "Send test push"}
                       </Button>
                     </div>

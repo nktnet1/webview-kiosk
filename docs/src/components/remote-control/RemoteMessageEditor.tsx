@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { InfoTooltip } from "#/components/remote-control/InfoTooltip";
 import { Button } from "#/components/ui/button";
 import { Checkbox } from "#/components/ui/checkbox";
 import { Input } from "#/components/ui/input";
@@ -123,7 +124,10 @@ function CommandControls({
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="remote-command">Command</Label>
+        <div className="flex items-center gap-1">
+          <Label htmlFor="remote-command">Command</Label>
+          <InfoTooltip>{definition.description}</InfoTooltip>
+        </div>
         <Select
           value={commandName}
           onValueChange={(value) => onChange(changeCommand(message, value))}
@@ -139,9 +143,6 @@ function CommandControls({
             ))}
           </SelectContent>
         </Select>
-        <p className="text-xs text-muted-foreground">
-          {definition.description}
-        </p>
       </div>
       {(definition.fields ?? []).map((field) => {
         const id = `remote-data-${field.key}`;
@@ -363,11 +364,13 @@ function SettingsControls({
               className="rounded-md border bg-background p-3 space-y-3"
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-1">
                   <p className="text-sm font-medium">{setting?.label ?? key}</p>
-                  <p className="text-xs text-muted-foreground break-all">
-                    {key}
-                  </p>
+                  <InfoTooltip>
+                    {setting
+                      ? `Setting key: ${key}`
+                      : `Unknown setting: ${key}. Edit its value in the JSON tab.`}
+                  </InfoTooltip>
                 </div>
                 <Button
                   type="button"
@@ -389,11 +392,7 @@ function SettingsControls({
                     onChange(changeSetting(message, key, next))
                   }
                 />
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Unrecognised key. Edit its value in the JSON tab.
-                </p>
-              )}
+              ) : null}
             </div>
           );
         })}
@@ -469,7 +468,7 @@ function AdvancedControls({
       </summary>
       <div className="space-y-4 pt-4">
         <div className="space-y-2">
-          <Label htmlFor="remote-message-id">Message ID (optional)</Label>
+          <Label htmlFor="remote-message-id">Message ID</Label>
           <Input
             id="remote-message-id"
             value={
@@ -660,10 +659,6 @@ export function RemoteMessageEditor({
             value={value}
             onChange={(event) => updateRaw(event.target.value)}
           />
-          <p className="text-xs text-muted-foreground">
-            Edit the exact message body. Invalid JSON is kept as you type and
-            cannot be sent.
-          </p>
         </TabsContent>
       </Tabs>
       {formError && (
@@ -671,18 +666,6 @@ export function RemoteMessageEditor({
           {formError}
         </p>
       )}
-      <p className="text-xs text-muted-foreground">
-        The same commands and settings are supported by MQTT and UnifiedPush.
-        See the{" "}
-        <a className="underline" href="/docs/settings/mqtt/topics/command">
-          command reference
-        </a>{" "}
-        and{" "}
-        <a className="underline" href="/docs/settings/mqtt/topics/settings">
-          settings reference
-        </a>
-        .
-      </p>
     </div>
   );
 }
