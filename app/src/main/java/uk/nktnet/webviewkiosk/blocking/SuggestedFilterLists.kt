@@ -28,9 +28,9 @@ internal object SuggestedFilterLists {
             url = "https://easylist.to/easylist/easyprivacy.txt",
         ),
         SuggestedFilterList(
-            name = "AdGuard Base",
-            description = "Ads · overlaps EasyList",
-            url = "https://filters.adtidy.org/extension/ublock/filters/2.txt",
+            name = "HaGeZi Multi NORMAL",
+            description = "Ads, trackers & threats",
+            url = "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/multi.txt",
         ),
     )
 }

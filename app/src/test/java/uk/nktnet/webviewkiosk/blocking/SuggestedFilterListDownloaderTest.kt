@@ -34,10 +34,11 @@ class SuggestedFilterListDownloaderTest {
         mime: String = "text/plain",
         status: Int = 200,
         requests: AtomicInteger = AtomicInteger(),
+        suggestion: SuggestedFilterList = preset,
     ): SuggestedFilterListDownloader = SuggestedFilterListDownloader(
         OkHttpClient.Builder().addInterceptor { chain ->
             requests.incrementAndGet()
-            assertEquals(preset.url, chain.request().url.toString())
+            assertEquals(suggestion.url, chain.request().url.toString())
             Response.Builder()
                 .request(chain.request())
                 .protocol(Protocol.HTTP_1_1)
@@ -50,9 +51,35 @@ class SuggestedFilterListDownloaderTest {
 
     @Test
     fun suggestionsAreLinksNotBundledLists() {
-        assertEquals(listOf("EasyList", "EasyPrivacy", "AdGuard Base"), SuggestedFilterLists.all.map { it.name })
+        assertEquals(listOf("EasyList", "EasyPrivacy", "HaGeZi Multi NORMAL"), SuggestedFilterLists.all.map { it.name })
+        assertEquals(
+            "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/multi.txt",
+            SuggestedFilterLists.all.last().url,
+        )
+        assertFalse(SuggestedFilterLists.all.any { it.name == "AdGuard Base" })
         assertTrue(SuggestedFilterLists.all.all { it.url.startsWith("https://") })
         assertTrue(store.list().isEmpty())
+    }
+
+    @Test
+    fun hageziCanBeDownloadedOnDemand() {
+        val hagezi = SuggestedFilterLists.all.last()
+        val imported = downloader(suggestion = hagezi).download(hagezi, store)
+        assertEquals("HaGeZi Multi NORMAL.txt", imported.name)
+        assertEquals(hagezi.url, imported.sourceUrl)
+        assertTrue(imported.enabled)
+        assertTrue(store.containsSource(hagezi.url))
+    }
+
+    @Test
+    fun previouslyImportedAdGuardListIsNotRemovedByChangingSuggestions() {
+        val old = store.importFrom(
+            "AdGuard Base.txt",
+            "||ads.example^\n".byteInputStream(),
+            sourceUrl = "https://filters.adtidy.org/extension/ublock/filters/2.txt",
+        )
+        assertFalse(SuggestedFilterLists.all.any { it.url == old.sourceUrl })
+        assertEquals(old, FilterListStore(RuntimeEnvironment.getApplication()).list().single())
     }
 
     @Test

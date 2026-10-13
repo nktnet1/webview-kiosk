@@ -5,13 +5,12 @@ import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
@@ -22,15 +21,21 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -39,6 +44,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -74,6 +80,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     var lists by remember { mutableStateOf(store.list()) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
+    var pendingRemoval by remember { mutableStateOf<ImportedFilterList?>(null) }
     var downloadingUrl by remember { mutableStateOf<String?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
 
@@ -145,54 +152,54 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 ) { Text("Add list") }
             }
 
-            if (busy && !showAddDialog) {
-                Text("Updating…", style = MaterialTheme.typography.bodySmall)
+            if (busy || blockingStatus == BlockingStatus.LOADING) {
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
             }
             if (!showAddDialog) {
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
-            when (blockingStatus) {
-                BlockingStatus.ACTIVE -> Text("Blocking active", style = MaterialTheme.typography.bodySmall)
-                BlockingStatus.LOADING -> Text("Compiling lists…", style = MaterialTheme.typography.bodySmall)
-                BlockingStatus.ERROR -> Text(
-                    "Blocking unavailable: ${nativeError.orEmpty()}",
+            if (blockingStatus == BlockingStatus.ERROR) {
+                Text(
+                    nativeError?.takeIf { it.isNotBlank() }?.let { "Blocking unavailable: $it" }
+                        ?: "Blocking unavailable",
                     color = MaterialTheme.colorScheme.error,
                 )
-                BlockingStatus.DISABLED -> Unit
             }
 
             if (lists.isEmpty()) {
-                Text("No lists added", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("No lists yet", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             lists.forEach { item ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        item.name,
-                        modifier = Modifier.weight(1f),
-                        style = MaterialTheme.typography.bodyLarge,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
+                key(item.id) {
+                    FilterListRow(
+                        item = item,
+                        busy = busy,
+                        onEnabledChange = { enabled -> update { store.setEnabled(item.id, enabled) } },
+                        onRemove = { pendingRemoval = item },
                     )
-                    Switch(
-                        checked = item.enabled,
-                        enabled = !busy,
-                        onCheckedChange = { enabled -> update { store.setEnabled(item.id, enabled) } },
-                        modifier = Modifier.semantics { contentDescription = "Enable ${item.name}" },
-                    )
-                    TextButton(
-                        onClick = { update { store.remove(item.id) } },
-                        enabled = !busy,
-                        modifier = Modifier.semantics { contentDescription = "Remove ${item.name}" },
-                    ) { Text("Remove") }
                 }
-                HorizontalDivider()
             }
-            Spacer(Modifier.height(12.dp))
         }
+    }
+
+    pendingRemoval?.let { item ->
+        AlertDialog(
+            onDismissRequest = { pendingRemoval = null },
+            title = { Text("Remove filter list?") },
+            text = { Text(item.name) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        pendingRemoval = null
+                        update { store.remove(item.id) }
+                    },
+                    enabled = !busy,
+                ) { Text("Remove", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingRemoval = null }) { Text("Cancel") }
+            },
+        )
     }
 
     if (showAddDialog) {
@@ -211,6 +218,68 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 update(downloadUrl = suggestion.url) { downloader.download(suggestion, store) }
             },
         )
+    }
+}
+
+@Composable
+private fun FilterListRow(
+    item: ImportedFilterList,
+    busy: Boolean,
+    onEnabledChange: (Boolean) -> Unit,
+    onRemove: () -> Unit,
+) {
+    var menuExpanded by remember { mutableStateOf(false) }
+    // Preserve local filenames; hide the .txt suffix for downloaded preset lists.
+    val name = if (item.sourceUrl != null) item.name.removeSuffix(".txt") else item.name
+
+    OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier.fillMaxWidth()
+                .heightIn(min = 64.dp)
+                .padding(start = 16.dp, end = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                name,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyLarge,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Switch(
+                checked = item.enabled,
+                enabled = !busy,
+                onCheckedChange = onEnabledChange,
+                modifier = Modifier.semantics { contentDescription = "Filter $name" },
+            )
+            Box {
+                IconButton(onClick = { menuExpanded = true }, enabled = !busy) {
+                    Icon(
+                        painter = painterResource(R.drawable.outline_more_vert_24),
+                        contentDescription = "Options for $name",
+                    )
+                }
+                DropdownMenu(
+                    expanded = menuExpanded,
+                    onDismissRequest = { menuExpanded = false },
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Remove") },
+                        onClick = {
+                            menuExpanded = false
+                            onRemove()
+                        },
+                        leadingIcon = {
+                            Icon(
+                                painter = painterResource(R.drawable.baseline_clear_24),
+                                contentDescription = null,
+                            )
+                        },
+                    )
+                }
+            }
+        }
     }
 }
 

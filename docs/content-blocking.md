@@ -77,11 +77,15 @@ native load **allows requests** and surfaces the error in the settings screen.
 - In **Content Blocking**, tap **Add list**. Choose a `.txt` file via Android's
   document picker or tap **Download** for one of three suggested lists: [EasyList](https://easylist.to/easylist/easylist.txt)
   (ads), [EasyPrivacy](https://easylist.to/easylist/easyprivacy.txt) (trackers), or
-  [AdGuard Base](https://filters.adtidy.org/extension/ublock/filters/2.txt) (ads).
-  AdGuard Base includes EasyList rules; avoid enabling both ads lists unnecessarily.
+  [HaGeZi Multi NORMAL](https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/multi.txt)
+  (ads, trackers and threats). HaGeZi overlaps the other lists, so choose only
+  those you need. Previously imported AdGuard Base lists are left untouched.
   The app bundles only shortcut URLs, never list content, and makes **no automatic
   network requests** for filters. Downloads are currently **one-time imports**, not
   periodically refreshed subscriptions.
+- The main list shows an enable switch and a three-dot menu per list. Removal
+  requires confirmation. Progress and errors appear only when relevant; an
+  active-state label is not shown during normal use.
 - Suggested downloads require successful HTTPS responses (no redirect downgrade),
   are performed on a background dispatcher with timeouts, and use the **same
   private-file, UTF-8 and size validation** as local file imports. Duplicate
