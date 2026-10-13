@@ -1,0 +1,21 @@
+[package]
+name = "wk_adblock"
+version = "0.1.0"
+edition = "2021"
+publish = false
+license = "AGPL-3.0-or-later"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Disable the single-thread optimization: interception callbacks run concurrently.
+# The embedded domain resolver is required for correct first-/third-party matching.
+adblock = { version = "=0.13.3", default-features = false, features = ["embedded-domain-resolver"] }
+jni = { version = "=0.21.1", default-features = false }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"

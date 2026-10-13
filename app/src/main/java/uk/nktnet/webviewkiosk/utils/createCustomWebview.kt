@@ -30,6 +30,7 @@ import android.widget.FrameLayout
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +46,8 @@ import androidx.webkit.WebViewClientCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import uk.nktnet.webviewkiosk.R
+import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
+import uk.nktnet.webviewkiosk.blocking.WebViewBlocker
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -87,6 +90,7 @@ import uk.nktnet.webviewkiosk.utils.webview.scripts.generateErudaConsoleScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOverrideScript
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 import java.io.File
+import java.util.concurrent.atomic.AtomicReference
 
 private const val LOCAL_NETWORK_PERMISSION_ERROR = "ERR_LOCAL_NETWORK_PERMISSION_MISSING"
 
@@ -167,6 +171,10 @@ fun createCustomWebview(
     val systemSettings = config.systemSettings
     val userSettings = config.userSettings
     val scope = rememberCoroutineScope()
+    val contentBlocker = remember(context.applicationContext) {
+        ContentBlockingService.get(context.applicationContext)
+    }
+    LaunchedEffect(contentBlocker) { contentBlocker.start() }
 
     var pendingFileChooserCallback by remember {
         mutableStateOf<ValueCallback<Array<Uri>>?>(null)
@@ -278,6 +286,8 @@ fun createCustomWebview(
         }
         var hideFullscreen: () -> Unit = {}
         val navigation = WebViewNavigationSession(config.isActive)
+        // shouldInterceptRequest runs off the UI thread. Never read WebView.url there.
+        val currentPageUrl = AtomicReference("")
 
         fun beginLoad(url: String) {
             val currentEntry = systemSettings.historyStack.getOrNull(systemSettings.historyIndex)
@@ -488,7 +498,10 @@ fun createCustomWebview(
                         // load was requested. It must not clear the new viewer's state.
                         return
                     }
-                    url?.let { navigation.pageStarted(it) }
+                    url?.let {
+                        navigation.pageStarted(it)
+                        currentPageUrl.set(it)
+                    }
                     awaitingPdfPageStart = false
                     config.setLastErrorUrl("")
                     config.onHttpAuthRequest(null)
@@ -657,6 +670,12 @@ fun createCustomWebview(
                                 return response
                             }
                         }
+
+                        // Preserve the app's PDF and local-file handlers; only inspect
+                        // normal web subresources after those have declined the request.
+                        WebViewBlocker.intercept(
+                            request, currentPageUrl.get(), contentBlocker,
+                        )?.let { return it }
                     }
                     return super.shouldInterceptRequest(view, request)
                 }

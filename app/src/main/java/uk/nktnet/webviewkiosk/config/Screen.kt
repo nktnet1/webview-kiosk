@@ -13,6 +13,7 @@ sealed class Screen(val route: String) {
     object SettingsWebBrowsingSitePermissions : Screen("settings/web-browsing/site-permissions")
 
     object SettingsWebEngine : Screen("settings/web-engine")
+    object SettingsContentBlocking : Screen("settings/content-blocking")
     object SettingsWebLifecycle : Screen("settings/web-lifecycle")
 
     object SettingsAppearance : Screen("settings/appearance")

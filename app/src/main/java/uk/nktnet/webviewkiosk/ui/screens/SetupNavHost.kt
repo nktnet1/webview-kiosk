@@ -44,6 +44,7 @@ internal fun SetupNavHost(
                 SettingsWebBrowsingSitePermissionsScreen(navController)
             },
             Screen.SettingsWebEngine.route to { SettingsWebEngineScreen(navController) },
+            Screen.SettingsContentBlocking.route to { SettingsContentBlockingScreen(navController) },
             Screen.SettingsWebLifecycle.route to { SettingsWebLifecycleScreen(navController) },
             Screen.SettingsAppearance.route to { SettingsAppearanceScreen(navController) },
             Screen.SettingsDevice.route to { SettingsDeviceScreen(navController) },

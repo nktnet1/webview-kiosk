@@ -1,3 +1,5 @@
+import java.io.File
+import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
@@ -137,4 +139,73 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     testImplementation(libs.junit)
     testImplementation(libs.robolectric)
+}
+
+// Build native filter matching from source, rather than checking large ABI binaries into git.
+// Host unit tests do not package JNI libraries and need no NDK/Rust installation.
+val nativeAdblockSource = layout.projectDirectory.dir("native-adblock").asFile
+val nativeAdblockTarget = layout.buildDirectory.dir("native-adblock/target").get().asFile
+val nativeAdblockJniLibs = layout.buildDirectory.dir("generated/native-adblock/jniLibs").get().asFile
+val localSdkDirectory = rootProject.file("local.properties").takeIf { it.isFile }?.let { propertiesFile ->
+    Properties().apply { propertiesFile.inputStream().use(::load) }
+        .getProperty("sdk.dir")
+}
+val nativeAdblockSdkHome = System.getenv("ANDROID_HOME") ?: System.getenv("ANDROID_SDK_ROOT")
+    ?: localSdkDirectory
+val nativeAdblockNdkHome = System.getenv("ANDROID_NDK_HOME") ?: System.getenv("ANDROID_NDK_ROOT")
+
+val buildNativeAdblock = tasks.register("buildNativeAdblock") {
+    group = "build"
+    description = "Compile the Rust content-blocking engine for all Android ABIs"
+    inputs.file(nativeAdblockSource.resolve("Cargo.toml"))
+    inputs.dir(nativeAdblockSource.resolve("src"))
+    outputs.dir(nativeAdblockJniLibs)
+    doLast {
+        val sdkNdk = nativeAdblockSdkHome?.let { File(it, "ndk") }
+        val ndkDirectory = nativeAdblockNdkHome?.let { File(it) }
+            ?: sdkNdk?.listFiles()?.filter { it.isDirectory }?.maxByOrNull { it.name }
+            ?: throw GradleException("Android NDK required for the Rust content-blocking engine")
+        val llvmPrebuilt = File(ndkDirectory, "toolchains/llvm/prebuilt")
+            .listFiles()?.firstOrNull { it.isDirectory }
+            ?: throw GradleException("No LLVM toolchain found in $ndkDirectory")
+        val bin = File(llvmPrebuilt, "bin")
+        val rustTargets = listOf(
+            Triple("arm64-v8a", "aarch64-linux-android", "aarch64-linux-android"),
+            Triple("armeabi-v7a", "armv7-linux-androideabi", "armv7a-linux-androideabi"),
+            Triple("x86", "i686-linux-android", "i686-linux-android"),
+            Triple("x86_64", "x86_64-linux-android", "x86_64-linux-android"),
+        )
+        for ((abi, target, clangPrefix) in rustTargets) {
+            val linker = File(bin, "${clangPrefix}21-clang")
+            if (!linker.isFile) throw GradleException("Missing Android linker $linker")
+            val command = listOf(
+                "cargo", "build", "--release", "--manifest-path",
+                File(nativeAdblockSource, "Cargo.toml").absolutePath,
+                "--target", target,
+            )
+            val builder = ProcessBuilder(command)
+                .directory(nativeAdblockSource)
+                .inheritIO()
+            val environment = builder.environment()
+            val envTarget = target.uppercase().replace('-', '_')
+            environment["CARGO_TARGET_${envTarget}_LINKER"] = linker.absolutePath
+            environment["CC_${target.replace('-', '_')}"] = linker.absolutePath
+            environment["CARGO_TARGET_DIR"] = nativeAdblockTarget.absolutePath
+            val result = builder.start().waitFor()
+            if (result != 0) {
+                throw GradleException("Rust build failed for $target ($result). Install the Rust Android target and use Cargo offline caches as needed.")
+            }
+            val artifact = File(nativeAdblockTarget, "$target/release/libwk_adblock.so")
+            val abiDir = File(nativeAdblockJniLibs, abi)
+            if (!abiDir.isDirectory && !abiDir.mkdirs()) {
+                throw GradleException("Cannot create $abiDir")
+            }
+            artifact.copyTo(File(abiDir, "libwk_adblock.so"), overwrite = true)
+        }
+    }
+}
+
+android.sourceSets.getByName("main").jniLibs.directories.add(nativeAdblockJniLibs.absolutePath)
+tasks.matching { it.name.matches(Regex("merge[A-Z].*JniLibFolders")) }.configureEach {
+    dependsOn(buildNativeAdblock)
 }
