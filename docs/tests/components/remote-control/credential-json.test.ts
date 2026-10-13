@@ -5,6 +5,7 @@ import {
   sanitizeStoredCredentials,
   serializeCredentialJson,
 } from "#/components/remote-control/credential-json";
+import { isJsonObject } from "#/components/remote-control/json-validation";
 import { EMPTY_CREDENTIALS } from "#/components/unifiedpush/storage";
 
 describe("Shared credential JSON backups", () => {
@@ -65,6 +66,17 @@ describe("Shared credential JSON backups", () => {
       ),
     ).toEqual({ ...template, brokerUrl: "wss://broker.example/mqtt" });
     expect(sanitizeStoredCredentials([], template)).toEqual(template);
+  });
+
+  it("rejects arrays before Valibot can convert them into records", () => {
+    for (const raw of ["[]", '["auth"]', '[{"auth":"secret"}]']) {
+      expect(() => parseCredentialJson(raw, EMPTY_CREDENTIALS)).toThrow(
+        /JSON object/,
+      );
+    }
+    expect(isJsonObject([])).toBe(false);
+    expect(isJsonObject(["auth"])).toBe(false);
+    expect(isJsonObject({ auth: "secret" })).toBe(true);
   });
 
   it("rejects malformed JSON, non-string values, and unknown-only files", () => {
