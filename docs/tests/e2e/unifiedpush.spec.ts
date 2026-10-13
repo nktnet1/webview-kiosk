@@ -20,9 +20,7 @@ test("UnifiedPush documentation links to the debugger from a top-level tip", asy
   page,
 }) => {
   await page.goto("/docs/settings/unifiedpush");
-  await expect(
-    page.getByText("Tip: Test UnifiedPush from your browser"),
-  ).toBeVisible();
+  await expect(page.getByText("Test UnifiedPush")).toBeVisible();
   await expect(
     page.getByRole("link", { name: "UnifiedPush Debugger" }),
   ).toHaveAttribute("href", "/debugger/unifiedpush");
@@ -48,11 +46,111 @@ test("Credential actions keep equal widths", async ({ page }) => {
   expect(widths[1]).toBe(widths[2]);
 });
 
+test("Credential fields have individual visibility toggles and a show-all action", async ({
+  page,
+}) => {
+  await page.goto("/debugger/unifiedpush");
+  const secrets = [
+    { label: "Push endpoint URL", reveal: "endpoint" },
+    { label: "Endpoint public key (p256dh)", reveal: "p256dh key" },
+    { label: "Endpoint auth secret", reveal: "auth secret" },
+    { label: "VAPID public key", reveal: "VAPID verification key" },
+    { label: "VAPID private key", reveal: "VAPID signing key" },
+  ];
+
+  for (const secret of secrets) {
+    await expect(
+      page.getByLabel(secret.label, { exact: true }),
+    ).toHaveAttribute("type", "password");
+    await expect(
+      page.getByRole("button", { name: `Show ${secret.reveal}` }),
+    ).toBeVisible();
+  }
+  await expect(page.getByLabel("VAPID contact (optional)")).toHaveAttribute(
+    "type",
+    "text",
+  );
+
+  await page.getByRole("button", { name: "Show p256dh key" }).click();
+  await expect(page.getByLabel("Endpoint public key (p256dh)")).toHaveAttribute(
+    "type",
+    "text",
+  );
+  await expect(page.getByLabel("VAPID public key")).toHaveAttribute(
+    "type",
+    "password",
+  );
+  await page.getByRole("button", { name: "Reveal credentials" }).click();
+  for (const secret of secrets) {
+    await expect(
+      page.getByLabel(secret.label, { exact: true }),
+    ).toHaveAttribute("type", "text");
+  }
+  await page
+    .getByRole("button", { name: "Hide VAPID verification key" })
+    .click();
+  await expect(page.getByLabel("VAPID public key")).toHaveAttribute(
+    "type",
+    "password",
+  );
+  await page.getByRole("button", { name: "Hide credentials" }).click();
+  for (const secret of secrets) {
+    await expect(
+      page.getByLabel(secret.label, { exact: true }),
+    ).toHaveAttribute("type", "password");
+  }
+  // The global toggle resets individual visibility overrides.
+  await page.getByRole("button", { name: "Reveal credentials" }).click();
+  await expect(page.getByLabel("VAPID public key")).toHaveAttribute(
+    "type",
+    "text",
+  );
+});
+
+test("Replacing VAPID keys requires a custom confirmation", async ({
+  page,
+}) => {
+  await page.goto("/debugger/unifiedpush");
+  await page.getByRole("button", { name: "Generate VAPID keys" }).click();
+  const vapidPublic = page.getByLabel("VAPID public key");
+  await expect(vapidPublic).toHaveValue(/^[a-zA-Z0-9_-]{87}$/);
+  const oldKey = await vapidPublic.inputValue();
+
+  await page.getByRole("button", { name: "Generate VAPID keys" }).click();
+  const confirmation = page.getByRole("alertdialog", {
+    name: "Replace existing VAPID keys?",
+  });
+  await expect(confirmation).toContainText("re-registered");
+  await confirmation.getByRole("button", { name: "Cancel" }).click();
+  await expect(vapidPublic).toHaveValue(oldKey);
+
+  await page.getByRole("button", { name: "Generate VAPID keys" }).click();
+  await confirmation.getByRole("button", { name: "Replace keys" }).click();
+  await expect.poll(() => vapidPublic.inputValue()).not.toBe(oldKey);
+  await expect
+    .poll(() =>
+      page.evaluate(() => {
+        const data = localStorage.getItem("webview-kiosk:unifiedpush-debug:v1");
+        return data ? JSON.parse(data).vapidPublicKey : "";
+      }),
+    )
+    .toBe(await vapidPublic.inputValue());
+});
+
 test("Delivery mode uses an accessible select and TTL is validated", async ({
   page,
 }) => {
   await page.goto("/debugger/unifiedpush");
-  await page.getByRole("combobox", { name: "Delivery mode" }).click();
+  const deliverySelect = page.getByRole("combobox", { name: "Delivery mode" });
+  await deliverySelect.click();
+  const popup = page.locator('[data-slot="select-content"]');
+  await expect(popup).toHaveAttribute("data-side", "bottom");
+  const triggerBox = await deliverySelect.boundingBox();
+  const popupBox = await popup.boundingBox();
+  if (!triggerBox || !popupBox) {
+    throw new Error("Expected a visible trigger and dropdown");
+  }
+  expect(popupBox.y).toBeGreaterThanOrEqual(triggerBox.y + triggerBox.height);
   await page
     .getByRole("option", { name: "Plaintext (ntfy-compatible only)" })
     .click();

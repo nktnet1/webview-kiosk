@@ -3,7 +3,7 @@
 import { useForm } from "@tanstack/react-form";
 import { Callout } from "fumadocs-ui/components/callout";
 import { Eye, EyeOff, KeyRound, Send, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { type ChangeEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { CredentialJsonTransfer } from "#/components/remote-control/CredentialJsonTransfer";
 import { InfoTooltip } from "#/components/remote-control/InfoTooltip";
@@ -14,6 +14,7 @@ import {
   validateRemotePayload,
 } from "#/components/remote-control/payload";
 import { RemoteMessageEditor } from "#/components/remote-control/RemoteMessageEditor";
+import { SecretInput } from "#/components/remote-control/SecretInput";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -65,6 +66,7 @@ const fields: {
   placeholder: string;
   hint: string;
   secret?: boolean;
+  revealLabel?: string;
   encryptedOnly?: boolean;
 }[] = [
   {
@@ -73,12 +75,15 @@ const fields: {
     placeholder: "https://ntfy.sh/your-endpoint?up=1",
     hint: "The capability URL supplied by the UnifiedPush distributor.",
     secret: true,
+    revealLabel: "endpoint",
   },
   {
     key: "p256dh",
     label: "Endpoint public key (p256dh)",
     placeholder: "Base64url (87 characters)",
     hint: "The endpoint public key from the app, not the VAPID key.",
+    secret: true,
+    revealLabel: "p256dh key",
     encryptedOnly: true,
   },
   {
@@ -87,6 +92,7 @@ const fields: {
     placeholder: "Base64url (22 characters)",
     hint: "The 16-byte encryption secret from the app.",
     secret: true,
+    revealLabel: "auth secret",
     encryptedOnly: true,
   },
   {
@@ -94,6 +100,8 @@ const fields: {
     label: "VAPID public key",
     placeholder: "Base64url (87 characters)",
     hint: "Must be the same public key used when registering the device.",
+    secret: true,
+    revealLabel: "VAPID verification key",
     encryptedOnly: true,
   },
   {
@@ -102,6 +110,7 @@ const fields: {
     placeholder: "Base64url (43 characters)",
     hint: "Keep private; only used for local signing.",
     secret: true,
+    revealLabel: "VAPID signing key",
     encryptedOnly: true,
   },
   {
@@ -123,6 +132,10 @@ export default function UnifiedPushDebugger() {
   const [loaded, setLoaded] = useState(false);
   const [storageWarning, setStorageWarning] = useState<string | null>(null);
   const [showSecrets, setShowSecrets] = useState(false);
+  const [fieldVisibility, setFieldVisibility] = useState<
+    Partial<Record<keyof PushCredentials, boolean>>
+  >({});
+  const [confirmReplaceKeys, setConfirmReplaceKeys] = useState(false);
   const [messageKind, setMessageKind] = useState<MessageKind>("command");
   const [payload, setPayload] = useState(() =>
     stringifyPayload(createRemotePayload("unifiedpush", "command")),
@@ -176,17 +189,19 @@ export default function UnifiedPushDebugger() {
     invalidateRequest();
   }
 
-  async function createKeys() {
+  function requestKeyGeneration() {
     if (generatingKeys || busy) return;
-    const credentials = form.state.values.credentials;
-    if (
-      (credentials.vapidPublicKey || credentials.vapidPrivateKey)
-      && !window.confirm(
-        "Replace the saved VAPID keys? You will need to re-register the device using the new public key.",
-      )
-    ) {
+    const { vapidPublicKey, vapidPrivateKey } = form.state.values.credentials;
+    if (vapidPublicKey || vapidPrivateKey) {
+      setConfirmReplaceKeys(true);
       return;
     }
+    void createKeys();
+  }
+
+  async function createKeys() {
+    if (generatingKeys || busy) return;
+    setConfirmReplaceKeys(false);
     setGeneratingKeys(true);
     try {
       const keys = await generateVapidKeys();
@@ -300,6 +315,7 @@ export default function UnifiedPushDebugger() {
   function clearCredentials() {
     form.setFieldValue("credentials", { ...EMPTY_CREDENTIALS });
     setShowSecrets(false);
+    setFieldVisibility({});
     invalidateRequest();
     try {
       window.localStorage.removeItem(STORAGE_KEY);
@@ -319,6 +335,7 @@ export default function UnifiedPushDebugger() {
     form.setFieldValue("credentials", credentials);
     persistEditedCredentials(credentials);
     setShowSecrets(false);
+    setFieldVisibility({});
     invalidateRequest();
     toast.success("Credential fields imported");
   }
@@ -407,39 +424,56 @@ export default function UnifiedPushDebugger() {
                           key={entry.key}
                           name={`credentials.${entry.key}`}
                         >
-                          {(field) => (
-                            <div className="space-y-2">
-                              <div className="flex items-center gap-1">
-                                <Label htmlFor={`push-${entry.key}`}>
-                                  {entry.label}
-                                </Label>
-                                <InfoTooltip>{entry.hint}</InfoTooltip>
+                          {(field) => {
+                            const inputProps = {
+                              id: `push-${entry.key}`,
+                              name: field.name,
+                              value: field.state.value,
+                              placeholder: entry.placeholder,
+                              autoComplete: "off" as const,
+                              spellCheck: false,
+                              onBlur: field.handleBlur,
+                              onChange: (
+                                event: ChangeEvent<HTMLInputElement>,
+                              ) => {
+                                const next = event.target.value;
+                                field.handleChange(next);
+                                persistEditedCredentials({
+                                  ...form.state.values.credentials,
+                                  [entry.key]: next,
+                                });
+                                invalidateRequest();
+                              },
+                            };
+
+                            return (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-1">
+                                  <Label htmlFor={`push-${entry.key}`}>
+                                    {entry.label}
+                                  </Label>
+                                  <InfoTooltip>{entry.hint}</InfoTooltip>
+                                </div>
+                                {entry.secret ? (
+                                  <SecretInput
+                                    {...inputProps}
+                                    revealLabel={entry.revealLabel ?? entry.key}
+                                    revealed={
+                                      fieldVisibility[entry.key] ?? showSecrets
+                                    }
+                                    onRevealChange={(revealed) =>
+                                      setFieldVisibility((current) => ({
+                                        ...current,
+                                        [entry.key]: revealed,
+                                      }))
+                                    }
+                                  />
+                                ) : (
+                                  <Input {...inputProps} type="text" />
+                                )}
                               </div>
-                              <Input
-                                id={`push-${entry.key}`}
-                                name={field.name}
-                                type={
-                                  entry.secret && !showSecrets
-                                    ? "password"
-                                    : "text"
-                                }
-                                value={field.state.value}
-                                placeholder={entry.placeholder}
-                                autoComplete="off"
-                                spellCheck={false}
-                                onBlur={field.handleBlur}
-                                onChange={(event) => {
-                                  const next = event.target.value;
-                                  field.handleChange(next);
-                                  persistEditedCredentials({
-                                    ...form.state.values.credentials,
-                                    [entry.key]: next,
-                                  });
-                                  invalidateRequest();
-                                }}
-                              />
-                            </div>
-                          )}
+                            );
+                          }}
                         </form.Field>
                       ))}
                     <div className="space-y-4 border-t pt-4">
@@ -462,7 +496,10 @@ export default function UnifiedPushDebugger() {
                               ? "Hide credentials"
                               : "Reveal credentials"
                           }
-                          onClick={() => setShowSecrets((value) => !value)}
+                          onClick={() => {
+                            setFieldVisibility({});
+                            setShowSecrets((value) => !value);
+                          }}
                         >
                           {showSecrets ? (
                             <EyeOff aria-hidden="true" />
@@ -477,12 +514,45 @@ export default function UnifiedPushDebugger() {
                             variant="outline"
                             className="w-full"
                             aria-label="Generate VAPID keys"
-                            onClick={createKeys}
+                            onClick={requestKeyGeneration}
                           >
                             <KeyRound aria-hidden="true" />
                             {generatingKeys ? "Generating…" : "Generate keys"}
                           </Button>
                         )}
+                        <AlertDialog
+                          open={confirmReplaceKeys}
+                          onOpenChange={setConfirmReplaceKeys}
+                        >
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Replace existing VAPID keys?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                The device must be re-registered with the new
+                                public key before it can receive pushes signed
+                                by the new private key.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel asChild>
+                                <Button type="button" variant="outline">
+                                  Cancel
+                                </Button>
+                              </AlertDialogCancel>
+                              <AlertDialogAction asChild>
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  onClick={() => void createKeys()}
+                                >
+                                  Replace keys
+                                </Button>
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
