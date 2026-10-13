@@ -65,6 +65,7 @@ import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.auth.CustomAuthPasswordDialog
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.ClientCertificateInstaller
 import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
 import uk.nktnet.webviewkiosk.ui.screens.SetupNavHost
@@ -93,6 +94,7 @@ open class MainActivity : AppCompatActivity() {
     private lateinit var userSettings: UserSettings
     private lateinit var systemSettings: SystemSettings
     private lateinit var backButtonService: BackButtonManager
+    private lateinit var clientCertificateInstaller: ClientCertificateInstaller
     private var lastOnStartTime = 0L
     private var pendingAndroid6HomeRedirect = false
     private var pendingAndroid6LockRequest = false
@@ -144,6 +146,14 @@ open class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        // Register both KeyChain-related activity results before STARTED, even when the
+        // mutual-TLS settings screen is not composed (e.g. while the picker is visible).
+        clientCertificateInstaller = ClientCertificateInstaller(
+            context = applicationContext,
+            lifecycleOwner = this,
+            activityResultRegistry = activityResultRegistry,
+            activityScope = lifecycleScope,
+        )
         WebViewStartup.start(applicationContext)
         createdHosts.add(this)
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
@@ -384,6 +394,8 @@ open class MainActivity : AppCompatActivity() {
             }
         }
     }
+
+    internal fun openClientCertificatePicker() = clientCertificateInstaller.openPicker()
 
     private fun canHandleMqttMessages(): Boolean =
         isApplicationEventHost()

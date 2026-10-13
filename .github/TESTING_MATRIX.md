@@ -4,16 +4,26 @@ Snapshot: post-merge `additional-tests` at `b51ab06d` compared with the v0.26.21
 release commit `aa7ceca9`. This is an assessment of test *coverage*, not a finding that the
 untested paths are defective. The app still declares `versionName = "0.26.21"`.
 
-## Current automated-test gate status (13 October 2026; v1.0.54)
+## Current automated-test gate status (13 October 2026; v1.0.56)
 
-**v1.0.54 verification:** The supplied offline JetBrains JDK 21, Gradle,
+**v1.0.56 verification:** The complete offline `:app:testDebugUnitTest`
+suite passed **572/572 tests across 57 JUnit suites**, zero failures, errors
+or skips. Four new Robolectric tests inspect the packaged Android network
+security configuration and assert the app-wide `system` + `user` trust
+anchors, retained cleartext policy, no pin overrides or debug override CAs,
+and the unchanged default `BLOCK` SSL-error setting. Python CI tests passed
+**11/11**, and the Android asset-exporter tests passed. These checks do not
+install a real CA certificate or exercise Android's TLS implementation on a
+physical device. No dependencies were changed.
+
+**v1.0.55 verification:** The supplied offline JetBrains JDK 21, Gradle,
 Android SDK and Robolectric dependencies passed the complete
-`:app:testDebugUnitTest` suite: **557/557 tests in 54 JUnit suites**, with zero
-failures, errors or skips. The only production edit moves a Lint opt-in annotation
-without changing WebView startup behaviour. **v1.0.53** also passed 557/557.
-The six existing ANR-hardening regressions remain covered. Robolectric's
-MainActivity fixture provides deterministic WebView startup completion;
-physical Android/Chromium ANR resolution remains unproven by JVM tests.
+`:app:testDebugUnitTest` suite: **568/568 tests in 56 JUnit suites**, with zero
+failures, errors or skips. Eleven new tests cover activity-owned certificate
+picker/installer result delivery, real Compose-scope disposal during selection
+and file reading, cancellation, errors and duplicate requests. The preceding
+v1.0.54 suite passed 557/557 tests in 54 suites; no dependencies changed.
+These JVM tests do not execute Android's real KeyChain certificate installer.
 
 **Testing policy:** Keep automated JVM/Robolectric, CI-script, Vitest and
 Chromium Playwright tests. All Android APK instrumentation, AVD/emulator jobs,
@@ -22,11 +32,11 @@ acceptance checks are **manual-only** and are not CI release gates.
 
 | Gate | Most recent evidence | Status |
 | --- | --- | --- |
-| Android JVM/Robolectric | v1.0.54 offline `:app:testDebugUnitTest`: **557/557 tests in 54 JUnit suites**, zero failures/errors/skips; v1.0.53 ANR-hardening and existing navigation/activity regressions retained. Uses supplied offline toolchain, SDK 37.0, Robolectric jars and AAPT2 | **Verified locally** |
+| Android JVM/Robolectric | v1.0.56 offline `:app:testDebugUnitTest`: **572/572 tests in 57 JUnit suites**, zero failures/errors/skips; four new Android user-CA trust-policy tests plus existing client-certificate, navigation and ANR regressions. Uses supplied offline toolchain, SDK 37.0, Robolectric jars and AAPT2 | **Verified locally** |
 | Kotlin/Java Android Lint | v1.0.54 `:app:lintDebug` attempted, but offline Gradle lacks `com.android.tools.lint:lint-gradle:32.4.1`; source analysis did not run. User SARIF reports 7 `UnsafeOptInUsageError` findings at the v1.0.53 property-level opt-in | **Recheck with installed Lint runtime**; no source result claimed |
 | Isolated Kotlin JVM regressions | v1.0.47: production `DeviceOwnerManager.kt` **9/9** mocked Dhizuku permission scenarios, production `lockTaskUtils.kt` **4/4** Android-version-gate success/denial scenarios, and 3/3 actual permission-token JUnit methods compiled/run with minimal JUnit shims. Both former failure classes were reproduced against v1.0.46. v1.0.46 independently passed 4/4 blob transport scenarios | **Verified narrowly** with temporary JVM stubs, not an Android runtime or full Robolectric suite |
 | Docs Vitest / Chromium Playwright | Jobs remain configured; no passing CI output supplied | Unverified |
-| Offline CI checks / local runner | v1.0.53: **11/11** Python CI-script tests and Android asset-exporter Bash tests passed. No TypeScript, dependency or generated-file changes | Verified local CI scripts |
+| Offline CI checks / local runner | v1.0.56: **11/11** Python CI-script tests and Android asset-exporter Bash tests passed. No TypeScript, dependency or generated-file changes | Verified local CI scripts |
 | Gradle/pnpm caching | v1.0.31 Gradle build cache and pnpm store caching retained; no measured post-change timings | Speedup unverified |
 | Installed APK, API 23 / API 35 | Instrumentation suites and CI jobs removed in v1.0.33 | Manual-only; **not** passing automated gates |
 | Release APK launch | AVD smoke job removed; release build still depends on JVM/docs test gate | Manual-only; release APK not runtime-certified by CI |
@@ -35,6 +45,62 @@ acceptance checks are **manual-only** and are not CI release gates.
 failed the custom-password dialog visibility assertion after v1.0.30. Removing
 that automation does **not** fix the underlying UI, nor confirm that the
 password dialog works on a device. Verify it during manual device acceptance.
+
+## Android-installed user CA trust (v1.0.56)
+
+The app already referenced `@xml/network_security_config` in its manifest.
+The previous base config preserved cleartext access but did not opt in to the
+Android user-installed CA store for modern target SDKs. Its `<trust-anchors>`
+now lists both `system` and `user`, enabling ordinary Android WebView HTTPS
+verification of private/local server certificates signed by a CA that the
+user installed through Android Settings. This intentionally applies **app-wide**:
+it is not restricted to the kiosk URL and is **not** a runtime toggle. The
+original cleartext-traffic policy remains unchanged. No blanket SSL-error
+approval is introduced; hostname, validity and certificate-chain checks still
+apply, and the default SSL-error mode remains `BLOCK`.
+
+The Mutual TLS setting now explains that its PKCS#12 client-identity installer
+is distinct from Android CA installation. README documents the broader trust
+scope and expected setup. The PDF-specific TLS policy and client-certificate
+lifecycle code remain untouched.
+
+Four Robolectric tests parse the **compiled** XML resource to verify CA sources,
+unchanged cleartext policy, and lack of pin overrides/debug-only exceptions,
+and assert that the default SSL-error mode still blocks invalid certificates.
+The full Android JVM suite passed **572/572 tests across 57 suites**; Python
+CI tests passed **11/11** and asset-exporter tests passed. Android Lint was
+not rerun because the offline cache lacks `lint-gradle:32.4.1`; actual device
+CA installation and trust resolution remain unverified.
+
+## Activity-owned mutual-TLS certificate installation (v1.0.55)
+
+In v0.26.21 through v1.0.54, `MutualTlsSetting` owned the document-picker
+and KeyChain-installation launchers as composition-scoped activity results. It
+also used `rememberCoroutineScope` to read the selected PKCS#12 document and
+launch KeyChain. Navigating away from settings while selection or reading was
+in progress could unregister its callbacks, cancel the coroutine and display a
+misleading `rememberCoroutineScope left the composition` failure toast.
+
+`MainActivity` now registers both callbacks at activity creation, before
+`STARTED`, using stable activity-result registry keys and its `lifecycleScope`
+for file reading/installer handoff. The callbacks and read survive removal of
+the settings composable and the activity's normal stop/start transitions;
+true activity destruction still cancels its scope, without treating coroutine
+cancellation as a certificate-installation error. Reading retains the
+`Dispatchers.IO` boundary and 10 MiB file cap. Picker/installer launch failures
+remain visible, and repeated requests cannot overlap one certificate handoff.
+The existing PKCS#12 import format, client-certificate behavior and server-TLS
+trust policy are unchanged. This patch does **not** enable Android user-CA
+trust for arbitrary HTTPS sites.
+
+Nine Robolectric controller tests cover picker/installer result delivery during
+stop/start, cancellation vs genuine failure, retries and duplicate requests.
+Two additional Robolectric tests dispose an actual Compose `rememberCoroutineScope`
+while the activity stays alive, then complete the picker or file read and verify
+the KeyChain installation intent still launches. **The complete offline Android
+suite passed 568/568 tests across 56 suites.** Python CI script checks passed
+**11/11**, and the asset-exporter tests passed. Real Android KeyChain prompts,
+credential confirmation and installation remain outside the JVM test harness.
 
 ## WebView asynchronous startup lint opt-in (v1.0.54)
 
