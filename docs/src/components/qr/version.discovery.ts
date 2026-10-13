@@ -11,6 +11,11 @@ const FETCH_TIMEOUT_MS = 8_000;
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 100;
 
+type RetryWait = (milliseconds: number) => Promise<void>;
+
+const waitForRetry: RetryWait = (milliseconds) =>
+  new Promise((resolve) => setTimeout(resolve, milliseconds));
+
 const GITHUB_LATEST_RELEASE_URL = urlJoin(
   "https://api.github.com/repos/",
   GITHUB_REPOSITORY,
@@ -260,7 +265,10 @@ const discoverers: Record<
 };
 
 /** Retry each source independently so one unavailable registry does not block the others. */
-async function withTwoRetries<T>(operation: () => Promise<T>): Promise<T> {
+async function withTwoRetries<T>(
+  operation: () => Promise<T>,
+  wait: RetryWait,
+): Promise<T> {
   let attempt = 0;
   while (true) {
     try {
@@ -270,15 +278,17 @@ async function withTwoRetries<T>(operation: () => Promise<T>): Promise<T> {
         throw error;
       }
       attempt++;
-      await new Promise<void>((resolve) => {
-        setTimeout(resolve, RETRY_DELAY_MS * attempt);
-      });
+      await wait(RETRY_DELAY_MS * attempt);
     }
   }
 }
 
 export async function discoverQrInstallationVersions(
-  options: { fetchImpl?: FetchLike; githubToken?: string } = {},
+  options: {
+    fetchImpl?: FetchLike;
+    githubToken?: string;
+    waitBeforeRetry?: RetryWait;
+  } = {},
 ): Promise<
   Partial<Record<QrInstallationSource, DiscoveredQrInstallationVersion>>
 > {
@@ -286,13 +296,14 @@ export async function discoverQrInstallationVersions(
     fetchImpl: options.fetchImpl ?? fetch,
     githubToken: options.githubToken,
   };
+  const wait = options.waitBeforeRetry ?? waitForRetry;
   const entries = await Promise.all(
     QR_INSTALLATION_SOURCES.map(async (source) => {
       try {
         console.log(`Fetching latest version for ${source}...`);
         return [
           source,
-          await withTwoRetries(() => discoverers[source](context)),
+          await withTwoRetries(() => discoverers[source](context), wait),
         ] as const;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

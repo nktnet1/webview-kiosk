@@ -1,5 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { discoverQrInstallationVersions } from "#/components/qr/version.discovery";
+import { discoverQrInstallationVersions as discoverWithDefaultRetryWait } from "#/components/qr/version.discovery";
+
+type DiscoveryOptions = Parameters<typeof discoverWithDefaultRetryWait>[0];
+
+// Retain production's retry schedule without waiting for real time in every
+// malformed-response and unavailable-source regression.
+const immediateRetryWait = async (_milliseconds: number): Promise<void> => {};
+
+function discoverQrInstallationVersions(options: DiscoveryOptions = {}) {
+  return discoverWithDefaultRetryWait({
+    ...options,
+    waitBeforeRetry: options.waitBeforeRetry ?? immediateRetryWait,
+  });
+}
 
 const githubReleaseUrl =
   "https://api.github.com/repos/nktnet1/webview-kiosk/releases/latest";
@@ -229,9 +242,11 @@ describe("discoverQrInstallationVersions", () => {
     });
     routes[fdroidUrl] = fdroidRoute;
 
+    const retryWait = vi.fn(immediateRetryWait);
     await expect(
-      discoverQrInstallationVersions({ fetchImpl }),
+      discoverQrInstallationVersions({ fetchImpl, waitBeforeRetry: retryWait }),
     ).resolves.toEqual(expectedVersions);
+    expect(retryWait.mock.calls).toEqual([[100], [200]]);
     expect(fdroidRoute).toHaveBeenCalledTimes(3);
     expect(fetchImpl).toHaveBeenCalledTimes(6);
     expect(console.warn).not.toHaveBeenCalled();
@@ -244,12 +259,14 @@ describe("discoverQrInstallationVersions", () => {
     });
     routes[fdroidUrl] = failingRoute;
 
+    const retryWait = vi.fn(immediateRetryWait);
     await expect(
-      discoverQrInstallationVersions({ fetchImpl }),
+      discoverQrInstallationVersions({ fetchImpl, waitBeforeRetry: retryWait }),
     ).resolves.toEqual({
       GitHub: expectedVersions.GitHub,
       IzzyOnDroid: expectedVersions.IzzyOnDroid,
     });
+    expect(retryWait.mock.calls).toEqual([[100], [200]]);
     expect(failingRoute).toHaveBeenCalledTimes(3);
     expect(console.warn).toHaveBeenCalledWith(
       expect.stringContaining("after 3 attempts"),
@@ -258,11 +275,17 @@ describe("discoverQrInstallationVersions", () => {
 
   it("returns an empty discovery result when all sources fail", async () => {
     const fetchImpl = vi.fn<typeof fetch>().mockRejectedValue("offline");
+    const retryWait = vi.fn(immediateRetryWait);
 
     await expect(
-      discoverQrInstallationVersions({ fetchImpl }),
+      discoverQrInstallationVersions({ fetchImpl, waitBeforeRetry: retryWait }),
     ).resolves.toEqual({});
     expect(fetchImpl).toHaveBeenCalledTimes(9);
+    expect(
+      retryWait.mock.calls
+        .map(([milliseconds]) => milliseconds)
+        .sort((left, right) => left - right),
+    ).toEqual([100, 100, 100, 200, 200, 200]);
     expect(console.warn).toHaveBeenCalledTimes(3);
   });
 
