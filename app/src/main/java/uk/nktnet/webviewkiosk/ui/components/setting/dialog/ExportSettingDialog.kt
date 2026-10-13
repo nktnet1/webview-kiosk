@@ -38,7 +38,11 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.OutputStream
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
@@ -47,6 +51,14 @@ import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog as Dialog
 import uk.nktnet.webviewkiosk.utils.boundedTextPreview
 
 private const val EXPORT_PREVIEW_MAX_CHARS = 8192
+
+/** SAF providers may block or reject an output stream; success requires a completed close. */
+internal suspend fun writeSettingsExport(text: String, openOutput: () -> OutputStream?) {
+    withContext(Dispatchers.IO) {
+        val stream = openOutput() ?: error("Unable to open selected export file.")
+        stream.use { it.write(text.toByteArray(Charsets.UTF_8)) }
+    }
+}
 
 enum class ExportTab {
     Base64,
@@ -101,10 +113,12 @@ fun ExportSettingsDialog(
         if (uri != null) {
             scope.launch {
                 try {
-                    context.contentResolver.openOutputStream(uri)?.use {
-                        it.write(textDisplay.toByteArray())
-                        ToastManager.show(context, "Exported to $uri")
+                    writeSettingsExport(textDisplay) {
+                        context.contentResolver.openOutputStream(uri)
                     }
+                    ToastManager.show(context, "Exported to $uri")
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     Log.e(Constants.APP_SCHEME, "Failed to export", e)
                     ToastManager.show(context, "Export Error: ${e.message}")

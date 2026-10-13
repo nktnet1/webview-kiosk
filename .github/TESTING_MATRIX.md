@@ -4,14 +4,14 @@ Snapshot: post-merge `additional-tests` at `b51ab06d` compared with the v0.26.21
 release commit `aa7ceca9`. This is an assessment of test *coverage*, not a finding that the
 untested paths are defective. The app still declares `versionName = "0.26.21"`.
 
-## Current automated-test gate status (13 October 2026; v1.0.49)
+## Current automated-test gate status (13 October 2026; v1.0.50)
 
-**v1.0.49 verification:** v1.0.48 is committed at `6791ddcf`. The supplied
-JetBrains JDK 21, Android SDK, offline Gradle cache and Robolectric artifacts
-were used for a complete offline v1.0.49 Android JVM/Robolectric run:
-**526/526 tests, 46 JUnit suites, zero failures, errors or skips**. This also
-executes the JUnit regressions committed in v1.0.48. The historical v1.0.45
-510-test pass is no longer the latest full-suite evidence.
+**v1.0.50 verification:** The supplied JetBrains JDK 21, Android SDK, offline
+Gradle cache and Robolectric runtime were used for the complete v1.0.50
+`:app:testDebugUnitTest` suite: **537/537 tests in 49 JUnit suites**, with
+zero failures, errors or skips. The 11 new methods in three suites test incoming
+intents, settings file export and Compose window-flag lifecycle. The prior
+v1.0.49 full-suite result was 526/526 in 46 suites.
 
 **Testing policy:** Keep automated JVM/Robolectric, CI-script, Vitest and
 Chromium Playwright tests. All Android APK instrumentation, AVD/emulator jobs,
@@ -20,10 +20,10 @@ acceptance checks are **manual-only** and are not CI release gates.
 
 | Gate | Most recent evidence | Status |
 | --- | --- | --- |
-| Android JVM/Robolectric | v1.0.49 offline `:app:testDebugUnitTest`: **526 tests in 46 JUnit suites**, zero failures/errors/skips; focused PDF suites also passed **40/40**. Used supplied Gradle 9.8.0 milestone 1, JetBrains JDK 21, Android SDK 37.0, offline cache, local AAPT2 and Robolectric jars | **Verified locally**; hosted CI, Lint and physical-device acceptance still pending |
+| Android JVM/Robolectric | v1.0.50 offline `:app:testDebugUnitTest`: **537 tests in 49 JUnit suites**, zero failures/errors/skips; 11 newly added intent, settings export and keep-awake lifecycle tests passed. Used supplied Gradle 9.8.0 milestone 1, JetBrains JDK 21, Android SDK 37.0, offline cache, local AAPT2 and Robolectric jars | **Verified locally**; hosted CI, Lint and physical-device acceptance still pending |
 | Isolated Kotlin JVM regressions | v1.0.47: production `DeviceOwnerManager.kt` **9/9** mocked Dhizuku permission scenarios, production `lockTaskUtils.kt` **4/4** Android-version-gate success/denial scenarios, and 3/3 actual permission-token JUnit methods compiled/run with minimal JUnit shims. Both former failure classes were reproduced against v1.0.46. v1.0.46 independently passed 4/4 blob transport scenarios | **Verified narrowly** with temporary JVM stubs, not an Android runtime or full Robolectric suite |
 | Docs Vitest / Chromium Playwright | Jobs remain configured; no passing CI output supplied | Unverified |
-| Offline CI checks / local runner | v1.0.49: **11/11** Python CI-script tests and Android asset-exporter shell tests passed. v1.0.47's Biome `check --write` result is historical; no TypeScript files were modified in v1.0.49 | Verified local CI scripts; hosted CI and docs browser pending |
+| Offline CI checks / local runner | v1.0.50: **11/11** Python CI-script tests and Android asset-exporter Bash tests passed. Biome `check --write` at v1.0.47 is historical; no TypeScript files were modified in v1.0.50 | Verified local CI scripts; hosted CI and docs browser pending |
 | Gradle/pnpm caching | v1.0.31 Gradle build cache and pnpm store caching retained; no measured post-change timings | Speedup unverified |
 | Installed APK, API 23 / API 35 | Instrumentation suites and CI jobs removed in v1.0.33 | Manual-only; **not** passing automated gates |
 | Release APK launch | AVD smoke job removed; release build still depends on JVM/docs test gate | Manual-only; release APK not runtime-certified by CI |
@@ -32,6 +32,39 @@ acceptance checks are **manual-only** and are not CI release gates.
 failed the custom-password dialog visibility assertion after v1.0.30. Removing
 that automation does **not** fix the underlying UI, nor confirm that the
 password dialog works on a device. Verify it during manual device acceptance.
+
+## Incoming intents, settings documents and keep-awake lifecycle (v1.0.50)
+
+`MainActivity` is exported for browser URLs and document sharing. Previously an
+explicit `ACTION_VIEW` could pass an unsupported scheme such as `javascript:`
+straight to `WebView.loadUrl`, bypassing the manifest intent-filter scheme
+policy. Android versions can also throw `ClassCastException` for extras whose
+values are not the requested types. A `text/plain` document shared via
+`EXTRA_STREAM` was lost if it did not also provide a valid text URL.
+
+- `handleMainIntent` now accepts HTTP(S) VIEW links only when they have a host,
+  and continues to accept `content:` VIEW attachments. `ACTION_SEND` file
+  attachments require a `content:` or `file:` stream URI, including when a
+  `text/plain` share has no valid text URL. Supported network URL text shares
+  and their validation are unchanged. Extra reads now handle both corrupt
+  parcelables and type mismatches without crashing the exported activity.
+- Settings export opens, writes and closes the selected SAF provider stream on
+  `Dispatchers.IO`. Null streams and close failures are treated as errors, not
+  silent successes; the success toast is emitted only after the stream closes.
+  Import/export cancellation no longer generates an erroneous failure toast.
+- The keep-awake Compose effect now uses the activity's window and a lifecycle
+  observer that applies `FLAG_KEEP_SCREEN_ON` only in `RESUMED`, even when
+  the setting recomposes during a pause. It clears the flag on pause and
+  disposal, and restores it only on resume.
+- Five `IntentUtilsTest`, three `SettingsExportTest` and three
+  `KeepScreenOnWindowControllerTest` methods cover these regressions. All
+  11 new methods passed. Production and test Kotlin sources compiled, and
+  **537/537 Android JVM/Robolectric tests across 49 suites** passed offline.
+  Python CI-script checks **11/11** and the asset-exporter Bash tests also
+  passed. These are local tests; Android Lint, hosted CI, docs Vitest/Playwright,
+  APK/device interactions (including API 23/35 and SAF-provider variations)
+  remain unverified. No runtime dependency, APK instrumentation/AVD job,
+  generated file or TLS trust policy was changed.
 
 ## PDF source connection and authentication ownership (v1.0.49)
 
