@@ -9,7 +9,7 @@ const APPLICATION_ID = "uk.nktnet.webviewkiosk";
 const GITHUB_REPOSITORY = "nktnet1/webview-kiosk";
 const FETCH_TIMEOUT_MS = 8_000;
 const MAX_RETRIES = 2;
-const RETRY_DELAY_MS = 100;
+const RETRY_DELAY_MS = 1_000;
 
 type RetryWait = (milliseconds: number) => Promise<void>;
 

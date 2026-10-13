@@ -246,7 +246,7 @@ describe("discoverQrInstallationVersions", () => {
     await expect(
       discoverQrInstallationVersions({ fetchImpl, waitBeforeRetry: retryWait }),
     ).resolves.toEqual(expectedVersions);
-    expect(retryWait.mock.calls).toEqual([[100], [200]]);
+    expect(retryWait.mock.calls).toEqual([[1_000], [2_000]]);
     expect(fdroidRoute).toHaveBeenCalledTimes(3);
     expect(fetchImpl).toHaveBeenCalledTimes(6);
     expect(console.warn).not.toHaveBeenCalled();
@@ -266,7 +266,7 @@ describe("discoverQrInstallationVersions", () => {
       GitHub: expectedVersions.GitHub,
       IzzyOnDroid: expectedVersions.IzzyOnDroid,
     });
-    expect(retryWait.mock.calls).toEqual([[100], [200]]);
+    expect(retryWait.mock.calls).toEqual([[1_000], [2_000]]);
     expect(failingRoute).toHaveBeenCalledTimes(3);
     expect(console.warn).toHaveBeenCalledWith(
       expect.stringContaining("after 3 attempts"),
@@ -285,7 +285,7 @@ describe("discoverQrInstallationVersions", () => {
       retryWait.mock.calls
         .map(([milliseconds]) => milliseconds)
         .sort((left, right) => left - right),
-    ).toEqual([100, 100, 100, 200, 200, 200]);
+    ).toEqual([1_000, 1_000, 1_000, 2_000, 2_000, 2_000]);
     expect(console.warn).toHaveBeenCalledTimes(3);
   });
 
