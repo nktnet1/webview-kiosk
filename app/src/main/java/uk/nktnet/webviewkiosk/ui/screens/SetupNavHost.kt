@@ -10,6 +10,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -20,8 +21,15 @@ import uk.nktnet.webviewkiosk.utils.WEBVIEW_RECREATION_REQUEST_KEY
 import uk.nktnet.webviewkiosk.utils.authComposable
 
 @Composable
-fun SetupNavHost(
+fun SetupNavHost(navController: NavHostController) {
+    SetupNavHost(navController) { WebviewScreen(navController) }
+}
+
+/** Internal content seam permits deterministic Compose regression tests without a real WebView. */
+@Composable
+internal fun SetupNavHost(
     navController: NavHostController,
+    webViewContent: @Composable () -> Unit,
 ) {
     KeepLegacyInsetsListenerAttached()
 
@@ -81,12 +89,7 @@ fun SetupNavHost(
         runCatching { navController.graph }.getOrNull()
             ?: navController.createGraph(startDestination = Screen.WebView.route) {
                 composable(Screen.WebView.route) { entry ->
-                    val recreationRequest by entry.savedStateHandle
-                        .getStateFlow(WEBVIEW_RECREATION_REQUEST_KEY, 0)
-                        .collectAsState()
-                    key(recreationRequest) {
-                        WebviewScreen(navController)
-                    }
+                    WebViewRootDestination(entry, webViewContent)
                 }
                 composable(Screen.AdminRestrictionsChanged.route) {
                     AdminRestrictionsChangedScreen(navController)
@@ -102,6 +105,18 @@ fun SetupNavHost(
     }
 
     NavHost(navController = navController, graph = graph)
+}
+
+/** Retain the NavBackStackEntry while replacing only the WebView's composition. */
+@Composable
+internal fun WebViewRootDestination(
+    entry: NavBackStackEntry,
+    content: @Composable () -> Unit,
+) {
+    val recreationRequest by entry.savedStateHandle
+        .getStateFlow(WEBVIEW_RECREATION_REQUEST_KEY, 0)
+        .collectAsState()
+    key(recreationRequest) { content() }
 }
 
 @Composable
