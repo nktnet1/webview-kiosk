@@ -44,6 +44,7 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.HistoryDialog
+import uk.nktnet.webviewkiosk.utils.boundedTextPreview
 import uk.nktnet.webviewkiosk.utils.IconUtils
 import uk.nktnet.webviewkiosk.utils.validateUrl
 
@@ -157,7 +158,7 @@ fun CreateShortcutDialog(
                             modifier = Modifier.fillMaxWidth()
                         )
                         Text(
-                            text = systemSettings.currentUrl,
+                            text = boundedTextPreview(systemSettings.currentUrl, 256),
                             style = MaterialTheme.typography.bodySmall,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,

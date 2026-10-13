@@ -46,6 +46,7 @@ import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundClearHistoryCommand
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog as Dialog
+import uk.nktnet.webviewkiosk.utils.boundedBreakableTextPreview
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
@@ -165,8 +166,7 @@ fun HistoryDialog(
                                                 append("[$index] ")
                                             }
                                             append(
-                                                displayUrl(item.url).toCharArray()
-                                                    .joinToString("\u200B")
+                                                boundedBreakableTextPreview(displayUrl(item.url))
                                             )
                                         },
                                         maxLines = 3,

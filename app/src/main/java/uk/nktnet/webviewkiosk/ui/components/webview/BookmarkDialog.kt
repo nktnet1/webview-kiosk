@@ -31,6 +31,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog as Dialog
+import uk.nktnet.webviewkiosk.utils.boundedBreakableTextPreview
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 
@@ -137,9 +138,7 @@ fun BookmarksDialog(
                                             }
 
                                             append(
-                                                displayText
-                                                    .toCharArray()
-                                                    .joinToString("\u200B")
+                                                boundedBreakableTextPreview(displayText)
                                             )
                                         },
                                         maxLines = 2,
