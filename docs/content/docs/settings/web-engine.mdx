@@ -268,23 +268,6 @@ managed.example.com=work-client-cert
 
 **Default:** (blank)
 
-### Installing a private CA for HTTPS
-
-Mutual TLS client certificates are different from the CA certificates used to
-verify a website's HTTPS server certificate. The **Install client certificate**
-action accepts a PKCS#12 client identity with a private key. It does not
-install a root CA or make the app trust a private HTTPS server.
-
-To access a website signed by a private CA, install that CA through **Android
-Settings**. Webview Kiosk trusts Android's system CAs and user-installed CAs
-for WebView HTTPS connections. This trust is **app-wide**, including websites
-outside the local network. It is not restricted to the hosts listed in Mutual
-TLS, and it cannot be switched on or off in the app.
-
-The server must still present a valid certificate matching its hostname.
-Installing a CA does not bypass certificate expiration, hostname or chain
-validation. The separate **SSL Error Mode** setting remains in effect.
-
 ## 16. SSL Error Mode
 
 Configure the action to take when an SSL Error is received.
