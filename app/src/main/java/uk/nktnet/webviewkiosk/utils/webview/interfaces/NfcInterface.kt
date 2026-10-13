@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package uk.nktnet.webviewkiosk.utils.webview.interfaces
 
 import android.webkit.JavascriptInterface

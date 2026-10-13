@@ -36,7 +36,7 @@ internal class WebViewStartupGate(
         readyState.value = true
     }
 
-    suspend fun awaitReady() = ready.first { it }.let { Unit }
+    suspend fun awaitReady() = ready.first { it }.let { }
 }
 
 /**
