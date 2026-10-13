@@ -1,13 +1,7 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine
 
-import android.app.Activity
-import android.content.Context
-import android.net.Uri
-import android.provider.OpenableColumns
-import android.security.KeyChain
 import android.webkit.WebView
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,15 +14,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -37,97 +28,14 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.TextSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.webview.parseMutualTlsRules
 import uk.nktnet.webviewkiosk.utils.webview.validateMutualTls
-import java.io.ByteArrayOutputStream
-
-private const val MAX_PKCS12_FILE_BYTES = 10 * 1024 * 1024
-
-private fun readPkcs12File(context: Context, uri: Uri): ByteArray {
-    val contentResolver = context.contentResolver
-    val reportedSize = try {
-        contentResolver.query(
-            uri,
-            arrayOf(OpenableColumns.SIZE),
-            null,
-            null,
-            null,
-        )?.use { cursor ->
-            val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
-            if (sizeIndex >= 0 && cursor.moveToFirst() && !cursor.isNull(sizeIndex)) {
-                cursor.getLong(sizeIndex).takeIf { it >= 0 }
-            } else {
-                null
-            }
-        }
-    } catch (_: Exception) {
-        null
-    }
-
-    require(reportedSize == null || reportedSize <= MAX_PKCS12_FILE_BYTES) {
-        "Client certificate file exceeds the 10 MiB limit."
-    }
-
-    return contentResolver.openInputStream(uri)?.use { input ->
-        val output = ByteArrayOutputStream(
-            reportedSize?.coerceAtMost(MAX_PKCS12_FILE_BYTES.toLong())?.toInt() ?: 8192
-        )
-        val buffer = ByteArray(8192)
-        var totalBytes = 0
-
-        while (true) {
-            val bytesRead = input.read(buffer)
-            if (bytesRead < 0) {
-                break
-            }
-
-            totalBytes += bytesRead
-            require(totalBytes <= MAX_PKCS12_FILE_BYTES) {
-                "Client certificate file exceeds the 10 MiB limit."
-            }
-            output.write(buffer, 0, bytesRead)
-        }
-
-        output.toByteArray()
-    } ?: error("Unable to open selected certificate file.")
-}
 
 @Composable
 fun MutualTlsSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
-    val scope = rememberCoroutineScope()
+    val certificateInstallerActivity = LocalActivity.current as? MainActivity
     val settingKey = UserSettingsKeys.WebEngine.MUTUAL_TLS
-    val certificateInstallerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            ToastManager.show(context, "Client certificate installed.")
-        }
-    }
-    val certificateFileLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        if (uri != null) {
-            scope.launch {
-                try {
-                    val pkcs12 = withContext(Dispatchers.IO) {
-                        readPkcs12File(context, uri)
-                    }
-                    certificateInstallerLauncher.launch(
-                        KeyChain.createInstallIntent().apply {
-                            putExtra(KeyChain.EXTRA_PKCS12, pkcs12)
-                        }
-                    )
-                } catch (e: Exception) {
-                    ToastManager.show(
-                        context,
-                        "Unable to install client certificate: ${e.message ?: "unknown error"}"
-                    )
-                }
-            }
-        }
-    }
-
     TextSettingFieldItem(
         label = stringResource(R.string.web_engine_mutual_tls_title),
         infoText = """
@@ -214,7 +122,11 @@ fun MutualTlsSetting() {
                     contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                     onClick = {
                         try {
-                            certificateFileLauncher.launch(arrayOf("*/*"))
+                            if (certificateInstallerActivity != null) {
+                                certificateInstallerActivity.openClientCertificatePicker()
+                            } else {
+                                ToastManager.show(context, "Unable to open certificate file picker.")
+                            }
                         } catch (_: Exception) {
                             ToastManager.show(context, "Unable to open certificate file picker.")
                         }
