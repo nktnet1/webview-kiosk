@@ -19,8 +19,8 @@ If **System** is used, this script is a no-op (does nothing).
 
 ## 2. Apply Desktop Viewport Width (px)
 
-This script injects JavaScript code that sets document.meta.content to
-`width=YOUR_WIDTH_VALUE`, simulating web browsing on a Desktop.
+This script creates or updates the page's viewport meta element, setting
+its content to `width=YOUR_WIDTH_VALUE` to request a desktop-sized viewport.
 
 JS history state changes will also be subscribed to (e.g. from Single Page
 Applications), and the script will be re-triggered as needed.

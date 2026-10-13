@@ -123,8 +123,11 @@ expiration time is reached.
 
 ### 13. Use WebSocket
 
-When enabled, the client will connect securely to the broker using TLS.
-Ensure the broker supports TLS on the configured port, e.g.
+When enabled, MQTT uses WebSocket transport instead of a direct TCP
+connection. TLS is configured separately with **Use TLS**. Enable both
+settings to use WSS (secure WebSocket).
+
+Ensure the broker supports WebSocket on the selected port, e.g.
 
 - `80`: WS (WebSocket, same port as HTTP)
 - `443`: WSS (WebSocket Secure, same port as HTTPS)
