@@ -26,6 +26,7 @@ import java.io.FilterInputStream
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.Collections
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import javax.net.ssl.HttpsURLConnection
@@ -41,6 +42,45 @@ private class RegisteredPdfSource(
     val tls: PdfTlsState = PdfTlsState(),
 ) {
     val pendingAuthentication = ConcurrentHashMap<PdfAuthScope, HttpAuthRequest>()
+    // Collections.newSetFromMap also works on the app's minimum Android API (21).
+    private val activeConnections = Collections.newSetFromMap(
+        ConcurrentHashMap<HttpURLConnection, Boolean>()
+    )
+    @Volatile private var cancelled = false
+
+    fun isActive(token: String): Boolean = !cancelled
+        && registeredPdfSources[token] === this
+        && expiresAt > System.currentTimeMillis()
+
+    fun trackConnection(connection: HttpURLConnection): Boolean {
+        // Register before checking cancellation so a concurrent cancel cannot miss this connection.
+        activeConnections.add(connection)
+        if (!cancelled) return true
+        releaseConnection(connection)
+        return false
+    }
+
+    fun releaseConnection(connection: HttpURLConnection) {
+        if (activeConnections.remove(connection)) connection.disconnect()
+    }
+
+    fun saveAuthorization(token: String, scope: PdfAuthScope, authorization: String): Boolean =
+        synchronized(credentials) {
+            if (!isActive(token)) return@synchronized false
+            credentials[scope] = authorization
+            true
+        }
+
+    fun cancelRequests() {
+        synchronized(credentials) {
+            cancelled = true
+            // A closed viewer must not retain Basic credentials until the registry TTL expires.
+            credentials.clear()
+        }
+        pendingAuthentication.values.toList().forEach { it.cancel() }
+        tls.cancelPendingRequests()
+        activeConnections.toList().forEach(::releaseConnection)
+    }
 }
 
 private data class PdfAuthScope(val origin: String, val realm: String)
@@ -66,12 +106,12 @@ fun registerPdfSource(sourceUrl: String, previousToken: String? = null): String 
         credentials = ConcurrentHashMap(previousSource?.credentials.orEmpty()),
         tls = PdfTlsState(previousSource?.tls),
     )
-    previousSource?.tls?.cancelPendingRequests()
+    previousSource?.cancelRequests()
     return token
 }
 
 fun cancelPdfSourceRequests(token: String?) {
-    token?.let { registeredPdfSources[it]?.tls?.cancelPendingRequests() }
+    token?.let { registeredPdfSources[it]?.cancelRequests() }
 }
 
 fun isPdfSourceNavigation(token: String?, navigationUrl: String?): Boolean {
@@ -126,6 +166,7 @@ fun handlePdfSourceRequest(
             return errorResponse(200, "OK")
         }
         val sourceUrl = source?.url ?: return errorResponse(404, "PDF source expired")
+        if (!source.isActive(sourceToken)) return errorResponse(410, "PDF viewer closed")
         val (schemeType, blockCause) = getBlockInfo(
             url = sourceUrl,
             blacklistRegexes = blacklistRegexes,
@@ -165,6 +206,9 @@ fun handlePdfSourceRequest(
         Log.w(Constants.APP_SCHEME, "Blocked PDF source request: ${e.message}")
         errorResponse(403, "PDF source is blocked")
     } catch (e: Exception) {
+        if (source != null && !source.isActive(sourceToken)) {
+            return errorResponse(410, "PDF viewer closed")
+        }
         if (source?.tls?.hasPendingRequests == true) {
             return errorResponse(401, "Waiting for TLS authentication")
         }
@@ -206,6 +250,7 @@ private fun remotePdfResponse(
     var authorization: String? = null
 
     while (true) {
+        if (!source.isActive(sourceToken)) return errorResponse(410, "PDF viewer closed")
         val (schemeType, blockCause) = getBlockInfo(
             url = currentUrl,
             blacklistRegexes = blacklistRegexes,
@@ -217,15 +262,14 @@ private fun remotePdfResponse(
         }
 
         val connection = URL(currentUrl).openConnection() as HttpURLConnection
+        if (!source.trackConnection(connection)) return errorResponse(410, "PDF viewer closed")
         var responseOwnsConnection = false
         try {
+            if (!source.isActive(sourceToken)) return errorResponse(410, "PDF viewer closed")
             if (connection is HttpsURLConnection) {
                 source.tls.configureConnection(
                     connection, context, userSettings,
-                    isActive = {
-                        registeredPdfSources[sourceToken] === source
-                            && source.expiresAt > System.currentTimeMillis()
-                    },
+                    isActive = { source.isActive(sourceToken) },
                     onClientCertificateRequired = { onClientCertificateRequired(sourceToken, source.url, it) },
                     onSslError = { onSslError(sourceToken, source.url, it) },
                     onApproved = { onAuthenticated(sourceToken, source.url) },
@@ -250,6 +294,7 @@ private fun remotePdfResponse(
             }
 
             val statusCode = connection.responseCode
+            if (!source.isActive(sourceToken)) return errorResponse(410, "PDF viewer closed")
             storeWebViewResponseCookies(currentUrl, connection.headerFields)
             if (statusCode in setOf(301, 302, 303, 307, 308)) {
                 val location = connection.getHeaderField("Location")
@@ -318,12 +363,16 @@ private fun remotePdfResponse(
                 statusCode,
                 responseMessage,
                 responseHeaders,
-                DisconnectingInputStream(input, connection)
+                DisconnectingInputStream(input) { source.releaseConnection(connection) }
             )
+            if (!source.isActive(sourceToken)) {
+                response.data.close()
+                return errorResponse(410, "PDF viewer closed")
+            }
             responseOwnsConnection = true
             return response
         } finally {
-            if (!responseOwnsConnection) connection.disconnect()
+            if (!responseOwnsConnection) source.releaseConnection(connection)
         }
     }
 }
@@ -342,19 +391,21 @@ private fun requestPdfAuthentication(
         host = host,
         realm = challenge.realm,
         onSubmit = { username, password ->
-            source.pendingAuthentication.remove(authScope, request)
-            if (registeredPdfSources[token] === source && source.expiresAt > System.currentTimeMillis()) {
+            if (source.pendingAuthentication.remove(authScope, request)) {
                 val charset = if (challenge.utf8) Charsets.UTF_8 else Charsets.ISO_8859_1
-                source.credentials[authScope] = "Basic " + Base64.encodeToString(
+                val authorization = "Basic " + Base64.encodeToString(
                     "$username:$password".toByteArray(charset), Base64.NO_WRAP
                 )
-                onAuthenticated(token, source.url)
+                if (source.saveAuthorization(token, authScope, authorization) && source.isActive(token)) {
+                    onAuthenticated(token, source.url)
+                }
             }
         },
         onCancel = { source.pendingAuthentication.remove(authScope, request) }
     )
     if (source.pendingAuthentication.putIfAbsent(authScope, request) == null) {
-        onAuthenticationRequired(token, source.url, request)
+        if (source.isActive(token)) onAuthenticationRequired(token, source.url, request)
+        else request.cancel()
     }
 }
 
@@ -406,14 +457,14 @@ private fun resolvePdfSource(token: String): RegisteredPdfSource? {
         return null
     }
 
+    if (!entry.isActive(token)) return null
     entry.expiresAt = now + PDF_SOURCE_TTL_MS
     return entry
 }
 
 private fun removePdfSource(token: String, source: RegisteredPdfSource) {
     if (registeredPdfSources.remove(token, source)) {
-        source.pendingAuthentication.values.forEach { it.cancel() }
-        source.tls.cancelPendingRequests()
+        source.cancelRequests()
     }
 }
 
@@ -441,13 +492,13 @@ private class PdfSourceBlockedException(message: String) : Exception(message)
 
 private class DisconnectingInputStream(
     input: InputStream,
-    private val connection: HttpURLConnection
+    private val releaseConnection: () -> Unit,
 ) : FilterInputStream(input) {
     override fun close() {
         try {
             super.close()
         } finally {
-            connection.disconnect()
+            releaseConnection()
         }
     }
 }

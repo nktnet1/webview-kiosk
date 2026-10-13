@@ -26,6 +26,8 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
 import java.net.InetSocketAddress
+import java.net.HttpURLConnection
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
@@ -722,6 +724,158 @@ class PdfSourceRequestTest {
     }
 
     @Test
+    fun closingAViewerCancelsItsAuthenticationPromptAndRejectsLaterRequests() {
+        server.createContext("/closing-auth.pdf") { exchange ->
+            respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"private\"")
+        }
+        val token = register("$remote/closing-auth.pdf")
+        val pending = mutableListOf<HttpAuthRequest>()
+        val callbacks = AtomicInteger()
+        assertStatus(401, load(
+            token,
+            onAuthenticationRequired = { _, _, request -> pending.add(request) },
+            onAuthenticated = { _, _ -> callbacks.incrementAndGet() },
+        ))
+        assertEquals(1, pendingAuthentication(source(token)).size)
+
+        cancelPdfSourceRequests(token)
+        cancelPdfSourceRequests(token)
+        pending.single().proceed("alice", "secret")
+
+        assertTrue(pendingAuthentication(source(token)).isEmpty())
+        assertTrue(credentials(source(token)).isEmpty())
+        assertEquals(0, callbacks.get())
+        assertStatus(404, load(token))
+    }
+
+    @Test
+    fun replacingAPdfViewerCancelsTheOldAuthenticationWithoutAffectingItsReplacement() {
+        server.createContext("/replaced-auth.pdf") { exchange ->
+            respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"private\"")
+        }
+        val url = "$remote/replaced-auth.pdf"
+        val oldToken = register(url)
+        val oldPrompt = mutableListOf<HttpAuthRequest>()
+        val oldCallbacks = AtomicInteger()
+        assertStatus(401, load(
+            oldToken,
+            onAuthenticationRequired = { _, _, request -> oldPrompt.add(request) },
+            onAuthenticated = { _, _ -> oldCallbacks.incrementAndGet() },
+        ))
+
+        val nextToken = registerPdfSource(url, oldToken).also(createdTokens::add)
+        val nextPrompt = mutableListOf<HttpAuthRequest>()
+        oldPrompt.single().proceed("obsolete", "password")
+        assertTrue(pendingAuthentication(source(oldToken)).isEmpty())
+        assertTrue(credentials(source(oldToken)).isEmpty())
+        assertEquals(0, oldCallbacks.get())
+        assertStatus(404, load(oldToken))
+
+        assertStatus(401, load(
+            nextToken,
+            onAuthenticationRequired = { _, _, request -> nextPrompt.add(request) },
+        ))
+        assertEquals(1, nextPrompt.size)
+        assertEquals(1, pendingAuthentication(source(nextToken)).size)
+    }
+
+    @Test
+    fun replacingAViewerRetainsCopiedCredentialsButErasesTheClosedViewersCopy() {
+        server.createContext("/retained-auth.pdf") { exchange ->
+            if (exchange.requestHeaders.getFirst("Authorization") == "Basic YWxpY2U6c2VjcmV0") {
+                respond(exchange, 200, "private PDF")
+            } else {
+                respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"private\"")
+            }
+        }
+        val url = "$remote/retained-auth.pdf"
+        val oldToken = register(url)
+        val prompts = mutableListOf<HttpAuthRequest>()
+        assertStatus(401, load(oldToken, onAuthenticationRequired = { _, _, it -> prompts.add(it) }))
+        prompts.single().proceed("alice", "secret")
+        assertEquals(1, credentials(source(oldToken)).size)
+
+        val nextToken = registerPdfSource(url, oldToken).also(createdTokens::add)
+
+        assertTrue(credentials(source(oldToken)).isEmpty())
+        assertEquals(1, credentials(source(nextToken)).size)
+        val response = requireNotNull(load(nextToken))
+        assertEquals(200, response.statusCode)
+        assertEquals("private PDF", response.data.use { it.bufferedReader().readText() })
+    }
+
+    @Test
+    fun closingAViewerReleasesAnOpenResponseWithoutClosingAnotherViewersConnection() {
+        server.createContext("/stream.pdf") { exchange -> respond(exchange, 200, "PDF contents") }
+        val oldToken = register("$remote/stream.pdf")
+        val otherToken = register("$remote/stream.pdf")
+        val oldResponse = requireNotNull(load(oldToken))
+        val otherResponse = requireNotNull(load(otherToken))
+        assertEquals(200, oldResponse.statusCode)
+        assertEquals(200, otherResponse.statusCode)
+        assertEquals(1, activeConnections(source(oldToken)).size)
+        assertEquals(1, activeConnections(source(otherToken)).size)
+
+        try {
+            cancelPdfSourceRequests(oldToken)
+            assertTrue(activeConnections(source(oldToken)).isEmpty())
+            assertEquals(1, activeConnections(source(otherToken)).size)
+            assertEquals("PDF contents", otherResponse.data.bufferedReader().readText())
+        } finally {
+            oldResponse.data.close()
+            otherResponse.data.close()
+        }
+        assertTrue(activeConnections(source(otherToken)).isEmpty())
+    }
+
+    @Test
+    fun cancellingAnInFlightRedirectNeverFetchesTheNextLocation() {
+        val entered = CountDownLatch(1)
+        val release = CountDownLatch(1)
+        val redirected = AtomicInteger()
+        server.createContext("/slow-redirect") { exchange ->
+            entered.countDown()
+            if (release.await(10, TimeUnit.SECONDS)) {
+                runCatching { respond(exchange, 302, "redirect", "Location" to "/forbidden-after-cancel") }
+            } else {
+                exchange.close()
+            }
+        }
+        server.createContext("/forbidden-after-cancel") { exchange ->
+            redirected.incrementAndGet()
+            respond(exchange, 200, "must not load")
+        }
+        val token = register("$remote/slow-redirect")
+        val result = AtomicReference<WebResourceResponse?>()
+        val failure = AtomicReference<Throwable?>()
+        val completed = CountDownLatch(1)
+        val worker = Thread {
+            try {
+                result.set(load(token))
+            } catch (e: Throwable) {
+                failure.set(e)
+            } finally {
+                completed.countDown()
+            }
+        }
+        worker.isDaemon = true
+        worker.start()
+        try {
+            assertTrue("Request did not reach the server", entered.await(5, TimeUnit.SECONDS))
+            cancelPdfSourceRequests(token)
+            release.countDown()
+            assertTrue("Cancelled request did not finish", completed.await(7, TimeUnit.SECONDS))
+            assertNull(failure.get())
+            assertStatus(410, result.get())
+            assertEquals(0, redirected.get())
+            assertTrue(activeConnections(source(token)).isEmpty())
+        } finally {
+            release.countDown()
+            worker.join(1000)
+        }
+    }
+
+    @Test
     fun expiredSourcesCancelPendingAuthenticationWithoutMakingAnotherHttpRequest() {
         val requests = AtomicInteger()
         server.createContext("/expired.pdf") { exchange ->
@@ -943,6 +1097,11 @@ class PdfSourceRequestTest {
     private fun pendingAuthentication(source: Any): MutableMap<Any, HttpAuthRequest> =
         source.javaClass.getDeclaredField("pendingAuthentication").apply { isAccessible = true }
             .get(source) as MutableMap<Any, HttpAuthRequest>
+
+    @Suppress("UNCHECKED_CAST")
+    private fun activeConnections(source: Any): Set<HttpURLConnection> =
+        source.javaClass.getDeclaredField("activeConnections").apply { isAccessible = true }
+            .get(source) as Set<HttpURLConnection>
 
     @Suppress("UNCHECKED_CAST")
     private fun credentials(source: Any): Map<Any, String> =
