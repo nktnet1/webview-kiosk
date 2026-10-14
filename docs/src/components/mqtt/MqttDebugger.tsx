@@ -1,14 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import { Callout } from "fumadocs-ui/components/callout";
-import {
-  ArrowDownLeft,
-  ArrowUpRight,
-  CircleHelp,
-  PlugZap,
-  Send,
-  Trash2,
-  WifiOff,
-} from "lucide-react";
+import { PlugZap, Send, Trash2, WifiOff } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CredentialJsonTransfer } from "#/components/remote-control/CredentialJsonTransfer";
@@ -45,6 +37,7 @@ import {
   SelectValue,
 } from "#/components/ui/select";
 import { Textarea } from "#/components/ui/textarea";
+import { type LogEntry, MqttMessageLog } from "./MqttMessageLog";
 import { type MqttConnectionStatus, MqttWebSocketClient } from "./protocol";
 import { RequestEditor } from "./RequestEditor";
 import { createRequestPayload, parseRequestPayload } from "./request";
@@ -73,28 +66,10 @@ import {
 
 type BrokerForm = MqttCredentials & { keepAlive: string };
 type Mode = "control" | "request" | "custom";
-type LogEntry = {
-  id: number;
-  time: string;
-  direction: "received" | "published";
-  topic: string;
-  payload: string;
-  qos: MqttQos;
-  retain: boolean;
-};
-
 function message(error: unknown): string {
   return error instanceof Error
     ? error.message
     : "An unexpected error occurred.";
-}
-
-function displayPayload(value: string): string {
-  try {
-    return JSON.stringify(JSON.parse(value), null, 2);
-  } catch {
-    return value;
-  }
 }
 
 function QosSelect({
@@ -457,11 +432,11 @@ export default function MqttDebugger() {
           {error}
         </p>
       )}
-      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+      <section aria-label="Broker connection">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between gap-2">
-              Broker
+              Connection
               <span
                 role="status"
                 className="flex items-center gap-1.5 text-xs font-normal text-muted-foreground"
@@ -490,83 +465,13 @@ export default function MqttDebugger() {
                 disabled={!loaded || status !== "disconnected"}
                 className="space-y-4 disabled:opacity-70"
               >
-                <form.Field
-                  name="brokerUrl"
-                  validators={{
-                    onBlur: ({ value }) => {
-                      try {
-                        validateBrokerDomain(value);
-                      } catch (cause) {
-                        return message(cause);
-                      }
-                    },
-                  }}
-                >
-                  {(field) => (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-1">
-                        <Label htmlFor="mqtt-broker-url">Broker domain</Label>
-                        <InfoTooltip>
-                          Hostname or IP address only. Configure the protocol,
-                          port and path separately.
-                        </InfoTooltip>
-                      </div>
-                      <Input
-                        id="mqtt-broker-url"
-                        name={field.name}
-                        type="text"
-                        required
-                        spellCheck={false}
-                        placeholder="broker.example.com"
-                        aria-invalid={!field.state.meta.isValid}
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(event) =>
-                          editCredential("brokerUrl", event.target.value)
-                        }
-                      />
-                      {!field.state.meta.isValid && (
-                        <p role="alert" className="text-xs text-destructive">
-                          {field.state.meta.errors.join(", ")}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                </form.Field>
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <form.Field name="protocol">
-                    {(field) => (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-1">
-                          <Label htmlFor="mqtt-protocol">Protocol</Label>
-                          <InfoTooltip>
-                            WSS uses TLS; WS is available on HTTP pages.
-                          </InfoTooltip>
-                        </div>
-                        <Select
-                          required
-                          value={field.state.value}
-                          onValueChange={(value) =>
-                            editCredential("protocol", value)
-                          }
-                        >
-                          <SelectTrigger id="mqtt-protocol" className="w-full">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="wss">Secure (WSS)</SelectItem>
-                            <SelectItem value="ws">Insecure (WS)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
-                  </form.Field>
+                <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
                   <form.Field
-                    name="port"
+                    name="brokerUrl"
                     validators={{
                       onBlur: ({ value }) => {
                         try {
-                          validateBrokerPort(value);
+                          validateBrokerDomain(value);
                         } catch (cause) {
                           return message(cause);
                         }
@@ -576,60 +481,24 @@ export default function MqttDebugger() {
                     {(field) => (
                       <div className="space-y-2">
                         <div className="flex items-center gap-1">
-                          <Label htmlFor="mqtt-port">Port</Label>
-                          <InfoTooltip>WebSocket port (1–65535).</InfoTooltip>
+                          <Label htmlFor="mqtt-broker-url">Broker domain</Label>
+                          <InfoTooltip>
+                            Hostname or IP address only. Configure the protocol,
+                            port and path separately.
+                          </InfoTooltip>
                         </div>
                         <Input
-                          id="mqtt-port"
+                          id="mqtt-broker-url"
                           name={field.name}
                           type="text"
-                          inputMode="numeric"
                           required
-                          aria-invalid={!field.state.meta.isValid}
-                          value={field.state.value}
-                          onBlur={field.handleBlur}
-                          onChange={(event) =>
-                            editCredential("port", event.target.value)
-                          }
-                        />
-                        {!field.state.meta.isValid && (
-                          <p role="alert" className="text-xs text-destructive">
-                            {field.state.meta.errors.join(", ")}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </form.Field>
-                  <form.Field
-                    name="path"
-                    validators={{
-                      onBlur: ({ value }) => {
-                        try {
-                          validateBrokerPath(value);
-                        } catch (cause) {
-                          return message(cause);
-                        }
-                      },
-                    }}
-                  >
-                    {(field) => (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-1">
-                          <Label htmlFor="mqtt-path">Path</Label>
-                          <InfoTooltip>
-                            WebSocket endpoint path, beginning with /.
-                          </InfoTooltip>
-                        </div>
-                        <Input
-                          id="mqtt-path"
-                          name={field.name}
                           spellCheck={false}
-                          required
+                          placeholder="broker.example.com"
                           aria-invalid={!field.state.meta.isValid}
                           value={field.state.value}
                           onBlur={field.handleBlur}
                           onChange={(event) =>
-                            editCredential("path", event.target.value)
+                            editCredential("brokerUrl", event.target.value)
                           }
                         />
                         {!field.state.meta.isValid && (
@@ -640,6 +509,123 @@ export default function MqttDebugger() {
                       </div>
                     )}
                   </form.Field>
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <form.Field name="protocol">
+                      {(field) => (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-1">
+                            <Label htmlFor="mqtt-protocol">Protocol</Label>
+                            <InfoTooltip>
+                              WSS uses TLS; WS is available on HTTP pages.
+                            </InfoTooltip>
+                          </div>
+                          <Select
+                            required
+                            value={field.state.value}
+                            onValueChange={(value) =>
+                              editCredential("protocol", value)
+                            }
+                          >
+                            <SelectTrigger
+                              id="mqtt-protocol"
+                              className="w-full"
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="wss">Secure (WSS)</SelectItem>
+                              <SelectItem value="ws">Insecure (WS)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </form.Field>
+                    <form.Field
+                      name="port"
+                      validators={{
+                        onBlur: ({ value }) => {
+                          try {
+                            validateBrokerPort(value);
+                          } catch (cause) {
+                            return message(cause);
+                          }
+                        },
+                      }}
+                    >
+                      {(field) => (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-1">
+                            <Label htmlFor="mqtt-port">Port</Label>
+                            <InfoTooltip>WebSocket port (1–65535).</InfoTooltip>
+                          </div>
+                          <Input
+                            id="mqtt-port"
+                            name={field.name}
+                            type="text"
+                            inputMode="numeric"
+                            required
+                            aria-invalid={!field.state.meta.isValid}
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(event) =>
+                              editCredential("port", event.target.value)
+                            }
+                          />
+                          {!field.state.meta.isValid && (
+                            <p
+                              role="alert"
+                              className="text-xs text-destructive"
+                            >
+                              {field.state.meta.errors.join(", ")}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </form.Field>
+                    <form.Field
+                      name="path"
+                      validators={{
+                        onBlur: ({ value }) => {
+                          try {
+                            validateBrokerPath(value);
+                          } catch (cause) {
+                            return message(cause);
+                          }
+                        },
+                      }}
+                    >
+                      {(field) => (
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-1">
+                            <Label htmlFor="mqtt-path">Path</Label>
+                            <InfoTooltip>
+                              WebSocket endpoint path, beginning with /.
+                            </InfoTooltip>
+                          </div>
+                          <Input
+                            id="mqtt-path"
+                            name={field.name}
+                            spellCheck={false}
+                            required
+                            aria-invalid={!field.state.meta.isValid}
+                            value={field.state.value}
+                            onBlur={field.handleBlur}
+                            onChange={(event) =>
+                              editCredential("path", event.target.value)
+                            }
+                          />
+                          {!field.state.meta.isValid && (
+                            <p
+                              role="alert"
+                              className="text-xs text-destructive"
+                            >
+                              {field.state.meta.errors.join(", ")}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </form.Field>
+                  </div>
                 </div>
                 <form.Subscribe
                   selector={(state) =>
@@ -672,7 +658,7 @@ export default function MqttDebugger() {
                     );
                   }}
                 </form.Subscribe>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   <form.Field name="username">
                     {(field) => (
                       <div className="space-y-2">
@@ -714,27 +700,27 @@ export default function MqttDebugger() {
                       </div>
                     )}
                   </form.Field>
+                  <form.Field name="password">
+                    {(field) => (
+                      <div className="space-y-2">
+                        <Label htmlFor="mqtt-password">Password</Label>
+                        <SecretInput
+                          id="mqtt-password"
+                          name={field.name}
+                          value={field.state.value}
+                          autoComplete="off"
+                          revealed={passwordVisible}
+                          onRevealChange={setPasswordVisible}
+                          revealLabel="MQTT password"
+                          onBlur={field.handleBlur}
+                          onChange={(event) =>
+                            editCredential("password", event.target.value)
+                          }
+                        />
+                      </div>
+                    )}
+                  </form.Field>
                 </div>
-                <form.Field name="password">
-                  {(field) => (
-                    <div className="space-y-2">
-                      <Label htmlFor="mqtt-password">Password</Label>
-                      <SecretInput
-                        id="mqtt-password"
-                        name={field.name}
-                        value={field.state.value}
-                        autoComplete="off"
-                        revealed={passwordVisible}
-                        onRevealChange={setPasswordVisible}
-                        revealLabel="MQTT password"
-                        onBlur={field.handleBlur}
-                        onChange={(event) =>
-                          editCredential("password", event.target.value)
-                        }
-                      />
-                    </div>
-                  )}
-                </form.Field>
                 <details className="rounded-md border p-3">
                   <summary className="cursor-pointer text-sm font-medium">
                     Connection options
@@ -784,10 +770,10 @@ export default function MqttDebugger() {
                   </div>
                 </details>
               </fieldset>
-              <div className="grid grid-cols-2 gap-2 border-t pt-4">
+              <div className="flex flex-wrap justify-end gap-2 border-t pt-4">
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full sm:w-36"
                   disabled={!loaded || status !== "disconnected"}
                 >
                   <PlugZap aria-hidden="true" />
@@ -796,7 +782,7 @@ export default function MqttDebugger() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full"
+                  className="w-full sm:w-36"
                   disabled={status === "disconnected"}
                   onClick={disconnect}
                 >
@@ -805,61 +791,70 @@ export default function MqttDebugger() {
                 </Button>
               </div>
             </form>
-            <div className="space-y-3 border-t pt-4">
-              <CredentialJsonTransfer
-                filename="mqtt-credentials.json"
-                template={EMPTY_MQTT_CREDENTIALS}
-                getCredentials={currentCredentials}
-                onImport={importCredentials}
-                warning="Backups include the broker password and connection options. Importing replaces all saved broker fields."
-              />
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full"
-                    disabled={!loaded}
-                  >
-                    <Trash2 aria-hidden="true" />
-                    Clear credentials
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Clear MQTT credentials?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This removes the saved broker address, connection options,
-                      username, password and client ID. A backup is required to
-                      restore them.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel asChild>
-                      <Button type="button" variant="outline">
-                        Cancel
-                      </Button>
-                    </AlertDialogCancel>
-                    <AlertDialogAction asChild>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        onClick={clearCredentials}
-                      >
-                        Clear credentials
-                      </Button>
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            </div>
+            <details className="rounded-md border p-3">
+              <summary className="cursor-pointer text-sm font-medium">
+                Manage credentials
+              </summary>
+              <div className="space-y-3 pt-3">
+                <CredentialJsonTransfer
+                  filename="mqtt-credentials.json"
+                  template={EMPTY_MQTT_CREDENTIALS}
+                  getCredentials={currentCredentials}
+                  onImport={importCredentials}
+                  warning="Backups include the broker password and connection options. Importing replaces all saved broker fields."
+                />
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      disabled={!loaded}
+                    >
+                      <Trash2 aria-hidden="true" />
+                      Clear credentials
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Clear MQTT credentials?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This removes the saved broker address, connection
+                        options, username, password and client ID. A backup is
+                        required to restore them.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel asChild>
+                        <Button type="button" variant="outline">
+                          Cancel
+                        </Button>
+                      </AlertDialogCancel>
+                      <AlertDialogAction asChild>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          onClick={clearCredentials}
+                        >
+                          Clear credentials
+                        </Button>
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </details>
           </CardContent>
         </Card>
+      </section>
+      <section aria-label="Publish messages">
         <Card>
           <CardHeader>
             <CardTitle>Publish</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-5">
+          <CardContent className="mx-auto w-full max-w-4xl space-y-5">
             <div className="space-y-2">
               <Label htmlFor="mqtt-publish-mode">Message</Label>
               <Select
@@ -955,148 +950,103 @@ export default function MqttDebugger() {
             </div>
           </CardContent>
         </Card>
-      </div>
-      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+      </section>
+      <section aria-label="MQTT activity">
         <Card>
           <CardHeader>
-            <CardTitle>Subscriptions</CardTitle>
+            <CardTitle>Activity</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_auto] sm:items-end">
-              <div className="space-y-2">
-                <Label htmlFor="mqtt-subscription-topic">Topic filter</Label>
-                <Input
-                  id="mqtt-subscription-topic"
-                  placeholder="wk/event/#"
-                  value={subscribeTopic}
-                  spellCheck={false}
-                  onChange={(event) => setSubscribeTopic(event.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mqtt-subscription-qos">QoS</Label>
-                <QosSelect
-                  id="mqtt-subscription-qos"
-                  value={subscribeQos}
-                  onChange={setSubscribeQos}
-                />
-              </div>
-              <Button
-                type="button"
-                className="w-full sm:w-auto"
-                disabled={status !== "connected" || subscriptionBusy}
-                onClick={() => void subscribe()}
-              >
-                Subscribe
-              </Button>
-            </div>
-            <div className="divide-y rounded-md border">
-              {preferences.subscriptions.map((sub) => (
-                <div
-                  key={sub.topic}
-                  className="flex items-center justify-between gap-3 px-3 py-2.5"
+          <CardContent className="space-y-6">
+            <div className="space-y-3">
+              <h3 className="text-sm font-semibold">
+                Subscriptions ({preferences.subscriptions.length})
+              </h3>
+              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_auto] sm:items-end">
+                <div className="space-y-2">
+                  <Label htmlFor="mqtt-subscription-topic">Topic filter</Label>
+                  <Input
+                    id="mqtt-subscription-topic"
+                    placeholder="wk/event/#"
+                    value={subscribeTopic}
+                    spellCheck={false}
+                    onChange={(event) => setSubscribeTopic(event.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="mqtt-subscription-qos">QoS</Label>
+                  <QosSelect
+                    id="mqtt-subscription-qos"
+                    value={subscribeQos}
+                    onChange={setSubscribeQos}
+                  />
+                </div>
+                <Button
+                  type="button"
+                  className="w-full sm:w-auto"
+                  disabled={status !== "connected" || subscriptionBusy}
+                  onClick={() => void subscribe()}
                 >
-                  <div className="min-w-0">
-                    <div className="break-all font-mono text-xs">
-                      {sub.topic}
-                    </div>
-                    <span className="text-xs text-muted-foreground">
-                      QoS {sub.qos}
-                      {activeTopics.includes(sub.topic) ? " · active" : ""}
-                    </span>
-                  </div>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    aria-label={`Unsubscribe ${sub.topic}`}
-                    disabled={subscriptionBusy}
-                    onClick={() => void unsubscribe(sub.topic)}
+                  Subscribe
+                </Button>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                {preferences.subscriptions.map((sub) => (
+                  <div
+                    key={sub.topic}
+                    className="flex min-w-0 items-center justify-between gap-3 rounded-md border px-3 py-2.5"
                   >
-                    <Trash2 aria-hidden="true" />
-                  </Button>
-                </div>
-              ))}
-              {preferences.subscriptions.length === 0 && (
-                <p className="px-3 py-4 text-sm text-muted-foreground">
-                  No subscriptions.
-                </p>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between gap-2">
-              <span>
-                Messages{" "}
-                <span className="text-xs font-normal text-muted-foreground">
-                  ({log.length}/100)
-                </span>
-              </span>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={log.length === 0}
-                onClick={() => setLog([])}
-              >
-                <Trash2 aria-hidden="true" />
-                Clear
-              </Button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div
-              className="max-h-[34rem] overflow-y-auto divide-y rounded-md border"
-              aria-label="MQTT messages"
-              role="log"
-            >
-              {log.map((entry) => (
-                <details
-                  key={entry.id}
-                  className="group px-3 py-3 open:bg-muted/20"
-                >
-                  <summary className="flex cursor-pointer list-none items-start gap-2 text-sm [&::-webkit-details-marker]:hidden">
-                    {entry.direction === "received" ? (
-                      <ArrowDownLeft
-                        aria-label="Received"
-                        className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-                      />
-                    ) : (
-                      <ArrowUpRight
-                        aria-label="Published"
-                        className="mt-0.5 size-4 shrink-0 text-muted-foreground"
-                      />
-                    )}
-                    <span className="min-w-0 flex-1 break-all font-mono text-xs leading-5">
-                      {entry.topic}
-                    </span>
-                    <span className="shrink-0 text-xs text-muted-foreground">
-                      {entry.time}
-                    </span>
-                  </summary>
-                  <div className="mt-3 space-y-2">
-                    <p className="text-xs text-muted-foreground">
-                      QoS {entry.qos}
-                      {entry.retain ? " · Retained" : ""}
-                    </p>
-                    <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted p-3 font-mono text-xs">
-                      {displayPayload(entry.payload)}
-                    </pre>
+                    <div className="min-w-0">
+                      <div className="break-all font-mono text-xs">
+                        {sub.topic}
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        QoS {sub.qos}
+                        {activeTopics.includes(sub.topic) ? " · active" : ""}
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`Unsubscribe ${sub.topic}`}
+                      disabled={subscriptionBusy}
+                      onClick={() => void unsubscribe(sub.topic)}
+                    >
+                      <Trash2 aria-hidden="true" />
+                    </Button>
                   </div>
-                </details>
-              ))}
-              {log.length === 0 && (
-                <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
-                  <CircleHelp aria-hidden="true" className="size-4" />
-                  Messages appear here when published or received.
-                </div>
-              )}
+                ))}
+                {preferences.subscriptions.length === 0 && (
+                  <p className="py-3 text-sm text-muted-foreground">
+                    No subscriptions.
+                  </p>
+                )}
+              </div>
+            </div>
+            <div className="space-y-3 border-t pt-6">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold">
+                  Messages{" "}
+                  <span className="font-normal text-muted-foreground">
+                    ({log.length}/100)
+                  </span>
+                </h3>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={log.length === 0}
+                  onClick={() => setLog([])}
+                >
+                  <Trash2 aria-hidden="true" />
+                  Clear
+                </Button>
+              </div>
+              <MqttMessageLog entries={log} />
             </div>
           </CardContent>
         </Card>
-      </div>
+      </section>
     </div>
   );
 }
