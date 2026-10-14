@@ -1,14 +1,8 @@
-import { createFileRoute } from "@tanstack/react-router";
-import UnifiedPushDebugger from "#/components/unifiedpush/UnifiedPushDebugger";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
+/** Keep previously shared debugger links usable. */
 export const Route = createFileRoute("/_homelayout/debugger/unifiedpush/")({
-  component: UnifiedPushPage,
+  beforeLoad: () => {
+    throw redirect({ replace: true, to: "/tools/unifiedpush" });
+  },
 });
-
-function UnifiedPushPage() {
-  return (
-    <main className="flex flex-col items-center p-4 md:mt-4 w-full">
-      <UnifiedPushDebugger />
-    </main>
-  );
-}
