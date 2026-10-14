@@ -75,6 +75,12 @@ describe("MQTT topics sidebar", () => {
     expect(html).toMatch(/type="submit"[^>]*disabled=""/);
     expect(html).toContain("Connect to a broker to subscribe.");
     expect(html).toContain('aria-describedby="mqtt-subscribe-connection-hint"');
+    expect(html).toContain(
+      'class="flex min-w-0 items-center justify-end gap-2"',
+    );
+    expect(html.indexOf('id="mqtt-subscribe-connection-hint"')).toBeLessThan(
+      html.indexOf(">Subscribe</button>"),
+    );
   });
 });
 

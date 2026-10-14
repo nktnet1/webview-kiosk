@@ -133,15 +133,71 @@ export function mqttPublishPropertyRows(
   return rows;
 }
 
+/** Keep MQTT 5 user properties separate from standard PUBLISH properties. */
+export function MqttPropertiesDetails({
+  properties,
+}: {
+  properties: MqttPublishProperties;
+}) {
+  const { userProperties = [], ...standardProperties } = properties;
+  const rows = mqttPublishPropertyRows(standardProperties);
+  const seen = new Map<string, number>();
+  const userSeen = new Map<string, number>();
+
+  return (
+    <>
+      <p className="mb-2 font-semibold">MQTT 5 properties</p>
+      {rows.length > 0 && (
+        <dl className="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)] gap-x-3 gap-y-1.5">
+          {rows.map(({ label, value }) => {
+            const identity = `${label}:${value}`;
+            const occurrence = seen.get(identity) ?? 0;
+            seen.set(identity, occurrence + 1);
+            return (
+              <div key={`${identity}:${occurrence}`} className="contents">
+                <dt className="min-w-0 break-words text-muted-foreground">
+                  {label}
+                </dt>
+                <dd className="min-w-0 break-all font-mono">{value}</dd>
+              </div>
+            );
+          })}
+        </dl>
+      )}
+      {userProperties.length > 0 && (
+        <section
+          aria-label="User properties"
+          className={cn(rows.length > 0 && "mt-3 border-t pt-3")}
+        >
+          <h3 className="mb-2 font-semibold">User properties</h3>
+          <dl className="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)] gap-x-3 gap-y-1.5">
+            {userProperties.map(({ name, value }) => {
+              const identity = `${name}:${value}`;
+              const occurrence = userSeen.get(identity) ?? 0;
+              userSeen.set(identity, occurrence + 1);
+              return (
+                <div key={`${identity}:${occurrence}`} className="contents">
+                  <dt className="min-w-0 break-words text-muted-foreground">
+                    {name}
+                  </dt>
+                  <dd className="min-w-0 break-all font-mono">{value}</dd>
+                </div>
+              );
+            })}
+          </dl>
+        </section>
+      )}
+    </>
+  );
+}
+
 function MessagePropertiesTooltip({
   properties,
 }: {
   properties: MqttPublishProperties;
 }) {
-  const rows = mqttPublishPropertyRows(properties);
-  if (rows.length === 0) return null;
+  if (mqttPublishPropertyRows(properties).length === 0) return null;
 
-  const seen = new Map<string, number>();
   return (
     <TooltipProvider delayDuration={150}>
       <Tooltip>
@@ -159,22 +215,7 @@ function MessagePropertiesTooltip({
           align="end"
           className="max-h-[min(28rem,70vh)] w-max max-w-[min(26rem,calc(100vw-2rem))] overflow-y-auto p-3"
         >
-          <p className="mb-2 font-semibold">MQTT 5 properties</p>
-          <dl className="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)] gap-x-3 gap-y-1.5">
-            {rows.map(({ label, value }) => {
-              const identity = `${label}:${value}`;
-              const occurrence = seen.get(identity) ?? 0;
-              seen.set(identity, occurrence + 1);
-              return (
-                <div key={`${identity}:${occurrence}`} className="contents">
-                  <dt className="min-w-0 break-words text-muted-foreground">
-                    {label}
-                  </dt>
-                  <dd className="min-w-0 break-all font-mono">{value}</dd>
-                </div>
-              );
-            })}
-          </dl>
+          <MqttPropertiesDetails properties={properties} />
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
@@ -259,13 +300,7 @@ function MessageEntry({
             : "border-emerald-500/25 bg-emerald-500/8 dark:bg-emerald-500/10",
         )}
       >
-        <button
-          type="button"
-          aria-expanded={expanded}
-          aria-controls={payloadId}
-          onClick={onToggle}
-          className="w-full cursor-pointer rounded-xl p-3 pb-1.5 pr-11 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
+        <div className="min-w-0 p-3 pb-2 pr-11">
           <div className="flex min-w-0 items-start gap-2.5">
             <span
               className={cn(
@@ -282,28 +317,16 @@ function MessageEntry({
               )}
             </span>
             <div className="min-w-0 flex-1 space-y-1">
-              <div className="flex items-center justify-between gap-2">
-                <span
-                  className={cn(
-                    "text-xs font-semibold",
-                    received
-                      ? "text-sky-700 dark:text-sky-400"
-                      : "text-emerald-700 dark:text-emerald-400",
-                  )}
-                >
-                  {received ? "Received" : "Published"}
-                </span>
-                <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
-                  <time>{entry.time}</time>
-                  <ChevronDown
-                    aria-hidden="true"
-                    className={cn(
-                      "size-3.5 transition-transform",
-                      expanded && "rotate-180",
-                    )}
-                  />
-                </span>
-              </div>
+              <span
+                className={cn(
+                  "text-xs font-semibold",
+                  received
+                    ? "text-sky-700 dark:text-sky-400"
+                    : "text-emerald-700 dark:text-emerald-400",
+                )}
+              >
+                {received ? "Received" : "Published"}
+              </span>
               <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs leading-5">
                 <span className="shrink-0 text-muted-foreground">
                   {received ? "Topic" : "To"}
@@ -314,7 +337,7 @@ function MessageEntry({
               </p>
             </div>
           </div>
-        </button>
+        </div>
         <div className="px-3 pb-3">
           <MessageDetails entry={entry} />
         </div>
@@ -328,6 +351,10 @@ function MessageEntry({
                 lang={formatted.language}
                 code={formatted.code}
                 codeblock={{
+                  title:
+                    formatted.language === "json"
+                      ? "JSON payload"
+                      : "Text payload",
                   className: "my-0",
                   viewportProps: { className: "max-h-80" },
                 }}
@@ -335,6 +362,27 @@ function MessageEntry({
             ) : (
               <p className="text-xs text-muted-foreground">Empty payload</p>
             ))}
+        </div>
+        <div className="flex items-center justify-end gap-1.5 px-3 pb-2">
+          <time className="text-xs text-muted-foreground">{entry.time}</time>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="size-7 shrink-0"
+            aria-label={expanded ? "Collapse message" : "Expand message"}
+            aria-expanded={expanded}
+            aria-controls={payloadId}
+            onClick={onToggle}
+          >
+            <ChevronDown
+              aria-hidden="true"
+              className={cn(
+                "size-4 transition-transform",
+                expanded && "rotate-180",
+              )}
+            />
+          </Button>
         </div>
       </article>
     </li>

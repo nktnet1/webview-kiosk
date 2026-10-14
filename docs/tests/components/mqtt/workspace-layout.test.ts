@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import MqttDebugger from "../../../src/components/mqtt/MqttDebugger";
+import { createRequestPayload } from "../../../src/components/mqtt/request";
 
 describe("MQTT debugger workspace", () => {
   it("renders a full-width workspace with the publisher below Topics and alongside Messages", () => {
@@ -25,7 +26,15 @@ describe("MQTT debugger workspace", () => {
     const manage = html.indexOf("Manage credentials");
     const connectForm = html.indexOf('id="mqtt-connection-fields"');
     expect(manage).toBeGreaterThan(connection);
-    expect(manage).toBeLessThan(connectForm);
+    expect(manage).toBeGreaterThan(connectForm);
+    expect(manage).toBeLessThan(html.indexOf(">Connect</button>"));
+    expect(html).toContain(
+      'class="flex items-center justify-end gap-2 border-t pt-4"',
+    );
+    expect(html).toContain("bottom-[calc(100%+0.5rem)]");
+    expect(html).toContain('id="mqtt-request-type"');
+    expect(html).toContain("wk/request");
+    expect(createRequestPayload()).toEqual({ requestType: "get_status" });
     expect(html).toContain("Export JSON");
     expect(html).toContain("Import JSON");
     expect(html).toContain("Clear credentials");

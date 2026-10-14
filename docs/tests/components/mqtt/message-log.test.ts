@@ -8,6 +8,7 @@ import {
   formatMqttMessagePayload,
   type LogEntry,
   MqttMessageLog,
+  MqttPropertiesDetails,
   matchesMqttTopicFilter,
   mqttPublishPropertyRows,
   pruneMqttMessageExpansion,
@@ -338,9 +339,10 @@ describe("MQTT message log", () => {
     );
     expect(first).toContain('aria-label="MQTT 5 properties"');
     expect(first).toContain('class="absolute top-3 right-3');
-    expect(first.indexOf('aria-label="MQTT 5 properties"')).toBeGreaterThan(
-      first.indexOf("</button>"),
+    expect(first.indexOf('aria-label="MQTT 5 properties"')).toBeLessThan(
+      first.indexOf('aria-label="Collapse message"'),
     );
+    expect(first).toContain('aria-label="Collapse message"');
     expect(first).toContain('aria-label="Message details"');
     expect(first).toContain(">QoS<");
     expect(first).toContain(">From<");
@@ -350,6 +352,77 @@ describe("MQTT message log", () => {
     expect(first).not.toContain("Topic alias");
     expect(html).toContain(">To<");
     expect(html).toContain("debug-42");
+  });
+
+  it("separates MQTT 5 user properties into their own labelled section", () => {
+    const html = renderToStaticMarkup(
+      createElement(MqttPropertiesDetails, {
+        properties: {
+          contentType: "application/json",
+          userProperties: [
+            { name: "username", value: "kiosk-a" },
+            { name: "username", value: "kiosk-b" },
+            { name: "appInstanceId", value: "instance-1" },
+          ],
+        },
+      }),
+    );
+    expect(html).toContain("MQTT 5 properties");
+    expect(html).toContain("Content type");
+    expect(html).toContain('aria-label="User properties"');
+    expect(html).toContain(">User properties</h3>");
+    expect(html).toContain("username</dt>");
+    expect(html).not.toContain("User property: username");
+    expect(html).toContain("kiosk-a");
+    expect(html).toContain("kiosk-b");
+    expect(html.indexOf("Content type")).toBeLessThan(
+      html.indexOf("User properties</h3>"),
+    );
+    expect((html.match(/username<\/dt>/g) ?? []).length).toBe(2);
+
+    const userOnly = renderToStaticMarkup(
+      createElement(MqttPropertiesDetails, {
+        properties: { userProperties: [{ name: "key", value: "value" }] },
+      }),
+    );
+    expect(userOnly).toContain("User properties</h3>");
+    expect(userOnly).not.toContain("border-t");
+  });
+
+  it("puts the message time and independent expand button in the bottom-right footer", () => {
+    const html = renderToStaticMarkup(
+      createElement(MqttMessageLog, { entries: [received] }),
+    );
+    const message = html.slice(
+      html.indexOf("<article"),
+      html.indexOf("</article>") + 10,
+    );
+    const payload = message.indexOf('id="mqtt-message-payload-1"');
+    const footer = message.indexOf(
+      'class="flex items-center justify-end gap-1.5 px-3 pb-2"',
+    );
+    const time = message.indexOf("10:15:00");
+    const toggle = message.indexOf('aria-label="Collapse message"');
+    expect(payload).toBeGreaterThanOrEqual(0);
+    expect(footer).toBeGreaterThan(payload);
+    expect(time).toBeGreaterThan(footer);
+    expect(toggle).toBeGreaterThan(time);
+    expect(message).toContain('aria-controls="mqtt-message-payload-1"');
+    expect(message).toContain('aria-expanded="true"');
+  });
+
+  it("places Fumadocs copy controls in the code block header, outside its scrollable region", () => {
+    const html = renderToStaticMarkup(
+      createElement(MqttMessageLog, { entries: [received] }),
+    );
+    expect(html).toContain("JSON payload</figcaption>");
+    expect(html).toContain("Copy Text");
+    expect(html.indexOf("JSON payload</figcaption>")).toBeLessThan(
+      html.indexOf("Copy Text"),
+    );
+    expect(html.indexOf("Copy Text")).toBeLessThan(
+      html.indexOf('role="region"'),
+    );
   });
 
   it("omits metadata tooltip when no MQTT 5 properties are present", () => {

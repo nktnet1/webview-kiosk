@@ -232,9 +232,19 @@ export function MqttTopicSidebar({
               />
             </div>
           </div>
-          <div className="flex justify-end">
+          <div className="flex min-w-0 items-center justify-end gap-2">
+            {!connected && (
+              <p
+                id="mqtt-subscribe-connection-hint"
+                className="flex min-w-0 flex-1 items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400"
+              >
+                <WifiOff aria-hidden="true" className="size-3.5 shrink-0" />
+                <span>Connect to a broker to subscribe.</span>
+              </p>
+            )}
             <Button
               type="submit"
+              className="shrink-0"
               disabled={!connected || subscriptionBusy}
               aria-describedby={
                 connected ? undefined : "mqtt-subscribe-connection-hint"
@@ -244,15 +254,6 @@ export function MqttTopicSidebar({
               Subscribe
             </Button>
           </div>
-          {!connected && (
-            <p
-              id="mqtt-subscribe-connection-hint"
-              className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400"
-            >
-              <WifiOff aria-hidden="true" className="size-3.5 shrink-0" />
-              Connect to a broker to subscribe.
-            </p>
-          )}
         </form>
       </Card>
       <Dialog

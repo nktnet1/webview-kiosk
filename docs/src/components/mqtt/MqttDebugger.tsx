@@ -91,7 +91,7 @@ export default function MqttDebugger() {
   const [subscribeQos, setSubscribeQos] = useState<MqttQos>(0);
   const [subscriptionBusy, setSubscriptionBusy] = useState(false);
   const [publishBusy, setPublishBusy] = useState(false);
-  const [mode, setMode] = useState<PublishMode>("command");
+  const [mode, setMode] = useState<PublishMode>("request");
   const [commandPayload, setCommandPayload] = useState(() =>
     stringifyPayload(createRemotePayload("mqtt", "command")),
   );
@@ -518,67 +518,6 @@ export default function MqttDebugger() {
                 className={`size-4 shrink-0 text-muted-foreground transition-transform ${connectionOpen ? "rotate-180" : ""}`}
               />
             </button>
-            <details className="group relative z-20 shrink-0">
-              <summary className="inline-flex h-8 cursor-pointer list-none items-center gap-1.5 rounded-md border bg-background px-2.5 text-sm font-medium shadow-xs hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
-                <KeyRound aria-hidden="true" className="size-4" />
-                <span className="hidden sm:inline">Manage credentials</span>
-                <span className="sr-only sm:hidden">Manage credentials</span>
-                <ChevronDown
-                  aria-hidden="true"
-                  className="size-3.5 transition-transform group-open:rotate-180"
-                />
-              </summary>
-              <div className="absolute top-[calc(100%+0.5rem)] right-0 z-30 w-72 max-w-[calc(100vw-2rem)] space-y-3 rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg">
-                <CredentialJsonTransfer
-                  filename="mqtt-credentials.json"
-                  template={EMPTY_MQTT_CREDENTIALS}
-                  getCredentials={currentCredentials}
-                  onImport={importCredentials}
-                  warning="Backups include the broker password and connection options. Importing replaces all saved broker fields."
-                />
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      disabled={!loaded}
-                    >
-                      <Trash2 aria-hidden="true" />
-                      Clear credentials
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Clear MQTT credentials?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This removes the saved broker address, connection
-                        options, username, password and client ID. A backup is
-                        required to restore them.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel asChild>
-                        <Button type="button" variant="outline">
-                          Cancel
-                        </Button>
-                      </AlertDialogCancel>
-                      <AlertDialogAction asChild>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          onClick={clearCredentials}
-                        >
-                          Clear credentials
-                        </Button>
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </details>
             {status !== "disconnected" && (
               <Button
                 type="button"
@@ -914,10 +853,70 @@ export default function MqttDebugger() {
                   </form.Field>
                 </div>
               </fieldset>
-              <div className="flex flex-wrap justify-end gap-2 border-t pt-4">
+              <div className="flex items-center justify-end gap-2 border-t pt-4">
+                <details className="group relative z-20 min-w-0 flex-1 sm:flex-none">
+                  <summary className="flex h-9 w-full cursor-pointer list-none items-center justify-center gap-1.5 rounded-md border bg-background px-2.5 text-sm font-medium shadow-xs hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                    <KeyRound aria-hidden="true" className="size-4" />
+                    <span className="truncate">Manage credentials</span>
+                    <ChevronDown
+                      aria-hidden="true"
+                      className="size-3.5 transition-transform group-open:rotate-180"
+                    />
+                  </summary>
+                  <div className="absolute bottom-[calc(100%+0.5rem)] right-0 z-30 w-72 max-w-[calc(100vw-2rem)] space-y-3 rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg">
+                    <CredentialJsonTransfer
+                      filename="mqtt-credentials.json"
+                      template={EMPTY_MQTT_CREDENTIALS}
+                      getCredentials={currentCredentials}
+                      onImport={importCredentials}
+                      warning="Backups include the broker password and connection options. Importing replaces all saved broker fields."
+                    />
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full"
+                          disabled={!loaded}
+                        >
+                          <Trash2 aria-hidden="true" />
+                          Clear credentials
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>
+                            Clear MQTT credentials?
+                          </AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This removes the saved broker address, connection
+                            options, username, password and client ID. A backup
+                            is required to restore them.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel asChild>
+                            <Button type="button" variant="outline">
+                              Cancel
+                            </Button>
+                          </AlertDialogCancel>
+                          <AlertDialogAction asChild>
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              onClick={clearCredentials}
+                            >
+                              Clear credentials
+                            </Button>
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </details>
                 <Button
                   type="submit"
-                  className="w-full sm:w-36"
+                  className="w-24 shrink-0 sm:w-36"
                   disabled={!loaded || status !== "disconnected"}
                 >
                   <PlugZap aria-hidden="true" />
