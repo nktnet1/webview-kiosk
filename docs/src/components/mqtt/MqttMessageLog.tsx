@@ -14,9 +14,16 @@ import {
   ChevronsDown,
   ChevronsUp,
   CircleHelp,
+  Info,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "#/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "#/components/ui/tooltip";
 import { cn } from "#/lib/cn";
 import { type MqttPublishProperties, reportedMqttSender } from "./properties";
 import type { MqttQos } from "./validation";
@@ -93,80 +100,137 @@ export function formatMqttMessagePayload(payload: string): {
   }
 }
 
-function MessageProperties({
-  properties,
-}: {
-  properties: MqttPublishProperties;
-}) {
-  const values: { label: string; value: string }[] = [];
+/** Human-readable PUBLISH properties; preserve repeated MQTT user properties. */
+export function mqttPublishPropertyRows(
+  properties: MqttPublishProperties,
+): { label: string; value: string }[] {
+  const rows: { label: string; value: string }[] = [];
   if (properties.payloadFormatIndicator !== undefined)
-    values.push({
+    rows.push({
       label: "Payload format",
       value: properties.payloadFormatIndicator === 1 ? "UTF-8" : "Binary",
     });
   if (properties.contentType !== undefined)
-    values.push({ label: "Content type", value: properties.contentType });
+    rows.push({ label: "Content type", value: properties.contentType });
   if (properties.messageExpiryInterval !== undefined)
-    values.push({
+    rows.push({
       label: "Message expiry",
       value: `${properties.messageExpiryInterval} seconds`,
     });
   if (properties.responseTopic !== undefined)
-    values.push({ label: "Response topic", value: properties.responseTopic });
+    rows.push({ label: "Response topic", value: properties.responseTopic });
   if (properties.correlationData !== undefined)
-    values.push({
+    rows.push({
       label: "Correlation data (hex)",
       value: `0x${properties.correlationData}`,
     });
   if (properties.topicAlias !== undefined)
-    values.push({ label: "Topic alias", value: String(properties.topicAlias) });
+    rows.push({ label: "Topic alias", value: String(properties.topicAlias) });
   for (const identifier of properties.subscriptionIdentifiers ?? [])
-    values.push({ label: "Subscription ID", value: String(identifier) });
+    rows.push({ label: "Subscription ID", value: String(identifier) });
   for (const { name, value } of properties.userProperties ?? [])
-    values.push({ label: `User property: ${name}`, value });
+    rows.push({ label: `User property: ${name}`, value });
+  return rows;
+}
 
-  if (!values.length) return null;
+function MessagePropertiesTooltip({
+  properties,
+}: {
+  properties: MqttPublishProperties;
+}) {
+  const rows = mqttPublishPropertyRows(properties);
+  if (rows.length === 0) return null;
+
   const seen = new Map<string, number>();
   return (
-    <div className="mt-3 rounded-md border bg-background/60 p-3 text-xs">
-      <p className="mb-2 font-semibold">MQTT 5 properties</p>
-      <dl className="grid grid-cols-1 gap-x-3 gap-y-1.5 sm:grid-cols-[max-content_minmax(0,1fr)]">
-        {values.map(({ label, value }) => {
-          const identity = `${label}:${value}`;
-          const occurrence = seen.get(identity) ?? 0;
-          seen.set(identity, occurrence + 1);
-          return (
-            <div key={`${identity}:${occurrence}`} className="contents">
-              <dt className="text-muted-foreground">{label}</dt>
-              <dd className="wrap-anywhere font-mono">{value}</dd>
-            </div>
-          );
-        })}
-      </dl>
-    </div>
+    <TooltipProvider delayDuration={150}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            aria-label="MQTT 5 properties"
+            className="absolute top-3 right-3 z-10 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            <Info aria-hidden="true" className="size-4" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent
+          side="top"
+          align="end"
+          className="max-h-[min(28rem,70vh)] w-max max-w-[min(26rem,calc(100vw-2rem))] overflow-y-auto p-3"
+        >
+          <p className="mb-2 font-semibold">MQTT 5 properties</p>
+          <dl className="grid grid-cols-[minmax(0,8rem)_minmax(0,1fr)] gap-x-3 gap-y-1.5">
+            {rows.map(({ label, value }) => {
+              const identity = `${label}:${value}`;
+              const occurrence = seen.get(identity) ?? 0;
+              seen.set(identity, occurrence + 1);
+              return (
+                <div key={`${identity}:${occurrence}`} className="contents">
+                  <dt className="min-w-0 break-words text-muted-foreground">
+                    {label}
+                  </dt>
+                  <dd className="min-w-0 break-all font-mono">{value}</dd>
+                </div>
+              );
+            })}
+          </dl>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }
 
-function SenderLabel({ entry }: { entry: LogEntry }) {
-  const sender =
-    entry.direction === "received"
-      ? reportedMqttSender(entry.properties)
-      : entry.sender;
-  const name = sender?.username;
-  const instance =
-    sender && "appInstanceId" in sender ? sender.appInstanceId : undefined;
-  const clientId = sender && "clientId" in sender ? sender.clientId : undefined;
+function MessageDetail({ label, value }: { label: string; value: string }) {
   return (
-    <p className="mt-1 wrap-anywhere text-xs text-muted-foreground">
-      {entry.direction === "published" ? "You" : "From"}
-      {name
-        ? ` · ${name}`
-        : entry.direction === "received"
-          ? " · Sender not provided"
-          : ""}
-      {instance ? ` · Instance: ${instance}` : ""}
-      {clientId ? ` · Client: ${clientId}` : ""}
-    </p>
+    <span className="flex max-w-full min-w-0 items-baseline gap-1.5 rounded-md border border-border/60 bg-background/60 px-2 py-1">
+      <span className="shrink-0 text-muted-foreground">{label}</span>
+      <span className="min-w-0 break-all font-medium text-foreground">
+        {value}
+      </span>
+    </span>
+  );
+}
+
+function MessageDetails({ entry }: { entry: LogEntry }) {
+  const received = entry.direction === "received";
+  const reported = received ? reportedMqttSender(entry.properties) : null;
+  const username = received ? reported?.username : entry.sender?.username;
+  const from = received
+    ? (username ?? "Not reported")
+    : username
+      ? `You (${username})`
+      : "You";
+  const identifier = received
+    ? reported?.appInstanceId
+    : entry.sender?.clientId;
+
+  return (
+    <dl
+      aria-label="Message details"
+      className="flex flex-wrap gap-1.5 text-[11px] leading-4"
+    >
+      <MessageDetail label="QoS" value={String(entry.qos)} />
+      <MessageDetail label="From" value={from} />
+      {identifier && (
+        <MessageDetail
+          label={received ? "Instance" : "Client"}
+          value={identifier}
+        />
+      )}
+      {entry.retain && (
+        <div className="rounded-md border border-border/60 bg-background/60 px-2 py-1 text-muted-foreground">
+          <dt className="sr-only">Retain flag</dt>
+          <dd>Retained</dd>
+        </div>
+      )}
+      {entry.duplicate && (
+        <div className="rounded-md border border-border/60 bg-background/60 px-2 py-1 text-muted-foreground">
+          <dt className="sr-only">Duplicate flag</dt>
+          <dd>Duplicate</dd>
+        </div>
+      )}
+    </dl>
   );
 }
 
@@ -189,7 +253,7 @@ function MessageEntry({
     >
       <article
         className={cn(
-          "min-w-0 w-full rounded-xl border sm:max-w-[85%] xl:max-w-[76%]",
+          "relative min-w-0 w-full rounded-xl border sm:max-w-[85%] xl:max-w-[76%]",
           received
             ? "border-border bg-muted/50"
             : "border-emerald-500/25 bg-emerald-500/8 dark:bg-emerald-500/10",
@@ -200,7 +264,7 @@ function MessageEntry({
           aria-expanded={expanded}
           aria-controls={payloadId}
           onClick={onToggle}
-          className="w-full cursor-pointer rounded-xl p-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="w-full cursor-pointer rounded-xl p-3 pb-1.5 pr-11 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <div className="flex min-w-0 items-start gap-2.5">
             <span
@@ -218,43 +282,45 @@ function MessageEntry({
               )}
             </span>
             <div className="min-w-0 flex-1 space-y-1">
-              <span
-                className={cn(
-                  "text-xs font-semibold",
-                  received
-                    ? "text-sky-700 dark:text-sky-400"
-                    : "text-emerald-700 dark:text-emerald-400",
-                )}
-              >
-                {received ? "Received" : "Published"}
-              </span>
-              <p className="wrap-anywhere font-mono text-xs leading-5 text-foreground">
-                {entry.topic}
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  className={cn(
+                    "text-xs font-semibold",
+                    received
+                      ? "text-sky-700 dark:text-sky-400"
+                      : "text-emerald-700 dark:text-emerald-400",
+                  )}
+                >
+                  {received ? "Received" : "Published"}
+                </span>
+                <span className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground">
+                  <time>{entry.time}</time>
+                  <ChevronDown
+                    aria-hidden="true"
+                    className={cn(
+                      "size-3.5 transition-transform",
+                      expanded && "rotate-180",
+                    )}
+                  />
+                </span>
+              </div>
+              <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs leading-5">
+                <span className="shrink-0 text-muted-foreground">
+                  {received ? "Topic" : "To"}
+                </span>
+                <span className="min-w-0 wrap-anywhere font-mono text-foreground">
+                  {entry.topic}
+                </span>
               </p>
-              <SenderLabel entry={entry} />
             </div>
           </div>
-          <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
-            <span>
-              QoS {entry.qos}
-              {entry.retain ? " · Retained" : ""}
-              {entry.duplicate ? " · Duplicate" : ""}
-              {entry.properties && Object.keys(entry.properties).length > 0
-                ? " · MQTT 5 metadata"
-                : ""}
-            </span>
-            <span className="flex shrink-0 items-center gap-1.5">
-              {entry.time}
-              <ChevronDown
-                aria-hidden="true"
-                className={cn(
-                  "size-3.5 transition-transform",
-                  expanded && "rotate-180",
-                )}
-              />
-            </span>
-          </div>
         </button>
+        <div className="px-3 pb-3">
+          <MessageDetails entry={entry} />
+        </div>
+        {entry.properties && (
+          <MessagePropertiesTooltip properties={entry.properties} />
+        )}
         <div id={payloadId} hidden={!expanded} className="min-w-0 px-3 pb-3">
           {formatted
             && (entry.payload.length > 0 ? (
@@ -269,9 +335,6 @@ function MessageEntry({
             ) : (
               <p className="text-xs text-muted-foreground">Empty payload</p>
             ))}
-          {expanded && entry.properties && (
-            <MessageProperties properties={entry.properties} />
-          )}
         </div>
       </article>
     </li>

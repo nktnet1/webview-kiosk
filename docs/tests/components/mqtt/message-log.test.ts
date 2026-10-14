@@ -9,6 +9,7 @@ import {
   type LogEntry,
   MqttMessageLog,
   matchesMqttTopicFilter,
+  mqttPublishPropertyRows,
   pruneMqttMessageExpansion,
   setMqttMessageExpansion,
   toggleMqttMessageExpansion,
@@ -252,11 +253,14 @@ describe("MQTT message log", () => {
       }),
     );
     expect(html).toContain("kiosk-alpha");
-    expect(html).toContain("Instance: android-999");
-    expect(html).toContain("MQTT 5 properties");
-    expect(html).toContain("Response topic");
-    expect(html).toContain("Correlation data (hex)");
-    expect(html).toContain("application/json");
+    expect(html).toContain("android-999");
+    expect(html).toContain('aria-label="Message details"');
+    expect(html).toContain('aria-label="MQTT 5 properties"');
+    // The metadata is in a portal-backed tooltip, not below the payload.
+    expect(html).not.toContain("Response topic");
+    expect(html).not.toContain("Correlation data (hex)");
+    expect(html).not.toContain("application/json");
+    expect(html).not.toContain("MQTT 5 metadata");
   });
 
   it("shows the local username and client ID for published messages", () => {
@@ -272,7 +276,91 @@ describe("MQTT message log", () => {
     );
     expect(html).toContain("You");
     expect(html).toContain("debugger");
-    expect(html).toContain("Client: wk-docs-1");
+    expect(html).toContain("wk-docs-1");
+    expect(html).toContain(">Client<");
+    expect(html).toContain(">To<");
+    expect(html).toContain(">From<");
+  });
+
+  it("formats MQTT 5 tooltip rows, including duplicate user properties and numeric zero", () => {
+    expect(
+      mqttPublishPropertyRows({
+        payloadFormatIndicator: 0,
+        messageExpiryInterval: 0,
+        contentType: "application/json",
+        responseTopic: "wk/response/a",
+        correlationData: "0001ff",
+        topicAlias: 12,
+        subscriptionIdentifiers: [1, 7],
+        userProperties: [
+          { name: "username", value: "kiosk-a" },
+          { name: "username", value: "kiosk-b" },
+          { name: "appInstanceId", value: "android-42" },
+        ],
+      }),
+    ).toEqual([
+      { label: "Payload format", value: "Binary" },
+      { label: "Content type", value: "application/json" },
+      { label: "Message expiry", value: "0 seconds" },
+      { label: "Response topic", value: "wk/response/a" },
+      { label: "Correlation data (hex)", value: "0x0001ff" },
+      { label: "Topic alias", value: "12" },
+      { label: "Subscription ID", value: "1" },
+      { label: "Subscription ID", value: "7" },
+      { label: "User property: username", value: "kiosk-a" },
+      { label: "User property: username", value: "kiosk-b" },
+      { label: "User property: appInstanceId", value: "android-42" },
+    ]);
+    expect(mqttPublishPropertyRows({})).toEqual([]);
+    expect(mqttPublishPropertyRows({ payloadFormatIndicator: 1 })).toEqual([
+      { label: "Payload format", value: "UTF-8" },
+    ]);
+  });
+
+  it("places the MQTT 5 tooltip button outside the payload toggle and keeps details compact", () => {
+    const html = renderToStaticMarkup(
+      createElement(MqttMessageLog, {
+        entries: [
+          {
+            ...received,
+            qos: 2,
+            duplicate: true,
+            retain: true,
+            properties: { topicAlias: 3 },
+          },
+          { ...published, sender: { username: "docs", clientId: "debug-42" } },
+        ],
+      }),
+    );
+    const first = html.slice(
+      html.indexOf("<article"),
+      html.indexOf("</article>") + 10,
+    );
+    expect(first).toContain('aria-label="MQTT 5 properties"');
+    expect(first).toContain('class="absolute top-3 right-3');
+    expect(first.indexOf('aria-label="MQTT 5 properties"')).toBeGreaterThan(
+      first.indexOf("</button>"),
+    );
+    expect(first).toContain('aria-label="Message details"');
+    expect(first).toContain(">QoS<");
+    expect(first).toContain(">From<");
+    expect(first).not.toContain(">Instance<");
+    expect(first).toContain("Retained");
+    expect(first).toContain("Duplicate");
+    expect(first).not.toContain("Topic alias");
+    expect(html).toContain(">To<");
+    expect(html).toContain("debug-42");
+  });
+
+  it("omits metadata tooltip when no MQTT 5 properties are present", () => {
+    const html = renderToStaticMarkup(
+      createElement(MqttMessageLog, {
+        entries: [received, { ...published, properties: {} }],
+      }),
+    );
+    expect(html).not.toContain('aria-label="MQTT 5 properties"');
+    expect(html).toContain('aria-label="Message details"');
+    expect(html).toContain("Not reported");
   });
 
   it("renders an empty payload only when its message is expanded", () => {
