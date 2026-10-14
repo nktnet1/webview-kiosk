@@ -1,6 +1,21 @@
-import { ListTree, Plus, Trash2 } from "lucide-react";
+import { Ellipsis, ListTree, Pencil, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import { Button } from "#/components/ui/button";
 import { Card } from "#/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "#/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "#/components/ui/dropdown-menu";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import { cn } from "#/lib/cn";
@@ -22,6 +37,10 @@ type Props = {
   connected: boolean;
   onSubscribe: () => void;
   onUnsubscribe: (topic: string) => void;
+  onUpdateSubscription: (
+    previousTopic: string,
+    replacement: MqttSubscription,
+  ) => Promise<boolean>;
 };
 
 export function MqttTopicSidebar({
@@ -38,7 +57,18 @@ export function MqttTopicSidebar({
   connected,
   onSubscribe,
   onUnsubscribe,
+  onUpdateSubscription,
 }: Props) {
+  const [editingTopic, setEditingTopic] = useState<string | null>(null);
+  const [draftTopic, setDraftTopic] = useState("");
+  const [draftQos, setDraftQos] = useState<MqttQos>(0);
+
+  function beginEdit(subscription: MqttSubscription) {
+    setEditingTopic(subscription.topic);
+    setDraftTopic(subscription.topic);
+    setDraftQos(subscription.qos);
+  }
+
   return (
     <aside aria-label="MQTT topics" className="min-w-0 lg:self-start">
       <Card className="gap-0 overflow-hidden py-0 lg:sticky lg:top-5">
@@ -102,17 +132,35 @@ export function MqttTopicSidebar({
                       </span>
                     </span>
                   </Button>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    className="mt-1 shrink-0"
-                    aria-label={`Unsubscribe ${subscription.topic}`}
-                    disabled={subscriptionBusy}
-                    onClick={() => onUnsubscribe(subscription.topic)}
-                  >
-                    <Trash2 aria-hidden="true" className="size-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="mt-1 shrink-0"
+                        aria-label={`Actions for ${subscription.topic}`}
+                        disabled={subscriptionBusy}
+                      >
+                        <Ellipsis aria-hidden="true" className="size-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onSelect={() => beginEdit(subscription)}
+                      >
+                        <Pencil aria-hidden="true" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onSelect={() => onUnsubscribe(subscription.topic)}
+                      >
+                        <Trash2 aria-hidden="true" />
+                        Remove
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               );
             })}
@@ -161,6 +209,66 @@ export function MqttTopicSidebar({
           </div>
         </form>
       </Card>
+      <Dialog
+        open={editingTopic !== null}
+        onOpenChange={(open) => {
+          if (!open) setEditingTopic(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit subscription</DialogTitle>
+            <DialogDescription>
+              Change the topic filter or QoS. Connected subscriptions update
+              immediately.
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            className="space-y-4"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (editingTopic === null || subscriptionBusy) return;
+              void onUpdateSubscription(editingTopic, {
+                topic: draftTopic,
+                qos: draftQos,
+              }).then((updated) => {
+                if (updated) setEditingTopic(null);
+              });
+            }}
+          >
+            <div className="space-y-2">
+              <Label htmlFor="mqtt-edit-topic">Topic filter</Label>
+              <Input
+                id="mqtt-edit-topic"
+                required
+                spellCheck={false}
+                value={draftTopic}
+                onChange={(event) => setDraftTopic(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="mqtt-edit-qos">QoS</Label>
+              <MqttQosSelect
+                id="mqtt-edit-qos"
+                value={draftQos}
+                onChange={setDraftQos}
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setEditingTopic(null)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={subscriptionBusy}>
+                {subscriptionBusy ? "Saving…" : "Save changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </aside>
   );
 }

@@ -8,7 +8,7 @@ import {
   type LogEntry,
   MqttMessageLog,
   matchesMqttTopicFilter,
-  previewMqttMessage,
+  selectedMqttMessageId,
 } from "../../../src/components/mqtt/MqttMessageLog";
 
 const received: LogEntry = {
@@ -111,10 +111,42 @@ describe("MQTT message log", () => {
     expect(filterMqttMessages(entries, "all", null)).toBe(entries);
   });
 
-  it("previews messages safely without dumping entire large payloads", () => {
-    expect(previewMqttMessage("")).toBe("Empty payload");
-    expect(previewMqttMessage("simple text")).toBe("simple text");
-    expect(previewMqttMessage("x".repeat(500))).toBe(`${"x".repeat(320)}…`);
+  it("expands only the newest visible message unless the user has chosen another", () => {
+    const entries = [received, published];
+    expect(selectedMqttMessageId(entries, "all", null, null)).toBe(2);
+    expect(
+      selectedMqttMessageId(entries, "all", null, {
+        id: 1,
+        latestId: 2,
+        filter: "all",
+        topicFilter: null,
+      }),
+    ).toBe(1);
+    expect(
+      selectedMqttMessageId(entries, "all", null, {
+        id: null,
+        latestId: 2,
+        filter: "all",
+        topicFilter: null,
+      }),
+    ).toBeNull();
+    expect(
+      selectedMqttMessageId([...entries, { ...received, id: 3 }], "all", null, {
+        id: 1,
+        latestId: 2,
+        filter: "all",
+        topicFilter: null,
+      }),
+    ).toBe(3);
+    expect(
+      selectedMqttMessageId([received], "received", null, {
+        id: 2,
+        latestId: 2,
+        filter: "all",
+        topicFilter: null,
+      }),
+    ).toBe(1);
+    expect(selectedMqttMessageId([], "all", null, null)).toBeNull();
   });
 
   it("shows an empty-state message when the selected topic has no messages", () => {
@@ -129,22 +161,39 @@ describe("MQTT message log", () => {
     expect(html).toContain("No messages matching this topic and direction.");
   });
 
-  it("displays received left and published right with distinct icon colours and message previews", () => {
+  it("renders Fumadocs tabs with a visibly active filter and hides older payloads", () => {
     const html = renderToStaticMarkup(
       createElement(MqttMessageLog, { entries: [received, published] }),
     );
-    expect(html).toContain("Filter MQTT messages");
-    expect(html).toContain('aria-pressed="true"');
+    expect(html).toContain('aria-label="Filter MQTT messages"');
+    expect(html).toContain('role="tablist"');
+    expect(html).toContain('data-state="active"');
+    expect(html).toContain('aria-selected="true"');
+    expect(html).toContain("data-[state=active]:bg-fd-accent/50");
     expect(html).toContain("justify-start");
     expect(html).toContain("justify-end");
     expect(html).toContain("text-sky-700");
     expect(html).toContain("text-emerald-700");
     expect(html).toContain("wk/event/state");
     expect(html).toContain("wk/command");
-    expect(html).toContain("{&quot;online&quot;:true}");
     expect(html).toContain("Retained");
     expect(html.indexOf("wk/event/state")).toBeLessThan(
       html.indexOf("wk/command"),
     );
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).toContain('aria-expanded="true"');
+    // The older received payload must not be shown, not even as a preview.
+    expect(html).not.toContain("online");
+    expect(html).toContain("refresh");
+  });
+
+  it("renders an empty payload only when its message is expanded", () => {
+    const html = renderToStaticMarkup(
+      createElement(MqttMessageLog, {
+        entries: [received, { ...published, payload: "" }],
+      }),
+    );
+    expect(html).toContain("Empty payload");
+    expect(html).not.toContain("online");
   });
 });

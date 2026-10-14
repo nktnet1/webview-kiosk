@@ -46,6 +46,7 @@ type Props = {
   value: string;
   onChange: (value: string) => void;
   onKindChange: (kind: MessageKind) => void;
+  showMessageTypeSelect?: boolean;
 };
 
 function ToggleField({
@@ -508,6 +509,7 @@ export function RemoteMessageEditor({
   value,
   onChange,
   onKindChange,
+  showMessageTypeSelect = true,
 }: Props) {
   const [tab, setTab] = useState("form");
   const [formError, setFormError] = useState<string | null>(null);
@@ -573,25 +575,27 @@ export function RemoteMessageEditor({
         <TabsContent value="form" className="pt-4 space-y-5">
           {formMessage && (
             <>
-              <div className="space-y-2">
-                <Label htmlFor="remote-message-kind">Message type</Label>
-                <Select
-                  value={kind}
-                  onValueChange={(next) => {
-                    const nextKind = next as MessageKind;
-                    onKindChange(nextKind);
-                    updateMessage(createRemotePayload(transport, nextKind));
-                  }}
-                >
-                  <SelectTrigger id="remote-message-kind" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="command">Command</SelectItem>
-                    <SelectItem value="settings">Settings update</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {showMessageTypeSelect && (
+                <div className="space-y-2">
+                  <Label htmlFor="remote-message-kind">Message type</Label>
+                  <Select
+                    value={kind}
+                    onValueChange={(next) => {
+                      const nextKind = next as MessageKind;
+                      onKindChange(nextKind);
+                      updateMessage(createRemotePayload(transport, nextKind));
+                    }}
+                  >
+                    <SelectTrigger id="remote-message-kind" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="command">Command</SelectItem>
+                      <SelectItem value="settings">Settings update</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               {kind === "command" ? (
                 <CommandControls
                   message={formMessage}

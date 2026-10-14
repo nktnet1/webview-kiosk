@@ -1,6 +1,5 @@
 import { Send } from "lucide-react";
 import { InfoTooltip } from "#/components/remote-control/InfoTooltip";
-import type { MessageKind } from "#/components/remote-control/payload";
 import { RemoteMessageEditor } from "#/components/remote-control/RemoteMessageEditor";
 import { Button } from "#/components/ui/button";
 import { Checkbox } from "#/components/ui/checkbox";
@@ -18,15 +17,21 @@ import { MqttQosSelect } from "./MqttQosSelect";
 import { RequestEditor } from "./RequestEditor";
 import type { MqttQos } from "./validation";
 
-export type PublishMode = "control" | "request" | "custom";
+export const PUBLISH_MODES = [
+  "command",
+  "settings",
+  "request",
+  "custom",
+] as const;
+export type PublishMode = (typeof PUBLISH_MODES)[number];
 
 type Props = {
   mode: PublishMode;
   onModeChange: (mode: PublishMode) => void;
-  kind: MessageKind;
-  onKindChange: (kind: MessageKind) => void;
-  controlPayload: string;
-  onControlPayloadChange: (value: string) => void;
+  commandPayload: string;
+  onCommandPayloadChange: (value: string) => void;
+  settingsPayload: string;
+  onSettingsPayloadChange: (value: string) => void;
   requestPayload: string;
   onRequestPayloadChange: (value: string) => void;
   customPayload: string;
@@ -49,10 +54,10 @@ type Props = {
 export function MqttPublishComposer({
   mode,
   onModeChange,
-  kind,
-  onKindChange,
-  controlPayload,
-  onControlPayloadChange,
+  commandPayload,
+  onCommandPayloadChange,
+  settingsPayload,
+  onSettingsPayloadChange,
   requestPayload,
   onRequestPayloadChange,
   customPayload,
@@ -90,20 +95,27 @@ export function MqttPublishComposer({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="control">Command / settings</SelectItem>
+            <SelectItem value="command">Command</SelectItem>
+            <SelectItem value="settings">Settings</SelectItem>
             <SelectItem value="request">Request</SelectItem>
             <SelectItem value="custom">Custom payload</SelectItem>
           </SelectContent>
         </Select>
       </div>
       <div className="min-w-0 space-y-4 p-4">
-        {mode === "control" ? (
+        {mode === "command" || mode === "settings" ? (
           <RemoteMessageEditor
+            key={mode}
             transport="mqtt"
-            kind={kind}
-            value={controlPayload}
-            onChange={onControlPayloadChange}
-            onKindChange={onKindChange}
+            kind={mode}
+            value={mode === "command" ? commandPayload : settingsPayload}
+            onChange={
+              mode === "command"
+                ? onCommandPayloadChange
+                : onSettingsPayloadChange
+            }
+            onKindChange={onModeChange}
+            showMessageTypeSelect={false}
           />
         ) : mode === "request" ? (
           <RequestEditor

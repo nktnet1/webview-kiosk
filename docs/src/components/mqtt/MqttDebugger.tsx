@@ -7,7 +7,6 @@ import { CredentialJsonTransfer } from "#/components/remote-control/CredentialJs
 import { InfoTooltip } from "#/components/remote-control/InfoTooltip";
 import {
   createRemotePayload,
-  type MessageKind,
   stringifyPayload,
   validateRemotePayload,
 } from "#/components/remote-control/payload";
@@ -52,6 +51,7 @@ import {
   saveMqttCredentials,
   saveMqttPreferences,
 } from "./storage";
+import { replaceMqttSubscription } from "./subscriptions";
 import {
   DEFAULT_PREFERENCES,
   EMPTY_MQTT_CREDENTIALS,
@@ -90,10 +90,12 @@ export default function MqttDebugger() {
   const [subscribeQos, setSubscribeQos] = useState<MqttQos>(0);
   const [subscriptionBusy, setSubscriptionBusy] = useState(false);
   const [publishBusy, setPublishBusy] = useState(false);
-  const [mode, setMode] = useState<PublishMode>("control");
-  const [kind, setKind] = useState<MessageKind>("command");
-  const [controlPayload, setControlPayload] = useState(() =>
+  const [mode, setMode] = useState<PublishMode>("command");
+  const [commandPayload, setCommandPayload] = useState(() =>
     stringifyPayload(createRemotePayload("mqtt", "command")),
+  );
+  const [settingsPayload, setSettingsPayload] = useState(() =>
+    stringifyPayload(createRemotePayload("mqtt", "settings")),
   );
   const [requestPayload, setRequestPayload] = useState(() =>
     stringifyPayload(createRequestPayload()),
@@ -343,14 +345,51 @@ export default function MqttDebugger() {
     }
   }
 
+  async function editSubscription(
+    previousTopic: string,
+    replacement: MqttPreferences["subscriptions"][number],
+  ): Promise<boolean> {
+    if (subscriptionBusy) return false;
+    setSubscriptionBusy(true);
+    try {
+      const client = status === "connected" ? clientRef.current : null;
+      const nextSubscriptions = await replaceMqttSubscription(
+        preferences.subscriptions,
+        previousTopic,
+        replacement,
+        client,
+        activeTopics.includes(previousTopic),
+      );
+      updatePreferences({ ...preferences, subscriptions: nextSubscriptions });
+      const nextTopic = nextSubscriptions.find(
+        (item) => item.topic === replacement.topic.trim(),
+      )?.topic;
+      if (nextTopic && selectedTopic === previousTopic)
+        setSelectedTopic(nextTopic);
+      setActiveTopics((topics) => {
+        const remaining = topics.filter((topic) => topic !== previousTopic);
+        return client && clientRef.current === client && nextTopic
+          ? [...new Set([...remaining, nextTopic])]
+          : remaining;
+      });
+      toast.success("Subscription updated");
+      return true;
+    } catch (cause) {
+      toast.error(message(cause));
+      return false;
+    } finally {
+      setSubscriptionBusy(false);
+    }
+  }
+
   const topicField =
-    mode === "request"
-      ? "requestTopic"
-      : mode === "custom"
-        ? "customTopic"
-        : kind === "command"
-          ? "commandTopic"
-          : "settingsTopic";
+    mode === "command"
+      ? "commandTopic"
+      : mode === "settings"
+        ? "settingsTopic"
+        : mode === "request"
+          ? "requestTopic"
+          : "customTopic";
   const publishTopic = preferences[topicField];
 
   async function publish() {
@@ -360,11 +399,13 @@ export default function MqttDebugger() {
     try {
       const topic = validateTopic(publishTopic.trim(), false);
       const payload =
-        mode === "control"
-          ? validateRemotePayload(controlPayload, "mqtt", kind)
-          : mode === "request"
-            ? JSON.stringify(parseRequestPayload(requestPayload))
-            : customPayload;
+        mode === "command"
+          ? validateRemotePayload(commandPayload, "mqtt", "command")
+          : mode === "settings"
+            ? validateRemotePayload(settingsPayload, "mqtt", "settings")
+            : mode === "request"
+              ? JSON.stringify(parseRequestPayload(requestPayload))
+              : customPayload;
       await clientRef.current.publish(topic, payload, {
         qos: publishQos,
         retain,
@@ -881,6 +922,7 @@ export default function MqttDebugger() {
           connected={status === "connected"}
           onSubscribe={() => void subscribe()}
           onUnsubscribe={(topic) => void unsubscribe(topic)}
+          onUpdateSubscription={editSubscription}
         />
         <section aria-label="MQTT workspace" className="min-w-0">
           <Card className="gap-0 overflow-hidden py-0">
@@ -920,10 +962,10 @@ export default function MqttDebugger() {
             <MqttPublishComposer
               mode={mode}
               onModeChange={setMode}
-              kind={kind}
-              onKindChange={setKind}
-              controlPayload={controlPayload}
-              onControlPayloadChange={setControlPayload}
+              commandPayload={commandPayload}
+              onCommandPayloadChange={setCommandPayload}
+              settingsPayload={settingsPayload}
+              onSettingsPayloadChange={setSettingsPayload}
               requestPayload={requestPayload}
               onRequestPayloadChange={setRequestPayload}
               customPayload={customPayload}

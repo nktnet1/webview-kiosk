@@ -28,7 +28,6 @@ export function loadMqttPreferences(raw: string | null): MqttPreferences {
   try {
     const result = v.safeParse(
       MqttPreferencesSchema,
-      normalizeMqttCredentials,
       JSON.parse(raw ?? "null"),
     );
     if (!result.success)

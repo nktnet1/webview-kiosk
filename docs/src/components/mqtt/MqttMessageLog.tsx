@@ -1,12 +1,19 @@
 import { DynamicCodeBlock } from "fumadocs-ui/components/dynamic-codeblock";
 import {
+  TabsList as FumadocsTabsList,
+  TabsTrigger as FumadocsTabsTrigger,
+} from "fumadocs-ui/components/tabs";
+import {
+  Tabs as FumadocsTabs,
+  TabsContent as FumadocsTabsContent,
+} from "fumadocs-ui/components/ui/tabs";
+import {
   ArrowDownLeft,
   ArrowUpRight,
   ChevronDown,
   CircleHelp,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Button } from "#/components/ui/button";
 import { cn } from "#/lib/cn";
 import type { MqttQos } from "./validation";
 
@@ -64,11 +71,6 @@ export function filterMqttMessages(
   );
 }
 
-export function previewMqttMessage(payload: string): string {
-  if (payload.length === 0) return "Empty payload";
-  return payload.length > 320 ? `${payload.slice(0, 320)}…` : payload;
-}
-
 export function formatMqttMessagePayload(payload: string): {
   language: "json" | "text";
   code: string;
@@ -83,25 +85,38 @@ export function formatMqttMessagePayload(payload: string): {
   }
 }
 
-function MessageEntry({ entry }: { entry: LogEntry }) {
-  const [expanded, setExpanded] = useState(false);
-  const formatted = expanded ? formatMqttMessagePayload(entry.payload) : null;
+function MessageEntry({
+  entry,
+  expanded,
+  onToggle,
+}: {
+  entry: LogEntry;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
   const received = entry.direction === "received";
+  const payloadId = `mqtt-message-payload-${entry.id}`;
+  const formatted = expanded ? formatMqttMessagePayload(entry.payload) : null;
 
   return (
     <li
       className={cn("flex min-w-0", received ? "justify-start" : "justify-end")}
     >
-      <details
+      <article
         className={cn(
-          "group min-w-0 w-full rounded-xl border sm:max-w-[85%] xl:max-w-[76%]",
+          "min-w-0 w-full rounded-xl border sm:max-w-[85%] xl:max-w-[76%]",
           received
             ? "border-border bg-muted/50"
             : "border-emerald-500/25 bg-emerald-500/8 dark:bg-emerald-500/10",
         )}
-        onToggle={(event) => setExpanded(event.currentTarget.open)}
       >
-        <summary className="cursor-pointer list-none rounded-xl p-3 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 [&::-webkit-details-marker]:hidden">
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={payloadId}
+          onClick={onToggle}
+          className="w-full cursor-pointer rounded-xl p-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
           <div className="flex min-w-0 items-start gap-2.5">
             <span
               className={cn(
@@ -133,9 +148,6 @@ function MessageEntry({ entry }: { entry: LogEntry }) {
               </p>
             </div>
           </div>
-          <p className="mt-2 line-clamp-3 wrap-anywhere whitespace-pre-wrap font-mono text-xs leading-relaxed text-foreground/90 group-open:hidden">
-            {previewMqttMessage(entry.payload)}
-          </p>
           <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
             <span>
               QoS {entry.qos}
@@ -145,14 +157,17 @@ function MessageEntry({ entry }: { entry: LogEntry }) {
               {entry.time}
               <ChevronDown
                 aria-hidden="true"
-                className="size-3.5 transition-transform group-open:rotate-180"
+                className={cn(
+                  "size-3.5 transition-transform",
+                  expanded && "rotate-180",
+                )}
               />
             </span>
           </div>
-        </summary>
-        {expanded && formatted && (
-          <div className="min-w-0 px-3 pb-3">
-            {entry.payload.length > 0 ? (
+        </button>
+        <div id={payloadId} hidden={!expanded} className="min-w-0 px-3 pb-3">
+          {formatted
+            && (entry.payload.length > 0 ? (
               <DynamicCodeBlock
                 lang={formatted.language}
                 code={formatted.code}
@@ -163,10 +178,9 @@ function MessageEntry({ entry }: { entry: LogEntry }) {
               />
             ) : (
               <p className="text-xs text-muted-foreground">Empty payload</p>
-            )}
-          </div>
-        )}
-      </details>
+            ))}
+        </div>
+      </article>
     </li>
   );
 }
@@ -177,6 +191,28 @@ const MESSAGE_FILTERS: { value: MessageFilter; label: string }[] = [
   { value: "published", label: "Published" },
 ];
 
+/** An explicit expansion choice remains until the visible stream or filter changes. */
+type ExpansionChoice = {
+  id: number | null;
+  latestId: number | null;
+  filter: MessageFilter;
+  topicFilter: string | null;
+};
+
+export function selectedMqttMessageId(
+  entries: LogEntry[],
+  filter: MessageFilter,
+  topicFilter: string | null,
+  choice: ExpansionChoice | null,
+): number | null {
+  const latestId = entries.at(-1)?.id ?? null;
+  return choice?.latestId === latestId
+    && choice?.filter === filter
+    && choice?.topicFilter === topicFilter
+    ? choice.id
+    : latestId;
+}
+
 export function MqttMessageLog({
   entries,
   topicFilter = null,
@@ -185,66 +221,105 @@ export function MqttMessageLog({
   topicFilter?: string | null;
 }) {
   const [filter, setFilter] = useState<MessageFilter>("all");
+  const [choice, setChoice] = useState<ExpansionChoice | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const followLatest = useRef(true);
+  const lastScrollKey = useRef<string | null>(null);
   const visibleEntries = filterMqttMessages(entries, filter, topicFilter);
+  const latestId = visibleEntries.at(-1)?.id ?? null;
+  const expandedId = selectedMqttMessageId(
+    visibleEntries,
+    filter,
+    topicFilter,
+    choice,
+  );
 
+  const scrollKey = JSON.stringify([latestId, filter, topicFilter]);
   useEffect(() => {
+    if (lastScrollKey.current === scrollKey) return;
+    lastScrollKey.current = scrollKey;
     const element = scrollRef.current;
     if (element && followLatest.current) {
       element.scrollTop = element.scrollHeight;
     }
-  });
+  }, [scrollKey]);
 
   return (
-    <div className="flex min-w-0 flex-col gap-3">
-      <fieldset className="inline-flex max-w-full min-w-0 flex-wrap items-center gap-1 rounded-lg bg-muted p-1">
-        <legend className="sr-only">Filter MQTT messages</legend>
+    <FumadocsTabs
+      value={filter}
+      onValueChange={(value) => {
+        followLatest.current = true;
+        setFilter(value as MessageFilter);
+      }}
+      className="flex min-w-0 flex-col gap-3"
+    >
+      <FumadocsTabsList
+        aria-label="Filter MQTT messages"
+        className="border-b border-border px-1"
+      >
         {MESSAGE_FILTERS.map(({ value, label }) => (
-          <Button
+          <FumadocsTabsTrigger
             key={value}
-            type="button"
-            size="sm"
-            variant={filter === value ? "secondary" : "ghost"}
-            aria-pressed={filter === value}
-            onClick={() => {
-              followLatest.current = true;
-              setFilter(value);
-            }}
+            value={value}
+            className="rounded-t-md px-4 data-[state=active]:bg-fd-accent/50 data-[state=active]:font-semibold"
           >
             {label}
-          </Button>
+          </FumadocsTabsTrigger>
         ))}
-      </fieldset>
-      <div
-        ref={scrollRef}
-        className="h-[24rem] min-h-48 min-w-0 overflow-y-auto rounded-lg border bg-background sm:h-[30rem]"
-        aria-label="MQTT messages"
-        role="log"
-        onScroll={(event) => {
-          const element = event.currentTarget;
-          followLatest.current =
-            element.scrollHeight - element.scrollTop - element.clientHeight
-            < 64;
-        }}
-      >
-        {visibleEntries.length > 0 ? (
-          <ol className="space-y-3 p-3 sm:p-4">
-            {visibleEntries.map((entry) => (
-              <MessageEntry key={entry.id} entry={entry} />
-            ))}
-          </ol>
-        ) : (
-          <div className="flex min-h-48 items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
-            <CircleHelp aria-hidden="true" className="size-4" />
-            {entries.length === 0
-              ? "Messages appear here when published or received."
-              : topicFilter !== null
-                ? "No messages matching this topic and direction."
-                : `No ${filter} messages.`}
-          </div>
-        )}
-      </div>
-    </div>
+      </FumadocsTabsList>
+      {MESSAGE_FILTERS.map(({ value }) => (
+        <FumadocsTabsContent
+          key={value}
+          value={value}
+          className="min-w-0 outline-none"
+        >
+          {filter === value && (
+            <div
+              ref={scrollRef}
+              className="h-[24rem] min-h-48 min-w-0 overflow-y-auto rounded-lg border bg-background sm:h-[30rem]"
+              aria-label="MQTT messages"
+              role="log"
+              onScroll={(event) => {
+                const element = event.currentTarget;
+                followLatest.current =
+                  element.scrollHeight
+                    - element.scrollTop
+                    - element.clientHeight
+                  < 64;
+              }}
+            >
+              {visibleEntries.length > 0 ? (
+                <ol className="space-y-3 p-3 sm:p-4">
+                  {visibleEntries.map((entry) => (
+                    <MessageEntry
+                      key={entry.id}
+                      entry={entry}
+                      expanded={expandedId === entry.id}
+                      onToggle={() =>
+                        setChoice({
+                          id: expandedId === entry.id ? null : entry.id,
+                          latestId,
+                          filter,
+                          topicFilter,
+                        })
+                      }
+                    />
+                  ))}
+                </ol>
+              ) : (
+                <div className="flex min-h-48 items-center justify-center gap-2 p-4 text-sm text-muted-foreground">
+                  <CircleHelp aria-hidden="true" className="size-4" />
+                  {entries.length === 0
+                    ? "Messages appear here when published or received."
+                    : topicFilter !== null
+                      ? "No messages matching this topic and direction."
+                      : `No ${filter} messages.`}
+                </div>
+              )}
+            </div>
+          )}
+        </FumadocsTabsContent>
+      ))}
+    </FumadocsTabs>
   );
 }

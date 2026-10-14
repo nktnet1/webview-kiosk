@@ -230,6 +230,20 @@ describe("MQTT form validation and storage", () => {
         values.get("webview-kiosk:mqtt-debug:preferences:v1") ?? null,
       ),
     ).toEqual(DEFAULT_PREFERENCES);
+    const customPreferences = {
+      ...DEFAULT_PREFERENCES,
+      commandTopic: "custom/command",
+      subscriptions: [
+        { topic: "custom/events/+", qos: 2 as const },
+        { topic: "custom/responses/#", qos: 1 as const },
+      ],
+    };
+    saveMqttPreferences(storage, customPreferences);
+    expect(
+      loadMqttPreferences(
+        values.get("webview-kiosk:mqtt-debug:preferences:v1") ?? null,
+      ),
+    ).toEqual(customPreferences);
     expect(loadMqttPreferences("[]")).toEqual(DEFAULT_PREFERENCES);
     expect(loadMqttCredentials("invalid")).toEqual(EMPTY_MQTT_CREDENTIALS);
     expect(

@@ -31,6 +31,7 @@ const props = {
   connected: true,
   onSubscribe: () => {},
   onUnsubscribe: () => {},
+  onUpdateSubscription: async () => true,
 };
 
 describe("MQTT topics sidebar", () => {
@@ -46,7 +47,7 @@ describe("MQTT topics sidebar", () => {
     expect(html).toContain('aria-label="Subscription active"');
     expect(html).toContain('aria-label="Subscription inactive"');
     expect(html).toContain('aria-pressed="true"');
-    expect(html).toContain('aria-label="Unsubscribe wk/event/#"');
+    expect(html).toContain('aria-label="Actions for wk/event/#"');
     expect(html).toContain("Subscribe to topic");
   });
 
