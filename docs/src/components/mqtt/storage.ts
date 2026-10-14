@@ -6,6 +6,7 @@ import {
   type MqttCredentials,
   type MqttPreferences,
   MqttPreferencesSchema,
+  normalizeMqttCredentials,
 } from "./validation";
 
 export const MQTT_CREDENTIALS_KEY = "webview-kiosk:mqtt-debug:credentials:v1";
@@ -14,7 +15,9 @@ export const MQTT_PREFERENCES_KEY = "webview-kiosk:mqtt-debug:preferences:v1";
 export function loadMqttCredentials(raw: string | null): MqttCredentials {
   try {
     return raw
-      ? sanitizeStoredCredentials(JSON.parse(raw), EMPTY_MQTT_CREDENTIALS)
+      ? normalizeMqttCredentials(
+          sanitizeStoredCredentials(JSON.parse(raw), EMPTY_MQTT_CREDENTIALS),
+        )
       : { ...EMPTY_MQTT_CREDENTIALS };
   } catch {
     return { ...EMPTY_MQTT_CREDENTIALS };
@@ -25,6 +28,7 @@ export function loadMqttPreferences(raw: string | null): MqttPreferences {
   try {
     const result = v.safeParse(
       MqttPreferencesSchema,
+      normalizeMqttCredentials,
       JSON.parse(raw ?? "null"),
     );
     if (!result.success)
@@ -48,7 +52,11 @@ export function saveMqttCredentials(
   storage: Pick<Storage, "setItem" | "removeItem">,
   credentials: MqttCredentials,
 ) {
-  if (Object.values(credentials).every((value) => value === ""))
+  if (
+    Object.entries(EMPTY_MQTT_CREDENTIALS).every(
+      ([key, value]) => credentials[key as keyof MqttCredentials] === value,
+    )
+  )
     storage.removeItem(MQTT_CREDENTIALS_KEY);
   else storage.setItem(MQTT_CREDENTIALS_KEY, JSON.stringify(credentials));
 }

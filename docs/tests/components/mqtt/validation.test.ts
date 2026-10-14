@@ -14,6 +14,7 @@ import {
 import {
   DEFAULT_PREFERENCES,
   EMPTY_MQTT_CREDENTIALS,
+  normalizeMqttCredentials,
   parseMqttCredentials,
   validateBrokerUrl,
   validateKeepAlive,
@@ -25,102 +26,103 @@ import {
 } from "../../../src/components/remote-control/credential-json";
 
 describe("MQTT form validation and storage", () => {
-  it("accepts full URLs, bare hosts, and host:port/path addresses", () => {
-    expect(validateBrokerUrl("wss://example.com/mqtt")).toBe(
-      "wss://example.com/mqtt",
-    );
-    expect(validateBrokerUrl("example.com")).toBe("wss://example.com/");
-    expect(validateBrokerUrl("example.com:9001/mqtt")).toBe(
-      "wss://example.com:9001/mqtt",
-    );
-    expect(validateBrokerUrl("https://example.com/mqtt?token=abc")).toBe(
-      "wss://example.com/mqtt?token=abc",
-    );
-    expect(validateBrokerUrl("http://localhost:8080/ws")).toBe(
-      "ws://localhost:8080/ws",
-    );
-    expect(validateBrokerUrl("//broker.example.com/mqtt")).toBe(
+  it("defaults to secure WebSockets on port 443 and path /mqtt", () => {
+    expect(EMPTY_MQTT_CREDENTIALS).toMatchObject({
+      brokerUrl: "",
+      protocol: "wss",
+      port: "443",
+      path: "/mqtt",
+    });
+    expect(validateBrokerUrl("broker.example.com")).toBe(
       "wss://broker.example.com/mqtt",
     );
-    expect(validateBrokerUrl("[::1]:9001/mqtt")).toBe("wss://[::1]:9001/mqtt");
+    expect(validateBrokerUrl("localhost")).toBe("wss://localhost/mqtt");
+    expect(validateBrokerUrl("192.168.1.2")).toBe("wss://192.168.1.2/mqtt");
+    expect(validateBrokerUrl("[::1]")).toBe("wss://[::1]/mqtt");
   });
 
-  it("selects WS or WSS automatically from the page and respects explicit URLs", () => {
+  it("uses the required protocol, port and path instead of URL inference", () => {
+    expect(
+      validateBrokerUrl("example.com", {
+        protocol: "ws",
+        port: "9001",
+        path: "/socket",
+      }),
+    ).toBe("ws://example.com:9001/socket");
+    expect(
+      validateBrokerUrl("example.com", {
+        protocol: "wss",
+        port: "9443",
+        path: "/mqtt/v5",
+      }),
+    ).toBe("wss://example.com:9443/mqtt/v5");
+
     vi.stubGlobal("location", { protocol: "http:" });
     try {
-      expect(validateBrokerUrl("example.com")).toBe("ws://example.com/");
-      expect(validateBrokerUrl("wss://example.com/mqtt")).toBe(
-        "wss://example.com/mqtt",
-      );
+      expect(validateBrokerUrl("example.com")).toBe("wss://example.com/mqtt");
     } finally {
       vi.unstubAllGlobals();
     }
     vi.stubGlobal("location", { protocol: "https:" });
     try {
-      expect(validateBrokerUrl("example.com")).toBe("wss://example.com/");
-      expect(() => validateBrokerUrl("ws://example.com")).toThrow(
-        /HTTPS pages/,
-      );
-      expect(() => validateBrokerUrl("http://example.com")).toThrow(
-        /HTTPS pages/,
-      );
+      expect(() =>
+        validateBrokerUrl("example.com", {
+          protocol: "ws",
+          port: "80",
+          path: "/mqtt",
+        }),
+      ).toThrow(/HTTPS pages/);
     } finally {
       vi.unstubAllGlobals();
     }
   });
 
-  it("applies protocol, port, and path options without losing URL query parameters", () => {
-    expect(
-      validateBrokerUrl("wss://example.com:8443/old?token=123", {
-        protocol: "ws",
-        port: "9001",
-        path: "mqtt",
-      }),
-    ).toBe("ws://example.com:9001/mqtt?token=123");
-    expect(
-      validateBrokerUrl("example.com", {
-        protocol: "wss",
-        port: "443",
-        path: "/mqtt",
-      }),
-    ).toBe("wss://example.com/mqtt");
-    expect(
-      validateBrokerUrl("example.com:9001/from-url", {
-        protocol: "",
-        port: "",
-        path: "",
-      }),
-    ).toBe("wss://example.com:9001/from-url");
+  it("rejects full URLs, ports, paths, credentials and invalid broker domains", () => {
+    for (const input of [
+      "",
+      "ftp://example.com",
+      "wss://example.com/mqtt",
+      "http://localhost:8080/ws",
+      "example.com:9001",
+      "example.com/mqtt",
+      "//example.com/mqtt",
+      "example.com?token=abc",
+      "user:pass@example.com",
+      "example..com",
+      "bad domain.com",
+      "/mqtt",
+      "-example.com",
+    ]) {
+      expect(() => validateBrokerUrl(input), input).toThrow(/domain|hostname/);
+    }
   });
 
-  it("rejects malformed addresses, options, embedded login, and fragments", () => {
-    expect(() => validateBrokerUrl("ftp://example.com")).toThrow(/WebSocket/);
-    expect(() => validateBrokerUrl("wss://user:pass@example.com/mqtt")).toThrow(
-      /embedded credentials/,
-    );
-    expect(() => validateBrokerUrl("wss://example.com/mqtt#secret")).toThrow(
-      /fragments/,
-    );
-    expect(() => validateBrokerUrl("/mqtt")).toThrow(/address/);
-    for (const port of ["0", "65536", "-1", "1.5", "foo", "80e2"]) {
+  it("requires an explicit valid protocol, port and path", () => {
+    for (const port of ["", " ", "0", "65536", "-1", "1.5", "foo", "80e2"]) {
       expect(() =>
-        validateBrokerUrl("example.com", { protocol: "", port, path: "" }),
+        validateBrokerUrl("example.com", {
+          protocol: "wss",
+          port,
+          path: "/mqtt",
+        }),
       ).toThrow(/Port/);
+    }
+    for (const path of ["", " ", "mqtt", "/mqtt?token=1", "/mqtt#frag"]) {
+      expect(() =>
+        validateBrokerUrl("example.com", {
+          protocol: "wss",
+          port: "443",
+          path,
+        }),
+      ).toThrow(/path/);
     }
     expect(() =>
       validateBrokerUrl("example.com", {
-        protocol: "",
-        port: "",
-        path: "/mqtt?token=1",
+        protocol: "" as "wss",
+        port: "443",
+        path: "/mqtt",
       }),
-    ).toThrow(/path/);
-    expect(() =>
-      validateBrokerUrl("example.com", {
-        protocol: "",
-        port: "",
-        path: "/mqtt#frag",
-      }),
-    ).toThrow(/path/);
+    ).toThrow(/protocol/);
   });
 
   it("validates MQTT topic names, filters, and keepalive", () => {
@@ -135,7 +137,7 @@ describe("MQTT form validation and storage", () => {
     expect(() => validateKeepAlive(65536)).toThrow(/whole/);
   });
 
-  it("backs up broker credentials and connection options independently of subscriptions", () => {
+  it("backs up credentials and upgrades older full-URL backups", () => {
     const credentials = {
       brokerUrl: "broker.example.com",
       protocol: "wss" as const,
@@ -150,35 +152,52 @@ describe("MQTT form validation and storage", () => {
       credentials,
     );
     expect(
-      parseCredentialJson(
-        '{"brokerUrl":"wss://example.com"}',
-        EMPTY_MQTT_CREDENTIALS,
+      normalizeMqttCredentials(
+        parseCredentialJson(
+          '{"brokerUrl":"wss://example.com"}',
+          EMPTY_MQTT_CREDENTIALS,
+        ),
       ),
-    ).toEqual({ ...EMPTY_MQTT_CREDENTIALS, brokerUrl: "wss://example.com" });
+    ).toEqual({ ...EMPTY_MQTT_CREDENTIALS, brokerUrl: "example.com" });
     expect(() => parseCredentialJson("[]", EMPTY_MQTT_CREDENTIALS)).toThrow(
       /JSON object/,
     );
     expect(parseMqttCredentials(credentials)).toEqual(credentials);
     expect(
       parseMqttCredentials({
-        brokerUrl: "wss://example.com/mqtt",
+        brokerUrl: "ws://localhost:9001/ws",
         clientId: "docs",
         username: "user",
         password: "secret",
       }),
     ).toEqual({
       ...EMPTY_MQTT_CREDENTIALS,
-      brokerUrl: "wss://example.com/mqtt",
+      brokerUrl: "localhost",
+      protocol: "ws",
+      port: "9001",
+      path: "/ws",
       clientId: "docs",
       username: "user",
       password: "secret",
+    });
+    expect(
+      parseMqttCredentials({
+        brokerUrl: "broker.example.com:8883/mqtt",
+        clientId: "",
+        username: "",
+        password: "",
+      }),
+    ).toEqual({
+      ...EMPTY_MQTT_CREDENTIALS,
+      brokerUrl: "broker.example.com",
+      port: "8883",
     });
     expect(() => parseMqttCredentials({ username: 123 })).toThrow(
       /credentials/,
     );
   });
 
-  it("persists typed preferences and recovers from corrupt JSON", () => {
+  it("persists connection options, removes reset credentials, and recovers older storage", () => {
     const values = new Map<string, string>();
     const storage = {
       getItem: (key: string) => values.get(key) ?? null,
@@ -189,15 +208,22 @@ describe("MQTT form validation and storage", () => {
         values.delete(key);
       },
     };
+    const key = "webview-kiosk:mqtt-debug:credentials:v1";
     saveMqttCredentials(storage, {
       ...EMPTY_MQTT_CREDENTIALS,
       password: "secret",
     });
-    expect(
-      loadMqttCredentials(
-        values.get("webview-kiosk:mqtt-debug:credentials:v1") ?? null,
-      ),
-    ).toEqual({ ...EMPTY_MQTT_CREDENTIALS, password: "secret" });
+    expect(loadMqttCredentials(values.get(key) ?? null)).toEqual({
+      ...EMPTY_MQTT_CREDENTIALS,
+      password: "secret",
+    });
+    saveMqttCredentials(storage, {
+      ...EMPTY_MQTT_CREDENTIALS,
+      path: "/socket",
+    });
+    expect(loadMqttCredentials(values.get(key) ?? null).path).toBe("/socket");
+    saveMqttCredentials(storage, EMPTY_MQTT_CREDENTIALS);
+    expect(values.has(key)).toBe(false);
     saveMqttPreferences(storage, DEFAULT_PREFERENCES);
     expect(
       loadMqttPreferences(
@@ -212,8 +238,18 @@ describe("MQTT form validation and storage", () => {
       ),
     ).toEqual({
       ...EMPTY_MQTT_CREDENTIALS,
-      brokerUrl: "ws://localhost:9001/mqtt",
+      brokerUrl: "localhost",
+      protocol: "ws",
+      port: "9001",
       password: "old",
+    });
+    expect(
+      loadMqttCredentials(
+        '{"brokerUrl":"example.com","protocol":"","port":"","path":""}',
+      ),
+    ).toEqual({
+      ...EMPTY_MQTT_CREDENTIALS,
+      brokerUrl: "example.com",
     });
   });
 });

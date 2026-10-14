@@ -1,12 +1,11 @@
 import * as v from "valibot";
 
 export type MqttQos = 0 | 1 | 2;
+export type MqttProtocol = "ws" | "wss";
 
-export type MqttProtocol = "" | "ws" | "wss";
-
-const BrokerCredentialsSchema = v.object({
+// Accept the previous (auto / unset) connection options when loading backups.
+const StoredBrokerCredentialsSchema = v.object({
   brokerUrl: v.string(),
-  // Optional for backups made before connection options were introduced.
   protocol: v.optional(v.picklist(["", "ws", "wss"]), ""),
   port: v.optional(v.string(), ""),
   path: v.optional(v.string(), ""),
@@ -15,12 +14,18 @@ const BrokerCredentialsSchema = v.object({
   password: v.string(),
 });
 
-export type MqttCredentials = v.InferOutput<typeof BrokerCredentialsSchema>;
+type StoredMqttCredentials = v.InferOutput<
+  typeof StoredBrokerCredentialsSchema
+>;
+export type MqttCredentials = Omit<StoredMqttCredentials, "protocol"> & {
+  protocol: MqttProtocol;
+};
+
 export const EMPTY_MQTT_CREDENTIALS: MqttCredentials = {
   brokerUrl: "",
-  protocol: "",
-  port: "",
-  path: "",
+  protocol: "wss",
+  port: "443",
+  path: "/mqtt",
   clientId: "",
   username: "",
   password: "",
@@ -52,103 +57,171 @@ export const DEFAULT_PREFERENCES: MqttPreferences = {
   subscriptions: DEFAULT_SUBSCRIPTIONS,
 };
 
-export function parseMqttCredentials(value: unknown): MqttCredentials {
-  const parsed = v.safeParse(BrokerCredentialsSchema, value);
-  if (!parsed.success) throw new Error("Invalid MQTT credentials.");
-  return parsed.output;
+/** Upgrade previously saved URL-based broker settings without losing their
+ * protocol, port or path. Invalid legacy URLs are left untouched so the user
+ * can correct them, rather than silently connecting to a different broker.
+ */
+export function normalizeMqttCredentials(
+  credentials: StoredMqttCredentials,
+): MqttCredentials {
+  let brokerUrl = credentials.brokerUrl.trim();
+  let { protocol, port, path } = credentials;
+  const legacyScheme = brokerUrl
+    .match(/^(https?|wss?):\/\//i)?.[1]
+    ?.toLowerCase();
+  const hasOtherScheme =
+    /^[a-z][a-z0-9+.-]*:\/\//i.test(brokerUrl) && !legacyScheme;
+  const needsMigration = legacyScheme || /[/:?#]/.test(brokerUrl);
+
+  if (needsMigration && !hasOtherScheme) {
+    try {
+      const url = new URL(legacyScheme ? brokerUrl : `wss://${brokerUrl}`);
+      if (
+        ["http:", "https:", "ws:", "wss:"].includes(url.protocol)
+        && url.hostname
+        && !url.username
+        && !url.password
+        && !url.search
+        && !url.hash
+      ) {
+        const inferredProtocol =
+          url.protocol === "http:" || url.protocol === "ws:" ? "ws" : "wss";
+        const nextProtocol = protocol || inferredProtocol;
+        brokerUrl = url.hostname;
+        protocol = nextProtocol;
+        port = port || url.port || (nextProtocol === "ws" ? "80" : "443");
+        path = path || (url.pathname === "/" ? "/mqtt" : url.pathname);
+      }
+    } catch {
+      // Invalid legacy addresses must be fixed in the broker-domain field.
+    }
+  }
+
+  return {
+    ...credentials,
+    brokerUrl,
+    protocol: protocol || "wss",
+    port: port || "443",
+    path: path || "/mqtt",
+  };
 }
 
-/** Resolve a broker address to the WebSocket URL used by the MQTT client.
- * Bare hosts, host:port, and http(s) URLs are accepted. Explicit schemes in
- * the address win unless a protocol override was selected.
- */
-export function validateBrokerUrl(
-  raw: string,
-  options: Pick<MqttCredentials, "protocol" | "port" | "path"> = {
-    protocol: "",
-    port: "",
-    path: "",
-  },
-): string {
-  const value = raw.trim();
-  if (!value || (value.startsWith("/") && !value.startsWith("//"))) {
-    throw new Error("Enter a valid WebSocket broker address.");
-  }
+export function parseMqttCredentials(value: unknown): MqttCredentials {
+  const parsed = v.safeParse(StoredBrokerCredentialsSchema, value);
+  if (!parsed.success) throw new Error("Invalid MQTT credentials.");
+  return normalizeMqttCredentials(parsed.output);
+}
 
-  const explicitScheme = value
-    .match(/^([a-z][a-z0-9+.-]*):\/\//i)?.[1]
-    ?.toLowerCase();
-  if (
-    explicitScheme
-    && !["http", "https", "ws", "wss"].includes(explicitScheme)
-  ) {
-    throw new Error("Use a WebSocket broker address (ws:// or wss://).");
-  }
+const BrokerPortSchema = v.pipe(
+  v.string(),
+  v.regex(/^\d+$/),
+  v.transform(Number),
+  v.integer(),
+  v.minValue(1),
+  v.maxValue(65535),
+);
 
-  if (!v.is(v.picklist(["", "ws", "wss"]), options.protocol)) {
-    throw new Error("Select a valid WebSocket protocol.");
+export function validateBrokerDomain(raw: string): string {
+  const domain = raw.trim();
+  if (!domain || /[/\\?#@\s%]/.test(domain)) {
+    throw new Error("Enter a broker domain without a scheme, port or path.");
   }
-
-  const inferredProtocol =
-    explicitScheme === "https" || explicitScheme === "wss"
-      ? "wss"
-      : explicitScheme === "http" || explicitScheme === "ws"
-        ? "ws"
-        : typeof location !== "undefined" && location.protocol === "http:"
-          ? "ws"
-          : "wss";
-  const protocol = options.protocol || inferredProtocol;
-  const withoutScheme = explicitScheme
-    ? value.slice(explicitScheme.length + 3)
-    : value.startsWith("//")
-      ? value.slice(2)
-      : value;
+  // IPv6 addresses must be bracketed. A colon elsewhere denotes a port.
+  if (domain.includes(":") && !/^\[[\da-f:.]+\]$/i.test(domain)) {
+    throw new Error("Enter a broker domain without a scheme, port or path.");
+  }
 
   let url: URL;
   try {
-    url = new URL(`${protocol}://${withoutScheme}`);
+    url = new URL(`wss://${domain}/`);
   } catch {
-    throw new Error("Enter a valid WebSocket broker address.");
+    throw new Error("Enter a valid broker domain or hostname.");
   }
-  if (!url.hostname || url.username || url.password || url.hash) {
-    throw new Error(
-      "Broker URLs cannot contain embedded credentials or fragments.",
-    );
+  const hostname = url.hostname;
+  if (!hostname || url.port || url.username || url.password) {
+    throw new Error("Enter a broker domain without a scheme, port or path.");
   }
-
-  const port = options.port.trim();
-  if (port) {
-    const result = v.safeParse(
-      v.pipe(
-        v.string(),
-        v.regex(/^\d+$/),
-        v.transform(Number),
-        v.integer(),
-        v.minValue(1),
-        v.maxValue(65535),
-      ),
-      port,
-    );
-    if (!result.success) {
-      throw new Error("Port must be a whole number from 1 to 65535.");
-    }
-    url.port = String(result.output);
-  }
-
-  const path = options.path.trim();
-  if (path) {
+  if (!hostname.startsWith("[")) {
+    // Allow DNS names, localhost, IPv4 and international domains (punycode).
+    const labels = hostname.replace(/\.$/, "").split(".");
     if (
-      !v.is(v.pipe(v.string(), v.regex(/^[^?#]+$/)), path)
-      || [...path].some(
-        (character) =>
-          character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127,
+      hostname.length > 254
+      || labels.some(
+        (label) =>
+          !v.is(v.pipe(v.string(), v.regex(/^[a-z0-9-]{1,63}$/i)), label)
+          || label.startsWith("-")
+          || label.endsWith("-"),
       )
     ) {
-      throw new Error("Enter a path without query parameters or fragments.");
+      throw new Error("Enter a valid broker domain or hostname.");
     }
-    url.pathname = path.startsWith("/") ? path : `/${path}`;
   }
+  return hostname;
+}
 
+export function validateBrokerPort(raw: string): number {
+  const result = v.safeParse(BrokerPortSchema, raw.trim());
+  if (!result.success) {
+    throw new Error("Port is required (1–65535).");
+  }
+  return result.output;
+}
+
+export function validateBrokerPath(raw: string): string {
+  const path = raw.trim();
+  if (
+    !v.is(v.pipe(v.string(), v.regex(/^\/[^?#]*$/)), path)
+    || [...path].some(
+      (character) =>
+        character.charCodeAt(0) < 32 || character.charCodeAt(0) === 127,
+    )
+  ) {
+    throw new Error(
+      "Enter a path starting with / (without a query or fragment).",
+    );
+  }
+  return path;
+}
+
+/** Construct the MQTT WebSocket endpoint from the required broker fields. */
+export function validateBrokerUrl(
+  raw: string,
+  options: Pick<
+    MqttCredentials,
+    "protocol" | "port" | "path"
+  > = EMPTY_MQTT_CREDENTIALS,
+): string {
+  const domain = validateBrokerDomain(raw);
+  if (!v.is(v.picklist(["ws", "wss"]), options.protocol)) {
+    throw new Error("Select WS or WSS for the broker protocol.");
+  }
+  const port = validateBrokerPort(options.port);
+  const path = validateBrokerPath(options.path);
+  const url = new URL(`${options.protocol}://${domain}/`);
+  url.port = String(port);
+  url.pathname = path;
+  return validateWebSocketUrl(url.toString());
+}
+
+/** The transport consumes a complete URL; domain-only validation belongs to the form. */
+export function validateWebSocketUrl(raw: string): string {
+  let url: URL;
+  try {
+    url = new URL(raw);
+  } catch {
+    throw new Error("Enter a valid WebSocket broker URL.");
+  }
+  if (
+    (url.protocol !== "ws:" && url.protocol !== "wss:")
+    || !url.hostname
+    || url.username
+    || url.password
+    || url.hash
+  ) {
+    throw new Error(
+      "Enter a valid WebSocket broker URL without embedded credentials or fragments.",
+    );
+  }
   if (
     typeof location !== "undefined"
     && location.protocol === "https:"

@@ -62,6 +62,10 @@ import {
   type MqttCredentials,
   type MqttPreferences,
   type MqttQos,
+  normalizeMqttCredentials,
+  validateBrokerDomain,
+  validateBrokerPath,
+  validateBrokerPort,
   validateBrokerUrl,
   validateKeepAlive,
   validateTopic,
@@ -216,9 +220,8 @@ export default function MqttDebugger() {
         form.setFieldValue("brokerUrl", value);
         break;
       case "protocol":
-        if (value === "" || value === "ws" || value === "wss") {
-          form.setFieldValue("protocol", value);
-        }
+        if (value !== "ws" && value !== "wss") return;
+        form.setFieldValue("protocol", value);
         break;
       case "port":
         form.setFieldValue("port", value);
@@ -258,13 +261,10 @@ export default function MqttDebugger() {
     setActiveTopics([]);
   }
 
-  function importCredentials(next: MqttCredentials) {
+  function importCredentials(imported: MqttCredentials) {
+    const next = normalizeMqttCredentials(imported);
     disconnect();
-    for (const key of Object.keys(
-      EMPTY_MQTT_CREDENTIALS,
-    ) as (keyof MqttCredentials)[]) {
-      form.setFieldValue(key, next[key]);
-    }
+    form.reset({ ...next, keepAlive: form.state.values.keepAlive });
     persistCredentials(next);
     setPasswordVisible(false);
     setError(null);
@@ -273,11 +273,7 @@ export default function MqttDebugger() {
 
   function clearCredentials() {
     disconnect();
-    for (const key of Object.keys(
-      EMPTY_MQTT_CREDENTIALS,
-    ) as (keyof MqttCredentials)[]) {
-      form.setFieldValue(key, "");
-    }
+    form.reset();
     persistCredentials({ ...EMPTY_MQTT_CREDENTIALS });
     setPasswordVisible(false);
     setError(null);
@@ -494,14 +490,25 @@ export default function MqttDebugger() {
                 disabled={!loaded || status !== "disconnected"}
                 className="space-y-4 disabled:opacity-70"
               >
-                <form.Field name="brokerUrl">
+                <form.Field
+                  name="brokerUrl"
+                  validators={{
+                    onBlur: ({ value }) => {
+                      try {
+                        validateBrokerDomain(value);
+                      } catch (cause) {
+                        return message(cause);
+                      }
+                    },
+                  }}
+                >
                   {(field) => (
                     <div className="space-y-2">
                       <div className="flex items-center gap-1">
-                        <Label htmlFor="mqtt-broker-url">Broker address</Label>
+                        <Label htmlFor="mqtt-broker-url">Broker domain</Label>
                         <InfoTooltip>
-                          Enter a hostname, host:port, or full URL. HTTP(S)
-                          addresses are converted to WebSocket URLs.
+                          Hostname or IP address only. Configure the protocol,
+                          port and path separately.
                         </InfoTooltip>
                       </div>
                       <Input
@@ -510,13 +517,19 @@ export default function MqttDebugger() {
                         type="text"
                         required
                         spellCheck={false}
-                        placeholder="broker.example.com or wss://broker.example.com/mqtt"
+                        placeholder="broker.example.com"
+                        aria-invalid={!field.state.meta.isValid}
                         value={field.state.value}
                         onBlur={field.handleBlur}
                         onChange={(event) =>
                           editCredential("brokerUrl", event.target.value)
                         }
                       />
+                      {!field.state.meta.isValid && (
+                        <p role="alert" className="text-xs text-destructive">
+                          {field.state.meta.errors.join(", ")}
+                        </p>
+                      )}
                     </div>
                   )}
                 </form.Field>
@@ -527,24 +540,20 @@ export default function MqttDebugger() {
                         <div className="flex items-center gap-1">
                           <Label htmlFor="mqtt-protocol">Protocol</Label>
                           <InfoTooltip>
-                            Auto keeps the URL scheme, or uses WS on HTTP pages
-                            and WSS on HTTPS pages.
+                            WSS uses TLS; WS is available on HTTP pages.
                           </InfoTooltip>
                         </div>
                         <Select
-                          value={field.state.value || "auto"}
+                          required
+                          value={field.state.value}
                           onValueChange={(value) =>
-                            editCredential(
-                              "protocol",
-                              value === "auto" ? "" : value,
-                            )
+                            editCredential("protocol", value)
                           }
                         >
                           <SelectTrigger id="mqtt-protocol" className="w-full">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="auto">Auto</SelectItem>
                             <SelectItem value="wss">Secure (WSS)</SelectItem>
                             <SelectItem value="ws">Insecure (WS)</SelectItem>
                           </SelectContent>
@@ -552,52 +561,82 @@ export default function MqttDebugger() {
                       </div>
                     )}
                   </form.Field>
-                  <form.Field name="port">
+                  <form.Field
+                    name="port"
+                    validators={{
+                      onBlur: ({ value }) => {
+                        try {
+                          validateBrokerPort(value);
+                        } catch (cause) {
+                          return message(cause);
+                        }
+                      },
+                    }}
+                  >
                     {(field) => (
                       <div className="space-y-2">
                         <div className="flex items-center gap-1">
                           <Label htmlFor="mqtt-port">Port</Label>
-                          <InfoTooltip>
-                            Overrides the URL port. Leave blank to use the URL
-                            or default port.
-                          </InfoTooltip>
+                          <InfoTooltip>WebSocket port (1–65535).</InfoTooltip>
                         </div>
                         <Input
                           id="mqtt-port"
                           name={field.name}
                           type="text"
                           inputMode="numeric"
-                          placeholder="Auto"
+                          required
+                          aria-invalid={!field.state.meta.isValid}
                           value={field.state.value}
                           onBlur={field.handleBlur}
                           onChange={(event) =>
                             editCredential("port", event.target.value)
                           }
                         />
+                        {!field.state.meta.isValid && (
+                          <p role="alert" className="text-xs text-destructive">
+                            {field.state.meta.errors.join(", ")}
+                          </p>
+                        )}
                       </div>
                     )}
                   </form.Field>
-                  <form.Field name="path">
+                  <form.Field
+                    name="path"
+                    validators={{
+                      onBlur: ({ value }) => {
+                        try {
+                          validateBrokerPath(value);
+                        } catch (cause) {
+                          return message(cause);
+                        }
+                      },
+                    }}
+                  >
                     {(field) => (
                       <div className="space-y-2">
                         <div className="flex items-center gap-1">
                           <Label htmlFor="mqtt-path">Path</Label>
                           <InfoTooltip>
-                            Overrides the URL path. Leave blank to keep its path
-                            (or /).
+                            WebSocket endpoint path, beginning with /.
                           </InfoTooltip>
                         </div>
                         <Input
                           id="mqtt-path"
                           name={field.name}
                           spellCheck={false}
-                          placeholder="/mqtt"
+                          required
+                          aria-invalid={!field.state.meta.isValid}
                           value={field.state.value}
                           onBlur={field.handleBlur}
                           onChange={(event) =>
                             editCredential("path", event.target.value)
                           }
                         />
+                        {!field.state.meta.isValid && (
+                          <p role="alert" className="text-xs text-destructive">
+                            {field.state.meta.errors.join(", ")}
+                          </p>
+                        )}
                       </div>
                     )}
                   </form.Field>

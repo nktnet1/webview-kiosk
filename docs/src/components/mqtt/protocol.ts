@@ -2,7 +2,11 @@
  * Supports QoS 0/1/2 publish and subscribe, acknowledgements, pings and MQTT 5
  * response-topic/correlation-data properties. No TCP access or auto-reconnect.
  */
-import { type MqttQos, validateBrokerUrl, validateTopic } from "./validation";
+import {
+  type MqttQos,
+  validateTopic,
+  validateWebSocketUrl,
+} from "./validation";
 
 const encoder = new TextEncoder();
 const decoder = new TextDecoder();
@@ -146,7 +150,7 @@ export class MqttWebSocketClient {
 
   connect(): Promise<void> {
     if (this.socket) throw new Error("MQTT client is already started.");
-    const url = validateBrokerUrl(this.options.brokerUrl);
+    const url = validateWebSocketUrl(this.options.brokerUrl);
     this.stopped = false;
     this.onStatus("connecting");
     return new Promise<void>((resolve, reject) => {

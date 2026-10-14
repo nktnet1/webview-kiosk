@@ -127,7 +127,7 @@ export function CredentialJsonTransfer<T extends object>({
       setError(null);
       if (
         credentialsDiffer(existing, credentials, template)
-        && Object.values(existing).some((value) => value !== "")
+        && credentialsDiffer(existing, template, template)
       ) {
         setPendingImport(credentials);
         return;
@@ -211,10 +211,10 @@ export function CredentialJsonTransfer<T extends object>({
             </DialogTitle>
             <DialogDescription>
               {pendingImport
-                ? "This replaces all saved credentials. Missing JSON fields will be cleared."
+                ? "This replaces all saved credentials. Missing fields will be reset to defaults."
                 : mode === "export"
                   ? "This JSON includes private keys and secrets. Keep it secure."
-                  : "Paste JSON or choose a file. Missing fields will be cleared."}
+                  : "Paste JSON or choose a file. Missing fields will use their defaults."}
             </DialogDescription>
           </DialogHeader>
           {pendingImport === null && (
