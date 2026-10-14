@@ -1,4 +1,3 @@
-"use client";
 import * as v from "valibot";
 
 export const DownloadSource = v.picklist(["GitHub", "F-Droid", "IzzyOnDroid"]);

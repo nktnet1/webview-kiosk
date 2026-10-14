@@ -1,5 +1,3 @@
-"use client";
-
 /* eslint-disable react/no-children-prop */
 
 import { useForm } from "@tanstack/react-form";
