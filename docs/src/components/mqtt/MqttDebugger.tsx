@@ -1,0 +1,937 @@
+import { useForm } from "@tanstack/react-form";
+import { Callout } from "fumadocs-ui/components/callout";
+import {
+  ArrowDownLeft,
+  ArrowUpRight,
+  CircleHelp,
+  PlugZap,
+  Send,
+  Trash2,
+  WifiOff,
+} from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { CredentialJsonTransfer } from "#/components/remote-control/CredentialJsonTransfer";
+import { InfoTooltip } from "#/components/remote-control/InfoTooltip";
+import {
+  createRemotePayload,
+  type MessageKind,
+  stringifyPayload,
+  validateRemotePayload,
+} from "#/components/remote-control/payload";
+import { RemoteMessageEditor } from "#/components/remote-control/RemoteMessageEditor";
+import { SecretInput } from "#/components/remote-control/SecretInput";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "#/components/ui/alert-dialog";
+import { Button } from "#/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
+import { Checkbox } from "#/components/ui/checkbox";
+import { Input } from "#/components/ui/input";
+import { Label } from "#/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "#/components/ui/select";
+import { Textarea } from "#/components/ui/textarea";
+import { type MqttConnectionStatus, MqttWebSocketClient } from "./protocol";
+import { RequestEditor } from "./RequestEditor";
+import { createRequestPayload, parseRequestPayload } from "./request";
+import {
+  loadMqttCredentials,
+  loadMqttPreferences,
+  MQTT_CREDENTIALS_KEY,
+  MQTT_PREFERENCES_KEY,
+  saveMqttCredentials,
+  saveMqttPreferences,
+} from "./storage";
+import {
+  DEFAULT_PREFERENCES,
+  EMPTY_MQTT_CREDENTIALS,
+  type MqttCredentials,
+  type MqttPreferences,
+  type MqttQos,
+  validateBrokerUrl,
+  validateKeepAlive,
+  validateTopic,
+} from "./validation";
+
+type BrokerForm = MqttCredentials & { keepAlive: string };
+type Mode = "control" | "request" | "custom";
+type LogEntry = {
+  id: number;
+  time: string;
+  direction: "received" | "published";
+  topic: string;
+  payload: string;
+  qos: MqttQos;
+  retain: boolean;
+};
+
+function message(error: unknown): string {
+  return error instanceof Error
+    ? error.message
+    : "An unexpected error occurred.";
+}
+
+function displayPayload(value: string): string {
+  try {
+    return JSON.stringify(JSON.parse(value), null, 2);
+  } catch {
+    return value;
+  }
+}
+
+function QosSelect({
+  value,
+  onChange,
+  id,
+}: {
+  value: MqttQos;
+  onChange: (value: MqttQos) => void;
+  id: string;
+}) {
+  return (
+    <Select
+      value={String(value)}
+      onValueChange={(next) => onChange(Number(next) as MqttQos)}
+    >
+      <SelectTrigger id={id} className="w-full">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="0">QoS 0</SelectItem>
+        <SelectItem value="1">QoS 1</SelectItem>
+        <SelectItem value="2">QoS 2</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}
+
+export default function MqttDebugger() {
+  const [loaded, setLoaded] = useState(false);
+  const [storageWarning, setStorageWarning] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [status, setStatus] = useState<MqttConnectionStatus>("disconnected");
+  const [error, setError] = useState<string | null>(null);
+  const [preferences, setPreferences] =
+    useState<MqttPreferences>(DEFAULT_PREFERENCES);
+  const preferencesRef = useRef<MqttPreferences>(DEFAULT_PREFERENCES);
+  const [activeTopics, setActiveTopics] = useState<string[]>([]);
+  const [subscribeTopic, setSubscribeTopic] = useState("");
+  const [subscribeQos, setSubscribeQos] = useState<MqttQos>(0);
+  const [subscriptionBusy, setSubscriptionBusy] = useState(false);
+  const [publishBusy, setPublishBusy] = useState(false);
+  const [mode, setMode] = useState<Mode>("control");
+  const [kind, setKind] = useState<MessageKind>("command");
+  const [controlPayload, setControlPayload] = useState(() =>
+    stringifyPayload(createRemotePayload("mqtt", "command")),
+  );
+  const [requestPayload, setRequestPayload] = useState(() =>
+    stringifyPayload(createRequestPayload()),
+  );
+  const [customPayload, setCustomPayload] = useState(
+    '{\n  "message": "Hello"\n}',
+  );
+  const [responseTopic, setResponseTopic] = useState("");
+  const [correlationData, setCorrelationData] = useState("");
+  const [publishQos, setPublishQos] = useState<MqttQos>(0);
+  const [retain, setRetain] = useState(false);
+  const [log, setLog] = useState<LogEntry[]>([]);
+  const clientRef = useRef<MqttWebSocketClient | null>(null);
+  const logSequence = useRef(0);
+
+  const addLog = useCallback((entry: Omit<LogEntry, "id" | "time">) => {
+    setLog((items) =>
+      [
+        {
+          ...entry,
+          id: ++logSequence.current,
+          time: new Date().toLocaleTimeString(),
+        },
+        ...items,
+      ].slice(0, 100),
+    );
+  }, []);
+
+  const form = useForm({
+    defaultValues: { ...EMPTY_MQTT_CREDENTIALS, keepAlive: "60" } as BrokerForm,
+    onSubmit: async ({ value }) => connect(value),
+  });
+
+  useEffect(() => {
+    try {
+      const credentials = loadMqttCredentials(
+        window.localStorage.getItem(MQTT_CREDENTIALS_KEY),
+      );
+      for (const key of Object.keys(
+        EMPTY_MQTT_CREDENTIALS,
+      ) as (keyof MqttCredentials)[]) {
+        form.setFieldValue(key, credentials[key]);
+      }
+      const next = loadMqttPreferences(
+        window.localStorage.getItem(MQTT_PREFERENCES_KEY),
+      );
+      preferencesRef.current = next;
+      setPreferences(next);
+    } catch {
+      setStorageWarning(true);
+    }
+    setLoaded(true);
+    return () => {
+      clientRef.current?.disconnect();
+      clientRef.current = null;
+    };
+  }, [form]);
+
+  function currentCredentials(): MqttCredentials {
+    const { brokerUrl, clientId, username, password } = form.state.values;
+    return { brokerUrl, clientId, username, password };
+  }
+
+  function persistCredentials(next: MqttCredentials) {
+    try {
+      saveMqttCredentials(window.localStorage, next);
+      setStorageWarning(false);
+    } catch {
+      setStorageWarning(true);
+    }
+  }
+
+  function editCredential(key: keyof MqttCredentials, value: string) {
+    switch (key) {
+      case "brokerUrl":
+        form.setFieldValue("brokerUrl", value);
+        break;
+      case "clientId":
+        form.setFieldValue("clientId", value);
+        break;
+      case "username":
+        form.setFieldValue("username", value);
+        break;
+      case "password":
+        form.setFieldValue("password", value);
+        break;
+    }
+    persistCredentials({ ...currentCredentials(), [key]: value });
+    setError(null);
+  }
+
+  function updatePreferences(next: MqttPreferences) {
+    preferencesRef.current = next;
+    setPreferences(next);
+    try {
+      saveMqttPreferences(window.localStorage, next);
+      setStorageWarning(false);
+    } catch {
+      setStorageWarning(true);
+    }
+  }
+
+  function disconnect() {
+    clientRef.current?.disconnect();
+    clientRef.current = null;
+    setStatus("disconnected");
+    setActiveTopics([]);
+  }
+
+  function importCredentials(next: MqttCredentials) {
+    disconnect();
+    for (const key of Object.keys(
+      EMPTY_MQTT_CREDENTIALS,
+    ) as (keyof MqttCredentials)[]) {
+      form.setFieldValue(key, next[key]);
+    }
+    persistCredentials(next);
+    setPasswordVisible(false);
+    setError(null);
+    toast.success("MQTT credentials imported");
+  }
+
+  function clearCredentials() {
+    disconnect();
+    for (const key of Object.keys(
+      EMPTY_MQTT_CREDENTIALS,
+    ) as (keyof MqttCredentials)[]) {
+      form.setFieldValue(key, "");
+    }
+    persistCredentials({ ...EMPTY_MQTT_CREDENTIALS });
+    setPasswordVisible(false);
+    setError(null);
+    toast.success("MQTT credentials cleared");
+  }
+
+  async function connect(values: BrokerForm) {
+    if (clientRef.current) return;
+    try {
+      validateBrokerUrl(values.brokerUrl);
+      if (!values.keepAlive.trim())
+        throw new Error("Enter a keep-alive interval.");
+      const keepAlive = validateKeepAlive(Number(values.keepAlive));
+      if (values.password && !values.username)
+        throw new Error("Enter a username when using a password.");
+      const client = new MqttWebSocketClient(
+        {
+          brokerUrl: values.brokerUrl,
+          username: values.username,
+          password: values.password,
+          clientId:
+            values.clientId || `wk-docs-${crypto.randomUUID().slice(0, 12)}`,
+          keepAlive,
+        },
+        (next, detail) => {
+          if (clientRef.current !== client) return;
+          setStatus(next);
+          if (next === "disconnected") {
+            clientRef.current = null;
+            setActiveTopics([]);
+          }
+          if (detail) setError(detail);
+        },
+        (received) => addLog({ direction: "received", ...received }),
+      );
+      clientRef.current = client;
+      setStatus("connecting");
+      setError(null);
+      await client.connect();
+      toast.success("Connected to MQTT broker");
+      for (const sub of preferencesRef.current.subscriptions) {
+        if (clientRef.current !== client) break;
+        try {
+          await client.subscribe(sub.topic, sub.qos);
+          if (clientRef.current === client)
+            setActiveTopics((topics) => [...new Set([...topics, sub.topic])]);
+        } catch (cause) {
+          toast.error(`Subscribe ${sub.topic}: ${message(cause)}`);
+        }
+      }
+    } catch (cause) {
+      setError(message(cause));
+      toast.error(message(cause));
+      if (clientRef.current && status !== "connected") disconnect();
+    }
+  }
+
+  async function subscribe() {
+    if (!clientRef.current || status !== "connected") return;
+    setSubscriptionBusy(true);
+    try {
+      const topic = validateTopic(subscribeTopic.trim(), true);
+      if (preferences.subscriptions.some((item) => item.topic === topic))
+        throw new Error("Topic filter is already saved.");
+      if (preferences.subscriptions.length >= 30)
+        throw new Error("Maximum 30 subscriptions.");
+      await clientRef.current.subscribe(topic, subscribeQos);
+      updatePreferences({
+        ...preferences,
+        subscriptions: [
+          ...preferences.subscriptions,
+          { topic, qos: subscribeQos },
+        ],
+      });
+      setActiveTopics((topics) => [...new Set([...topics, topic])]);
+      setSubscribeTopic("");
+      toast.success(`Subscribed to ${topic}`);
+    } catch (cause) {
+      toast.error(message(cause));
+    } finally {
+      setSubscriptionBusy(false);
+    }
+  }
+
+  async function unsubscribe(topic: string) {
+    setSubscriptionBusy(true);
+    try {
+      if (
+        clientRef.current
+        && status === "connected"
+        && activeTopics.includes(topic)
+      ) {
+        await clientRef.current.unsubscribe(topic);
+      }
+      updatePreferences({
+        ...preferences,
+        subscriptions: preferences.subscriptions.filter(
+          (item) => item.topic !== topic,
+        ),
+      });
+      setActiveTopics((topics) => topics.filter((item) => item !== topic));
+      toast.success(`Removed ${topic}`);
+    } catch (cause) {
+      toast.error(message(cause));
+    } finally {
+      setSubscriptionBusy(false);
+    }
+  }
+
+  const topicField =
+    mode === "request"
+      ? "requestTopic"
+      : mode === "custom"
+        ? "customTopic"
+        : kind === "command"
+          ? "commandTopic"
+          : "settingsTopic";
+  const publishTopic = preferences[topicField];
+
+  async function publish() {
+    if (!clientRef.current || status !== "connected") return;
+    setPublishBusy(true);
+    setError(null);
+    try {
+      const topic = validateTopic(publishTopic.trim(), false);
+      const payload =
+        mode === "control"
+          ? validateRemotePayload(controlPayload, "mqtt", kind)
+          : mode === "request"
+            ? JSON.stringify(parseRequestPayload(requestPayload))
+            : customPayload;
+      await clientRef.current.publish(topic, payload, {
+        qos: publishQos,
+        retain,
+        ...(mode === "request"
+          ? { responseTopic: responseTopic.trim(), correlationData }
+          : {}),
+      });
+      addLog({
+        topic,
+        payload,
+        qos: publishQos,
+        retain,
+        direction: "published",
+      });
+      toast.success(
+        publishQos === 0
+          ? "Published (QoS 0, no broker acknowledgement)"
+          : `Published (QoS ${publishQos} acknowledged)`,
+      );
+    } catch (cause) {
+      setError(message(cause));
+      toast.error(message(cause));
+    } finally {
+      setPublishBusy(false);
+    }
+  }
+
+  return (
+    <div className="w-full max-w-6xl space-y-6 pb-12">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">MQTT Debugger</h1>
+        <p className="text-sm text-muted-foreground">
+          Connect, publish and inspect MQTT 5 messages over WebSockets.
+        </p>
+      </div>
+      <Callout title="Credentials" type="warning">
+        Credentials are stored unencrypted in this browser. Avoid shared
+        devices.
+      </Callout>
+      {storageWarning && (
+        <p role="alert" className="text-sm text-destructive">
+          Browser storage is unavailable; settings will not persist.
+        </p>
+      )}
+      {error && (
+        <p
+          role="alert"
+          className="rounded-md border border-destructive px-3 py-2 text-sm text-destructive"
+        >
+          {error}
+        </p>
+      )}
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between gap-2">
+              Broker
+              <span
+                role="status"
+                className="flex items-center gap-1.5 text-xs font-normal text-muted-foreground"
+              >
+                <span
+                  className={`size-2 rounded-full ${status === "connected" ? "bg-green-500" : status === "connecting" ? "bg-yellow-500" : "bg-muted-foreground"}`}
+                />
+                {status === "connected"
+                  ? "Connected"
+                  : status === "connecting"
+                    ? "Connecting…"
+                    : "Disconnected"}
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                void form.handleSubmit();
+              }}
+              className="space-y-4"
+            >
+              <fieldset
+                disabled={!loaded || status !== "disconnected"}
+                className="space-y-4 disabled:opacity-70"
+              >
+                <form.Field name="brokerUrl">
+                  {(field) => (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-1">
+                        <Label htmlFor="mqtt-broker-url">WebSocket URL</Label>
+                        <InfoTooltip>
+                          Use ws:// or wss:// and the broker's WebSocket
+                          listener path, usually /mqtt.
+                        </InfoTooltip>
+                      </div>
+                      <Input
+                        id="mqtt-broker-url"
+                        name={field.name}
+                        type="url"
+                        required
+                        spellCheck={false}
+                        placeholder="wss://broker.example.com/mqtt"
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(event) =>
+                          editCredential("brokerUrl", event.target.value)
+                        }
+                      />
+                    </div>
+                  )}
+                </form.Field>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <form.Field name="username">
+                    {(field) => (
+                      <div className="space-y-2">
+                        <Label htmlFor="mqtt-user">Username</Label>
+                        <Input
+                          id="mqtt-user"
+                          name={field.name}
+                          autoComplete="off"
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(event) =>
+                            editCredential("username", event.target.value)
+                          }
+                        />
+                      </div>
+                    )}
+                  </form.Field>
+                  <form.Field name="clientId">
+                    {(field) => (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-1">
+                          <Label htmlFor="mqtt-client-id">Client ID</Label>
+                          <InfoTooltip>
+                            Leave blank for a temporary ID. Never reuse your
+                            kiosk's own client ID.
+                          </InfoTooltip>
+                        </div>
+                        <Input
+                          id="mqtt-client-id"
+                          name={field.name}
+                          placeholder="Auto-generated"
+                          autoComplete="off"
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(event) =>
+                            editCredential("clientId", event.target.value)
+                          }
+                        />
+                      </div>
+                    )}
+                  </form.Field>
+                </div>
+                <form.Field name="password">
+                  {(field) => (
+                    <div className="space-y-2">
+                      <Label htmlFor="mqtt-password">Password</Label>
+                      <SecretInput
+                        id="mqtt-password"
+                        name={field.name}
+                        value={field.state.value}
+                        autoComplete="off"
+                        revealed={passwordVisible}
+                        onRevealChange={setPasswordVisible}
+                        revealLabel="MQTT password"
+                        onBlur={field.handleBlur}
+                        onChange={(event) =>
+                          editCredential("password", event.target.value)
+                        }
+                      />
+                    </div>
+                  )}
+                </form.Field>
+                <details className="rounded-md border p-3">
+                  <summary className="cursor-pointer text-sm font-medium">
+                    Connection options
+                  </summary>
+                  <div className="pt-3">
+                    <form.Field
+                      name="keepAlive"
+                      validators={{
+                        onBlur: ({ value }) => {
+                          try {
+                            validateKeepAlive(Number(value));
+                          } catch (cause) {
+                            return message(cause);
+                          }
+                        },
+                      }}
+                    >
+                      {(field) => (
+                        <div className="space-y-2">
+                          <Label htmlFor="mqtt-keepalive">
+                            Keep alive (seconds)
+                          </Label>
+                          <Input
+                            id="mqtt-keepalive"
+                            type="number"
+                            min={0}
+                            max={65535}
+                            step={1}
+                            value={field.state.value}
+                            aria-invalid={!field.state.meta.isValid}
+                            onBlur={field.handleBlur}
+                            onChange={(event) =>
+                              field.handleChange(event.target.value)
+                            }
+                          />
+                          {!field.state.meta.isValid && (
+                            <p
+                              role="alert"
+                              className="text-xs text-destructive"
+                            >
+                              {field.state.meta.errors.join(", ")}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </form.Field>
+                  </div>
+                </details>
+              </fieldset>
+              <div className="grid grid-cols-2 gap-2 border-t pt-4">
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={!loaded || status !== "disconnected"}
+                >
+                  <PlugZap aria-hidden="true" />
+                  {status === "connecting" ? "Connecting…" : "Connect"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={status === "disconnected"}
+                  onClick={disconnect}
+                >
+                  <WifiOff aria-hidden="true" />
+                  Disconnect
+                </Button>
+              </div>
+            </form>
+            <div className="space-y-3 border-t pt-4">
+              <CredentialJsonTransfer
+                filename="mqtt-credentials.json"
+                template={EMPTY_MQTT_CREDENTIALS}
+                getCredentials={currentCredentials}
+                onImport={importCredentials}
+                warning="Backups include the broker password. Importing replaces all four credential fields."
+              />
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={!loaded}
+                  >
+                    <Trash2 aria-hidden="true" />
+                    Clear credentials
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Clear MQTT credentials?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This removes the saved broker URL, username, password and
+                      client ID. A backup is required to restore them.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel asChild>
+                      <Button type="button" variant="outline">
+                        Cancel
+                      </Button>
+                    </AlertDialogCancel>
+                    <AlertDialogAction asChild>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={clearCredentials}
+                      >
+                        Clear credentials
+                      </Button>
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Publish</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="mqtt-publish-mode">Message</Label>
+              <Select
+                value={mode}
+                onValueChange={(value) => setMode(value as Mode)}
+              >
+                <SelectTrigger id="mqtt-publish-mode" className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="control">Command / settings</SelectItem>
+                  <SelectItem value="request">Request</SelectItem>
+                  <SelectItem value="custom">Custom payload</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {mode === "control" ? (
+              <RemoteMessageEditor
+                transport="mqtt"
+                kind={kind}
+                value={controlPayload}
+                onChange={setControlPayload}
+                onKindChange={setKind}
+              />
+            ) : mode === "request" ? (
+              <RequestEditor
+                value={requestPayload}
+                onChange={setRequestPayload}
+                responseTopic={responseTopic}
+                onResponseTopicChange={setResponseTopic}
+                correlationData={correlationData}
+                onCorrelationDataChange={setCorrelationData}
+              />
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="mqtt-custom-message">Payload (UTF-8)</Label>
+                <Textarea
+                  id="mqtt-custom-message"
+                  className="min-h-56 font-mono text-sm"
+                  rows={10}
+                  value={customPayload}
+                  spellCheck={false}
+                  onChange={(event) => setCustomPayload(event.target.value)}
+                />
+              </div>
+            )}
+            <div className="space-y-2">
+              <Label htmlFor="mqtt-publish-topic">Publish topic</Label>
+              <Input
+                id="mqtt-publish-topic"
+                spellCheck={false}
+                value={publishTopic}
+                onChange={(event) =>
+                  updatePreferences({
+                    ...preferences,
+                    [topicField]: event.target.value,
+                  })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-2 items-end gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="mqtt-publish-qos">Quality of service</Label>
+                <QosSelect
+                  id="mqtt-publish-qos"
+                  value={publishQos}
+                  onChange={setPublishQos}
+                />
+              </div>
+              <div className="flex h-9 items-center gap-2">
+                <Checkbox
+                  id="mqtt-retain"
+                  checked={retain}
+                  onCheckedChange={(value) => setRetain(value === true)}
+                />
+                <Label htmlFor="mqtt-retain">Retain</Label>
+                <InfoTooltip>
+                  Retained commands may run again when the kiosk reconnects.
+                  Leave off unless intentional.
+                </InfoTooltip>
+              </div>
+            </div>
+            <div className="flex justify-end border-t pt-4">
+              <Button
+                type="button"
+                className="w-full sm:w-48"
+                onClick={() => void publish()}
+                disabled={status !== "connected" || publishBusy}
+              >
+                <Send aria-hidden="true" />
+                {publishBusy ? "Publishing…" : "Publish"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        <Card>
+          <CardHeader>
+            <CardTitle>Subscriptions</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_auto] sm:items-end">
+              <div className="space-y-2">
+                <Label htmlFor="mqtt-subscription-topic">Topic filter</Label>
+                <Input
+                  id="mqtt-subscription-topic"
+                  placeholder="wk/event/#"
+                  value={subscribeTopic}
+                  spellCheck={false}
+                  onChange={(event) => setSubscribeTopic(event.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mqtt-subscription-qos">QoS</Label>
+                <QosSelect
+                  id="mqtt-subscription-qos"
+                  value={subscribeQos}
+                  onChange={setSubscribeQos}
+                />
+              </div>
+              <Button
+                type="button"
+                className="w-full sm:w-auto"
+                disabled={status !== "connected" || subscriptionBusy}
+                onClick={() => void subscribe()}
+              >
+                Subscribe
+              </Button>
+            </div>
+            <div className="divide-y rounded-md border">
+              {preferences.subscriptions.map((sub) => (
+                <div
+                  key={sub.topic}
+                  className="flex items-center justify-between gap-3 px-3 py-2.5"
+                >
+                  <div className="min-w-0">
+                    <div className="break-all font-mono text-xs">
+                      {sub.topic}
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      QoS {sub.qos}
+                      {activeTopics.includes(sub.topic) ? " · active" : ""}
+                    </span>
+                  </div>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    aria-label={`Unsubscribe ${sub.topic}`}
+                    disabled={subscriptionBusy}
+                    onClick={() => void unsubscribe(sub.topic)}
+                  >
+                    <Trash2 aria-hidden="true" />
+                  </Button>
+                </div>
+              ))}
+              {preferences.subscriptions.length === 0 && (
+                <p className="px-3 py-4 text-sm text-muted-foreground">
+                  No subscriptions.
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between gap-2">
+              <span>
+                Messages{" "}
+                <span className="text-xs font-normal text-muted-foreground">
+                  ({log.length}/100)
+                </span>
+              </span>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={log.length === 0}
+                onClick={() => setLog([])}
+              >
+                <Trash2 aria-hidden="true" />
+                Clear
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div
+              className="max-h-[34rem] overflow-y-auto divide-y rounded-md border"
+              aria-label="MQTT messages"
+              role="log"
+            >
+              {log.map((entry) => (
+                <details
+                  key={entry.id}
+                  className="group px-3 py-3 open:bg-muted/20"
+                >
+                  <summary className="flex cursor-pointer list-none items-start gap-2 text-sm [&::-webkit-details-marker]:hidden">
+                    {entry.direction === "received" ? (
+                      <ArrowDownLeft
+                        aria-label="Received"
+                        className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                      />
+                    ) : (
+                      <ArrowUpRight
+                        aria-label="Published"
+                        className="mt-0.5 size-4 shrink-0 text-muted-foreground"
+                      />
+                    )}
+                    <span className="min-w-0 flex-1 break-all font-mono text-xs leading-5">
+                      {entry.topic}
+                    </span>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {entry.time}
+                    </span>
+                  </summary>
+                  <div className="mt-3 space-y-2">
+                    <p className="text-xs text-muted-foreground">
+                      QoS {entry.qos}
+                      {entry.retain ? " · Retained" : ""}
+                    </p>
+                    <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-all rounded-md bg-muted p-3 font-mono text-xs">
+                      {displayPayload(entry.payload)}
+                    </pre>
+                  </div>
+                </details>
+              ))}
+              {log.length === 0 && (
+                <div className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
+                  <CircleHelp aria-hidden="true" className="size-4" />
+                  Messages appear here when published or received.
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

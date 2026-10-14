@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { DelimitedListInput } from "#/components/remote-control/DelimitedListInput";
 import { InfoTooltip } from "#/components/remote-control/InfoTooltip";
 import { Button } from "#/components/ui/button";
 import { Checkbox } from "#/components/ui/checkbox";
@@ -30,7 +31,6 @@ import {
   type MessageKind,
   parseRemotePayload,
   type RemoteTransport,
-  splitTargets,
   stringifyPayload,
 } from "./payload";
 import {
@@ -67,42 +67,6 @@ function ToggleField({
         onCheckedChange={(checked) => onChange(checked === true)}
       />
       <Label htmlFor={id}>{label}</Label>
-    </div>
-  );
-}
-
-function TargetField({
-  id,
-  label,
-  targets,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  targets: string[];
-  onChange: (values: string[]) => void;
-}) {
-  // Keep the uncommitted delimiter while typing multiple targets.
-  const [draft, setDraft] = useState(targets.join(", "));
-  const targetValues = targets.join("\n");
-  useEffect(() => {
-    if (splitTargets(draft).join("\n") !== targetValues) {
-      setDraft(targets.join(", "));
-    }
-  }, [draft, targets, targetValues]);
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        value={draft}
-        placeholder="Comma-separated (optional)"
-        spellCheck={false}
-        onChange={(event) => {
-          setDraft(event.target.value);
-          onChange(splitTargets(event.target.value));
-        }}
-      />
     </div>
   );
 }
@@ -477,10 +441,10 @@ function AdvancedControls({
             }
           />
         </div>
-        <TargetField
+        <DelimitedListInput
           id="remote-target-instances"
           label="Target instance IDs"
-          targets={
+          values={
             Array.isArray(message.targetInstances)
               ? (message.targetInstances as string[])
               : []
@@ -489,10 +453,10 @@ function AdvancedControls({
             setField("targetInstances", values.length ? values : undefined)
           }
         />
-        <TargetField
+        <DelimitedListInput
           id="remote-target-users"
           label="Target usernames"
-          targets={
+          values={
             Array.isArray(message.targetUsernames)
               ? (message.targetUsernames as string[])
               : []
