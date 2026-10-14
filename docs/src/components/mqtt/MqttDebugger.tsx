@@ -196,8 +196,9 @@ export default function MqttDebugger() {
   }, [form]);
 
   function currentCredentials(): MqttCredentials {
-    const { brokerUrl, clientId, username, password } = form.state.values;
-    return { brokerUrl, clientId, username, password };
+    const { brokerUrl, protocol, port, path, clientId, username, password } =
+      form.state.values;
+    return { brokerUrl, protocol, port, path, clientId, username, password };
   }
 
   function persistCredentials(next: MqttCredentials) {
@@ -213,6 +214,17 @@ export default function MqttDebugger() {
     switch (key) {
       case "brokerUrl":
         form.setFieldValue("brokerUrl", value);
+        break;
+      case "protocol":
+        if (value === "" || value === "ws" || value === "wss") {
+          form.setFieldValue("protocol", value);
+        }
+        break;
+      case "port":
+        form.setFieldValue("port", value);
+        break;
+      case "path":
+        form.setFieldValue("path", value);
         break;
       case "clientId":
         form.setFieldValue("clientId", value);
@@ -275,7 +287,7 @@ export default function MqttDebugger() {
   async function connect(values: BrokerForm) {
     if (clientRef.current) return;
     try {
-      validateBrokerUrl(values.brokerUrl);
+      const brokerUrl = validateBrokerUrl(values.brokerUrl, values);
       if (!values.keepAlive.trim())
         throw new Error("Enter a keep-alive interval.");
       const keepAlive = validateKeepAlive(Number(values.keepAlive));
@@ -283,7 +295,7 @@ export default function MqttDebugger() {
         throw new Error("Enter a username when using a password.");
       const client = new MqttWebSocketClient(
         {
-          brokerUrl: values.brokerUrl,
+          brokerUrl,
           username: values.username,
           password: values.password,
           clientId:
@@ -486,19 +498,19 @@ export default function MqttDebugger() {
                   {(field) => (
                     <div className="space-y-2">
                       <div className="flex items-center gap-1">
-                        <Label htmlFor="mqtt-broker-url">WebSocket URL</Label>
+                        <Label htmlFor="mqtt-broker-url">Broker address</Label>
                         <InfoTooltip>
-                          Use ws:// or wss:// and the broker's WebSocket
-                          listener path, usually /mqtt.
+                          Enter a hostname, host:port, or full URL. HTTP(S)
+                          addresses are converted to WebSocket URLs.
                         </InfoTooltip>
                       </div>
                       <Input
                         id="mqtt-broker-url"
                         name={field.name}
-                        type="url"
+                        type="text"
                         required
                         spellCheck={false}
-                        placeholder="wss://broker.example.com/mqtt"
+                        placeholder="broker.example.com or wss://broker.example.com/mqtt"
                         value={field.state.value}
                         onBlur={field.handleBlur}
                         onChange={(event) =>
@@ -508,6 +520,119 @@ export default function MqttDebugger() {
                     </div>
                   )}
                 </form.Field>
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <form.Field name="protocol">
+                    {(field) => (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-1">
+                          <Label htmlFor="mqtt-protocol">Protocol</Label>
+                          <InfoTooltip>
+                            Auto keeps the URL scheme, or uses WS on HTTP pages
+                            and WSS on HTTPS pages.
+                          </InfoTooltip>
+                        </div>
+                        <Select
+                          value={field.state.value || "auto"}
+                          onValueChange={(value) =>
+                            editCredential(
+                              "protocol",
+                              value === "auto" ? "" : value,
+                            )
+                          }
+                        >
+                          <SelectTrigger id="mqtt-protocol" className="w-full">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="auto">Auto</SelectItem>
+                            <SelectItem value="wss">Secure (WSS)</SelectItem>
+                            <SelectItem value="ws">Insecure (WS)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </form.Field>
+                  <form.Field name="port">
+                    {(field) => (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-1">
+                          <Label htmlFor="mqtt-port">Port</Label>
+                          <InfoTooltip>
+                            Overrides the URL port. Leave blank to use the URL
+                            or default port.
+                          </InfoTooltip>
+                        </div>
+                        <Input
+                          id="mqtt-port"
+                          name={field.name}
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="Auto"
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(event) =>
+                            editCredential("port", event.target.value)
+                          }
+                        />
+                      </div>
+                    )}
+                  </form.Field>
+                  <form.Field name="path">
+                    {(field) => (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-1">
+                          <Label htmlFor="mqtt-path">Path</Label>
+                          <InfoTooltip>
+                            Overrides the URL path. Leave blank to keep its path
+                            (or /).
+                          </InfoTooltip>
+                        </div>
+                        <Input
+                          id="mqtt-path"
+                          name={field.name}
+                          spellCheck={false}
+                          placeholder="/mqtt"
+                          value={field.state.value}
+                          onBlur={field.handleBlur}
+                          onChange={(event) =>
+                            editCredential("path", event.target.value)
+                          }
+                        />
+                      </div>
+                    )}
+                  </form.Field>
+                </div>
+                <form.Subscribe
+                  selector={(state) =>
+                    [
+                      state.values.brokerUrl,
+                      state.values.protocol,
+                      state.values.port,
+                      state.values.path,
+                    ] as const
+                  }
+                >
+                  {([brokerUrl, protocol, port, path]) => {
+                    let resolved: string;
+                    try {
+                      resolved = validateBrokerUrl(brokerUrl, {
+                        protocol,
+                        port,
+                        path,
+                      });
+                    } catch {
+                      return null;
+                    }
+                    return (
+                      <p className="break-all text-xs text-muted-foreground">
+                        <span className="sr-only">
+                          Resolved WebSocket URL:{" "}
+                        </span>
+                        <code>{resolved}</code>
+                      </p>
+                    );
+                  }}
+                </form.Subscribe>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <form.Field name="username">
                     {(field) => (
@@ -647,7 +772,7 @@ export default function MqttDebugger() {
                 template={EMPTY_MQTT_CREDENTIALS}
                 getCredentials={currentCredentials}
                 onImport={importCredentials}
-                warning="Backups include the broker password. Importing replaces all four credential fields."
+                warning="Backups include the broker password and connection options. Importing replaces all saved broker fields."
               />
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -665,8 +790,9 @@ export default function MqttDebugger() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Clear MQTT credentials?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This removes the saved broker URL, username, password and
-                      client ID. A backup is required to restore them.
+                      This removes the saved broker address, connection options,
+                      username, password and client ID. A backup is required to
+                      restore them.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

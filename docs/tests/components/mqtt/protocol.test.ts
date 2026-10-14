@@ -129,6 +129,15 @@ describe("MQTT 5 WebSocket transport", () => {
     expect(statuses.at(-1)).toBe("disconnected");
   });
 
+  it("connects using a normalized WebSocket URL from a bare broker address", async () => {
+    const { client, socket } = await connected({
+      ...CONNECT_OPTIONS,
+      brokerUrl: "broker.example.com:9443/mqtt",
+    });
+    expect(socket.url).toBe("wss://broker.example.com:9443/mqtt");
+    client.disconnect();
+  });
+
   it("rejects failed CONNACK with broker reason code", async () => {
     const client = new MqttWebSocketClient(
       CONNECT_OPTIONS,
