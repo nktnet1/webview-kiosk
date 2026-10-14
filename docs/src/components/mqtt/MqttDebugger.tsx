@@ -509,7 +509,7 @@ export default function MqttDebugger() {
                 className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground"
               >
                 <span
-                  className={`size-2 rounded-full ${status === "connected" ? "bg-emerald-500" : status === "connecting" ? "bg-amber-500" : "bg-muted-foreground/50"}`}
+                  className={`size-2 rounded-full ${status === "connected" ? "bg-emerald-500" : status === "connecting" ? "bg-amber-500" : "bg-red-500"}`}
                 />
                 {status === "connected"
                   ? "Connected"
@@ -930,36 +930,7 @@ export default function MqttDebugger() {
           </CardContent>
         </Card>
       </section>
-      {status !== "connected" && (
-        <div
-          role="status"
-          className="flex flex-wrap items-center gap-3 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2.5 text-sm"
-        >
-          <WifiOff
-            aria-hidden="true"
-            className="size-4 shrink-0 text-amber-600 dark:text-amber-400"
-          />
-          <p className="min-w-0 flex-1">
-            {status === "connecting"
-              ? "Connecting to the broker. Publishing and subscriptions will be available once connected."
-              : "Not connected. Connect to a broker to publish, subscribe, and receive live messages."}
-          </p>
-          {status === "disconnected" && (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setConnectionOpen(true);
-                connectionToggleRef.current?.focus();
-              }}
-            >
-              Connection settings
-            </Button>
-          )}
-        </div>
-      )}
-      <div className="grid w-full min-w-0 items-start gap-3 lg:grid-cols-[minmax(0,3fr)_minmax(0,4fr)]">
+      <div className="grid w-full min-w-0 items-start gap-3 lg:grid-cols-[minmax(0,3fr)_minmax(0,5fr)]">
         <div className="min-w-0 space-y-3">
           <MqttTopicSidebar
             subscriptions={preferences.subscriptions}

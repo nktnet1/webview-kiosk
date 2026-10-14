@@ -70,7 +70,7 @@ describe("MQTT publish modes", () => {
       createElement(MqttPublishComposer, { ...props, mode: "command" }),
     );
     expect(html).toContain(
-      "grid-cols-[minmax(0,1fr)_5.5rem_auto] items-end gap-2",
+      "grid-cols-[minmax(0,1fr)_7.5rem_auto] items-end gap-2",
     );
     const messageType = html.indexOf('id="mqtt-publish-mode"');
     const qos = html.indexOf('id="mqtt-publish-qos"');

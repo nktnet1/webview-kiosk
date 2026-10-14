@@ -19,9 +19,10 @@ describe("MQTT debugger workspace", () => {
     expect(html).toContain('aria-controls="mqtt-connection-fields"');
     expect(html).toContain('aria-expanded="true"');
     expect(html).toContain("Disconnected");
-    expect(html).toContain("lg:grid-cols-[minmax(0,3fr)_minmax(0,4fr)]");
-    expect(html).toContain("Not connected. Connect to a broker");
-    expect(html).toContain("Connection settings");
+    expect(html).toContain("lg:grid-cols-[minmax(0,3fr)_minmax(0,5fr)]");
+    expect(html).toContain("bg-red-500");
+    expect(html).not.toContain("Not connected. Connect to a broker");
+    expect(html).not.toContain("Connection settings");
     expect(html).toContain("h-[74vh]");
     expect(html).not.toContain("max-w-6xl");
   });
