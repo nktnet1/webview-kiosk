@@ -37,7 +37,11 @@ import {
   SelectValue,
 } from "#/components/ui/select";
 import { Textarea } from "#/components/ui/textarea";
-import { type LogEntry, MqttMessageLog } from "./MqttMessageLog";
+import {
+  appendMqttMessage,
+  type LogEntry,
+  MqttMessageLog,
+} from "./MqttMessageLog";
 import { type MqttConnectionStatus, MqttWebSocketClient } from "./protocol";
 import { RequestEditor } from "./RequestEditor";
 import { createRequestPayload, parseRequestPayload } from "./request";
@@ -133,14 +137,11 @@ export default function MqttDebugger() {
 
   const addLog = useCallback((entry: Omit<LogEntry, "id" | "time">) => {
     setLog((items) =>
-      [
-        {
-          ...entry,
-          id: ++logSequence.current,
-          time: new Date().toLocaleTimeString(),
-        },
-        ...items,
-      ].slice(0, 100),
+      appendMqttMessage(items, {
+        ...entry,
+        id: ++logSequence.current,
+        time: new Date().toLocaleTimeString(),
+      }),
     );
   }, []);
 
