@@ -7,7 +7,7 @@ export const Route = createFileRoute("/_homelayout/debugger/unifiedpush/")({
 
 function UnifiedPushPage() {
   return (
-    <main className="flex flex-col items-center p-4 md:mt-8 w-full">
+    <main className="flex flex-col items-center p-4 md:mt-4 w-full">
       <UnifiedPushDebugger />
     </main>
   );
