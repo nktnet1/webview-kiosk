@@ -84,11 +84,17 @@ export function MqttPublishComposer({
           <h2 className="text-sm font-semibold">Publish</h2>
         </div>
         <div className="min-w-0 space-y-3 p-3">
-          <div className="grid grid-cols-[minmax(0,4.5fr)_minmax(0,2.75fr)_minmax(0,2.75fr)] items-end gap-2">
+          <div className="grid grid-cols-[minmax(0,6fr)_minmax(0,2fr)_minmax(0,2fr)] items-end gap-2">
             <div className="min-w-0 space-y-1.5">
-              <Label htmlFor="mqtt-publish-mode" className="text-xs">
-                Message type
-              </Label>
+              <div className="flex items-center gap-1">
+                <Label htmlFor="mqtt-publish-mode" className="text-xs">
+                  Message type
+                </Label>
+                <InfoTooltip>
+                  Choose a kiosk command, settings update, request, or custom
+                  payload.
+                </InfoTooltip>
+              </div>
               <Select
                 value={mode}
                 onValueChange={(next) => onModeChange(next as PublishMode)}
@@ -108,33 +114,48 @@ export function MqttPublishComposer({
               </Select>
             </div>
             <div className="min-w-0 space-y-1.5">
-              <Label htmlFor="mqtt-publish-qos" className="text-xs">
-                QoS
-              </Label>
+              <div className="flex items-center gap-1">
+                <Label htmlFor="mqtt-publish-qos" className="text-xs">
+                  QoS
+                </Label>
+                <InfoTooltip>
+                  0: at most once. 1: at least once. 2: exactly once.
+                </InfoTooltip>
+              </div>
               <MqttQosSelect
                 id="mqtt-publish-qos"
+                compact
                 value={qos}
                 onChange={onQosChange}
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="mqtt-retain" className="text-xs">
-                Retain
-              </Label>
-              <div className="flex h-9 w-full min-w-0 items-center justify-between gap-1 rounded-md border border-input px-2">
+              <div className="flex items-center gap-1">
+                <Label htmlFor="mqtt-retain" className="text-xs">
+                  Retain
+                </Label>
+                <InfoTooltip>
+                  Store the last message on this topic for future subscribers.
+                  Retained commands may run again when the kiosk reconnects.
+                </InfoTooltip>
+              </div>
+              <div className="flex h-9 w-full min-w-0 items-center justify-center rounded-md border border-input">
                 <Checkbox
                   id="mqtt-retain"
+                  aria-label="Retain message"
                   checked={retain}
                   onCheckedChange={(value) => onRetainChange(value === true)}
                 />
-                <InfoTooltip>
-                  Retained commands may run again when the kiosk reconnects.
-                </InfoTooltip>
               </div>
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="mqtt-publish-topic">Publish topic</Label>
+            <div className="flex items-center gap-1">
+              <Label htmlFor="mqtt-publish-topic">Publish topic</Label>
+              <InfoTooltip>
+                Broker topic to publish to, such as wk/command or wk/settings.
+              </InfoTooltip>
+            </div>
             <Input
               id="mqtt-publish-topic"
               className="font-mono text-xs"

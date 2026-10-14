@@ -7,6 +7,7 @@ import {
   WifiOff,
 } from "lucide-react";
 import { useState } from "react";
+import { InfoTooltip } from "#/components/remote-control/InfoTooltip";
 import { Button } from "#/components/ui/button";
 import { Card } from "#/components/ui/card";
 import {
@@ -194,27 +195,44 @@ export function MqttTopicSidebar({
           <h3 className="text-xs font-semibold text-muted-foreground">
             Subscribe to topic
           </h3>
-          <Label className="sr-only" htmlFor="mqtt-subscription-topic">
-            Topic filter
-          </Label>
-          <Input
-            id="mqtt-subscription-topic"
-            placeholder="wk/event/#"
-            spellCheck={false}
-            value={subscribeTopic}
-            onChange={(event) => onSubscribeTopicChange(event.target.value)}
-          />
-          <div className="flex items-center gap-2">
-            <div className="min-w-0 flex-1">
-              <Label className="sr-only" htmlFor="mqtt-subscription-qos">
-                Subscription QoS
-              </Label>
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(6rem,35%)] items-end gap-2">
+            <div className="min-w-0 space-y-1.5">
+              <div className="flex items-center gap-1">
+                <Label htmlFor="mqtt-subscription-topic" className="text-xs">
+                  Topic
+                </Label>
+                <InfoTooltip>
+                  Topic filter to subscribe to. Use + for one level or # for
+                  multiple levels.
+                </InfoTooltip>
+              </div>
+              <Input
+                id="mqtt-subscription-topic"
+                className="min-w-0"
+                placeholder="wk/event/#"
+                spellCheck={false}
+                value={subscribeTopic}
+                onChange={(event) => onSubscribeTopicChange(event.target.value)}
+              />
+            </div>
+            <div className="min-w-0 space-y-1.5">
+              <div className="flex items-center gap-1">
+                <Label htmlFor="mqtt-subscription-qos" className="text-xs">
+                  QoS
+                </Label>
+                <InfoTooltip>
+                  Maximum delivery quality requested for messages matching this
+                  topic filter.
+                </InfoTooltip>
+              </div>
               <MqttQosSelect
                 id="mqtt-subscription-qos"
                 value={subscribeQos}
                 onChange={onSubscribeQosChange}
               />
             </div>
+          </div>
+          <div className="flex justify-end">
             <Button
               type="submit"
               disabled={!connected || subscriptionBusy}
@@ -275,7 +293,12 @@ export function MqttTopicSidebar({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="mqtt-edit-qos">QoS</Label>
+              <div className="flex items-center gap-1">
+                <Label htmlFor="mqtt-edit-qos">QoS</Label>
+                <InfoTooltip>
+                  Maximum delivery quality requested for this subscription.
+                </InfoTooltip>
+              </div>
               <MqttQosSelect
                 id="mqtt-edit-qos"
                 value={draftQos}

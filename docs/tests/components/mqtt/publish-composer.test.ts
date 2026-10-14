@@ -70,11 +70,9 @@ describe("MQTT publish modes", () => {
       createElement(MqttPublishComposer, { ...props, mode: "command" }),
     );
     expect(html).toContain(
-      "grid-cols-[minmax(0,4.5fr)_minmax(0,2.75fr)_minmax(0,2.75fr)] items-end gap-2",
+      "grid-cols-[minmax(0,6fr)_minmax(0,2fr)_minmax(0,2fr)] items-end gap-2",
     );
-    expect(html).toContain(
-      "justify-between gap-1 rounded-md border border-input px-2",
-    );
+    expect(html).toContain("justify-center rounded-md border border-input");
     const messageType = html.indexOf('id="mqtt-publish-mode"');
     const qos = html.indexOf('id="mqtt-publish-qos"');
     const retain = html.indexOf('id="mqtt-retain"');
@@ -83,6 +81,20 @@ describe("MQTT publish modes", () => {
     expect(qos).toBeGreaterThan(messageType);
     expect(retain).toBeGreaterThan(qos);
     expect(topic).toBeGreaterThan(retain);
+    // The compact QoS value fits the narrower 20% control.
+    expect(html).toContain("gap-1 px-2");
+    // Each control has a label-side information trigger; Retain's input does not.
+    expect(
+      (html.match(/aria-label="More information"/g) ?? []).length,
+    ).toBeGreaterThanOrEqual(4);
+    const retainLabel = html.indexOf(">Retain</label>");
+    const retainHelp = html.indexOf(
+      'aria-label="More information"',
+      retainLabel,
+    );
+    const retainControl = html.indexOf('id="mqtt-retain"', retainLabel);
+    expect(retainHelp).toBeGreaterThan(retainLabel);
+    expect(retainHelp).toBeLessThan(retainControl);
   });
 
   it("keeps Publish disabled when disconnected without hiding the editor", () => {

@@ -17,6 +17,18 @@ describe("MQTT debugger workspace", () => {
     expect(composer).toBeGreaterThan(sidebar);
     expect(messages).toBeGreaterThan(composer);
     expect(html).toContain('aria-controls="mqtt-connection-fields"');
+    expect(html).toContain("MQTT Broker Connection");
+    expect(html).not.toContain("MQTT Debugger</h1>");
+    expect(html).not.toContain("Connection options");
+    expect(html).toContain("Keep alive (seconds)");
+    expect(html).toContain("lg:grid-cols-4");
+    const manage = html.indexOf("Manage credentials");
+    const connectForm = html.indexOf('id="mqtt-connection-fields"');
+    expect(manage).toBeGreaterThan(connection);
+    expect(manage).toBeLessThan(connectForm);
+    expect(html).toContain("Export JSON");
+    expect(html).toContain("Import JSON");
+    expect(html).toContain("Clear credentials");
     expect(html).toContain('aria-expanded="true"');
     expect(html).toContain("Disconnected");
     expect(html).toContain("lg:grid-cols-[minmax(16rem,28%)_minmax(0,1fr)]");

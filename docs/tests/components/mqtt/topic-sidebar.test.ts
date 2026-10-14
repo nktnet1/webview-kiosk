@@ -49,6 +49,16 @@ describe("MQTT topics sidebar", () => {
     expect(html).toContain('aria-pressed="true"');
     expect(html).toContain('aria-label="Actions for wk/event/#"');
     expect(html).toContain("Subscribe to topic");
+    expect(html).toContain("grid-cols-[minmax(0,1fr)_minmax(6rem,35%)]");
+    const topic = html.indexOf('id="mqtt-subscription-topic"');
+    const qos = html.indexOf('id="mqtt-subscription-qos"');
+    const subscribe = html.indexOf(">Subscribe</button>");
+    expect(topic).toBeGreaterThanOrEqual(0);
+    expect(qos).toBeGreaterThan(topic);
+    expect(subscribe).toBeGreaterThan(qos);
+    expect(
+      (html.match(/aria-label="More information"/g) ?? []).length,
+    ).toBeGreaterThanOrEqual(2);
   });
 
   it("keeps topic selection available while disconnected but disables new subscriptions", () => {

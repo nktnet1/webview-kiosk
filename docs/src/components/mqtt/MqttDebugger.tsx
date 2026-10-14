@@ -1,6 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import { Callout } from "fumadocs-ui/components/callout";
-import { ChevronDown, PlugZap, Trash2, WifiOff } from "lucide-react";
+import { ChevronDown, KeyRound, PlugZap, Trash2, WifiOff } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CredentialJsonTransfer } from "#/components/remote-control/CredentialJsonTransfer";
@@ -460,7 +460,6 @@ export default function MqttDebugger() {
 
   return (
     <div className="min-w-0 w-full space-y-4">
-      <h1 className="text-xl font-semibold tracking-tight">MQTT Debugger</h1>
       {storageWarning && (
         <p role="alert" className="text-sm text-destructive">
           Browser storage is unavailable; settings will not persist.
@@ -476,14 +475,14 @@ export default function MqttDebugger() {
       )}
       <section aria-label="Broker connection">
         <Card className="gap-0 py-0">
-          <div className="flex min-w-0 items-center gap-2 px-3 py-2 sm:px-5">
+          <div className="flex min-w-0 flex-wrap items-center gap-2 px-3 py-2 sm:px-5">
             <button
               ref={connectionToggleRef}
               type="button"
               aria-expanded={connectionOpen}
               aria-controls="mqtt-connection-fields"
               onClick={() => setConnectionOpen((open) => !open)}
-              className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-2 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="flex min-w-48 flex-1 items-center gap-3 rounded-md px-2 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <PlugZap
                 aria-hidden="true"
@@ -491,7 +490,7 @@ export default function MqttDebugger() {
               />
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-semibold">
-                  Broker connection
+                  MQTT Broker Connection
                 </span>
                 <form.Subscribe selector={(state) => state.values.brokerUrl}>
                   {(domain) => (
@@ -519,6 +518,67 @@ export default function MqttDebugger() {
                 className={`size-4 shrink-0 text-muted-foreground transition-transform ${connectionOpen ? "rotate-180" : ""}`}
               />
             </button>
+            <details className="group relative z-20 shrink-0">
+              <summary className="inline-flex h-8 cursor-pointer list-none items-center gap-1.5 rounded-md border bg-background px-2.5 text-sm font-medium shadow-xs hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [&::-webkit-details-marker]:hidden">
+                <KeyRound aria-hidden="true" className="size-4" />
+                <span className="hidden sm:inline">Manage credentials</span>
+                <span className="sr-only sm:hidden">Manage credentials</span>
+                <ChevronDown
+                  aria-hidden="true"
+                  className="size-3.5 transition-transform group-open:rotate-180"
+                />
+              </summary>
+              <div className="absolute top-[calc(100%+0.5rem)] right-0 z-30 w-72 max-w-[calc(100vw-2rem)] space-y-3 rounded-lg border bg-popover p-3 text-popover-foreground shadow-lg">
+                <CredentialJsonTransfer
+                  filename="mqtt-credentials.json"
+                  template={EMPTY_MQTT_CREDENTIALS}
+                  getCredentials={currentCredentials}
+                  onImport={importCredentials}
+                  warning="Backups include the broker password and connection options. Importing replaces all saved broker fields."
+                />
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="w-full"
+                      disabled={!loaded}
+                    >
+                      <Trash2 aria-hidden="true" />
+                      Clear credentials
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>
+                        Clear MQTT credentials?
+                      </AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This removes the saved broker address, connection
+                        options, username, password and client ID. A backup is
+                        required to restore them.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel asChild>
+                        <Button type="button" variant="outline">
+                          Cancel
+                        </Button>
+                      </AlertDialogCancel>
+                      <AlertDialogAction asChild>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          onClick={clearCredentials}
+                        >
+                          Clear credentials
+                        </Button>
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </details>
             {status !== "disconnected" && (
               <Button
                 type="button"
@@ -746,7 +806,7 @@ export default function MqttDebugger() {
                     );
                   }}
                 </form.Subscribe>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                   <form.Field name="username">
                     {(field) => (
                       <div className="space-y-2">
@@ -808,55 +868,51 @@ export default function MqttDebugger() {
                       </div>
                     )}
                   </form.Field>
-                </div>
-                <details className="rounded-md border p-3">
-                  <summary className="cursor-pointer text-sm font-medium">
-                    Connection options
-                  </summary>
-                  <div className="pt-3">
-                    <form.Field
-                      name="keepAlive"
-                      validators={{
-                        onBlur: ({ value }) => {
-                          try {
-                            validateKeepAlive(Number(value));
-                          } catch (cause) {
-                            return message(cause);
-                          }
-                        },
-                      }}
-                    >
-                      {(field) => (
-                        <div className="space-y-2">
+                  <form.Field
+                    name="keepAlive"
+                    validators={{
+                      onBlur: ({ value }) => {
+                        try {
+                          validateKeepAlive(Number(value));
+                        } catch (cause) {
+                          return message(cause);
+                        }
+                      },
+                    }}
+                  >
+                    {(field) => (
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-1">
                           <Label htmlFor="mqtt-keepalive">
                             Keep alive (seconds)
                           </Label>
-                          <Input
-                            id="mqtt-keepalive"
-                            type="number"
-                            min={0}
-                            max={65535}
-                            step={1}
-                            value={field.state.value}
-                            aria-invalid={!field.state.meta.isValid}
-                            onBlur={field.handleBlur}
-                            onChange={(event) =>
-                              field.handleChange(event.target.value)
-                            }
-                          />
-                          {!field.state.meta.isValid && (
-                            <p
-                              role="alert"
-                              className="text-xs text-destructive"
-                            >
-                              {field.state.meta.errors.join(", ")}
-                            </p>
-                          )}
+                          <InfoTooltip>
+                            Interval between MQTT keep-alive packets. Set to 0
+                            to disable keep-alive checks.
+                          </InfoTooltip>
                         </div>
-                      )}
-                    </form.Field>
-                  </div>
-                </details>
+                        <Input
+                          id="mqtt-keepalive"
+                          type="number"
+                          min={0}
+                          max={65535}
+                          step={1}
+                          value={field.state.value}
+                          aria-invalid={!field.state.meta.isValid}
+                          onBlur={field.handleBlur}
+                          onChange={(event) =>
+                            field.handleChange(event.target.value)
+                          }
+                        />
+                        {!field.state.meta.isValid && (
+                          <p role="alert" className="text-xs text-destructive">
+                            {field.state.meta.errors.join(", ")}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </form.Field>
+                </div>
               </fieldset>
               <div className="flex flex-wrap justify-end gap-2 border-t pt-4">
                 <Button
@@ -869,61 +925,6 @@ export default function MqttDebugger() {
                 </Button>
               </div>
             </form>
-            <details className="rounded-md border p-3">
-              <summary className="cursor-pointer text-sm font-medium">
-                Manage credentials
-              </summary>
-              <div className="space-y-3 pt-3">
-                <CredentialJsonTransfer
-                  filename="mqtt-credentials.json"
-                  template={EMPTY_MQTT_CREDENTIALS}
-                  getCredentials={currentCredentials}
-                  onImport={importCredentials}
-                  warning="Backups include the broker password and connection options. Importing replaces all saved broker fields."
-                />
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      className="w-full"
-                      disabled={!loaded}
-                    >
-                      <Trash2 aria-hidden="true" />
-                      Clear credentials
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>
-                        Clear MQTT credentials?
-                      </AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This removes the saved broker address, connection
-                        options, username, password and client ID. A backup is
-                        required to restore them.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel asChild>
-                        <Button type="button" variant="outline">
-                          Cancel
-                        </Button>
-                      </AlertDialogCancel>
-                      <AlertDialogAction asChild>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          onClick={clearCredentials}
-                        >
-                          Clear credentials
-                        </Button>
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </details>
           </CardContent>
         </Card>
       </section>
