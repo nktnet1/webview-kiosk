@@ -284,71 +284,52 @@ const MESSAGE_FILTERS: { value: MessageFilter; label: string }[] = [
   { value: "published", label: "Published" },
 ];
 
-/** Manual expansion choices are scoped to the selected direction and topic. */
-export type MqttExpansionState = {
-  filter: MessageFilter;
-  topicFilter: string | null;
-  mode: "latest" | "all" | "none";
-  /** Per-message choices override the bulk mode without closing other messages. */
-  overrides: ReadonlyMap<number, boolean>;
-};
-
-function activeExpansionState(
-  state: MqttExpansionState | null,
-  filter: MessageFilter,
-  topicFilter: string | null,
-): MqttExpansionState | null {
-  return state?.filter === filter && state.topicFilter === topicFilter
-    ? state
-    : null;
-}
-
-/** Resolve expanded IDs from the *visible* stream; never expand hidden messages. */
+/** Messages start expanded; only explicit user actions collapse them. */
 export function expandedMqttMessageIds(
-  entries: LogEntry[],
-  filter: MessageFilter,
-  topicFilter: string | null,
-  state: MqttExpansionState | null,
+  entries: readonly LogEntry[],
+  collapsedIds: ReadonlySet<number>,
 ): ReadonlySet<number> {
-  const active = activeExpansionState(state, filter, topicFilter);
-  const latestId = entries.at(-1)?.id;
-  const mode = active?.mode ?? "latest";
   return new Set(
     entries
-      .filter(
-        (entry) =>
-          active?.overrides.get(entry.id)
-          ?? (mode === "all" || (mode === "latest" && entry.id === latestId)),
-      )
+      .filter((entry) => !collapsedIds.has(entry.id))
       .map((entry) => entry.id),
   );
 }
 
-/** Toggle one message while preserving the expansion of every other message. */
+/** Toggling a message never changes the expansion state of other messages. */
 export function toggleMqttMessageExpansion(
-  entries: LogEntry[],
-  filter: MessageFilter,
-  topicFilter: string | null,
-  state: MqttExpansionState | null,
+  collapsedIds: ReadonlySet<number>,
   id: number,
-): MqttExpansionState {
-  const active = activeExpansionState(state, filter, topicFilter);
-  const visibleIds = new Set(entries.map((entry) => entry.id));
-  const overrides = new Map(
-    [...(active?.overrides ?? [])].filter(([entryId]) =>
-      visibleIds.has(entryId),
-    ),
-  );
-  overrides.set(
-    id,
-    !expandedMqttMessageIds(entries, filter, topicFilter, active).has(id),
-  );
-  return {
-    filter,
-    topicFilter,
-    mode: active?.mode ?? "latest",
-    overrides,
-  };
+): ReadonlySet<number> {
+  const next = new Set(collapsedIds);
+  if (next.has(id)) next.delete(id);
+  else next.add(id);
+  return next;
+}
+
+/** Expand/collapse only the currently visible entries, preserving hidden ones. */
+export function setMqttMessageExpansion(
+  collapsedIds: ReadonlySet<number>,
+  visibleEntries: readonly LogEntry[],
+  expand: boolean,
+): ReadonlySet<number> {
+  const next = new Set(collapsedIds);
+  for (const entry of visibleEntries) {
+    if (expand) next.delete(entry.id);
+    else next.add(entry.id);
+  }
+  return next;
+}
+
+/** Forget choices for messages dropped from the bounded history. */
+export function pruneMqttMessageExpansion(
+  collapsedIds: ReadonlySet<number>,
+  entries: readonly LogEntry[],
+): ReadonlySet<number> {
+  if (collapsedIds.size === 0) return collapsedIds;
+  const ids = new Set(entries.map((entry) => entry.id));
+  if ([...collapsedIds].every((id) => ids.has(id))) return collapsedIds;
+  return new Set([...collapsedIds].filter((id) => ids.has(id)));
 }
 
 export function MqttMessageLog({
@@ -359,18 +340,19 @@ export function MqttMessageLog({
   topicFilter?: string | null;
 }) {
   const [filter, setFilter] = useState<MessageFilter>("all");
-  const [expansion, setExpansion] = useState<MqttExpansionState | null>(null);
+  const [collapsedIds, setCollapsedIds] = useState<ReadonlySet<number>>(
+    () => new Set(),
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const followLatest = useRef(true);
   const lastScrollKey = useRef<string | null>(null);
   const visibleEntries = filterMqttMessages(entries, filter, topicFilter);
   const latestId = visibleEntries.at(-1)?.id ?? null;
-  const expandedIds = expandedMqttMessageIds(
-    visibleEntries,
-    filter,
-    topicFilter,
-    expansion,
-  );
+  const expandedIds = expandedMqttMessageIds(visibleEntries, collapsedIds);
+
+  useEffect(() => {
+    setCollapsedIds((current) => pruneMqttMessageExpansion(current, entries));
+  }, [entries]);
 
   const scrollKey = JSON.stringify([latestId, filter, topicFilter]);
   useEffect(() => {
@@ -419,12 +401,9 @@ export function MqttMessageLog({
               || expandedIds.size === visibleEntries.length
             }
             onClick={() =>
-              setExpansion({
-                filter,
-                topicFilter,
-                mode: "all",
-                overrides: new Map(),
-              })
+              setCollapsedIds((current) =>
+                setMqttMessageExpansion(current, visibleEntries, true),
+              )
             }
           >
             <ChevronsDown aria-hidden="true" />
@@ -436,12 +415,9 @@ export function MqttMessageLog({
             size="sm"
             disabled={expandedIds.size === 0}
             onClick={() =>
-              setExpansion({
-                filter,
-                topicFilter,
-                mode: "none",
-                overrides: new Map(),
-              })
+              setCollapsedIds((current) =>
+                setMqttMessageExpansion(current, visibleEntries, false),
+              )
             }
           >
             <ChevronsUp aria-hidden="true" />
@@ -478,14 +454,8 @@ export function MqttMessageLog({
                       entry={entry}
                       expanded={expandedIds.has(entry.id)}
                       onToggle={() =>
-                        setExpansion((previous) =>
-                          toggleMqttMessageExpansion(
-                            visibleEntries,
-                            filter,
-                            topicFilter,
-                            previous,
-                            entry.id,
-                          ),
+                        setCollapsedIds((current) =>
+                          toggleMqttMessageExpansion(current, entry.id),
                         )
                       }
                     />

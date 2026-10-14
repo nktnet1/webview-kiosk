@@ -70,7 +70,7 @@ describe("MQTT publish modes", () => {
       createElement(MqttPublishComposer, { ...props, mode: "command" }),
     );
     expect(html).toContain(
-      "grid-cols-[minmax(0,4fr)_minmax(0,3fr)_minmax(0,3fr)] items-end gap-2",
+      "grid-cols-[minmax(0,4.5fr)_minmax(0,2.75fr)_minmax(0,2.75fr)] items-end gap-2",
     );
     expect(html).toContain(
       "justify-between gap-1 rounded-md border border-input px-2",

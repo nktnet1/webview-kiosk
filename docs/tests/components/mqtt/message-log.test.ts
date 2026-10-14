@@ -9,6 +9,8 @@ import {
   type LogEntry,
   MqttMessageLog,
   matchesMqttTopicFilter,
+  pruneMqttMessageExpansion,
+  setMqttMessageExpansion,
   toggleMqttMessageExpansion,
 } from "../../../src/components/mqtt/MqttMessageLog";
 
@@ -112,130 +114,80 @@ describe("MQTT message log", () => {
     expect(filterMqttMessages(entries, "all", null)).toBe(entries);
   });
 
-  it("expands the newest message by default and independently toggles earlier messages", () => {
+  it("starts with every message expanded and only collapses manually selected messages", () => {
     const entries = [received, published];
-    expect([...expandedMqttMessageIds(entries, "all", null, null)]).toEqual([
-      2,
+    const initiallyCollapsed = new Set<number>();
+    expect([...expandedMqttMessageIds(entries, initiallyCollapsed)]).toEqual([
+      1, 2,
     ]);
 
-    const withOlder = toggleMqttMessageExpansion(entries, "all", null, null, 1);
-    expect([
-      ...expandedMqttMessageIds(entries, "all", null, withOlder),
-    ]).toEqual([1, 2]);
+    const oneCollapsed = toggleMqttMessageExpansion(initiallyCollapsed, 1);
+    expect([...expandedMqttMessageIds(entries, oneCollapsed)]).toEqual([2]);
+    expect([...expandedMqttMessageIds(entries, initiallyCollapsed)]).toEqual([
+      1, 2,
+    ]);
 
-    const withoutLatest = toggleMqttMessageExpansion(
-      entries,
-      "all",
-      null,
-      withOlder,
-      2,
-    );
-    expect([
-      ...expandedMqttMessageIds(entries, "all", null, withoutLatest),
-    ]).toEqual([1]);
+    const bothCollapsed = toggleMqttMessageExpansion(oneCollapsed, 2);
+    expect(expandedMqttMessageIds(entries, bothCollapsed).size).toBe(0);
 
-    const withoutEither = toggleMqttMessageExpansion(
-      entries,
-      "all",
-      null,
-      withoutLatest,
-      1,
-    );
-    expect(
-      expandedMqttMessageIds(entries, "all", null, withoutEither).size,
-    ).toBe(0);
+    const oneReopened = toggleMqttMessageExpansion(bothCollapsed, 1);
+    expect([...expandedMqttMessageIds(entries, oneReopened)]).toEqual([1]);
   });
 
-  it("supports expand all and collapse all while keeping manual toggles independent", () => {
+  it("expands and collapses all visible messages without changing hidden messages", () => {
     const entries = [received, published];
-    const expandedAll = {
-      filter: "all" as const,
-      topicFilter: null,
-      mode: "all" as const,
-      overrides: new Map<number, boolean>(),
-    };
-    const collapsedAll = { ...expandedAll, mode: "none" as const };
-    expect([
-      ...expandedMqttMessageIds(entries, "all", null, expandedAll),
-    ]).toEqual([1, 2]);
-    expect(
-      expandedMqttMessageIds(entries, "all", null, collapsedAll).size,
-    ).toBe(0);
-    expect([
-      ...expandedMqttMessageIds(
-        [...entries, { ...received, id: 3 }],
-        "all",
-        null,
-        expandedAll,
-      ),
-    ]).toEqual([1, 2, 3]);
+    const collapsed = setMqttMessageExpansion(new Set(), [received], false);
+    expect([...expandedMqttMessageIds(entries, collapsed)]).toEqual([2]);
 
-    const reopened = toggleMqttMessageExpansion(
+    const allCollapsed = setMqttMessageExpansion(collapsed, entries, false);
+    expect(expandedMqttMessageIds(entries, allCollapsed).size).toBe(0);
+
+    const receivedReopened = setMqttMessageExpansion(
+      allCollapsed,
+      [received],
+      true,
+    );
+    expect([...expandedMqttMessageIds(entries, receivedReopened)]).toEqual([1]);
+    expect([...expandedMqttMessageIds([published], receivedReopened)]).toEqual(
+      [],
+    );
+
+    const reopenedAll = setMqttMessageExpansion(
+      receivedReopened,
       entries,
-      "all",
-      null,
-      collapsedAll,
-      1,
+      true,
     );
-    expect([...expandedMqttMessageIds(entries, "all", null, reopened)]).toEqual(
-      [1],
-    );
-    const oneClosed = toggleMqttMessageExpansion(
-      entries,
-      "all",
-      null,
-      expandedAll,
-      2,
-    );
-    expect([
-      ...expandedMqttMessageIds(entries, "all", null, oneClosed),
-    ]).toEqual([1]);
+    expect([...expandedMqttMessageIds(entries, reopenedAll)]).toEqual([1, 2]);
+    expect(allCollapsed).toEqual(new Set([1, 2]));
   });
 
-  it("resets expansion when filters change and handles subsequent messages", () => {
+  it("opens new messages by default even after Collapse all, and preserves manually collapsed messages across filters", () => {
     const entries = [received, published];
-    const olderOpened = toggleMqttMessageExpansion(
-      entries,
-      "all",
-      null,
-      null,
-      1,
-    );
+    const collapsed = setMqttMessageExpansion(new Set(), entries, false);
     const next = { ...received, id: 3, time: "10:15:02" };
-    expect([
-      ...expandedMqttMessageIds([...entries, next], "all", null, olderOpened),
-    ]).toEqual([1, 3]);
-    expect([
-      ...expandedMqttMessageIds([received], "received", null, olderOpened),
-    ]).toEqual([1]);
-    expect([
-      ...expandedMqttMessageIds([received], "all", "wk/event/#", olderOpened),
-    ]).toEqual([1]);
-    expect(expandedMqttMessageIds([], "all", null, null).size).toBe(0);
 
-    // A deliberate collapse-all survives new messages until the user changes it.
-    const collapsedAll = {
-      filter: "all" as const,
-      topicFilter: null,
-      mode: "none" as const,
-      overrides: new Map<number, boolean>(),
-    };
-    expect(
-      expandedMqttMessageIds([...entries, next], "all", null, collapsedAll)
-        .size,
-    ).toBe(0);
+    // Newly received messages were not present when Collapse all was clicked.
+    expect([...expandedMqttMessageIds([...entries, next], collapsed)]).toEqual([
+      3,
+    ]);
+    expect([...expandedMqttMessageIds([received], collapsed)]).toEqual([]);
+    expect([...expandedMqttMessageIds([published], collapsed)]).toEqual([]);
+    expect(expandedMqttMessageIds([], collapsed).size).toBe(0);
+
+    // Re-expanding a filtered message does not affect other topics or tabs.
+    const reopened = setMqttMessageExpansion(collapsed, [received], true);
+    expect([...expandedMqttMessageIds(entries, reopened)]).toEqual([1]);
+    expect([...expandedMqttMessageIds([published], reopened)]).toEqual([]);
   });
 
-  it("prunes expansion overrides for messages outside the visible log", () => {
+  it("prunes collapsed message IDs that are no longer in the bounded history", () => {
+    const old = new Set([1, 999]);
     const entries = [received, published];
-    const prior = {
-      filter: "all" as const,
-      topicFilter: null,
-      mode: "latest" as const,
-      overrides: new Map([[999, true]]),
-    };
-    const next = toggleMqttMessageExpansion(entries, "all", null, prior, 1);
-    expect([...next.overrides.keys()]).toEqual([1]);
+    const next = pruneMqttMessageExpansion(old, entries);
+    expect(next).toEqual(new Set([1]));
+    expect(old).toEqual(new Set([1, 999]));
+    expect(pruneMqttMessageExpansion(next, entries)).toBe(next);
+    expect(pruneMqttMessageExpansion(new Set(), entries).size).toBe(0);
   });
 
   it("shows an empty-state message when the selected topic has no messages", () => {
@@ -250,7 +202,7 @@ describe("MQTT message log", () => {
     expect(html).toContain("No messages matching this topic and direction.");
   });
 
-  it("renders Fumadocs tabs with a visibly active filter and hides older payloads", () => {
+  it("renders Fumadocs tabs with all messages expanded by default", () => {
     const html = renderToStaticMarkup(
       createElement(MqttMessageLog, { entries: [received, published] }),
     );
@@ -274,10 +226,9 @@ describe("MQTT message log", () => {
     expect(html.indexOf("wk/event/state")).toBeLessThan(
       html.indexOf("wk/command"),
     );
-    expect(html).toContain('aria-expanded="false"');
-    expect(html).toContain('aria-expanded="true"');
-    // The older received payload must not be shown, not even as a preview.
-    expect(html).not.toContain("online");
+    expect(html).not.toContain('aria-expanded="false"');
+    expect((html.match(/aria-expanded="true"/g) ?? []).length).toBe(2);
+    expect(html).toContain("online");
     expect(html).toContain("refresh");
   });
 
@@ -331,6 +282,6 @@ describe("MQTT message log", () => {
       }),
     );
     expect(html).toContain("Empty payload");
-    expect(html).not.toContain("online");
+    expect(html).toContain("online");
   });
 });

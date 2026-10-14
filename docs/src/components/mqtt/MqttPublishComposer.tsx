@@ -84,7 +84,7 @@ export function MqttPublishComposer({
           <h2 className="text-sm font-semibold">Publish</h2>
         </div>
         <div className="min-w-0 space-y-3 p-3">
-          <div className="grid grid-cols-[minmax(0,4fr)_minmax(0,3fr)_minmax(0,3fr)] items-end gap-2">
+          <div className="grid grid-cols-[minmax(0,4.5fr)_minmax(0,2.75fr)_minmax(0,2.75fr)] items-end gap-2">
             <div className="min-w-0 space-y-1.5">
               <Label htmlFor="mqtt-publish-mode" className="text-xs">
                 Message type
