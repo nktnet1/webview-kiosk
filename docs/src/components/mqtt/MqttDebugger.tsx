@@ -959,7 +959,7 @@ export default function MqttDebugger() {
           )}
         </div>
       )}
-      <div className="grid w-full min-w-0 items-start gap-3 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+      <div className="grid w-full min-w-0 items-start gap-3 lg:grid-cols-[minmax(0,3fr)_minmax(0,4fr)]">
         <div className="min-w-0 space-y-3">
           <MqttTopicSidebar
             subscriptions={preferences.subscriptions}

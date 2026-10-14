@@ -264,6 +264,19 @@ function SettingControl({
       </div>
     );
   }
+  if (setting.kind === "string" && setting.multiline) {
+    return (
+      <Textarea
+        id={id}
+        aria-label={`${setting.key} value`}
+        className="min-h-28 resize-y font-mono text-xs"
+        rows={5}
+        spellCheck={false}
+        value={typeof value === "string" ? value : ""}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    );
+  }
   return (
     <Input
       id={id}

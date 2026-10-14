@@ -16,6 +16,7 @@ export type SettingDefinition = {
   label: string;
   group: string;
   kind: SettingKind;
+  multiline?: boolean;
   options?: readonly string[];
 };
 
@@ -299,6 +300,19 @@ const OPTIONS = {
   ],
 } as const;
 
+/** Text-based settings that use multiline editors in the Android app. */
+const MULTILINE_SETTING_KEYS = new Set<string>([
+  "web_content.website_blacklist",
+  "web_content.website_whitelist",
+  "web_content.website_bookmarks",
+  "web_engine.mutual_tls",
+  "appearance.blocked_message",
+  "appearance.custom_block_page_html",
+  "js_scripts.custom_script_on_page_start",
+  "js_scripts.custom_script_on_page_finish",
+  "mqtt.will.payload",
+]);
+
 const MULTI_SELECT_KEYS = new Set<string>([
   "web_browsing.address_bar_actions",
   "web_browsing.kiosk_control_panel_actions",
@@ -343,6 +357,9 @@ function setting(
     group: formatSettingLabel(parts[0]),
     label: formatSettingLabel(parts.at(-1) ?? key),
     kind,
+    ...(kind === "string" && MULTILINE_SETTING_KEYS.has(key)
+      ? { multiline: true }
+      : {}),
     ...(options ? { options } : {}),
   };
 }
