@@ -205,6 +205,58 @@ describe("MQTT 5 WebSocket transport", () => {
     client.disconnect();
   });
 
+  it("delivers received MQTT 5 user properties, response metadata and duplicate flag", async () => {
+    const { client, socket, messages } = await connected();
+    const properties = Uint8Array.of(
+      0x26,
+      ...utf("username"),
+      ...utf("my-kiosk"),
+      0x26,
+      ...utf("appInstanceId"),
+      ...utf("instance-012"),
+      0x03,
+      ...utf("application/json"),
+      0x08,
+      ...utf("wk/response/test"),
+      0x09,
+      0,
+      2,
+      0xff,
+      0,
+    );
+    const data = Uint8Array.of(
+      ...utf("wk/event/status"),
+      properties.length,
+      ...properties,
+      ...new TextEncoder().encode('{"online":true}'),
+    );
+    socket.receive(frame(0x38, ...data)); // PUBLISH with DUP
+    await vi.waitFor(() => expect(messages).toHaveLength(1));
+    expect(messages[0]).toMatchObject({
+      topic: "wk/event/status",
+      payload: '{"online":true}',
+      duplicate: true,
+      properties: {
+        contentType: "application/json",
+        responseTopic: "wk/response/test",
+        correlationData: "ff00",
+        userProperties: [
+          { name: "username", value: "my-kiosk" },
+          { name: "appInstanceId", value: "instance-012" },
+        ],
+      },
+    });
+    client.disconnect();
+  });
+
+  it("closes a connection if the broker sends malformed MQTT 5 properties", async () => {
+    const { client, socket, statuses } = await connected();
+    socket.receive(frame(0x30, ...utf("wk/event"), 2, 0x26, 0));
+    await vi.waitFor(() => expect(statuses.at(-1)).toBe("disconnected"));
+    expect(socket.readyState).toBe(FakeWebSocket.CLOSED);
+    client.disconnect();
+  });
+
   it("publishes with QoS 1 and MQTT 5 response metadata and waits for PUBACK", async () => {
     const { client, socket } = await connected();
     const sending = client.publish(

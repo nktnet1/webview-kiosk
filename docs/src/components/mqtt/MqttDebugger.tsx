@@ -41,6 +41,7 @@ import {
 } from "./MqttMessageLog";
 import { MqttPublishComposer, type PublishMode } from "./MqttPublishComposer";
 import { MqttTopicSidebar } from "./MqttTopicSidebar";
+import { mqttHex } from "./properties";
 import { type MqttConnectionStatus, MqttWebSocketClient } from "./protocol";
 import { createRequestPayload, parseRequestPayload } from "./request";
 import {
@@ -109,6 +110,9 @@ export default function MqttDebugger() {
   const [retain, setRetain] = useState(false);
   const [log, setLog] = useState<LogEntry[]>([]);
   const clientRef = useRef<MqttWebSocketClient | null>(null);
+  const publisherRef = useRef<{ username?: string; clientId: string } | null>(
+    null,
+  );
   const connectionToggleRef = useRef<HTMLButtonElement>(null);
   const logSequence = useRef(0);
 
@@ -210,6 +214,7 @@ export default function MqttDebugger() {
   function disconnect() {
     clientRef.current?.disconnect();
     clientRef.current = null;
+    publisherRef.current = null;
     setStatus("disconnected");
     setActiveTopics([]);
     setConnectionOpen(true);
@@ -245,13 +250,18 @@ export default function MqttDebugger() {
       const keepAlive = validateKeepAlive(Number(values.keepAlive));
       if (values.password && !values.username)
         throw new Error("Enter a username when using a password.");
+      const clientId =
+        values.clientId || `wk-docs-${crypto.randomUUID().slice(0, 12)}`;
+      publisherRef.current = {
+        username: values.username || undefined,
+        clientId,
+      };
       const client = new MqttWebSocketClient(
         {
           brokerUrl,
           username: values.username,
           password: values.password,
-          clientId:
-            values.clientId || `wk-docs-${crypto.randomUUID().slice(0, 12)}`,
+          clientId,
           keepAlive,
         },
         (next, detail) => {
@@ -259,6 +269,7 @@ export default function MqttDebugger() {
           setStatus(next);
           if (next === "disconnected") {
             clientRef.current = null;
+            publisherRef.current = null;
             setActiveTopics([]);
             setConnectionOpen(true);
           }
@@ -419,6 +430,20 @@ export default function MqttDebugger() {
         qos: publishQos,
         retain,
         direction: "published",
+        sender: publisherRef.current ?? undefined,
+        properties: {
+          payloadFormatIndicator: 1,
+          ...(mode === "request" && responseTopic.trim()
+            ? { responseTopic: responseTopic.trim() }
+            : {}),
+          ...(mode === "request" && correlationData
+            ? {
+                correlationData: mqttHex(
+                  new TextEncoder().encode(correlationData),
+                ),
+              }
+            : {}),
+        },
       });
       toast.success(
         publishQos === 0

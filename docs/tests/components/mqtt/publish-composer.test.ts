@@ -53,11 +53,13 @@ describe("MQTT publish modes", () => {
       expect(html).toContain('aria-label="Publish messages"');
       expect(html).toContain('aria-label="Message type"');
       expect(html).toContain("Publish topic");
+      expect(html).toContain('aria-controls="mqtt-publish-editor"');
+      expect(html).toContain('aria-expanded="false"');
+      expect(html).toContain("Edit payload");
+      expect(html).toContain('id="mqtt-publish-editor" hidden=""');
       expect(html).not.toContain('id="remote-message-kind"');
-      if (mode === "command") expect(html).toContain('id="remote-command"');
-      if (mode === "settings") expect(html).toContain("Add setting");
-      if (mode === "request") expect(html).toContain("Response topic");
-      if (mode === "custom") expect(html).toContain("hello mqtt");
+      expect(html).not.toContain('id="remote-command"');
+      expect(html).not.toContain("hello mqtt");
     },
   );
 });

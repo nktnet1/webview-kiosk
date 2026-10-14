@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "#/lib/cn";
+import { type MqttPublishProperties, reportedMqttSender } from "./properties";
 import type { MqttQos } from "./validation";
 
 export type LogEntry = {
@@ -25,6 +26,10 @@ export type LogEntry = {
   payload: string;
   qos: MqttQos;
   retain: boolean;
+  duplicate?: boolean;
+  properties?: MqttPublishProperties;
+  /** Local connection identity for debugger-originated messages. */
+  sender?: { username?: string; clientId?: string };
 };
 
 export type MessageFilter = "all" | LogEntry["direction"];
@@ -83,6 +88,83 @@ export function formatMqttMessagePayload(payload: string): {
   } catch {
     return { language: "text", code: payload };
   }
+}
+
+function MessageProperties({
+  properties,
+}: {
+  properties: MqttPublishProperties;
+}) {
+  const values: { label: string; value: string }[] = [];
+  if (properties.payloadFormatIndicator !== undefined)
+    values.push({
+      label: "Payload format",
+      value: properties.payloadFormatIndicator === 1 ? "UTF-8" : "Binary",
+    });
+  if (properties.contentType !== undefined)
+    values.push({ label: "Content type", value: properties.contentType });
+  if (properties.messageExpiryInterval !== undefined)
+    values.push({
+      label: "Message expiry",
+      value: `${properties.messageExpiryInterval} seconds`,
+    });
+  if (properties.responseTopic !== undefined)
+    values.push({ label: "Response topic", value: properties.responseTopic });
+  if (properties.correlationData !== undefined)
+    values.push({
+      label: "Correlation data (hex)",
+      value: `0x${properties.correlationData}`,
+    });
+  if (properties.topicAlias !== undefined)
+    values.push({ label: "Topic alias", value: String(properties.topicAlias) });
+  for (const identifier of properties.subscriptionIdentifiers ?? [])
+    values.push({ label: "Subscription ID", value: String(identifier) });
+  for (const { name, value } of properties.userProperties ?? [])
+    values.push({ label: `User property: ${name}`, value });
+
+  if (!values.length) return null;
+  const seen = new Map<string, number>();
+  return (
+    <div className="mt-3 rounded-md border bg-background/60 p-3 text-xs">
+      <p className="mb-2 font-semibold">MQTT 5 properties</p>
+      <dl className="grid grid-cols-1 gap-x-3 gap-y-1.5 sm:grid-cols-[max-content_minmax(0,1fr)]">
+        {values.map(({ label, value }) => {
+          const identity = `${label}:${value}`;
+          const occurrence = seen.get(identity) ?? 0;
+          seen.set(identity, occurrence + 1);
+          return (
+            <div key={`${identity}:${occurrence}`} className="contents">
+              <dt className="text-muted-foreground">{label}</dt>
+              <dd className="wrap-anywhere font-mono">{value}</dd>
+            </div>
+          );
+        })}
+      </dl>
+    </div>
+  );
+}
+
+function SenderLabel({ entry }: { entry: LogEntry }) {
+  const sender =
+    entry.direction === "received"
+      ? reportedMqttSender(entry.properties)
+      : entry.sender;
+  const name = sender?.username;
+  const instance =
+    sender && "appInstanceId" in sender ? sender.appInstanceId : undefined;
+  const clientId = sender && "clientId" in sender ? sender.clientId : undefined;
+  return (
+    <p className="mt-1 wrap-anywhere text-xs text-muted-foreground">
+      {entry.direction === "published" ? "You" : "From"}
+      {name
+        ? ` · ${name}`
+        : entry.direction === "received"
+          ? " · Sender not provided"
+          : ""}
+      {instance ? ` · Instance: ${instance}` : ""}
+      {clientId ? ` · Client: ${clientId}` : ""}
+    </p>
+  );
 }
 
 function MessageEntry({
@@ -146,12 +228,17 @@ function MessageEntry({
               <p className="wrap-anywhere font-mono text-xs leading-5 text-foreground">
                 {entry.topic}
               </p>
+              <SenderLabel entry={entry} />
             </div>
           </div>
           <div className="mt-2 flex items-center justify-between gap-3 text-xs text-muted-foreground">
             <span>
               QoS {entry.qos}
               {entry.retain ? " · Retained" : ""}
+              {entry.duplicate ? " · Duplicate" : ""}
+              {entry.properties && Object.keys(entry.properties).length > 0
+                ? " · MQTT 5 metadata"
+                : ""}
             </span>
             <span className="flex shrink-0 items-center gap-1.5">
               {entry.time}
@@ -179,6 +266,9 @@ function MessageEntry({
             ) : (
               <p className="text-xs text-muted-foreground">Empty payload</p>
             ))}
+          {expanded && entry.properties && (
+            <MessageProperties properties={entry.properties} />
+          )}
         </div>
       </article>
     </li>
@@ -276,7 +366,7 @@ export function MqttMessageLog({
           {filter === value && (
             <div
               ref={scrollRef}
-              className="h-[24rem] min-h-48 min-w-0 overflow-y-auto rounded-lg border bg-background sm:h-[30rem]"
+              className="h-[58vh] min-h-80 max-h-[48rem] min-w-0 overflow-y-auto rounded-lg border bg-background sm:h-[65vh]"
               aria-label="MQTT messages"
               role="log"
               onScroll={(event) => {

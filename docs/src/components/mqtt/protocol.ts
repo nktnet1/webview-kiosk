@@ -3,6 +3,10 @@
  * response-topic/correlation-data properties. No TCP access or auto-reconnect.
  */
 import {
+  type MqttPublishProperties,
+  parseMqttPublishProperties,
+} from "./properties";
+import {
   type MqttQos,
   validateTopic,
   validateWebSocketUrl,
@@ -26,6 +30,8 @@ export type MqttMessage = {
   payload: string;
   qos: MqttQos;
   retain: boolean;
+  duplicate?: boolean;
+  properties?: MqttPublishProperties;
 };
 
 export type PublishOptions = {
@@ -287,6 +293,9 @@ export class MqttWebSocketClient {
       if (!properties || properties.end + properties.value > data.length) {
         throw new Error("Malformed MQTT PUBLISH properties.");
       }
+      const metadata = parseMqttPublishProperties(
+        data.subarray(properties.end, properties.end + properties.value),
+      );
       if (qos !== 2 || !this.incomingQos2.has(messageId)) {
         this.onMessage({
           topic: cursor.text,
@@ -295,6 +304,8 @@ export class MqttWebSocketClient {
           ),
           qos: qos as MqttQos,
           retain: Boolean(flags & 1),
+          ...(flags & 0x08 ? { duplicate: true } : {}),
+          ...(Object.keys(metadata).length ? { properties: metadata } : {}),
         });
         if (qos === 2) this.incomingQos2.add(messageId);
       }

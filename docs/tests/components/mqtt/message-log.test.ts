@@ -187,6 +187,49 @@ describe("MQTT message log", () => {
     expect(html).toContain("refresh");
   });
 
+  it("identifies MQTT publishers from reported user properties and displays metadata", () => {
+    const html = renderToStaticMarkup(
+      createElement(MqttMessageLog, {
+        entries: [
+          {
+            ...received,
+            properties: {
+              contentType: "application/json",
+              responseTopic: "wk/reply",
+              correlationData: "0a0b",
+              userProperties: [
+                { name: "username", value: "kiosk-alpha" },
+                { name: "appInstanceId", value: "android-999" },
+              ],
+            },
+          },
+        ],
+      }),
+    );
+    expect(html).toContain("kiosk-alpha");
+    expect(html).toContain("Instance: android-999");
+    expect(html).toContain("MQTT 5 properties");
+    expect(html).toContain("Response topic");
+    expect(html).toContain("Correlation data (hex)");
+    expect(html).toContain("application/json");
+  });
+
+  it("shows the local username and client ID for published messages", () => {
+    const html = renderToStaticMarkup(
+      createElement(MqttMessageLog, {
+        entries: [
+          {
+            ...published,
+            sender: { username: "debugger", clientId: "wk-docs-1" },
+          },
+        ],
+      }),
+    );
+    expect(html).toContain("You");
+    expect(html).toContain("debugger");
+    expect(html).toContain("Client: wk-docs-1");
+  });
+
   it("renders an empty payload only when its message is expanded", () => {
     const html = renderToStaticMarkup(
       createElement(MqttMessageLog, {

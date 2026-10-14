@@ -3,14 +3,13 @@ import { DelimitedListInput } from "#/components/remote-control/DelimitedListInp
 import { InfoTooltip } from "#/components/remote-control/InfoTooltip";
 import { Button } from "#/components/ui/button";
 import { Checkbox } from "#/components/ui/checkbox";
+import { Combobox } from "#/components/ui/combobox";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "#/components/ui/select";
@@ -294,21 +293,9 @@ function SettingsControls({
 }) {
   const data = isJsonObject(message.data) ? message.data : {};
   const settings = isJsonObject(data.settings) ? data.settings : {};
-  const [filter, setFilter] = useState("");
-  const [newKey, setNewKey] = useState("");
   const available = SETTINGS_CATALOG.filter(
-    (setting) =>
-      !(setting.key in settings)
-      && `${setting.key} ${setting.label}`
-        .toLowerCase()
-        .includes(filter.trim().toLowerCase()),
+    (setting) => !(setting.key in settings),
   );
-  const groups = new Map<string, SettingDefinition[]>();
-  for (const setting of available) {
-    const group = groups.get(setting.group) ?? [];
-    group.push(setting);
-    groups.set(setting.group, group);
-  }
 
   return (
     <div className="space-y-5">
@@ -361,53 +348,20 @@ function SettingsControls({
         })}
       </div>
       <div className="space-y-2 border-t pt-4">
-        <Label htmlFor="remote-setting-filter">Find a setting</Label>
-        <Input
-          id="remote-setting-filter"
-          value={filter}
-          placeholder="Search by key or name"
-          onChange={(event) => {
-            setFilter(event.target.value);
-            setNewKey("");
-          }}
+        <Label htmlFor="remote-setting-add">Add setting</Label>
+        <Combobox
+          id="remote-setting-add"
+          options={available.map((setting) => ({
+            value: setting.key,
+            label: setting.label,
+            description: setting.group,
+          }))}
+          disabled={available.length === 0}
+          placeholder={
+            available.length ? "Choose a setting…" : "All settings added"
+          }
+          onSelect={(key) => onChange(addDefaultSetting(message, key))}
         />
-        <Select value={newKey} onValueChange={setNewKey}>
-          <SelectTrigger
-            id="remote-setting-select"
-            aria-label="Setting to add"
-            className="w-full"
-            disabled={available.length === 0}
-          >
-            <SelectValue
-              placeholder={
-                available.length ? "Choose a setting" : "No matching settings"
-              }
-            />
-          </SelectTrigger>
-          <SelectContent>
-            {[...groups].map(([group, entries]) => (
-              <SelectGroup key={group}>
-                <SelectLabel>{group}</SelectLabel>
-                {entries.map((setting) => (
-                  <SelectItem key={setting.key} value={setting.key}>
-                    {setting.label} ({setting.key})
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={!newKey}
-          onClick={() => {
-            onChange(addDefaultSetting(message, newKey));
-            setNewKey("");
-          }}
-        >
-          Add setting
-        </Button>
       </div>
     </div>
   );
