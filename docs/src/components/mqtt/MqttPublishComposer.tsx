@@ -1,0 +1,239 @@
+import { Send, WifiOff } from "lucide-react";
+import { InfoTooltip } from "#/components/remote-control/InfoTooltip";
+import { RemoteMessageEditor } from "#/components/remote-control/RemoteMessageEditor";
+import { Button } from "#/components/ui/button";
+import { Card } from "#/components/ui/card";
+import { Checkbox } from "#/components/ui/checkbox";
+import { Input } from "#/components/ui/input";
+import { Label } from "#/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "#/components/ui/select";
+import { Textarea } from "#/components/ui/textarea";
+import { MqttQosSelect } from "./MqttQosSelect";
+import { RequestEditor } from "./RequestEditor";
+import type { MqttQos } from "./validation";
+
+export const PUBLISH_MODES = [
+  "command",
+  "settings",
+  "request",
+  "custom",
+] as const;
+export type PublishMode = (typeof PUBLISH_MODES)[number];
+
+type Props = {
+  mode: PublishMode;
+  onModeChange: (mode: PublishMode) => void;
+  commandPayload: string;
+  onCommandPayloadChange: (value: string) => void;
+  settingsPayload: string;
+  onSettingsPayloadChange: (value: string) => void;
+  requestPayload: string;
+  onRequestPayloadChange: (value: string) => void;
+  customPayload: string;
+  onCustomPayloadChange: (value: string) => void;
+  responseTopic: string;
+  onResponseTopicChange: (value: string) => void;
+  correlationData: string;
+  onCorrelationDataChange: (value: string) => void;
+  topic: string;
+  onTopicChange: (value: string) => void;
+  qos: MqttQos;
+  onQosChange: (qos: MqttQos) => void;
+  retain: boolean;
+  onRetainChange: (value: boolean) => void;
+  connected: boolean;
+  busy: boolean;
+  onPublish: () => void;
+};
+
+export function MqttPublishComposer({
+  mode,
+  onModeChange,
+  commandPayload,
+  onCommandPayloadChange,
+  settingsPayload,
+  onSettingsPayloadChange,
+  requestPayload,
+  onRequestPayloadChange,
+  customPayload,
+  onCustomPayloadChange,
+  responseTopic,
+  onResponseTopicChange,
+  correlationData,
+  onCorrelationDataChange,
+  topic,
+  onTopicChange,
+  qos,
+  onQosChange,
+  retain,
+  onRetainChange,
+  connected,
+  busy,
+  onPublish,
+}: Props) {
+  return (
+    <section aria-label="Publish messages" className="min-w-0">
+      <Card className="gap-0 overflow-hidden py-0">
+        <div className="border-b px-3 py-3">
+          <h2 className="text-sm font-semibold">Publish</h2>
+        </div>
+        <div className="min-w-0 space-y-3 p-3">
+          <div className="grid grid-cols-[minmax(0,6fr)_minmax(0,2fr)_minmax(0,2fr)] items-end gap-2">
+            <div className="min-w-0 space-y-1.5">
+              <div className="flex items-center gap-1">
+                <Label htmlFor="mqtt-publish-mode" className="text-xs">
+                  Message type
+                </Label>
+                <InfoTooltip>
+                  Choose a kiosk command, settings update, request, or custom
+                  payload.
+                </InfoTooltip>
+              </div>
+              <Select
+                value={mode}
+                onValueChange={(next) => onModeChange(next as PublishMode)}
+              >
+                <SelectTrigger
+                  id="mqtt-publish-mode"
+                  className="w-full min-w-0"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="command">Command</SelectItem>
+                  <SelectItem value="settings">Settings</SelectItem>
+                  <SelectItem value="request">Request</SelectItem>
+                  <SelectItem value="custom">Custom</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-0 space-y-1.5">
+              <div className="flex items-center gap-1">
+                <Label htmlFor="mqtt-publish-qos" className="text-xs">
+                  QoS
+                </Label>
+                <InfoTooltip>
+                  0: at most once. 1: at least once. 2: exactly once.
+                </InfoTooltip>
+              </div>
+              <MqttQosSelect
+                id="mqtt-publish-qos"
+                compact
+                value={qos}
+                onChange={onQosChange}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-1">
+                <Label htmlFor="mqtt-retain" className="text-xs">
+                  Retain
+                </Label>
+                <InfoTooltip>
+                  Store the last message on this topic for future subscribers.
+                  Retained commands may run again when the kiosk reconnects.
+                </InfoTooltip>
+              </div>
+              <div className="flex h-9 w-full min-w-0 items-center justify-center rounded-md border border-input">
+                <Checkbox
+                  id="mqtt-retain"
+                  aria-label="Retain message"
+                  checked={retain}
+                  onCheckedChange={(value) => onRetainChange(value === true)}
+                />
+              </div>
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-1">
+              <Label htmlFor="mqtt-publish-topic">Publish topic</Label>
+              <InfoTooltip>
+                Broker topic to publish to, such as wk/command or wk/settings.
+              </InfoTooltip>
+            </div>
+            <Input
+              id="mqtt-publish-topic"
+              className="font-mono text-xs"
+              spellCheck={false}
+              value={topic}
+              onChange={(event) => onTopicChange(event.target.value)}
+            />
+          </div>
+          <section
+            id="mqtt-publish-editor"
+            aria-label="Message payload editor"
+            className="max-h-[min(28rem,55vh)] min-w-0 space-y-3 overflow-y-auto overscroll-contain rounded-md border p-3"
+          >
+            {mode === "command" || mode === "settings" ? (
+              <RemoteMessageEditor
+                key={mode}
+                transport="mqtt"
+                kind={mode}
+                value={mode === "command" ? commandPayload : settingsPayload}
+                onChange={
+                  mode === "command"
+                    ? onCommandPayloadChange
+                    : onSettingsPayloadChange
+                }
+                onKindChange={onModeChange}
+                showMessageTypeSelect={false}
+              />
+            ) : mode === "request" ? (
+              <RequestEditor
+                value={requestPayload}
+                onChange={onRequestPayloadChange}
+                responseTopic={responseTopic}
+                onResponseTopicChange={onResponseTopicChange}
+                correlationData={correlationData}
+                onCorrelationDataChange={onCorrelationDataChange}
+              />
+            ) : (
+              <div className="space-y-2">
+                <Label htmlFor="mqtt-custom-message">Payload (UTF-8)</Label>
+                <Textarea
+                  id="mqtt-custom-message"
+                  className="min-h-32 font-mono text-sm"
+                  rows={5}
+                  value={customPayload}
+                  spellCheck={false}
+                  onChange={(event) =>
+                    onCustomPayloadChange(event.target.value)
+                  }
+                />
+              </div>
+            )}
+          </section>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+            {!connected && (
+              <p
+                id="mqtt-publish-connection-hint"
+                className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400"
+              >
+                <WifiOff aria-hidden="true" className="size-3.5 shrink-0" />
+                Connect to a broker to publish.
+              </p>
+            )}
+            <Button
+              type="button"
+              size="sm"
+              className="ml-auto"
+              disabled={!connected || busy}
+              aria-describedby={
+                connected ? undefined : "mqtt-publish-connection-hint"
+              }
+              onClick={onPublish}
+            >
+              <Send aria-hidden="true" />
+              {busy ? "Publishing..." : "Publish"}
+            </Button>
+          </div>
+        </div>
+      </Card>
+    </section>
+  );
+}

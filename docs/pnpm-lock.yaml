@@ -245,6 +245,9 @@ importers:
       '@tanstack/react-router-devtools':
         specifier: 1.167.2
         version: 1.167.2(@tanstack/react-router@1.170.41(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@tanstack/router-core@1.171.34)(csstype@3.2.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@tanstack/router-generator':
+        specifier: 1.167.40
+        version: 1.167.40(supports-color@10.2.2)
       '@types/mdast':
         specifier: 4.0.4
         version: 4.0.4

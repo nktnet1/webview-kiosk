@@ -65,6 +65,24 @@ export default defineConfig(async ({ command }) => {
             path: "/docs",
           },
           {
+            path: "/tools",
+          },
+          {
+            path: "/tools/unifiedpush",
+          },
+          {
+            path: "/tools/mqtt",
+          },
+          {
+            path: "/tools/regex",
+          },
+          {
+            path: "/tools/qr-installation",
+          },
+          {
+            path: "/provision-device",
+          },
+          {
             path: "/privacy",
           },
           {
