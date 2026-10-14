@@ -65,3 +65,23 @@ describe("MQTT topics sidebar", () => {
     expect(html).toMatch(/type="submit"[^>]*disabled=""/);
   });
 });
+
+describe("MQTT topic list size", () => {
+  it("caps the scrolling list to five fixed-height topics without dropping subscriptions", () => {
+    const subscriptions = Array.from({ length: 7 }, (_, index) => ({
+      topic: `wk/event/${index}`,
+      qos: 0 as const,
+    }));
+    const html = renderToStaticMarkup(
+      createElement(MqttTopicSidebar, { ...props, subscriptions }),
+    );
+    expect(html).toContain('aria-label="Subscriptions"');
+    expect(html).toContain("max-h-[18.5rem]");
+    expect(html).toContain("overflow-y-auto");
+    expect(
+      html.match(/class="flex h-14 min-w-0 items-center gap-1"/g),
+    ).toHaveLength(7);
+    expect(html).toContain('aria-label="Actions for wk/event/0"');
+    expect(html).toContain('aria-label="Actions for wk/event/6"');
+  });
+});

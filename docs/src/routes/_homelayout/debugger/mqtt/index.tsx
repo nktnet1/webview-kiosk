@@ -7,7 +7,7 @@ export const Route = createFileRoute("/_homelayout/debugger/mqtt/")({
 
 function MqttPage() {
   return (
-    <main className="flex w-full flex-col items-center p-4 md:mt-8">
+    <main className="min-w-0 w-full">
       <MqttDebugger />
     </main>
   );

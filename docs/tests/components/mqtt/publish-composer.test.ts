@@ -42,24 +42,38 @@ describe("MQTT publish modes", () => {
   });
 
   it.each(PUBLISH_MODES)(
-    "renders the %s editor without an extra message-type dropdown",
+    "keeps the %s editor visible in the sidebar",
     (mode: PublishMode) => {
       const html = renderToStaticMarkup(
-        createElement(MqttPublishComposer, {
-          ...props,
-          mode,
-        }),
+        createElement(MqttPublishComposer, { ...props, mode }),
       );
       expect(html).toContain('aria-label="Publish messages"');
-      expect(html).toContain('aria-label="Message type"');
+      expect(html).toContain("Message type");
       expect(html).toContain("Publish topic");
-      expect(html).toContain('aria-controls="mqtt-publish-editor"');
-      expect(html).toContain('aria-expanded="false"');
-      expect(html).toContain("Edit payload");
-      expect(html).toContain('id="mqtt-publish-editor" hidden=""');
+      expect(html).toContain('id="mqtt-publish-editor"');
+      expect(html).toContain('aria-label="Message payload editor"');
+      expect(html).not.toMatch(/id="mqtt-publish-editor"[^>]*hidden/);
+      expect(html).not.toContain("Edit payload");
       expect(html).not.toContain('id="remote-message-kind"');
-      expect(html).not.toContain('id="remote-command"');
-      expect(html).not.toContain("hello mqtt");
+      expect(html).toContain("Retain");
+      expect(html).toContain("QoS");
+      if (mode === "command") expect(html).toContain('id="remote-command"');
+      if (mode === "settings") expect(html).toContain("Settings to update");
+      if (mode === "request")
+        expect(html).toContain("MQTT 5 response metadata");
+      if (mode === "custom") expect(html).toContain("hello mqtt");
     },
   );
+
+  it("keeps Publish disabled when disconnected without hiding the editor", () => {
+    const html = renderToStaticMarkup(
+      createElement(MqttPublishComposer, {
+        ...props,
+        mode: "custom",
+        connected: false,
+      }),
+    );
+    expect(html).toContain("hello mqtt");
+    expect(html).toMatch(/<button[^>]*disabled=""[^>]*>[^<]*<svg/);
+  });
 });

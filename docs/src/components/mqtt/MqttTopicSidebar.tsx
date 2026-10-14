@@ -70,8 +70,8 @@ export function MqttTopicSidebar({
   }
 
   return (
-    <aside aria-label="MQTT topics" className="min-w-0 lg:self-start">
-      <Card className="gap-0 overflow-hidden py-0 lg:sticky lg:top-5">
+    <aside aria-label="MQTT topics" className="min-w-0">
+      <Card className="gap-0 overflow-hidden py-0">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h2 className="text-sm font-semibold">Topics</h2>
           <span className="rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
@@ -94,7 +94,10 @@ export function MqttTopicSidebar({
               {entries.length}
             </span>
           </Button>
-          <div className="max-h-52 space-y-1 overflow-y-auto lg:max-h-[28rem]">
+          <section
+            aria-label="Subscriptions"
+            className="max-h-[18.5rem] space-y-1 overflow-y-auto overscroll-contain"
+          >
             {subscriptions.map((subscription) => {
               const active = activeTopics.includes(subscription.topic);
               const selected = selectedTopic === subscription.topic;
@@ -104,12 +107,12 @@ export function MqttTopicSidebar({
               return (
                 <div
                   key={subscription.topic}
-                  className="flex min-w-0 items-start gap-1"
+                  className="flex h-14 min-w-0 items-center gap-1"
                 >
                   <Button
                     type="button"
                     variant={selected ? "secondary" : "ghost"}
-                    className="h-auto min-w-0 flex-1 justify-start gap-2 whitespace-normal px-3 py-2 text-left"
+                    className="h-full min-w-0 flex-1 justify-start gap-2 px-3 py-1 text-left"
                     aria-pressed={selected}
                     onClick={() => onSelectTopic(subscription.topic)}
                   >
@@ -119,12 +122,15 @@ export function MqttTopicSidebar({
                         active ? "Subscription active" : "Subscription inactive"
                       }
                       className={cn(
-                        "mt-1 size-2 shrink-0 rounded-full",
+                        "size-2 shrink-0 rounded-full",
                         active ? "bg-emerald-500" : "bg-muted-foreground/40",
                       )}
                     />
                     <span className="min-w-0 flex-1">
-                      <span className="block break-all font-mono text-xs leading-5">
+                      <span
+                        className="block truncate font-mono text-xs leading-5"
+                        title={subscription.topic}
+                      >
                         {subscription.topic}
                       </span>
                       <span className="block text-xs font-normal text-muted-foreground">
@@ -138,7 +144,7 @@ export function MqttTopicSidebar({
                         type="button"
                         size="icon"
                         variant="ghost"
-                        className="mt-1 shrink-0"
+                        className="shrink-0"
                         aria-label={`Actions for ${subscription.topic}`}
                         disabled={subscriptionBusy}
                       >
@@ -169,7 +175,7 @@ export function MqttTopicSidebar({
                 No subscribed topics.
               </p>
             )}
-          </div>
+          </section>
         </nav>
         <form
           className="space-y-3 border-t p-3"

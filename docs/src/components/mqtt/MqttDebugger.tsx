@@ -459,12 +459,10 @@ export default function MqttDebugger() {
   }
 
   return (
-    <div className="w-full max-w-6xl space-y-6 pb-12">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">MQTT Debugger</h1>
-        <p className="text-sm text-muted-foreground">
-          Connect, publish and inspect MQTT 5 messages over WebSockets.
-        </p>
+    <div className="min-w-0 w-full space-y-3 pb-6">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+        <h1 className="text-xl font-semibold tracking-tight">MQTT Debugger</h1>
+        <p className="text-xs text-muted-foreground">MQTT 5 over WebSockets</p>
       </div>
       {storageWarning && (
         <p role="alert" className="text-sm text-destructive">
@@ -932,23 +930,52 @@ export default function MqttDebugger() {
           </CardContent>
         </Card>
       </section>
-      <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[17rem_minmax(0,1fr)]">
-        <MqttTopicSidebar
-          subscriptions={preferences.subscriptions}
-          activeTopics={activeTopics}
-          entries={log}
-          selectedTopic={selectedTopic}
-          onSelectTopic={setSelectedTopic}
-          subscribeTopic={subscribeTopic}
-          onSubscribeTopicChange={setSubscribeTopic}
-          subscribeQos={subscribeQos}
-          onSubscribeQosChange={setSubscribeQos}
-          subscriptionBusy={subscriptionBusy}
-          connected={status === "connected"}
-          onSubscribe={() => void subscribe()}
-          onUnsubscribe={(topic) => void unsubscribe(topic)}
-          onUpdateSubscription={editSubscription}
-        />
+      <div className="grid min-w-0 items-start gap-3 lg:grid-cols-[minmax(20rem,24rem)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-3">
+          <MqttTopicSidebar
+            subscriptions={preferences.subscriptions}
+            activeTopics={activeTopics}
+            entries={log}
+            selectedTopic={selectedTopic}
+            onSelectTopic={setSelectedTopic}
+            subscribeTopic={subscribeTopic}
+            onSubscribeTopicChange={setSubscribeTopic}
+            subscribeQos={subscribeQos}
+            onSubscribeQosChange={setSubscribeQos}
+            subscriptionBusy={subscriptionBusy}
+            connected={status === "connected"}
+            onSubscribe={() => void subscribe()}
+            onUnsubscribe={(topic) => void unsubscribe(topic)}
+            onUpdateSubscription={editSubscription}
+          />
+          <MqttPublishComposer
+            mode={mode}
+            onModeChange={setMode}
+            commandPayload={commandPayload}
+            onCommandPayloadChange={setCommandPayload}
+            settingsPayload={settingsPayload}
+            onSettingsPayloadChange={setSettingsPayload}
+            requestPayload={requestPayload}
+            onRequestPayloadChange={setRequestPayload}
+            customPayload={customPayload}
+            onCustomPayloadChange={setCustomPayload}
+            responseTopic={responseTopic}
+            onResponseTopicChange={setResponseTopic}
+            correlationData={correlationData}
+            onCorrelationDataChange={setCorrelationData}
+            topic={publishTopic}
+            onTopicChange={(value) =>
+              updatePreferences({ ...preferences, [topicField]: value })
+            }
+            qos={publishQos}
+            onQosChange={setPublishQos}
+            retain={retain}
+            onRetainChange={setRetain}
+            connected={status === "connected"}
+            busy={publishBusy}
+            onPublish={() => void publish()}
+          />
+        </div>
         <section aria-label="MQTT workspace" className="min-w-0">
           <Card className="gap-0 overflow-hidden py-0">
             <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
@@ -984,33 +1011,6 @@ export default function MqttDebugger() {
                 topicFilter={selectedTopic}
               />
             </div>
-            <MqttPublishComposer
-              mode={mode}
-              onModeChange={setMode}
-              commandPayload={commandPayload}
-              onCommandPayloadChange={setCommandPayload}
-              settingsPayload={settingsPayload}
-              onSettingsPayloadChange={setSettingsPayload}
-              requestPayload={requestPayload}
-              onRequestPayloadChange={setRequestPayload}
-              customPayload={customPayload}
-              onCustomPayloadChange={setCustomPayload}
-              responseTopic={responseTopic}
-              onResponseTopicChange={setResponseTopic}
-              correlationData={correlationData}
-              onCorrelationDataChange={setCorrelationData}
-              topic={publishTopic}
-              onTopicChange={(value) =>
-                updatePreferences({ ...preferences, [topicField]: value })
-              }
-              qos={publishQos}
-              onQosChange={setPublishQos}
-              retain={retain}
-              onRetainChange={setRetain}
-              connected={status === "connected"}
-              busy={publishBusy}
-              onPublish={() => void publish()}
-            />
           </Card>
         </section>
       </div>

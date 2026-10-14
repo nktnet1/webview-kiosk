@@ -366,7 +366,7 @@ export function MqttMessageLog({
           {filter === value && (
             <div
               ref={scrollRef}
-              className="h-[58vh] min-h-80 max-h-[48rem] min-w-0 overflow-y-auto rounded-lg border bg-background sm:h-[65vh]"
+              className="h-[74vh] min-h-[28rem] max-h-[72rem] min-w-0 overflow-y-auto rounded-lg border bg-background sm:h-[78vh]"
               aria-label="MQTT messages"
               role="log"
               onScroll={(event) => {
