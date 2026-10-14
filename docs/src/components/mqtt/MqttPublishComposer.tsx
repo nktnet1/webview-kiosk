@@ -84,22 +84,48 @@ export function MqttPublishComposer({
           <h2 className="text-sm font-semibold">Publish</h2>
         </div>
         <div className="min-w-0 space-y-3 p-3">
-          <div className="space-y-1.5">
-            <Label htmlFor="mqtt-publish-mode">Message type</Label>
-            <Select
-              value={mode}
-              onValueChange={(next) => onModeChange(next as PublishMode)}
-            >
-              <SelectTrigger id="mqtt-publish-mode" className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="command">Command</SelectItem>
-                <SelectItem value="settings">Settings</SelectItem>
-                <SelectItem value="request">Request</SelectItem>
-                <SelectItem value="custom">Custom payload</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_auto] items-end gap-2">
+            <div className="min-w-0 space-y-1.5">
+              <Label htmlFor="mqtt-publish-mode">Message type</Label>
+              <Select
+                value={mode}
+                onValueChange={(next) => onModeChange(next as PublishMode)}
+              >
+                <SelectTrigger
+                  id="mqtt-publish-mode"
+                  className="w-full min-w-0"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="command">Command</SelectItem>
+                  <SelectItem value="settings">Settings</SelectItem>
+                  <SelectItem value="request">Request</SelectItem>
+                  <SelectItem value="custom">Custom</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-0 space-y-1.5">
+              <Label htmlFor="mqtt-publish-qos">QoS</Label>
+              <MqttQosSelect
+                id="mqtt-publish-qos"
+                value={qos}
+                onChange={onQosChange}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="mqtt-retain">Retain</Label>
+              <div className="flex h-9 items-center gap-1.5">
+                <Checkbox
+                  id="mqtt-retain"
+                  checked={retain}
+                  onCheckedChange={(value) => onRetainChange(value === true)}
+                />
+                <InfoTooltip>
+                  Retained commands may run again when the kiosk reconnects.
+                </InfoTooltip>
+              </div>
+            </div>
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="mqtt-publish-topic">Publish topic</Label>
@@ -155,26 +181,7 @@ export function MqttPublishComposer({
               </div>
             )}
           </section>
-          <div className="flex flex-wrap items-end justify-between gap-2 border-t pt-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="mqtt-publish-qos">QoS</Label>
-              <MqttQosSelect
-                id="mqtt-publish-qos"
-                value={qos}
-                onChange={onQosChange}
-              />
-            </div>
-            <div className="flex h-9 items-center gap-2">
-              <Checkbox
-                id="mqtt-retain"
-                checked={retain}
-                onCheckedChange={(value) => onRetainChange(value === true)}
-              />
-              <Label htmlFor="mqtt-retain">Retain</Label>
-              <InfoTooltip>
-                Retained commands may run again when the kiosk reconnects.
-              </InfoTooltip>
-            </div>
+          <div className="flex justify-end border-t pt-3">
             <Button
               type="button"
               size="sm"

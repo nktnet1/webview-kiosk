@@ -96,7 +96,7 @@ export function MqttTopicSidebar({
           </Button>
           <section
             aria-label="Subscriptions"
-            className="max-h-[18.5rem] space-y-1 overflow-y-auto overscroll-contain"
+            className="max-h-[11rem] space-y-1 overflow-y-auto overscroll-contain"
           >
             {subscriptions.map((subscription) => {
               const active = activeTopics.includes(subscription.topic);

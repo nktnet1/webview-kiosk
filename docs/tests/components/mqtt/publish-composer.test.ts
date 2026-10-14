@@ -65,6 +65,23 @@ describe("MQTT publish modes", () => {
     },
   );
 
+  it("places message type, QoS, and Retain together above the topic and editor", () => {
+    const html = renderToStaticMarkup(
+      createElement(MqttPublishComposer, { ...props, mode: "command" }),
+    );
+    expect(html).toContain(
+      "grid-cols-[minmax(0,1fr)_5.5rem_auto] items-end gap-2",
+    );
+    const messageType = html.indexOf('id="mqtt-publish-mode"');
+    const qos = html.indexOf('id="mqtt-publish-qos"');
+    const retain = html.indexOf('id="mqtt-retain"');
+    const topic = html.indexOf('id="mqtt-publish-topic"');
+    expect(messageType).toBeGreaterThanOrEqual(0);
+    expect(qos).toBeGreaterThan(messageType);
+    expect(retain).toBeGreaterThan(qos);
+    expect(topic).toBeGreaterThan(retain);
+  });
+
   it("keeps Publish disabled when disconnected without hiding the editor", () => {
     const html = renderToStaticMarkup(
       createElement(MqttPublishComposer, {

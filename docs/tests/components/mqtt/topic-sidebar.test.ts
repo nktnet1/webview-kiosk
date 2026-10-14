@@ -67,7 +67,7 @@ describe("MQTT topics sidebar", () => {
 });
 
 describe("MQTT topic list size", () => {
-  it("caps the scrolling list to five fixed-height topics without dropping subscriptions", () => {
+  it("caps the scrolling list to three fixed-height topics without dropping subscriptions", () => {
     const subscriptions = Array.from({ length: 7 }, (_, index) => ({
       topic: `wk/event/${index}`,
       qos: 0 as const,
@@ -76,7 +76,7 @@ describe("MQTT topic list size", () => {
       createElement(MqttTopicSidebar, { ...props, subscriptions }),
     );
     expect(html).toContain('aria-label="Subscriptions"');
-    expect(html).toContain("max-h-[18.5rem]");
+    expect(html).toContain("max-h-[11rem]");
     expect(html).toContain("overflow-y-auto");
     expect(
       html.match(/class="flex h-14 min-w-0 items-center gap-1"/g),
