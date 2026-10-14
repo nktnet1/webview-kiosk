@@ -19,6 +19,7 @@ import { Route as ApiSearchRouteImport } from './routes/api/search'
 import { Route as DocsSplatRouteImport } from './routes/docs/$'
 import { Route as DocsChar123Char125DotmdRouteImport } from './routes/docs/{$}[.]md'
 import { Route as HomelayoutProvisionDeviceIndexRouteImport } from './routes/_homelayout/provision-device/index'
+import { Route as HomelayoutDebuggerMqttIndexRouteImport } from './routes/_homelayout/debugger/mqtt/index'
 import { Route as HomelayoutDebuggerUnifiedpushIndexRouteImport } from './routes/_homelayout/debugger/unifiedpush/index'
 
 const HomelayoutRouteRoute = HomelayoutRouteRouteImport.update({
@@ -71,6 +72,12 @@ const HomelayoutProvisionDeviceIndexRoute =
     path: '/provision-device/',
     getParentRoute: () => HomelayoutRouteRoute,
   } as any)
+const HomelayoutDebuggerMqttIndexRoute =
+  HomelayoutDebuggerMqttIndexRouteImport.update({
+    id: '/debugger/mqtt/',
+    path: '/debugger/mqtt/',
+    getParentRoute: () => HomelayoutRouteRoute,
+  } as any)
 const HomelayoutDebuggerUnifiedpushIndexRoute =
   HomelayoutDebuggerUnifiedpushIndexRouteImport.update({
     id: '/debugger/unifiedpush/',
@@ -88,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/docs/$': typeof DocsSplatRoute
   '/docs/{$}.md': typeof DocsChar123Char125DotmdRoute
   '/provision-device/': typeof HomelayoutProvisionDeviceIndexRoute
+  '/debugger/mqtt/': typeof HomelayoutDebuggerMqttIndexRoute
   '/debugger/unifiedpush/': typeof HomelayoutDebuggerUnifiedpushIndexRoute
 }
 export interface FileRoutesByTo {
@@ -100,6 +108,7 @@ export interface FileRoutesByTo {
   '/docs/{$}.md': typeof DocsChar123Char125DotmdRoute
   '/': typeof HomelayoutIndexRoute
   '/provision-device': typeof HomelayoutProvisionDeviceIndexRoute
+  '/debugger/mqtt': typeof HomelayoutDebuggerMqttIndexRoute
   '/debugger/unifiedpush': typeof HomelayoutDebuggerUnifiedpushIndexRoute
 }
 export interface FileRoutesById {
@@ -114,6 +123,7 @@ export interface FileRoutesById {
   '/docs/{$}.md': typeof DocsChar123Char125DotmdRoute
   '/_homelayout/': typeof HomelayoutIndexRoute
   '/_homelayout/provision-device/': typeof HomelayoutProvisionDeviceIndexRoute
+  '/_homelayout/debugger/mqtt/': typeof HomelayoutDebuggerMqttIndexRoute
   '/_homelayout/debugger/unifiedpush/': typeof HomelayoutDebuggerUnifiedpushIndexRoute
 }
 export interface FileRouteTypes {
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/docs/$'
     | '/docs/{$}.md'
     | '/provision-device/'
+    | '/debugger/mqtt/'
     | '/debugger/unifiedpush/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/docs/{$}.md'
     | '/'
     | '/provision-device'
+    | '/debugger/mqtt'
     | '/debugger/unifiedpush'
   id:
     | '__root__'
@@ -153,6 +165,7 @@ export interface FileRouteTypes {
     | '/docs/{$}.md'
     | '/_homelayout/'
     | '/_homelayout/provision-device/'
+    | '/_homelayout/debugger/mqtt/'
     | '/_homelayout/debugger/unifiedpush/'
   fileRoutesById: FileRoutesById
 }
@@ -238,6 +251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomelayoutProvisionDeviceIndexRouteImport
       parentRoute: typeof HomelayoutRouteRoute
     }
+    '/_homelayout/debugger/mqtt/': {
+      id: '/_homelayout/debugger/mqtt/'
+      path: '/debugger/mqtt'
+      fullPath: '/debugger/mqtt/'
+      preLoaderRoute: typeof HomelayoutDebuggerMqttIndexRouteImport
+      parentRoute: typeof HomelayoutRouteRoute
+    }
     '/_homelayout/debugger/unifiedpush/': {
       id: '/_homelayout/debugger/unifiedpush/'
       path: '/debugger/unifiedpush'
@@ -252,6 +272,7 @@ interface HomelayoutRouteRouteChildren {
   HomelayoutSplatRoute: typeof HomelayoutSplatRoute
   HomelayoutIndexRoute: typeof HomelayoutIndexRoute
   HomelayoutProvisionDeviceIndexRoute: typeof HomelayoutProvisionDeviceIndexRoute
+  HomelayoutDebuggerMqttIndexRoute: typeof HomelayoutDebuggerMqttIndexRoute
   HomelayoutDebuggerUnifiedpushIndexRoute: typeof HomelayoutDebuggerUnifiedpushIndexRoute
 }
 
@@ -259,6 +280,7 @@ const HomelayoutRouteRouteChildren: HomelayoutRouteRouteChildren = {
   HomelayoutSplatRoute: HomelayoutSplatRoute,
   HomelayoutIndexRoute: HomelayoutIndexRoute,
   HomelayoutProvisionDeviceIndexRoute: HomelayoutProvisionDeviceIndexRoute,
+  HomelayoutDebuggerMqttIndexRoute: HomelayoutDebuggerMqttIndexRoute,
   HomelayoutDebuggerUnifiedpushIndexRoute:
     HomelayoutDebuggerUnifiedpushIndexRoute,
 }

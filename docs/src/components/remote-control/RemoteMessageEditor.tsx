@@ -1,15 +1,15 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { DelimitedListInput } from "#/components/remote-control/DelimitedListInput";
 import { InfoTooltip } from "#/components/remote-control/InfoTooltip";
 import { Button } from "#/components/ui/button";
 import { Checkbox } from "#/components/ui/checkbox";
+import { Combobox } from "#/components/ui/combobox";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "#/components/ui/select";
@@ -30,7 +30,6 @@ import {
   type MessageKind,
   parseRemotePayload,
   type RemoteTransport,
-  splitTargets,
   stringifyPayload,
 } from "./payload";
 import {
@@ -46,6 +45,7 @@ type Props = {
   value: string;
   onChange: (value: string) => void;
   onKindChange: (kind: MessageKind) => void;
+  showMessageTypeSelect?: boolean;
 };
 
 function ToggleField({
@@ -67,42 +67,6 @@ function ToggleField({
         onCheckedChange={(checked) => onChange(checked === true)}
       />
       <Label htmlFor={id}>{label}</Label>
-    </div>
-  );
-}
-
-function TargetField({
-  id,
-  label,
-  targets,
-  onChange,
-}: {
-  id: string;
-  label: string;
-  targets: string[];
-  onChange: (values: string[]) => void;
-}) {
-  // Keep the uncommitted delimiter while typing multiple targets.
-  const [draft, setDraft] = useState(targets.join(", "));
-  const targetValues = targets.join("\n");
-  useEffect(() => {
-    if (splitTargets(draft).join("\n") !== targetValues) {
-      setDraft(targets.join(", "));
-    }
-  }, [draft, targets, targetValues]);
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        value={draft}
-        placeholder="Comma-separated (optional)"
-        spellCheck={false}
-        onChange={(event) => {
-          setDraft(event.target.value);
-          onChange(splitTargets(event.target.value));
-        }}
-      />
     </div>
   );
 }
@@ -300,6 +264,19 @@ function SettingControl({
       </div>
     );
   }
+  if (setting.kind === "string" && setting.multiline) {
+    return (
+      <Textarea
+        id={id}
+        aria-label={`${setting.key} value`}
+        className="min-h-28 resize-y font-mono text-xs"
+        rows={5}
+        spellCheck={false}
+        value={typeof value === "string" ? value : ""}
+        onChange={(event) => onChange(event.target.value)}
+      />
+    );
+  }
   return (
     <Input
       id={id}
@@ -329,21 +306,9 @@ function SettingsControls({
 }) {
   const data = isJsonObject(message.data) ? message.data : {};
   const settings = isJsonObject(data.settings) ? data.settings : {};
-  const [filter, setFilter] = useState("");
-  const [newKey, setNewKey] = useState("");
   const available = SETTINGS_CATALOG.filter(
-    (setting) =>
-      !(setting.key in settings)
-      && `${setting.key} ${setting.label}`
-        .toLowerCase()
-        .includes(filter.trim().toLowerCase()),
+    (setting) => !(setting.key in settings),
   );
-  const groups = new Map<string, SettingDefinition[]>();
-  for (const setting of available) {
-    const group = groups.get(setting.group) ?? [];
-    group.push(setting);
-    groups.set(setting.group, group);
-  }
 
   return (
     <div className="space-y-5">
@@ -396,53 +361,20 @@ function SettingsControls({
         })}
       </div>
       <div className="space-y-2 border-t pt-4">
-        <Label htmlFor="remote-setting-filter">Find a setting</Label>
-        <Input
-          id="remote-setting-filter"
-          value={filter}
-          placeholder="Search by key or name"
-          onChange={(event) => {
-            setFilter(event.target.value);
-            setNewKey("");
-          }}
+        <Label htmlFor="remote-setting-add">Add setting</Label>
+        <Combobox
+          id="remote-setting-add"
+          options={available.map((setting) => ({
+            value: setting.key,
+            label: setting.label,
+            description: setting.group,
+          }))}
+          disabled={available.length === 0}
+          placeholder={
+            available.length ? "Choose a setting…" : "All settings added"
+          }
+          onSelect={(key) => onChange(addDefaultSetting(message, key))}
         />
-        <Select value={newKey} onValueChange={setNewKey}>
-          <SelectTrigger
-            id="remote-setting-select"
-            aria-label="Setting to add"
-            className="w-full"
-            disabled={available.length === 0}
-          >
-            <SelectValue
-              placeholder={
-                available.length ? "Choose a setting" : "No matching settings"
-              }
-            />
-          </SelectTrigger>
-          <SelectContent>
-            {[...groups].map(([group, entries]) => (
-              <SelectGroup key={group}>
-                <SelectLabel>{group}</SelectLabel>
-                {entries.map((setting) => (
-                  <SelectItem key={setting.key} value={setting.key}>
-                    {setting.label} ({setting.key})
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          type="button"
-          variant="outline"
-          disabled={!newKey}
-          onClick={() => {
-            onChange(addDefaultSetting(message, newKey));
-            setNewKey("");
-          }}
-        >
-          Add setting
-        </Button>
       </div>
     </div>
   );
@@ -477,10 +409,10 @@ function AdvancedControls({
             }
           />
         </div>
-        <TargetField
+        <DelimitedListInput
           id="remote-target-instances"
           label="Target instance IDs"
-          targets={
+          values={
             Array.isArray(message.targetInstances)
               ? (message.targetInstances as string[])
               : []
@@ -489,10 +421,10 @@ function AdvancedControls({
             setField("targetInstances", values.length ? values : undefined)
           }
         />
-        <TargetField
+        <DelimitedListInput
           id="remote-target-users"
           label="Target usernames"
-          targets={
+          values={
             Array.isArray(message.targetUsernames)
               ? (message.targetUsernames as string[])
               : []
@@ -544,6 +476,7 @@ export function RemoteMessageEditor({
   value,
   onChange,
   onKindChange,
+  showMessageTypeSelect = true,
 }: Props) {
   const [tab, setTab] = useState("form");
   const [formError, setFormError] = useState<string | null>(null);
@@ -609,25 +542,27 @@ export function RemoteMessageEditor({
         <TabsContent value="form" className="pt-4 space-y-5">
           {formMessage && (
             <>
-              <div className="space-y-2">
-                <Label htmlFor="remote-message-kind">Message type</Label>
-                <Select
-                  value={kind}
-                  onValueChange={(next) => {
-                    const nextKind = next as MessageKind;
-                    onKindChange(nextKind);
-                    updateMessage(createRemotePayload(transport, nextKind));
-                  }}
-                >
-                  <SelectTrigger id="remote-message-kind" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="command">Command</SelectItem>
-                    <SelectItem value="settings">Settings update</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {showMessageTypeSelect && (
+                <div className="space-y-2">
+                  <Label htmlFor="remote-message-kind">Message type</Label>
+                  <Select
+                    value={kind}
+                    onValueChange={(next) => {
+                      const nextKind = next as MessageKind;
+                      onKindChange(nextKind);
+                      updateMessage(createRemotePayload(transport, nextKind));
+                    }}
+                  >
+                    <SelectTrigger id="remote-message-kind" className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="command">Command</SelectItem>
+                      <SelectItem value="settings">Settings update</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               {kind === "command" ? (
                 <CommandControls
                   message={formMessage}

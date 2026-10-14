@@ -68,6 +68,9 @@ export default defineConfig(async ({ command }) => {
             path: "/debugger/unifiedpush",
           },
           {
+            path: "/debugger/mqtt",
+          },
+          {
             path: "/privacy",
           },
           {

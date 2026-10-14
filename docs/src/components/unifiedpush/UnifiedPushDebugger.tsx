@@ -340,7 +340,7 @@ export default function UnifiedPushDebugger() {
   }
 
   return (
-    <div className="bg-fd-muted rounded-2xl p-5 md:p-10 w-full max-w-6xl space-y-6">
+    <div className="bg-fd-muted rounded-2xl p-5 md:p-10 md:pt-6 w-full max-w-6xl space-y-6">
       <div className="space-y-2 text-center">
         <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
           UnifiedPush Debugger
