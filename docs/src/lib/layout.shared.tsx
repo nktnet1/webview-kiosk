@@ -21,12 +21,6 @@ export function baseOptions(): BaseLayoutProps {
     },
     links: [
       {
-        icon: <WrenchIcon />,
-        text: "Tools",
-        url: "/tools",
-        secondary: false,
-      },
-      {
         icon: <ShieldIcon />,
         text: "Privacy",
         url: "/privacy",
@@ -36,6 +30,12 @@ export function baseOptions(): BaseLayoutProps {
         icon: <FileTextIcon />,
         text: "Terms",
         url: "/terms",
+        secondary: false,
+      },
+      {
+        icon: <WrenchIcon />,
+        text: "Tools",
+        url: "/tools",
         secondary: false,
       },
     ],

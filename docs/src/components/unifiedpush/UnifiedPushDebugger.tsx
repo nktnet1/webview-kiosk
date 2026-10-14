@@ -1,7 +1,7 @@
 import { useForm } from "@tanstack/react-form";
 import { Callout } from "fumadocs-ui/components/callout";
-import { Eye, EyeOff, KeyRound, Send, Trash2 } from "lucide-react";
-import { type ChangeEvent, useEffect, useState } from "react";
+import { ChevronDown, Eye, EyeOff, KeyRound, Send, Trash2 } from "lucide-react";
+import { type ChangeEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CredentialJsonTransfer } from "#/components/remote-control/CredentialJsonTransfer";
 import { InfoTooltip } from "#/components/remote-control/InfoTooltip";
@@ -36,11 +36,18 @@ import {
   SelectValue,
 } from "#/components/ui/select";
 import {
+  appendPushDelivery,
+  finishPushDelivery,
+  type PushDeliveryEntry,
+  type PushDeliveryOutcome,
+} from "./delivery-log";
+import {
   EMPTY_CREDENTIALS,
   parseStoredCredentials,
   persistCredentials,
   STORAGE_KEY,
 } from "./storage";
+import { UnifiedPushDeliveryLog } from "./UnifiedPushDeliveryLog";
 import {
   generateVapidKeys,
   isValidPushTtlInput,
@@ -57,7 +64,6 @@ type DebugFormValues = {
   mode: DeliveryMode;
   ttl: string;
 };
-type Feedback = { kind: "success" | "error" | "warning"; message: string };
 
 const fields: {
   key: keyof PushCredentials;
@@ -141,7 +147,9 @@ export default function UnifiedPushDebugger() {
   );
   const [busy, setBusy] = useState(false);
   const [generatingKeys, setGeneratingKeys] = useState(false);
-  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const [connectionOpen, setConnectionOpen] = useState(true);
+  const [log, setLog] = useState<PushDeliveryEntry[]>([]);
+  const logSequence = useRef(0);
 
   // Keep fields, validation and submit values in TanStack Form. Only the
   // credentials (not TTL or delivery mode) are saved to browser storage.
@@ -179,13 +187,8 @@ export default function UnifiedPushDebugger() {
     }
   }
 
-  function invalidateRequest() {
-    setFeedback(null);
-  }
-
   function changePayload(value: string) {
     setPayload(value);
-    invalidateRequest();
   }
 
   function requestKeyGeneration() {
@@ -211,7 +214,6 @@ export default function UnifiedPushDebugger() {
       };
       form.setFieldValue("credentials", nextCredentials);
       persistEditedCredentials(nextCredentials);
-      invalidateRequest();
       toast.success(
         "VAPID key pair generated. Register the device with this public key.",
       );
@@ -225,16 +227,47 @@ export default function UnifiedPushDebugger() {
   async function handleSend(values: DebugFormValues) {
     if (busy || generatingKeys) return;
     setBusy(true);
-    setFeedback(null);
+    const now = new Date();
+    const attemptId = ++logSequence.current;
+    setLog((entries) =>
+      appendPushDelivery(entries, {
+        id: attemptId,
+        timestamp: now.toISOString(),
+        time: now.toLocaleTimeString(),
+        mode: values.mode,
+        kind: messageKind,
+        payload,
+        outcome: "sending",
+        detail: "Waiting for the push service response…",
+      }),
+    );
+
+    function finish(
+      outcome: PushDeliveryOutcome,
+      detail: string,
+      httpStatus?: number,
+    ) {
+      setLog((entries) =>
+        finishPushDelivery(entries, attemptId, {
+          outcome,
+          detail,
+          ...(httpStatus === undefined ? {} : { httpStatus }),
+        }),
+      );
+    }
 
     try {
+      const message = validateRemotePayload(
+        payload,
+        "unifiedpush",
+        messageKind,
+      );
       if (values.mode === "encrypted") {
         const request = await prepareWebPush(
           values.credentials,
-          validateRemotePayload(payload, "unifiedpush", messageKind),
+          message,
           values.ttl.trim() ? Number(values.ttl) : Number.NaN,
         );
-
         let response: Response;
         try {
           response = await fetch(request.endpoint, {
@@ -247,41 +280,27 @@ export default function UnifiedPushDebugger() {
             signal: AbortSignal.timeout(15_000),
           });
         } catch {
-          setFeedback({
-            kind: "warning",
-            message:
-              "The browser could not complete the request (often because the push server blocks CORS). No delivery is confirmed. Use an endpoint that allows browser-origin requests.",
-          });
+          finish(
+            "unconfirmed",
+            "The browser could not complete the request (possibly due to CORS). Acceptance and delivery are unconfirmed.",
+          );
           return;
         }
-
-        setFeedback(
+        finish(
+          response.ok ? "accepted" : "rejected",
           response.ok
-            ? {
-                kind: "success",
-                message: `Push server accepted the request (HTTP ${response.status}). Check the device's UnifiedPush debug logs for delivery.`,
-              }
-            : {
-                kind: "error",
-                message: `Push server rejected the request (HTTP ${response.status}). Check the endpoint and keys.`,
-              },
+            ? `Push service accepted the request (HTTP ${response.status}). Device delivery is not confirmed.`
+            : `Push service rejected the request (HTTP ${response.status}). Check the endpoint and keys.`,
+          response.status,
         );
       } else {
         const endpoint = parsePushEndpoint(values.credentials.endpoint);
-        const message = validateRemotePayload(
-          payload,
-          "unifiedpush",
-          messageKind,
-        );
         if (new TextEncoder().encode(message).length > MAX_PUSH_PAYLOAD_BYTES) {
           throw new Error(
             `Payload must be at most ${MAX_PUSH_PAYLOAD_BYTES} UTF-8 bytes.`,
           );
         }
-
-        // Only ntfy-compatible unencrypted distributors can process this mode.
-        // A simple request avoids CORS preflight, but an opaque response does
-        // NOT indicate whether the server accepted or delivered the message.
+        // An opaque response does not prove that the request was accepted.
         const response = await fetch(endpoint, {
           method: "POST",
           mode: "no-cors",
@@ -291,21 +310,21 @@ export default function UnifiedPushDebugger() {
           redirect: "error",
           signal: AbortSignal.timeout(15_000),
         });
-        setFeedback(
-          response.type === "opaque"
-            ? {
-                kind: "warning",
-                message:
-                  "Request sent without a readable response. Acceptance and delivery cannot be verified in no-CORS mode; check the device debug logs.",
-              }
-            : {
-                kind: response.ok ? "success" : "error",
-                message: `Push server returned HTTP ${response.status}. Check the device debug logs.`,
-              },
-        );
+        if (response.type === "opaque") {
+          finish(
+            "unconfirmed",
+            "Browser sent a no-CORS request without a readable response. Acceptance and delivery cannot be verified.",
+          );
+        } else {
+          finish(
+            response.ok ? "accepted" : "rejected",
+            `Push service returned HTTP ${response.status}. Device delivery is not confirmed.`,
+            response.status,
+          );
+        }
       }
     } catch (error) {
-      setFeedback({ kind: "error", message: describeError(error) });
+      finish("failed", describeError(error));
     } finally {
       setBusy(false);
     }
@@ -315,7 +334,6 @@ export default function UnifiedPushDebugger() {
     form.setFieldValue("credentials", { ...EMPTY_CREDENTIALS });
     setShowSecrets(false);
     setFieldVisibility({});
-    invalidateRequest();
     try {
       window.localStorage.removeItem(STORAGE_KEY);
       setStorageWarning(null);
@@ -335,29 +353,13 @@ export default function UnifiedPushDebugger() {
     persistEditedCredentials(credentials);
     setShowSecrets(false);
     setFieldVisibility({});
-    invalidateRequest();
     toast.success("Credential fields imported");
   }
 
   return (
-    <div className="bg-fd-muted rounded-2xl p-5 md:p-10 md:pt-6 w-full max-w-6xl space-y-6">
-      <div className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
-          UnifiedPush Debugger
-        </h1>
-      </div>
-
-      <Callout title="Privacy warning" type="warning">
-        Credentials, including private keys, are stored unencrypted in this
-        browser. Avoid shared devices.
-      </Callout>
-      {storageWarning && (
-        <p role="alert" className="text-sm text-destructive">
-          {storageWarning}
-        </p>
-      )}
-
+    <div className="min-w-0 w-full space-y-4">
       <form
+        className="space-y-4"
         onSubmit={(event) => {
           event.preventDefault();
           event.stopPropagation();
@@ -366,346 +368,386 @@ export default function UnifiedPushDebugger() {
       >
         <form.Subscribe selector={(state) => state.values.mode}>
           {(mode) => (
-            <fieldset
-              disabled={!loaded || busy || generatingKeys}
-              className="space-y-6 disabled:opacity-70"
-            >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Connection &amp; credentials</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-5">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-1">
-                        <Label htmlFor="push-mode">Delivery mode</Label>
-                        <InfoTooltip>
-                          Encrypted Web Push uses the endpoint keys and VAPID.
-                          Plaintext requires an ntfy-compatible distributor.
-                        </InfoTooltip>
-                      </div>
-                      <form.Field name="mode">
-                        {(field) => (
-                          <Select
-                            value={field.state.value}
-                            onValueChange={(value) => {
-                              field.handleChange(value as DeliveryMode);
-                              invalidateRequest();
-                            }}
-                          >
-                            <SelectTrigger id="push-mode" className="w-full">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="encrypted">
-                                Encrypted Web Push (recommended)
-                              </SelectItem>
-                              <SelectItem value="plaintext">
-                                Plaintext (ntfy-compatible only)
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                        )}
-                      </form.Field>
-                    </div>
-                    {mode === "plaintext" && (
-                      <Callout title="Unencrypted delivery" type="warning">
-                        Enable <strong>Process Unencrypted Messages</strong> in
-                        the app. Delivery cannot be verified in no-CORS mode.
-                      </Callout>
-                    )}
-                    {fields
-                      .filter(
-                        (field) => mode === "encrypted" || !field.encryptedOnly,
-                      )
-                      .map((entry) => (
-                        <form.Field
-                          key={entry.key}
-                          name={`credentials.${entry.key}`}
-                        >
-                          {(field) => {
-                            const inputProps = {
-                              id: `push-${entry.key}`,
-                              name: field.name,
-                              value: field.state.value,
-                              placeholder: entry.placeholder,
-                              autoComplete: "off" as const,
-                              spellCheck: false,
-                              onBlur: field.handleBlur,
-                              onChange: (
-                                event: ChangeEvent<HTMLInputElement>,
-                              ) => {
-                                const next = event.target.value;
-                                field.handleChange(next);
-                                persistEditedCredentials({
-                                  ...form.state.values.credentials,
-                                  [entry.key]: next,
-                                });
-                                invalidateRequest();
-                              },
-                            };
-
-                            return (
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-1">
-                                  <Label htmlFor={`push-${entry.key}`}>
-                                    {entry.label}
-                                  </Label>
-                                  <InfoTooltip>{entry.hint}</InfoTooltip>
-                                </div>
-                                {entry.secret ? (
-                                  <SecretInput
-                                    {...inputProps}
-                                    revealLabel={entry.revealLabel ?? entry.key}
-                                    revealed={
-                                      fieldVisibility[entry.key] ?? showSecrets
-                                    }
-                                    onRevealChange={(revealed) =>
-                                      setFieldVisibility((current) => ({
-                                        ...current,
-                                        [entry.key]: revealed,
-                                      }))
-                                    }
-                                  />
-                                ) : (
-                                  <Input {...inputProps} type="text" />
-                                )}
-                              </div>
-                            );
-                          }}
-                        </form.Field>
-                      ))}
-                    <div className="space-y-4 border-t pt-4">
-                      <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                        Credential actions
-                        <InfoTooltip>
-                          Generating new VAPID keys requires registering the
-                          device again with the new public key.
-                        </InfoTooltip>
-                      </div>
-                      <div
-                        className={`grid gap-2 ${mode === "encrypted" ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}
-                      >
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="w-full"
-                          aria-label={
-                            showSecrets
-                              ? "Hide credentials"
-                              : "Reveal credentials"
-                          }
-                          onClick={() => {
-                            setFieldVisibility({});
-                            setShowSecrets((value) => !value);
-                          }}
-                        >
-                          {showSecrets ? (
-                            <EyeOff aria-hidden="true" />
-                          ) : (
-                            <Eye aria-hidden="true" />
-                          )}
-                          {showSecrets ? "Hide secrets" : "Show secrets"}
-                        </Button>
-                        {mode === "encrypted" && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full"
-                            aria-label="Generate VAPID keys"
-                            onClick={requestKeyGeneration}
-                          >
-                            <KeyRound aria-hidden="true" />
-                            {generatingKeys ? "Generating…" : "Generate keys"}
-                          </Button>
-                        )}
-                        <AlertDialog
-                          open={confirmReplaceKeys}
-                          onOpenChange={setConfirmReplaceKeys}
-                        >
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Replace existing VAPID keys?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                The device must be re-registered with the new
-                                public key before it can receive pushes signed
-                                by the new private key.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel asChild>
-                                <Button type="button" variant="outline">
-                                  Cancel
-                                </Button>
-                              </AlertDialogCancel>
-                              <AlertDialogAction asChild>
-                                <Button
-                                  type="button"
-                                  variant="destructive"
-                                  onClick={() => void createKeys()}
-                                >
-                                  Replace keys
-                                </Button>
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              className="w-full"
-                              aria-label="Clear credentials"
-                            >
-                              <Trash2 aria-hidden="true" /> Clear
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Clear saved credentials?
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This permanently clears the push endpoint, auth
-                                secret, and VAPID keys stored in this browser.
-                                This cannot be undone unless you have an
-                                exported backup. You may need to register the
-                                device again.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel asChild>
-                                <Button type="button" variant="outline">
-                                  Cancel
-                                </Button>
-                              </AlertDialogCancel>
-                              <AlertDialogAction asChild>
-                                <Button
-                                  type="button"
-                                  variant="destructive"
-                                  onClick={clearCredentials}
-                                >
-                                  Clear credentials
-                                </Button>
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                      <CredentialJsonTransfer
-                        filename="unifiedpush-credentials.json"
-                        template={EMPTY_CREDENTIALS}
-                        getCredentials={() => form.state.values.credentials}
-                        onImport={applyImportedCredentials}
-                        warning="Exported JSON contains your private VAPID key, auth secret and endpoint. Importing replaces all six credential fields, including missing values."
+            <>
+              <section aria-label="UnifiedPush connection">
+                <Card className="gap-0">
+                  <CardHeader className="pb-4">
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md"
+                      aria-expanded={connectionOpen}
+                      aria-controls="push-connection-fields"
+                      onClick={() => setConnectionOpen((open) => !open)}
+                    >
+                      <CardTitle>UnifiedPush Connection</CardTitle>
+                      <ChevronDown
+                        aria-hidden="true"
+                        className={`size-4 shrink-0 transition-transform ${connectionOpen ? "rotate-180" : ""}`}
                       />
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-1">
-                      Message
-                      <InfoTooltip>
-                        Maximum {MAX_PUSH_PAYLOAD_BYTES} UTF-8 bytes after JSON
-                        minification.
-                      </InfoTooltip>
-                    </CardTitle>
+                    </button>
                   </CardHeader>
-                  <CardContent className="space-y-5">
-                    <RemoteMessageEditor
-                      transport="unifiedpush"
-                      kind={messageKind}
-                      value={payload}
-                      onChange={changePayload}
-                      onKindChange={(kind) => {
-                        setMessageKind(kind);
-                        invalidateRequest();
-                      }}
-                    />
-                    {mode === "encrypted" && (
-                      <form.Field
-                        name="ttl"
-                        validators={{
-                          onBlur: ({ value }) => {
-                            return isValidPushTtlInput(value)
-                              ? undefined
-                              : `TTL must be a whole number between 0 and ${MAX_PUSH_TTL} seconds.`;
-                          },
-                        }}
+                  {connectionOpen && (
+                    <CardContent
+                      id="push-connection-fields"
+                      className="space-y-5"
+                    >
+                      <Callout title="Privacy warning" type="warning">
+                        Credentials, including private keys, are stored
+                        unencrypted in this browser. Avoid shared devices.
+                      </Callout>
+                      {storageWarning && (
+                        <p role="alert" className="text-sm text-destructive">
+                          {storageWarning}
+                        </p>
+                      )}
+                      <fieldset
+                        disabled={!loaded || busy || generatingKeys}
+                        className="min-w-0 space-y-5 disabled:opacity-70"
                       >
-                        {(field) => (
+                        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
                           <div className="space-y-2">
                             <div className="flex items-center gap-1">
-                              <Label htmlFor="push-ttl">
-                                Time to live (seconds)
-                              </Label>
+                              <Label htmlFor="push-mode">Delivery mode</Label>
                               <InfoTooltip>
-                                How long the push server may retain an
-                                undelivered notification (0–{MAX_PUSH_TTL}{" "}
-                                seconds).
+                                Encrypted Web Push uses the endpoint keys and
+                                VAPID. Plaintext requires an ntfy-compatible
+                                distributor.
                               </InfoTooltip>
                             </div>
-                            <Input
-                              id="push-ttl"
-                              name={field.name}
-                              type="number"
-                              min={0}
-                              max={MAX_PUSH_TTL}
-                              step={1}
-                              value={field.state.value}
-                              aria-invalid={!field.state.meta.isValid}
-                              onBlur={field.handleBlur}
-                              onChange={(event) => {
-                                field.handleChange(event.target.value);
-                                invalidateRequest();
-                              }}
-                            />
-                            {!field.state.meta.isValid && (
-                              <p
-                                role="alert"
-                                className="text-xs text-destructive"
-                              >
-                                {field.state.meta.errors.join(", ")}
-                              </p>
-                            )}
+                            <form.Field name="mode">
+                              {(field) => (
+                                <Select
+                                  value={field.state.value}
+                                  onValueChange={(value) =>
+                                    field.handleChange(value as DeliveryMode)
+                                  }
+                                >
+                                  <SelectTrigger
+                                    id="push-mode"
+                                    className="w-full"
+                                  >
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="encrypted">
+                                      Encrypted Web Push (recommended)
+                                    </SelectItem>
+                                    <SelectItem value="plaintext">
+                                      Plaintext (ntfy-compatible only)
+                                    </SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            </form.Field>
                           </div>
-                        )}
-                      </form.Field>
-                    )}
-                    <div className="flex justify-end border-t pt-4">
-                      <Button
-                        type="submit"
-                        className="w-full sm:w-48"
-                        disabled={!loaded || busy || generatingKeys}
-                      >
-                        <Send aria-hidden="true" />
-                        {busy ? "Sending…" : "Send test push"}
-                      </Button>
-                    </div>
-                    {feedback
-                      && (feedback.kind === "warning" ? (
-                        <div role="status">
-                          <Callout title="Delivery warning" type="warning">
-                            {feedback.message}
+                          {fields
+                            .filter(
+                              (entry) =>
+                                mode === "encrypted" || !entry.encryptedOnly,
+                            )
+                            .map((entry) => (
+                              <form.Field
+                                key={entry.key}
+                                name={`credentials.${entry.key}`}
+                              >
+                                {(field) => {
+                                  const inputProps = {
+                                    id: `push-${entry.key}`,
+                                    name: field.name,
+                                    value: field.state.value,
+                                    placeholder: entry.placeholder,
+                                    autoComplete: "off" as const,
+                                    spellCheck: false,
+                                    onBlur: field.handleBlur,
+                                    onChange: (
+                                      event: ChangeEvent<HTMLInputElement>,
+                                    ) => {
+                                      const next = event.target.value;
+                                      field.handleChange(next);
+                                      persistEditedCredentials({
+                                        ...form.state.values.credentials,
+                                        [entry.key]: next,
+                                      });
+                                    },
+                                  };
+                                  return (
+                                    <div className="min-w-0 space-y-2">
+                                      <div className="flex items-center gap-1">
+                                        <Label htmlFor={`push-${entry.key}`}>
+                                          {entry.label}
+                                        </Label>
+                                        <InfoTooltip>{entry.hint}</InfoTooltip>
+                                      </div>
+                                      {entry.secret ? (
+                                        <SecretInput
+                                          {...inputProps}
+                                          revealLabel={
+                                            entry.revealLabel ?? entry.key
+                                          }
+                                          revealed={
+                                            fieldVisibility[entry.key]
+                                            ?? showSecrets
+                                          }
+                                          onRevealChange={(revealed) =>
+                                            setFieldVisibility((current) => ({
+                                              ...current,
+                                              [entry.key]: revealed,
+                                            }))
+                                          }
+                                        />
+                                      ) : (
+                                        <Input {...inputProps} type="text" />
+                                      )}
+                                    </div>
+                                  );
+                                }}
+                              </form.Field>
+                            ))}
+                        </div>
+                        {mode === "plaintext" && (
+                          <Callout title="Unencrypted delivery" type="warning">
+                            Enable <strong>Process Unencrypted Messages</strong>{" "}
+                            in the app. Delivery cannot be verified in no-CORS
+                            mode.
                           </Callout>
+                        )}
+                        <div className="space-y-4 border-t pt-4">
+                          <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+                            Credential actions
+                            <InfoTooltip>
+                              Generating new VAPID keys requires registering the
+                              device again with the new public key.
+                            </InfoTooltip>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="min-w-36"
+                              aria-label={
+                                showSecrets
+                                  ? "Hide credentials"
+                                  : "Reveal credentials"
+                              }
+                              onClick={() => {
+                                setFieldVisibility({});
+                                setShowSecrets((value) => !value);
+                              }}
+                            >
+                              {showSecrets ? (
+                                <EyeOff aria-hidden="true" />
+                              ) : (
+                                <Eye aria-hidden="true" />
+                              )}
+                              {showSecrets ? "Hide secrets" : "Show secrets"}
+                            </Button>
+                            {mode === "encrypted" && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="min-w-36"
+                                aria-label="Generate VAPID keys"
+                                onClick={requestKeyGeneration}
+                              >
+                                <KeyRound aria-hidden="true" />
+                                {generatingKeys
+                                  ? "Generating…"
+                                  : "Generate keys"}
+                              </Button>
+                            )}
+                            <AlertDialog
+                              open={confirmReplaceKeys}
+                              onOpenChange={setConfirmReplaceKeys}
+                            >
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Replace existing VAPID keys?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    The device must be re-registered with the
+                                    new public key before it can receive pushes
+                                    signed by the new private key.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel asChild>
+                                    <Button type="button" variant="outline">
+                                      Cancel
+                                    </Button>
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction asChild>
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      onClick={() => void createKeys()}
+                                    >
+                                      Replace keys
+                                    </Button>
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  className="min-w-28"
+                                  aria-label="Clear credentials"
+                                >
+                                  <Trash2 aria-hidden="true" /> Clear
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Clear saved credentials?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This permanently clears the push endpoint,
+                                    auth secret, and VAPID keys stored in this
+                                    browser. This cannot be undone unless you
+                                    have an exported backup. You may need to
+                                    register the device again.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel asChild>
+                                    <Button type="button" variant="outline">
+                                      Cancel
+                                    </Button>
+                                  </AlertDialogCancel>
+                                  <AlertDialogAction asChild>
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      onClick={clearCredentials}
+                                    >
+                                      Clear credentials
+                                    </Button>
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                          <div className="max-w-xs">
+                            <CredentialJsonTransfer
+                              filename="unifiedpush-credentials.json"
+                              template={EMPTY_CREDENTIALS}
+                              getCredentials={() =>
+                                form.state.values.credentials
+                              }
+                              onImport={applyImportedCredentials}
+                              warning="Exported JSON contains your private VAPID key, auth secret and endpoint. Importing replaces all six credential fields, including missing values."
+                            />
+                          </div>
                         </div>
-                      ) : (
-                        <div
-                          role="status"
-                          className={`rounded-md border p-3 text-sm ${feedback.kind === "error" ? "border-destructive text-destructive" : "border-border"}`}
-                        >
-                          {feedback.message}
-                        </div>
-                      ))}
-                  </CardContent>
+                      </fieldset>
+                    </CardContent>
+                  )}
                 </Card>
+              </section>
+              <div className="grid min-w-0 items-stretch gap-4 lg:grid-cols-[minmax(21rem,32%)_minmax(0,1fr)]">
+                <section
+                  aria-label="Send UnifiedPush message"
+                  className="min-w-0"
+                >
+                  <Card className="h-full min-w-0">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-1">
+                        Send
+                        <InfoTooltip>
+                          Maximum {MAX_PUSH_PAYLOAD_BYTES} UTF-8 bytes after
+                          JSON minification.
+                        </InfoTooltip>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-5">
+                      <fieldset
+                        disabled={!loaded || busy || generatingKeys}
+                        className="min-w-0 space-y-5 disabled:opacity-70"
+                      >
+                        <RemoteMessageEditor
+                          transport="unifiedpush"
+                          kind={messageKind}
+                          value={payload}
+                          onChange={changePayload}
+                          onKindChange={setMessageKind}
+                        />
+                        {mode === "encrypted" && (
+                          <form.Field
+                            name="ttl"
+                            validators={{
+                              onBlur: ({ value }) =>
+                                isValidPushTtlInput(value)
+                                  ? undefined
+                                  : `TTL must be a whole number between 0 and ${MAX_PUSH_TTL} seconds.`,
+                            }}
+                          >
+                            {(field) => (
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-1">
+                                  <Label htmlFor="push-ttl">
+                                    Time to live (seconds)
+                                  </Label>
+                                  <InfoTooltip>
+                                    How long the push server may retain an
+                                    undelivered notification (0–{MAX_PUSH_TTL}{" "}
+                                    seconds).
+                                  </InfoTooltip>
+                                </div>
+                                <Input
+                                  id="push-ttl"
+                                  name={field.name}
+                                  type="number"
+                                  min={0}
+                                  max={MAX_PUSH_TTL}
+                                  step={1}
+                                  value={field.state.value}
+                                  aria-invalid={!field.state.meta.isValid}
+                                  onBlur={field.handleBlur}
+                                  onChange={(event) =>
+                                    field.handleChange(event.target.value)
+                                  }
+                                />
+                                {!field.state.meta.isValid && (
+                                  <p
+                                    role="alert"
+                                    className="text-xs text-destructive"
+                                  >
+                                    {field.state.meta.errors.join(", ")}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </form.Field>
+                        )}
+                        <div className="border-t pt-4">
+                          <Button
+                            type="submit"
+                            className="w-full"
+                            disabled={!loaded || busy || generatingKeys}
+                          >
+                            <Send aria-hidden="true" />
+                            {busy ? "Sending…" : "Send test push"}
+                          </Button>
+                        </div>
+                      </fieldset>
+                    </CardContent>
+                  </Card>
+                </section>
+                <section
+                  aria-label="UnifiedPush delivery history"
+                  className="min-w-0"
+                >
+                  <UnifiedPushDeliveryLog
+                    entries={log}
+                    onClear={() => setLog([])}
+                  />
+                </section>
               </div>
-            </fieldset>
+            </>
           )}
         </form.Subscribe>
       </form>
