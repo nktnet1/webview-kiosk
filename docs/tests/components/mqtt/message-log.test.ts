@@ -279,7 +279,8 @@ describe("MQTT message log", () => {
     expect(html).toContain("debugger");
     expect(html).toContain("wk-docs-1");
     expect(html).toContain(">Client<");
-    expect(html).toContain(">To<");
+    expect(html).toContain(">Topic<");
+    expect(html).not.toContain(">To<");
     expect(html).toContain(">From<");
   });
 
@@ -338,9 +339,12 @@ describe("MQTT message log", () => {
       html.indexOf("</article>") + 10,
     );
     expect(first).toContain('aria-label="MQTT 5 properties"');
-    expect(first).toContain('class="absolute top-3 right-3');
+    expect(first).toContain('class="inline-flex size-7 shrink-0');
+    expect(first.indexOf("10:15:00")).toBeLessThan(
+      first.indexOf('aria-label="MQTT 5 properties"'),
+    );
     expect(first.indexOf('aria-label="MQTT 5 properties"')).toBeLessThan(
-      first.indexOf('aria-label="Collapse message"'),
+      first.indexOf('aria-label="Message details"'),
     );
     expect(first).toContain('aria-label="Collapse message"');
     expect(first).toContain('aria-label="Message details"');
@@ -350,7 +354,8 @@ describe("MQTT message log", () => {
     expect(first).toContain("Retained");
     expect(first).toContain("Duplicate");
     expect(first).not.toContain("Topic alias");
-    expect(html).toContain(">To<");
+    expect(html).toContain(">Topic<");
+    expect(html).not.toContain(">To<");
     expect(html).toContain("debug-42");
   });
 
@@ -389,26 +394,39 @@ describe("MQTT message log", () => {
     expect(userOnly).not.toContain("border-t");
   });
 
-  it("puts the message time and independent expand button in the bottom-right footer", () => {
+  it("keeps the timestamp beside the info tooltip and the expand arrow beside metadata, before the payload", () => {
     const html = renderToStaticMarkup(
-      createElement(MqttMessageLog, { entries: [received] }),
+      createElement(MqttMessageLog, {
+        entries: [
+          { ...received, properties: { contentType: "application/json" } },
+        ],
+      }),
     );
     const message = html.slice(
       html.indexOf("<article"),
       html.indexOf("</article>") + 10,
     );
-    const payload = message.indexOf('id="mqtt-message-payload-1"');
-    const footer = message.indexOf(
-      'class="flex items-center justify-end gap-1.5 px-3 pb-2"',
+    const header = message.indexOf(
+      'class="flex min-w-0 items-start justify-between gap-2 p-3 pb-2"',
     );
     const time = message.indexOf("10:15:00");
-    const toggle = message.indexOf('aria-label="Collapse message"');
-    expect(payload).toBeGreaterThanOrEqual(0);
-    expect(footer).toBeGreaterThan(payload);
-    expect(time).toBeGreaterThan(footer);
-    expect(toggle).toBeGreaterThan(time);
+    const info = message.indexOf('aria-label="MQTT 5 properties"');
+    const details = message.indexOf('aria-label="Message details"');
+    const arrow = message.indexOf('aria-label="Collapse message"');
+    const payload = message.indexOf('id="mqtt-message-payload-1"');
+
+    expect(header).toBeGreaterThanOrEqual(0);
+    expect(time).toBeGreaterThan(header);
+    expect(info).toBeGreaterThan(time);
+    expect(details).toBeGreaterThan(info);
+    expect(arrow).toBeGreaterThan(details);
+    expect(payload).toBeGreaterThan(arrow);
+    expect(message).toContain('class="flex min-w-0 items-end gap-2 px-3 pb-2"');
     expect(message).toContain('aria-controls="mqtt-message-payload-1"');
     expect(message).toContain('aria-expanded="true"');
+    expect(message).not.toContain(
+      'class="flex items-center justify-end gap-1.5 px-3 pb-2"',
+    );
   });
 
   it("places Fumadocs copy controls in the code block header, outside its scrollable region", () => {

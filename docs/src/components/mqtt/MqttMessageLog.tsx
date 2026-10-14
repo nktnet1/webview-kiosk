@@ -205,7 +205,7 @@ function MessagePropertiesTooltip({
           <button
             type="button"
             aria-label="MQTT 5 properties"
-            className="absolute top-3 right-3 z-10 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            className="inline-flex size-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-background/80 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <Info aria-hidden="true" className="size-4" />
           </button>
@@ -300,7 +300,7 @@ function MessageEntry({
             : "border-emerald-500/25 bg-emerald-500/8 dark:bg-emerald-500/10",
         )}
       >
-        <div className="min-w-0 p-3 pb-2 pr-11">
+        <div className="flex min-w-0 items-start justify-between gap-2 p-3 pb-2">
           <div className="flex min-w-0 items-start gap-2.5">
             <span
               className={cn(
@@ -328,43 +328,26 @@ function MessageEntry({
                 {received ? "Received" : "Published"}
               </span>
               <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5 text-xs leading-5">
-                <span className="shrink-0 text-muted-foreground">
-                  {received ? "Topic" : "To"}
-                </span>
+                <span className="shrink-0 text-muted-foreground">Topic</span>
                 <span className="min-w-0 wrap-anywhere font-mono text-foreground">
                   {entry.topic}
                 </span>
               </p>
             </div>
           </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <time className="whitespace-nowrap text-xs text-muted-foreground">
+              {entry.time}
+            </time>
+            {entry.properties && (
+              <MessagePropertiesTooltip properties={entry.properties} />
+            )}
+          </div>
         </div>
-        <div className="px-3 pb-3">
-          <MessageDetails entry={entry} />
-        </div>
-        {entry.properties && (
-          <MessagePropertiesTooltip properties={entry.properties} />
-        )}
-        <div id={payloadId} hidden={!expanded} className="min-w-0 px-3 pb-3">
-          {formatted
-            && (entry.payload.length > 0 ? (
-              <DynamicCodeBlock
-                lang={formatted.language}
-                code={formatted.code}
-                codeblock={{
-                  title:
-                    formatted.language === "json"
-                      ? "JSON payload"
-                      : "Text payload",
-                  className: "my-0",
-                  viewportProps: { className: "max-h-80" },
-                }}
-              />
-            ) : (
-              <p className="text-xs text-muted-foreground">Empty payload</p>
-            ))}
-        </div>
-        <div className="flex items-center justify-end gap-1.5 px-3 pb-2">
-          <time className="text-xs text-muted-foreground">{entry.time}</time>
+        <div className="flex min-w-0 items-end gap-2 px-3 pb-2">
+          <div className="min-w-0 flex-1">
+            <MessageDetails entry={entry} />
+          </div>
           <Button
             type="button"
             variant="ghost"
@@ -383,6 +366,25 @@ function MessageEntry({
               )}
             />
           </Button>
+        </div>
+        <div id={payloadId} hidden={!expanded} className="min-w-0 px-3 pb-3">
+          {formatted
+            && (entry.payload.length > 0 ? (
+              <DynamicCodeBlock
+                lang={formatted.language}
+                code={formatted.code}
+                codeblock={{
+                  title:
+                    formatted.language === "json"
+                      ? "JSON payload"
+                      : "Text payload",
+                  className: "my-0",
+                  viewportProps: { className: "max-h-80" },
+                }}
+              />
+            ) : (
+              <p className="text-xs text-muted-foreground">Empty payload</p>
+            ))}
         </div>
       </article>
     </li>
