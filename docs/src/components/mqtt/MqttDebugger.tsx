@@ -1,6 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import { Callout } from "fumadocs-ui/components/callout";
-import { PlugZap, Send, Trash2, WifiOff } from "lucide-react";
+import { ChevronDown, PlugZap, Trash2, WifiOff } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CredentialJsonTransfer } from "#/components/remote-control/CredentialJsonTransfer";
@@ -11,7 +11,6 @@ import {
   stringifyPayload,
   validateRemotePayload,
 } from "#/components/remote-control/payload";
-import { RemoteMessageEditor } from "#/components/remote-control/RemoteMessageEditor";
 import { SecretInput } from "#/components/remote-control/SecretInput";
 import {
   AlertDialog,
@@ -25,8 +24,7 @@ import {
   AlertDialogTrigger,
 } from "#/components/ui/alert-dialog";
 import { Button } from "#/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
-import { Checkbox } from "#/components/ui/checkbox";
+import { Card, CardContent } from "#/components/ui/card";
 import { Input } from "#/components/ui/input";
 import { Label } from "#/components/ui/label";
 import {
@@ -36,14 +34,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "#/components/ui/select";
-import { Textarea } from "#/components/ui/textarea";
 import {
   appendMqttMessage,
+  filterMqttMessages,
   type LogEntry,
   MqttMessageLog,
 } from "./MqttMessageLog";
+import { MqttPublishComposer, type PublishMode } from "./MqttPublishComposer";
+import { MqttTopicSidebar } from "./MqttTopicSidebar";
 import { type MqttConnectionStatus, MqttWebSocketClient } from "./protocol";
-import { RequestEditor } from "./RequestEditor";
 import { createRequestPayload, parseRequestPayload } from "./request";
 import {
   loadMqttCredentials,
@@ -69,37 +68,10 @@ import {
 } from "./validation";
 
 type BrokerForm = MqttCredentials & { keepAlive: string };
-type Mode = "control" | "request" | "custom";
 function message(error: unknown): string {
   return error instanceof Error
     ? error.message
     : "An unexpected error occurred.";
-}
-
-function QosSelect({
-  value,
-  onChange,
-  id,
-}: {
-  value: MqttQos;
-  onChange: (value: MqttQos) => void;
-  id: string;
-}) {
-  return (
-    <Select
-      value={String(value)}
-      onValueChange={(next) => onChange(Number(next) as MqttQos)}
-    >
-      <SelectTrigger id={id} className="w-full">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="0">QoS 0</SelectItem>
-        <SelectItem value="1">QoS 1</SelectItem>
-        <SelectItem value="2">QoS 2</SelectItem>
-      </SelectContent>
-    </Select>
-  );
 }
 
 export default function MqttDebugger() {
@@ -107,6 +79,8 @@ export default function MqttDebugger() {
   const [storageWarning, setStorageWarning] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [status, setStatus] = useState<MqttConnectionStatus>("disconnected");
+  const [connectionOpen, setConnectionOpen] = useState(true);
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [preferences, setPreferences] =
     useState<MqttPreferences>(DEFAULT_PREFERENCES);
@@ -116,7 +90,7 @@ export default function MqttDebugger() {
   const [subscribeQos, setSubscribeQos] = useState<MqttQos>(0);
   const [subscriptionBusy, setSubscriptionBusy] = useState(false);
   const [publishBusy, setPublishBusy] = useState(false);
-  const [mode, setMode] = useState<Mode>("control");
+  const [mode, setMode] = useState<PublishMode>("control");
   const [kind, setKind] = useState<MessageKind>("command");
   const [controlPayload, setControlPayload] = useState(() =>
     stringifyPayload(createRemotePayload("mqtt", "command")),
@@ -133,6 +107,7 @@ export default function MqttDebugger() {
   const [retain, setRetain] = useState(false);
   const [log, setLog] = useState<LogEntry[]>([]);
   const clientRef = useRef<MqttWebSocketClient | null>(null);
+  const connectionToggleRef = useRef<HTMLButtonElement>(null);
   const logSequence = useRef(0);
 
   const addLog = useCallback((entry: Omit<LogEntry, "id" | "time">) => {
@@ -235,11 +210,13 @@ export default function MqttDebugger() {
     clientRef.current = null;
     setStatus("disconnected");
     setActiveTopics([]);
+    setConnectionOpen(true);
   }
 
   function importCredentials(imported: MqttCredentials) {
     const next = normalizeMqttCredentials(imported);
     disconnect();
+    setSelectedTopic(null);
     form.reset({ ...next, keepAlive: form.state.values.keepAlive });
     persistCredentials(next);
     setPasswordVisible(false);
@@ -249,6 +226,7 @@ export default function MqttDebugger() {
 
   function clearCredentials() {
     disconnect();
+    setSelectedTopic(null);
     form.reset();
     persistCredentials({ ...EMPTY_MQTT_CREDENTIALS });
     setPasswordVisible(false);
@@ -280,6 +258,7 @@ export default function MqttDebugger() {
           if (next === "disconnected") {
             clientRef.current = null;
             setActiveTopics([]);
+            setConnectionOpen(true);
           }
           if (detail) setError(detail);
         },
@@ -289,6 +268,9 @@ export default function MqttDebugger() {
       setStatus("connecting");
       setError(null);
       await client.connect();
+      if (clientRef.current !== client) return;
+      connectionToggleRef.current?.focus();
+      setConnectionOpen(false);
       toast.success("Connected to MQTT broker");
       for (const sub of preferencesRef.current.subscriptions) {
         if (clientRef.current !== client) break;
@@ -325,6 +307,7 @@ export default function MqttDebugger() {
         ],
       });
       setActiveTopics((topics) => [...new Set([...topics, topic])]);
+      setSelectedTopic(topic);
       setSubscribeTopic("");
       toast.success(`Subscribed to ${topic}`);
     } catch (cause) {
@@ -350,6 +333,7 @@ export default function MqttDebugger() {
           (item) => item.topic !== topic,
         ),
       });
+      if (selectedTopic === topic) setSelectedTopic(null);
       setActiveTopics((topics) => topics.filter((item) => item !== topic));
       toast.success(`Removed ${topic}`);
     } catch (cause) {
@@ -416,10 +400,6 @@ export default function MqttDebugger() {
           Connect, publish and inspect MQTT 5 messages over WebSockets.
         </p>
       </div>
-      <Callout title="Credentials" type="warning">
-        Credentials are stored unencrypted in this browser. Avoid shared
-        devices.
-      </Callout>
       {storageWarning && (
         <p role="alert" className="text-sm text-destructive">
           Browser storage is unavailable; settings will not persist.
@@ -434,26 +414,72 @@ export default function MqttDebugger() {
         </p>
       )}
       <section aria-label="Broker connection">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between gap-2">
-              Connection
+        <Card className="gap-0 py-0">
+          <div className="flex min-w-0 items-center gap-2 px-3 py-2 sm:px-5">
+            <button
+              ref={connectionToggleRef}
+              type="button"
+              aria-expanded={connectionOpen}
+              aria-controls="mqtt-connection-fields"
+              onClick={() => setConnectionOpen((open) => !open)}
+              className="flex min-w-0 flex-1 items-center gap-3 rounded-md px-2 py-1.5 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <PlugZap
+                aria-hidden="true"
+                className="size-5 shrink-0 text-muted-foreground"
+              />
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold">
+                  Broker connection
+                </span>
+                <form.Subscribe selector={(state) => state.values.brokerUrl}>
+                  {(domain) => (
+                    <span className="block truncate text-xs text-muted-foreground">
+                      {domain.trim() || "Configure your MQTT broker"}
+                    </span>
+                  )}
+                </form.Subscribe>
+              </span>
               <span
                 role="status"
-                className="flex items-center gap-1.5 text-xs font-normal text-muted-foreground"
+                className="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground"
               >
                 <span
-                  className={`size-2 rounded-full ${status === "connected" ? "bg-green-500" : status === "connecting" ? "bg-yellow-500" : "bg-muted-foreground"}`}
+                  className={`size-2 rounded-full ${status === "connected" ? "bg-emerald-500" : status === "connecting" ? "bg-amber-500" : "bg-muted-foreground/50"}`}
                 />
                 {status === "connected"
                   ? "Connected"
                   : status === "connecting"
-                    ? "Connecting…"
+                    ? "Connecting..."
                     : "Disconnected"}
               </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-5">
+              <ChevronDown
+                aria-hidden="true"
+                className={`size-4 shrink-0 text-muted-foreground transition-transform ${connectionOpen ? "rotate-180" : ""}`}
+              />
+            </button>
+            {status !== "disconnected" && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={disconnect}
+              >
+                <WifiOff aria-hidden="true" />
+                <span className="hidden sm:inline">Disconnect</span>
+                <span className="sr-only sm:hidden">Disconnect</span>
+              </Button>
+            )}
+          </div>
+          <CardContent
+            id="mqtt-connection-fields"
+            hidden={!connectionOpen}
+            className="space-y-5 border-t py-5"
+          >
+            <Callout title="Credentials" type="warning">
+              Credentials are stored unencrypted in this browser. Avoid shared
+              devices.
+            </Callout>
             <form
               onSubmit={(event) => {
                 event.preventDefault();
@@ -780,16 +806,6 @@ export default function MqttDebugger() {
                   <PlugZap aria-hidden="true" />
                   {status === "connecting" ? "Connecting…" : "Connect"}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full sm:w-36"
-                  disabled={status === "disconnected"}
-                  onClick={disconnect}
-                >
-                  <WifiOff aria-hidden="true" />
-                  Disconnect
-                </Button>
               </div>
             </form>
             <details className="rounded-md border p-3">
@@ -850,204 +866,87 @@ export default function MqttDebugger() {
           </CardContent>
         </Card>
       </section>
-      <section aria-label="Publish messages">
-        <Card>
-          <CardHeader>
-            <CardTitle>Publish</CardTitle>
-          </CardHeader>
-          <CardContent className="mx-auto w-full max-w-4xl space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="mqtt-publish-mode">Message</Label>
-              <Select
-                value={mode}
-                onValueChange={(value) => setMode(value as Mode)}
-              >
-                <SelectTrigger id="mqtt-publish-mode" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="control">Command / settings</SelectItem>
-                  <SelectItem value="request">Request</SelectItem>
-                  <SelectItem value="custom">Custom payload</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {mode === "control" ? (
-              <RemoteMessageEditor
-                transport="mqtt"
-                kind={kind}
-                value={controlPayload}
-                onChange={setControlPayload}
-                onKindChange={setKind}
-              />
-            ) : mode === "request" ? (
-              <RequestEditor
-                value={requestPayload}
-                onChange={setRequestPayload}
-                responseTopic={responseTopic}
-                onResponseTopicChange={setResponseTopic}
-                correlationData={correlationData}
-                onCorrelationDataChange={setCorrelationData}
-              />
-            ) : (
-              <div className="space-y-2">
-                <Label htmlFor="mqtt-custom-message">Payload (UTF-8)</Label>
-                <Textarea
-                  id="mqtt-custom-message"
-                  className="min-h-56 font-mono text-sm"
-                  rows={10}
-                  value={customPayload}
-                  spellCheck={false}
-                  onChange={(event) => setCustomPayload(event.target.value)}
-                />
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="mqtt-publish-topic">Publish topic</Label>
-              <Input
-                id="mqtt-publish-topic"
-                spellCheck={false}
-                value={publishTopic}
-                onChange={(event) =>
-                  updatePreferences({
-                    ...preferences,
-                    [topicField]: event.target.value,
-                  })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-2 items-end gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="mqtt-publish-qos">Quality of service</Label>
-                <QosSelect
-                  id="mqtt-publish-qos"
-                  value={publishQos}
-                  onChange={setPublishQos}
-                />
-              </div>
-              <div className="flex h-9 items-center gap-2">
-                <Checkbox
-                  id="mqtt-retain"
-                  checked={retain}
-                  onCheckedChange={(value) => setRetain(value === true)}
-                />
-                <Label htmlFor="mqtt-retain">Retain</Label>
-                <InfoTooltip>
-                  Retained commands may run again when the kiosk reconnects.
-                  Leave off unless intentional.
-                </InfoTooltip>
-              </div>
-            </div>
-            <div className="flex justify-end border-t pt-4">
-              <Button
-                type="button"
-                className="w-full sm:w-48"
-                onClick={() => void publish()}
-                disabled={status !== "connected" || publishBusy}
-              >
-                <Send aria-hidden="true" />
-                {publishBusy ? "Publishing…" : "Publish"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </section>
-      <section aria-label="MQTT activity">
-        <Card>
-          <CardHeader>
-            <CardTitle>Activity</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-3">
-              <h3 className="text-sm font-semibold">
-                Subscriptions ({preferences.subscriptions.length})
-              </h3>
-              <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_6rem_auto] sm:items-end">
-                <div className="space-y-2">
-                  <Label htmlFor="mqtt-subscription-topic">Topic filter</Label>
-                  <Input
-                    id="mqtt-subscription-topic"
-                    placeholder="wk/event/#"
-                    value={subscribeTopic}
-                    spellCheck={false}
-                    onChange={(event) => setSubscribeTopic(event.target.value)}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="mqtt-subscription-qos">QoS</Label>
-                  <QosSelect
-                    id="mqtt-subscription-qos"
-                    value={subscribeQos}
-                    onChange={setSubscribeQos}
-                  />
-                </div>
-                <Button
-                  type="button"
-                  className="w-full sm:w-auto"
-                  disabled={status !== "connected" || subscriptionBusy}
-                  onClick={() => void subscribe()}
-                >
-                  Subscribe
-                </Button>
-              </div>
-              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-                {preferences.subscriptions.map((sub) => (
-                  <div
-                    key={sub.topic}
-                    className="flex min-w-0 items-center justify-between gap-3 rounded-md border px-3 py-2.5"
-                  >
-                    <div className="min-w-0">
-                      <div className="break-all font-mono text-xs">
-                        {sub.topic}
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        QoS {sub.qos}
-                        {activeTopics.includes(sub.topic) ? " · active" : ""}
-                      </span>
-                    </div>
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      aria-label={`Unsubscribe ${sub.topic}`}
-                      disabled={subscriptionBusy}
-                      onClick={() => void unsubscribe(sub.topic)}
-                    >
-                      <Trash2 aria-hidden="true" />
-                    </Button>
-                  </div>
-                ))}
-                {preferences.subscriptions.length === 0 && (
-                  <p className="py-3 text-sm text-muted-foreground">
-                    No subscriptions.
+      <div className="grid min-w-0 items-start gap-4 lg:grid-cols-[17rem_minmax(0,1fr)]">
+        <MqttTopicSidebar
+          subscriptions={preferences.subscriptions}
+          activeTopics={activeTopics}
+          entries={log}
+          selectedTopic={selectedTopic}
+          onSelectTopic={setSelectedTopic}
+          subscribeTopic={subscribeTopic}
+          onSubscribeTopicChange={setSubscribeTopic}
+          subscribeQos={subscribeQos}
+          onSubscribeQosChange={setSubscribeQos}
+          subscriptionBusy={subscriptionBusy}
+          connected={status === "connected"}
+          onSubscribe={() => void subscribe()}
+          onUnsubscribe={(topic) => void unsubscribe(topic)}
+        />
+        <section aria-label="MQTT workspace" className="min-w-0">
+          <Card className="gap-0 overflow-hidden py-0">
+            <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
+              <div className="min-w-0">
+                <h2 className="text-sm font-semibold">
+                  Messages{" "}
+                  <span className="font-normal text-muted-foreground">
+                    ({filterMqttMessages(log, "all", selectedTopic).length}/
+                    {log.length})
+                  </span>
+                </h2>
+                {selectedTopic && (
+                  <p className="break-all font-mono text-xs text-muted-foreground">
+                    {selectedTopic}
                   </p>
                 )}
               </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={log.length === 0}
+                onClick={() => setLog([])}
+              >
+                <Trash2 aria-hidden="true" />
+                Clear
+              </Button>
             </div>
-            <div className="space-y-3 border-t pt-6">
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="text-sm font-semibold">
-                  Messages{" "}
-                  <span className="font-normal text-muted-foreground">
-                    ({log.length}/100)
-                  </span>
-                </h3>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={log.length === 0}
-                  onClick={() => setLog([])}
-                >
-                  <Trash2 aria-hidden="true" />
-                  Clear
-                </Button>
-              </div>
-              <MqttMessageLog entries={log} />
+            <div className="min-w-0 p-3 sm:p-4">
+              <MqttMessageLog
+                key={selectedTopic ?? "all"}
+                entries={log}
+                topicFilter={selectedTopic}
+              />
             </div>
-          </CardContent>
-        </Card>
-      </section>
+            <MqttPublishComposer
+              mode={mode}
+              onModeChange={setMode}
+              kind={kind}
+              onKindChange={setKind}
+              controlPayload={controlPayload}
+              onControlPayloadChange={setControlPayload}
+              requestPayload={requestPayload}
+              onRequestPayloadChange={setRequestPayload}
+              customPayload={customPayload}
+              onCustomPayloadChange={setCustomPayload}
+              responseTopic={responseTopic}
+              onResponseTopicChange={setResponseTopic}
+              correlationData={correlationData}
+              onCorrelationDataChange={setCorrelationData}
+              topic={publishTopic}
+              onTopicChange={(value) =>
+                updatePreferences({ ...preferences, [topicField]: value })
+              }
+              qos={publishQos}
+              onQosChange={setPublishQos}
+              retain={retain}
+              onRetainChange={setRetain}
+              connected={status === "connected"}
+              busy={publishBusy}
+              onPublish={() => void publish()}
+            />
+          </Card>
+        </section>
+      </div>
     </div>
   );
 }

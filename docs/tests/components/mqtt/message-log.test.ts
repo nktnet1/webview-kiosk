@@ -7,6 +7,7 @@ import {
   formatMqttMessagePayload,
   type LogEntry,
   MqttMessageLog,
+  matchesMqttTopicFilter,
   previewMqttMessage,
 } from "../../../src/components/mqtt/MqttMessageLog";
 
@@ -80,10 +81,52 @@ describe("MQTT message log", () => {
     expect(entries).toEqual([received, published]);
   });
 
+  it("matches MQTT wildcard topic filters without including system topics", () => {
+    expect(matchesMqttTopicFilter("wk/event/#", "wk/event")).toBe(true);
+    expect(matchesMqttTopicFilter("wk/event/#", "wk/event/device/state")).toBe(
+      true,
+    );
+    expect(matchesMqttTopicFilter("wk/+/state", "wk/node/state")).toBe(true);
+    expect(matchesMqttTopicFilter("wk/+/state", "wk/node/sub/state")).toBe(
+      false,
+    );
+    expect(matchesMqttTopicFilter("wk/event", "wk/event/state")).toBe(false);
+    expect(matchesMqttTopicFilter("wk/event", "wk/event")).toBe(true);
+    expect(matchesMqttTopicFilter("#", "$SYS/broker/state")).toBe(false);
+    expect(matchesMqttTopicFilter("+/broker/state", "$SYS/broker/state")).toBe(
+      false,
+    );
+    expect(matchesMqttTopicFilter("$SYS/#", "$SYS/broker/state")).toBe(true);
+  });
+
+  it("filters messages by selected subscription and direction", () => {
+    const entries = [received, published];
+    expect(filterMqttMessages(entries, "all", "wk/event/#")).toEqual([
+      received,
+    ]);
+    expect(filterMqttMessages(entries, "received", "wk/event/#")).toEqual([
+      received,
+    ]);
+    expect(filterMqttMessages(entries, "published", "wk/event/#")).toEqual([]);
+    expect(filterMqttMessages(entries, "all", null)).toBe(entries);
+  });
+
   it("previews messages safely without dumping entire large payloads", () => {
     expect(previewMqttMessage("")).toBe("Empty payload");
     expect(previewMqttMessage("simple text")).toBe("simple text");
     expect(previewMqttMessage("x".repeat(500))).toBe(`${"x".repeat(320)}…`);
+  });
+
+  it("shows an empty-state message when the selected topic has no messages", () => {
+    const html = renderToStaticMarkup(
+      createElement(MqttMessageLog, {
+        entries: [received, published],
+        topicFilter: "other/#",
+      }),
+    );
+    expect(html).not.toContain("justify-start");
+    expect(html).not.toContain("justify-end");
+    expect(html).toContain("No messages matching this topic and direction.");
   });
 
   it("displays received left and published right with distinct icon colours and message previews", () => {

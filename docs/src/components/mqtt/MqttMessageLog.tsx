@@ -30,13 +30,38 @@ export function appendMqttMessage(
   return [...entries, entry].slice(-100);
 }
 
+/** Match MQTT topic levels, including the single- and multi-level wildcards.
+ * As required by MQTT, root wildcards never match $-prefixed system topics.
+ */
+export function matchesMqttTopicFilter(filter: string, topic: string): boolean {
+  if (topic.startsWith("$") && !filter.startsWith("$")) return false;
+  const filterLevels = filter.split("/");
+  const topicLevels = topic.split("/");
+  for (let i = 0; i < filterLevels.length; i++) {
+    const level = filterLevels[i];
+    if (level === "#") return i === filterLevels.length - 1;
+    if (
+      i >= topicLevels.length
+      || (level !== "+" && level !== topicLevels[i])
+    ) {
+      return false;
+    }
+  }
+  return filterLevels.length === topicLevels.length;
+}
+
 export function filterMqttMessages(
   entries: LogEntry[],
   filter: MessageFilter,
+  topicFilter: string | null = null,
 ): LogEntry[] {
-  return filter === "all"
-    ? entries
-    : entries.filter((entry) => entry.direction === filter);
+  if (filter === "all" && topicFilter === null) return entries;
+  return entries.filter(
+    (entry) =>
+      (filter === "all" || entry.direction === filter)
+      && (topicFilter === null
+        || matchesMqttTopicFilter(topicFilter, entry.topic)),
+  );
 }
 
 export function previewMqttMessage(payload: string): string {
@@ -152,11 +177,17 @@ const MESSAGE_FILTERS: { value: MessageFilter; label: string }[] = [
   { value: "published", label: "Published" },
 ];
 
-export function MqttMessageLog({ entries }: { entries: LogEntry[] }) {
+export function MqttMessageLog({
+  entries,
+  topicFilter = null,
+}: {
+  entries: LogEntry[];
+  topicFilter?: string | null;
+}) {
   const [filter, setFilter] = useState<MessageFilter>("all");
   const scrollRef = useRef<HTMLDivElement>(null);
   const followLatest = useRef(true);
-  const visibleEntries = filterMqttMessages(entries, filter);
+  const visibleEntries = filterMqttMessages(entries, filter, topicFilter);
 
   useEffect(() => {
     const element = scrollRef.current;
@@ -166,7 +197,7 @@ export function MqttMessageLog({ entries }: { entries: LogEntry[] }) {
   });
 
   return (
-    <div className="min-w-0 space-y-3">
+    <div className="flex min-w-0 flex-col gap-3">
       <fieldset className="inline-flex max-w-full min-w-0 flex-wrap items-center gap-1 rounded-lg bg-muted p-1">
         <legend className="sr-only">Filter MQTT messages</legend>
         {MESSAGE_FILTERS.map(({ value, label }) => (
@@ -187,7 +218,7 @@ export function MqttMessageLog({ entries }: { entries: LogEntry[] }) {
       </fieldset>
       <div
         ref={scrollRef}
-        className="max-h-[42rem] min-h-48 min-w-0 overflow-y-auto rounded-lg border bg-background"
+        className="h-[24rem] min-h-48 min-w-0 overflow-y-auto rounded-lg border bg-background sm:h-[30rem]"
         aria-label="MQTT messages"
         role="log"
         onScroll={(event) => {
@@ -208,7 +239,9 @@ export function MqttMessageLog({ entries }: { entries: LogEntry[] }) {
             <CircleHelp aria-hidden="true" className="size-4" />
             {entries.length === 0
               ? "Messages appear here when published or received."
-              : `No ${filter} messages.`}
+              : topicFilter !== null
+                ? "No messages matching this topic and direction."
+                : `No ${filter} messages.`}
           </div>
         )}
       </div>
