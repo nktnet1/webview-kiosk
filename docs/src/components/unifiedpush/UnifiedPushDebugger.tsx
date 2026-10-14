@@ -42,8 +42,9 @@ import {
   type PushDeliveryOutcome,
 } from "./delivery-log";
 import {
+  DEFAULT_VAPID_CONTACT,
   EMPTY_CREDENTIALS,
-  parseStoredCredentials,
+  initialPushCredentials,
   persistCredentials,
   STORAGE_KEY,
 } from "./storage";
@@ -118,13 +119,6 @@ const fields: {
     revealLabel: "VAPID signing key",
     encryptedOnly: true,
   },
-  {
-    key: "vapidSubject",
-    label: "VAPID contact (optional)",
-    placeholder: "mailto:you@example.com",
-    hint: "A mailto: address or HTTPS URL.",
-    encryptedOnly: true,
-  },
 ];
 
 function describeError(error: unknown): string {
@@ -155,7 +149,10 @@ export default function UnifiedPushDebugger() {
   // credentials (not TTL or delivery mode) are saved to browser storage.
   const form = useForm({
     defaultValues: {
-      credentials: { ...EMPTY_CREDENTIALS },
+      credentials: {
+        ...EMPTY_CREDENTIALS,
+        vapidSubject: DEFAULT_VAPID_CONTACT,
+      },
       mode: "encrypted",
       ttl: "60",
     } as DebugFormValues,
@@ -166,7 +163,7 @@ export default function UnifiedPushDebugger() {
     try {
       form.setFieldValue(
         "credentials",
-        parseStoredCredentials(window.localStorage.getItem(STORAGE_KEY)),
+        initialPushCredentials(window.localStorage.getItem(STORAGE_KEY)),
       );
     } catch {
       setStorageWarning(
@@ -648,6 +645,54 @@ export default function UnifiedPushDebugger() {
                   )}
                 </Card>
               </section>
+              {mode === "encrypted" && (
+                <section aria-label="VAPID contact">
+                  <Card className="gap-0">
+                    <CardContent className="py-4">
+                      <fieldset
+                        disabled={!loaded || busy || generatingKeys}
+                        className="disabled:opacity-70"
+                      >
+                        <form.Field name="credentials.vapidSubject">
+                          {(field) => (
+                            <div className="max-w-lg space-y-2">
+                              <div className="flex items-center gap-1">
+                                <Label htmlFor="push-vapidSubject">
+                                  VAPID contact (optional)
+                                </Label>
+                                <InfoTooltip>
+                                  Enter your email address or an HTTPS URL.
+                                  Email addresses are sent with mailto:
+                                  automatically. Replace the example contact
+                                  before sending.
+                                </InfoTooltip>
+                              </div>
+                              <Input
+                                id="push-vapidSubject"
+                                name={field.name}
+                                type="text"
+                                autoComplete="off"
+                                spellCheck={false}
+                                placeholder={DEFAULT_VAPID_CONTACT}
+                                value={field.state.value}
+                                onBlur={field.handleBlur}
+                                onChange={(event) => {
+                                  const next = event.target.value;
+                                  field.handleChange(next);
+                                  persistEditedCredentials({
+                                    ...form.state.values.credentials,
+                                    vapidSubject: next,
+                                  });
+                                }}
+                              />
+                            </div>
+                          )}
+                        </form.Field>
+                      </fieldset>
+                    </CardContent>
+                  </Card>
+                </section>
+              )}
               <div className="grid min-w-0 items-stretch gap-4 lg:grid-cols-[minmax(21rem,32%)_minmax(0,1fr)]">
                 <section
                   aria-label="Send UnifiedPush message"

@@ -1,12 +1,33 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  DEFAULT_VAPID_CONTACT,
   EMPTY_CREDENTIALS,
+  initialPushCredentials,
   parseStoredCredentials,
   persistCredentials,
   STORAGE_KEY,
 } from "#/components/unifiedpush/storage";
 
 describe("UnifiedPush browser storage", () => {
+  it("prefills the contact for new users without changing saved credentials", () => {
+    expect(initialPushCredentials(null)).toEqual({
+      ...EMPTY_CREDENTIALS,
+      vapidSubject: DEFAULT_VAPID_CONTACT,
+    });
+    expect(
+      initialPushCredentials('{"vapidSubject":"mailto:existing@example.com"}'),
+    ).toMatchObject({ vapidSubject: "mailto:existing@example.com" });
+    expect(
+      initialPushCredentials('{"endpoint":"https://push.example.org"}'),
+    ).toEqual({
+      ...EMPTY_CREDENTIALS,
+      endpoint: "https://push.example.org",
+      vapidSubject: DEFAULT_VAPID_CONTACT,
+    });
+    expect(
+      initialPushCredentials('{"vapidSubject":"https://example.com/contact"}'),
+    ).toMatchObject({ vapidSubject: "https://example.com/contact" });
+  });
   it("ignores malformed, unexpected and non-string credentials", () => {
     expect(parseStoredCredentials(null)).toEqual(EMPTY_CREDENTIALS);
     expect(parseStoredCredentials("invalid json")).toEqual(EMPTY_CREDENTIALS);
