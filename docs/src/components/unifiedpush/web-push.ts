@@ -27,6 +27,7 @@ const SecureEndpointSchema = v.pipe(
     );
   }),
 );
+const EmailSchema = v.pipe(v.string(), v.email());
 const PushKindSchema = v.picklist(["command", "settings"]);
 const NonEmptyCommandSchema = v.pipe(v.string(), v.nonEmpty());
 const VapidSubjectSchema = v.pipe(
@@ -34,8 +35,13 @@ const VapidSubjectSchema = v.pipe(
   v.trim(),
   v.check((subject) => {
     if (!subject) return true;
-    if (subject.startsWith("mailto:")) {
-      return /^mailto:[^\s@]+@[^\s@]+$/.test(subject);
+    if (
+      v.is(
+        EmailSchema,
+        subject.startsWith("mailto:") ? subject.slice(7) : subject,
+      )
+    ) {
+      return true;
     }
     const url = v.safeParse(UrlSchema, subject);
     if (!url.success) return false;
@@ -223,14 +229,17 @@ async function encryptPayload(
   return concat(header, senderPublicKey, ciphertext);
 }
 
-function vapidSubjectClaim(value: string): string | undefined {
+/** Normalise a friendly contact email into the VAPID JWT subject (RFC 8292). */
+export function normalizeVapidSubject(value: string): string | undefined {
   const result = v.safeParse(VapidSubjectSchema, value);
   if (!result.success) {
-    throw new Error(
-      "VAPID contact must be a mailto: email address or an HTTPS URL.",
-    );
+    throw new Error("VAPID contact must be an email address or an HTTPS URL.");
   }
-  return result.output || undefined;
+  if (!result.output) return undefined;
+  if (v.is(EmailSchema, result.output)) {
+    return `mailto:${result.output}`;
+  }
+  return result.output;
 }
 
 async function createVapidAuthorization(
@@ -260,7 +269,7 @@ async function createVapidAuthorization(
       "The VAPID public and private keys are invalid or do not match.",
     );
   }
-  const contact = vapidSubjectClaim(subject);
+  const contact = normalizeVapidSubject(subject);
   const claims = {
     aud: endpoint.origin,
     exp: Math.floor(Date.now() / 1000) + 12 * 60 * 60,

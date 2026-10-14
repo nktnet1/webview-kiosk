@@ -9,6 +9,7 @@ import {
   generateVapidKeys,
   isValidPushTtlInput,
   MAX_PUSH_PAYLOAD_BYTES,
+  normalizeVapidSubject,
   type PushCredentials,
   prepareWebPush,
   validatePushPayload,
@@ -117,6 +118,35 @@ describe("Web Push builder", () => {
         new TextEncoder().encode(`${header}.${claims}`),
       ),
     ).toBe(true);
+  });
+
+  it("automatically prefixes contact emails without altering URLs", () => {
+    expect(normalizeVapidSubject("you@example.com")).toBe(
+      "mailto:you@example.com",
+    );
+    expect(normalizeVapidSubject("  you@example.com  ")).toBe(
+      "mailto:you@example.com",
+    );
+    expect(normalizeVapidSubject("mailto:you@example.com")).toBe(
+      "mailto:you@example.com",
+    );
+    expect(normalizeVapidSubject("https://example.com/support")).toBe(
+      "https://example.com/support",
+    );
+    expect(normalizeVapidSubject("")).toBeUndefined();
+    expect(() => normalizeVapidSubject("mailto:no-at-sign")).toThrow(/contact/);
+  });
+
+  it("signs a VAPID JWT using mailto: for a plain contact email", async () => {
+    const { credentials } = await createCredentials();
+    credentials.vapidSubject = "  support@example.org ";
+    const request = await prepareWebPush(credentials, message, 60);
+    const claims = request.headers.Authorization.replace("vapid t=", "")
+      .split(", k=")[0]
+      .split(".")[1];
+    expect(JSON.parse(decode(claims).toString()).sub).toBe(
+      "mailto:support@example.org",
+    );
   });
 
   it("rejects mismatched VAPID keys", async () => {
