@@ -927,7 +927,7 @@ export default function MqttDebugger() {
           </CardContent>
         </Card>
       </section>
-      <div className="grid w-full min-w-0 gap-4 lg:grid-cols-[minmax(16rem,1fr)_minmax(0,3fr)]">
+      <div className="grid w-full min-w-0 gap-4 lg:grid-cols-[minmax(16rem,28%)_minmax(0,1fr)]">
         <div className="min-w-0 space-y-4">
           <MqttTopicSidebar
             subscriptions={preferences.subscriptions}

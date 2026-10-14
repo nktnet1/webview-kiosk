@@ -11,9 +11,12 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   ChevronDown,
+  ChevronsDown,
+  ChevronsUp,
   CircleHelp,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Button } from "#/components/ui/button";
 import { cn } from "#/lib/cn";
 import { type MqttPublishProperties, reportedMqttSender } from "./properties";
 import type { MqttQos } from "./validation";
@@ -281,26 +284,71 @@ const MESSAGE_FILTERS: { value: MessageFilter; label: string }[] = [
   { value: "published", label: "Published" },
 ];
 
-/** An explicit expansion choice remains until the visible stream or filter changes. */
-type ExpansionChoice = {
-  id: number | null;
-  latestId: number | null;
+/** Manual expansion choices are scoped to the selected direction and topic. */
+export type MqttExpansionState = {
   filter: MessageFilter;
   topicFilter: string | null;
+  mode: "latest" | "all" | "none";
+  /** Per-message choices override the bulk mode without closing other messages. */
+  overrides: ReadonlyMap<number, boolean>;
 };
 
-export function selectedMqttMessageId(
+function activeExpansionState(
+  state: MqttExpansionState | null,
+  filter: MessageFilter,
+  topicFilter: string | null,
+): MqttExpansionState | null {
+  return state?.filter === filter && state.topicFilter === topicFilter
+    ? state
+    : null;
+}
+
+/** Resolve expanded IDs from the *visible* stream; never expand hidden messages. */
+export function expandedMqttMessageIds(
   entries: LogEntry[],
   filter: MessageFilter,
   topicFilter: string | null,
-  choice: ExpansionChoice | null,
-): number | null {
-  const latestId = entries.at(-1)?.id ?? null;
-  return choice?.latestId === latestId
-    && choice?.filter === filter
-    && choice?.topicFilter === topicFilter
-    ? choice.id
-    : latestId;
+  state: MqttExpansionState | null,
+): ReadonlySet<number> {
+  const active = activeExpansionState(state, filter, topicFilter);
+  const latestId = entries.at(-1)?.id;
+  const mode = active?.mode ?? "latest";
+  return new Set(
+    entries
+      .filter(
+        (entry) =>
+          active?.overrides.get(entry.id)
+          ?? (mode === "all" || (mode === "latest" && entry.id === latestId)),
+      )
+      .map((entry) => entry.id),
+  );
+}
+
+/** Toggle one message while preserving the expansion of every other message. */
+export function toggleMqttMessageExpansion(
+  entries: LogEntry[],
+  filter: MessageFilter,
+  topicFilter: string | null,
+  state: MqttExpansionState | null,
+  id: number,
+): MqttExpansionState {
+  const active = activeExpansionState(state, filter, topicFilter);
+  const visibleIds = new Set(entries.map((entry) => entry.id));
+  const overrides = new Map(
+    [...(active?.overrides ?? [])].filter(([entryId]) =>
+      visibleIds.has(entryId),
+    ),
+  );
+  overrides.set(
+    id,
+    !expandedMqttMessageIds(entries, filter, topicFilter, active).has(id),
+  );
+  return {
+    filter,
+    topicFilter,
+    mode: active?.mode ?? "latest",
+    overrides,
+  };
 }
 
 export function MqttMessageLog({
@@ -311,17 +359,17 @@ export function MqttMessageLog({
   topicFilter?: string | null;
 }) {
   const [filter, setFilter] = useState<MessageFilter>("all");
-  const [choice, setChoice] = useState<ExpansionChoice | null>(null);
+  const [expansion, setExpansion] = useState<MqttExpansionState | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const followLatest = useRef(true);
   const lastScrollKey = useRef<string | null>(null);
   const visibleEntries = filterMqttMessages(entries, filter, topicFilter);
   const latestId = visibleEntries.at(-1)?.id ?? null;
-  const expandedId = selectedMqttMessageId(
+  const expandedIds = expandedMqttMessageIds(
     visibleEntries,
     filter,
     topicFilter,
-    choice,
+    expansion,
   );
 
   const scrollKey = JSON.stringify([latestId, filter, topicFilter]);
@@ -343,20 +391,64 @@ export function MqttMessageLog({
       }}
       className="flex min-h-0 min-w-0 flex-1 flex-col gap-3"
     >
-      <FumadocsTabsList
-        aria-label="Filter MQTT messages"
-        className="border-b border-border px-1"
-      >
-        {MESSAGE_FILTERS.map(({ value, label }) => (
-          <FumadocsTabsTrigger
-            key={value}
-            value={value}
-            className="rounded-t-md px-4 data-[state=active]:bg-fd-accent/50 data-[state=active]:font-semibold"
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <FumadocsTabsList
+          aria-label="Filter MQTT messages"
+          className="border-b border-border px-1"
+        >
+          {MESSAGE_FILTERS.map(({ value, label }) => (
+            <FumadocsTabsTrigger
+              key={value}
+              value={value}
+              className="rounded-t-md px-4 data-[state=active]:bg-fd-accent/50 data-[state=active]:font-semibold"
+            >
+              {label}
+            </FumadocsTabsTrigger>
+          ))}
+        </FumadocsTabsList>
+        <fieldset
+          aria-label="Message expansion"
+          className="flex items-center gap-1"
+        >
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={
+              visibleEntries.length === 0
+              || expandedIds.size === visibleEntries.length
+            }
+            onClick={() =>
+              setExpansion({
+                filter,
+                topicFilter,
+                mode: "all",
+                overrides: new Map(),
+              })
+            }
           >
-            {label}
-          </FumadocsTabsTrigger>
-        ))}
-      </FumadocsTabsList>
+            <ChevronsDown aria-hidden="true" />
+            Expand all
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={expandedIds.size === 0}
+            onClick={() =>
+              setExpansion({
+                filter,
+                topicFilter,
+                mode: "none",
+                overrides: new Map(),
+              })
+            }
+          >
+            <ChevronsUp aria-hidden="true" />
+            Collapse all
+          </Button>
+        </fieldset>
+      </div>
       {MESSAGE_FILTERS.map(({ value }) => (
         <FumadocsTabsContent
           key={value}
@@ -384,14 +476,17 @@ export function MqttMessageLog({
                     <MessageEntry
                       key={entry.id}
                       entry={entry}
-                      expanded={expandedId === entry.id}
+                      expanded={expandedIds.has(entry.id)}
                       onToggle={() =>
-                        setChoice({
-                          id: expandedId === entry.id ? null : entry.id,
-                          latestId,
-                          filter,
-                          topicFilter,
-                        })
+                        setExpansion((previous) =>
+                          toggleMqttMessageExpansion(
+                            visibleEntries,
+                            filter,
+                            topicFilter,
+                            previous,
+                            entry.id,
+                          ),
+                        )
                       }
                     />
                   ))}

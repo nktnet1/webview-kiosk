@@ -3,12 +3,13 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
   appendMqttMessage,
+  expandedMqttMessageIds,
   filterMqttMessages,
   formatMqttMessagePayload,
   type LogEntry,
   MqttMessageLog,
   matchesMqttTopicFilter,
-  selectedMqttMessageId,
+  toggleMqttMessageExpansion,
 } from "../../../src/components/mqtt/MqttMessageLog";
 
 const received: LogEntry = {
@@ -111,42 +112,130 @@ describe("MQTT message log", () => {
     expect(filterMqttMessages(entries, "all", null)).toBe(entries);
   });
 
-  it("expands only the newest visible message unless the user has chosen another", () => {
+  it("expands the newest message by default and independently toggles earlier messages", () => {
     const entries = [received, published];
-    expect(selectedMqttMessageId(entries, "all", null, null)).toBe(2);
+    expect([...expandedMqttMessageIds(entries, "all", null, null)]).toEqual([
+      2,
+    ]);
+
+    const withOlder = toggleMqttMessageExpansion(entries, "all", null, null, 1);
+    expect([
+      ...expandedMqttMessageIds(entries, "all", null, withOlder),
+    ]).toEqual([1, 2]);
+
+    const withoutLatest = toggleMqttMessageExpansion(
+      entries,
+      "all",
+      null,
+      withOlder,
+      2,
+    );
+    expect([
+      ...expandedMqttMessageIds(entries, "all", null, withoutLatest),
+    ]).toEqual([1]);
+
+    const withoutEither = toggleMqttMessageExpansion(
+      entries,
+      "all",
+      null,
+      withoutLatest,
+      1,
+    );
     expect(
-      selectedMqttMessageId(entries, "all", null, {
-        id: 1,
-        latestId: 2,
-        filter: "all",
-        topicFilter: null,
-      }),
-    ).toBe(1);
+      expandedMqttMessageIds(entries, "all", null, withoutEither).size,
+    ).toBe(0);
+  });
+
+  it("supports expand all and collapse all while keeping manual toggles independent", () => {
+    const entries = [received, published];
+    const expandedAll = {
+      filter: "all" as const,
+      topicFilter: null,
+      mode: "all" as const,
+      overrides: new Map<number, boolean>(),
+    };
+    const collapsedAll = { ...expandedAll, mode: "none" as const };
+    expect([
+      ...expandedMqttMessageIds(entries, "all", null, expandedAll),
+    ]).toEqual([1, 2]);
     expect(
-      selectedMqttMessageId(entries, "all", null, {
-        id: null,
-        latestId: 2,
-        filter: "all",
-        topicFilter: null,
-      }),
-    ).toBeNull();
+      expandedMqttMessageIds(entries, "all", null, collapsedAll).size,
+    ).toBe(0);
+    expect([
+      ...expandedMqttMessageIds(
+        [...entries, { ...received, id: 3 }],
+        "all",
+        null,
+        expandedAll,
+      ),
+    ]).toEqual([1, 2, 3]);
+
+    const reopened = toggleMqttMessageExpansion(
+      entries,
+      "all",
+      null,
+      collapsedAll,
+      1,
+    );
+    expect([...expandedMqttMessageIds(entries, "all", null, reopened)]).toEqual(
+      [1],
+    );
+    const oneClosed = toggleMqttMessageExpansion(
+      entries,
+      "all",
+      null,
+      expandedAll,
+      2,
+    );
+    expect([
+      ...expandedMqttMessageIds(entries, "all", null, oneClosed),
+    ]).toEqual([1]);
+  });
+
+  it("resets expansion when filters change and handles subsequent messages", () => {
+    const entries = [received, published];
+    const olderOpened = toggleMqttMessageExpansion(
+      entries,
+      "all",
+      null,
+      null,
+      1,
+    );
+    const next = { ...received, id: 3, time: "10:15:02" };
+    expect([
+      ...expandedMqttMessageIds([...entries, next], "all", null, olderOpened),
+    ]).toEqual([1, 3]);
+    expect([
+      ...expandedMqttMessageIds([received], "received", null, olderOpened),
+    ]).toEqual([1]);
+    expect([
+      ...expandedMqttMessageIds([received], "all", "wk/event/#", olderOpened),
+    ]).toEqual([1]);
+    expect(expandedMqttMessageIds([], "all", null, null).size).toBe(0);
+
+    // A deliberate collapse-all survives new messages until the user changes it.
+    const collapsedAll = {
+      filter: "all" as const,
+      topicFilter: null,
+      mode: "none" as const,
+      overrides: new Map<number, boolean>(),
+    };
     expect(
-      selectedMqttMessageId([...entries, { ...received, id: 3 }], "all", null, {
-        id: 1,
-        latestId: 2,
-        filter: "all",
-        topicFilter: null,
-      }),
-    ).toBe(3);
-    expect(
-      selectedMqttMessageId([received], "received", null, {
-        id: 2,
-        latestId: 2,
-        filter: "all",
-        topicFilter: null,
-      }),
-    ).toBe(1);
-    expect(selectedMqttMessageId([], "all", null, null)).toBeNull();
+      expandedMqttMessageIds([...entries, next], "all", null, collapsedAll)
+        .size,
+    ).toBe(0);
+  });
+
+  it("prunes expansion overrides for messages outside the visible log", () => {
+    const entries = [received, published];
+    const prior = {
+      filter: "all" as const,
+      topicFilter: null,
+      mode: "latest" as const,
+      overrides: new Map([[999, true]]),
+    };
+    const next = toggleMqttMessageExpansion(entries, "all", null, prior, 1);
+    expect([...next.overrides.keys()]).toEqual([1]);
   });
 
   it("shows an empty-state message when the selected topic has no messages", () => {
@@ -171,6 +260,9 @@ describe("MQTT message log", () => {
     expect(html).toContain("lg:h-full lg:min-h-0");
     expect(html).toContain('data-state="active"');
     expect(html).toContain('aria-selected="true"');
+    expect(html).toContain('aria-label="Message expansion"');
+    expect(html).toContain("Expand all");
+    expect(html).toContain("Collapse all");
     expect(html).toContain("data-[state=active]:bg-fd-accent/50");
     expect(html).toContain("justify-start");
     expect(html).toContain("justify-end");
