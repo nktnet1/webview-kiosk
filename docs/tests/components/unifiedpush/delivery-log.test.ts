@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   appendPushDelivery,
+  describePushNetworkError,
+  describePushServiceError,
   finishPushDelivery,
   formatPushDeliveryPayload,
   MAX_PUSH_LOG_ENTRIES,
@@ -31,11 +33,24 @@ describe("UnifiedPush delivery history", () => {
     expect(entries.at(-1)?.id).toBe(MAX_PUSH_LOG_ENTRIES + 2);
   });
 
+  it("does not add explanatory text to successful HTTP responses", () => {
+    const result = finishPushDelivery([entry(1)], 1, {
+      outcome: "accepted",
+      detail: "",
+      httpStatus: 201,
+    });
+    expect(result[0]).toMatchObject({
+      outcome: "accepted",
+      detail: "",
+      httpStatus: 201,
+    });
+  });
+
   it("resolves only the matching attempt and preserves the HTTP status", () => {
     const entries = [entry(1), entry(2)];
     const finished = finishPushDelivery(entries, 2, {
       outcome: "accepted",
-      detail: "HTTP 201 (delivery unconfirmed)",
+      detail: "",
       httpStatus: 201,
     });
     expect(finished[0]).toEqual(entry(1));
@@ -51,6 +66,42 @@ describe("UnifiedPush delivery history", () => {
     expect(
       finishPushDelivery([], 42, { outcome: "failed", detail: "Timed out" }),
     ).toEqual([]);
+  });
+
+  it("includes HTTP errors and the push service's useful response", () => {
+    expect(
+      describePushServiceError(
+        { status: 403, statusText: "Forbidden" },
+        '{"message":"Invalid VAPID token","errno":109}',
+      ),
+    ).toBe("HTTP 403 Forbidden: Invalid VAPID token");
+    expect(describePushServiceError({ status: 404, statusText: "" }, "")).toBe(
+      "HTTP 404. The endpoint may be invalid or expired. Register again if needed.",
+    );
+    expect(
+      describePushServiceError(
+        { status: 400, statusText: "Bad Request" },
+        "missing header",
+      ),
+    ).toBe("HTTP 400 Bad Request: missing header");
+    expect(describePushServiceError({ status: 429, statusText: "" }, "")).toBe(
+      "HTTP 429. Rate limited. Try again later.",
+    );
+    expect(
+      describePushServiceError(
+        { status: 500, statusText: "" },
+        "x".repeat(2000),
+      ),
+    ).toBe(`HTTP 500: ${"x".repeat(1000)}…`);
+  });
+
+  it("gives actionable feedback when the browser cannot read a response", () => {
+    expect(
+      describePushNetworkError(new DOMException("", "TimeoutError")),
+    ).toMatch(/timed out/);
+    expect(describePushNetworkError(new TypeError("Failed to fetch"))).toMatch(
+      /CORS/,
+    );
   });
 
   it("formats JSON and preserves invalid JSON as text", () => {

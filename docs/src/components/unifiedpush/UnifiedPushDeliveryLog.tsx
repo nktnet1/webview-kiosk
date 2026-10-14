@@ -8,6 +8,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { InfoTooltip } from "#/components/remote-control/InfoTooltip";
 import { Button } from "#/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "#/components/ui/card";
 import {
@@ -70,7 +71,6 @@ function DeliveryEntry({ entry }: { entry: PushDeliveryEntry }) {
             </span>
             <div className="min-w-0">
               <p className="text-xs font-semibold">{display.label}</p>
-              <p className="text-xs text-muted-foreground">Outgoing push</p>
             </div>
           </div>
           <time
@@ -100,8 +100,12 @@ function DeliveryEntry({ entry }: { entry: PushDeliveryEntry }) {
         </dl>
         {entry.detail && (
           <p
-            role="status"
-            className="wrap-anywhere text-xs leading-relaxed text-muted-foreground"
+            role={entry.outcome === "sending" ? "status" : "alert"}
+            className={`wrap-anywhere rounded-md border px-3 py-2 text-sm leading-relaxed ${
+              entry.outcome === "rejected" || entry.outcome === "failed"
+                ? "border-destructive/40 bg-destructive/10 text-destructive"
+                : "border-amber-500/40 bg-amber-500/10 text-foreground"
+            }`}
           >
             {entry.detail}
           </p>
@@ -141,12 +145,12 @@ export function UnifiedPushDeliveryLog({
   return (
     <Card className="h-full min-h-[26rem] min-w-0 gap-0 overflow-hidden">
       <CardHeader className="flex flex-row items-center justify-between gap-3 border-b pb-4">
-        <div className="min-w-0 space-y-1">
-          <CardTitle>Delivery log</CardTitle>
-          <p className="text-xs text-muted-foreground">
-            Push service responses, not device delivery receipts
-          </p>
-        </div>
+        <CardTitle className="flex items-center gap-1">
+          Delivery log
+          <InfoTooltip>
+            Push service responses do not confirm device delivery.
+          </InfoTooltip>
+        </CardTitle>
         <Button
           type="button"
           variant="outline"

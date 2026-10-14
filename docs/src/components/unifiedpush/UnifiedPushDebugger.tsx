@@ -37,6 +37,8 @@ import {
 } from "#/components/ui/select";
 import {
   appendPushDelivery,
+  describePushNetworkError,
+  describePushServiceError,
   finishPushDelivery,
   type PushDeliveryEntry,
   type PushDeliveryOutcome,
@@ -235,7 +237,7 @@ export default function UnifiedPushDebugger() {
         kind: messageKind,
         payload,
         outcome: "sending",
-        detail: "Waiting for the push service response…",
+        detail: "",
       }),
     );
 
@@ -251,6 +253,13 @@ export default function UnifiedPushDebugger() {
           ...(httpStatus === undefined ? {} : { httpStatus }),
         }),
       );
+      if (outcome === "rejected" || outcome === "failed") {
+        toast.error(outcome === "rejected" ? "Push rejected" : "Push failed", {
+          description: detail,
+        });
+      } else if (outcome === "unconfirmed" && values.mode === "encrypted") {
+        toast.warning("Push response unavailable", { description: detail });
+      }
     }
 
     try {
@@ -276,18 +285,18 @@ export default function UnifiedPushDebugger() {
             cache: "no-store",
             signal: AbortSignal.timeout(15_000),
           });
-        } catch {
-          finish(
-            "unconfirmed",
-            "The browser could not complete the request (possibly due to CORS). Acceptance and delivery are unconfirmed.",
-          );
+        } catch (error) {
+          finish("unconfirmed", describePushNetworkError(error));
           return;
         }
         finish(
           response.ok ? "accepted" : "rejected",
           response.ok
-            ? `Push service accepted the request (HTTP ${response.status}). Device delivery is not confirmed.`
-            : `Push service rejected the request (HTTP ${response.status}). Check the endpoint and keys.`,
+            ? ""
+            : describePushServiceError(
+                response,
+                await response.text().catch(() => ""),
+              ),
           response.status,
         );
       } else {
@@ -308,14 +317,16 @@ export default function UnifiedPushDebugger() {
           signal: AbortSignal.timeout(15_000),
         });
         if (response.type === "opaque") {
-          finish(
-            "unconfirmed",
-            "Browser sent a no-CORS request without a readable response. Acceptance and delivery cannot be verified.",
-          );
+          finish("unconfirmed", "Response unavailable (no-CORS mode).");
         } else {
           finish(
             response.ok ? "accepted" : "rejected",
-            `Push service returned HTTP ${response.status}. Device delivery is not confirmed.`,
+            response.ok
+              ? ""
+              : describePushServiceError(
+                  response,
+                  await response.text().catch(() => ""),
+                ),
             response.status,
           );
         }
@@ -371,12 +382,28 @@ export default function UnifiedPushDebugger() {
                   <CardHeader className="pb-4">
                     <button
                       type="button"
-                      className="flex w-full items-center justify-between gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md"
+                      className="flex w-full items-center justify-between gap-3 rounded-md text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       aria-expanded={connectionOpen}
                       aria-controls="push-connection-fields"
                       onClick={() => setConnectionOpen((open) => !open)}
                     >
-                      <CardTitle>UnifiedPush Connection</CardTitle>
+                      <div className="min-w-0 flex-1">
+                        <CardTitle>UnifiedPush Connection</CardTitle>
+                        {mode === "encrypted" && (
+                          <form.Subscribe
+                            selector={(state) =>
+                              state.values.credentials.vapidSubject
+                            }
+                          >
+                            {(contact) => (
+                              <span className="mt-1 block truncate text-xs text-muted-foreground">
+                                {contact.trim()
+                                  || "No VAPID contact configured"}
+                              </span>
+                            )}
+                          </form.Subscribe>
+                        )}
+                      </div>
                       <ChevronDown
                         aria-hidden="true"
                         className={`size-4 shrink-0 transition-transform ${connectionOpen ? "rotate-180" : ""}`}
@@ -501,6 +528,43 @@ export default function UnifiedPushDebugger() {
                               </form.Field>
                             ))}
                         </div>
+                        {mode === "encrypted" && (
+                          <form.Field name="credentials.vapidSubject">
+                            {(field) => (
+                              <div className="max-w-lg space-y-2">
+                                <div className="flex items-center gap-1">
+                                  <Label htmlFor="push-vapidSubject">
+                                    VAPID contact (optional)
+                                  </Label>
+                                  <InfoTooltip>
+                                    Enter your email address or an HTTPS URL.
+                                    Email addresses are sent with mailto:
+                                    automatically. Replace the example contact
+                                    before sending.
+                                  </InfoTooltip>
+                                </div>
+                                <Input
+                                  id="push-vapidSubject"
+                                  name={field.name}
+                                  type="text"
+                                  autoComplete="off"
+                                  spellCheck={false}
+                                  placeholder={DEFAULT_VAPID_CONTACT}
+                                  value={field.state.value}
+                                  onBlur={field.handleBlur}
+                                  onChange={(event) => {
+                                    const next = event.target.value;
+                                    field.handleChange(next);
+                                    persistEditedCredentials({
+                                      ...form.state.values.credentials,
+                                      vapidSubject: next,
+                                    });
+                                  }}
+                                />
+                              </div>
+                            )}
+                          </form.Field>
+                        )}
                         {mode === "plaintext" && (
                           <Callout title="Unencrypted delivery" type="warning">
                             Enable <strong>Process Unencrypted Messages</strong>{" "}
@@ -645,54 +709,6 @@ export default function UnifiedPushDebugger() {
                   )}
                 </Card>
               </section>
-              {mode === "encrypted" && (
-                <section aria-label="VAPID contact">
-                  <Card className="gap-0">
-                    <CardContent className="py-4">
-                      <fieldset
-                        disabled={!loaded || busy || generatingKeys}
-                        className="disabled:opacity-70"
-                      >
-                        <form.Field name="credentials.vapidSubject">
-                          {(field) => (
-                            <div className="max-w-lg space-y-2">
-                              <div className="flex items-center gap-1">
-                                <Label htmlFor="push-vapidSubject">
-                                  VAPID contact (optional)
-                                </Label>
-                                <InfoTooltip>
-                                  Enter your email address or an HTTPS URL.
-                                  Email addresses are sent with mailto:
-                                  automatically. Replace the example contact
-                                  before sending.
-                                </InfoTooltip>
-                              </div>
-                              <Input
-                                id="push-vapidSubject"
-                                name={field.name}
-                                type="text"
-                                autoComplete="off"
-                                spellCheck={false}
-                                placeholder={DEFAULT_VAPID_CONTACT}
-                                value={field.state.value}
-                                onBlur={field.handleBlur}
-                                onChange={(event) => {
-                                  const next = event.target.value;
-                                  field.handleChange(next);
-                                  persistEditedCredentials({
-                                    ...form.state.values.credentials,
-                                    vapidSubject: next,
-                                  });
-                                }}
-                              />
-                            </div>
-                          )}
-                        </form.Field>
-                      </fieldset>
-                    </CardContent>
-                  </Card>
-                </section>
-              )}
               <div className="grid min-w-0 items-stretch gap-4 lg:grid-cols-[minmax(21rem,32%)_minmax(0,1fr)]">
                 <section
                   aria-label="Send UnifiedPush message"
