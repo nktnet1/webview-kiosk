@@ -167,6 +167,8 @@ describe("MQTT message log", () => {
     );
     expect(html).toContain('aria-label="Filter MQTT messages"');
     expect(html).toContain('role="tablist"');
+    expect(html).toContain("flex min-h-0 min-w-0 flex-1 flex-col gap-3");
+    expect(html).toContain("lg:h-full lg:min-h-0");
     expect(html).toContain('data-state="active"');
     expect(html).toContain('aria-selected="true"');
     expect(html).toContain("data-[state=active]:bg-fd-accent/50");

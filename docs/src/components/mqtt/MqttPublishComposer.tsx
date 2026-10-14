@@ -84,9 +84,11 @@ export function MqttPublishComposer({
           <h2 className="text-sm font-semibold">Publish</h2>
         </div>
         <div className="min-w-0 space-y-3 p-3">
-          <div className="grid grid-cols-[minmax(0,1fr)_7.5rem_auto] items-end gap-2">
+          <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,3fr)_minmax(0,4fr)] items-end gap-2">
             <div className="min-w-0 space-y-1.5">
-              <Label htmlFor="mqtt-publish-mode">Message type</Label>
+              <Label htmlFor="mqtt-publish-mode" className="text-xs">
+                Message type
+              </Label>
               <Select
                 value={mode}
                 onValueChange={(next) => onModeChange(next as PublishMode)}
@@ -106,7 +108,9 @@ export function MqttPublishComposer({
               </Select>
             </div>
             <div className="min-w-0 space-y-1.5">
-              <Label htmlFor="mqtt-publish-qos">QoS</Label>
+              <Label htmlFor="mqtt-publish-qos" className="text-xs">
+                QoS
+              </Label>
               <MqttQosSelect
                 id="mqtt-publish-qos"
                 value={qos}
@@ -114,8 +118,10 @@ export function MqttPublishComposer({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="mqtt-retain">Retain</Label>
-              <div className="flex h-9 items-center gap-1.5">
+              <Label htmlFor="mqtt-retain" className="text-xs">
+                Retain
+              </Label>
+              <div className="flex h-9 w-full min-w-0 items-center justify-between gap-1 rounded-md border border-input px-2">
                 <Checkbox
                   id="mqtt-retain"
                   checked={retain}

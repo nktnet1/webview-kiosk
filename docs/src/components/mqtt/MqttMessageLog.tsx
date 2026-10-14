@@ -341,7 +341,7 @@ export function MqttMessageLog({
         followLatest.current = true;
         setFilter(value as MessageFilter);
       }}
-      className="flex min-w-0 flex-col gap-3"
+      className="flex min-h-0 min-w-0 flex-1 flex-col gap-3"
     >
       <FumadocsTabsList
         aria-label="Filter MQTT messages"
@@ -361,12 +361,12 @@ export function MqttMessageLog({
         <FumadocsTabsContent
           key={value}
           value={value}
-          className="min-w-0 outline-none"
+          className="min-h-0 min-w-0 flex-1 outline-none"
         >
           {filter === value && (
             <div
               ref={scrollRef}
-              className="h-[74vh] min-h-[28rem] max-h-[72rem] min-w-0 overflow-y-auto rounded-lg border bg-background sm:h-[78vh]"
+              className="h-[74vh] min-h-[28rem] min-w-0 overflow-y-auto rounded-lg border bg-background sm:h-[78vh] lg:h-full lg:min-h-0"
               aria-label="MQTT messages"
               role="log"
               onScroll={(event) => {

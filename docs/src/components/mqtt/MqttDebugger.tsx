@@ -459,11 +459,8 @@ export default function MqttDebugger() {
   }
 
   return (
-    <div className="min-w-0 w-full space-y-3 pb-6">
-      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-        <h1 className="text-xl font-semibold tracking-tight">MQTT Debugger</h1>
-        <p className="text-xs text-muted-foreground">MQTT 5 over WebSockets</p>
-      </div>
+    <div className="min-w-0 w-full space-y-4">
+      <h1 className="text-xl font-semibold tracking-tight">MQTT Debugger</h1>
       {storageWarning && (
         <p role="alert" className="text-sm text-destructive">
           Browser storage is unavailable; settings will not persist.
@@ -930,8 +927,8 @@ export default function MqttDebugger() {
           </CardContent>
         </Card>
       </section>
-      <div className="grid w-full min-w-0 items-start gap-3 lg:grid-cols-[minmax(0,3fr)_minmax(0,5fr)]">
-        <div className="min-w-0 space-y-3">
+      <div className="grid w-full min-w-0 gap-4 lg:grid-cols-[minmax(16rem,1fr)_minmax(0,3fr)]">
+        <div className="min-w-0 space-y-4">
           <MqttTopicSidebar
             subscriptions={preferences.subscriptions}
             activeTopics={activeTopics}
@@ -976,8 +973,12 @@ export default function MqttDebugger() {
             onPublish={() => void publish()}
           />
         </div>
-        <section aria-label="MQTT workspace" className="min-w-0">
-          <Card className="gap-0 overflow-hidden py-0">
+        <section
+          aria-label="MQTT workspace"
+          className="min-w-0 lg:relative lg:min-h-0"
+        >
+          {/* Let the left column set the row height; messages fill it without making the grid grow. */}
+          <Card className="flex min-h-0 flex-col gap-0 overflow-hidden py-0 lg:absolute lg:inset-0">
             <div className="flex min-w-0 flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
               <div className="min-w-0">
                 <h2 className="text-sm font-semibold">
@@ -1004,7 +1005,7 @@ export default function MqttDebugger() {
                 Clear
               </Button>
             </div>
-            <div className="min-w-0 p-3 sm:p-4">
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col p-3 sm:p-4">
               <MqttMessageLog
                 key={selectedTopic ?? "all"}
                 entries={log}
