@@ -1,4 +1,4 @@
-import { Send } from "lucide-react";
+import { Send, WifiOff } from "lucide-react";
 import { InfoTooltip } from "#/components/remote-control/InfoTooltip";
 import { RemoteMessageEditor } from "#/components/remote-control/RemoteMessageEditor";
 import { Button } from "#/components/ui/button";
@@ -181,11 +181,24 @@ export function MqttPublishComposer({
               </div>
             )}
           </section>
-          <div className="flex justify-end border-t pt-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-3">
+            {!connected && (
+              <p
+                id="mqtt-publish-connection-hint"
+                className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400"
+              >
+                <WifiOff aria-hidden="true" className="size-3.5 shrink-0" />
+                Connect to a broker to publish.
+              </p>
+            )}
             <Button
               type="button"
               size="sm"
+              className="ml-auto"
               disabled={!connected || busy}
+              aria-describedby={
+                connected ? undefined : "mqtt-publish-connection-hint"
+              }
               onClick={onPublish}
             >
               <Send aria-hidden="true" />

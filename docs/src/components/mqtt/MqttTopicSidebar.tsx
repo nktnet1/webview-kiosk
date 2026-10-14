@@ -1,4 +1,11 @@
-import { Ellipsis, ListTree, Pencil, Plus, Trash2 } from "lucide-react";
+import {
+  Ellipsis,
+  ListTree,
+  Pencil,
+  Plus,
+  Trash2,
+  WifiOff,
+} from "lucide-react";
 import { useState } from "react";
 import { Button } from "#/components/ui/button";
 import { Card } from "#/components/ui/card";
@@ -70,8 +77,8 @@ export function MqttTopicSidebar({
   }
 
   return (
-    <aside aria-label="MQTT topics" className="min-w-0">
-      <Card className="gap-0 overflow-hidden py-0">
+    <aside aria-label="MQTT topics" className="w-full min-w-0">
+      <Card className="w-full gap-0 overflow-hidden py-0">
         <div className="flex items-center justify-between border-b px-4 py-3">
           <h2 className="text-sm font-semibold">Topics</h2>
           <span className="rounded-full bg-muted px-2 py-0.5 text-xs tabular-nums text-muted-foreground">
@@ -96,7 +103,7 @@ export function MqttTopicSidebar({
           </Button>
           <section
             aria-label="Subscriptions"
-            className="max-h-[11rem] space-y-1 overflow-y-auto overscroll-contain"
+            className="h-[11rem] min-w-0 space-y-1 overflow-x-hidden overflow-y-auto overscroll-contain [scrollbar-gutter:stable]"
           >
             {subscriptions.map((subscription) => {
               const active = activeTopics.includes(subscription.topic);
@@ -208,11 +215,26 @@ export function MqttTopicSidebar({
                 onChange={onSubscribeQosChange}
               />
             </div>
-            <Button type="submit" disabled={!connected || subscriptionBusy}>
+            <Button
+              type="submit"
+              disabled={!connected || subscriptionBusy}
+              aria-describedby={
+                connected ? undefined : "mqtt-subscribe-connection-hint"
+              }
+            >
               <Plus aria-hidden="true" className="size-4" />
               Subscribe
             </Button>
           </div>
+          {!connected && (
+            <p
+              id="mqtt-subscribe-connection-hint"
+              className="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-400"
+            >
+              <WifiOff aria-hidden="true" className="size-3.5 shrink-0" />
+              Connect to a broker to subscribe.
+            </p>
+          )}
         </form>
       </Card>
       <Dialog

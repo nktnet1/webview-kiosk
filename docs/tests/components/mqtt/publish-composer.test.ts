@@ -92,5 +92,21 @@ describe("MQTT publish modes", () => {
     );
     expect(html).toContain("hello mqtt");
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*>[^<]*<svg/);
+    expect(html).toContain("Connect to a broker to publish.");
+    expect(html).toContain('aria-describedby="mqtt-publish-connection-hint"');
+  });
+});
+
+describe("MQTT publish availability", () => {
+  it("does not show a connection warning when connected", () => {
+    const html = renderToStaticMarkup(
+      createElement(MqttPublishComposer, {
+        ...props,
+        mode: "command",
+        connected: true,
+      }),
+    );
+    expect(html).not.toContain("mqtt-publish-connection-hint");
+    expect(html).not.toContain("Connect to a broker to publish.");
   });
 });

@@ -63,6 +63,8 @@ describe("MQTT topics sidebar", () => {
     expect(html).toContain("All messages");
     expect(html).toContain('aria-pressed="true"');
     expect(html).toMatch(/type="submit"[^>]*disabled=""/);
+    expect(html).toContain("Connect to a broker to subscribe.");
+    expect(html).toContain('aria-describedby="mqtt-subscribe-connection-hint"');
   });
 });
 
@@ -76,7 +78,10 @@ describe("MQTT topic list size", () => {
       createElement(MqttTopicSidebar, { ...props, subscriptions }),
     );
     expect(html).toContain('aria-label="Subscriptions"');
-    expect(html).toContain("max-h-[11rem]");
+    expect(html).toContain("h-[11rem]");
+    expect(html).not.toContain("max-h-[11rem]");
+    expect(html).toContain("[scrollbar-gutter:stable]");
+    expect(html).toContain("overflow-x-hidden");
     expect(html).toContain("overflow-y-auto");
     expect(
       html.match(/class="flex h-14 min-w-0 items-center gap-1"/g),
@@ -84,4 +89,27 @@ describe("MQTT topic list size", () => {
     expect(html).toContain('aria-label="Actions for wk/event/0"');
     expect(html).toContain('aria-label="Actions for wk/event/6"');
   });
+});
+
+describe("MQTT topic list layout", () => {
+  it.each([0, 1, 2, 3, 7])(
+    "retains its width and three-row viewport with %i subscriptions",
+    (length) => {
+      const subscriptions = Array.from({ length }, (_, index) => ({
+        topic: `a/very/long/topic/name/${index}`,
+        qos: 0 as const,
+      }));
+      const html = renderToStaticMarkup(
+        createElement(MqttTopicSidebar, { ...props, subscriptions }),
+      );
+      expect(html).toContain('aria-label="MQTT topics" class="w-full min-w-0"');
+      expect(html).toContain('aria-label="Subscriptions"');
+      expect(html).toContain("h-[11rem]");
+      expect(html).toContain("[scrollbar-gutter:stable]");
+      expect(html).toContain("overflow-y-auto");
+      expect(
+        html.match(/class="flex h-14 min-w-0 items-center gap-1"/g) ?? [],
+      ).toHaveLength(length);
+    },
+  );
 });
