@@ -13,12 +13,15 @@ import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
+internal enum class FilterListType { FILE, URL, PRESET }
+
 internal data class ImportedFilterList(
     val id: String,
     val name: String,
     val enabled: Boolean,
     /** The original HTTPS download URL, if this list was imported from a link. */
     val sourceUrl: String? = null,
+    val type: FilterListType = if (sourceUrl == null) FilterListType.FILE else FilterListType.URL,
 )
 
 /** Stores only user-imported plain-text lists in private app storage. No built-in rules. */
@@ -42,11 +45,24 @@ internal class FilterListStore(context: Context) {
                 name = entry.optString("name").take(MAX_NAME_LENGTH),
                 enabled = entry.optBoolean("enabled", true),
                 sourceUrl = entry.optString("sourceUrl").takeIf { it.isNotBlank() },
+                type = readType(entry),
             )
         }
     }
 
-    /** Called on Dispatchers.IO, never from the Compose or request-interception thread. */
+    private fun readType(entry: JSONObject): FilterListType {
+        val url = entry.optString("sourceUrl").takeIf { it.isNotBlank() }
+        val saved = runCatching { FilterListType.valueOf(entry.optString("type")) }.getOrNull()
+        // Existing installations never stored a type. Treat matching presets as presets,
+        // and all other downloads as editable URL lists; local files remain local.
+        return saved ?: when {
+            url == null -> FilterListType.FILE
+            SuggestedFilterLists.all.any { it.url == url } -> FilterListType.PRESET
+            else -> FilterListType.URL
+        }
+    }
+
+    /** Called on Dispatchers.IO, never from Compose or the request-interception thread. */
     @Synchronized
     fun containsSource(sourceUrl: String): Boolean = list().any { it.sourceUrl == sourceUrl }
 
@@ -55,9 +71,25 @@ internal class FilterListStore(context: Context) {
         name: String,
         input: InputStream,
         sourceUrl: String? = null,
+        type: FilterListType = if (sourceUrl == null) FilterListType.FILE else FilterListType.URL,
+    ): ImportedFilterList = importNew(name, input, sourceUrl, type, enabled = true, allowDuplicate = false)
+
+    private fun importNew(
+        name: String,
+        input: InputStream,
+        sourceUrl: String?,
+        type: FilterListType,
+        enabled: Boolean,
+        allowDuplicate: Boolean,
     ): ImportedFilterList {
+        require((type == FilterListType.FILE) == (sourceUrl == null)) {
+            "A file has no download URL; a URL or preset needs one"
+        }
+        require(type != FilterListType.PRESET || SuggestedFilterLists.all.any { it.url == sourceUrl }) {
+            "Unknown preset filter list"
+        }
         val existing = list()
-        require(sourceUrl == null || existing.none { it.sourceUrl == sourceUrl }) {
+        require(allowDuplicate || sourceUrl == null || existing.none { it.sourceUrl == sourceUrl }) {
             "This filter list has already been downloaded"
         }
         require(existing.size < MAX_LISTS) { "At most $MAX_LISTS filter lists are supported" }
@@ -67,10 +99,12 @@ internal class FilterListStore(context: Context) {
         try {
             val item = ImportedFilterList(
                 id = UUID.randomUUID().toString(),
-                name = name.substringAfterLast('/').substringAfterLast('\\')
-                    .ifBlank { "Imported filter list" }.take(MAX_NAME_LENGTH),
-                enabled = true,
+                name = validateName(if (type == FilterListType.FILE && !allowDuplicate) {
+                    name.substringAfterLast('/').substringAfterLast('\\')
+                } else name),
+                enabled = enabled,
                 sourceUrl = sourceUrl,
+                type = type,
             )
             val destination = fileFor(item.id)
             if (!temporary.renameTo(destination)) {
@@ -88,16 +122,66 @@ internal class FilterListStore(context: Context) {
         }
     }
 
-    /** Renaming is metadata-only: it must not cause recompilation or modify the source URL. */
-    @Synchronized
-    fun rename(id: String, name: String) {
-        val normalized = name.trim()
+    private fun validateName(name: String): String = name.trim().also { normalized ->
         require(normalized.isNotEmpty()) { "List name cannot be empty" }
         require(normalized.length <= MAX_NAME_LENGTH) { "List name must be at most $MAX_NAME_LENGTH characters" }
         require(normalized.none { it.isISOControl() }) { "List name contains invalid characters" }
+    }
+
+    /** Preset definitions are immutable; clone a preset to get an editable URL list. */
+    @Synchronized
+    fun rename(id: String, name: String) {
         val existing = list()
-        require(existing.any { it.id == id }) { "Unknown filter list" }
+        val item = existing.firstOrNull { it.id == id }
+            ?: throw IllegalArgumentException("Unknown filter list")
+        require(item.type != FilterListType.PRESET) { "Clone a preset to edit it" }
+        val normalized = validateName(name)
         save(existing.map { if (it.id == id) it.copy(name = normalized) else it })
+    }
+
+    /** A clone copies the cached rules without network access and starts disabled. */
+    @Synchronized
+    fun cloneList(id: String, name: String? = null): ImportedFilterList {
+        val item = list().firstOrNull { it.id == id }
+            ?: throw IllegalArgumentException("Unknown filter list")
+        val file = fileFor(id)
+        if (!file.isFile) throw IOException("Original filter list is missing")
+        val proposedName = name ?: "${item.name.removeSuffix(".txt")} (copy)".take(MAX_NAME_LENGTH)
+        // A preset clone becomes a regular, editable URL list. Duplicating the URL is
+        // intentional here, unlike adding the same remote list a second time.
+        return file.inputStream().use { input ->
+            importNew(
+                proposedName, input, item.sourceUrl,
+                if (item.type == FilterListType.PRESET) FilterListType.URL else item.type,
+                enabled = false, allowDuplicate = true,
+            )
+        }
+    }
+
+    /** Read small local lists for inline editing; large lists can be replaced from a file. */
+    @Synchronized
+    fun editableFileText(id: String): String? {
+        val item = list().firstOrNull { it.id == id }
+            ?: throw IllegalArgumentException("Unknown filter list")
+        require(item.type == FilterListType.FILE) { "Only file lists have editable text" }
+        val file = fileFor(id)
+        if (!file.isFile) throw IOException("Original filter list is missing")
+        return if (file.length() > MAX_INLINE_EDIT_BYTES) null else file.readText(Charsets.UTF_8)
+    }
+
+    /** File edits keep their ID and activation state, including name-only edits. */
+    @Synchronized
+    fun updateFile(id: String, name: String, input: InputStream? = null): ImportedFilterList {
+        val existing = list()
+        val item = existing.firstOrNull { it.id == id }
+            ?: throw IllegalArgumentException("Unknown filter list")
+        require(item.type == FilterListType.FILE) { "This is not an editable file list" }
+        val updated = item.copy(name = validateName(name))
+        if (input == null) {
+            save(existing.map { if (it.id == id) updated else it })
+            return updated
+        }
+        return replaceContent(existing, item, updated, input)
     }
 
     /** Replace a downloaded list in-place; failed downloads cannot damage existing rules. */
@@ -109,16 +193,51 @@ internal class FilterListStore(context: Context) {
         require(item.sourceUrl != null && item.sourceUrl == sourceUrl) {
             "This list does not have the specified download URL"
         }
-        val destination = fileFor(id)
+        return replaceContent(existing, item, item, input)
+    }
+
+    /** Apply a changed URL and its downloaded rules as one edit, not two independent saves. */
+    @Synchronized
+    fun updateUrl(id: String, originalUrl: String, url: String, name: String, input: InputStream): ImportedFilterList {
+        val existing = list()
+        val item = existing.firstOrNull { it.id == id }
+            ?: throw IllegalArgumentException("Unknown filter list")
+        require(item.type == FilterListType.URL && item.sourceUrl == originalUrl) {
+            "This is not an editable URL list"
+        }
+        require(existing.none { it.id != id && it.sourceUrl == url } || url == originalUrl) {
+            "This filter list has already been downloaded"
+        }
+        return replaceContent(existing, item, item.copy(name = validateName(name), sourceUrl = url), input)
+    }
+
+    private fun replaceContent(
+        existing: List<ImportedFilterList>,
+        item: ImportedFilterList,
+        updated: ImportedFilterList,
+        input: InputStream,
+    ): ImportedFilterList {
+        val destination = fileFor(item.id)
         if (!destination.isFile) throw IOException("Original filter list is missing")
-        // Exclude the old copy from the quota so a full store can still refresh a list.
-        val otherBytes = existing.filterNot { it.id == id }.sumOf { fileFor(it.id).length() }
+        // Exclude the old copy from the quota so full stores can still update a list.
+        val otherBytes = existing.filterNot { it.id == item.id }.sumOf { fileFor(it.id).length() }
         val temporary = writeValidatedTempFile(input, otherBytes)
+        val backup = File.createTempFile("backup-", ".tmp", directory)
+        backup.delete()
         try {
-            // Same-directory rename replaces the old file atomically on Android filesystems.
-            // Existing metadata (including name, ID and enabled state) is untouched.
-            if (!temporary.renameTo(destination)) throw IOException("Failed to update filter list")
-            return item
+            if (!destination.renameTo(backup)) throw IOException("Failed to back up filter list")
+            try {
+                if (!temporary.renameTo(destination)) throw IOException("Failed to update filter list")
+                if (item != updated) save(existing.map { if (it.id == item.id) updated else it })
+            } catch (e: Exception) {
+                destination.delete()
+                if (!backup.renameTo(destination)) {
+                    e.addSuppressed(IOException("Unable to restore original list; backup retained at ${backup.name}"))
+                }
+                throw e
+            }
+            backup.delete()
+            return updated
         } finally {
             temporary.delete()
         }
@@ -199,7 +318,7 @@ internal class FilterListStore(context: Context) {
         val array = JSONArray()
         lists.forEach { list ->
             val entry = JSONObject().put("id", list.id).put("name", list.name)
-                .put("enabled", list.enabled)
+                .put("enabled", list.enabled).put("type", list.type.name)
             list.sourceUrl?.let { entry.put("sourceUrl", it) }
             array.put(entry)
         }
@@ -211,6 +330,7 @@ internal class FilterListStore(context: Context) {
     companion object {
         private const val INDEX_KEY = "imports"
         private const val MAX_NAME_LENGTH = 100
+        private const val MAX_INLINE_EDIT_BYTES = 128L * 1024
         private const val MAX_LISTS = 16
         internal const val MAX_LIST_BYTES = 8L * 1024 * 1024
         private const val MAX_TOTAL_BYTES = 32L * 1024 * 1024

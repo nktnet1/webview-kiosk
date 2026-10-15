@@ -72,35 +72,49 @@ use under a short native write lock. Request matching takes a native read lock
 and does not parse rules, access preferences, or download data. A failed
 native load **allows requests** and surfaces the error in the settings screen.
 
-## Import safeguards
+## Filter-list management
 
-- In **Content Blocking**, tap **Add list**. Choose a `.txt` file via Android's
-  document picker or tap **Download** for one of three suggested lists: [EasyList](https://easylist.to/easylist/easylist.txt)
-  (ads), [EasyPrivacy](https://easylist.to/easylist/easyprivacy.txt) (trackers), or
-  [HaGeZi Multi NORMAL](https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/multi.txt)
-  (ads, trackers and threats). HaGeZi overlaps the other lists, so choose only
-  those you need. Previously imported AdGuard Base lists are left untouched.
-  The app bundles only shortcut URLs, never list content, and makes **no automatic
-  network requests** for filters. Downloads are manual, not periodically
-  refreshed subscriptions.
-- The main list has a switch on the left and a delete icon on the right.
-  Tap a list's name/pencil to rename it. Downloaded lists also have a refresh
-  icon to refetch their original HTTPS URL, including previously imported
-  AdGuard lists. Local-file imports do not offer refresh. Removal requires
-  confirmation, and the progress indicator reserves its height even when idle.
-- Renaming updates only list metadata; it does not recompile rules. A refresh
-  validates and stages the new file before replacing the old content, preserving
-  the list ID, custom name, enablement and source URL. If the fetch or validation
-  fails, the existing list remains intact. A successful refresh recompiles rules.
-- Suggested downloads require successful HTTPS responses (no redirect downgrade),
-  are performed on a background dispatcher with timeouts, and use the **same
-  private-file, UTF-8 and size validation** as local file imports. Duplicate
-  downloads of the same suggestion are rejected until the imported list is removed.
+- In **Settings → Web Content → Content Blocking**, **Add list** starts with a **Type**
+  dropdown: **File** (Android's document picker), **URL** (a custom HTTPS link and
+  display name), or **Preset list** (a compact second dropdown of [EasyList](https://easylist.to/easylist/easylist.txt),
+  [EasyPrivacy](https://easylist.to/easylist/easyprivacy.txt), and
+  [HaGeZi Multi NORMAL](https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/multi.txt)).
+  The app bundles only shortcut URLs, never the filter content. All downloads
+  require an explicit user action; no subscriptions or automatic refreshes run.
+- Each row has a switch on the left and a three-dot actions menu on the right:
+  **Edit**, **Update** (for URL/preset lists), and **Delete**. Deletion requires
+  confirmation. The loading indicator has a reserved height so toggling does
+  not shift the rows. **Update all** refetches every URL/preset list, including
+  disabled ones, but not locally imported files. Individual failures are shown
+  without stopping remaining downloads or overwriting their old rules; the
+  blocking engine is reloaded once after the batch.
+- **Edit** allows names to be changed for File/URL lists; URLs can also be
+  changed. A changed URL is fetched and validated before replacing the stored
+  rules, URL, and name together. Unchanged URLs are not refetched on rename.
+  Local File lists can be edited inline when smaller than 128 KiB, or replaced
+  from a new text file; larger lists must be replaced via the file picker.
+  Presets are read-only in Edit, but their rules can still be updated normally.
+- All list types offer a **Clone list** checkbox in Edit, **off by default**.
+  Clones are created with new identities, copies of the cached rules, and
+  **disabled** status so they cannot silently change active blocking. A preset
+  clone is an editable URL list; File and URL clones retain their types.
+  Changing the clone's URL or File rules leaves the original unchanged. Cloning
+  does not require a network request unless the cloned URL is changed.
+- Existing stored metadata without a type field is migrated at read time:
+  local imports remain File, known preset URLs become Preset, and other
+  downloaded links become URL. Existing IDs, enablement, and rule text remain
+  intact. Previously imported AdGuard Base lists are retained as custom URLs.
+- Remote downloads require successful HTTPS responses (without downgrade),
+  are performed on an IO dispatcher with timeouts, and use the same private-file,
+  UTF-8, and size validation as local file imports. Attempting to add the same
+  download source twice is rejected, though explicit clones may share a URL.
 - Each file must be UTF-8, nonempty, and no larger than 8 MiB. Storage is
-  bounded to 16 lists / 32 MiB total; imports are written to temporary files
-  and committed with the list metadata.
+  bounded to 16 lists / 32 MiB total; imports and replacements are staged as
+  validated temporary files before changing the active rules. A failed
+  download or file edit retains the previous list. A successful refresh or
+  content change recompiles active rules; renaming alone does not.
 - The original text is retained for rebuilding on startup. No compiled
-  binary cache is persisted in this first increment. Imported list files are
+  binary cache is persisted in this increment. Imported list files are
   not yet included in the app's existing settings JSON/Base64 export.
 - Removing or disabling the last list unloads native engine state.
 
@@ -116,14 +130,13 @@ Service worker fetches are not covered in this increment.
 
 Network blocking and exception rules can work today; cosmetic filters,
 scriptlets, `$redirect` resources, response-body modification, per-site
-allowlists, periodically refreshed subscriptions, and arbitrary list URLs
-are intentionally out of scope.
+allowlists, and periodically refreshed subscriptions are intentionally out of scope.
 
 ## Verification
 
-Robolectric tests exercise persistence, import and refresh limits, list renaming,
-successful and failed manual HTTPS updates, duplicate/rejection handling,
-enable/disable/reload, and resource
+Robolectric tests exercise persistence, migration, import/refresh limits, file edits,
+custom URL downloads and edits, preset immutability and clones, bulk refresh
+with partial failure, duplicate/rejection handling, enable/disable/reload, and resource
 classification with a fake native matcher. Native Rust tests
 cover blocking, exceptions, hosts lists, and malformed requests; Android
 cross-compilation and real-device WebView tests are still required before

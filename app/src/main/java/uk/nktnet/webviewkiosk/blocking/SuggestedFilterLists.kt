@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.blocking
 
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -35,6 +36,9 @@ internal object SuggestedFilterLists {
     )
 }
 
+internal data class FilterRefreshFailure(val name: String, val message: String)
+internal data class FilterRefreshResult(val updated: Int, val total: Int, val failures: List<FilterRefreshFailure>)
+
 /** Performs user-initiated HTTPS downloads and refreshes, never background subscriptions. */
 internal class SuggestedFilterListDownloader(
     private val client: OkHttpClient = sharedClient,
@@ -61,11 +65,19 @@ internal class SuggestedFilterListDownloader(
                 name = "${suggestion.name}.txt",
                 input = stream,
                 sourceUrl = suggestion.url,
+                type = FilterListType.PRESET,
             )
         }
     }
 
-    /** Refetches any previously downloaded list, including older non-preset URLs. */
+    /** Download a manually entered URL using the same limits as presets. */
+    fun downloadUrl(url: String, name: String, store: FilterListStore): ImportedFilterList {
+        val validated = requireHttpsUrl(url)
+        require(!store.containsSource(validated)) { "This filter list has already been downloaded" }
+        return fetch(validated) { stream -> store.importFrom(name, stream, validated, FilterListType.URL) }
+    }
+
+    /** Refetches any downloaded list, including presets and older non-preset URLs. */
     fun refresh(item: ImportedFilterList, store: FilterListStore): ImportedFilterList {
         val current = store.list().firstOrNull { it.id == item.id }
             ?: throw IllegalArgumentException("Unknown filter list")
@@ -73,11 +85,52 @@ internal class SuggestedFilterListDownloader(
         return fetch(url) { stream -> store.replaceFromSource(current.id, url, stream) }
     }
 
-    private inline fun <T> fetch(url: String, save: (java.io.InputStream) -> T): T {
-        require(url.startsWith("https://", ignoreCase = true)) { "HTTPS is required for filter lists" }
+    /** Change the URL and rules together; name-only edits never trigger a download. */
+    fun editUrl(item: ImportedFilterList, name: String, url: String, store: FilterListStore): ImportedFilterList {
+        val current = store.list().firstOrNull { it.id == item.id }
+            ?: throw IllegalArgumentException("Unknown filter list")
+        require(current.type == FilterListType.URL) { "Clone a preset to edit it" }
+        val validated = requireHttpsUrl(url)
+        val original = current.sourceUrl ?: throw IllegalArgumentException("Missing list URL")
+        if (validated == original) {
+            store.rename(current.id, name)
+            return store.list().first { it.id == current.id }
+        }
+        require(store.list().none { it.id != current.id && it.sourceUrl == validated }) {
+            "This filter list has already been downloaded"
+        }
+        return fetch(validated) { stream ->
+            store.updateUrl(current.id, original, validated, name, stream)
+        }
+    }
 
+    /** Continue past individual failures. Callers queue one engine reload after the batch. */
+    fun refreshAll(store: FilterListStore): FilterRefreshResult {
+        val candidates = store.list().filter { it.sourceUrl != null }
+        val failures = mutableListOf<FilterRefreshFailure>()
+        var updated = 0
+        candidates.forEach { item ->
+            try {
+                refresh(item, store)
+                updated++
+            } catch (error: Exception) {
+                failures += FilterRefreshFailure(item.name, error.message ?: "Update failed")
+            }
+        }
+        return FilterRefreshResult(updated, candidates.size, failures)
+    }
+
+    private fun requireHttpsUrl(url: String): String {
+        val address = url.trim().toHttpUrlOrNull()
+        require(address != null && address.scheme == "https" && address.username.isEmpty() && address.password.isEmpty()) {
+            "Enter a valid HTTPS filter-list URL"
+        }
+        return address.toString()
+    }
+
+    private inline fun <T> fetch(url: String, save: (java.io.InputStream) -> T): T {
         val request = Request.Builder()
-            .url(url)
+            .url(requireHttpsUrl(url))
             .header("Accept", "text/plain")
             .build()
         client.newCall(request).execute().use { response ->

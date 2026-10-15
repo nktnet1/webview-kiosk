@@ -212,4 +212,93 @@ class SuggestedFilterListDownloaderTest {
         assertEquals(0, calls.get())
         assertEquals(listOf("||old.example^"), store.enabledTexts())
     }
+    @Test
+    fun manuallyEnteredHttpsUrlCreatesEditableUrlList() {
+        val imported = downloader().downloadUrl(preset.url, "My manual list", store)
+        assertEquals(FilterListType.URL, imported.type)
+        assertEquals("My manual list", imported.name)
+        assertEquals(preset.url, imported.sourceUrl)
+        assertEquals(listOf(imported), store.list())
+    }
+
+    @Test
+    fun manualDownloadRejectsUnsafeUrlsBeforeFetching() {
+        val calls = AtomicInteger()
+        val client = downloader(requests = calls)
+        listOf("http://example.org/list.txt", "not a URL", "https://user:pass@example.org/list")
+            .forEach { unsafe ->
+                assertThrows(IllegalArgumentException::class.java) {
+                    client.downloadUrl(unsafe, "Invalid", store)
+                }
+            }
+        assertEquals(0, calls.get())
+        assertTrue(store.list().isEmpty())
+    }
+
+    @Test
+    fun editingUrlFetchesNewSourceWhileNameOnlyEditStaysOffline() {
+        val original = store.importFrom("Initial", "||old.example^".byteInputStream(), "https://example.org/initial.txt")
+        val calls = AtomicInteger()
+        val client = SuggestedFilterListDownloader(
+            OkHttpClient.Builder().addInterceptor { chain ->
+                calls.incrementAndGet()
+                assertEquals("https://example.org/new.txt", chain.request().url.toString())
+                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
+                    .code(200).message("ok")
+                    .body("||new.example^".toResponseBody("text/plain".toMediaType()))
+                    .build()
+            }.build(),
+        )
+        client.editUrl(original, "Rename only", original.sourceUrl!!, store)
+        assertEquals(0, calls.get())
+        val changed = client.editUrl(original, "New source", "https://example.org/new.txt", store)
+        assertEquals(1, calls.get())
+        assertEquals(original.id, changed.id)
+        assertEquals("New source", changed.name)
+        assertEquals("https://example.org/new.txt", changed.sourceUrl)
+        assertEquals(listOf("||new.example^"), store.enabledTexts())
+    }
+
+    @Test
+    fun failedUrlChangeDoesNotChangeNameSourceOrRules() {
+        val original = store.importFrom("Initial", "||old.example^".byteInputStream(), "https://example.org/initial.txt")
+        val client = SuggestedFilterListDownloader(
+            OkHttpClient.Builder().addInterceptor { chain ->
+                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
+                    .code(503).message("unavailable")
+                    .body("error".toResponseBody()).build()
+            }.build(),
+        )
+        assertThrows(IOException::class.java) {
+            client.editUrl(original, "Other", "https://example.org/new.txt", store)
+        }
+        assertEquals(original, store.list().single())
+        assertEquals(listOf("||old.example^"), store.enabledTexts())
+    }
+
+    @Test
+    fun updateAllSkipsFilesAndContinuesAfterIndividualFailures() {
+        val good = store.importFrom("Good", "old good".byteInputStream(), "https://example.org/good.txt")
+        val bad = store.importFrom("Bad", "old bad".byteInputStream(), "https://example.org/bad.txt")
+        val local = store.importFrom("Local", "local".byteInputStream())
+        store.setEnabled(bad.id, false)
+        val calls = AtomicInteger()
+        val client = SuggestedFilterListDownloader(
+            OkHttpClient.Builder().addInterceptor { chain ->
+                calls.incrementAndGet()
+                val isGood = chain.request().url.toString() == good.sourceUrl
+                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
+                    .code(if (isGood) 200 else 500).message("test")
+                    .body((if (isGood) "new good" else "error").toResponseBody()).build()
+            }.build(),
+        )
+        val result = client.refreshAll(store)
+        assertEquals(2, result.total)
+        assertEquals(1, result.updated)
+        assertEquals(listOf("Bad"), result.failures.map { it.name })
+        assertEquals(2, calls.get())
+        assertEquals(listOf("new good", "local"), store.enabledTexts())
+        assertEquals(listOf(good, bad.copy(enabled = false), local), store.list())
+    }
+
 }
