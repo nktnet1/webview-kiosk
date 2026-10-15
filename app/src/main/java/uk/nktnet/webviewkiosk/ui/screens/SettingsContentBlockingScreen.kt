@@ -9,7 +9,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -101,10 +100,13 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     val downloader = remember { SuggestedFilterListDownloader() }
     val scope = rememberCoroutineScope()
     val blockingStatus by blocker.status.collectAsState()
+    val loadStage by blocker.loadStage.collectAsState()
     val blockingError by blocker.lastError.collectAsState()
     var lists by remember { mutableStateOf(store.list()) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
+    var workingMessage by remember { mutableStateOf("") }
+    var bulkActionsExpanded by remember { mutableStateOf(false) }
     var pendingRemoval by remember { mutableStateOf<ImportedFilterList?>(null) }
     var pendingEdit by remember { mutableStateOf<ImportedFilterList?>(null) }
     var pendingInfo by remember { mutableStateOf<ImportedFilterList?>(null) }
@@ -119,12 +121,14 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     fun update(
         reloadRules: Boolean = true,
         successMessage: String? = null,
+        progressMessage: String = "Saving filter-list changes…",
         onStored: (() -> Unit)? = null,
         onSuccess: (() -> Unit)? = null,
         block: () -> Unit,
     ) {
         if (busy) return
         busy = true
+        workingMessage = progressMessage
         error = null
         scope.launch {
             try {
@@ -161,7 +165,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
 
     val addFilePicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
-            update(successMessage = "List added") {
+            update(successMessage = "List added", progressMessage = "Reading and validating the selected filter list…") {
                 val stream = context.contentResolver.openInputStream(uri)
                     ?: throw IOException("Cannot open the selected file")
                 store.importFrom(displayName(uri), stream)
@@ -214,36 +218,53 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         ) {
             item(key = "actions") {
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    FlowRow(
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        OutlinedButton(
-                            onClick = { update(successMessage = "All lists enabled") { store.setAllEnabled(true) } },
-                            enabled = !busy && lists.any { !it.enabled },
-                        ) { Text("Enable all", maxLines = 1, overflow = TextOverflow.Ellipsis) }
-                        OutlinedButton(
-                            onClick = { update(successMessage = "All lists disabled") { store.setAllEnabled(false) } },
-                            enabled = !busy && lists.any { it.enabled },
-                        ) { Text("Disable all", maxLines = 1, overflow = TextOverflow.Ellipsis) }
-                        OutlinedButton(
-                            onClick = {
-                                var summary = FilterRefreshResult(0, 0, emptyList())
-                                update(onSuccess = {
-                                    ToastManager.show(context, "Refreshed ${summary.updated} of ${summary.total} lists")
-                                    if (summary.failures.isNotEmpty()) {
-                                        error = summary.failures.joinToString("\n") { "${it.name}: ${it.message}" }
-                                    }
-                                }) {
-                                    summary = downloader.refreshAll(store)
-                                }
-                            },
-                            enabled = !busy && lists.any { it.sourceUrl != null },
-                        ) {
-                            Icon(painterResource(R.drawable.baseline_refresh_24), contentDescription = null, modifier = Modifier.size(18.dp))
-                            Spacer(Modifier.width(6.dp))
-                            Text("Refresh all", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Box(modifier = Modifier.weight(1f, fill = false)) {
+                            OutlinedButton(
+                                onClick = { bulkActionsExpanded = true },
+                                enabled = !busy && lists.isNotEmpty(),
+                            ) {
+                                Text("Actions", maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Icon(painterResource(R.drawable.outline_keyboard_arrow_down_24), contentDescription = null)
+                            }
+                            DropdownMenu(expanded = bulkActionsExpanded, onDismissRequest = { bulkActionsExpanded = false }) {
+                                DropdownMenuItem(
+                                    text = { Text("Enable all") },
+                                    enabled = !busy && lists.any { !it.enabled },
+                                    onClick = {
+                                        bulkActionsExpanded = false
+                                        update(successMessage = "All lists enabled") { store.setAllEnabled(true) }
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Disable all") },
+                                    enabled = !busy && lists.any { it.enabled },
+                                    onClick = {
+                                        bulkActionsExpanded = false
+                                        update(successMessage = "All lists disabled") { store.setAllEnabled(false) }
+                                    },
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Refresh all") },
+                                    enabled = !busy && lists.any { it.sourceUrl != null },
+                                    onClick = {
+                                        bulkActionsExpanded = false
+                                        var summary = FilterRefreshResult(0, 0, emptyList())
+                                        update(progressMessage = "Downloading and validating filter lists…", onSuccess = {
+                                            ToastManager.show(context, "Refreshed ${summary.updated} of ${summary.total} lists")
+                                            if (summary.failures.isNotEmpty()) {
+                                                error = summary.failures.joinToString("\n") { "${it.name}: ${it.message}" }
+                                            }
+                                        }) {
+                                            summary = downloader.refreshAll(store)
+                                        }
+                                    },
+                                )
+                            }
                         }
                         Button(
                             onClick = {
@@ -255,10 +276,25 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     }
 
                     Spacer(Modifier.height(12.dp))
-                    // Reserve the indicator's height so enable/disable and downloads never shift rows.
-                    Box(modifier = Modifier.fillMaxWidth().height(4.dp)) {
-                        if (busy || blockingStatus == BlockingStatus.LOADING) {
-                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    // Reserve room for both the phase and indicator so rows do not jump.
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            when {
+                                blockingStatus == BlockingStatus.LOADING -> loadStage?.description ?: "Loading filter rules…"
+                                busy -> workingMessage
+                                else -> ""
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            minLines = 2,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Spacer(Modifier.height(6.dp))
+                        Box(Modifier.fillMaxWidth().height(4.dp)) {
+                            if (busy || blockingStatus == BlockingStatus.LOADING) {
+                                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                            }
                         }
                     }
                     Spacer(Modifier.height(12.dp))
@@ -291,7 +327,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     busy = busy,
                     onEnabledChange = { enabled -> update { store.setEnabled(item.id, enabled) } },
                     onRefresh = {
-                        update(reloadRules = item.enabled, successMessage = "List refreshed") {
+                        update(reloadRules = item.enabled, successMessage = "List refreshed",
+                            progressMessage = "Downloading and validating ${item.displayName()}…") {
                             downloader.refresh(item, store)
                         }
                     },
@@ -371,6 +408,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 update(
                     reloadRules = reloadRules,
                     successMessage = "List saved",
+                    progressMessage = "Validating and saving the filter list…",
                     onStored = { pendingEdit = null },
                 ) {
                     when (item.type) {
@@ -403,12 +441,14 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 addFilePicker.launch(arrayOf("*/*"))
             },
             onDownloadUrl = { url, name ->
-                update(successMessage = "List added", onStored = { showAddDialog = false }) {
+                update(successMessage = "List added", progressMessage = "Downloading and validating the filter list…",
+                    onStored = { showAddDialog = false }) {
                     downloader.downloadUrl(url, name, store)
                 }
             },
             onDownloadPreset = { suggestion ->
-                update(successMessage = "List added", onStored = { showAddDialog = false }) {
+                update(successMessage = "List added", progressMessage = "Downloading and validating ${suggestion.name}…",
+                    onStored = { showAddDialog = false }) {
                     downloader.download(suggestion, store)
                 }
             },
@@ -483,7 +523,7 @@ private fun FilterListInfoDialog(item: ImportedFilterList, store: FilterListStor
                 InfoStat("Type", when (item.type) {
                     FilterListType.FILE -> "File"
                     FilterListType.URL -> "URL"
-                    FilterListType.PRESET -> "Preset list"
+                    FilterListType.PRESET -> "Preset"
                 })
                 InfoStat("Status", if (item.enabled) "Enabled" else "Disabled")
                 InfoStat("File size", fileSize?.let { Formatter.formatShortFileSize(context, it) }, unavailable)
@@ -572,7 +612,7 @@ private fun FilterListRow(
                     when (item.type) {
                         FilterListType.FILE -> "File"
                         FilterListType.URL -> "URL"
-                        FilterListType.PRESET -> "Preset list"
+                        FilterListType.PRESET -> "Preset"
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -629,7 +669,7 @@ private fun ListTypeDropdown(value: FilterListType, onChange: (FilterListType) -
     val label = when (value) {
         FilterListType.FILE -> "File"
         FilterListType.URL -> "URL"
-        FilterListType.PRESET -> "Preset list"
+        FilterListType.PRESET -> "Preset"
     }
     Box(modifier = Modifier.fillMaxWidth()) {
         OutlinedButton(
@@ -646,7 +686,7 @@ private fun ListTypeDropdown(value: FilterListType, onChange: (FilterListType) -
                         Text(when (type) {
                             FilterListType.FILE -> "File"
                             FilterListType.URL -> "URL"
-                            FilterListType.PRESET -> "Preset list"
+                            FilterListType.PRESET -> "Preset"
                         })
                     },
                     onClick = { expanded = false; onChange(type) },
@@ -674,7 +714,7 @@ private fun AddFilterListDialog(
     onDownloadUrl: (String, String) -> Unit,
     onDownloadPreset: (SuggestedFilterList) -> Unit,
 ) {
-    var type by rememberSaveable { mutableStateOf(FilterListType.FILE) }
+    var type by rememberSaveable { mutableStateOf(FilterListType.PRESET) }
     var url by rememberSaveable { mutableStateOf("") }
     var name by rememberSaveable { mutableStateOf("") }
     var suggestion by remember { mutableStateOf(SuggestedFilterLists.all.first()) }
@@ -726,11 +766,11 @@ private fun AddFilterListDialog(
                         }
                     }
                     FilterListType.PRESET -> {
-                        FilterListField("Preset list") {
+                        FilterListField("Preset") {
                             Box(modifier = Modifier.fillMaxWidth()) {
                                 OutlinedButton(
                                     onClick = { presetsExpanded = true }, enabled = !busy,
-                                    modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Preset list" },
+                                    modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Preset" },
                                 ) {
                                     Text(suggestion.name, modifier = Modifier.weight(1f), maxLines = 1, overflow = TextOverflow.Ellipsis)
                                     Icon(painterResource(R.drawable.outline_keyboard_arrow_down_24), contentDescription = null)
@@ -750,9 +790,14 @@ private fun AddFilterListDialog(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        SelectionContainer {
+                            Text(suggestion.url, style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.fillMaxWidth())
+                        }
                     }
                 }
-                FilterValidationNotice()
+                if (busy) Text("Downloading and validating the filter list…", style = MaterialTheme.typography.bodySmall)
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
         },
@@ -787,15 +832,6 @@ private fun AddFilterListDialog(
             }
         },
         dismissButton = { TextButton(onClick = onDismiss, enabled = !busy) { Text("Cancel") } },
-    )
-}
-
-@Composable
-private fun FilterValidationNotice() {
-    Text(
-        "At least one supported network or CSS-hiding rule is required. Rules with unsupported options, regex filters, scriptlets, and procedural filters are skipped. Reload the page after changing cosmetic rules.",
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }
 
@@ -856,7 +892,6 @@ private fun EditFilterListDialog(
                 } else if (!fileLoaded) {
                     CircularProgressIndicator(modifier = Modifier.size(24.dp))
                 } else {
-                    FilterValidationNotice()
                     if (fileText != null) {
                         OutlinedTextField(
                             value = fileText,

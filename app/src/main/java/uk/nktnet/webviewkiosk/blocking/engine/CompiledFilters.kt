@@ -5,7 +5,7 @@ import java.util.Locale
 
 /** Validates rule text and builds the immutable indexes used by request threads. */
 internal object FilterCompiler {
-    private const val MAX_RULES = 500_000
+    internal const val MAX_RULES = 500_000
 
     fun validate(text: String) {
         var supported = 0
@@ -33,7 +33,9 @@ internal object FilterCompiler {
         }
     }
 
-    fun compile(lists: List<String>): CompiledFilters {
+    fun compile(lists: List<String>): CompiledFilters = parse(lists).build()
+
+    fun parse(lists: List<String>): CompiledRuleSet {
         val networks = LinkedHashSet<NetworkIdentity>()
         val disabled = HashSet<NetworkIdentity>()
         val cosmetics = LinkedHashSet<CosmeticRule>()
@@ -52,11 +54,22 @@ internal object FilterCompiler {
             }
         }
         networks.removeAll(disabled)
+        return CompiledRuleSet(networks, cosmetics, skipped)
+    }
+}
+
+/** Normalized, deduplicated rules. Disk restoration bypasses the text parser. */
+internal data class CompiledRuleSet(
+    val networks: Collection<NetworkIdentity>,
+    val cosmetics: Collection<CosmeticRule>,
+    val skippedRules: Int,
+) {
+    fun build(): CompiledFilters {
         if (networks.any { it.conditions.thirdParty != null }) {
             // Load OkHttp's existing public-suffix data on the compilation worker.
             httpAddress("https://example.com/")!!.topPrivateDomain()
         }
-        return CompiledFilters(networks, cosmetics, skipped)
+        return CompiledFilters(networks, cosmetics, skippedRules)
     }
 }
 

@@ -1,6 +1,6 @@
 package uk.nktnet.webviewkiosk.blocking
 
-import android.net.Uri
+import androidx.core.net.toUri
 import android.webkit.WebResourceRequest
 import uk.nktnet.webviewkiosk.config.Constants
 import android.webkit.WebResourceResponse
@@ -38,12 +38,12 @@ internal object WebViewBlocker {
     }
 
     internal fun isFilterableUrl(url: String): Boolean {
-        val uri = Uri.parse(url)
+        val uri = url.toUri()
         if (!uri.scheme.equals("http", true) && !uri.scheme.equals("https", true)) return false
         val host = uri.host?.takeIf { it.isNotBlank() } ?: return false
         // Compare hosts, including origins without a trailing slash, before matching.
         return !host.equals("appassets.androidplatform.net", true) &&
-            !host.equals(Uri.parse(Constants.PDF_JS_ASSETS_DUMMY_URL).host, true)
+            !host.equals(Constants.PDF_JS_ASSETS_DUMMY_URL.toUri().host, true)
     }
 
     internal fun resourceType(headers: Map<String, String>): String {

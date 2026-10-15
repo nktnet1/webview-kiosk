@@ -27,33 +27,51 @@ There is no full-list scan per request, except a bounded fallback for patterns
 without a usable index.
 
 Imported rule text is saved in private files. Startup and list changes read the
-enabled files on the loader thread and compile them into hostname/token maps,
-rule conditions, and CSS-selector indexes. The compiled snapshot stays in RAM
+enabled files on the loader thread. A versioned binary cache holds the normalized,
+deduplicated rules from the last successful compilation. A SHA-256 digest of the exact
+enabled contents (including list boundaries), the cache format, and the app build
+identify a reusable snapshot. Cache hits skip text parsing and reconstruct hostname/token
+maps and CSS-selector indexes from the normalized records. Missing, incompatible, or
+checksum-damaged caches fall back to compilation; failed cache writes do not disable
+blocking. The disposable cache is limited to one file of at most 64 MiB in app cache storage
+and is replaced atomically. Clearing app cache makes the next load compile again.
+Changes to parsing or matching semantics must bump the cache format version.
+
+The active snapshot stays in RAM
 while blocking is active. Compilation prepares these data structures for matching;
 it does not turn the rules into executable code or remove their memory cost.
 During a reload, the old and new snapshots can briefly coexist. Temporary input
 text and parsing objects become eligible for collection after loading finishes;
-the old snapshot does so when readers release it. No compiled disk cache is saved,
-so the indexes are rebuilt on startup. Disabling all lists clears the active snapshot.
+the old snapshot does so when readers release it. Disabling all lists clears the active
+snapshot. The first launch after this change, and loads after rule content changes,
+still perform compilation; subsequent launches avoid that parse. Index construction,
+disk reads, and WebView provider startup still have a cost.
+
+Startup and the list screen display the actual load phase: reading saved lists,
+checking the cache, restoring compiled rules into memory, compiling rules,
+building indexes, saving the cache, or disabling rules. Compilation and replacement
+finish before the startup gate opens or success feedback appears.
 
 ## Filter-list management
 
 - In **Settings → Web Content → Content Blocking**, **Add list** starts with a **Type**
-  dropdown: **File** (Android's document picker), **URL** (a custom HTTPS link and
-  display name), or **Preset list** (a compact second dropdown of [EasyList](https://easylist.to/easylist/easylist.txt),
+  dropdown defaulting to **Preset**, with **File** (Android's document picker),
+  **URL** (a custom HTTPS link and display name), or **Preset** (a compact second dropdown of [EasyList](https://easylist.to/easylist/easylist.txt),
   [EasyPrivacy](https://easylist.to/easylist/easyprivacy.txt), and
   [HaGeZi Multi NORMAL](https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/multi.txt)).
-  The app bundles only shortcut URLs, never the filter content. All downloads
+  The selected preset's URL is visible and selectable. The app bundles only shortcut URLs,
+  never the filter content. All downloads
   require an explicit user action; no subscriptions or automatic refreshes run.
 - Each row has a switch on the left and a three-dot actions menu on the right:
   **Edit**, **Refresh** (for URL/preset lists), **Info**, **Clone**, and **Delete**. Deletion requires
-  confirmation. The loading indicator has a reserved height so toggling does
-  not shift the rows. **Refresh all** refetches every URL/preset list, including
+  confirmation. The loading phase and indicator have reserved space so toggling does
+  not shift the rows. The compact **Actions** menu beside **Add list** contains
+  **Enable all**, **Disable all**, and **Refresh all**. **Refresh all** refetches every URL/preset list, including
   disabled ones, but not locally imported files. Individual failures are shown
   without stopping remaining downloads or overwriting their old rules; the
   blocking engine is reloaded once after the batch.
 - **Enable all** and **Disable all** toggle every saved list, including clones,
-  with one metadata save and one rule reload. Each button is disabled when all
+  with one metadata save and one rule reload. Each menu item is disabled when all
   lists already have the requested state or there are no lists. No file contents
   or list identities change.
 - Add, refresh, enable/disable, and other rule-changing operations keep their busy
@@ -73,7 +91,7 @@ so the indexes are rebuilt on startup. Disabling all lists clears the active sna
   and ellipsized, and the dialog body scrolls. Skipped-rule totals are not shown
   on the main list screen.
 - The empty screen uses a card reading **No filter lists have been added**, with
-  brief guidance. The actions wrap on narrow screens, with additional space
+  brief guidance. The two compact controls share one row, with additional space
   before the list. A lazy vertical list handles many rows and short screens;
   long list names, picker labels, and replacement filenames use ellipses.
 - **Edit** allows names to be changed for File/URL lists; URLs can also be
@@ -104,7 +122,7 @@ so the indexes are rebuilt on startup. Disabling all lists clears the active sna
   validated temporary files before changing the active rules. A failed
   download or file edit retains the previous list. A successful refresh or
   content change recompiles active rules; renaming alone does not.
-- The original text is retained for rebuilding on startup. Imported list files are
+- The original text is retained for rebuilding whenever the cache cannot be reused. Imported list files are
   not yet included in the app's existing settings JSON/Base64 export.
 - Removing or disabling the last list clears the compiled engine snapshot.
 
@@ -261,6 +279,9 @@ cancelling a screen wait, retaining active rules on failed updates,
 service-worker source headers, and message/frame-origin bounds. Dependency-free
 Node tests execute the shipped cosmetic script with a DOM/bridge fixture to check
 dynamic changes, batching, retries, CSS rejection, style restoration, and cleanup.
+Cache tests replay the complete network fixture corpus through restored engines,
+check CSS exceptions and cross-list badfilter behavior, and verify content invalidation,
+corruption/version recovery, and cache-write failure without losing blocking.
 
 Host tests are not a device compatibility or performance measurement. On Android,
 check cold startup, first-/third-party requests, domain/generic hiding and exceptions

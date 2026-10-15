@@ -49,7 +49,10 @@ internal sealed interface ParsedFilter {
 internal object FilterParser {
     private val whitespace = Regex("\\s+")
     private class Invalid(message: String) : RuntimeException(message)
-    private object Unsupported : RuntimeException(null, null, false, false)
+    private object Unsupported : RuntimeException() {
+        // The four-argument constructor is unavailable before Android 7.
+        override fun fillInStackTrace(): Throwable = this
+    }
     private val procedural = listOf(
         ":has-text(", ":matches-attr(", ":matches-css(", ":matches-css-before(", ":matches-css-after(",
         ":matches-path(", ":min-text-length(", ":upward(", ":xpath(", ":contains(", ":-abp-contains(",

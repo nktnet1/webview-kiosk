@@ -1,6 +1,7 @@
 package uk.nktnet.webviewkiosk.blocking
 
 import android.content.Context
+import android.annotation.SuppressLint
 import android.content.SharedPreferences
 import org.json.JSONArray
 import org.json.JSONObject
@@ -379,6 +380,7 @@ internal class FilterListStore(
         return File(directory, "$id.txt")
     }
 
+    @SuppressLint("UseKtx") // KTX edit discards commit()'s result; failed saves must be reported.
     private fun save(lists: List<ImportedFilterList>) {
         val array = JSONArray()
         lists.forEach { list ->

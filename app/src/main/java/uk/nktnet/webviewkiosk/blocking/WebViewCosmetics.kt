@@ -78,8 +78,12 @@ internal class WebViewCosmetics private constructor(
         if (disposed) return
         disposed = true
         scope.cancel()
-        runCatching { handler?.remove() }
-        if (bridgeInstalled) runCatching { WebViewCompat.removeWebMessageListener(webView, BRIDGE) }
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            runCatching { handler?.remove() }
+        }
+        if (bridgeInstalled && WebViewFeature.isFeatureSupported(WebViewFeature.WEB_MESSAGE_LISTENER)) {
+            runCatching { WebViewCompat.removeWebMessageListener(webView, BRIDGE) }
+        }
     }
 
     internal data class Query(val id: Int, val url: String, val classes: List<String>, val ids: List<String>)

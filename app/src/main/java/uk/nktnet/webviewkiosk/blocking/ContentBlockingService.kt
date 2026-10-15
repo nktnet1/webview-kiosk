@@ -5,6 +5,9 @@ import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import uk.nktnet.webviewkiosk.BuildConfig
+import uk.nktnet.webviewkiosk.blocking.engine.CompiledFilterCache
+import java.io.File
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
@@ -35,6 +38,8 @@ internal class ContentBlockingService(
 
     private val _status = MutableStateFlow(BlockingStatus.DISABLED)
     val status = _status.asStateFlow()
+    private val _loadStage = MutableStateFlow<RuleLoadStage?>(null)
+    val loadStage = _loadStage.asStateFlow()
     private val _lastError = MutableStateFlow<String?>(null)
     val lastError = _lastError.asStateFlow()
     private val _skippedRules = MutableStateFlow(0)
@@ -57,6 +62,7 @@ internal class ContentBlockingService(
     @Synchronized
     fun reload(): Long {
         val revision = generation.incrementAndGet()
+        _loadStage.value = RuleLoadStage.READING_LISTS
         _status.value = BlockingStatus.LOADING
         try {
             worker.execute {
@@ -65,9 +71,10 @@ internal class ContentBlockingService(
                     val texts = store.enabledTexts()
                     if (revision != generation.get()) return@execute
                     if (texts.isEmpty()) {
+                        updateStage(revision, RuleLoadStage.CLEARING)
                         engine.clear()
                     } else {
-                        engine.replace(texts)
+                        engine.replace(texts) { stage -> updateStage(revision, stage) }
                     }
                     finishReload(revision, texts.isNotEmpty())
                 } catch (e: Exception) {
@@ -80,6 +87,11 @@ internal class ContentBlockingService(
             reportError(revision, e)
         }
         return revision
+    }
+
+    @Synchronized
+    private fun updateStage(revision: Long, stage: RuleLoadStage) {
+        if (revision == generation.get()) _loadStage.value = stage
     }
 
     /** Wait for this load, or the newer load that superseded it, without blocking a thread. */
@@ -100,6 +112,7 @@ internal class ContentBlockingService(
         ready = hasRules
         _skippedRules.value = engine.unsupportedRuleCount()
         _status.value = if (ready) BlockingStatus.ACTIVE else BlockingStatus.DISABLED
+        _loadStage.value = null
         _initialLoadComplete.value = true
         completedLoad.value = RuleLoadCompletion(revision)
     }
@@ -110,6 +123,7 @@ internal class ContentBlockingService(
             // Compilation is atomic. A failed update leaves the last working rules active.
             _lastError.value = error.message ?: "Content-blocking rules could not be loaded"
             _status.value = BlockingStatus.ERROR
+            _loadStage.value = null
             _initialLoadComplete.value = true
             completedLoad.value = RuleLoadCompletion(revision, error)
             Log.e(TAG, "Failed to load content-blocking rules", error)
@@ -145,7 +159,10 @@ internal class ContentBlockingService(
         fun get(context: Context): ContentBlockingService = instance ?: synchronized(this) {
             instance ?: ContentBlockingService(
                 FilterListStore(context.applicationContext),
-                KotlinFilterEngine(),
+                KotlinFilterEngine(CompiledFilterCache(
+                    File(context.applicationContext.cacheDir, "content-blocking/compiled-rules.bin"),
+                    BuildConfig.VERSION_CODE,
+                )),
                 Executors.newSingleThreadExecutor { task ->
                     Thread(task, "content-blocking-loader").apply { isDaemon = true }
                 },

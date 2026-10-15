@@ -41,6 +41,27 @@ class ContentBlockingServiceTest {
         assertEquals(1, engine.clears)
         assertFalse(service.shouldBlock("https://ads.example/pixel", "https://site.example", "other", "GET"))
         assertNull(service.lastError.value)
+        assertNull(service.loadStage.value)
+    }
+
+    @Test
+    fun reportsTheActualLoadPhaseAndClearsItOnCompletionOrFailure() {
+        val item = store.importFrom("test.txt", "||ads.example^".byteInputStream())
+        service.start()
+        assertEquals(RuleLoadStage.READING_LISTS, service.loadStage.value)
+        engine.duringReplace = { assertEquals(RuleLoadStage.COMPILING, service.loadStage.value) }
+        executor.runAll()
+        assertNull(service.loadStage.value)
+        engine.failReplace = true
+        service.reload()
+        executor.runAll()
+        assertEquals(BlockingStatus.ERROR, service.status.value)
+        assertNull(service.loadStage.value)
+        store.setEnabled(item.id, false)
+        engine.duringClear = { assertEquals(RuleLoadStage.CLEARING, service.loadStage.value) }
+        service.reload()
+        executor.runAll()
+        assertNull(service.loadStage.value)
     }
 
     @Test
@@ -222,13 +243,16 @@ class ContentBlockingServiceTest {
         var clears = 0
         var failReplace = false
         var skipped = 0
+        var duringReplace: () -> Unit = {}
+        var duringClear: () -> Unit = {}
         private var list = ""
         override fun replace(lists: List<String>) {
+            duringReplace()
             if (failReplace) throw IllegalStateException("failed to compile")
             replacements++
             list = lists.joinToString("\n")
         }
-        override fun clear() { clears++; list = ""; skipped = 0 }
+        override fun clear() { duringClear(); clears++; list = ""; skipped = 0 }
         override fun unsupportedRuleCount(): Int = skipped
         override fun shouldBlock(url: String, sourceUrl: String, type: String, method: String) =
             list.contains("||ads.example^") && url.contains("ads.example")
