@@ -12,8 +12,8 @@ The JNI library in `app/native-adblock` uses Brave `adblock-rust` 0.13.3
 this repository's AGPL-3.0-or-later license; distributors must also satisfy
 the MPL-2.0 obligations for the upstream engine (license notice and source
 availability).
-Do not bundle filter lists. The native engine is lazy-loaded and holds no
-compiled rules when all lists are disabled.
+Do not bundle filter lists. The native library is lazy-loaded for syntax validation
+or the first enabled list, and holds no compiled rules when all lists are disabled.
 
 Building an APK requires **Android NDK 29.0.14206865**, a Rust toolchain, Cargo,
 and Rust's four Android cross-compilation targets. The NDK version is pinned in
@@ -82,7 +82,7 @@ native load **allows requests** and surfaces the error in the settings screen.
   The app bundles only shortcut URLs, never the filter content. All downloads
   require an explicit user action; no subscriptions or automatic refreshes run.
 - Each row has a switch on the left and a three-dot actions menu on the right:
-  **Edit**, **Update** (for URL/preset lists), and **Delete**. Deletion requires
+  **Edit**, **Update** (for URL/preset lists), **Clone**, and **Delete**. Deletion requires
   confirmation. The loading indicator has a reserved height so toggling does
   not shift the rows. **Update all** refetches every URL/preset list, including
   disabled ones, but not locally imported files. Individual failures are shown
@@ -94,12 +94,15 @@ native load **allows requests** and surfaces the error in the settings screen.
   Local File lists can be edited inline when smaller than 128 KiB, or replaced
   from a new text file; larger lists must be replaced via the file picker.
   Presets are read-only in Edit, but their rules can still be updated normally.
-- All list types offer a **Clone list** checkbox in Edit, **off by default**.
-  Clones are created with new identities, copies of the cached rules, and
+- All list types offer **Clone** in the three-dot menu. Cloning immediately creates
+  a copy with a new identity, the cached rules, and
   **disabled** status so they cannot silently change active blocking. A preset
   clone is an editable URL list; File and URL clones retain their types.
-  Changing the clone's URL or File rules leaves the original unchanged. Cloning
-  does not require a network request unless the cloned URL is changed.
+  Use **Edit** on the copy to change its name, URL, or File rules without changing
+  the original. Cloning never makes a network request. Presets remain read-only.
+- The Add dialog starts with the list type; field labels appear above the type,
+  URL, name, file picker, and preset picker controls. The page has no additional
+  "Filter lists" heading above the list controls.
 - Existing stored metadata without a type field is migrated at read time:
   local imports remain File, known preset URLs become Preset, and other
   downloaded links become URL. Existing IDs, enablement, and rule text remain
@@ -117,6 +120,58 @@ native load **allows requests** and surfaces the error in the settings screen.
   binary cache is persisted in this increment. Imported list files are
   not yet included in the app's existing settings JSON/Base64 export.
 - Removing or disabling the last list unloads native engine state.
+
+## File syntax validation
+
+Imports, inline file edits, replacement files, and clones all validate the staged
+UTF-8 text **before** changing saved rules or metadata. Downloads, URL edits, and
+refreshes use the same gate. Validation runs on the settings screen's IO dispatcher,
+with one JNI call per file, without compiling or swapping the active engine. The
+existing 8 MiB per-file and 32 MiB total limits still apply. Parser failures leave
+the old name, ID, source URL, enablement, and rule bytes intact and remove the
+temporary file. If the native validator cannot load, the operation fails with an
+explanation; it never silently saves unvalidated content. Existing stored lists
+remain readable, and name-only edits do not revalidate their existing rules.
+
+The validator calls [`adblock::lists::parse_filter` from the pinned 0.13.3 engine](https://docs.rs/adblock/0.13.3/adblock/lists/fn.parse_filter.html)
+with the same network-only options used by compilation. It does not use a custom
+Adblock grammar or a JVM regex approximation. Explicit structural/hostname errors,
+invalid negations of supported options, and missing redirect values produce an
+error with original **1-based line numbers**. At most five error details are shown,
+followed by the number of additional errors, keeping diagnostics bounded for large
+files. Whitespace-only and comment-only files get a separate "no rules" message;
+empty lines, list headers, `!` comments, and hosts `#` comments within a useful list
+are benign. UTF-8 BOMs and CRLF line endings are supported.
+
+Validation and compilation share line routing. Adblock network/exception rules
+may be mixed with IP-prefixed hosts records in either order. IPv4/IPv6 hosts
+records support multiple aliases and trailing comments; the upstream hosts parser
+validates each hostname. Local machine aliases such as `localhost` and
+`ip6-loopback` are ignored. Existing hosts lists beginning with an IP record keep
+their hostname semantics for subsequent bare domains, using the upstream hosts
+parser to recognise them. Other bare patterns/domains keep their existing Adblock
+interpretation. IP-looking prefixes followed by a hostname are checked as IP
+addresses; standalone IP patterns retain their Adblock interpretation.
+
+### Compatibility limits
+
+Upstream bulk list loading silently discards errors; its per-rule API exposes
+enough detail to reject known malformed network syntax. It also reports engine
+limitations as errors. Unknown options, unsupported domain forms, full regex
+filters (disabled in this build), unsupported modifier combinations, cosmetic
+filters, and scriptlets are therefore **compatibility warnings, not reasons to
+reject a file**. They are skipped as before, and the dialogs explain that unsupported
+filters are ignored. A file containing only unsupported rules may be saved but
+will not block requests. No cosmetic or scriptlet validation is claimed.
+
+Some malformed-looking text is legal as an Adblock substring pattern, and the
+upstream parser accepts some incomplete option values (for example `$domain`
+without a value). Unknown options may also be misspellings; they cannot reliably
+be distinguished from another engine's extensions. These cases are accepted rather
+than inventing stricter syntax rules. The validator does not promise that every
+accepted line takes effect, and it does not verify filter intent or resource
+availability. Future unclassified upstream errors are treated conservatively as
+unsupported syntax. No alternate parser or new dependency is added.
 
 ## Known WebView limitations
 
@@ -137,7 +192,12 @@ allowlists, and periodically refreshed subscriptions are intentionally out of sc
 Robolectric tests exercise persistence, migration, import/refresh limits, file edits,
 custom URL downloads and edits, preset immutability and clones, bulk refresh
 with partial failure, duplicate/rejection handling, enable/disable/reload, and resource
-classification with a fake native matcher. Native Rust tests
-cover blocking, exceptions, hosts lists, and malformed requests; Android
+classification with a fake native matcher. Storage validation tests inject a parser
+result to verify staging, cleanup, error propagation, failed replacements/clone edits,
+native-unavailable failures, and metadata preservation without Android JNI.
+Native Rust tests use the real parser for valid/invalid/empty/comment-only files,
+unsupported rules, BOM/CRLF text, IPv4/IPv6 hosts, mixed formats, line numbers,
+bounded diagnostics, blocking, exceptions, and malformed requests. The Tests workflow
+runs these host Rust tests separately from Robolectric, without an NDK; Android
 cross-compilation and real-device WebView tests are still required before
 claiming production-level compatibility or latency.

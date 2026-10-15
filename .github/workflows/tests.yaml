@@ -16,6 +16,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  native-adblock:
+    name: Native filter parser tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup host Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Test native parsing, validation, and matching
+        # Run from the repo root: host tests need neither the NDK nor Android targets.
+        run: cargo test --manifest-path app/native-adblock/Cargo.toml
+
   android:
     name: Android JVM and Robolectric tests
     runs-on: ubuntu-latest

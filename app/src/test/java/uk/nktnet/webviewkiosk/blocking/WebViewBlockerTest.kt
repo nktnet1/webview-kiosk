@@ -19,7 +19,7 @@ class WebViewBlockerTest {
         val context = RuntimeEnvironment.getApplication()
         context.getSharedPreferences("content_blocking_lists", 0).edit().clear().commit()
         java.io.File(context.filesDir, "content-blocking-lists").deleteRecursively()
-        val store = FilterListStore(context)
+        val store = FilterListStore(context, validator = FilterListValidator {})
         store.importFrom("ads.txt", "||ads.example^".byteInputStream())
         val engine = object : NetworkFilterEngine {
             override fun replace(lists: List<String>) = Unit

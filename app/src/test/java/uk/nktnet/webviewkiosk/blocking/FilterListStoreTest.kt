@@ -24,7 +24,7 @@ class FilterListStoreTest {
         context.getSharedPreferences("content_blocking_lists", 0).edit().clear().commit()
         java.io.File(context.filesDir, "content-blocking-lists")
             .deleteRecursively()
-        store = FilterListStore(context)
+        store = FilterListStore(context, validator = FilterListValidator {})
     }
 
     @Test

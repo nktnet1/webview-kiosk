@@ -25,7 +25,10 @@ internal data class ImportedFilterList(
 )
 
 /** Stores only user-imported plain-text lists in private app storage. No built-in rules. */
-internal class FilterListStore(context: Context) {
+internal class FilterListStore(
+    context: Context,
+    private val validator: FilterListValidator = NativeAdblockEngine(),
+) {
     private val preferences: SharedPreferences = context.applicationContext.getSharedPreferences(
         "content_blocking_lists", Context.MODE_PRIVATE,
     )
@@ -269,15 +272,18 @@ internal class FilterListStore(context: Context) {
             require(written > 0L) { "Filter list is empty" }
             // Reject malformed text/binary files rather than silently loading bad UTF-8.
             val data = temporary.readBytes()
-            try {
+            val text = try {
                 StandardCharsets.UTF_8.newDecoder()
                     .onMalformedInput(CodingErrorAction.REPORT)
                     .onUnmappableCharacter(CodingErrorAction.REPORT)
-                    .decode(ByteBuffer.wrap(data))
+                    .decode(ByteBuffer.wrap(data)).toString()
             } catch (_: CharacterCodingException) {
                 throw IllegalArgumentException("Filter list must be UTF-8 text")
             }
             require(!data.contains(0)) { "Filter list must be plain text" }
+            // Imports, edits, replacements, downloads, and clones all pass this gate
+            // before either the index or an existing working file is touched.
+            validator.validate(text)
             return temporary
         } catch (e: Exception) {
             temporary.delete()
