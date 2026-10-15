@@ -23,6 +23,7 @@ OUTPUT_ARG="$PROJECT_ROOT/build/android-test-assets"
 SDK_ARG=""
 GRADLE_HOME_ARG=""
 GRADLE_BIN_ARG=""
+WITH_RUST=0
 WORK_DIR=""
 STAGING_DIR=""
 
@@ -40,6 +41,8 @@ Options:
   --output DIR           Output directory (default: build/android-test-assets).
   --gradle-user-home DIR Use an existing Gradle cache (native Linux only).
   --gradle-bin FILE      Use this local Gradle executable (native Linux only).
+  --with-rust            Also export the Linux host Rust toolchain and vendored
+                         native-adblock Cargo dependencies into --output/rust.
   -h, --help             Show this help.
 
 Resolves the Android JVM test configurations without compiling or running tests,
@@ -50,6 +53,10 @@ Archives smaller than 512,000,000 bytes are ordinary .tar.gz files; larger
 ones use numbered .part-* files, each smaller than 512,000,000 bytes. Gradle
 credentials, keystores, and the Gradle distribution are not exported. Upload
 the resulting archives (or parts) with SHA256SUMS and CONTENTS.txt.
+
+Use --with-rust to invoke the separate Rust asset exporter after the Android
+export, or run scripts/export-rust-test-assets.sh by itself to avoid repeating
+Gradle resolution. The Rust host parser tests need no Android NDK.
 
 Docker mode builds scripts/Dockerfile.android-test-assets on first use, runs
 with an isolated project copy (ignoring host local.properties), and writes only
@@ -118,6 +125,10 @@ while (($#)); do
             esac
             shift 2
             ;;
+        --with-rust)
+            WITH_RUST=1
+            shift
+            ;;
         -h|--help)
             usage
             exit 0
@@ -184,6 +195,9 @@ run_in_docker() {
 
 if [[ "$(uname -s)" != Linux || "$(uname -m)" != x86_64 ]]; then
     run_in_docker
+    if ((WITH_RUST)); then
+        "$PROJECT_ROOT/scripts/export-rust-test-assets.sh" --output "$OUTPUT_ARG/rust"
+    fi
     exit 0
 fi
 for tool in tar split sha256sum sha512sum grep mktemp java curl; do
@@ -420,3 +434,6 @@ rm -f -- "$OUTPUT_DIR"/gradle-*-bin.zip.part-* \
 mv -- "$STAGING_DIR"/* "$OUTPUT_DIR"/
 say "Export complete: $OUTPUT_DIR"
 ls -lh "$OUTPUT_DIR"
+if ((WITH_RUST)); then
+    "$PROJECT_ROOT/scripts/export-rust-test-assets.sh" --output "$OUTPUT_DIR/rust"
+fi

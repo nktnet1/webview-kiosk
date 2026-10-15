@@ -32,3 +32,5 @@ local.properties
 
 # Generated locally by the native filter engine build (not shipped in patches).
 /app/native-adblock/Cargo.lock
+/app/native-adblock/vendor/
+/app/native-adblock/.cargo/config.toml

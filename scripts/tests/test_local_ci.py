@@ -101,9 +101,10 @@ class LocalTestRunnerTest(unittest.TestCase):
         # Avoid installing packages: record a real script dispatch with stubs.
         (self.root / "docs/node_modules").mkdir()
         (self.root / "scripts/tests").mkdir()
-        (self.root / "scripts/tests/export-android-test-assets.test.sh").write_text(
-            "#!/bin/sh\nexit 0\n", encoding="utf-8"
-        )
+        for name in ("export-android-test-assets.test.sh", "export-rust-test-assets.test.sh"):
+            (self.root / "scripts/tests" / name).write_text(
+                "#!/bin/sh\nexit 0\n", encoding="utf-8"
+            )
         # Stub python3 so the offline Python suite does not require copied tests.
         stub = self.root / "bin/python3"
         stub.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")

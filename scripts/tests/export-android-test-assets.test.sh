@@ -100,6 +100,15 @@ assert_contains "$TEMP_DIR/run.args" 'HOME=/tmp/android-assets-home'
 grep -F -- '--sdk-root /opt/android-sdk' "$TEMP_DIR/run.args" >/dev/null
 grep -F -- '--gradle-user-home /var/cache/android-test-assets/gradle' "$TEMP_DIR/run.args" >/dev/null
 
+# Opting in to Rust runs the separate Linux amd64 exporter after Gradle. The
+# default path above remains Gradle-only and does not pull the Rust image.
+FAKE_OS=Darwin FAKE_ARCH=arm64 bash "$EXPORTER" --with-rust --output "$output" \
+    > "$TEMP_DIR/combined.log"
+[[ -d "$output/rust" ]]
+assert_contains "$TEMP_DIR/build.args" "$PROJECT_ROOT/scripts/Dockerfile.rust-test-assets"
+assert_contains "$TEMP_DIR/run.args" "$output/rust:/export"
+assert_contains "$TEMP_DIR/run.args" 'RUSTUP_TOOLCHAIN=stable-x86_64-unknown-linux-gnu'
+
 # Help does not require Docker, even on non-Linux hosts.
 rm "$TEMP_DIR/build.args" "$TEMP_DIR/run.args"
 bash "$EXPORTER" --help > "$TEMP_DIR/help.log"

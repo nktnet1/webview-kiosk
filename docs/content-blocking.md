@@ -53,6 +53,24 @@ can discover its `rust-toolchain.toml` toolchain configuration. The file is a
 Gradle task input: changing the toolchain declaration invalidates the native
 library task's up-to-date state.
 
+For **host parser and validation tests only**, the Android NDK is not
+required. On Linux x86_64, a helper can export the host Rust toolchain and
+vendored Cargo crates for offline tests, using Docker on macOS and other
+architectures:
+
+```sh
+scripts/export-rust-test-assets.sh --output build/android-test-assets/rust
+```
+
+Use `scripts/export-android-test-assets.sh --with-rust` to generate the
+Android/Gradle and Rust archives in one invocation. The Rust exporter records
+a lockfile (generating it only in a disposable copy if absent), preserves the
+original checkout, and emits SHA-256 verified archives. Restore `cargo/bin`,
+`rustup/toolchains`, `Cargo.lock`, `vendor/`, and `.cargo/config.toml` as
+documented in [the contributor guide](../.github/CONTRIBUTING.md#offline-native-adblock-rust-host-tests).
+Set `RUSTUP_TOOLCHAIN=stable-x86_64-unknown-linux-gnu` for host tests so
+rustup does not try to install the four Android targets declared above.
+
 The Gradle `buildNativeAdblock` task runs Cargo with the NDK clang linker for
 each target and includes the resulting `.so` files in the APK. On macOS,
 `~/.cargo/bin/cargo` is used even when Android Studio is launched without a

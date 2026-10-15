@@ -64,6 +64,7 @@ checks() {
     require_tool bash
     printf 'Local tests: checking CI scripts and test assets\n'
     bash scripts/tests/export-android-test-assets.test.sh
+    bash scripts/tests/export-rust-test-assets.test.sh
     python3 -m unittest discover -s scripts/tests -p 'test_*.py'
 }
 

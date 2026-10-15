@@ -1,0 +1,7 @@
+# The official Rust image provides rustup and a stable Linux host toolchain.
+# Force amd64 in the exporter, including on Apple Silicon Docker hosts.
+FROM rust:1-bookworm
+
+# Docker volume roots inherit the image directory permissions. Let the caller
+# run as their host UID while retaining a writable Cargo dependency cache.
+RUN install -d -m 1777 /var/cache/native-adblock-rust

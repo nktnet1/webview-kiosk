@@ -101,3 +101,64 @@ before extraction. `SHA256SUMS` verifies each exported file, and
 `CONTENTS.txt` records their installation destinations. Extract
 `gradle-deps.tar.gz` into `$GRADLE_USER_HOME` (or `~/.gradle` by default)
 before running Gradle with `--offline`.
+
+### Offline native-adblock Rust host tests
+
+To export the Linux x86_64 stable Rust compiler, Cargo, rustup, and the
+`app/native-adblock/Cargo.toml` dependencies alongside the Gradle assets, use:
+
+```bash
+scripts/export-android-test-assets.sh --with-rust --output build/android-test-assets
+```
+
+The existing command **without `--with-rust` remains Gradle-only**. If its
+Android/Gradle exports already exist, run only the Rust exporter instead:
+
+```bash
+scripts/export-rust-test-assets.sh --output build/android-test-assets/rust
+```
+
+On macOS, Apple Silicon, and non-x86_64 Linux, the Rust exporter builds a
+small Docker image based on the official `rust:1-bookworm` Linux amd64 image.
+It needs Docker and internet access for the initial image/dependency download,
+but no host Rust, Java, or Android SDK installation. Its separate named Docker
+volume retains downloaded Cargo dependencies. On Linux x86_64, it uses an
+existing rustup-managed `stable-x86_64-unknown-linux-gnu` toolchain; neither
+route downloads the Android NDK or compiles the native JNI library.
+
+The Rust exporter creates these files in the `rust/` output directory, with
+independent `SHA256SUMS` and `CONTENTS.txt` metadata:
+
+- `rust-toolchain-linux-x86_64.tar.gz`: Cargo/rustup proxies and an installed
+  Rust host toolchain (`cargo/bin`, `rustup/toolchains`, and sanitized rustup
+  settings), **without** registry caches, credentials, or Android targets.
+- `native-adblock-vendor.tar.gz`: `Cargo.lock`, `vendor/`, and
+  `.cargo/config.toml`. Cargo's `--locked` vendoring preserves an existing
+  lockfile, or generates one in a temporary checkout if none exists. `cargo
+  metadata --locked --offline` validates the vendored dependency resolution.
+
+As with the Android archives, files over the upload limit are split into
+`.part-*` pieces, and `SHA256SUMS` verifies the results. Reassemble any
+numbered pieces in order before extraction. To run the parser tests on a Linux
+x86_64 host after restoring both archives:
+
+```bash
+mkdir -p "$PWD/.rust-offline"
+tar -xzf build/android-test-assets/rust/rust-toolchain-linux-x86_64.tar.gz -C "$PWD/.rust-offline"
+tar -xzf build/android-test-assets/rust/native-adblock-vendor.tar.gz -C app/native-adblock
+export CARGO_HOME="$PWD/.rust-offline/cargo"
+export RUSTUP_HOME="$PWD/.rust-offline/rustup"
+export RUSTUP_TOOLCHAIN=stable-x86_64-unknown-linux-gnu
+export PATH="$CARGO_HOME/bin:$PATH"
+cd app/native-adblock
+cargo test --locked --offline
+```
+
+Run Cargo from the crate directory so it discovers the restored
+`app/native-adblock/.cargo/config.toml`; the `--manifest-path` flag alone does
+not change Cargo's configuration-file search path. `RUSTUP_TOOLCHAIN` is
+important: the checked-in `rust-toolchain.toml` lists
+Android targets for APK builds, but the host parser tests use only the Linux
+standard library and a normal Linux linker, **not** the Android NDK. Nothing
+under `app/native-adblock/vendor/`, `.cargo/config.toml`, or `Cargo.lock` is
+committed; these are locally restored test assets.
