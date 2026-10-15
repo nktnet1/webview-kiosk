@@ -18,6 +18,7 @@ class FilterListValidationTest {
     private lateinit var directory: File
     private val validated = mutableListOf<String>()
     private var failure: Exception? = null
+    private var currentTime = 1_000L
 
     @Before
     fun setup() {
@@ -30,7 +31,7 @@ class FilterListValidationTest {
         store = FilterListStore(context, validator = FilterListValidator { text ->
             validated += text
             failure?.let { throw it }
-        })
+        }, now = { currentTime })
     }
 
     @Test
@@ -293,9 +294,10 @@ class FilterListValidationTest {
     @Test
     fun urlEditsValidateTheSameContentsWithoutDocumentFormatDetection() {
         val item = store.importFrom("URL", "||working.example^".byteInputStream(), "https://example.org/old.txt")
+        currentTime = 2_000L
         val updated = store.updateUrl(item.id, item.sourceUrl!!, "https://example.org/new.txt", "Changed",
             "{}".byteInputStream())
-        assertEquals(item.copy(name = "Changed", sourceUrl = "https://example.org/new.txt"), updated)
+        assertEquals(item.copy(name = "Changed", sourceUrl = "https://example.org/new.txt", lastRefreshedAt = 2_000L), updated)
         assertEquals(listOf(updated), store.list())
         assertEquals(listOf("||working.example^", "{}"), validated)
         assertEquals(listOf("{}"), store.enabledTexts())

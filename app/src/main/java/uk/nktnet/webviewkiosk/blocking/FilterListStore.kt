@@ -25,6 +25,8 @@ internal data class ImportedFilterList(
     /** The original HTTPS download URL, if this list was imported from a link. */
     val sourceUrl: String? = null,
     val type: FilterListType = if (sourceUrl == null) FilterListType.FILE else FilterListType.URL,
+    /** Last successful source download, including the initial import; absent for local files. */
+    val lastRefreshedAt: Long? = null,
 )
 
 /** Counts saved entries before deduplication and cross-list rule precedence. */
@@ -44,6 +46,7 @@ internal data class FilterListInfo(
 internal class FilterListStore(
     context: Context,
     private val validator: FilterListValidator = KotlinFilterEngine(),
+    private val now: () -> Long = System::currentTimeMillis,
 ) {
     private val preferences: SharedPreferences = context.applicationContext.getSharedPreferences(
         "content_blocking_lists", Context.MODE_PRIVATE,
@@ -65,6 +68,7 @@ internal class FilterListStore(
                 enabled = entry.optBoolean("enabled", true),
                 sourceUrl = entry.optString("sourceUrl").takeIf { it.isNotBlank() },
                 type = readType(entry),
+                lastRefreshedAt = entry.optLong("lastRefreshedAt", 0).takeIf { it > 0 },
             )
         }
     }
@@ -100,6 +104,7 @@ internal class FilterListStore(
         type: FilterListType,
         enabled: Boolean,
         allowDuplicate: Boolean,
+        copiedRefreshTime: Long? = null,
     ): ImportedFilterList {
         require((type == FilterListType.FILE) == (sourceUrl == null)) {
             "A file has no download URL; a URL or preset needs one"
@@ -124,6 +129,11 @@ internal class FilterListStore(
                 enabled = enabled,
                 sourceUrl = sourceUrl,
                 type = type,
+                lastRefreshedAt = when {
+                    allowDuplicate -> copiedRefreshTime // Cloning does not fetch the source again.
+                    sourceUrl != null -> now()
+                    else -> null
+                },
             )
             val destination = fileFor(item.id)
             if (!temporary.renameTo(destination)) {
@@ -173,6 +183,7 @@ internal class FilterListStore(
                 proposedName, input, item.sourceUrl,
                 if (item.type == FilterListType.PRESET) FilterListType.URL else item.type,
                 enabled = false, allowDuplicate = true,
+                copiedRefreshTime = item.lastRefreshedAt,
             )
         }
     }
@@ -241,13 +252,14 @@ internal class FilterListStore(
         // Exclude the old copy from the quota so full stores can still update a list.
         val otherBytes = existing.filterNot { it.id == item.id }.sumOf { fileFor(it.id).length() }
         val temporary = writeValidatedTempFile(input, otherBytes)
+        val refreshed = if (updated.sourceUrl != null) updated.copy(lastRefreshedAt = now()) else updated
         val backup = File.createTempFile("backup-", ".tmp", directory)
         backup.delete()
         try {
             if (!destination.renameTo(backup)) throw IOException("Failed to back up filter list")
             try {
                 if (!temporary.renameTo(destination)) throw IOException("Failed to update filter list")
-                if (item != updated) save(existing.map { if (it.id == item.id) updated else it })
+                if (item != refreshed) save(existing.map { if (it.id == item.id) refreshed else it })
             } catch (e: Exception) {
                 destination.delete()
                 if (!backup.renameTo(destination)) {
@@ -256,7 +268,7 @@ internal class FilterListStore(
                 throw e
             }
             backup.delete()
-            return updated
+            return refreshed
         } finally {
             temporary.delete()
         }
@@ -387,6 +399,7 @@ internal class FilterListStore(
             val entry = JSONObject().put("id", list.id).put("name", list.name)
                 .put("enabled", list.enabled).put("type", list.type.name)
             list.sourceUrl?.let { entry.put("sourceUrl", it) }
+            list.lastRefreshedAt?.let { entry.put("lastRefreshedAt", it) }
             array.put(entry)
         }
         if (!preferences.edit().putString(INDEX_KEY, array.toString()).commit()) {

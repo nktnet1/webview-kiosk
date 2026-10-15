@@ -21,13 +21,14 @@ import java.util.concurrent.atomic.AtomicInteger
 class SuggestedFilterListDownloaderTest {
     private lateinit var store: FilterListStore
     private val preset = SuggestedFilterLists.all.first()
+    private var currentTime = 1_000L
 
     @Before
     fun setup() {
         val context = RuntimeEnvironment.getApplication()
         context.getSharedPreferences("content_blocking_lists", 0).edit().clear().commit()
         java.io.File(context.filesDir, "content-blocking-lists").deleteRecursively()
-        store = FilterListStore(context, validator = FilterListValidator {})
+        store = FilterListStore(context, validator = FilterListValidator {}, now = { currentTime })
     }
 
     private fun downloader(
@@ -144,6 +145,7 @@ class SuggestedFilterListDownloaderTest {
         store.rename(original.id, "My filters")
         store.setEnabled(original.id, false)
         val calls = AtomicInteger()
+        currentTime = 2_000L
         val refreshed = downloader(content = "||new.example^", requests = calls)
             .refresh(original, store)
 
@@ -152,6 +154,7 @@ class SuggestedFilterListDownloaderTest {
         assertEquals("My filters", refreshed.name)
         assertFalse(refreshed.enabled)
         assertEquals(preset.url, refreshed.sourceUrl)
+        assertEquals(2_000L, refreshed.lastRefreshedAt)
         assertEquals(listOf(refreshed), store.list())
         assertTrue(store.enabledTexts().isEmpty())
         store.setEnabled(original.id, true)
@@ -165,9 +168,10 @@ class SuggestedFilterListDownloaderTest {
         val old = store.importFrom(
             "AdGuard Base.txt", "||old.example^".byteInputStream(), sourceUrl = legacyUrl,
         )
+        currentTime = 2_000L
         downloader(content = "||updated.example^", suggestion = legacy).refresh(old, store)
         assertEquals(listOf("||updated.example^"), store.enabledTexts())
-        assertEquals(old, store.list().single())
+        assertEquals(old.copy(lastRefreshedAt = 2_000L), store.list().single())
     }
 
     @Test
@@ -292,13 +296,14 @@ class SuggestedFilterListDownloaderTest {
                     .body((if (isGood) "new good" else "error").toResponseBody()).build()
             }.build(),
         )
+        currentTime = 2_000L
         val result = client.refreshAll(store)
         assertEquals(2, result.total)
         assertEquals(1, result.updated)
         assertEquals(listOf("Bad"), result.failures.map { it.name })
         assertEquals(2, calls.get())
         assertEquals(listOf("new good", "local"), store.enabledTexts())
-        assertEquals(listOf(good, bad.copy(enabled = false), local), store.list())
+        assertEquals(listOf(good.copy(lastRefreshedAt = 2_000L), bad.copy(enabled = false), local), store.list())
     }
 
 }

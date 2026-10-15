@@ -71,6 +71,10 @@ finish before the startup gate opens or success feedback appears.
   disabled ones, but not locally imported files. Individual failures are shown
   without stopping remaining downloads or overwriting their old rules; the
   blocking engine is reloaded once after the batch.
+- A **Filter Lists** heading appears directly above the list, with total and enabled
+  counts on the right. Counts include disabled clones and update after saved changes.
+  Each row's type label has a matching icon: a checklist for Preset, a link for URL,
+  and a document for File.
 - **Enable all** and **Disable all** toggle every saved list, including clones,
   with one metadata save and one rule reload. Each menu item is disabled when all
   lists already have the requested state or there are no lists. No file contents
@@ -80,7 +84,7 @@ finish before the startup gate opens or success feedback appears.
   completion. A failed reload reports an error while keeping the previous working
   engine; saved list changes remain visible. Adding or editing closes its dialog
   after the file is saved, while the main loading indicator covers rule loading.
-- **Info**, directly above **Clone**, shows the saved list's type, enabled status,
+- **Info**, directly above **Clone**, shows the saved list's type, enabled status, last refresh time,
   file size, total parsed rules, network rules, cosmetic rules, and skipped rules;
   invalid rules are shown as well. Its title is the list name. Counts include disabled lists and
   describe entries before deduplication and cross-list precedence. The saved file
@@ -91,8 +95,14 @@ finish before the startup gate opens or success feedback appears.
   mark pending values unavailable and show an error. Long names and source URLs are selectable
   and ellipsized, and the dialog body scrolls. Skipped-rule totals are not shown
   on the main list screen.
-- The empty screen uses a card reading **No filter lists have been added**, with
-  brief guidance. The two compact controls share one row, with additional space
+- **Last refreshed** records successful source downloads, including the initial download,
+  identical-content refreshes, and URL changes. It is saved with the list metadata and shown
+  immediately in Info using the device's date/time format and timezone. Failed downloads
+  or validation leave it unchanged; renaming and toggling do not alter it. Clones inherit
+  their source's timestamp. Older lists without a recorded timestamp show **Unknown** until
+  their next successful refresh. Local File lists show **Not applicable**.
+- The empty screen uses a card containing only **No filter lists have been added**.
+  The two compact controls share one row, with additional space
   before the list. A lazy vertical list handles many rows and short screens;
   long list names, picker labels, and replacement filenames use ellipses.
 - **Edit** allows names to be changed for File/URL lists; URLs can also be
@@ -108,8 +118,8 @@ finish before the startup gate opens or success feedback appears.
   Use **Edit** on the copy to change its name, URL, or File rules without changing
   the original. Cloning never makes a network request. Presets remain read-only.
 - The Add dialog starts with the list type; field labels appear above the type,
-  URL, name, file picker, and preset picker controls. The page has no additional
-  "Filter lists" heading above the list controls.
+  URL, name, file picker, and preset picker controls. The **Filter Lists** heading sits
+  below the page's action buttons and any active loading status.
 - Existing stored metadata without a type field is migrated at read time:
   local imports remain File, known preset URLs become Preset, and other
   downloaded links become URL. Existing IDs, enablement, and rule text remain

@@ -34,6 +34,86 @@ class FilterListStoreTest {
     }
 
     @Test
+    fun downloadTimesPersistAndArePreservedByMetadataChangesAndClones() {
+        val context = RuntimeEnvironment.getApplication()
+        var time = 1_000L
+        val timed = FilterListStore(context, FilterListValidator {}, now = { time })
+        val remote = timed.importFrom("Remote", "||ads.example^".byteInputStream(), "https://example.org/list.txt")
+        assertEquals(1_000L, remote.lastRefreshedAt)
+        assertEquals(remote, FilterListStore(context).list().single())
+        time = 2_000L
+        timed.rename(remote.id, "Renamed")
+        timed.setEnabled(remote.id, false)
+        timed.setAllEnabled(true)
+        val copy = timed.cloneList(remote.id)
+        assertEquals(1_000L, copy.lastRefreshedAt)
+        assertEquals(1_000L, timed.info(remote.id).item.lastRefreshedAt)
+        val file = timed.importFrom("Local", "||local.example^".byteInputStream())
+        assertNull(file.lastRefreshedAt)
+        assertNull(timed.updateFile(file.id, "Edited", "||edited.example^".byteInputStream()).lastRefreshedAt)
+        assertNull(timed.cloneList(file.id).lastRefreshedAt)
+    }
+
+    @Test
+    fun successfulRefreshesAndSourceChangesAdvanceTheirSavedTime() {
+        val context = RuntimeEnvironment.getApplication()
+        var time = 1_000L
+        val timed = FilterListStore(context, FilterListValidator {}, now = { time })
+        val preset = timed.importFrom("Preset", "||ads.example^".byteInputStream(),
+            SuggestedFilterLists.all.first().url, FilterListType.PRESET)
+        assertEquals(1_000L, preset.lastRefreshedAt)
+        time = 2_000L
+        // Identical downloaded contents still count as a successful refresh.
+        val refreshed = timed.replaceFromSource(preset.id, preset.sourceUrl!!, "||ads.example^".byteInputStream())
+        assertEquals(preset.copy(lastRefreshedAt = 2_000L), refreshed)
+        assertEquals(refreshed, FilterListStore(context).list().single())
+        val copy = timed.cloneList(preset.id)
+        time = 3_000L
+        val changed = timed.updateUrl(copy.id, copy.sourceUrl!!, "https://example.org/new.txt", "Changed",
+            "||new.example^".byteInputStream())
+        assertEquals(3_000L, changed.lastRefreshedAt)
+        assertEquals(3_000L, FilterListStore(context).info(copy.id).item.lastRefreshedAt)
+        assertEquals(2_000L, timed.info(preset.id).item.lastRefreshedAt)
+    }
+
+    @Test
+    fun failedRefreshOrSourceChangeRetainsThePreviousTimeAndRules() {
+        val context = RuntimeEnvironment.getApplication()
+        var time = 1_000L
+        val timed = FilterListStore(context, FilterListValidator {}, now = { time })
+        val item = timed.importFrom("Remote", "||old.example^".byteInputStream(), "https://example.org/list.txt")
+        time = 2_000L
+        assertThrows(IllegalArgumentException::class.java) {
+            timed.replaceFromSource(item.id, item.sourceUrl!!, byteArrayOf().inputStream())
+        }
+        assertThrows(IllegalArgumentException::class.java) {
+            timed.updateUrl(item.id, item.sourceUrl!!, "https://example.org/new.txt", "Changed", byteArrayOf(0).inputStream())
+        }
+        assertEquals(item, FilterListStore(context).list().single())
+        assertEquals(listOf("||old.example^"), timed.enabledTexts())
+    }
+
+    @Test
+    fun legacyListsAndTheirClonesKeepAnUnknownTimeUntilRefreshed() {
+        val context = RuntimeEnvironment.getApplication()
+        var time = 1_000L
+        val timed = FilterListStore(context, FilterListValidator {}, now = { time })
+        val item = timed.importFrom("Remote", "||old.example^".byteInputStream(), "https://example.org/list.txt")
+        val preferences = context.getSharedPreferences("content_blocking_lists", 0)
+        val index = JSONArray(preferences.getString("imports", "[]"))
+        index.getJSONObject(0).remove("lastRefreshedAt")
+        preferences.edit().putString("imports", index.toString()).commit()
+        assertNull(FilterListStore(context).list().single().lastRefreshedAt)
+        time = 2_000L
+        timed.rename(item.id, "Renamed")
+        val clone = timed.cloneList(item.id)
+        assertNull(clone.lastRefreshedAt)
+        val refreshed = timed.replaceFromSource(item.id, item.sourceUrl!!, "||new.example^".byteInputStream())
+        assertEquals(2_000L, refreshed.lastRefreshedAt)
+        assertNull(timed.info(clone.id).item.lastRefreshedAt)
+    }
+
+    @Test
     fun infoCountsOnlyTheRequestedSavedListWithoutChangingItsState() {
         val text = "\uFEFF! header\r\n0.0.0.0 ads.example alias.example\n||tracker.example^\n" +
             "@@||allowed.example^\nsite.example##.広告\n##.ad\n||popup.example^\$popup\n" +

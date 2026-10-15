@@ -83,7 +83,9 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import java.io.IOException
+import java.text.DateFormat
 import java.text.NumberFormat
+import java.util.Date
 
 private fun ImportedFilterList.displayName(): String =
     if (sourceUrl == null) name else name.removeSuffix(".txt")
@@ -313,6 +315,22 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 }
             }
 
+            item(key = "list-heading") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Filter Lists", modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 2, overflow = TextOverflow.Ellipsis)
+                    Text("${lists.size} total · ${lists.count { it.enabled }} enabled",
+                        modifier = Modifier.weight(1f), textAlign = TextAlign.End,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+            }
             if (lists.isEmpty()) {
                 item(key = "empty") { EmptyFilterListsCard() }
             }
@@ -457,29 +475,12 @@ private fun EmptyFilterListsCard() {
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
     ) {
-        Column(
+        Text(
+            "No filter lists have been added",
             modifier = Modifier.fillMaxWidth().padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Icon(
-                painterResource(R.drawable.outline_folder_24),
-                contentDescription = null,
-                modifier = Modifier.size(32.dp),
-                tint = MaterialTheme.colorScheme.primary,
-            )
-            Text(
-                "No filter lists have been added",
-                style = MaterialTheme.typography.titleMedium,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                "Add a filter file, an HTTPS URL, or a preset list to get started.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-            )
-        }
+            style = MaterialTheme.typography.titleMedium,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -521,6 +522,13 @@ private fun FilterListInfoDialog(item: ImportedFilterList, store: FilterListStor
                     FilterListType.PRESET -> "Preset"
                 })
                 InfoStat("Status", if (item.enabled) "Enabled" else "Disabled")
+                InfoStat("Last refreshed", when {
+                    item.type == FilterListType.FILE -> "Not applicable"
+                    item.lastRefreshedAt == null -> "Unknown"
+                    else -> remember(item.lastRefreshedAt) {
+                        DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(item.lastRefreshedAt))
+                    }
+                })
                 InfoStat("File size", fileSize?.let { Formatter.formatShortFileSize(context, it) }, unavailable)
                 InfoStat("Total rules", details?.let { numbers.format(it.totalRules) }, unavailable)
                 InfoStat("Network rules", details?.let { numbers.format(it.networkRules) }, unavailable)
@@ -603,17 +611,25 @@ private fun FilterListRow(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-                Text(
-                    when (item.type) {
-                        FilterListType.FILE -> "File"
-                        FilterListType.URL -> "URL"
-                        FilterListType.PRESET -> "Preset"
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(painterResource(when (item.type) {
+                        FilterListType.FILE -> R.drawable.outline_description_24
+                        FilterListType.URL -> R.drawable.outline_link_24
+                        FilterListType.PRESET -> R.drawable.outline_checklist_24
+                    }), contentDescription = null, modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        when (item.type) {
+                            FilterListType.FILE -> "File"
+                            FilterListType.URL -> "URL"
+                            FilterListType.PRESET -> "Preset"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
             Box {
                 IconButton(onClick = { menuExpanded = true }, enabled = !busy) {
