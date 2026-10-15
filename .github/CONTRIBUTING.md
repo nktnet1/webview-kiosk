@@ -118,8 +118,8 @@ python3 scripts/export-android-test-assets.py --assets all --output build/androi
 ```
 
 The default command remains Gradle-only; `--assets all` exports both, and
-`--assets rust` exports Rust alone. The old `.sh` entry points and
-`--with-rust` option remain compatibility wrappers around the Python command.
+`--assets rust` exports Rust alone. Use the Python command directly;
+`--with-rust` remains an alias for `--assets all`.
 If the Android/Gradle exports already exist, run only the Rust exporter instead:
 
 ```bash

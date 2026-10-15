@@ -387,15 +387,14 @@ class ExporterTest(unittest.TestCase):
 
 
 class DispatchTest(unittest.TestCase):
-    def test_cli_and_legacy_wrappers_help_without_tools(self):
-        commands = ([sys.executable, str(ROOT / "scripts/export-android-test-assets.py")],
-                    ["sh", str(ROOT / "scripts/export-android-test-assets.sh")],
-                    ["sh", str(ROOT / "scripts/export-rust-test-assets.sh")])
-        for command in commands:
-            result = subprocess.run([*command, "--help"], text=True, capture_output=True)
-            self.assertEqual(0, result.returncode, result.stderr)
-            self.assertIn("--assets", result.stdout)
-            self.assertIn("250,000,000", result.stdout)
+    def test_python_cli_help_without_tools(self):
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "scripts/export-android-test-assets.py"), "--help"],
+            text=True, capture_output=True,
+        )
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("--assets", result.stdout)
+        self.assertIn("250,000,000", result.stdout)
 
     def test_defaults_and_compatibility_alias(self):
         self.assertEqual("gradle", ASSETS.parse_args([]).assets)
