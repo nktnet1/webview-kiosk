@@ -46,12 +46,24 @@ so the indexes are rebuilt on startup. Disabling all lists clears the active sna
   The app bundles only shortcut URLs, never the filter content. All downloads
   require an explicit user action; no subscriptions or automatic refreshes run.
 - Each row has a switch on the left and a three-dot actions menu on the right:
-  **Edit**, **Update** (for URL/preset lists), **Clone**, and **Delete**. Deletion requires
+  **Edit**, **Refresh** (for URL/preset lists), **Info**, **Clone**, and **Delete**. Deletion requires
   confirmation. The loading indicator has a reserved height so toggling does
-  not shift the rows. **Update all** refetches every URL/preset list, including
+  not shift the rows. **Refresh all** refetches every URL/preset list, including
   disabled ones, but not locally imported files. Individual failures are shown
   without stopping remaining downloads or overwriting their old rules; the
   blocking engine is reloaded once after the batch.
+- **Info**, directly above **Clone**, shows the saved list's type, enabled status,
+  file size, total parsed rules, network rules, cosmetic rules, and skipped rules;
+  invalid rules are also shown when present. Counts include disabled lists and
+  describe entries before deduplication and cross-list precedence. The saved file
+  is read on an IO worker when the dialog opens; inspection changes neither the
+  stored list nor the active engine. Long names and source URLs are selectable
+  and ellipsized, and the dialog body scrolls. Skipped-rule totals are not shown
+  on the main list screen.
+- The empty screen uses a card reading **No filter lists have been added**, with
+  brief guidance. The actions wrap on narrow screens, with additional space
+  before the list. A lazy vertical list handles many rows and short screens;
+  long list names, picker labels, and replacement filenames use ellipses.
 - **Edit** allows names to be changed for File/URL lists; URLs can also be
   changed. A changed URL is fetched and validated before replacing the stored
   rules, URL, and name together. Unchanged URLs are not refetched on rename.
@@ -122,8 +134,8 @@ cannot infer filter intent and does not blacklist JSON/XML by filename or shape.
 | Popup-specific rules, redirects, response rewriting, CSP, parameter stripping, unknown modifiers | Skipped |
 
 An unsupported option discards the **whole rule**, including exception rules; its
-remaining URL pattern is never applied without its restrictions. Settings shows
-the number of skipped unsupported/invalid rules in the active snapshot. Old stored
+remaining URL pattern is never applied without its restrictions. Each list's
+**Info** dialog shows the number of skipped unsupported/invalid rules in its saved file. Old stored
 lists remain readable and useful supported rules still compile. This is a documented
 subset of EasyList, AdGuard, and uBlock syntax. Document-type rules do not introduce site-wide
 allowlisting, and parsing a resource type does not make WebView expose that type.
@@ -193,6 +205,11 @@ support disabled, new-window requests are treated as top-level navigations inste
 they cannot safely be classified as popups by the request matcher alone. See the
 [Chromium new-window flow](https://chromium.googlesource.com/chromium/src/+/HEAD/android_webview/docs/how-does-on-create-window-work.md)
 and [`WebSettings.setSupportMultipleWindows`](https://developer.android.com/reference/android/webkit/WebSettings#setSupportMultipleWindows(boolean)).
+The kiosk leaves multiple-window support at its default `false` and does not
+create child windows. A single-window kiosk does not need to implement window
+creation unless its intended workflow requires separate windows. This default
+does not enforce a blanket popup-navigation ban: a new-window link can replace
+the current page and remains subject to the app's ordinary navigation policy.
 
 ## Verification
 

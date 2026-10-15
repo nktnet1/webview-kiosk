@@ -12,6 +12,8 @@ import java.nio.charset.CharacterCodingException
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
 import java.util.UUID
+import uk.nktnet.webviewkiosk.blocking.engine.FilterParser
+import uk.nktnet.webviewkiosk.blocking.engine.ParsedFilter
 
 internal enum class FilterListType { FILE, URL, PRESET }
 
@@ -23,6 +25,19 @@ internal data class ImportedFilterList(
     val sourceUrl: String? = null,
     val type: FilterListType = if (sourceUrl == null) FilterListType.FILE else FilterListType.URL,
 )
+
+/** Counts saved entries before deduplication and cross-list rule precedence. */
+internal data class FilterListInfo(
+    val item: ImportedFilterList,
+    val sizeBytes: Long,
+    val networkRules: Int,
+    val cosmeticRules: Int,
+    val unsupportedRules: Int,
+    val invalidRules: Int,
+) {
+    val skippedRules: Int get() = unsupportedRules + invalidRules
+    val totalRules: Int get() = networkRules + cosmeticRules + skippedRules
+}
 
 /** Stores only user-imported plain-text lists in private app storage. No built-in rules. */
 internal class FilterListStore(
@@ -314,6 +329,31 @@ internal class FilterListStore(
             throw IOException("Filter list ${item.name} is missing or too large")
         }
         file.readText(Charsets.UTF_8)
+    }
+
+    /** Inspect one saved list on IO without compiling or replacing the active engine. */
+    @Synchronized
+    fun info(id: String): FilterListInfo {
+        val item = list().firstOrNull { it.id == id }
+            ?: throw IllegalArgumentException("Unknown filter list")
+        val file = fileFor(id)
+        val size = file.length()
+        if (!file.isFile || size > MAX_LIST_BYTES) {
+            throw IOException("Filter list ${item.name} is missing or too large")
+        }
+        var network = 0
+        var cosmetic = 0
+        var unsupported = 0
+        var invalid = 0
+        FilterParser.visit(file.readText(Charsets.UTF_8)) { _, rule ->
+            when (rule) {
+                is ParsedFilter.Network -> network++
+                is ParsedFilter.Cosmetic -> cosmetic++
+                ParsedFilter.Unsupported -> unsupported++
+                is ParsedFilter.Invalid -> invalid++
+            }
+        }
+        return FilterListInfo(item, size, network, cosmetic, unsupported, invalid)
     }
 
     private fun fileFor(id: String): File {

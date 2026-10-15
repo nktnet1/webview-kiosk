@@ -34,6 +34,60 @@ class FilterListStoreTest {
     }
 
     @Test
+    fun infoCountsOnlyTheRequestedSavedListWithoutChangingItsState() {
+        val text = "\uFEFF! header\r\n0.0.0.0 ads.example alias.example\n||tracker.example^\n" +
+            "@@||allowed.example^\nsite.example##.広告\n##.ad\n||popup.example^\$popup\n" +
+            "site.example#?#div:has-text(Sponsored)\n||"
+        val item = store.importFrom("Mixed", text.byteInputStream())
+        store.setEnabled(item.id, false)
+        store.importFrom("Other", "||unrelated.example^".byteInputStream())
+        val saved = store.list()
+        val enabled = store.enabledTexts()
+        val info = store.info(item.id)
+        assertEquals(item.copy(enabled = false), info.item)
+        assertEquals(text.toByteArray(Charsets.UTF_8).size.toLong(), info.sizeBytes)
+        assertEquals(4, info.networkRules)
+        assertEquals(2, info.cosmeticRules)
+        assertEquals(2, info.unsupportedRules)
+        assertEquals(1, info.invalidRules)
+        assertEquals(3, info.skippedRules)
+        assertEquals(9, info.totalRules)
+        assertEquals(saved, store.list())
+        assertEquals(enabled, store.enabledTexts())
+    }
+
+    @Test
+    fun infoReflectsFileReplacementAndDisabledClones() {
+        val item = store.importFrom("Original", "||ads.example^".byteInputStream())
+        assertEquals(1, store.info(item.id).networkRules)
+        val text = "##.ad\n||popup.example^\$popup"
+        store.updateFile(item.id, "Changed", text.byteInputStream())
+        val updated = store.info(item.id)
+        assertEquals(0, updated.networkRules)
+        assertEquals(1, updated.cosmeticRules)
+        assertEquals(1, updated.skippedRules)
+        assertEquals(text.toByteArray().size.toLong(), updated.sizeBytes)
+        val clone = store.cloneList(item.id)
+        val copy = store.info(clone.id)
+        assertEquals(clone, copy.item)
+        assertFalse(copy.item.enabled)
+        assertEquals(updated.totalRules, copy.totalRules)
+        assertEquals(updated.skippedRules, copy.skippedRules)
+    }
+
+    @Test
+    fun infoRejectsUnknownMissingAndOversizedFiles() {
+        assertThrows(IllegalArgumentException::class.java) { store.info("../outside") }
+        val item = store.importFrom("Original", "||ads.example^".byteInputStream())
+        val directory = java.io.File(RuntimeEnvironment.getApplication().filesDir, "content-blocking-lists")
+        val file = java.io.File(directory, "${item.id}.txt")
+        assertTrue(file.delete())
+        assertThrows(java.io.IOException::class.java) { store.info(item.id) }
+        java.io.RandomAccessFile(file, "rw").use { it.setLength(8L * 1024 * 1024 + 1) }
+        assertThrows(java.io.IOException::class.java) { store.info(item.id) }
+    }
+
+    @Test
     fun importedListsPersistAndCanBeDisabledAndRemoved() {
         val entry = store.importFrom("ads.txt", "||ads.example^\n".byteInputStream())
         assertEquals("ads.txt", entry.name)
