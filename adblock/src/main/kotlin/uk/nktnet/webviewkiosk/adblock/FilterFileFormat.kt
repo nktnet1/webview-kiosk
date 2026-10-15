@@ -8,7 +8,8 @@ fun validateFilterFileFormat(text: String) {
             !character.isISOControl() ||
                 character == '\t' || character == '\r' || character == '\n',
         ) {
-            val code = character.code.toString(16).uppercase().padStart(4, '0')
+            val code = character.code.toString(16)
+                .uppercase().padStart(4, '0')
             "Line $lineNumber: Filter list must be plain text " +
                 "(unexpected control character U+$code)."
         }

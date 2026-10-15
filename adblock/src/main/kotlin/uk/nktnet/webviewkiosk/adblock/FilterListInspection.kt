@@ -25,5 +25,10 @@ fun inspectFilterList(text: String): FilterRuleCounts {
             is ParsedFilter.Invalid -> invalid++
         }
     }
-    return FilterRuleCounts(network, cosmetic, unsupported, invalid)
+    return FilterRuleCounts(
+        network,
+        cosmetic,
+        unsupported,
+        invalid
+    )
 }

@@ -9,7 +9,9 @@ import java.io.File
 class KotlinFilterEngine(cacheFile: File? = null, cacheVersion: Int = 0) :
     NetworkFilterEngine,
     FilterListValidator {
-    private val cache = cacheFile?.let { CompiledFilterCache(it, cacheVersion) }
+    private val cache = cacheFile?.let {
+        CompiledFilterCache(it, cacheVersion)
+    }
 
     @Volatile private var compiled = CompiledFilters.EMPTY
 

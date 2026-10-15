@@ -18,7 +18,9 @@ internal class CompiledFilterCache(private val file: File, private val buildVers
     fun key(lists: List<String>): ByteArray {
         val digest = MessageDigest.getInstance("SHA-256")
         fun length(value: Int) {
-            for (shift in 24 downTo 0 step 8) digest.update((value ushr shift).toByte())
+            for (shift in 24 downTo 0 step 8) {
+                digest.update((value ushr shift).toByte())
+            }
         }
         length(lists.size)
         for (text in lists) {
@@ -33,7 +35,12 @@ internal class CompiledFilterCache(private val file: File, private val buildVers
         if (!file.isFile || file.length() !in 1..MAX_BYTES) return null
         return try {
             val checksum = CRC32()
-            DataInputStream(CheckedInputStream(file.inputStream().buffered(BUFFER_SIZE), checksum))
+            DataInputStream(
+                CheckedInputStream(
+                    file.inputStream().buffered(BUFFER_SIZE),
+                    checksum
+                )
+            )
                 .use { input ->
                     if (
                         input.readInt() != MAGIC ||
@@ -89,8 +96,14 @@ internal class CompiledFilterCache(private val file: File, private val buildVers
                             NetworkIdentity(pattern, conditions, exception, important, hide)
                         }
                     val cosmetics =
-                        List(input.count(FilterCompiler.MAX_RULES - skipped - networks.size)) {
-                            CosmeticRule(strings.read(), strings.scope(), input.readBoolean())
+                        List(input.count(
+                            FilterCompiler.MAX_RULES - skipped - networks.size)
+                        ) {
+                            CosmeticRule(
+                                strings.read(),
+                                strings.scope(),
+                                input.readBoolean()
+                            )
                         }
                     val actual = checksum.value
                     if (input.readLong() != actual || input.read() != -1) return null
@@ -112,7 +125,10 @@ internal class CompiledFilterCache(private val file: File, private val buildVers
             temporary = File.createTempFile("compiled-", ".tmp", parent)
             val checksum = CRC32()
             DataOutputStream(
-                CheckedOutputStream(temporary.outputStream().buffered(BUFFER_SIZE), checksum),
+                CheckedOutputStream(
+                    temporary.outputStream().buffered(BUFFER_SIZE),
+                    checksum
+                ),
             )
                 .use { output ->
                     output.writeInt(MAGIC)
@@ -205,7 +221,9 @@ internal class CompiledFilterCache(private val file: File, private val buildVers
             return if (count == 0) {
                 emptySet()
             } else {
-                LinkedHashSet<String>(count).apply { repeat(count) { add(read()) } }
+                LinkedHashSet<String>(count).apply {
+                    repeat(count) { add(read()) }
+                }
             }
         }
 
@@ -228,6 +246,8 @@ internal class CompiledFilterCache(private val file: File, private val buildVers
         private const val MAX_BYTES = 64L * 1024 * 1024
         private const val BUFFER_SIZE = 64 * 1024
 
-        private fun DataInputStream.count(max: Int): Int = readInt().also { require(it in 0..max) }
+        private fun DataInputStream.count(max: Int): Int = readInt().also {
+            require(it in 0..max)
+        }
     }
 }

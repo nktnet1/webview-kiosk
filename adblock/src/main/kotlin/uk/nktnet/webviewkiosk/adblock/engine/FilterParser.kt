@@ -193,12 +193,21 @@ internal object FilterParser {
     private fun parseHost(host: String): ParsedFilter {
         val normalized =
             normalizedHost(host) ?: return ParsedFilter.Invalid("invalid hosts hostname")
-        if (!normalized.contains('.') && !normalized.contains(':')) return ParsedFilter.Unsupported
+        if (!normalized.contains('.') && !normalized.contains(':')) {
+            return ParsedFilter.Unsupported
+        }
         val literal = if (normalized.contains(':')) "[$normalized]" else normalized
         return ParsedFilter.Network(
             NetworkRule(
                 NetworkIdentity(
-                    UrlPattern("$literal^", true, false, false, false, normalized),
+                    UrlPattern(
+                        "$literal^",
+                        true,
+                        false,
+                        false,
+                        false,
+                        normalized
+                    ),
                     Conditions.ANY,
                     false,
                     false,
@@ -281,7 +290,11 @@ internal object FilterParser {
             } else {
                 body
             }
-        val options = if (dollar >= 0) body.substring(dollar + 1).split(',') else emptyList()
+        val options = if (dollar >= 0) {
+            body.substring(dollar + 1).split(',')
+        } else {
+            emptyList()
+        }
         var scope = DomainScope.ANY
         var types = 0
         var excludedTypes = 0
@@ -294,7 +307,10 @@ internal object FilterParser {
         var hide = 0
         // Check unknown options before interpreting any remaining restriction.
         for (option in options) {
-            val name = option.substringBefore('=').removePrefix("~").lowercase(Locale.ROOT)
+            val name = option
+                .substringBefore('=')
+                .removePrefix("~")
+                .lowercase(Locale.ROOT)
             if (
                 ResourceTypes.known(name) == null &&
                 name !in
@@ -320,7 +336,10 @@ internal object FilterParser {
         }
         for (option in options) {
             val negated = option.startsWith('~')
-            val name = option.substringBefore('=').removePrefix("~").lowercase(Locale.ROOT)
+            val name = option
+                .substringBefore('=')
+                .removePrefix("~")
+                .lowercase(Locale.ROOT)
             val value = option.substringAfter('=', "")
             val type = ResourceTypes.known(name)
             if (type != null) {
@@ -402,10 +421,14 @@ internal object FilterParser {
                 }
             }
         }
-        val conditions =
-            Conditions(scope, types, excludedTypes, thirdParty, methods, excludedMethods).let {
-                if (it == Conditions.ANY) Conditions.ANY else it
-            }
+        val conditions = Conditions(
+            scope,
+            types,
+            excludedTypes,
+            thirdParty,
+            methods,
+            excludedMethods
+        )
         return ParsedFilter.Network(
             NetworkRule(
                 NetworkIdentity(
@@ -452,7 +475,9 @@ internal object FilterParser {
                 if (text.startsWith('*')) throw Unsupported
                 throw Invalid("missing host anchor")
             }
-            if (!text.startsWith('[') && text.getOrNull(end) == '*') throw Unsupported
+            if (!text.startsWith('[') && text.getOrNull(end) == '*') {
+                throw Unsupported
+            }
             val normalized =
                 normalizedHost(host, allowPrefix = end == text.length && !endAnchor)
                     ?: throw Invalid("invalid host anchor")
@@ -463,7 +488,9 @@ internal object FilterParser {
                 hostIndex = normalized
             }
         }
-        if (!matchCase) text = text.lowercase(Locale.ROOT)
+        if (!matchCase) {
+            text = text.lowercase(Locale.ROOT)
+        }
         return UrlPattern(text, domainAnchor, startAnchor, endAnchor, matchCase, hostIndex)
     }
 }
