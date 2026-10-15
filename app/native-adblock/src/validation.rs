@@ -103,8 +103,15 @@ impl ValidationReport {
                 message.push_str(&format!("\n… and {} more errors", self.invalid - self.errors.len()));
             }
             Some(message)
-        } else if self.supported == 0 && self.unsupported == 0 {
-            Some("Filter list has no rules (only comments or blank lines)".to_owned())
+        } else if self.supported == 0 {
+            if self.unsupported == 0 {
+                Some("Filter list has no rules (only comments or blank lines)".to_owned())
+            } else {
+                Some(format!(
+                    "Filter list has no supported network rules. Unsupported rules: {}. No changes were saved.",
+                    self.unsupported,
+                ))
+            }
         } else {
             None
         }
@@ -207,10 +214,34 @@ mod tests {
     }
 
     #[test]
-    fn unsupported_only_list_is_not_reported_as_malformed() {
+    fn unsupported_only_list_cannot_be_saved_as_a_usable_network_list() {
         let report = validate("example.com##.ad\n||ads.example^$future-option");
-        assert!(report.error_message().is_none());
+        assert!(report.error_message().unwrap().contains("no supported network rules"));
         assert_eq!(report.unsupported, 2);
+        assert_eq!(report.invalid, 0);
+    }
+
+    #[test]
+    fn unsupported_rules_are_warnings_when_supported_network_rules_remain() {
+        let report = validate("example.com##.ad\n||ads.example^$future-option\n||supported.example^");
+        assert!(report.error_message().is_none());
+        assert_eq!(report.supported, 1);
+        assert_eq!(report.unsupported, 2);
+        assert_eq!(report.invalid, 0);
+    }
+
+    #[test]
+    fn valid_literal_patterns_are_network_rules_without_special_markers() {
+        let report = validate("advertisement\n@@allowed\n/ads/banner*\n||ads.example^");
+        assert!(report.error_message().is_none());
+        assert_eq!(report.supported, 4);
+    }
+
+    #[test]
+    fn exception_only_lists_are_supported_network_rules() {
+        let report = validate("@@||allowed.example^");
+        assert!(report.error_message().is_none());
+        assert_eq!(report.supported, 1);
     }
 
     #[test]

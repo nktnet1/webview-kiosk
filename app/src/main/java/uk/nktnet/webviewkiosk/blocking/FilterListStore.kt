@@ -281,6 +281,7 @@ internal class FilterListStore(
                 throw IllegalArgumentException("Filter list must be UTF-8 text")
             }
             require(!data.contains(0)) { "Filter list must be plain text" }
+            validateFilterFileFormat(text)
             // Imports, edits, replacements, downloads, and clones all pass this gate
             // before either the index or an existing working file is touched.
             validator.validate(text)

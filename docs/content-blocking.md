@@ -133,6 +133,21 @@ temporary file. If the native validator cannot load, the operation fails with an
 explanation; it never silently saves unvalidated content. Existing stored lists
 remain readable, and name-only edits do not revalidate their existing rules.
 
+Before native rule parsing, a streaming file-format check rejects complete JSON
+objects and arrays, including pretty-printed documents and arrays of filter
+strings. Checking the entire document avoids relying on filenames or incorrectly
+rejecting `[Adblock Plus 2.0]` headers, bracket-shaped patterns, and JSON fragments
+inside URLs/rules. UTF-8 BOMs and surrounding whitespace do not bypass this check.
+The check uses Android's existing `JsonReader` without building a JSON tree and
+runs on the same IO dispatcher. Imports, replacements, inline edits, URL updates,
+and clones all use it; rejected documents never replace saved rules or metadata.
+Every candidate also rejects control characters other than tab, CR, and LF,
+with the original line number. This check scans all text, including comments and
+leading/trailing characters, rather than checking only particular document types.
+The native parser must accept at least one network rule before the file is saved.
+Exception rules and literal URL substring rules count; a file containing only
+unsupported rules gets a distinct error instead of being imported with no effect.
+
 The validator calls [`adblock::lists::parse_filter` from the pinned 0.13.3 engine](https://docs.rs/adblock/0.13.3/adblock/lists/fn.parse_filter.html)
 with the same network-only options used by compilation. It does not use a custom
 Adblock grammar or a JVM regex approximation. Explicit structural/hostname errors,
@@ -159,10 +174,11 @@ Upstream bulk list loading silently discards errors; its per-rule API exposes
 enough detail to reject known malformed network syntax. It also reports engine
 limitations as errors. Unknown options, unsupported domain forms, full regex
 filters (disabled in this build), unsupported modifier combinations, cosmetic
-filters, and scriptlets are therefore **compatibility warnings, not reasons to
-reject a file**. They are skipped as before, and the dialogs explain that unsupported
-filters are ignored. A file containing only unsupported rules may be saved but
-will not block requests. No cosmetic or scriptlet validation is claimed.
+filters, and scriptlets are therefore **compatibility warnings, not malformed
+rules**. They are skipped as before, and the dialogs explain that unsupported
+filters are ignored when supported network rules remain. A file containing only
+unsupported rules is rejected with a "no supported network rules" explanation,
+without labelling those rules malformed. No cosmetic or scriptlet validation is claimed.
 
 Some malformed-looking text is legal as an Adblock substring pattern, and the
 upstream parser accepts some incomplete option values (for example `$domain`
@@ -172,6 +188,13 @@ than inventing stricter syntax rules. The validator does not promise that every
 accepted line takes effect, and it does not verify filter intent or resource
 availability. Future unclassified upstream errors are treated conservatively as
 unsupported syntax. No alternate parser or new dependency is added.
+
+The JSON document check deliberately targets complete objects/arrays. Scalar
+values and literal patterns such as `true` or `123`, malformed JSON-shaped literals, and
+fragments embedded in actual rules can also be valid Adblock substring patterns,
+so they remain the rule parser's responsibility. File validation cannot reliably
+infer the author's intent from arbitrary text; it is not a guarantee that every
+unrelated text document will be recognised or that every accepted pattern is useful.
 
 ## Known WebView limitations
 

@@ -190,4 +190,112 @@ class FilterListValidationTest {
         assertEquals("Renamed", store.list().single().name)
         assertFalse(store.list().single().enabled)
     }
+
+    @Test
+    fun jsonImportIsRejectedBeforeNativeParsingRegardlessOfFilename() {
+        for (name in listOf("settings.json", "renamed.txt")) {
+            val error = assertThrows(IllegalArgumentException::class.java) {
+                store.importFrom(name, """{"setting":true}""".byteInputStream())
+            }
+            assertTrue(error.message!!.contains("JSON document"))
+        }
+        assertTrue(validated.isEmpty())
+        assertTrue(store.list().isEmpty())
+        assertTrue(directory.listFiles().orEmpty().isEmpty())
+    }
+
+    @Test
+    fun jsonReplacementCannotChangeAWorkingListsNameRulesOrEnablement() {
+        val item = store.importFrom("Working", "||working.example^".byteInputStream())
+        assertThrows(IllegalArgumentException::class.java) {
+            store.updateFile(item.id, "Changed", """["||new.example^"]""".byteInputStream())
+        }
+        assertEquals(listOf(item), store.list())
+        assertEquals(listOf("||working.example^"), store.enabledTexts())
+        assertEquals(listOf("||working.example^"), validated)
+        assertEquals(1, directory.listFiles().orEmpty().size)
+    }
+
+    @Test
+    fun fileCloneCannotBeEditedToJsonAndRemainsDisabled() {
+        val item = store.importFrom("Original", "||working.example^".byteInputStream())
+        val copy = store.cloneList(item.id)
+        assertThrows(IllegalArgumentException::class.java) {
+            store.updateFile(copy.id, "Changed", "{}".byteInputStream())
+        }
+        assertEquals(listOf(item, copy), store.list())
+        assertFalse(store.list().last().enabled)
+        assertEquals("||working.example^", store.editableFileText(copy.id))
+        assertEquals(listOf("||working.example^"), store.enabledTexts())
+        assertEquals(2, directory.listFiles().orEmpty().size)
+    }
+
+    @Test
+    fun legacyJsonCannotBeClonedButExistingDataIsPreserved() {
+        val item = store.importFrom("Legacy", "||working.example^".byteInputStream())
+        val json = """{"setting":true}"""
+        File(directory, "${item.id}.txt").writeText(json)
+        assertThrows(IllegalArgumentException::class.java) { store.cloneList(item.id) }
+        assertEquals(listOf(item), store.list())
+        assertEquals(json, store.editableFileText(item.id))
+        assertEquals(1, directory.listFiles().orEmpty().size)
+    }
+
+    @Test
+    fun jsonUrlEditCannotChangeTheWorkingSourceOrRules() {
+        val item = store.importFrom("URL", "||working.example^".byteInputStream(), "https://example.org/old.txt")
+        assertThrows(IllegalArgumentException::class.java) {
+            store.updateUrl(item.id, item.sourceUrl!!, "https://example.org/new.txt", "Changed",
+                "{}".byteInputStream())
+        }
+        assertEquals(listOf(item), store.list())
+        assertEquals(listOf("||working.example^"), store.enabledTexts())
+        assertEquals(1, directory.listFiles().orEmpty().size)
+    }
+
+    @Test
+    fun invalidControlCharactersCannotBeImportedAsRules() {
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            store.importFrom("unrelated.txt", "||ads.example^\ninvalid\u001Bcontent".byteInputStream())
+        }
+        assertTrue(error.message!!.contains("Line 2:"))
+        assertTrue(validated.isEmpty())
+        assertTrue(store.list().isEmpty())
+        assertTrue(directory.listFiles().orEmpty().isEmpty())
+    }
+
+    @Test
+    fun mixedValidAndInvalidContentCannotPartiallyReplaceAWorkingList() {
+        val item = store.importFrom("Working", "||working.example^".byteInputStream())
+        assertThrows(IllegalArgumentException::class.java) {
+            store.updateFile(item.id, "Changed", "||new.example^\ninvalid\u0085content".byteInputStream())
+        }
+        assertEquals(listOf(item), store.list())
+        assertEquals(listOf("||working.example^"), store.enabledTexts())
+        assertEquals(listOf("||working.example^"), validated)
+        assertEquals(1, directory.listFiles().orEmpty().size)
+    }
+
+    @Test
+    fun unsupportedOnlyImportsAreRejectedWithADistinctExplanation() {
+        failure = IllegalArgumentException("Filter list has no supported network rules. Unsupported rules: 1. No changes were saved.")
+        val error = assertThrows(IllegalArgumentException::class.java) {
+            store.importFrom("cosmetics.txt", "example.com##.ad".byteInputStream())
+        }
+        assertTrue(error.message!!.contains("no supported network rules"))
+        assertTrue(store.list().isEmpty())
+        assertTrue(directory.listFiles().orEmpty().isEmpty())
+    }
+
+    @Test
+    fun unsupportedOnlyReplacementKeepsTheWorkingList() {
+        val item = store.importFrom("Working", "||working.example^".byteInputStream())
+        failure = IllegalArgumentException("Filter list has no supported network rules. Unsupported rules: 1. No changes were saved.")
+        assertThrows(IllegalArgumentException::class.java) {
+            store.updateFile(item.id, "Changed", "example.com##.ad".byteInputStream())
+        }
+        assertEquals(listOf(item), store.list())
+        assertEquals(listOf("||working.example^"), store.enabledTexts())
+        assertEquals(1, directory.listFiles().orEmpty().size)
+    }
 }
