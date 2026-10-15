@@ -14,9 +14,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import uk.nktnet.webviewkiosk.adblock.FilterListValidator
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
-import uk.nktnet.webviewkiosk.filterengine.FilterListValidator
 
 @RunWith(RobolectricTestRunner::class)
 class SuggestedFilterListDownloaderTest {
@@ -39,22 +39,27 @@ class SuggestedFilterListDownloaderTest {
         requests: AtomicInteger = AtomicInteger(),
         suggestion: SuggestedFilterList = preset,
     ): SuggestedFilterListDownloader = SuggestedFilterListDownloader(
-        OkHttpClient.Builder().addInterceptor { chain ->
-            requests.incrementAndGet()
-            assertEquals(suggestion.url, chain.request().url.toString())
-            Response.Builder()
-                .request(chain.request())
-                .protocol(Protocol.HTTP_1_1)
-                .code(status)
-                .message("test response")
-                .body(content.toResponseBody(mime.toMediaType()))
-                .build()
-        }.build(),
+        OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                requests.incrementAndGet()
+                assertEquals(suggestion.url, chain.request().url.toString())
+                Response.Builder()
+                    .request(chain.request())
+                    .protocol(Protocol.HTTP_1_1)
+                    .code(status)
+                    .message("test response")
+                    .body(content.toResponseBody(mime.toMediaType()))
+                    .build()
+            }
+            .build(),
     )
 
     @Test
     fun suggestionsAreLinksNotBundledLists() {
-        assertEquals(listOf("EasyList", "EasyPrivacy", "HaGeZi Multi NORMAL"), SuggestedFilterLists.all.map { it.name })
+        assertEquals(
+            listOf("EasyList", "EasyPrivacy", "HaGeZi Multi NORMAL"),
+            SuggestedFilterLists.all.map { it.name },
+        )
         assertEquals(
             "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/multi.txt",
             SuggestedFilterLists.all.last().url,
@@ -76,11 +81,12 @@ class SuggestedFilterListDownloaderTest {
 
     @Test
     fun previouslyImportedAdGuardListIsNotRemovedByChangingSuggestions() {
-        val old = store.importFrom(
-            "AdGuard Base.txt",
-            "||ads.example^\n".byteInputStream(),
-            sourceUrl = "https://filters.adtidy.org/extension/ublock/filters/2.txt",
-        )
+        val old =
+            store.importFrom(
+                "AdGuard Base.txt",
+                "||ads.example^\n".byteInputStream(),
+                sourceUrl = "https://filters.adtidy.org/extension/ublock/filters/2.txt",
+            )
         assertFalse(SuggestedFilterLists.all.any { it.url == old.sourceUrl })
         assertEquals(old, FilterListStore(RuntimeEnvironment.getApplication()).list().single())
     }
@@ -126,9 +132,14 @@ class SuggestedFilterListDownloaderTest {
                 client.download(preset, store)
             }
             assertEquals(2, calls.get())
-            assertEquals(setOf(FilterListType.PRESET, FilterListType.URL), store.list().map { it.type }.toSet())
+            assertEquals(
+                setOf(FilterListType.PRESET, FilterListType.URL),
+                store.list().map { it.type }.toSet(),
+            )
             assertThrows(IllegalArgumentException::class.java) { client.download(preset, store) }
-            assertThrows(IllegalArgumentException::class.java) { client.downloadUrl(preset.url, "Duplicate", store) }
+            assertThrows(IllegalArgumentException::class.java) {
+                client.downloadUrl(preset.url, "Duplicate", store)
+            }
             assertEquals(2, calls.get())
             store.list().forEach { store.remove(it.id) }
         }
@@ -136,7 +147,12 @@ class SuggestedFilterListDownloaderTest {
 
     @Test
     fun duplicateUrlEditsAreRejectedBeforeFetchingWithoutChangingSavedData() {
-        val first = store.importFrom("First", "||first.example^".byteInputStream(), "https://example.org/one.txt")
+        val first =
+            store.importFrom(
+                "First",
+                "||first.example^".byteInputStream(),
+                "https://example.org/one.txt",
+            )
         val second = store.importFrom("Second", "||second.example^".byteInputStream(), preset.url)
         val calls = AtomicInteger()
         assertThrows(IllegalArgumentException::class.java) {
@@ -149,9 +165,15 @@ class SuggestedFilterListDownloaderTest {
     @Test
     fun aUrlEditMayMatchAnExistingPreset() {
         val installed = downloader().download(preset, store)
-        val url = store.importFrom("Custom", "||old.example^".byteInputStream(), "https://example.org/old.txt")
+        val url =
+            store.importFrom(
+                "Custom",
+                "||old.example^".byteInputStream(),
+                "https://example.org/old.txt",
+            )
         val calls = AtomicInteger()
-        val updated = downloader(requests = calls).editUrl(url, "Matching preset", preset.url, store)
+        val updated =
+            downloader(requests = calls).editUrl(url, "Matching preset", preset.url, store)
         assertEquals(1, calls.get())
         assertEquals(preset.url, updated.sourceUrl)
         assertEquals(FilterListType.URL, updated.type)
@@ -160,11 +182,17 @@ class SuggestedFilterListDownloaderTest {
 
     @Test
     fun errorsAndHtmlDoNotImportOrActivateLists() {
-        assertTrue(runCatching { downloader(status = 503).download(preset, store) }.exceptionOrNull() is IOException)
-        assertTrue(runCatching {
-            downloader(content = "<html>error</html>", mime = "text/html")
-                .download(preset, store)
-        }.exceptionOrNull() is IOException)
+        assertTrue(
+            runCatching { downloader(status = 503).download(preset, store) }.exceptionOrNull()
+                is IOException,
+        )
+        assertTrue(
+            runCatching {
+                downloader(content = "<html>error</html>", mime = "text/html")
+                    .download(preset, store)
+            }
+                .exceptionOrNull() is IOException,
+        )
         assertTrue(store.list().isEmpty())
         assertTrue(store.enabledTexts().isEmpty())
     }
@@ -172,7 +200,9 @@ class SuggestedFilterListDownloaderTest {
     @Test
     fun downloadedBodyUsesSameSizeValidationAsLocalImports() {
         val oversized = "||ads.example^\n".repeat(600_000)
-        assertTrue(runCatching { downloader(content = oversized).download(preset, store) }.isFailure)
+        assertTrue(
+            runCatching { downloader(content = oversized).download(preset, store) }.isFailure,
+        )
         assertTrue(store.list().isEmpty())
     }
 
@@ -185,15 +215,18 @@ class SuggestedFilterListDownloaderTest {
 
     @Test
     fun refreshDownloadsInPlaceAndPreservesRenamedDisabledLists() {
-        val original = store.importFrom(
-            "EasyList.txt", "||old.example^".byteInputStream(), sourceUrl = preset.url,
-        )
+        val original =
+            store.importFrom(
+                "EasyList.txt",
+                "||old.example^".byteInputStream(),
+                sourceUrl = preset.url,
+            )
         store.rename(original.id, "My filters")
         store.setEnabled(original.id, false)
         val calls = AtomicInteger()
         currentTime = 2_000L
-        val refreshed = downloader(content = "||new.example^", requests = calls)
-            .refresh(original, store)
+        val refreshed =
+            downloader(content = "||new.example^", requests = calls).refresh(original, store)
 
         assertEquals(1, calls.get())
         assertEquals(original.id, refreshed.id)
@@ -211,9 +244,12 @@ class SuggestedFilterListDownloaderTest {
     fun refreshSupportsOlderCustomSourceUrls() {
         val legacyUrl = "https://filters.adtidy.org/extension/ublock/filters/2.txt"
         val legacy = SuggestedFilterList("Previously downloaded", "", legacyUrl)
-        val old = store.importFrom(
-            "AdGuard Base.txt", "||old.example^".byteInputStream(), sourceUrl = legacyUrl,
-        )
+        val old =
+            store.importFrom(
+                "AdGuard Base.txt",
+                "||old.example^".byteInputStream(),
+                sourceUrl = legacyUrl,
+            )
         currentTime = 2_000L
         downloader(content = "||updated.example^", suggestion = legacy).refresh(old, store)
         assertEquals(listOf("||updated.example^"), store.enabledTexts())
@@ -222,15 +258,19 @@ class SuggestedFilterListDownloaderTest {
 
     @Test
     fun failedRefreshKeepsOriginalRulesAndMetadata() {
-        val original = store.importFrom(
-            "Original.txt", "||old.example^".byteInputStream(), sourceUrl = preset.url,
-        )
-        val invalid = listOf(
-            downloader(status = 503),
-            downloader(content = "<html>oops</html>", mime = "text/html"),
-            downloader(content = ""),
-            downloader(content = "||ads.example^\n".repeat(600_000)),
-        )
+        val original =
+            store.importFrom(
+                "Original.txt",
+                "||old.example^".byteInputStream(),
+                sourceUrl = preset.url,
+            )
+        val invalid =
+            listOf(
+                downloader(status = 503),
+                downloader(content = "<html>oops</html>", mime = "text/html"),
+                downloader(content = ""),
+                downloader(content = "||ads.example^\n".repeat(600_000)),
+            )
         invalid.forEach { client ->
             assertTrue(runCatching { client.refresh(original, store) }.isFailure)
             assertEquals(original, store.list().single())
@@ -253,15 +293,19 @@ class SuggestedFilterListDownloaderTest {
 
     @Test
     fun refreshRejectsInsecureSourceUrlsWithoutNetworkAccess() {
-        val old = store.importFrom(
-            "Unsafe.txt", "||old.example^".byteInputStream(), sourceUrl = "http://example.org/list.txt",
-        )
+        val old =
+            store.importFrom(
+                "Unsafe.txt",
+                "||old.example^".byteInputStream(),
+                sourceUrl = "http://example.org/list.txt",
+            )
         val calls = AtomicInteger()
         val client = downloader(requests = calls)
         assertThrows(IllegalArgumentException::class.java) { client.refresh(old, store) }
         assertEquals(0, calls.get())
         assertEquals(listOf("||old.example^"), store.enabledTexts())
     }
+
     @Test
     fun manuallyEnteredHttpsUrlCreatesEditableUrlList() {
         val imported = downloader().downloadUrl(preset.url, "My manual list", store)
@@ -287,18 +331,29 @@ class SuggestedFilterListDownloaderTest {
 
     @Test
     fun editingUrlFetchesNewSourceWhileNameOnlyEditStaysOffline() {
-        val original = store.importFrom("Initial", "||old.example^".byteInputStream(), "https://example.org/initial.txt")
+        val original =
+            store.importFrom(
+                "Initial",
+                "||old.example^".byteInputStream(),
+                "https://example.org/initial.txt",
+            )
         val calls = AtomicInteger()
-        val client = SuggestedFilterListDownloader(
-            OkHttpClient.Builder().addInterceptor { chain ->
-                calls.incrementAndGet()
-                assertEquals("https://example.org/new.txt", chain.request().url.toString())
-                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
-                    .code(200).message("ok")
-                    .body("||new.example^".toResponseBody("text/plain".toMediaType()))
-                    .build()
-            }.build(),
-        )
+        val client =
+            SuggestedFilterListDownloader(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        calls.incrementAndGet()
+                        assertEquals("https://example.org/new.txt", chain.request().url.toString())
+                        Response.Builder()
+                            .request(chain.request())
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(200)
+                            .message("ok")
+                            .body("||new.example^".toResponseBody("text/plain".toMediaType()))
+                            .build()
+                    }
+                    .build(),
+            )
         client.editUrl(original, "Rename only", original.sourceUrl!!, store)
         assertEquals(0, calls.get())
         val changed = client.editUrl(original, "New source", "https://example.org/new.txt", store)
@@ -311,14 +366,26 @@ class SuggestedFilterListDownloaderTest {
 
     @Test
     fun failedUrlChangeDoesNotChangeNameSourceOrRules() {
-        val original = store.importFrom("Initial", "||old.example^".byteInputStream(), "https://example.org/initial.txt")
-        val client = SuggestedFilterListDownloader(
-            OkHttpClient.Builder().addInterceptor { chain ->
-                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
-                    .code(503).message("unavailable")
-                    .body("error".toResponseBody()).build()
-            }.build(),
-        )
+        val original =
+            store.importFrom(
+                "Initial",
+                "||old.example^".byteInputStream(),
+                "https://example.org/initial.txt",
+            )
+        val client =
+            SuggestedFilterListDownloader(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        Response.Builder()
+                            .request(chain.request())
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(503)
+                            .message("unavailable")
+                            .body("error".toResponseBody())
+                            .build()
+                    }
+                    .build(),
+            )
         assertThrows(IOException::class.java) {
             client.editUrl(original, "Other", "https://example.org/new.txt", store)
         }
@@ -328,20 +395,29 @@ class SuggestedFilterListDownloaderTest {
 
     @Test
     fun updateAllSkipsFilesAndContinuesAfterIndividualFailures() {
-        val good = store.importFrom("Good", "old good".byteInputStream(), "https://example.org/good.txt")
-        val bad = store.importFrom("Bad", "old bad".byteInputStream(), "https://example.org/bad.txt")
+        val good =
+            store.importFrom("Good", "old good".byteInputStream(), "https://example.org/good.txt")
+        val bad =
+            store.importFrom("Bad", "old bad".byteInputStream(), "https://example.org/bad.txt")
         val local = store.importFrom("Local", "local".byteInputStream())
         store.setEnabled(bad.id, false)
         val calls = AtomicInteger()
-        val client = SuggestedFilterListDownloader(
-            OkHttpClient.Builder().addInterceptor { chain ->
-                calls.incrementAndGet()
-                val isGood = chain.request().url.toString() == good.sourceUrl
-                Response.Builder().request(chain.request()).protocol(Protocol.HTTP_1_1)
-                    .code(if (isGood) 200 else 500).message("test")
-                    .body((if (isGood) "new good" else "error").toResponseBody()).build()
-            }.build(),
-        )
+        val client =
+            SuggestedFilterListDownloader(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        calls.incrementAndGet()
+                        val isGood = chain.request().url.toString() == good.sourceUrl
+                        Response.Builder()
+                            .request(chain.request())
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(if (isGood) 200 else 500)
+                            .message("test")
+                            .body((if (isGood) "new good" else "error").toResponseBody())
+                            .build()
+                    }
+                    .build(),
+            )
         currentTime = 2_000L
         val result = client.refreshAll(store)
         assertEquals(2, result.total)
@@ -349,7 +425,9 @@ class SuggestedFilterListDownloaderTest {
         assertEquals(listOf("Bad"), result.failures.map { it.name })
         assertEquals(2, calls.get())
         assertEquals(listOf("new good", "local"), store.enabledTexts())
-        assertEquals(listOf(good.copy(lastRefreshedAt = 2_000L), bad.copy(enabled = false), local), store.list())
+        assertEquals(
+            listOf(good.copy(lastRefreshedAt = 2_000L), bad.copy(enabled = false), local),
+            store.list(),
+        )
     }
-
 }

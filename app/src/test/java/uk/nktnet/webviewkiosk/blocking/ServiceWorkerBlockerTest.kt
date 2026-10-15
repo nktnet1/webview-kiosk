@@ -10,9 +10,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import uk.nktnet.webviewkiosk.adblock.FilterListValidator
+import uk.nktnet.webviewkiosk.adblock.NetworkFilterEngine
 import java.util.concurrent.Executor
-import uk.nktnet.webviewkiosk.filterengine.FilterListValidator
-import uk.nktnet.webviewkiosk.filterengine.NetworkFilterEngine
 
 @RunWith(RobolectricTestRunner::class)
 class ServiceWorkerBlockerTest {
@@ -26,14 +26,22 @@ class ServiceWorkerBlockerTest {
         java.io.File(context.filesDir, "content-blocking-lists").deleteRecursively()
         val store = FilterListStore(context, FilterListValidator {})
         store.importFrom("ads.txt", "||ads.example^".byteInputStream())
-        val engine = object : NetworkFilterEngine {
-            override fun replace(lists: List<String>) = Unit
-            override fun clear() = Unit
-            override fun shouldBlock(url: String, sourceUrl: String, type: String, method: String): Boolean {
-                lastSource = sourceUrl
-                return Uri.parse(url).host == "ads.example"
+        val engine =
+            object : NetworkFilterEngine {
+                override fun replace(lists: List<String>) = Unit
+
+                override fun clear() = Unit
+
+                override fun shouldBlock(
+                    url: String,
+                    sourceUrl: String,
+                    type: String,
+                    method: String,
+                ): Boolean {
+                    lastSource = sourceUrl
+                    return Uri.parse(url).host == "ads.example"
+                }
             }
-        }
         service = ContentBlockingService(store, engine, Executor { it.run() }).also { it.start() }
     }
 
@@ -46,28 +54,50 @@ class ServiceWorkerBlockerTest {
 
     @Test
     fun usesRequestInitiatorRatherThanAnUnrelatedWebView() {
-        assertNotNull(ServiceWorkerBlocker.intercept(request(mapOf("rEfErEr" to "https://publisher.example/article")), service))
+        assertNotNull(
+            ServiceWorkerBlocker.intercept(
+                request(mapOf("rEfErEr" to "https://publisher.example/article")),
+                service,
+            ),
+        )
         assertEquals("https://publisher.example/article", lastSource)
-        assertNotNull(ServiceWorkerBlocker.intercept(request(mapOf("Origin" to "https://worker.example")), service))
+        assertNotNull(
+            ServiceWorkerBlocker.intercept(
+                request(mapOf("Origin" to "https://worker.example")),
+                service,
+            ),
+        )
         assertEquals("https://worker.example", lastSource)
     }
 
     @Test
     fun unknownOpaqueAndInternalOriginsFailOpen() {
-        for (headers in listOf(
-            emptyMap(), mapOf("Origin" to "null"), mapOf("Referer" to "file:///private.html"),
+        for (
+        headers in
+        listOf(
+            emptyMap(),
+            mapOf("Origin" to "null"),
+            mapOf("Referer" to "file:///private.html"),
             mapOf("Origin" to "https://appassets.androidplatform.net/"),
             mapOf("Origin" to "https://appassets.androidplatform.net"),
-        )) assertNull(ServiceWorkerBlocker.intercept(request(headers), service))
+        )
+        ) {
+            assertNull(ServiceWorkerBlocker.intercept(request(headers), service))
+        }
         assertNull(lastSource)
     }
 
     private fun request(headers: Map<String, String>) = object : WebResourceRequest {
         override fun getUrl(): Uri = Uri.parse("https://ads.example/a.js")
+
         override fun isForMainFrame() = false
+
         override fun isRedirect() = false
+
         override fun hasGesture() = false
+
         override fun getMethod() = "GET"
+
         override fun getRequestHeaders() = headers
     }
 }

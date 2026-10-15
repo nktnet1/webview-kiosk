@@ -3,12 +3,12 @@ import org.gradle.api.artifacts.ProjectDependency
 // Resolve only the artifacts needed for the engine JVM and Android/Robolectric tests.
 // This init script deliberately registers no dependency on a build or test task.
 gradle.beforeProject { project ->
-    if (project.path in [':app', ':filter-engine']) {
-        def engine = project.path == ':filter-engine'
+    if (project.path in [':app', ':adblock']) {
+        def engine = project.path == ':adblock'
         project.tasks.register('resolveAndroidTestAssets') {
             group = 'help'
             description = 'Download JVM test dependencies without compiling or running tests.'
-            if (!engine) dependsOn(':filter-engine:resolveAndroidTestAssets')
+            if (!engine) dependsOn(':adblock:resolveAndroidTestAssets')
 
             doLast {
                 def required = engine ? [
@@ -37,7 +37,9 @@ gradle.beforeProject { project ->
                     def configuration = project.configurations.findByName(configurationName)
                     if (configuration == null || !configuration.canBeResolved) {
                         if (required.contains(configurationName)) {
-                            throw new GradleException("Cannot resolve required configuration: ${configurationName}")
+                            throw new GradleException(
+                                "Cannot resolve required configuration: ${configurationName}"
+                            )
                         }
                         return
                     }
@@ -50,11 +52,14 @@ gradle.beforeProject { project ->
                     // The JVM engine has only external dependencies. Resolve its
                     // original configuration so Kotlin's lazy stdlib defaults and
                     // version alignment are retained by the exporter.
-                    def externalOnly = engine ? configuration : configuration.copyRecursive { dependency ->
-                        !(dependency instanceof ProjectDependency)
-                    }
+                    def externalOnly = engine ? configuration :
+                        configuration.copyRecursive { dependency ->
+                            !(dependency instanceof ProjectDependency)
+                        }
                     def files = externalOnly.incoming.artifacts.artifactFiles.files
-                    logger.lifecycle("Resolved ${project.path}:${configurationName}: ${files.size()} files")
+                    logger.lifecycle(
+                        "Resolved ${project.path}:${configurationName}: ${files.size()} files"
+                    )
                 }
             }
         }

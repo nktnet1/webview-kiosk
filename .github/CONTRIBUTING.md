@@ -18,7 +18,7 @@ Use JetBrains Java 21 (JBRSDK) and the Android SDK required by
 root:
 
 ```bash
-./gradlew :filter-engine:test :app:testDebugUnitTest
+./gradlew :adblock:test :app:testDebugUnitTest
 ```
 
 > [!NOTE]
@@ -33,9 +33,9 @@ of the Android URI parsing change. Keyboard tests use a scoped shadow for the
 native key-name lookup missing from Robolectric 4.17. The tests use local fixtures
 and do not require an emulator or MQTT broker.
 
-The parser, matcher, and compiled-cache tests live in `filter-engine/src/test/kotlin`.
+The parser, matcher, and compiled-cache tests live in `adblock/src/test/kotlin`.
 They use JUnit and OkHttp's JVM public-suffix data, without Android or Robolectric.
-Run just those tests with `./gradlew :filter-engine:test --configure-on-demand`.
+Run just those tests with `./gradlew :adblock:test --configure-on-demand`.
 
 Run the asset-exporter, CI runner, and cosmetic page-script regressions with
 Python 3.10+ and Node.js 24 (no npm packages required):

@@ -4,8 +4,11 @@
 /.idea/assetWizardSettings.xml
 /.idea/caches
 /.idea/codeStyles
+/.idea/compiler.xml
 /.idea/deploymentTargetSelector.xml
 /.idea/deviceHardwareInput.xml
+/.idea/gradle.xml
+/.idea/kotlinc.xml
 /.idea/libraries
 /.idea/markdown.xml
 /.idea/misc.xml
@@ -13,7 +16,7 @@
 /.idea/navEditor.xml
 /.idea/workspace.xml
 .DS_Store
-/build
+build/
 /captures
 .externalNativeBuild
 .cxx
@@ -28,3 +31,6 @@ local.properties
 
 *.bundle
 *.patch
+
+__pycache__/
+*.py[cod]

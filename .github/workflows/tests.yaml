@@ -46,10 +46,12 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-provider: enhanced
-          cache-read-only: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+          cache-read-only: >-
+            ${{ github.event_name == 'pull_request'
+            && github.event.pull_request.head.repo.full_name != github.repository }}
 
       - name: Run unit tests
-        run: sh gradlew :filter-engine:test :app:testDebugUnitTest --build-cache --profile --stacktrace
+        run: sh gradlew :adblock:test :app:testDebugUnitTest --build-cache --profile --stacktrace
 
       - name: Upload JVM test reports
         if: always()
@@ -57,8 +59,8 @@ jobs:
         with:
           name: android-unit-results
           path: |
-            filter-engine/build/test-results/test/
-            filter-engine/build/reports/tests/test/
+            adblock/build/test-results/test/
+            adblock/build/reports/tests/test/
             app/build/test-results/testDebugUnitTest/
             app/build/reports/tests/testDebugUnitTest/
             build/reports/profile/

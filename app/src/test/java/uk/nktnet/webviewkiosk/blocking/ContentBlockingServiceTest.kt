@@ -1,5 +1,8 @@
 package uk.nktnet.webviewkiosk.blocking
 
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -9,14 +12,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.async
-import kotlinx.coroutines.runBlocking
+import uk.nktnet.webviewkiosk.adblock.FilterListValidator
+import uk.nktnet.webviewkiosk.adblock.NetworkFilterEngine
+import uk.nktnet.webviewkiosk.adblock.RuleLoadStage
 import java.util.ArrayDeque
 import java.util.concurrent.Executor
-import uk.nktnet.webviewkiosk.filterengine.FilterListValidator
-import uk.nktnet.webviewkiosk.filterengine.NetworkFilterEngine
-import uk.nktnet.webviewkiosk.filterengine.RuleLoadStage
 
 @RunWith(RobolectricTestRunner::class)
 class ContentBlockingServiceTest {
@@ -42,7 +42,14 @@ class ContentBlockingServiceTest {
         executor.runAll()
         assertEquals(0, engine.replacements)
         assertEquals(1, engine.clears)
-        assertFalse(service.shouldBlock("https://ads.example/pixel", "https://site.example", "other", "GET"))
+        assertFalse(
+            service.shouldBlock(
+                "https://ads.example/pixel",
+                "https://site.example",
+                "other",
+                "GET",
+            ),
+        )
         assertNull(service.lastError.value)
         assertNull(service.loadStage.value)
     }
@@ -71,19 +78,47 @@ class ContentBlockingServiceTest {
     fun compilationOccursOutsideRequestAndIsReplacedAfterUpdate() {
         val item = store.importFrom("test.txt", "||ads.example^".byteInputStream())
         service.start()
-        assertFalse(service.shouldBlock("https://ads.example/pixel", "https://site.example", "other", "GET"))
+        assertFalse(
+            service.shouldBlock(
+                "https://ads.example/pixel",
+                "https://site.example",
+                "other",
+                "GET",
+            ),
+        )
         executor.runAll()
         assertEquals(1, engine.replacements)
         assertEquals(BlockingStatus.ACTIVE, service.status.value)
-        assertTrue(service.shouldBlock("https://ads.example/pixel", "https://site.example", "other", "GET"))
+        assertTrue(
+            service.shouldBlock(
+                "https://ads.example/pixel",
+                "https://site.example",
+                "other",
+                "GET",
+            ),
+        )
 
         store.setEnabled(item.id, false)
         service.reload()
-        assertTrue(service.shouldBlock("https://ads.example/pixel", "https://site.example", "other", "GET"))
+        assertTrue(
+            service.shouldBlock(
+                "https://ads.example/pixel",
+                "https://site.example",
+                "other",
+                "GET",
+            ),
+        )
         executor.runAll()
         assertEquals(1, engine.clears)
         assertEquals(BlockingStatus.DISABLED, service.status.value)
-        assertFalse(service.shouldBlock("https://ads.example/pixel", "https://site.example", "other", "GET"))
+        assertFalse(
+            service.shouldBlock(
+                "https://ads.example/pixel",
+                "https://site.example",
+                "other",
+                "GET",
+            ),
+        )
     }
 
     @Test
@@ -103,7 +138,9 @@ class ContentBlockingServiceTest {
         engine.failReplace = true
         service.start()
         executor.runAll()
-        assertFalse(service.shouldBlock("https://ads.example", "https://site.example", "other", "GET"))
+        assertFalse(
+            service.shouldBlock("https://ads.example", "https://site.example", "other", "GET"),
+        )
         assertTrue(service.lastError.value!!.contains("failed"))
         assertEquals(BlockingStatus.ERROR, service.status.value)
         assertTrue(service.initialLoadComplete.value)
@@ -130,7 +167,14 @@ class ContentBlockingServiceTest {
         service.reload()
         assertTrue(service.hasActiveRules)
         executor.runAll()
-        assertTrue(service.shouldBlock("https://ads.example/pixel", "https://site.example", "other", "GET"))
+        assertTrue(
+            service.shouldBlock(
+                "https://ads.example/pixel",
+                "https://site.example",
+                "other",
+                "GET",
+            ),
+        )
         assertEquals(BlockingStatus.ERROR, service.status.value)
         assertTrue(service.lastError.value!!.contains("failed"))
     }
@@ -155,7 +199,12 @@ class ContentBlockingServiceTest {
 
     @Test
     fun rejectedLoaderReleasesTheStartupGate() = runBlocking {
-        val rejected = ContentBlockingService(store, engine, Executor { throw java.util.concurrent.RejectedExecutionException("closed") })
+        val rejected =
+            ContentBlockingService(
+                store,
+                engine,
+                Executor { throw java.util.concurrent.RejectedExecutionException("closed") },
+            )
         rejected.awaitInitialLoad()
         assertEquals(BlockingStatus.ERROR, rejected.status.value)
         assertFalse(rejected.hasActiveRules)
@@ -171,7 +220,9 @@ class ContentBlockingServiceTest {
         executor.runAll()
         waiting.await()
         assertEquals(BlockingStatus.ACTIVE, service.status.value)
-        assertTrue(service.shouldBlock("https://ads.example/a", "https://site.example/", "other", "GET"))
+        assertTrue(
+            service.shouldBlock("https://ads.example/a", "https://site.example/", "other", "GET"),
+        )
     }
 
     @Test
@@ -181,7 +232,8 @@ class ContentBlockingServiceTest {
         val firstWaiter = async(start = CoroutineStart.UNDISPATCHED) { service.awaitReload(first) }
         store.setAllEnabled(false)
         val latest = service.reload()
-        val latestWaiter = async(start = CoroutineStart.UNDISPATCHED) { service.awaitReload(latest) }
+        val latestWaiter =
+            async(start = CoroutineStart.UNDISPATCHED) { service.awaitReload(latest) }
         executor.runNext()
         assertFalse(firstWaiter.isCompleted)
         assertFalse(latestWaiter.isCompleted)
@@ -212,18 +264,28 @@ class ContentBlockingServiceTest {
         executor.runAll()
         engine.failReplace = true
         val revision = service.reload()
-        val waiting = async(start = CoroutineStart.UNDISPATCHED) { runCatching { service.awaitReload(revision) } }
+        val waiting =
+            async(start = CoroutineStart.UNDISPATCHED) {
+                runCatching { service.awaitReload(revision) }
+            }
         executor.runAll()
         val result = waiting.await()
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull()!!.message!!.contains("rules could not be loaded"))
         assertEquals(BlockingStatus.ERROR, service.status.value)
-        assertTrue(service.shouldBlock("https://ads.example/a", "https://site.example/", "other", "GET"))
+        assertTrue(
+            service.shouldBlock("https://ads.example/a", "https://site.example/", "other", "GET"),
+        )
     }
 
     @Test
     fun rejectedReloadCompletesItsWaiterWithAnError() = runBlocking {
-        val rejected = ContentBlockingService(store, engine, Executor { throw java.util.concurrent.RejectedExecutionException("closed") })
+        val rejected =
+            ContentBlockingService(
+                store,
+                engine,
+                Executor { throw java.util.concurrent.RejectedExecutionException("closed") },
+            )
         val revision = rejected.reload()
         assertTrue(runCatching { rejected.awaitReload(revision) }.isFailure)
         assertEquals(BlockingStatus.ERROR, rejected.status.value)
@@ -249,22 +311,40 @@ class ContentBlockingServiceTest {
         var duringReplace: () -> Unit = {}
         var duringClear: () -> Unit = {}
         private var list = ""
+
         override fun replace(lists: List<String>) {
             duringReplace()
             if (failReplace) throw IllegalStateException("failed to compile")
             replacements++
             list = lists.joinToString("\n")
         }
-        override fun clear() { duringClear(); clears++; list = ""; skipped = 0 }
+
+        override fun clear() {
+            duringClear()
+            clears++
+            list = ""
+            skipped = 0
+        }
+
         override fun unsupportedRuleCount(): Int = skipped
+
         override fun shouldBlock(url: String, sourceUrl: String, type: String, method: String) =
             list.contains("||ads.example^") && url.contains("ads.example")
     }
 
     private class QueuedExecutor : Executor {
         val queue = ArrayDeque<Runnable>()
-        override fun execute(command: Runnable) { queue.addLast(command) }
-        fun runNext() { queue.removeFirst().run() }
-        fun runAll() { while (queue.isNotEmpty()) queue.removeFirst().run() }
+
+        override fun execute(command: Runnable) {
+            queue.addLast(command)
+        }
+
+        fun runNext() {
+            queue.removeFirst().run()
+        }
+
+        fun runAll() {
+            while (queue.isNotEmpty()) queue.removeFirst().run()
+        }
     }
 }

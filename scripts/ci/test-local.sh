@@ -70,14 +70,15 @@ checks() {
 
 jvm() {
     require_tool java
-    printf 'Local tests: running filter-engine JVM and Android JVM/Robolectric tests\n'
-    sh gradlew :filter-engine:test :app:testDebugUnitTest --build-cache --profile --stacktrace
+    printf 'Local tests: running adblock JVM and Android JVM/Robolectric tests\n'
+    sh gradlew :adblock:test :app:testDebugUnitTest --build-cache --profile --stacktrace
 }
 
 prepare_docs() {
     require_tool node
     require_tool pnpm
-    [ -d docs/node_modules ] || die 'docs/node_modules is missing. Install the locked dependencies separately before running docs tests.'
+    [ -d docs/node_modules ] || die \
+        'docs/node_modules is missing. Install the locked dependencies before running docs tests.'
 }
 
 docs() {

@@ -1,14 +1,14 @@
 package uk.nktnet.webviewkiosk.blocking
 
-import androidx.core.net.toUri
 import android.webkit.WebResourceRequest
-import uk.nktnet.webviewkiosk.config.Constants
 import android.webkit.WebResourceResponse
+import androidx.core.net.toUri
+import uk.nktnet.webviewkiosk.config.Constants
 import java.io.ByteArrayInputStream
 
 /**
- * WebView has no reliable resource-type or initiator-frame API. Only match subresources
- * with a known top-level URL; unknown types are "other" and can underblock typed rules.
+ * WebView has no reliable resource-type or initiator-frame API. Only match subresources with a
+ * known top-level URL; unknown types are "other" and can underblock typed rules.
  */
 internal object WebViewBlocker {
     private val empty = ByteArray(0)
@@ -30,10 +30,18 @@ internal object WebViewBlocker {
         pageUrl: String,
         service: ContentBlockingService,
     ): WebResourceResponse? {
-        if (!shouldBlock(
-                request.url.toString(), request.isForMainFrame, pageUrl,
-                request.requestHeaders.orEmpty(), request.method, service,
-            )) return null
+        if (
+            !shouldBlock(
+                request.url.toString(),
+                request.isForMainFrame,
+                pageUrl,
+                request.requestHeaders.orEmpty(),
+                request.method,
+                service,
+            )
+        ) {
+            return null
+        }
         return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(empty))
     }
 
@@ -47,20 +55,40 @@ internal object WebViewBlocker {
     }
 
     internal fun resourceType(headers: Map<String, String>): String {
-        val destination = headers.entries.firstOrNull {
-            it.key.equals("sec-fetch-dest", ignoreCase = true)
-        }?.value?.lowercase()
+        val destination =
+            headers.entries
+                .firstOrNull {
+                    it.key.equals("sec-fetch-dest", ignoreCase = true)
+                }
+                ?.value
+                ?.lowercase()
         return when (destination) {
             "image" -> "image"
+
             "script" -> "script"
+
             "style" -> "stylesheet"
+
             "font" -> "font"
-            "audio", "video", "track" -> "media"
-            "iframe", "frame" -> "subdocument"
+
+            "audio",
+            "video",
+            "track",
+            -> "media"
+
+            "iframe",
+            "frame",
+            -> "subdocument"
+
             else -> {
-                val accept = headers.entries.firstOrNull {
-                    it.key.equals("accept", ignoreCase = true)
-                }?.value?.lowercase().orEmpty()
+                val accept =
+                    headers.entries
+                        .firstOrNull {
+                            it.key.equals("accept", ignoreCase = true)
+                        }
+                        ?.value
+                        ?.lowercase()
+                        .orEmpty()
                 when {
                     accept.startsWith("image/") -> "image"
                     accept.startsWith("text/css") -> "stylesheet"

@@ -1,8 +1,8 @@
 package uk.nktnet.webviewkiosk.blocking
 
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 
@@ -10,41 +10,42 @@ import java.util.concurrent.TimeUnit
  * Opt-in download shortcuts only. No rule lists or subscriptions are bundled or fetched at startup.
  * The source URLs are published by their respective list maintainers.
  */
-internal data class SuggestedFilterList(
-    val name: String,
-    val description: String,
-    val url: String,
-)
+internal data class SuggestedFilterList(val name: String, val description: String, val url: String)
 
 internal object SuggestedFilterLists {
-    val all = listOf(
-        SuggestedFilterList(
-            name = "EasyList",
-            description = "Ads",
-            url = "https://easylist.to/easylist/easylist.txt",
-        ),
-        SuggestedFilterList(
-            name = "EasyPrivacy",
-            description = "Trackers",
-            url = "https://easylist.to/easylist/easyprivacy.txt",
-        ),
-        SuggestedFilterList(
-            name = "HaGeZi Multi NORMAL",
-            description = "Ads, trackers & threats",
-            url = "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/multi.txt",
-        ),
-    )
+    val all =
+        listOf(
+            SuggestedFilterList(
+                name = "EasyList",
+                description = "Ads",
+                url = "https://easylist.to/easylist/easylist.txt",
+            ),
+            SuggestedFilterList(
+                name = "EasyPrivacy",
+                description = "Trackers",
+                url = "https://easylist.to/easylist/easyprivacy.txt",
+            ),
+            SuggestedFilterList(
+                name = "HaGeZi Multi NORMAL",
+                description = "Ads, trackers & threats",
+                url = "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/multi.txt",
+            ),
+        )
 }
 
 internal data class FilterRefreshFailure(val name: String, val message: String)
-internal data class FilterRefreshResult(val updated: Int, val total: Int, val failures: List<FilterRefreshFailure>)
+
+internal data class FilterRefreshResult(
+    val updated: Int,
+    val total: Int,
+    val failures: List<FilterRefreshFailure>,
+)
 
 /** Performs user-initiated HTTPS downloads and refreshes, never background subscriptions. */
-internal class SuggestedFilterListDownloader(
-    private val client: OkHttpClient = sharedClient,
-) {
+internal class SuggestedFilterListDownloader(private val client: OkHttpClient = sharedClient) {
     companion object {
-        // Reuse one small connection pool across settings visits instead of creating one per screen.
+        // Reuse one small connection pool across settings visits instead of creating one per
+        // screen.
         private val sharedClient by lazy {
             OkHttpClient.Builder()
                 // Follow ordinary HTTPS redirects, but never downgrade to cleartext HTTP.
@@ -74,22 +75,34 @@ internal class SuggestedFilterListDownloader(
     fun downloadUrl(url: String, name: String, store: FilterListStore): ImportedFilterList {
         val validated = requireHttpsUrl(url)
         require(!store.containsUrl(validated)) { "A URL list with this address already exists" }
-        return fetch(validated) { stream -> store.importFrom(name, stream, validated, FilterListType.URL) }
+        return fetch(validated) { stream ->
+            store.importFrom(name, stream, validated, FilterListType.URL)
+        }
     }
 
     /** Refetches any downloaded list, including presets and older non-preset URLs. */
     fun refresh(item: ImportedFilterList, store: FilterListStore): ImportedFilterList {
-        val current = store.list().firstOrNull { it.id == item.id }
-            ?: throw IllegalArgumentException("Unknown filter list")
-        val url = current.sourceUrl ?: throw IllegalArgumentException("Local lists cannot be refreshed")
+        val current =
+            store.list().firstOrNull { it.id == item.id }
+                ?: throw IllegalArgumentException("Unknown filter list")
+        val url =
+            current.sourceUrl ?: throw IllegalArgumentException("Local lists cannot be refreshed")
         return fetch(url) { stream -> store.replaceFromSource(current.id, url, stream) }
     }
 
     /** Change the URL and rules together; name-only edits never trigger a download. */
-    fun editUrl(item: ImportedFilterList, name: String, url: String, store: FilterListStore): ImportedFilterList {
-        val current = store.list().firstOrNull { it.id == item.id }
-            ?: throw IllegalArgumentException("Unknown filter list")
-        require(current.type == FilterListType.URL) { "Only URL lists have editable download addresses" }
+    fun editUrl(
+        item: ImportedFilterList,
+        name: String,
+        url: String,
+        store: FilterListStore,
+    ): ImportedFilterList {
+        val current =
+            store.list().firstOrNull { it.id == item.id }
+                ?: throw IllegalArgumentException("Unknown filter list")
+        require(current.type == FilterListType.URL) {
+            "Only URL lists have editable download addresses"
+        }
         val validated = requireHttpsUrl(url)
         val original = current.sourceUrl ?: throw IllegalArgumentException("Missing list URL")
         if (validated == original) {
@@ -120,17 +133,20 @@ internal class SuggestedFilterListDownloader(
 
     private fun requireHttpsUrl(url: String): String {
         val address = url.trim().toHttpUrlOrNull()
-        require(address != null && address.scheme == "https" && address.username.isEmpty() && address.password.isEmpty()) {
+        require(
+            address != null &&
+                address.scheme == "https" &&
+                address.username.isEmpty() &&
+                address.password.isEmpty(),
+        ) {
             "Enter a valid HTTPS filter-list URL"
         }
         return address.toString()
     }
 
     private inline fun <T> fetch(url: String, save: (java.io.InputStream) -> T): T {
-        val request = Request.Builder()
-            .url(requireHttpsUrl(url))
-            .header("Accept", "text/plain")
-            .build()
+        val request =
+            Request.Builder().url(requireHttpsUrl(url)).header("Accept", "text/plain").build()
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
                 throw IOException("Filter-list download failed (HTTP ${response.code})")
@@ -142,9 +158,11 @@ internal class SuggestedFilterListDownloader(
             if (body.contentLength() > FilterListStore.MAX_LIST_BYTES) {
                 throw IOException("Filter list exceeds 8 MiB")
             }
-            if (body.contentType()?.let {
+            if (
+                body.contentType()?.let {
                     it.type == "text" && it.subtype == "html"
-                } == true) {
+                } == true
+            ) {
                 throw IOException("The server returned an HTML page instead of a filter list")
             }
             return save(body.byteStream())

@@ -6,21 +6,26 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import uk.nktnet.webviewkiosk.BuildConfig
+import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
+import uk.nktnet.webviewkiosk.adblock.NetworkFilterEngine
+import uk.nktnet.webviewkiosk.adblock.RuleLoadStage
 import java.io.File
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
-import uk.nktnet.webviewkiosk.filterengine.KotlinFilterEngine
-import uk.nktnet.webviewkiosk.filterengine.NetworkFilterEngine
-import uk.nktnet.webviewkiosk.filterengine.RuleLoadStage
 
-internal enum class BlockingStatus { DISABLED, LOADING, ACTIVE, ERROR }
+internal enum class BlockingStatus {
+    DISABLED,
+    LOADING,
+    ACTIVE,
+    ERROR,
+}
 
 private data class RuleLoadCompletion(val revision: Long, val error: Throwable? = null)
 
 /**
- * Serialises list compilation away from the UI and the WebView request threads.
- * A successful compilation atomically replaces the immutable Kotlin engine snapshot.
+ * Serialises list compilation away from the UI and the WebView request threads. A successful
+ * compilation atomically replaces the immutable Kotlin engine snapshot.
  */
 internal class ContentBlockingService(
     private val store: FilterListStore,
@@ -30,13 +35,15 @@ internal class ContentBlockingService(
     private val generation = AtomicLong(0)
     private var started = false
 
-    @Volatile
-    private var ready = false
+    @Volatile private var ready = false
 
     private val _initialLoadComplete = MutableStateFlow(false)
     val initialLoadComplete = _initialLoadComplete.asStateFlow()
-    val hasActiveRules: Boolean get() = ready
-    val hasActiveCosmeticRules: Boolean get() = ready && engine.hasCosmeticRules()
+    val hasActiveRules: Boolean
+        get() = ready
+
+    val hasActiveCosmeticRules: Boolean
+        get() = ready && engine.hasCosmeticRules()
 
     private val _status = MutableStateFlow(BlockingStatus.DISABLED)
     val status = _status.asStateFlow()
@@ -99,10 +106,14 @@ internal class ContentBlockingService(
     /** Wait for this load, or the newer load that superseded it, without blocking a thread. */
     suspend fun awaitReload(revision: Long) {
         require(revision > 0) { "A rule-load revision is required" }
-        val result = completedLoad.first { it.revision >= revision && it.revision == generation.get() }
+        val result = completedLoad.first {
+            it.revision >= revision && it.revision == generation.get()
+        }
         result.error?.let { error ->
             throw IllegalStateException(
-                "Filter lists were saved, but rules could not be loaded: ${error.message ?: "Unknown error"}", error,
+                "Filter lists were saved, but rules could not be loaded: " +
+                    (error.message ?: "Unknown error"),
+                error,
             )
         }
     }
@@ -156,24 +167,36 @@ internal class ContentBlockingService(
 
     companion object {
         private const val TAG = "ContentBlocking"
+
         @Volatile private var instance: ContentBlockingService? = null
 
-        fun get(context: Context): ContentBlockingService = instance ?: synchronized(this) {
-            instance ?: ContentBlockingService(
-                FilterListStore(context.applicationContext),
-                KotlinFilterEngine(
-                    cacheFile = File(context.applicationContext.cacheDir, "content-blocking/compiled-rules.bin"),
-                    cacheVersion = BuildConfig.VERSION_CODE,
-                ),
-                Executors.newSingleThreadExecutor { task ->
-                    Thread(task, "content-blocking-loader").apply { isDaemon = true }
-                },
-            ).also {
-                // Explicit initialization also covers test/headless entry points where
-                // AndroidX Startup has not initialized OkHttp's existing suffix asset.
-                okhttp3.OkHttp.initialize(context.applicationContext)
-                instance = it
+        fun get(context: Context): ContentBlockingService = instance
+            ?: synchronized(this) {
+                instance
+                    ?: ContentBlockingService(
+                        FilterListStore(context.applicationContext),
+                        KotlinFilterEngine(
+                            cacheFile =
+                            File(
+                                context.applicationContext.cacheDir,
+                                "content-blocking/compiled-rules.bin",
+                            ),
+                            cacheVersion = BuildConfig.VERSION_CODE,
+                        ),
+                        Executors.newSingleThreadExecutor { task ->
+                            Thread(task, "content-blocking-loader").apply {
+                                isDaemon = true
+                            }
+                        },
+                    )
+                        .also {
+                            // Explicit initialization also covers test/headless entry points
+                            // where
+                            // AndroidX Startup has not initialized OkHttp's existing suffix
+                            // asset.
+                            okhttp3.OkHttp.initialize(context.applicationContext)
+                            instance = it
+                        }
             }
-        }
     }
 }

@@ -69,7 +69,7 @@ class LocalTestRunnerTest(unittest.TestCase):
         result = self.run_suite("jvm")
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(
-            ":filter-engine:test\n:app:testDebugUnitTest\n--build-cache\n--profile\n--stacktrace\n",
+            ":adblock:test\n:app:testDebugUnitTest\n--build-cache\n--profile\n--stacktrace\n",
             self.read_gradle_args(),
         )
 
@@ -97,7 +97,9 @@ class LocalTestRunnerTest(unittest.TestCase):
         (self.root / "docs/node_modules").mkdir()
         result = self.run_suite("docs-browser")
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertEqual("-C docs build\n-C docs test:e2e\n", (self.root / "pnpm-args.txt").read_text())
+        self.assertEqual(
+            "-C docs build\n-C docs test:e2e\n", (self.root / "pnpm-args.txt").read_text()
+        )
 
     def test_docs_runs_checks_and_vitest(self):
         (self.root / "docs/node_modules").mkdir()
@@ -121,7 +123,7 @@ class LocalTestRunnerTest(unittest.TestCase):
         result = self.run_suite("all")
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(
-            ":filter-engine:test\n:app:testDebugUnitTest\n--build-cache\n--profile\n--stacktrace\n",
+            ":adblock:test\n:app:testDebugUnitTest\n--build-cache\n--profile\n--stacktrace\n",
             self.read_gradle_args(),
         )
         self.assertEqual(

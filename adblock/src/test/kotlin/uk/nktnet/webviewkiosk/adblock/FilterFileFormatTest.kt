@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.filterengine
+package uk.nktnet.webviewkiosk.adblock
 
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
@@ -7,7 +7,9 @@ import org.junit.Test
 class FilterFileFormatTest {
     @Test
     fun documentPunctuationAndFilterSyntaxAreLeftToTheRuleParser() {
-        for (text in listOf(
+        for (
+        text in
+        listOf(
             "{}",
             "[]",
             "\uFEFF \r\n {\"message\": \"例子\"}\r\n\t",
@@ -22,15 +24,22 @@ class FilterFileFormatTest {
             "{\"ad\":true}\$script",
             "||api.example/ads?payload={\"ad\":true}",
             "example.com##[data-ad=\"true\"]",
-        )) validateFilterFileFormat(text)
+        )
+        ) {
+            validateFilterFileFormat(text)
+        }
     }
 
     @Test
     fun controlCharactersAreRejectedInAnyContentIncludingComments() {
-        for (character in listOf('\u0000', '\u0001', '\u000C', '\u001B', '\u007F', '\u0085', '\u009F')) {
-            val error = assertThrows(IllegalArgumentException::class.java) {
-                validateFilterFileFormat("||working.example^\r\n! comment $character")
-            }
+        for (
+        character in
+        listOf('\u0000', '\u0001', '\u000C', '\u001B', '\u007F', '\u0085', '\u009F')
+        ) {
+            val error =
+                assertThrows(IllegalArgumentException::class.java) {
+                    validateFilterFileFormat("||working.example^\r\n! comment $character")
+                }
             assertTrue(error.message!!.contains("Line 2:"))
             assertTrue(error.message!!.contains("control character"))
         }
@@ -38,19 +47,25 @@ class FilterFileFormatTest {
 
     @Test
     fun leadingControlCharactersCannotHideInTrimmedWhitespace() {
-        val error = assertThrows(IllegalArgumentException::class.java) {
-            validateFilterFileFormat("\u001B||ads.example^")
-        }
+        val error =
+            assertThrows(IllegalArgumentException::class.java) {
+                validateFilterFileFormat("\u001B||ads.example^")
+            }
         assertTrue(error.message!!.contains("Line 1:"))
         assertTrue(error.message!!.contains("U+001B"))
     }
 
     @Test
     fun normalWhitespaceUnicodeAndLiteralPatternsRemainPermitted() {
-        for (text in listOf(
+        for (
+        text in
+        listOf(
             "\uFEFF! 例子\tfilters\r\n0.0.0.0\tads.example\r\n||例子.测试^\r\n",
             "advertisement\n@@allowed\n/ads/banner*\n||ads.example^",
             "||ads.example^\$csp=script-src 'none'\nexample.com##div > .ad",
-        )) validateFilterFileFormat(text)
+        )
+        ) {
+            validateFilterFileFormat(text)
+        }
     }
 }

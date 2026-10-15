@@ -4,7 +4,9 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class MinimumLoadingStateTest {
@@ -13,7 +15,14 @@ class MinimumLoadingStateTest {
         var time = 0L
         var waited = 0L
         val release = CompletableDeferred<Unit>()
-        val loading = MinimumLoadingState(now = { time }, pause = { waited = it; release.await() })
+        val loading =
+            MinimumLoadingState(
+                now = { time },
+                pause = {
+                    waited = it
+                    release.await()
+                },
+            )
         loading.show("Loading rules…")
         time = 100L
         val hide = async(start = CoroutineStart.UNDISPATCHED) { loading.hide() }
@@ -32,7 +41,8 @@ class MinimumLoadingStateTest {
     @Test
     fun slowWorkDoesNotAddAnotherSecond() = runBlocking {
         var time = 0L
-        val loading = MinimumLoadingState(now = { time }, pause = { error("No extra wait expected") })
+        val loading =
+            MinimumLoadingState(now = { time }, pause = { error("No extra wait expected") })
         loading.show("Downloading…")
         time = 1_500L
         loading.hide()
@@ -88,7 +98,8 @@ class MinimumLoadingStateTest {
     @Test
     fun cancellingAPendingHideKeepsTheMessageUntilTheNextCompletion() = runBlocking {
         var time = 0L
-        val loading = MinimumLoadingState(now = { time }, pause = { CompletableDeferred<Unit>().await() })
+        val loading =
+            MinimumLoadingState(now = { time }, pause = { CompletableDeferred<Unit>().await() })
         loading.show("Loading…")
         val pending = async(start = CoroutineStart.UNDISPATCHED) { loading.hide() }
         pending.cancel()

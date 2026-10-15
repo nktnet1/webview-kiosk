@@ -15,15 +15,20 @@ internal object ServiceWorkerBlocker {
     fun install(service: ContentBlockingService) {
         if (installed) return
         try {
-            if (WebViewFeature.isFeatureSupported(WebViewFeature.SERVICE_WORKER_BASIC_USAGE) &&
-                WebViewFeature.isFeatureSupported(WebViewFeature.SERVICE_WORKER_SHOULD_INTERCEPT_REQUEST)
-            ) {
-                ServiceWorkerControllerCompat.getInstance().setServiceWorkerClient(
-                    object : ServiceWorkerClientCompat() {
-                        override fun shouldInterceptRequest(request: WebResourceRequest): WebResourceResponse? =
-                            intercept(request, service)
-                    },
+            if (
+                WebViewFeature.isFeatureSupported(WebViewFeature.SERVICE_WORKER_BASIC_USAGE) &&
+                WebViewFeature.isFeatureSupported(
+                    WebViewFeature.SERVICE_WORKER_SHOULD_INTERCEPT_REQUEST,
                 )
+            ) {
+                ServiceWorkerControllerCompat.getInstance()
+                    .setServiceWorkerClient(
+                        object : ServiceWorkerClientCompat() {
+                            override fun shouldInterceptRequest(
+                                request: WebResourceRequest,
+                            ): WebResourceResponse? = intercept(request, service)
+                        },
+                    )
             }
             installed = true
         } catch (error: RuntimeException) {
@@ -36,14 +41,22 @@ internal object ServiceWorkerBlocker {
         }
     }
 
-    internal fun intercept(request: WebResourceRequest, service: ContentBlockingService): WebResourceResponse? {
+    internal fun intercept(
+        request: WebResourceRequest,
+        service: ContentBlockingService,
+    ): WebResourceResponse? {
         val headers = request.requestHeaders.orEmpty()
         // Never borrow an unrelated tab's URL or guess the worker's first/third-party context.
         // Without an initiator header, keep the existing fail-open policy.
-        val source = sequenceOf("referer", "origin").mapNotNull { name ->
-            headers.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }?.value
-                ?.takeIf(WebViewBlocker::isFilterableUrl)
-        }.firstOrNull() ?: return null
+        val source =
+            sequenceOf("referer", "origin")
+                .mapNotNull { name ->
+                    headers.entries
+                        .firstOrNull { it.key.equals(name, ignoreCase = true) }
+                        ?.value
+                        ?.takeIf(WebViewBlocker::isFilterableUrl)
+                }
+                .firstOrNull() ?: return null
         return WebViewBlocker.intercept(request, source, service)
     }
 }

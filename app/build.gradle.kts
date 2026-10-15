@@ -108,7 +108,7 @@ kotlin {
 }
 
 dependencies {
-    implementation(project(":filter-engine"))
+    implementation(project(":adblock"))
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.core.ktx)

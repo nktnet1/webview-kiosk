@@ -1,7 +1,7 @@
-package uk.nktnet.webviewkiosk.filterengine
+package uk.nktnet.webviewkiosk.adblock
 
-import uk.nktnet.webviewkiosk.filterengine.engine.FilterParser
-import uk.nktnet.webviewkiosk.filterengine.engine.ParsedFilter
+import uk.nktnet.webviewkiosk.adblock.engine.FilterParser
+import uk.nktnet.webviewkiosk.adblock.engine.ParsedFilter
 
 /** Saved-rule counts before deduplication or precedence across lists. */
 data class FilterRuleCounts(

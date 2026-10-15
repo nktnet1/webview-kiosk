@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.filterengine.engine
+package uk.nktnet.webviewkiosk.adblock.engine
 
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -17,15 +17,35 @@ internal fun normalizedHost(value: String, allowPrefix: Boolean = false): String
     }
     if (host.all { it in 'a'..'z' || it in '0'..'9' || it in "-._" }) {
         val labels = (if (allowPrefix) host.removeSuffix(".") else host).split('.')
-        if (labels.any { it.isEmpty() || it.length > 63 || it.startsWith('-') || it.endsWith('-') }) return null
+        if (labels.any {
+                it.isEmpty() || it.length > 63 || it.startsWith('-') || it.endsWith('-')
+            }
+        ) {
+            return null
+        }
         // Reject invalid numeric IPv4 hosts rather than letting them become URL patterns.
         if (!allowPrefix && host.all { it in '0'..'9' || it == '.' } && host.contains('.')) {
-            if (host.split('.').size != 4 || host.split('.').any { (it.toIntOrNull() ?: 256) !in 0..255 }) return null
+            if (
+                host.split('.').size != 4 ||
+                host.split('.').any { (it.toIntOrNull() ?: 256) !in 0..255 }
+            ) {
+                return null
+            }
         }
         return host
     }
-    if (host.any { it.isWhitespace() || (it.code < 128 && it !in 'a'..'z' && it !in '0'..'9' && it !in "-._") }) return null
-    return "http://$host/".toHttpUrlOrNull()?.takeIf { it.username.isEmpty() && it.password.isEmpty() && it.port == 80 }?.host
+    if (
+        host.any {
+            it.isWhitespace() ||
+                (it.code < 128 && it !in 'a'..'z' && it !in '0'..'9' && it !in "-._")
+        }
+    ) {
+        return null
+    }
+    return "http://$host/"
+        .toHttpUrlOrNull()
+        ?.takeIf { it.username.isEmpty() && it.password.isEmpty() && it.port == 80 }
+        ?.host
 }
 
 internal fun domainMatches(host: String, domain: String): Boolean =
@@ -56,6 +76,7 @@ internal class MatchBudget {
     private var work = 0
     var exhausted = false
         private set
+
     fun consume(amount: Int = 1): Boolean {
         work += amount
         if (work > 250_000) exhausted = true
@@ -71,32 +92,44 @@ internal data class UrlPattern(
     val matchCase: Boolean,
     val hostIndex: String?,
 ) {
-    val plainHost: String? get() = hostIndex?.takeIf { domainAnchor && text == "$it^" && !endAnchor }
+    val plainHost: String?
+        get() = hostIndex?.takeIf { domainAnchor && text == "$it^" && !endAnchor }
 
     // Host-anchored filters use the hostname index. Other patterns get a literal
     // substring index, not a word index: "advert" must also match "myadvert.js".
-    val indexToken: Int? = if (hostIndex != null) null else run {
-        var bestStart = -1
-        var bestLength = 0
-        var runStart = 0
-        for (i in 0..text.length) {
-            if (i == text.length || !(text[i].isLetterOrDigit() || text[i] == '_' || text[i] == '-')) {
-                if (i - runStart >= 4 && i - runStart >= bestLength) {
-                    bestStart = runStart
-                    bestLength = i - runStart
+    val indexToken: Int? =
+        if (hostIndex != null) {
+            null
+        } else {
+            run {
+                var bestStart = -1
+                var bestLength = 0
+                var runStart = 0
+                for (i in 0..text.length) {
+                    if (
+                        i == text.length ||
+                        !(text[i].isLetterOrDigit() || text[i] == '_' || text[i] == '-')
+                    ) {
+                        if (i - runStart >= 4 && i - runStart >= bestLength) {
+                            bestStart = runStart
+                            bestLength = i - runStart
+                        }
+                        runStart = i + 1
+                    }
                 }
-                runStart = i + 1
+                if (bestStart >= 0) tokenHash(text, bestStart) else null
             }
         }
-        if (bestStart >= 0) tokenHash(text, bestStart) else null
-    }
 
     fun matches(address: HttpUrl, url: String, budget: MatchBudget): Boolean {
         if (!domainAnchor) return glob(url, 0, !startAnchor, budget)
         if (hostIndex != null && !domainMatches(address.host, hostIndex)) return false
         val authorityStart = url.indexOf("://") + 3
         val authorityEnd = url.indexOf('/', authorityStart).let { if (it < 0) url.length else it }
-        val hostStart = url.lastIndexOf('@', authorityEnd - 1).let { if (it >= authorityStart) it + 1 else authorityStart }
+        val hostStart =
+            url.lastIndexOf('@', authorityEnd - 1).let {
+                if (it >= authorityStart) it + 1 else authorityStart
+            }
         if (glob(url, hostStart, false, budget)) return true
         if (address.host.contains(':')) return false
         val hostEnd = hostStart + address.host.length
@@ -120,7 +153,8 @@ internal data class UrlPattern(
             if (p < text.length && text[p] == '*') {
                 star = p++
                 retry = u
-            } else if (p < text.length &&
+            } else if (
+                p < text.length &&
                 (if (text[p] == '^') separator(url[u]) else text[p].equals(url[u], !matchCase))
             ) {
                 p++
@@ -128,7 +162,9 @@ internal data class UrlPattern(
             } else if (star != -1) {
                 p = if (star == -2) 0 else star + 1
                 u = ++retry
-            } else return false
+            } else {
+                return false
+            }
         }
         while (p < text.length && (text[p] == '*' || text[p] == '^')) p++
         return p == text.length

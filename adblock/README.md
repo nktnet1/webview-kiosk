@@ -1,10 +1,10 @@
-# Filter engine
+# Adblock
 
 Internal Kotlin/JVM library for the kiosk's network and basic CSS filter rules.
 It depends on the same OkHttp version as the app for URL parsing and public-suffix
 classification. It has no Android, Compose, or app-module dependency.
 
-The public API is in `uk.nktnet.webviewkiosk.filterengine`:
+The public API is in `uk.nktnet.webviewkiosk.adblock`:
 
 - `KotlinFilterEngine` validates and compiles lists, matches requests, and selects
   cosmetic rules. Optional `cacheFile` and `cacheVersion` arguments enable the
@@ -22,7 +22,7 @@ serialization of replacements, list storage, downloads, and WebView integration.
 From the repository root, run the plain JVM tests with:
 
 ```sh
-./gradlew :filter-engine:test --configure-on-demand
+./gradlew :adblock:test --configure-on-demand
 ```
 
 The tests require no Android SDK or Robolectric. Run the complete engine and Android

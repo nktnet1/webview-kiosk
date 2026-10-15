@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.filterengine
+package uk.nktnet.webviewkiosk.adblock
 
 enum class RuleLoadStage(val description: String) {
     READING_LISTS("Reading saved filter lists…"),
@@ -13,14 +13,21 @@ enum class RuleLoadStage(val description: String) {
 /** Injectable request/selector boundary shared by production and host tests. */
 interface NetworkFilterEngine {
     fun replace(lists: List<String>)
+
     fun replace(lists: List<String>, onProgress: (RuleLoadStage) -> Unit) {
         onProgress(RuleLoadStage.COMPILING)
         replace(lists)
     }
+
     fun clear()
+
     fun shouldBlock(url: String, sourceUrl: String, type: String, method: String): Boolean
+
     fun hasCosmeticRules(): Boolean = false
-    fun cosmeticSelectors(url: String, classes: List<String>, ids: List<String>): List<String> = emptyList()
+
+    fun cosmeticSelectors(url: String, classes: List<String>, ids: List<String>): List<String> =
+        emptyList()
+
     fun unsupportedRuleCount(): Int = 0
 }
 
