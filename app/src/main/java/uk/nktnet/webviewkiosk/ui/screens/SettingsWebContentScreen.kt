@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.screens
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -10,8 +11,6 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -57,9 +56,7 @@ fun SettingsWebContentScreen(navController: NavController) {
             AllowLocalFilesSetting()
 
             Spacer(modifier = Modifier.height(16.dp))
-            HorizontalDivider(modifier = Modifier.padding(bottom = 12.dp))
 
-            // Use the same sub-settings cards as MQTT's Connection / Topics screens.
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 SettingListItem(
                     title = stringResource(R.string.settings_content_blocking_title),
