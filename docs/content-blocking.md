@@ -64,8 +64,9 @@ finish before the startup gate opens or success feedback appears.
   require an explicit user action; no subscriptions or automatic refreshes run.
 - Each row has a switch on the left and a three-dot actions menu on the right:
   **Edit**, **Refresh** (for URL/preset lists), **Info**, **Clone**, and **Delete**. Deletion requires
-  confirmation. The loading phase and indicator have reserved space so toggling does
-  not shift the rows. The compact **Actions** menu beside **Add list** contains
+  confirmation. While work is in progress, a small centered spinner and phase text
+  appear below the buttons. When idle, they are removed entirely, leaving only the
+  normal 12 dp list spacing. The compact **Actions** menu beside **Add list** contains
   **Enable all**, **Disable all**, and **Refresh all**. **Refresh all** refetches every URL/preset list, including
   disabled ones, but not locally imported files. Individual failures are shown
   without stopping remaining downloads or overwriting their old rules; the

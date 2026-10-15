@@ -35,7 +35,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
@@ -275,29 +274,25 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                         ) { Text("Add list", maxLines = 1, overflow = TextOverflow.Ellipsis) }
                     }
 
-                    Spacer(Modifier.height(12.dp))
-                    // Reserve room for both the phase and indicator so rows do not jump.
-                    Column(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            when {
-                                blockingStatus == BlockingStatus.LOADING -> loadStage?.description ?: "Loading filter rules…"
-                                busy -> workingMessage
-                                else -> ""
-                            },
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            minLines = 2,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Spacer(Modifier.height(6.dp))
-                        Box(Modifier.fillMaxWidth().height(4.dp)) {
-                            if (busy || blockingStatus == BlockingStatus.LOADING) {
-                                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
-                            }
+                    if (busy || blockingStatus == BlockingStatus.LOADING) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                            Text(
+                                if (blockingStatus == BlockingStatus.LOADING) loadStage?.description ?: "Loading filter rules…"
+                                else workingMessage,
+                                modifier = Modifier.fillMaxWidth(),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                textAlign = TextAlign.Center,
+                                maxLines = 3,
+                                overflow = TextOverflow.Ellipsis,
+                            )
                         }
                     }
-                    Spacer(Modifier.height(12.dp))
                 }
             }
             if (!showAddDialog && pendingEdit == null) {
