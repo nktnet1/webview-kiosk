@@ -46,6 +46,7 @@ class FilterListStoreTest {
         val info = store.info(item.id)
         assertEquals(item.copy(enabled = false), info.item)
         assertEquals(text.toByteArray(Charsets.UTF_8).size.toLong(), info.sizeBytes)
+        assertEquals(info.sizeBytes, store.fileSizeBytes(item.id))
         assertEquals(4, info.networkRules)
         assertEquals(2, info.cosmeticRules)
         assertEquals(2, info.unsupportedRules)
@@ -83,8 +84,35 @@ class FilterListStoreTest {
         val file = java.io.File(directory, "${item.id}.txt")
         assertTrue(file.delete())
         assertThrows(java.io.IOException::class.java) { store.info(item.id) }
+        assertThrows(java.io.IOException::class.java) { store.fileSizeBytes(item.id) }
         java.io.RandomAccessFile(file, "rw").use { it.setLength(8L * 1024 * 1024 + 1) }
         assertThrows(java.io.IOException::class.java) { store.info(item.id) }
+        assertThrows(java.io.IOException::class.java) { store.fileSizeBytes(item.id) }
+    }
+
+    @Test
+    fun bulkTogglesPreserveListMetadataAndAllSavedRuleFiles() {
+        val text = "||ads.example^"
+        val first = store.importFrom("File", text.byteInputStream())
+        store.importFrom("Remote", "##.ad".byteInputStream(), "https://lists.example/ads.txt")
+        store.cloneList(first.id)
+        val saved = store.list()
+        store.setAllEnabled(true)
+        assertEquals(saved.map { it.copy(enabled = true) }, store.list())
+        assertEquals(listOf(text, "##.ad", text), store.enabledTexts())
+        store.setAllEnabled(false)
+        assertEquals(saved.map { it.copy(enabled = false) }, store.list())
+        assertTrue(store.enabledTexts().isEmpty())
+        store.setAllEnabled(true)
+        assertEquals(listOf(text, "##.ad", text), store.enabledTexts())
+    }
+
+    @Test
+    fun bulkTogglesOnAnEmptyStoreDoNotCreateSavedEntries() {
+        store.setAllEnabled(true)
+        store.setAllEnabled(false)
+        assertTrue(store.list().isEmpty())
+        assertFalse(RuntimeEnvironment.getApplication().getSharedPreferences("content_blocking_lists", 0).contains("imports"))
     }
 
     @Test

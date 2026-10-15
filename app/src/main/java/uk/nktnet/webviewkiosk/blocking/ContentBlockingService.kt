@@ -11,6 +11,8 @@ import java.util.concurrent.atomic.AtomicLong
 
 internal enum class BlockingStatus { DISABLED, LOADING, ACTIVE, ERROR }
 
+private data class RuleLoadCompletion(val revision: Long, val error: Throwable? = null)
+
 /**
  * Serialises list compilation away from the UI and the WebView request threads.
  * A successful compilation atomically replaces the immutable Kotlin engine snapshot.
@@ -37,6 +39,7 @@ internal class ContentBlockingService(
     val lastError = _lastError.asStateFlow()
     private val _skippedRules = MutableStateFlow(0)
     val skippedRules = _skippedRules.asStateFlow()
+    private val completedLoad = MutableStateFlow(RuleLoadCompletion(0))
 
     @Synchronized
     fun start() {
@@ -51,7 +54,8 @@ internal class ContentBlockingService(
         initialLoadComplete.first { it }
     }
 
-    fun reload() {
+    @Synchronized
+    fun reload(): Long {
         val revision = generation.incrementAndGet()
         _status.value = BlockingStatus.LOADING
         try {
@@ -65,13 +69,7 @@ internal class ContentBlockingService(
                     } else {
                         engine.replace(texts)
                     }
-                    if (revision == generation.get()) {
-                        _lastError.value = null
-                        ready = texts.isNotEmpty()
-                        _skippedRules.value = engine.unsupportedRuleCount()
-                        _status.value = if (ready) BlockingStatus.ACTIVE else BlockingStatus.DISABLED
-                        _initialLoadComplete.value = true
-                    }
+                    finishReload(revision, texts.isNotEmpty())
                 } catch (e: Exception) {
                     reportError(revision, e)
                 } catch (e: LinkageError) {
@@ -81,14 +79,39 @@ internal class ContentBlockingService(
         } catch (e: Exception) {
             reportError(revision, e)
         }
+        return revision
     }
 
+    /** Wait for this load, or the newer load that superseded it, without blocking a thread. */
+    suspend fun awaitReload(revision: Long) {
+        require(revision > 0) { "A rule-load revision is required" }
+        val result = completedLoad.first { it.revision >= revision && it.revision == generation.get() }
+        result.error?.let { error ->
+            throw IllegalStateException(
+                "Filter lists were saved, but rules could not be loaded: ${error.message ?: "Unknown error"}", error,
+            )
+        }
+    }
+
+    @Synchronized
+    private fun finishReload(revision: Long, hasRules: Boolean) {
+        if (revision != generation.get()) return
+        _lastError.value = null
+        ready = hasRules
+        _skippedRules.value = engine.unsupportedRuleCount()
+        _status.value = if (ready) BlockingStatus.ACTIVE else BlockingStatus.DISABLED
+        _initialLoadComplete.value = true
+        completedLoad.value = RuleLoadCompletion(revision)
+    }
+
+    @Synchronized
     private fun reportError(revision: Long, error: Throwable) {
         if (revision == generation.get()) {
             // Compilation is atomic. A failed update leaves the last working rules active.
             _lastError.value = error.message ?: "Content-blocking rules could not be loaded"
             _status.value = BlockingStatus.ERROR
             _initialLoadComplete.value = true
+            completedLoad.value = RuleLoadCompletion(revision, error)
             Log.e(TAG, "Failed to load content-blocking rules", error)
         }
     }

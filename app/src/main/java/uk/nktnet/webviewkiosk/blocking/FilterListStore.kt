@@ -314,6 +314,15 @@ internal class FilterListStore(
         save(existing.map { if (it.id == id) it.copy(enabled = enabled) else it })
     }
 
+    /** Persist one bulk change; callers queue one engine reload after it commits. */
+    @Synchronized
+    fun setAllEnabled(enabled: Boolean) {
+        val existing = list()
+        if (existing.any { it.enabled != enabled }) {
+            save(existing.map { it.copy(enabled = enabled) })
+        }
+    }
+
     @Synchronized
     fun remove(id: String) {
         val existing = list()
@@ -334,13 +343,8 @@ internal class FilterListStore(
     /** Inspect one saved list on IO without compiling or replacing the active engine. */
     @Synchronized
     fun info(id: String): FilterListInfo {
-        val item = list().firstOrNull { it.id == id }
-            ?: throw IllegalArgumentException("Unknown filter list")
-        val file = fileFor(id)
+        val (item, file) = infoFile(id)
         val size = file.length()
-        if (!file.isFile || size > MAX_LIST_BYTES) {
-            throw IOException("Filter list ${item.name} is missing or too large")
-        }
         var network = 0
         var cosmetic = 0
         var unsupported = 0
@@ -354,6 +358,20 @@ internal class FilterListStore(
             }
         }
         return FilterListInfo(item, size, network, cosmetic, unsupported, invalid)
+    }
+
+    /** Available before the rule scan; does not read or parse the file contents. */
+    @Synchronized
+    fun fileSizeBytes(id: String): Long = infoFile(id).second.length()
+
+    private fun infoFile(id: String): Pair<ImportedFilterList, File> {
+        val item = list().firstOrNull { it.id == id }
+            ?: throw IllegalArgumentException("Unknown filter list")
+        val file = fileFor(id)
+        if (!file.isFile || file.length() > MAX_LIST_BYTES) {
+            throw IOException("Filter list ${item.name} is missing or too large")
+        }
+        return item to file
     }
 
     private fun fileFor(id: String): File {

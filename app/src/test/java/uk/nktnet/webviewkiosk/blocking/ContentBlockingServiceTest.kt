@@ -137,6 +137,86 @@ class ContentBlockingServiceTest {
         assertFalse(rejected.hasActiveRules)
     }
 
+    @Test
+    fun reloadCompletionWaitsUntilReplacementRulesAreActive() = runBlocking {
+        store.importFrom("test.txt", "||ads.example^".byteInputStream())
+        val revision = service.reload()
+        val waiting = async(start = CoroutineStart.UNDISPATCHED) { service.awaitReload(revision) }
+        assertFalse(waiting.isCompleted)
+        assertEquals(BlockingStatus.LOADING, service.status.value)
+        executor.runAll()
+        waiting.await()
+        assertEquals(BlockingStatus.ACTIVE, service.status.value)
+        assertTrue(service.shouldBlock("https://ads.example/a", "https://site.example/", "other", "GET"))
+    }
+
+    @Test
+    fun supersededWaitersFollowTheLatestReloadInsteadOfReportingEarlySuccess() = runBlocking {
+        val item = store.importFrom("test.txt", "||ads.example^".byteInputStream())
+        val first = service.reload()
+        val firstWaiter = async(start = CoroutineStart.UNDISPATCHED) { service.awaitReload(first) }
+        store.setAllEnabled(false)
+        val latest = service.reload()
+        val latestWaiter = async(start = CoroutineStart.UNDISPATCHED) { service.awaitReload(latest) }
+        executor.runNext()
+        assertFalse(firstWaiter.isCompleted)
+        assertFalse(latestWaiter.isCompleted)
+        executor.runAll()
+        firstWaiter.await()
+        latestWaiter.await()
+        assertEquals(BlockingStatus.DISABLED, service.status.value)
+        assertEquals(0, engine.replacements)
+        assertFalse(store.info(item.id).item.enabled)
+    }
+
+    @Test
+    fun completedOldRevisionCannotFinishWhileANewerLoadIsPending() = runBlocking {
+        val first = service.reload()
+        executor.runAll()
+        service.reload()
+        val waiting = async(start = CoroutineStart.UNDISPATCHED) { service.awaitReload(first) }
+        assertFalse(waiting.isCompleted)
+        executor.runAll()
+        waiting.await()
+        assertEquals(BlockingStatus.DISABLED, service.status.value)
+    }
+
+    @Test
+    fun awaitedFailureIsReportedAndTheLastWorkingSnapshotRemainsActive() = runBlocking {
+        store.importFrom("test.txt", "||ads.example^".byteInputStream())
+        service.start()
+        executor.runAll()
+        engine.failReplace = true
+        val revision = service.reload()
+        val waiting = async(start = CoroutineStart.UNDISPATCHED) { runCatching { service.awaitReload(revision) } }
+        executor.runAll()
+        val result = waiting.await()
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()!!.message!!.contains("rules could not be loaded"))
+        assertEquals(BlockingStatus.ERROR, service.status.value)
+        assertTrue(service.shouldBlock("https://ads.example/a", "https://site.example/", "other", "GET"))
+    }
+
+    @Test
+    fun rejectedReloadCompletesItsWaiterWithAnError() = runBlocking {
+        val rejected = ContentBlockingService(store, engine, Executor { throw java.util.concurrent.RejectedExecutionException("closed") })
+        val revision = rejected.reload()
+        assertTrue(runCatching { rejected.awaitReload(revision) }.isFailure)
+        assertEquals(BlockingStatus.ERROR, rejected.status.value)
+    }
+
+    @Test
+    fun cancellingTheScreenWaitDoesNotCancelTheQueuedRuleLoad() = runBlocking {
+        store.importFrom("test.txt", "||ads.example^".byteInputStream())
+        val revision = service.reload()
+        val waiting = async(start = CoroutineStart.UNDISPATCHED) { service.awaitReload(revision) }
+        waiting.cancel()
+        executor.runAll()
+        waiting.join()
+        assertEquals(BlockingStatus.ACTIVE, service.status.value)
+        assertTrue(service.hasActiveRules)
+    }
+
     private class FakeEngine : NetworkFilterEngine {
         var replacements = 0
         var clears = 0
@@ -157,6 +237,7 @@ class ContentBlockingServiceTest {
     private class QueuedExecutor : Executor {
         val queue = ArrayDeque<Runnable>()
         override fun execute(command: Runnable) { queue.addLast(command) }
+        fun runNext() { queue.removeFirst().run() }
         fun runAll() { while (queue.isNotEmpty()) queue.removeFirst().run() }
     }
 }

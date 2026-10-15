@@ -52,12 +52,24 @@ so the indexes are rebuilt on startup. Disabling all lists clears the active sna
   disabled ones, but not locally imported files. Individual failures are shown
   without stopping remaining downloads or overwriting their old rules; the
   blocking engine is reloaded once after the batch.
+- **Enable all** and **Disable all** toggle every saved list, including clones,
+  with one metadata save and one rule reload. Each button is disabled when all
+  lists already have the requested state or there are no lists. No file contents
+  or list identities change.
+- Add, refresh, enable/disable, and other rule-changing operations keep their busy
+  state until rule compilation or clearing finishes. Success messages follow that
+  completion. A failed reload reports an error while keeping the previous working
+  engine; saved list changes remain visible. Adding or editing closes its dialog
+  after the file is saved, while the main loading indicator covers rule loading.
 - **Info**, directly above **Clone**, shows the saved list's type, enabled status,
   file size, total parsed rules, network rules, cosmetic rules, and skipped rules;
-  invalid rules are also shown when present. Counts include disabled lists and
+  invalid rules are shown as well. Its title is the list name. Counts include disabled lists and
   describe entries before deduplication and cross-list precedence. The saved file
   is read on an IO worker when the dialog opens; inspection changes neither the
-  stored list nor the active engine. Long names and source URLs are selectable
+  stored list nor the active engine. Metadata and source appear immediately, file
+  size appears after a quick file check, and each pending figure has its own loading
+  indicator. Rule counts share one scan and become final together. Read failures
+  mark pending values unavailable and show an error. Long names and source URLs are selectable
   and ellipsized, and the dialog body scrolls. Skipped-rule totals are not shown
   on the main list screen.
 - The empty screen uses a card reading **No filter lists have been added**, with
@@ -243,8 +255,9 @@ zero syntax errors: 78,828 network/CSS rules are supported and 3,628 rules are
 skipped, including 2,965 popup-specific rules. These are parser counts for this
 snapshot, not a measurement of ad-blocking coverage.
 
-Robolectric tests also cover persisted list management, staged validation, partial
-refresh failures, startup readiness, retaining active rules on failed updates,
+Robolectric tests also cover persisted list management, bulk toggles, staged validation, partial
+refresh failures, startup readiness, awaited rule-load completion, superseded loads,
+cancelling a screen wait, retaining active rules on failed updates,
 service-worker source headers, and message/frame-origin bounds. Dependency-free
 Node tests execute the shipped cosmetic script with a DOM/bridge fixture to check
 dynamic changes, batching, retries, CSS rejection, style restoration, and cleanup.

@@ -119,6 +119,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     fun update(
         reloadRules: Boolean = true,
         successMessage: String? = null,
+        onStored: (() -> Unit)? = null,
         onSuccess: (() -> Unit)? = null,
         block: () -> Unit,
     ) {
@@ -127,12 +128,17 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         error = null
         scope.launch {
             try {
-                lists = withContext(Dispatchers.IO) {
+                val (savedLists, revision) = withContext(Dispatchers.IO) {
                     block()
                     // Queue the reload on IO even if this screen is then navigated away from.
-                    if (reloadRules) blocker.reload()
-                    store.list()
+                    val revision = if (reloadRules) blocker.reload() else null
+                    store.list() to revision
                 }
+                lists = savedLists
+                onStored?.invoke()
+                if (revision != null) blocker.awaitReload(revision)
+                // Clear the busy state before any success feedback is delivered.
+                busy = false
                 onSuccess?.invoke()
                 successMessage?.let { ToastManager.show(context, it) }
             } catch (e: CancellationException) {
@@ -213,6 +219,14 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
+                        OutlinedButton(
+                            onClick = { update(successMessage = "All lists enabled") { store.setAllEnabled(true) } },
+                            enabled = !busy && lists.any { !it.enabled },
+                        ) { Text("Enable all", maxLines = 1, overflow = TextOverflow.Ellipsis) }
+                        OutlinedButton(
+                            onClick = { update(successMessage = "All lists disabled") { store.setAllEnabled(false) } },
+                            enabled = !busy && lists.any { it.enabled },
+                        ) { Text("Disable all", maxLines = 1, overflow = TextOverflow.Ellipsis) }
                         OutlinedButton(
                             onClick = {
                                 var summary = FilterRefreshResult(0, 0, emptyList())
@@ -357,7 +371,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 update(
                     reloadRules = reloadRules,
                     successMessage = "List saved",
-                    onSuccess = { pendingEdit = null },
+                    onStored = { pendingEdit = null },
                 ) {
                     when (item.type) {
                         FilterListType.FILE -> {
@@ -389,12 +403,12 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 addFilePicker.launch(arrayOf("*/*"))
             },
             onDownloadUrl = { url, name ->
-                update(successMessage = "List added", onSuccess = { showAddDialog = false }) {
+                update(successMessage = "List added", onStored = { showAddDialog = false }) {
                     downloader.downloadUrl(url, name, store)
                 }
             },
             onDownloadPreset = { suggestion ->
-                update(successMessage = "List added", onSuccess = { showAddDialog = false }) {
+                update(successMessage = "List added", onStored = { showAddDialog = false }) {
                     downloader.download(suggestion, store)
                 }
             },
@@ -438,11 +452,14 @@ private fun EmptyFilterListsCard() {
 private fun FilterListInfoDialog(item: ImportedFilterList, store: FilterListStore, onDismiss: () -> Unit) {
     val context = LocalContext.current
     val numbers = remember { NumberFormat.getIntegerInstance() }
+    var fileSize by remember(item.id) { mutableStateOf<Long?>(null) }
     var info by remember(item.id) { mutableStateOf<FilterListInfo?>(null) }
     var failure by remember(item.id) { mutableStateOf<String?>(null) }
     LaunchedEffect(store, item.id) {
         try {
+            fileSize = withContext(Dispatchers.IO) { store.fileSizeBytes(item.id) }
             info = withContext(Dispatchers.IO) { store.info(item.id) }
+            fileSize = info?.sizeBytes
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -451,53 +468,41 @@ private fun FilterListInfoDialog(item: ImportedFilterList, store: FilterListStor
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Filter list info") },
+        title = {
+            SelectionContainer {
+                Text(item.displayName(), maxLines = 3, overflow = TextOverflow.Ellipsis)
+            }
+        },
         text = {
             Column(
                 modifier = Modifier.fillMaxWidth().heightIn(max = 460.dp).verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                SelectionContainer {
-                    Text(item.displayName(), style = MaterialTheme.typography.titleMedium,
-                        maxLines = 3, overflow = TextOverflow.Ellipsis)
-                }
                 val details = info
-                when {
-                    failure != null -> Text(failure.orEmpty(), color = MaterialTheme.colorScheme.error)
-                    details == null -> Row(
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        CircularProgressIndicator(Modifier.size(24.dp), strokeWidth = 2.dp)
-                        Text("Loading list info…", modifier = Modifier.weight(1f))
-                    }
-                    else -> {
-                        InfoStat("Type", when (details.item.type) {
-                            FilterListType.FILE -> "File"
-                            FilterListType.URL -> "URL"
-                            FilterListType.PRESET -> "Preset list"
-                        })
-                        InfoStat("Status", if (details.item.enabled) "Enabled" else "Disabled")
-                        InfoStat("File size", Formatter.formatShortFileSize(context, details.sizeBytes))
-                        InfoStat("Total rules", numbers.format(details.totalRules))
-                        InfoStat("Network rules", numbers.format(details.networkRules))
-                        InfoStat("Cosmetic rules", numbers.format(details.cosmeticRules))
-                        InfoStat("Skipped rules", numbers.format(details.skippedRules))
-                        if (details.invalidRules > 0) InfoStat("Invalid rules", numbers.format(details.invalidRules))
-                        Text("Counts are for this saved list.", style = MaterialTheme.typography.bodySmall,
+                val unavailable = failure != null
+                InfoStat("Type", when (item.type) {
+                    FilterListType.FILE -> "File"
+                    FilterListType.URL -> "URL"
+                    FilterListType.PRESET -> "Preset list"
+                })
+                InfoStat("Status", if (item.enabled) "Enabled" else "Disabled")
+                InfoStat("File size", fileSize?.let { Formatter.formatShortFileSize(context, it) }, unavailable)
+                InfoStat("Total rules", details?.let { numbers.format(it.totalRules) }, unavailable)
+                InfoStat("Network rules", details?.let { numbers.format(it.networkRules) }, unavailable)
+                InfoStat("Cosmetic rules", details?.let { numbers.format(it.cosmeticRules) }, unavailable)
+                InfoStat("Skipped rules", details?.let { numbers.format(it.skippedRules) }, unavailable)
+                InfoStat("Invalid rules", details?.let { numbers.format(it.invalidRules) }, unavailable)
+                item.sourceUrl?.let { source ->
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Source", style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        details.item.sourceUrl?.let { source ->
-                            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Text("Source", style = MaterialTheme.typography.labelMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                SelectionContainer {
-                                    Text(source, modifier = Modifier.fillMaxWidth(),
-                                        maxLines = 4, overflow = TextOverflow.Ellipsis)
-                                }
-                            }
+                        SelectionContainer {
+                            Text(source, modifier = Modifier.fillMaxWidth(),
+                                maxLines = 4, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 }
+                failure?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
         },
         confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
@@ -505,12 +510,22 @@ private fun FilterListInfoDialog(item: ImportedFilterList, store: FilterListStor
 }
 
 @Composable
-private fun InfoStat(label: String, value: String) {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+private fun InfoStat(label: String, value: String?, unavailable: Boolean = false) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalAlignment = Alignment.CenterVertically) {
         Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(value, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.End, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
+            if (value != null || unavailable) {
+                Text(value ?: "Unavailable", style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.End, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            } else {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp).semantics { contentDescription = "Loading $label" },
+                    strokeWidth = 2.dp,
+                )
+            }
+        }
     }
 }
 
