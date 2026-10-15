@@ -47,7 +47,9 @@ import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
+import uk.nktnet.webviewkiosk.blocking.ServiceWorkerBlocker
 import uk.nktnet.webviewkiosk.blocking.WebViewBlocker
+import uk.nktnet.webviewkiosk.blocking.WebViewCosmetics
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -288,6 +290,7 @@ fun createCustomWebview(
         val navigation = WebViewNavigationSession(config.isActive)
         // shouldInterceptRequest runs off the UI thread. Never read WebView.url there.
         val currentPageUrl = AtomicReference("")
+        var cosmetics: WebViewCosmetics? = null
 
         fun beginLoad(url: String) {
             val currentEntry = systemSettings.historyStack.getOrNull(systemSettings.historyIndex)
@@ -313,6 +316,7 @@ fun createCustomWebview(
             config.updateAddressBarAndHistory(url, originalUrl)
         }
 
+        ServiceWorkerBlocker.install(contentBlocker)
         val webView = object : WebView(context) {
             var awaitingPdfPageStart = false
 
@@ -424,6 +428,8 @@ fun createCustomWebview(
                 mixedContentMode = userSettings.mixedContentMode.mode
                 overScrollMode = userSettings.overScrollMode.mode
             }
+
+            cosmetics = WebViewCosmetics.attach(this, contentBlocker, scope)
 
             if (userSettings.enableBatteryApi) {
                 addJavascriptInterface(BatteryInterface(context), BatteryInterface.NAME)
@@ -545,6 +551,10 @@ fun createCustomWebview(
                     val completedLoad = navigation.acceptedCompletionToken(url, this@apply.url)
                         ?: return
                     config.finishSwipeRefresh()
+                    if (cosmetics == null) {
+                        cosmetics = WebViewCosmetics.attach(this@apply, contentBlocker, scope)
+                    }
+                    cosmetics?.onPageFinished()
 
                     url?.let {
                         /*
@@ -1202,6 +1212,7 @@ fun createCustomWebview(
             completeFileChooser(null, webView)
             if (wasActive) config.onHttpAuthRequest(null)
             dialogs.dispose()
+            cosmetics?.dispose()
             blobInterface?.dispose()
         }
     }

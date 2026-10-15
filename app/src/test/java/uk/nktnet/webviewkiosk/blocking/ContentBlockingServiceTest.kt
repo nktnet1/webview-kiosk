@@ -9,6 +9,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
 import java.util.ArrayDeque
 import java.util.concurrent.Executor
 
@@ -52,10 +55,11 @@ class ContentBlockingServiceTest {
 
         store.setEnabled(item.id, false)
         service.reload()
-        assertFalse(service.shouldBlock("https://ads.example/pixel", "https://site.example", "other", "GET"))
+        assertTrue(service.shouldBlock("https://ads.example/pixel", "https://site.example", "other", "GET"))
         executor.runAll()
         assertEquals(1, engine.clears)
         assertEquals(BlockingStatus.DISABLED, service.status.value)
+        assertFalse(service.shouldBlock("https://ads.example/pixel", "https://site.example", "other", "GET"))
     }
 
     @Test
@@ -78,6 +82,41 @@ class ContentBlockingServiceTest {
         assertFalse(service.shouldBlock("https://ads.example", "https://site.example", "other", "GET"))
         assertTrue(service.lastError.value!!.contains("failed"))
         assertEquals(BlockingStatus.ERROR, service.status.value)
+        assertTrue(service.initialLoadComplete.value)
+    }
+
+    @Test
+    fun firstNavigationCanWaitWithoutBlockingTheLoader() = runBlocking {
+        store.importFrom("test.txt", "||ads.example^".byteInputStream())
+        val waiting = async(start = CoroutineStart.UNDISPATCHED) { service.awaitInitialLoad() }
+        assertFalse(waiting.isCompleted)
+        assertFalse(service.initialLoadComplete.value)
+        executor.runAll()
+        waiting.await()
+        assertTrue(service.initialLoadComplete.value)
+        assertTrue(service.hasActiveRules)
+    }
+
+    @Test
+    fun failedReloadKeepsWorkingRulesAndReportsTheError() {
+        store.importFrom("test.txt", "||ads.example^".byteInputStream())
+        service.start()
+        executor.runAll()
+        engine.failReplace = true
+        service.reload()
+        assertTrue(service.hasActiveRules)
+        executor.runAll()
+        assertTrue(service.shouldBlock("https://ads.example/pixel", "https://site.example", "other", "GET"))
+        assertEquals(BlockingStatus.ERROR, service.status.value)
+        assertTrue(service.lastError.value!!.contains("failed"))
+    }
+
+    @Test
+    fun rejectedLoaderReleasesTheStartupGate() = runBlocking {
+        val rejected = ContentBlockingService(store, engine, Executor { throw java.util.concurrent.RejectedExecutionException("closed") })
+        rejected.awaitInitialLoad()
+        assertEquals(BlockingStatus.ERROR, rejected.status.value)
+        assertFalse(rejected.hasActiveRules)
     }
 
     private class FakeEngine : NetworkFilterEngine {

@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.blocking
 
+import android.net.Uri
 import android.webkit.WebResourceRequest
 import uk.nktnet.webviewkiosk.config.Constants
 import android.webkit.WebResourceResponse
@@ -20,11 +21,7 @@ internal object WebViewBlocker {
         method: String,
         service: ContentBlockingService,
     ): Boolean {
-        if (isMainFrame || !isWebUrl(url) || !isWebUrl(pageUrl)) return false
-        // Never apply untrusted imported rules to the app's virtual asset origins.
-        if (url.startsWith("https://appassets.androidplatform.net/", ignoreCase = true) ||
-            url.startsWith("${Constants.PDF_JS_ASSETS_DUMMY_URL}/", ignoreCase = true)
-        ) return false
+        if (isMainFrame || !isFilterableUrl(url) || !isFilterableUrl(pageUrl)) return false
         return service.shouldBlock(url, pageUrl, resourceType(requestHeaders), method)
     }
 
@@ -40,9 +37,14 @@ internal object WebViewBlocker {
         return WebResourceResponse("text/plain", "UTF-8", ByteArrayInputStream(empty))
     }
 
-    private fun isWebUrl(url: String): Boolean =
-        url.startsWith("https://", ignoreCase = true) ||
-            url.startsWith("http://", ignoreCase = true)
+    internal fun isFilterableUrl(url: String): Boolean {
+        val uri = Uri.parse(url)
+        if (!uri.scheme.equals("http", true) && !uri.scheme.equals("https", true)) return false
+        val host = uri.host?.takeIf { it.isNotBlank() } ?: return false
+        // Compare hosts, including origins without a trailing slash, before invoking JNI.
+        return !host.equals("appassets.androidplatform.net", true) &&
+            !host.equals(Uri.parse(Constants.PDF_JS_ASSETS_DUMMY_URL).host, true)
+    }
 
     internal fun resourceType(headers: Map<String, String>): String {
         val destination = headers.entries.firstOrNull {

@@ -33,6 +33,17 @@ of the Android URI parsing change. Keyboard tests use a scoped shadow for the
 native key-name lookup missing from Robolectric 4.17. The tests use local fixtures
 and do not require an emulator or MQTT broker.
 
+Run the asset-exporter, CI runner, and cosmetic page-script regressions with
+Python 3.10+ and Node.js 24 (no npm packages required):
+
+```bash
+sh scripts/ci/test-local.sh checks
+```
+
+The cosmetic script tests use a DOM/bridge fixture to exercise batching, dynamic
+elements, CSS rejection, retries, and cleanup. They do not replace a real WebView
+test for CSS rendering, CSP, frames, or provider feature support.
+
 ### Documentation site
 
 Use Node.js 24 and the pnpm version declared in `docs/package.json`. After

@@ -1,7 +1,7 @@
-# Native content blocking (first increment)
+# Native content blocking
 
-**Status:** Network-only baseline. No automatic downloads or updates, no cosmetic
-injection, no bundled filter rules or scriptlets. Manage lists in **Settings → Web Content →
+**Status:** Network filtering and basic CSS element hiding. No automatic downloads
+or updates, bundled filter rules, or scriptlets. Manage lists in **Settings → Web Content →
 Content Blocking**. Blocking is enabled when at least one user-imported or explicitly
 downloaded list is enabled.
 
@@ -90,8 +90,11 @@ installs matching NDK and Rust Android targets.
 
 The engine is compiled on a single background executor and then swapped into
 use under a short native write lock. Request matching takes a native read lock
-and does not parse rules, access preferences, or download data. A failed
-native load **allows requests** and surfaces the error in the settings screen.
+and does not parse rules, access preferences, or download data. Initial WebView
+creation waits for provider warmup and the first rule load, without blocking the
+UI or request threads. An initial load failure releases that gate, **allows
+requests**, and surfaces the error in settings. Later reloads keep the working
+rules active until a replacement is ready; a failed update retains those rules.
 
 ## Filter-list management
 
@@ -159,13 +162,14 @@ document shape. There is no JSON detection or other document-format blacklist.
 Every candidate rejects control characters other than tab, CR, and LF,
 with the original line number. This check scans all text, including comments and
 leading/trailing characters, rather than checking only particular document types.
-The native parser must accept at least one network rule before the file is saved.
-Exception rules and literal URL substring rules count; a file containing only
+The native parser must accept at least one network or supported CSS-hiding rule
+before the file is saved. Exception rules and literal URL substring rules count; a file containing only
 unsupported rules gets a distinct error instead of being imported with no effect.
 
 The validator calls [`adblock::lists::parse_filter` from the pinned 0.13.3 engine](https://docs.rs/adblock/0.13.3/adblock/lists/fn.parse_filter.html)
-with the same network-only options used by compilation. It does not use a custom
-Adblock grammar or a JVM regex approximation. Explicit structural/hostname errors,
+with the same network/cosmetic options and cosmetic restrictions used by
+compilation. It does not use a custom Adblock grammar or a JVM regex approximation.
+Explicit structural/hostname errors,
 invalid negations of supported options, and missing redirect values produce an
 error with original **1-based line numbers**. At most five error details are shown,
 followed by the number of additional errors, keeping diagnostics bounded for large
@@ -188,12 +192,20 @@ addresses; standalone IP patterns retain their Adblock interpretation.
 Upstream bulk list loading silently discards errors; its per-rule API exposes
 enough detail to reject known malformed network syntax. It also reports engine
 limitations as errors. Unknown options, unsupported domain forms, full regex
-filters (disabled in this build), unsupported modifier combinations, cosmetic
-filters, and scriptlets are therefore **compatibility warnings, not malformed
-rules**. They are skipped as before, and the dialogs explain that unsupported
-filters are ignored when supported network rules remain. A file containing only
-unsupported rules is rejected with a "no supported network rules" explanation,
-without labelling those rules malformed. No cosmetic or scriptlet validation is claimed.
+filters (disabled in this build), unsupported modifier combinations, custom cosmetic
+actions, procedural filters, and scriptlets are therefore **compatibility warnings,
+not malformed rules**. They are skipped, and the dialogs explain that unsupported
+filters are ignored when supported network or CSS-hiding rules remain. A file
+containing only unsupported rules is rejected with a "no supported network or
+CSS-hiding rules" explanation, without labelling those rules malformed.
+
+Upstream's optional CSS parser is disabled to avoid adding dependencies. Only
+single CSS selector operations without actions are exposed. Known procedural
+extensions are conservatively excluded, including when their names occur in
+selector strings. WebView validates the remaining selectors on a detached element
+before inserting a fixed `display: none !important` rule; invalid or unsupported
+CSS is ignored per selector. Import validation does not guarantee CSS compatibility
+with a particular WebView provider.
 
 Some malformed-looking text is legal as an Adblock substring pattern, and the
 upstream parser accepts some incomplete option values (for example `$domain`
@@ -211,7 +223,42 @@ File validation cannot reliably infer the author's intent from arbitrary text;
 it is not a guarantee that every unrelated text document will be recognised or
 that every accepted pattern is useful.
 
-## Known WebView limitations
+## CSS element hiding
+
+The engine supplies domain-specific hide selectors, generic selectors looked up
+from observed class/ID tokens, cosmetic exceptions, and `$generichide` exceptions.
+Selectors cross a data-only AndroidX WebKit message bridge, which checks the
+actual frame origin against the requested URL. List text is never executed as
+JavaScript or arbitrary CSS declarations.
+
+On providers supporting `WEB_MESSAGE_LISTENER` and `DOCUMENT_START_SCRIPT`, a
+small bootstrap is registered before navigation for HTTP(S) frames. It observes
+new elements and class/ID changes, debounces work, scans at most 400 elements per
+turn, and batches up to 256 class and ID tokens per native query. Only one query
+is outstanding per frame; the app bounds concurrent replies per WebView. Token,
+selector, and reply-size caps limit the work and memory on large pages.
+
+Network-only and hosts-only lists install no scanner. Cosmetic filtering requires
+JavaScript and the WebKit message-listener feature. Without document-start support,
+the app injects a top-frame fallback after page load; providers without the bridge
+retain network filtering. Local files and private app/PDF asset hosts are excluded.
+Reload the page after enabling or changing cosmetic lists so old styles and frame
+bindings are replaced. Enabling a first cosmetic list in an existing WebView gets
+the post-load fallback on its next completed navigation. The bootstrap can run
+before a DOM exists, but asynchronous matching means some elements may briefly
+appear. Page CSP may prevent an injected style from taking effect.
+
+Scriptlets, procedural operators, custom styles, and DOM-removal actions are not
+implemented. This is basic CSS hiding, not uBlock Origin's complete cosmetic engine.
+
+## Service workers and WebView limitations
+
+A process-wide `ServiceWorkerClientCompat` is installed before WebView creation
+when the provider supports interception. It uses a valid HTTP(S) `Referer` or
+`Origin` header as the request's source context and applies the same matcher.
+The callback provides no owning WebView or worker URL. Requests without usable
+source context are allowed, rather than borrowing an unrelated tab's page URL.
+This improves coverage, but does not cover every service-worker or cached response.
 
 `WebViewClient.shouldInterceptRequest` does not expose reliable subresource
 kinds or initiating frames. This integration passes `Sec-Fetch-Dest` or `Accept`
@@ -219,10 +266,7 @@ when present, otherwise `other`. It uses the last accepted top-level page URL
 as a *best-effort* initiator, rather than inventing a nested frame's origin.
 Top-level navigations are intentionally left alone. `javascript:`, `blob:`,
 and subsequent redirect destinations cannot be intercepted using this API.
-Service worker fetches are not covered in this increment.
-
-Network blocking and exception rules can work today; cosmetic filters,
-scriptlets, `$redirect` resources, response-body modification, per-site
+Scriptlets, `$redirect` resources, response-body modification, per-site
 allowlists, and periodically refreshed subscriptions are intentionally out of scope.
 
 ## Verification
@@ -230,12 +274,26 @@ allowlists, and periodically refreshed subscriptions are intentionally out of sc
 Robolectric tests exercise persistence, migration, import/refresh limits, file edits,
 custom URL downloads and edits, preset immutability and clones, bulk refresh
 with partial failure, duplicate/rejection handling, enable/disable/reload, and resource
-classification with a fake native matcher. Storage validation tests inject a parser
+classification with a fake native matcher. Startup tests cover the first-load
+gate, initial failure, rejected scheduling, and retaining active rules on failed
+updates. Service-worker tests cover source headers and unknown/private context;
+bridge tests cover frame-origin checks and message/token bounds.
+Storage validation tests inject a parser
 result to verify staging, cleanup, error propagation, failed replacements/clone edits,
 native-unavailable failures, and metadata preservation without Android JNI.
 Native Rust tests use the real parser for valid/invalid/empty/comment-only files,
 unsupported rules, BOM/CRLF text, IPv4/IPv6 hosts, mixed formats, line numbers,
-bounded diagnostics, blocking, exceptions, and malformed requests. The Tests workflow
-runs these host Rust tests separately from Robolectric, without an NDK; Android
+bounded diagnostics, blocking, exceptions, malformed requests, cosmetic domains,
+observed generic tokens, and `$generichide`. Dependency-free Node tests execute the
+shipped cosmetic script with a DOM/bridge fixture, checking dynamic changes,
+bounded batches, retries, CSS rejection, style restoration, and cleanup. They run
+in `sh scripts/ci/test-local.sh checks` and the Tests workflow.
+The workflow runs host Rust tests separately from Robolectric, without an NDK; Android
 cross-compilation and real-device WebView tests are still required before
 claiming production-level compatibility or latency.
+
+On a device, check a cold start with an enabled list, third-party blocked resources,
+domain-specific/generic hiding and exceptions in frames, dynamically inserted ads,
+service-worker fetches with and without initiator headers, JavaScript disabled,
+strict CSP, list disable/re-enable plus reload, and pages that do not use any
+cosmetic rules. There is no measured coverage percentage or performance guarantee.

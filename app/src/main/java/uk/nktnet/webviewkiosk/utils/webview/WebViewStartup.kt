@@ -6,9 +6,14 @@ import android.os.Looper
 import android.util.Log
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewStartUpConfig
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -52,6 +57,9 @@ internal object WebViewStartup {
     // kiosk on a progress indicator if a WebView provider fails to reply.
     private const val STARTUP_TIMEOUT_MILLIS = 12_000L
     private val timeoutScheduled = AtomicBoolean(false)
+    private val readinessScheduled = AtomicBoolean(false)
+    private val readinessScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val readyState = MutableStateFlow(false)
     private val mainHandler = Handler(Looper.getMainLooper())
     @Volatile private var testGate: WebViewStartupGate? = null
 
@@ -78,11 +86,20 @@ internal object WebViewStartup {
     )
 
     private lateinit var applicationContext: Context
-    val ready get() = (testGate ?: gate).ready
+    val ready get() = testGate?.ready ?: readyState.asStateFlow()
 
     fun start(context: Context) {
         applicationContext = context.applicationContext
         val active = testGate ?: gate
+        if (active === gate && readinessScheduled.compareAndSet(false, true)) {
+            val blocker = ContentBlockingService.get(applicationContext)
+            blocker.start()
+            readinessScope.launch {
+                gate.awaitReady()
+                blocker.awaitInitialLoad()
+                readyState.value = true
+            }
+        }
         active.start()
         if (active === gate && !gate.ready.value && timeoutScheduled.compareAndSet(false, true)) {
             mainHandler.postDelayed({
@@ -96,7 +113,7 @@ internal object WebViewStartup {
 
     suspend fun awaitReady(context: Context) {
         start(context)
-        (testGate ?: gate).awaitReady()
+        ready.first { it }
     }
 
     /** Robolectric cannot reliably start Chromium; the activity tests supply a fake gate. */

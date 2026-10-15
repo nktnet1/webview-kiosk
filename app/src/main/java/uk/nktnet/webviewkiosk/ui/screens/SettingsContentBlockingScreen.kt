@@ -628,7 +628,7 @@ private fun AddFilterListDialog(
 @Composable
 private fun FilterValidationNotice() {
     Text(
-        "At least one supported network rule is required. Unsupported filters, including cosmetic rules and scriptlets, are ignored.",
+                    "At least one supported network or CSS-hiding rule is required. Scriptlets, custom styles, and procedural filters are ignored. Reload the page after changing cosmetic rules.",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )

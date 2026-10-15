@@ -2,8 +2,9 @@
 //! Unsupported syntax is not a malformed rule: subscriptions often mix engines' features.
 
 use adblock::{
+    filters::cosmetic::{CosmeticFilter, CosmeticFilterMask, CosmeticFilterOperator},
     filters::network::NetworkFilterError,
-    lists::{parse_filter, FilterFormat, FilterParseError, ParseOptions, RuleTypes},
+    lists::{parse_filter, FilterFormat, FilterParseError, ParseOptions, ParsedLine, RuleTypes},
 };
 use std::net::IpAddr;
 
@@ -108,7 +109,7 @@ impl ValidationReport {
                 Some("Filter list has no rules (only comments or blank lines)".to_owned())
             } else {
                 Some(format!(
-                    "Filter list has no supported network rules. Unsupported rules: {}. No changes were saved.",
+                    "Filter list has no supported network or CSS-hiding rules. Unsupported rules: {}. No changes were saved.",
                     self.unsupported,
                 ))
             }
@@ -116,6 +117,29 @@ impl ValidationReport {
             None
         }
     }
+}
+
+/// Only selector-based hiding is exposed to WebView. Never execute list-supplied code,
+/// custom style declarations, procedural operators, or resource/scriptlet instructions.
+pub(crate) fn supported_cosmetic(filter: &CosmeticFilter) -> bool {
+    if filter.mask.contains(CosmeticFilterMask::SCRIPT_INJECT) || filter.action.is_some() {
+        return false;
+    }
+    let [CosmeticFilterOperator::CssSelector(selector)] = &filter.selector[..] else {
+        return false;
+    };
+    // This small build disables upstream's optional css-validation dependency. Its
+    // parser therefore leaves procedural operators inside the raw selector. Reject
+    // known extensions here; WebView validates ordinary CSS before inserting it.
+    // This is deliberately conservative, not a second CSS parser.
+    ![
+        ":has-text(", ":matches-attr(", ":matches-css(", ":matches-css-before(",
+        ":matches-css-after(", ":matches-path(", ":min-text-length(", ":upward(",
+        ":xpath(", ":contains(", ":-abp-contains(", ":-abp-has(",
+        ":-abp-properties(", ":if(", ":if-not(", ":watch-attr(",
+    ]
+    .iter()
+    .any(|operator| selector.contains(operator))
 }
 
 /// Reject only explicit syntax errors. Other engine restrictions, unknown options,
@@ -148,17 +172,19 @@ pub(crate) fn validate(text: &str) -> ValidationReport {
                 false,
                 ParseOptions {
                     format,
-                    rule_types: RuleTypes::NetworkOnly,
+                    rule_types: RuleTypes::All,
                     ..ParseOptions::default()
                 },
             );
             match result {
-                Ok(_) => report.supported += 1,
+                Ok(ParsedLine::Network(_)) => report.supported += 1,
+                Ok(ParsedLine::Cosmetic(filter)) if supported_cosmetic(&filter) => report.supported += 1,
+                Ok(_) => report.unsupported += 1,
                 Err(FilterParseError::Network(error)) if malformed(&error) => {
                     report.invalid_rule(line, error);
                 }
                 Err(FilterParseError::Empty) => (),
-                // Cosmetics/scriptlets are outside this network-only integration.
+                // Unsupported cosmetics/scriptlets remain compatibility warnings.
                 // Metadata warnings and unsupported extensions must not reject a list.
                 Err(_) => report.unsupported += 1,
             }
@@ -209,14 +235,14 @@ mod tests {
     fn unsupported_features_are_not_syntax_errors() {
         let report = validate("||ads.example^\n||other.example^$unknown-option\n||other.example^$removeparam=/test/\n/[a-z]+/\nexample.com##.ad\n##.generic-ad\nexample.com##+js(set, foo, bar)");
         assert!(report.error_message().is_none());
-        assert_eq!(report.supported, 1);
-        assert_eq!(report.unsupported, 6);
+        assert_eq!(report.supported, 3);
+        assert_eq!(report.unsupported, 4);
     }
 
     #[test]
-    fn unsupported_only_list_cannot_be_saved_as_a_usable_network_list() {
-        let report = validate("example.com##.ad\n||ads.example^$future-option");
-        assert!(report.error_message().unwrap().contains("no supported network rules"));
+    fn unsupported_only_list_cannot_be_saved_as_a_usable_list() {
+        let report = validate("example.com##+js(set, foo, bar)\n||ads.example^$future-option");
+        assert!(report.error_message().unwrap().contains("no supported network or CSS-hiding rules"));
         assert_eq!(report.unsupported, 2);
         assert_eq!(report.invalid, 0);
     }
@@ -225,9 +251,30 @@ mod tests {
     fn unsupported_rules_are_warnings_when_supported_network_rules_remain() {
         let report = validate("example.com##.ad\n||ads.example^$future-option\n||supported.example^");
         assert!(report.error_message().is_none());
-        assert_eq!(report.supported, 1);
-        assert_eq!(report.unsupported, 2);
+        assert_eq!(report.supported, 2);
+        assert_eq!(report.unsupported, 1);
         assert_eq!(report.invalid, 0);
+    }
+
+    #[test]
+    fn cosmetic_only_lists_and_exceptions_are_usable() {
+        let report = validate("##.ad\nexample.com##.sponsor\nexample.com#@#.ad");
+        assert!(report.error_message().is_none());
+        assert_eq!(report.supported, 3);
+    }
+
+    #[test]
+    fn actions_procedural_filters_and_scriptlets_are_not_executable_rules() {
+        for rule in [
+            "example.com##.ad:remove()",
+            "example.com##.ad:style(color:red)",
+            "example.com##.ad:has-text(Advertisement)",
+            "example.com##+js(set, foo, bar)",
+        ] {
+            let report = validate(rule);
+            assert_eq!(report.supported, 0, "{rule}: {report:?}");
+            assert_eq!(report.unsupported, 1);
+        }
     }
 
     #[test]

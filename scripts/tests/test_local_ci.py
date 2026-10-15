@@ -30,7 +30,10 @@ class LocalTestRunnerTest(unittest.TestCase):
         bin_dir.mkdir()
         for name in ("node", "java"):
             command = bin_dir / name
-            command.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            command.write_text(
+                '#!/bin/sh\nprintf "%s\\n" "$*" >> ' + name + '-args.txt\nexit 0\n',
+                encoding="utf-8",
+            )
             command.chmod(0o755)
         pnpm = bin_dir / "pnpm"
         pnpm.write_text(
@@ -75,6 +78,17 @@ class LocalTestRunnerTest(unittest.TestCase):
         self.assertEqual(2, result.returncode)
         self.assertIn("Unknown suite 'android'", result.stderr)
         self.assertIsNone(self.read_gradle_args())
+
+    def test_checks_runs_cosmetic_script_without_npm_dependencies(self):
+        stub = self.root / "bin/python3"
+        stub.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        stub.chmod(0o755)
+        result = self.run_suite("checks")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual(
+            "--test scripts/tests/cosmetic.test.mjs\n",
+            (self.root / "node-args.txt").read_text(encoding="utf-8"),
+        )
 
     def test_docs_browser_requires_preinstalled_dependencies(self):
         missing = self.run_suite("docs-browser")

@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
@@ -25,6 +26,11 @@ internal class ContentBlockingService(
     @Volatile
     private var ready = false
 
+    private val _initialLoadComplete = MutableStateFlow(false)
+    val initialLoadComplete = _initialLoadComplete.asStateFlow()
+    val hasActiveRules: Boolean get() = ready
+    val hasActiveCosmeticRules: Boolean get() = ready && engine.hasCosmeticRules()
+
     private val _status = MutableStateFlow(BlockingStatus.DISABLED)
     val status = _status.asStateFlow()
     private val _lastError = MutableStateFlow<String?>(null)
@@ -37,38 +43,49 @@ internal class ContentBlockingService(
         reload()
     }
 
+    /** Suspend the first navigation, never the UI or request-interception thread. */
+    suspend fun awaitInitialLoad() {
+        start()
+        initialLoadComplete.first { it }
+    }
+
     fun reload() {
         val revision = generation.incrementAndGet()
-        ready = false
         _status.value = BlockingStatus.LOADING
-        worker.execute {
-            try {
-                if (revision != generation.get()) return@execute
-                val texts = store.enabledTexts()
-                if (revision != generation.get()) return@execute
-                if (texts.isEmpty()) {
-                    engine.clear()
-                } else {
-                    engine.replace(texts)
+        try {
+            worker.execute {
+                try {
+                    if (revision != generation.get()) return@execute
+                    val texts = store.enabledTexts()
+                    if (revision != generation.get()) return@execute
+                    if (texts.isEmpty()) {
+                        engine.clear()
+                    } else {
+                        engine.replace(texts)
+                    }
+                    if (revision == generation.get()) {
+                        _lastError.value = null
+                        ready = texts.isNotEmpty()
+                        _status.value = if (ready) BlockingStatus.ACTIVE else BlockingStatus.DISABLED
+                        _initialLoadComplete.value = true
+                    }
+                } catch (e: Exception) {
+                    reportError(revision, e)
+                } catch (e: LinkageError) {
+                    reportError(revision, e)
                 }
-                if (revision == generation.get()) {
-                    _lastError.value = null
-                    ready = texts.isNotEmpty()
-                    _status.value = if (ready) BlockingStatus.ACTIVE else BlockingStatus.DISABLED
-                }
-            } catch (e: Exception) {
-                reportError(revision, e)
-            } catch (e: LinkageError) {
-                reportError(revision, e)
             }
+        } catch (e: Exception) {
+            reportError(revision, e)
         }
     }
 
     private fun reportError(revision: Long, error: Throwable) {
         if (revision == generation.get()) {
-            ready = false
+            // Compilation is atomic. A failed update leaves the last working rules active.
             _lastError.value = error.message ?: "Native content-blocking engine unavailable"
             _status.value = BlockingStatus.ERROR
+            _initialLoadComplete.value = true
             Log.e(TAG, "Failed to load content-blocking rules", error)
         }
     }
@@ -78,8 +95,20 @@ internal class ContentBlockingService(
         return try {
             engine.shouldBlock(url, sourceUrl, type, method)
         } catch (e: LinkageError) {
+            ready = false
             reportError(generation.get(), e)
             false
+        }
+    }
+
+    fun cosmeticSelectors(url: String, classes: List<String>, ids: List<String>): List<String> {
+        if (!ready) return emptyList()
+        return try {
+            engine.cosmeticSelectors(url, classes, ids)
+        } catch (e: LinkageError) {
+            ready = false
+            reportError(generation.get(), e)
+            emptyList()
         }
     }
 
