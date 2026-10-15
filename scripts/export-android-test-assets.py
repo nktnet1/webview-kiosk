@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export Linux x86_64 Gradle/Android assets using Python 3.10+."""
+"""Export Linux x86_64 Android test and lint assets using Python 3.10+."""
 
 import argparse
 import contextlib
@@ -200,7 +200,7 @@ def download(url, destination):
 
 
 def verified_download(url, destination, checksum):
-    """Reuse verified cache entries; failed downloads retain the previous bytes."""
+    """Reuse verified SHA-256 cache entries without replacing them on failure."""
     if not re.fullmatch(r"[0-9a-fA-F]{64}", checksum):
         raise ExportError(f"Invalid SHA-256 checksum for {destination.name}")
     if destination.is_file() and file_digest(destination) == checksum.lower():
@@ -230,21 +230,29 @@ def extract_zip(archive_path, destination):
 
 
 def extract_tar(archive_path, destination):
-    # Python 3.10 has no tar extraction filter. Check each member immediately
-    # before extracting so earlier symlinks cannot redirect a later member.
+    # Check each member immediately before extraction so an earlier symlink
+    # cannot redirect a later member outside the destination.
+    root = destination.resolve()
     with tarfile.open(archive_path) as archive:
         for member in archive:
             target = destination / member.name
-            if member.isdev() or member.isfifo() or not target.resolve().is_relative_to(destination.resolve()):
+            if not (member.isfile() or member.isdir() or member.issym() or member.islnk()) or (
+                not target.resolve().is_relative_to(root)
+            ):
                 raise ExportError(f"Unsafe path or file type in tar archive: {member.name}")
             if member.issym() or member.islnk():
                 base = target.parent if member.issym() else destination
-                if not (base / member.linkname).resolve().is_relative_to(destination.resolve()):
+                if Path(member.linkname).is_absolute() or not (
+                    base / member.linkname
+                ).resolve().is_relative_to(root):
                     raise ExportError(f"Unsafe link in tar archive: {member.name}")
             member = copy.copy(member)
             member.uid = member.gid = member.uname = member.gname = None
             member.mode &= 0o777
-            options = {"filter": "data"} if hasattr(tarfile, "data_filter") else {}
+            # Some Python 3.10 backports of data_filter incorrectly reject JBR's
+            # safe ../java.base symlinks. Our checks above validate link targets;
+            # tar_filter retains tarfile's path and permission protections.
+            options = {"filter": "tar"} if hasattr(tarfile, "tar_filter") else {}
             archive.extract(member, destination, **options)
 
 
@@ -263,10 +271,15 @@ def tool_download_specs(args):
             raise ExportError("Set distributionSha256Sum in gradle-wrapper.properties before downloading Gradle")
         specs["gradle"] = (f"gradle-{required_gradle_version()}-bin.zip", url, checksum)
     if args.download_jbr:
-        specs["jbr"] = (JBR_ARCHIVE, f"https://cache-redirector.jetbrains.com/intellij-jbr/{JBR_ARCHIVE}", JBR_SHA256)
+        specs["jbr"] = (
+            JBR_ARCHIVE, f"https://cache-redirector.jetbrains.com/intellij-jbr/{JBR_ARCHIVE}",
+            JBR_SHA256,
+        )
     if args.download_android_tools:
-        specs["android-tools"] = (CMDLINE_TOOLS_ZIP,
-                                  f"https://dl.google.com/android/repository/{CMDLINE_TOOLS_ZIP}", CMDLINE_TOOLS_SHA256)
+        specs["android-tools"] = (
+            CMDLINE_TOOLS_ZIP, f"https://dl.google.com/android/repository/{CMDLINE_TOOLS_ZIP}",
+            CMDLINE_TOOLS_SHA256,
+        )
     return specs
 
 
@@ -299,7 +312,9 @@ def export_downloaded_tools(args):
             if not existing.is_file():
                 continue
             name = re.sub(r"\.part-\d{3}$", "", existing.name)
-            if name in (JBR_ARCHIVE, CMDLINE_TOOLS_ZIP) or re.fullmatch(r"gradle-[0-9][0-9A-Za-z.+-]*-bin\.zip", name):
+            if name in (JBR_ARCHIVE, CMDLINE_TOOLS_ZIP) or re.fullmatch(
+                r"gradle-[0-9][0-9A-Za-z.+-]*-bin\.zip", name
+            ):
                 all_names.add(name)
         for name in sorted(all_names - {spec[0] for spec in specs.values()}):
             whole = output / name
@@ -321,12 +336,15 @@ def export_downloaded_tools(args):
 Gradle: original distribution ZIP, version and SHA-256 pinned by gradle-wrapper.properties
 JBR: original JetBrains JDK 21 SDK archive, pinned by the exporter and Docker image
 Android tools: original command-line tools ZIP, pinned by the exporter and Docker image
-Sources: Gradle distribution URL, JetBrains intellij-jbr CDN, Google Android repository
+Sources: Gradle distribution, JetBrains JBR CDN, Google Android
 Raw download cache: kept separately from these size-limited exports
 Gradle and JBR are used automatically for native Gradle exports when selected.
 Download-only mode does not unpack or execute downloaded tools.
 """
-        publish(staging, output, names, contents)
+        publish(staging, output, names, contents, obsolete=(
+            "node-v*.tar.xz", "node-v*.tar.xz.part-*",
+            "pnpm-*.tgz", "pnpm-*.tgz.part-*",
+        ))
     return downloaded
 
 
@@ -449,13 +467,16 @@ def sdk_root(args):
 def sdk_installed(root):
     return (root / f"platforms/{SDK_PLATFORM}/android.jar").is_file() and (
         root / f"build-tools/{SDK_BUILD_TOOLS}/source.properties"
-    ).is_file()
+    ).is_file() and (root / "platform-tools/adb").is_file()
 
 
 def ensure_sdk(root, work, env, *, tools_archive=None, accept_licenses=False):
     if sdk_installed(root):
         return
-    options = [f"--sdk_root={root}", "--channel=3", f"platforms;{SDK_PLATFORM}", f"build-tools;{SDK_BUILD_TOOLS}"]
+    options = [
+        f"--sdk_root={root}", "--channel=3", f"platforms;{SDK_PLATFORM}",
+        f"build-tools;{SDK_BUILD_TOOLS}", "platform-tools",
+    ]
     candidates = [root / "cmdline-tools/latest/bin/sdkmanager"]
     candidates.extend(sorted(root.glob("cmdline-tools/*/bin/sdkmanager")))
     candidates.append(root / "tools/bin/sdkmanager")
@@ -491,7 +512,8 @@ def ensure_sdk(root, work, env, *, tools_archive=None, accept_licenses=False):
         install(manager)
     except ExportError as error:
         raise ExportError(
-            f"Could not install platforms;{SDK_PLATFORM} and build-tools;{SDK_BUILD_TOOLS}; "
+            f"Could not install platforms;{SDK_PLATFORM}, build-tools;{SDK_BUILD_TOOLS}, "
+            "and platform-tools; "
             "check network access and SDK licences (use --accept-sdk-licenses for noninteractive acceptance)"
         ) from error
     if not sdk_installed(root):
@@ -519,11 +541,11 @@ def export_gradle(args, output, *, env=None):
             env.update(ANDROID_HOME=str(sdk), ANDROID_SDK_ROOT=str(sdk), GRADLE_USER_HOME=str(home))
             ensure_sdk(sdk, work, env, tools_archive=args.sdk_tools_archive,
                        accept_licenses=args.accept_sdk_licenses)
-            say("Resolving Android JVM test dependencies (no compilation or test execution)")
+            say("Resolving Android JVM test and lint dependencies (no tasks executed)")
             run([gradle, "--no-daemon", "--no-configuration-cache", "--console=plain",
                  "--init-script", PROJECT_ROOT / "scripts/resolve-android-test-assets.init.gradle",
                  ":app:resolveAndroidTestAssets"], env=env,
-                message="Gradle could not resolve the required Android JVM test dependencies")
+                message="Gradle could not resolve the required Android test and lint dependencies")
             modules = home / "caches/modules-2"
             if not (modules / "files-2.1").is_dir():
                 raise ExportError("Gradle dependency artifacts were not populated")
@@ -535,8 +557,12 @@ def export_gradle(args, output, *, env=None):
                 for extension in ("pom", "jar"):
                     robolectric_artifact(maven, version, extension)
             say("Exporting Android SDK, Gradle dependencies, and Robolectric runtimes")
-            sdk_paths = [f"platforms/{SDK_PLATFORM}", f"build-tools/{SDK_BUILD_TOOLS}"]
-            sdk_paths.extend(name for name in ("licenses", "platform-tools") if (sdk / name).is_dir())
+            sdk_paths = [
+                f"platforms/{SDK_PLATFORM}", f"build-tools/{SDK_BUILD_TOOLS}",
+                "platform-tools",
+            ]
+            if (sdk / "licenses").is_dir():
+                sdk_paths.append("licenses")
             export_archive(staging / "android-sdk.tar.gz", [(sdk / name, name) for name in sdk_paths])
 
             def exclude_locks(member):
@@ -549,19 +575,21 @@ def export_gradle(args, output, *, env=None):
             contents = f"""Project task: :app:resolveAndroidTestAssets (resolves dependencies only)
 Platform: Linux x86_64
 Gradle/JBR distributions: exported in tools/ when requested with --download-gradle/--download-jbr
-Android SDK: platforms/{SDK_PLATFORM}, build-tools/{SDK_BUILD_TOOLS}, optional licences/platform-tools
+Android SDK: platforms/{SDK_PLATFORM}, build-tools/{SDK_BUILD_TOOLS}, platform-tools
+Android SDK licences: exported when available
 Gradle dependencies: caches/modules-2 (artifacts and resolution metadata; excludes *.lock and gc.properties)
 Robolectric: Android 9 / API 28 and Android 10 / API 29 Maven runtime artifacts
-Gradle test invocation: not run (no compilation or tests)
+Gradle tests and lint: dependencies resolved only (no tasks executed)
 Gradle deps destination: $GRADLE_USER_HOME/caches/modules-2/ (extract into $GRADLE_USER_HOME/)
 Android SDK destination: $ANDROID_SDK_ROOT/
 Robolectric Maven destination: ~/.m2/repository/ (default)
+Android lint: androidLintTool and its transitive dependencies included in gradle-deps
+Linux AAPT2: AGP-matched artifact included in gradle-deps
 """
             publish(
                 staging, output, ("android-sdk.tar.gz", "gradle-deps.tar.gz", "robolectric-maven.tar.gz"),
                 contents, obsolete=("gradle-cache.tar.gz", "gradle-cache.tar.gz.part-*", "gradle-*-bin.zip.part-*"),
             )
-
 
 
 # Run Python inside the container too, including checkout isolation. No host
@@ -571,17 +599,19 @@ import pathlib, shutil, subprocess, sys
 root = pathlib.Path('/tmp/project')
 pathlib.Path('/tmp/assets-home').mkdir(exist_ok=True)
 shutil.copytree('/source', root, ignore=shutil.ignore_patterns(
-    '.git', '.gradle', '.idea', 'build', 'docs', 'local.properties',
-    'release', '*.jks', '.env*', '*.bundle', '*.patch', '__pycache__'))
+    '.git', '.gradle', '.idea', 'build', 'node_modules', 'local.properties',
+    '.source', '.tanstack', 'dist', 'release', 'docs', '*.jks', '.env*',
+    '*.bundle', '*.patch', '__pycache__'))
 pathlib.Path('/var/cache/android-test-assets/gradle').mkdir(parents=True, exist_ok=True)
 options = ['--sdk-root', '/opt/android-sdk', '--gradle-bin', '/opt/gradle/bin/gradle',
-           '--gradle-user-home', '/var/cache/android-test-assets/gradle']
+           '--gradle-user-home', '/var/cache/android-test-assets/gradle',
+           '--download-cache', '/var/cache/android-test-assets/downloads']
 subprocess.run([sys.executable, str(root / 'scripts/export-android-test-assets.py'),
-                '--output', '/export', *options], check=True)
+                '--output', '/export', *options, *sys.argv[1:]], check=True)
 """
 
 
-def export_docker(output):
+def export_docker(args):
     if not shutil.which("docker"):
         raise ExportError("Docker is required to export Linux x86_64 test assets on this host")
     operating_system = run(["docker", "info", "--format", "{{.OSType}}"], capture=True,
@@ -594,14 +624,19 @@ def export_docker(output):
     say("Preparing the Linux x86_64 Gradle exporter image (cached after first use)")
     run(["docker", "build", "--platform", "linux/amd64", "--tag", image,
          "--file", PROJECT_ROOT / "scripts" / dockerfile, PROJECT_ROOT / "scripts"])
-    output.mkdir(parents=True, exist_ok=True)
+    args.output.mkdir(parents=True, exist_ok=True)
     command = ["docker", "run", "--rm", "--platform", "linux/amd64"]
     if hasattr(os, "getuid"):
         command.extend(["--user", f"{os.getuid()}:{os.getgid()}"])
     command.extend(["--env", "HOME=/tmp/assets-home"])
-    command.extend(["--volume", f"{PROJECT_ROOT}:/source:ro", "--volume", f"{output}:/export",
+    command.extend(["--volume", f"{PROJECT_ROOT}:/source:ro", "--volume", f"{args.output}:/export",
                     "--volume", cache, "--workdir", "/tmp", image,
-                    "python3", "-c", DOCKER_BOOTSTRAP])
+                    "python3", "-c", DOCKER_BOOTSTRAP, "--assets", args.assets])
+    for name in ("gradle", "jbr", "android-tools"):
+        if getattr(args, f"download_{name.replace('-', '_')}"):
+            command.append(f"--download-{name}")
+    if args.accept_sdk_licenses:
+        command.append("--accept-sdk-licenses")
     run(command)
 
 
@@ -612,15 +647,15 @@ def parse_args(argv=None):
         return Path(value)
 
     parser = argparse.ArgumentParser(description=__doc__, epilog="""
-On Linux x86_64, use preinstalled Gradle/JetBrains JDK 21/Android SDK.
+On Linux x86_64, use Gradle/JBR/SDK to resolve Android tests and lint.
 Other hosts use Docker with Linux amd64 images. Exports resolve dependencies
-without compiling or running tests. SHA256SUMS and CONTENTS.txt
+without compiling or running tests or lint. SHA256SUMS and CONTENTS.txt
 accompany the archives. All exported files automatically split above 180,000,000 bytes.
 Use --download-tools to include verified Linux amd64 Gradle/JBR/Android tools;
 use --download-only to fetch these packages without an SDK, Java, or Docker.
 """)
-    parser.add_argument("--assets", choices=("gradle",), default="gradle",
-                        help="asset type (Gradle/Android dependencies)")
+    parser.add_argument("--assets", choices=("gradle", "all"), default="gradle",
+                        help="Android only; all is a compatibility alias for gradle")
     parser.add_argument("--output", type=path_argument, help=(
         "output directory (default: build/android-test-assets)"
     ))
@@ -628,8 +663,10 @@ use --download-only to fetch these packages without an SDK, Java, or Docker.
     parser.add_argument("--gradle-user-home", type=path_argument, help="reuse an existing native Gradle cache")
     parser.add_argument("--gradle-bin", type=path_argument, help="preinstalled native Gradle executable matching the wrapper")
     downloads = parser.add_argument_group("Optional tool downloads (Linux x86_64 packages)")
-    downloads.add_argument("--download-tools", action="store_true",
-                           help="download Gradle, JetBrains JDK 21, and Android command-line tools")
+    downloads.add_argument(
+        "--download-tools", action="store_true",
+        help="download Gradle, JBR 21, and Android SDK command-line tools",
+    )
     downloads.add_argument("--download-gradle", action="store_true",
                            help="download the distribution and verify the SHA-256 pinned by the Gradle wrapper")
     downloads.add_argument("--download-jbr", action="store_true", help="download the pinned JetBrains JDK 21 SDK")
@@ -644,7 +681,9 @@ use --download-only to fetch these packages without an SDK, Java, or Docker.
     args = parser.parse_args(argv)
     if args.download_tools:
         args.download_gradle = args.download_jbr = args.download_android_tools = True
-    if args.download_only and not any((args.download_gradle, args.download_jbr, args.download_android_tools)):
+    if args.download_only and not any((
+        args.download_gradle, args.download_jbr, args.download_android_tools,
+    )):
         parser.error("--download-only requires --download-tools or at least one specific --download-* option")
     args.output = (args.output or PROJECT_ROOT / "build/android-test-assets").resolve()
     args.download_cache = args.download_cache.resolve()
@@ -660,7 +699,7 @@ def main(argv=None):
     try:
         if not native and not args.download_only and any((args.sdk_root, args.gradle_bin, args.gradle_user_home)):
             raise ExportError("Toolchain overrides are native Linux options; Docker supplies its own Linux toolchains")
-        downloaded = export_downloaded_tools(args)
+        downloaded = export_downloaded_tools(args) if native or args.download_only else {}
         if args.download_only:
             return 0
         with contextlib.ExitStack() as stack:
@@ -672,7 +711,7 @@ def main(argv=None):
             if native:
                 export_gradle(args, args.output, env=env)
             else:
-                export_docker(args.output)
+                export_docker(args)
     except (ExportError, OSError, ValueError, tarfile.TarError, zipfile.BadZipFile) as error:
         print(f"Error: {error}", file=sys.stderr)
         return 1

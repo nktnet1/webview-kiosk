@@ -126,10 +126,12 @@ class ExporterTest(unittest.TestCase):
         self.sdk = self.root / "sdk"
         write(self.sdk / "platforms/android-37.0/android.jar", "SDK fixture")
         write(self.sdk / "build-tools/36.0.0/source.properties", "tools fixture")
+        write(self.sdk / "platform-tools/adb", "adb fixture", executable=True)
         write(self.sdk / "licenses/license", "licence fixture")
         write(self.sdk / "ndk/secret", "not exported")
         write(self.project / "gradle/wrapper/gradle-wrapper.properties",
               "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.8.0-bin.zip\n")
+        write(self.project / "docs/pnpm-workspace.yaml", "packages: []\n")
         self.downloads = []
         self.tool_packages = {}
         self.stack = contextlib.ExitStack()
@@ -162,7 +164,8 @@ if '--licenses' in sys.argv:
     (root / 'sdkmanager-input.txt').write_text(sys.stdin.read())
 else:
     sdk = pathlib.Path(os.environ['ANDROID_SDK_ROOT'])
-    for name in ('platforms/android-37.0/android.jar', 'build-tools/36.0.0/source.properties'):
+    for name in ('platforms/android-37.0/android.jar', 'build-tools/36.0.0/source.properties',
+                 'platform-tools/adb'):
         path = sdk / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text('SDK fixture')
@@ -183,7 +186,10 @@ else:
                 member.mode, member.size = 0o755, len(data)
                 archive.addfile(member, io.BytesIO(data))
         self.tool_packages[ASSETS.JBR_ARCHIVE] = stream.getvalue()
-        self.stack.enter_context(mock.patch.object(ASSETS, "JBR_SHA256", hashlib.sha256(stream.getvalue()).hexdigest()))
+        self.stack.enter_context(mock.patch.object(
+            ASSETS, "JBR_SHA256",
+            hashlib.sha256(self.tool_packages[ASSETS.JBR_ARCHIVE]).hexdigest(),
+        ))
         self.stack.enter_context(mock.patch.object(ASSETS, "CMDLINE_TOOLS_SHA256",
                                                   hashlib.sha256(self.tool_packages[ASSETS.CMDLINE_TOOLS_ZIP]).hexdigest()))
         wrapper = self.project / "gradle/wrapper/gradle-wrapper.properties"
@@ -221,7 +227,10 @@ else:
         for line in records:
             expected, name = line.split("  ", 1)
             self.assertEqual(expected, hashlib.sha256((root / name).read_bytes()).hexdigest())
-        expected_names = {path.name for path in root.iterdir() if ".tar.gz" in path.name or ".zip" in path.name}
+        expected_names = {
+            path.name for path in root.iterdir()
+            if any(extension in path.name for extension in (".tar.gz", ".zip", ".tar.xz", ".tgz"))
+        }
         self.assertEqual(expected_names, {line.split("  ", 1)[1] for line in records})
 
     def test_gradle_exports_only_offline_inputs_and_cleans_stale_parts(self):
@@ -348,6 +357,23 @@ else:
         self.verify_checksums(tools)
         self.assertFalse((self.root / "gradle-calls.jsonl").exists())
 
+    def test_previously_exported_node_and_pnpm_are_not_retained(self):
+        self.tool_fixtures()
+        self.assertEqual(0, self.download_export("--download-tools", "--download-only"),
+                         self.error)
+        tools = self.output / "tools"
+        stale = ["node-v24.22.0-linux-x64.tar.xz", "pnpm-12.9.1.tgz.part-000"]
+        for name in stale:
+            write(tools / name, "obsolete")
+        write(tools / "unrelated.txt", "keep")
+        self.assertEqual(0, self.download_export("--download-tools", "--download-only"),
+                         self.error)
+        self.assertFalse(any((tools / name).exists() for name in stale))
+        self.assertEqual("keep", (tools / "unrelated.txt").read_text())
+        self.assertNotIn("node-v", (tools / "SHA256SUMS").read_text())
+        self.assertNotIn("pnpm-", (tools / "CONTENTS.txt").read_text())
+        self.verify_checksums(tools)
+
     def test_native_export_uses_downloaded_gradle_jbr_and_sdk_tools(self):
         self.tool_fixtures()
         sdk = self.root / "new SDK"
@@ -357,6 +383,7 @@ else:
         calls = (self.root / "sdkmanager-calls.txt").read_text().splitlines()
         self.assertIn("--licenses", calls[0])
         self.assertIn("platforms;android-37.0", calls[1])
+        self.assertIn("platform-tools", calls[1])
         self.assertEqual("y\n" * 100, (self.root / "sdkmanager-input.txt").read_text())
         gradle = self.calls("gradle")[0]
         self.assertEqual(str(sdk), gradle["sdk"])
@@ -364,6 +391,18 @@ else:
         self.assertFalse(Path(gradle["java"]).exists())
         self.verify_checksums()
         self.verify_checksums(self.output / "tools")
+
+    def test_all_is_compatible_alias_for_android_only(self):
+        self.tool_fixtures()
+        self.assertEqual(0, self.download_export(
+            "--assets", "all", "--sdk-root", str(self.sdk), "--gradle-bin", str(self.gradle),
+        ), self.error)
+        self.assertTrue((self.output / "gradle-deps.tar.gz").is_file())
+        self.assertFalse((self.output / "docs").exists())
+        self.assertFalse((self.output / "tools").exists())
+        self.assertEqual(8, len(self.downloads))  # Robolectric only
+        self.verify_checksums()
+        self.assertIn("androidLintTool", (self.output / "CONTENTS.txt").read_text())
 
     def test_tool_download_cache_repairs_corruption_and_rejects_bad_downloads(self):
         self.tool_fixtures()
@@ -436,7 +475,15 @@ class DispatchTest(unittest.TestCase):
     def test_defaults_and_invalid_options(self):
         self.assertEqual("gradle", ASSETS.parse_args([]).assets)
         self.assertEqual("gradle", ASSETS.parse_args(["--assets", "gradle"]).assets)
-        for arguments in (("--assets", "unknown"),
+        self.assertEqual("all", ASSETS.parse_args(["--assets", "all"]).assets)
+        downloaded = ASSETS.parse_args(["--assets", "all", "--download-tools"])
+        self.assertTrue(downloaded.download_gradle)
+        self.assertTrue(downloaded.download_jbr)
+        self.assertTrue(downloaded.download_android_tools)
+        self.assertFalse(hasattr(downloaded, "download_node"))
+        self.assertFalse(hasattr(downloaded, "download_pnpm"))
+        for arguments in (("--assets", "unknown"), ("--assets", "docs"),
+                          ("--download-node",), ("--download-pnpm",),
                           ("--output", ""), ("--output",), ("--download-only",)):
             with self.subTest(arguments=arguments), contextlib.redirect_stderr(io.StringIO()):
                 with self.assertRaises(SystemExit) as error:
@@ -467,6 +514,33 @@ class DispatchTest(unittest.TestCase):
                 self.assertIn(ASSETS.DOCKER_BOOTSTRAP, containers[0])
                 compile(ASSETS.DOCKER_BOOTSTRAP, "docker-bootstrap", "exec")
 
+    def test_docker_forwards_android_only_downloads(self):
+        with tempfile.TemporaryDirectory() as directory, \
+             mock.patch.object(ASSETS.platform, "system", return_value="Darwin"), \
+             mock.patch.object(ASSETS.shutil, "which", return_value="/usr/bin/docker"), \
+             mock.patch.object(ASSETS, "run", return_value="linux") as run, \
+             contextlib.redirect_stdout(io.StringIO()):
+            output = Path(directory) / "out"
+            self.assertEqual(0, ASSETS.main(["--assets", "all", "--download-tools",
+                                             "--output", str(output)]))
+            command = run.call_args_list[-1].args[0]
+            self.assertEqual(["--assets", "all", "--download-gradle", "--download-jbr",
+                              "--download-android-tools"], command[-5:])
+            self.assertNotIn("--download-node", command)
+            self.assertNotIn("--download-pnpm", command)
+            self.assertIn("'docs'", ASSETS.DOCKER_BOOTSTRAP)
+
+    def test_init_script_prefetches_lint_gradle_and_aapt2(self):
+        script = (ROOT / "scripts/resolve-android-test-assets.init.gradle").read_text()
+        self.assertIn("'androidLintTool'", script)
+        self.assertIn("'lintChecks'", script)
+        self.assertIn("'debugLintChecksClasspath'", script)
+        self.assertIn("'releaseLintChecksClasspath'", script)
+        self.assertIn("lint-gradle-", script)
+        self.assertIn("com.android.tools.build:aapt2:9.4.1-15978811:linux", script)
+        # Android lint dependencies are resolved as files, not graph metadata.
+        self.assertIn("incoming.artifacts.artifactFiles.files", script)
+
     def test_docker_rejects_native_paths_unavailable_daemon_and_windows_containers(self):
         with mock.patch.object(ASSETS.platform, "system", return_value="Darwin"), \
              mock.patch.object(ASSETS.shutil, "which", return_value="/bin/docker"), \
@@ -492,6 +566,40 @@ class DispatchTest(unittest.TestCase):
 
 
 class DownloadTest(unittest.TestCase):
+    def test_extraction_preserves_jbr_legal_symlinks(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "jbr.tar.gz"
+            jbr = ASSETS.JBR_ARCHIVE.removesuffix(".tar.gz")
+            with tarfile.open(source, "w:gz") as archive:
+                data = b"JBR license information\n"
+                original = tarfile.TarInfo(f"{jbr}/legal/java.base/ADDITIONAL_LICENSE_INFO")
+                original.size = len(data)
+                archive.addfile(original, io.BytesIO(data))
+                sibling = tarfile.TarInfo(f"{jbr}/legal/java.compiler/ADDITIONAL_LICENSE_INFO")
+                sibling.type = tarfile.SYMTYPE
+                sibling.linkname = "../java.base/ADDITIONAL_LICENSE_INFO"
+                archive.addfile(sibling)
+
+            filters = []
+            original_extract = tarfile.TarFile.extract
+
+            def record_filter(archive, member, path="", **options):
+                filters.append(options.get("filter"))
+                return original_extract(archive, member, path, **options)
+
+            destination = root / "tools"
+            with mock.patch.object(tarfile.TarFile, "extract", record_filter):
+                ASSETS.extract_tar(source, destination)
+
+            link = destination / jbr / "legal/java.compiler/ADDITIONAL_LICENSE_INFO"
+            self.assertTrue(link.is_symlink())
+            self.assertEqual(data, link.read_bytes())
+            self.assertTrue(link.resolve().is_relative_to(destination.resolve()))
+            if hasattr(tarfile, "tar_filter"):
+                # Python 3.10's backported "data" filter rejects this valid link.
+                self.assertEqual(["tar", "tar"], filters)
+
     def test_extraction_rejects_paths_and_links_outside_destination(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -509,6 +617,24 @@ class DownloadTest(unittest.TestCase):
             with self.assertRaisesRegex(ASSETS.ExportError, "Unsafe link"):
                 ASSETS.extract_tar(source, root / "destination")
             self.assertFalse((root / "destination/link").exists())
+
+            for link_type, linkname in (
+                (tarfile.SYMTYPE, str(root / "destination/inside")),
+                (tarfile.LNKTYPE, "../outside"),
+            ):
+                with self.subTest(link_type=link_type), tarfile.open(source, "w:gz") as archive:
+                    member = tarfile.TarInfo("link")
+                    member.type, member.linkname = link_type, linkname
+                    archive.addfile(member)
+                with self.assertRaisesRegex(ASSETS.ExportError, "Unsafe link"):
+                    ASSETS.extract_tar(source, root / "destination")
+
+            with tarfile.open(source, "w:gz") as archive:
+                member = tarfile.TarInfo("unsafe-fifo")
+                member.type = tarfile.FIFOTYPE
+                archive.addfile(member)
+            with self.assertRaisesRegex(ASSETS.ExportError, "Unsafe path or file type"):
+                ASSETS.extract_tar(source, root / "destination")
 
     def test_transient_download_retries_and_publishes_complete_bytes(self):
         with tempfile.TemporaryDirectory() as directory, \
@@ -547,6 +673,7 @@ class DownloadTest(unittest.TestCase):
                 self.assertTrue(os.access(command[0], os.X_OK))
                 write(sdk / "platforms/android-37.0/android.jar", "SDK")
                 write(sdk / "build-tools/36.0.0/source.properties", "tools")
+                write(sdk / "platform-tools/adb", "adb", executable=True)
 
             with mock.patch.object(ASSETS, "download", side_effect=lambda _url, path: shutil.copyfile(source, path)), \
                  mock.patch.object(ASSETS.shutil, "which", return_value=None), \

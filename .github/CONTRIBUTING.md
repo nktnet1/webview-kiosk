@@ -70,14 +70,24 @@ The suite covers source-specific version selection and fallback behavior,
 malformed metadata, HTTP and timeout failures, GitHub token scoping, and request
 timeouts.
 
-### Exporting Android test assets
+### Exporting offline test and lint assets
 
-To export Linux x86_64 Android SDK components and Robolectric runtime archives
-for use when running Android unit tests, use:
+To export Linux x86_64 Android SDK, Gradle dependencies (including lint), and
+Robolectric runtime archives for offline Android tests, use:
 
 ```bash
 python3 scripts/export-android-test-assets.py --output build/android-test-assets
 ```
+
+To include the original Gradle, JetBrains JBR 21, and Android SDK command-line
+tools for an offline environment, run:
+
+```bash
+python3 scripts/export-android-test-assets.py --download-tools
+```
+
+The `--assets all` option is accepted as a compatibility alias for the default
+Android-only export. Neither option downloads Node.js, pnpm, or docs assets.
 
 The command requires Python 3.10 or newer and uses only the standard library.
 On Linux x86_64, the script uses the locally installed Android SDK, JetBrains
@@ -90,7 +100,7 @@ resolve the project's dependencies on its first run. No host Android SDK,
 Java or Gradle setup is necessary in Docker mode. Docker on Apple Silicon runs
 an x86_64 container, which can be slower than native Linux due to emulation.
 
-The `--assets` selection and `--output` carry over to Docker mode. The
+The download flags and `--output` carry over to Docker mode. The
 native-only `--sdk-root`, `--gradle-user-home`, and `--gradle-bin` options are
 rejected on other hosts.
 Docker uses a disposable copy of the checkout without `local.properties`,
@@ -100,14 +110,18 @@ runtime downloads between exports. No compiled app outputs or test
 results are saved. Initial downloads and x86_64 emulation are still slower than
 native execution. Existing exports are replaced by the native exporter rules.
 
-The exporter always includes the Gradle dependencies and resolution metadata
+The Android export includes the Gradle dependencies and resolution metadata
 from `caches/modules-2` in `gradle-deps.tar.gz`, alongside
 `android-sdk.tar.gz` and `robolectric-maven.tar.gz`. It excludes Gradle lock
 files, credentials, and keystores. Original tool distributions are optional
 downloads kept separately in `tools/`. The script runs
-`resolveAndroidTestAssets`, which resolves the required debug/JVM-test and
-available Kotlin compiler configurations **without compiling or running
-`testDebugUnitTest`**.
+`resolveAndroidTestAssets`, which resolves debug/JVM-test dependencies,
+`androidLintTool` (including `com.android.tools.lint:lint-gradle` and its
+transitive dependencies), the AGP-matched Linux AAPT2, and available Kotlin
+compiler configurations **without compiling, running tests, or executing lint**.
+The AAPT2 version is matched to AGP 9.4.1 in `gradle/libs.versions.toml`.
+The SDK archive includes `platform-tools` (`adb`), installed via `sdkmanager`
+when missing.
 Robolectric's pinned API 28/29 runtime jars and their SHA-512 checksums are
 retrieved directly from Maven Central. A fresh Gradle home keeps the exported
 dependencies specific to this project. Passing `--gradle-user-home` on Linux

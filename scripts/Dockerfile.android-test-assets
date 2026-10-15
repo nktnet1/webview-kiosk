@@ -39,7 +39,7 @@ RUN yes | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" \
         --sdk_root="${ANDROID_SDK_ROOT}" --licenses > /dev/null \
     && "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" \
         --sdk_root="${ANDROID_SDK_ROOT}" --channel=3 \
-        'platforms;android-37.0' 'build-tools;36.0.0'
+        'platforms;android-37.0' 'build-tools;36.0.0' 'platform-tools'
 
 # The named Docker volume retains Gradle caches and Robolectric downloads.
 # Its root is writable by the host UID, with private cache subdirectories.

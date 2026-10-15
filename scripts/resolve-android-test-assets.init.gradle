@@ -1,6 +1,6 @@
 import org.gradle.api.artifacts.ProjectDependency
 
-// Resolve only the artifacts needed for the engine JVM and Android/Robolectric tests.
+// Resolve the artifacts needed for engine JVM, Android/Robolectric tests, and lint.
 // This init script deliberately registers no dependency on a build or test task.
 gradle.beforeProject { project ->
     if (project.path in [':app', ':adblock']) {
@@ -21,6 +21,9 @@ gradle.beforeProject { project ->
                     'debugRuntimeClasspath',
                     'debugUnitTestCompileClasspath',
                     'debugUnitTestRuntimeClasspath',
+                    // AGP supplies lint through this separate configuration.
+                    // It is not downloaded by the test classpaths above.
+                    'androidLintTool',
                 ]
                 // Kotlin compiler/compiler-plugin configurations are resolved
                 // lazily during compilation. Pre-fetch them for offline tests,
@@ -32,6 +35,9 @@ gradle.beforeProject { project ->
                     'kotlinCompilerPluginClasspathTest',
                     'kotlinCompilerPluginClasspathDebug',
                     'kotlinCompilerPluginClasspathDebugUnitTest',
+                    'lintChecks',
+                    'debugLintChecksClasspath',
+                    'releaseLintChecksClasspath',
                 ]
                 (required + optional).each { configurationName ->
                     def configuration = project.configurations.findByName(configurationName)
@@ -57,9 +63,28 @@ gradle.beforeProject { project ->
                             !(dependency instanceof ProjectDependency)
                         }
                     def files = externalOnly.incoming.artifacts.artifactFiles.files
+                    if (!engine && configurationName == 'androidLintTool' &&
+                        !files.any { it.name.startsWith('lint-gradle-') && it.name.endsWith('.jar') }) {
+                        throw new GradleException('Android lint-gradle JAR was not resolved')
+                    }
                     logger.lifecycle(
                         "Resolved ${project.path}:${configurationName}: ${files.size()} files"
                     )
+                }
+                if (!engine) {
+                    // AGP downloads the Linux AAPT2 binary independently of the
+                    // debug/test configurations. Keep this version in sync with
+                    // AGP 9.4.1 in gradle/libs.versions.toml.
+                    def aapt2 = project.configurations.detachedConfiguration(
+                        project.dependencies.create(
+                            'com.android.tools.build:aapt2:9.4.1-15978811:linux'
+                        )
+                    )
+                    def files = aapt2.incoming.artifacts.artifactFiles.files
+                    if (files.isEmpty()) {
+                        throw new GradleException('Linux AAPT2 artifact was not resolved')
+                    }
+                    logger.lifecycle("Resolved Linux AAPT2: ${files.size()} files")
                 }
             }
         }
