@@ -1,4 +1,5 @@
-# The official Rust image provides rustup and a stable Linux host toolchain.
+# The official Rust image provides rustup and a pinned stable Linux release.
+# Its installed toolchain is versioned (1.x.y-*), not necessarily named stable-*.
 # Force amd64 in the exporter, including on Apple Silicon Docker hosts.
 FROM rust:1-bookworm
 

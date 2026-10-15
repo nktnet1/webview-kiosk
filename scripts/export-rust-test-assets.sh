@@ -24,7 +24,8 @@ native-adblock Cargo dependencies, for offline host-side Rust tests.
 No Android NDK or Android Rust targets are needed.
 
 On macOS or non-x86_64 hosts, Docker uses the official Linux amd64 Rust image.
-On Linux x86_64, a rustup-managed stable toolchain must already be installed.
+On Linux x86_64, a rustup-managed stable or version-numbered host toolchain
+must already be installed.
 
 Options:
   --output DIR           Output directory (default: build/android-test-assets/rust).
@@ -108,7 +109,6 @@ run_in_docker() {
         --env HOME=/tmp/rust-assets-home \
         --env CARGO_HOME=/var/cache/native-adblock-rust/cargo \
         --env RUSTUP_HOME=/usr/local/rustup \
-        --env RUSTUP_TOOLCHAIN="$TOOLCHAIN" \
         --volume "$PROJECT_ROOT:/source:ro" \
         --volume "$output_dir:/export" \
         --volume "$cache_volume:/var/cache/native-adblock-rust" \
@@ -158,9 +158,6 @@ else
 fi
 [[ -d "$CARGO_BIN_DIR" ]] || fail "Cargo binary directory does not exist: $CARGO_BIN_DIR"
 CARGO_BIN_DIR="$(cd -- "$CARGO_BIN_DIR" && pwd -P)"
-[[ -d "$RUSTUP_DIR/toolchains/$TOOLCHAIN" && \
-   -x "$RUSTUP_DIR/toolchains/$TOOLCHAIN/bin/rustc" ]] || \
-    fail "Rustup toolchain $TOOLCHAIN is missing from $RUSTUP_DIR. Install the stable host toolchain first."
 for bin in cargo rustup rustc rustdoc; do
     [[ -x "$CARGO_BIN_DIR/$bin" ]] || \
         fail "Rustup proxy $bin is missing from $CARGO_BIN_DIR"
@@ -168,11 +165,28 @@ done
 [[ -f "$RUSTUP_DIR/settings.toml" ]] || \
     fail "Rustup settings.toml is missing from $RUSTUP_DIR"
 
+# The official rust:1-bookworm image installs a pinned release (for example,
+# 1.99.0-x86_64-unknown-linux-gnu), NOT a toolchain named stable-*. Reuse the
+# already-installed release rather than downloading stable a second time.
+# Prefer an explicitly installed stable toolchain on native Linux, otherwise
+# accept the installed versioned default from rustup's settings.
+SOURCE_TOOLCHAIN="$TOOLCHAIN"
+if [[ ! -x "$RUSTUP_DIR/toolchains/$SOURCE_TOOLCHAIN/bin/rustc" ]]; then
+    rustup_default="$(sed -n 's/^default_toolchain = "\([^"]*\)"$/\1/p' \
+        "$RUSTUP_DIR/settings.toml" | head -n 1)"
+    if [[ "$rustup_default" =~ ^[0-9]+(\.[0-9]+){1,2}-$HOST_TRIPLE$ && \
+        -x "$RUSTUP_DIR/toolchains/$rustup_default/bin/rustc" ]]; then
+        SOURCE_TOOLCHAIN="$rustup_default"
+    else
+        fail "No installed stable or version-numbered $HOST_TRIPLE toolchain in $RUSTUP_DIR. Install a stable host toolchain first."
+    fi
+fi
+
 # An override prevents rust-toolchain.toml from installing its four Android
 # targets. Host tests and cargo vendor require only the host standard library.
-export RUSTUP_TOOLCHAIN="$TOOLCHAIN"
+export RUSTUP_TOOLCHAIN="$SOURCE_TOOLCHAIN"
 rust_host="$("$CARGO_BIN_DIR/rustc" -vV | sed -n 's/^host: //p')" || \
-    fail "Cannot query host toolchain $TOOLCHAIN"
+    fail "Cannot query host toolchain $SOURCE_TOOLCHAIN"
 [[ "$rust_host" == "$HOST_TRIPLE" ]] || \
     fail "Expected $HOST_TRIPLE rustc, found: $rust_host"
 
@@ -212,7 +226,10 @@ mkdir -p "$TOOLCHAIN_LAYOUT/cargo/bin" "$TOOLCHAIN_LAYOUT/rustup/toolchains"
 for bin in cargo rustup rustc rustdoc; do
     ln -s -- "$CARGO_BIN_DIR/$bin" "$TOOLCHAIN_LAYOUT/cargo/bin/$bin"
 done
-ln -s -- "$RUSTUP_DIR/toolchains/$TOOLCHAIN" \
+# Always archive under the stable name used by the offline restore commands,
+# even when the source Docker image stores its pinned release under 1.x.y-*.
+# GNU tar --dereference packages the real files rather than the source symlink.
+ln -s -- "$RUSTUP_DIR/toolchains/$SOURCE_TOOLCHAIN" \
     "$TOOLCHAIN_LAYOUT/rustup/toolchains/$TOOLCHAIN"
 # Do not export rustup's user-defined directory overrides or personal settings.
 settings_version="$(sed -n 's/^version = "\([^"]*\)"$/\1/p' \
@@ -250,6 +267,7 @@ tar -C "$CRATE_COPY" -czf - Cargo.lock .cargo/config.toml vendor | \
 cat > "$STAGING_DIR/CONTENTS.txt" <<CONTENTS
 Platform: Linux x86_64 ($HOST_TRIPLE)
 Rust channel: $TOOLCHAIN (minimal host toolchain; no Android targets)
+Installed source toolchain: $SOURCE_TOOLCHAIN
 Rust version: $("$CARGO_BIN_DIR/rustc" --version)
 Cargo version: $("$CARGO_BIN_DIR/cargo" --version)
 Crate: app/native-adblock/Cargo.toml

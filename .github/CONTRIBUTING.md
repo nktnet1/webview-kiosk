@@ -122,9 +122,11 @@ On macOS, Apple Silicon, and non-x86_64 Linux, the Rust exporter builds a
 small Docker image based on the official `rust:1-bookworm` Linux amd64 image.
 It needs Docker and internet access for the initial image/dependency download,
 but no host Rust, Java, or Android SDK installation. Its separate named Docker
-volume retains downloaded Cargo dependencies. On Linux x86_64, it uses an
-existing rustup-managed `stable-x86_64-unknown-linux-gnu` toolchain; neither
-route downloads the Android NDK or compiles the native JNI library.
+volume retains downloaded Cargo dependencies. The official Docker image has
+a version-numbered stable release, which the exporter reuses without downloading
+another toolchain. On Linux x86_64, it uses an existing rustup-managed stable
+toolchain or a version-numbered default; neither route downloads the Android
+NDK or compiles the native JNI library.
 
 The Rust exporter creates these files in the `rust/` output directory, with
 independent `SHA256SUMS` and `CONTENTS.txt` metadata:

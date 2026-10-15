@@ -107,7 +107,10 @@ FAKE_OS=Darwin FAKE_ARCH=arm64 bash "$EXPORTER" --with-rust --output "$output" \
 [[ -d "$output/rust" ]]
 assert_contains "$TEMP_DIR/build.args" "$PROJECT_ROOT/scripts/Dockerfile.rust-test-assets"
 assert_contains "$TEMP_DIR/run.args" "$output/rust:/export"
-assert_contains "$TEMP_DIR/run.args" 'RUSTUP_TOOLCHAIN=stable-x86_64-unknown-linux-gnu'
+if grep -F 'RUSTUP_TOOLCHAIN=' "$TEMP_DIR/run.args"; then
+    echo 'Combined export must allow Rust to detect the installed Docker toolchain' >&2
+    exit 1
+fi
 
 # Help does not require Docker, even on non-Linux hosts.
 rm "$TEMP_DIR/build.args" "$TEMP_DIR/run.args"

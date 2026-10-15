@@ -61,7 +61,13 @@ assert_contains "$TEMP_DIR/docker-run.args" 'linux/amd64'
 assert_contains "$TEMP_DIR/docker-run.args" "$TEST_PROJECT:/source:ro"
 assert_contains "$TEMP_DIR/docker-run.args" "$output:/export"
 assert_contains "$TEMP_DIR/docker-run.args" 'webview-kiosk-rust-test-assets-cargo:/var/cache/native-adblock-rust'
-assert_contains "$TEMP_DIR/docker-run.args" 'RUSTUP_TOOLCHAIN=stable-x86_64-unknown-linux-gnu'
+# The Docker image installs a version-numbered release, not a stable-* alias.
+# The native exporter must discover that release instead of forcing rustup to
+# select (and potentially try to download) an uninstalled stable toolchain.
+if grep -F 'RUSTUP_TOOLCHAIN=' "$TEMP_DIR/docker-run.args"; then
+    echo 'Docker must not override rustup before the installed toolchain is discovered' >&2
+    exit 1
+fi
 grep -F -- '--cargo-bin-dir /usr/local/cargo/bin' "$TEMP_DIR/docker-run.args" >/dev/null
 grep -F -- 'exec bash /tmp/project/scripts/export-rust-test-assets.sh' \
     "$TEMP_DIR/docker-run.args" >/dev/null
@@ -105,6 +111,7 @@ default_toolchain = "stable-x86_64-unknown-linux-gnu"
 SETTINGS
 cat > "$CARGO_BIN/rustc" <<'RUSTC'
 #!/usr/bin/env bash
+[[ "${RUSTUP_TOOLCHAIN:-}" == "${FAKE_EXPECTED_TOOLCHAIN:-stable-x86_64-unknown-linux-gnu}" ]] || exit 13
 case "$1" in
     -vV) printf 'rustc 1.99.0 (fixture)\nhost: %s\n' "${FAKE_RUST_HOST:-x86_64-unknown-linux-gnu}" ;;
     --version) printf 'rustc 1.99.0 (fixture)\n' ;;
@@ -122,7 +129,7 @@ RUSTUP
 cat > "$CARGO_BIN/cargo" <<'CARGO'
 #!/usr/bin/env bash
 set -euo pipefail
-[[ "${RUSTUP_TOOLCHAIN:-}" == stable-x86_64-unknown-linux-gnu ]] || exit 13
+[[ "${RUSTUP_TOOLCHAIN:-}" == "${FAKE_EXPECTED_TOOLCHAIN:-stable-x86_64-unknown-linux-gnu}" ]] || exit 13
 printf '%s\n' "$*" >> "$CAPTURE_DIR/cargo-calls.log"
 case "$1" in
     generate-lockfile)
@@ -193,6 +200,7 @@ fi
 [[ ! -d "$TEST_PROJECT/app/native-adblock/vendor" ]]
 grep -F 'Android NDK: not required' "$native_output/CONTENTS.txt" >/dev/null
 grep -F 'Toolchain selection: set RUSTUP_TOOLCHAIN=' "$native_output/CONTENTS.txt" >/dev/null
+grep -F 'Installed source toolchain: stable-x86_64-unknown-linux-gnu' "$native_output/CONTENTS.txt" >/dev/null
 grep -F 'generate-lockfile' "$TEMP_DIR/cargo-calls.log" >/dev/null
 grep -F 'vendor --locked --versioned-dirs vendor' "$TEMP_DIR/cargo-calls.log" >/dev/null
 grep -F 'metadata --locked --offline --format-version 1' "$TEMP_DIR/cargo-calls.log" >/dev/null
@@ -206,6 +214,65 @@ if grep -F 'generate-lockfile' "$TEMP_DIR/cargo-calls.log"; then
     exit 1
 fi
 [[ "$(tar -xOzf "$native_output/native-adblock-vendor.tar.gz" Cargo.lock)" == 'previously locked fixture' ]]
+
+# Regression: the official rust:1-bookworm image has ONLY a pinned versioned
+# rustup directory and selects it in settings.toml. Cargo and rustc must use
+# that installed version, but the portable export must still contain the
+# stable-x86_64-unknown-linux-gnu directory and settings expected by restore.
+versioned_toolchain='1.99.0-x86_64-unknown-linux-gnu'
+mv -- "$TOOLCHAIN_DIR" "$RUSTUP_HOME_DIR/toolchains/$versioned_toolchain"
+cat > "$RUSTUP_HOME_DIR/settings.toml" <<SETTINGS
+version = "12"
+default_toolchain = "$versioned_toolchain"
+SETTINGS
+FAKE_EXPECTED_TOOLCHAIN="$versioned_toolchain" native_export "$native_output" \
+    > "$TEMP_DIR/versioned.log"
+grep -F "Installed source toolchain: $versioned_toolchain" \
+    "$native_output/CONTENTS.txt" >/dev/null
+tar -tzf "$native_output/rust-toolchain-linux-x86_64.tar.gz" \
+    > "$TEMP_DIR/versioned-archive.txt"
+assert_contains "$TEMP_DIR/versioned-archive.txt" \
+    'rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/rustc'
+assert_contains "$TEMP_DIR/versioned-archive.txt" \
+    'rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libstd.rlib'
+if grep -F "$versioned_toolchain" "$TEMP_DIR/versioned-archive.txt"; then
+    echo 'Versioned source directory unexpectedly leaked into the archive' >&2
+    exit 1
+fi
+tar -xOzf "$native_output/rust-toolchain-linux-x86_64.tar.gz" \
+    rustup/settings.toml > "$TEMP_DIR/versioned-settings.toml"
+grep -Fx 'default_toolchain = "stable-x86_64-unknown-linux-gnu"' \
+    "$TEMP_DIR/versioned-settings.toml" >/dev/null
+restored_toolchain="$TEMP_DIR/restored-versioned-toolchain"
+mkdir -p "$restored_toolchain"
+tar -xzf "$native_output/rust-toolchain-linux-x86_64.tar.gz" \
+    -C "$restored_toolchain"
+[[ -x "$restored_toolchain/rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/rustc" ]]
+[[ ! -L "$restored_toolchain/rustup/toolchains/stable-x86_64-unknown-linux-gnu" ]]
+[[ -f "$restored_toolchain/rustup/toolchains/stable-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/lib/libstd.rlib" ]]
+(
+    cd "$native_output"
+    sha256sum --check --status SHA256SUMS
+)
+
+# Do not fall back to a nightly release or attempt a toolchain download when
+# there is no installed stable/versioned default. Existing archives remain safe.
+cat > "$RUSTUP_HOME_DIR/settings.toml" <<'SETTINGS'
+version = "12"
+default_toolchain = "nightly-x86_64-unknown-linux-gnu"
+SETTINGS
+if native_export "$TEMP_DIR/no-stable-toolchain" > "$TEMP_DIR/no-stable.log" 2>&1; then
+    echo 'Missing stable/versioned Rust toolchain must fail early' >&2
+    exit 1
+fi
+grep -F 'No installed stable or version-numbered' "$TEMP_DIR/no-stable.log" >/dev/null
+[[ ! -f "$TEMP_DIR/no-stable-toolchain/rust-toolchain-linux-x86_64.tar.gz" ]]
+
+mv -- "$RUSTUP_HOME_DIR/toolchains/$versioned_toolchain" "$TOOLCHAIN_DIR"
+cat > "$RUSTUP_HOME_DIR/settings.toml" <<'SETTINGS'
+version = "12"
+default_toolchain = "stable-x86_64-unknown-linux-gnu"
+SETTINGS
 
 # A vendor/download failure must not replace a previous successful archive.
 previous_hash="$(sha256sum "$native_output/native-adblock-vendor.tar.gz")"
