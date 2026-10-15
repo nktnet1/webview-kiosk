@@ -90,12 +90,22 @@ internal class FilterListStore(
     fun containsSource(sourceUrl: String): Boolean = list().any { it.sourceUrl == sourceUrl }
 
     @Synchronized
+    fun containsPreset(sourceUrl: String): Boolean = list().any {
+        it.type == FilterListType.PRESET && it.sourceUrl == sourceUrl
+    }
+
+    @Synchronized
+    fun containsUrl(sourceUrl: String): Boolean = list().any {
+        it.type == FilterListType.URL && it.sourceUrl == sourceUrl
+    }
+
+    @Synchronized
     fun importFrom(
         name: String,
         input: InputStream,
         sourceUrl: String? = null,
         type: FilterListType = if (sourceUrl == null) FilterListType.FILE else FilterListType.URL,
-    ): ImportedFilterList = importNew(name, input, sourceUrl, type, enabled = true, allowDuplicate = false)
+    ): ImportedFilterList = importNew(name, input, sourceUrl, type, enabled = true, cloning = false)
 
     private fun importNew(
         name: String,
@@ -103,7 +113,7 @@ internal class FilterListStore(
         sourceUrl: String?,
         type: FilterListType,
         enabled: Boolean,
-        allowDuplicate: Boolean,
+        cloning: Boolean,
         copiedRefreshTime: Long? = null,
     ): ImportedFilterList {
         require((type == FilterListType.FILE) == (sourceUrl == null)) {
@@ -113,8 +123,15 @@ internal class FilterListStore(
             "Unknown preset filter list"
         }
         val existing = list()
-        require(allowDuplicate || sourceUrl == null || existing.none { it.sourceUrl == sourceUrl }) {
-            "This filter list has already been downloaded"
+        require(type != FilterListType.PRESET || existing.none {
+            it.type == FilterListType.PRESET && it.sourceUrl == sourceUrl
+        }) {
+            "This preset has already been added"
+        }
+        require(type != FilterListType.URL || existing.none {
+            it.type == FilterListType.URL && it.sourceUrl == sourceUrl
+        }) {
+            "A URL list with this address already exists"
         }
         require(existing.size < MAX_LISTS) { "At most $MAX_LISTS filter lists are supported" }
         val currentBytes = existing.sumOf { fileFor(it.id).length() }
@@ -123,14 +140,14 @@ internal class FilterListStore(
         try {
             val item = ImportedFilterList(
                 id = UUID.randomUUID().toString(),
-                name = validateName(if (type == FilterListType.FILE && !allowDuplicate) {
+                name = validateName(if (type == FilterListType.FILE && !cloning) {
                     name.substringAfterLast('/').substringAfterLast('\\')
                 } else name),
                 enabled = enabled,
                 sourceUrl = sourceUrl,
                 type = type,
                 lastRefreshedAt = when {
-                    allowDuplicate -> copiedRefreshTime // Cloning does not fetch the source again.
+                    cloning -> copiedRefreshTime // Cloning does not fetch the source again.
                     sourceUrl != null -> now()
                     else -> null
                 },
@@ -171,18 +188,19 @@ internal class FilterListStore(
     /** A clone copies the cached rules without network access and starts disabled. */
     @Synchronized
     fun cloneList(id: String, name: String? = null): ImportedFilterList {
-        val item = list().firstOrNull { it.id == id }
+        val existing = list()
+        val item = existing.firstOrNull { it.id == id }
             ?: throw IllegalArgumentException("Unknown filter list")
+        require(item.type != FilterListType.URL) { "URL lists cannot be cloned" }
         val file = fileFor(id)
         if (!file.isFile) throw IOException("Original filter list is missing")
         val proposedName = name ?: "${item.name.removeSuffix(".txt")} (copy)".take(MAX_NAME_LENGTH)
-        // A preset clone becomes a regular, editable URL list. Duplicating the URL is
-        // intentional here, unlike adding the same remote list a second time.
+        // A preset clone is a regular URL list; the same-type uniqueness check still applies.
         return file.inputStream().use { input ->
             importNew(
                 proposedName, input, item.sourceUrl,
-                if (item.type == FilterListType.PRESET) FilterListType.URL else item.type,
-                enabled = false, allowDuplicate = true,
+                if (item.type == FilterListType.PRESET) FilterListType.URL else FilterListType.FILE,
+                enabled = false, cloning = true,
                 copiedRefreshTime = item.lastRefreshedAt,
             )
         }
@@ -235,8 +253,10 @@ internal class FilterListStore(
         require(item.type == FilterListType.URL && item.sourceUrl == originalUrl) {
             "This is not an editable URL list"
         }
-        require(existing.none { it.id != id && it.sourceUrl == url } || url == originalUrl) {
-            "This filter list has already been downloaded"
+        require(url == originalUrl || existing.none {
+            it.id != id && it.type == FilterListType.URL && it.sourceUrl == url
+        }) {
+            "A URL list with this address already exists"
         }
         return replaceContent(existing, item, item.copy(name = validateName(name), sourceUrl = url), input)
     }

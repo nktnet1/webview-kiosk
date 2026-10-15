@@ -146,6 +146,16 @@ class FilterListValidationTest {
     }
 
     @Test
+    fun urlCloneIsRejectedBeforeReadingOrValidatingAnotherCopy() {
+        val item = store.importFrom("Remote", "||working.example^".byteInputStream(), "https://example.org/rules.txt")
+        val error = assertThrows(IllegalArgumentException::class.java) { store.cloneList(item.id) }
+        assertEquals("URL lists cannot be cloned", error.message)
+        assertEquals(listOf("||working.example^"), validated)
+        assertEquals(listOf(item), store.list())
+        assertEquals(1, directory.listFiles().orEmpty().size)
+    }
+
+    @Test
     fun invalidLegacyFileCannotBeClonedAndOriginalIsRetained() {
         val item = store.importFrom("Legacy", "||old.example^".byteInputStream())
         val invalid = "||bad.example^\$redirect="

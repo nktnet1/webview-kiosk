@@ -59,12 +59,14 @@ finish before the startup gate opens or success feedback appears.
   **URL** (a custom HTTPS link and display name), or **Preset** (a compact second dropdown of [EasyList](https://easylist.to/easylist/easylist.txt),
   [EasyPrivacy](https://easylist.to/easylist/easyprivacy.txt), and
   [HaGeZi Multi NORMAL](https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/multi.txt)).
-  The selected preset's URL is visible and selectable. The app bundles only shortcut URLs,
+  The selected preset's URL is visible and selectable. Installed presets have a prominent
+  **Already added** notice and are marked in the preset dropdown; a matching URL entry
+  does not mark the preset as installed. The app bundles only shortcut URLs,
   never the filter content. All downloads
   require an explicit user action; no subscriptions or automatic refreshes run.
 - Each row has a switch on the left and a three-dot actions menu on the right:
   **Edit**, **Refresh** (for URL/preset lists), **Info**, **Clone**, and **Delete**. Deletion requires
-  confirmation. While work is in progress, a small centered spinner and phase text
+  confirmation. While work is in progress, a small centered spinner and italic gray phase text
   appear below the buttons. When idle, they are removed entirely, leaving only the
   normal 12 dp list spacing. The compact **Actions** menu beside **Add list** contains
   **Enable all**, **Disable all**, and **Refresh all**. **Refresh all** refetches every URL/preset list, including
@@ -80,8 +82,12 @@ finish before the startup gate opens or success feedback appears.
   lists already have the requested state or there are no lists. No file contents
   or list identities change.
 - Add, refresh, enable/disable, and other rule-changing operations keep their busy
-  state until rule compilation or clearing finishes. Success messages follow that
-  completion. A failed reload reports an error while keeping the previous working
+  state until rule compilation or clearing finishes, with a minimum visible duration
+  of one second to avoid flashing. Phase changes share that interval; closing an import/edit
+  dialog starts a fresh minimum for the main indicator. Success messages follow both
+  rule-load completion and the indicator closing. The startup indicator uses the same
+  minimum when shown. The timer suspends UI presentation only; it does not block the
+  main thread or delay engine work. A failed reload reports an error while keeping the previous working
   engine; saved list changes remain visible. Adding or editing closes its dialog
   after the file is saved, while the main loading indicator covers rule loading.
 - **Info**, directly above **Clone**, shows the saved list's type, enabled status, last refresh time,
@@ -92,29 +98,33 @@ finish before the startup gate opens or success feedback appears.
   stored list nor the active engine. Metadata and source appear immediately, file
   size appears after a quick file check, and each pending figure has its own loading
   indicator. Rule counts share one scan and become final together. Read failures
-  mark pending values unavailable and show an error. Long names and source URLs are selectable
-  and ellipsized, and the dialog body scrolls. Skipped-rule totals are not shown
+  mark pending values unavailable and show an error. The full list name is available in
+  its selectable, scrollable title. Source URLs are selectable and ellipsized, and the
+  dialog body scrolls. Skipped-rule totals are not shown
   on the main list screen.
 - **Last refreshed** records successful source downloads, including the initial download,
   identical-content refreshes, and URL changes. It is saved with the list metadata and shown
   immediately in Info using the device's date/time format and timezone. Failed downloads
-  or validation leave it unchanged; renaming and toggling do not alter it. Clones inherit
+  or validation leave it unchanged; renaming and toggling do not alter it. Preset clones inherit
   their source's timestamp. Older lists without a recorded timestamp show **Unknown** until
   their next successful refresh. Local File lists show **Not applicable**.
 - The empty screen uses a card containing only **No filter lists have been added**.
   The two compact controls share one row, with additional space
   before the list. A lazy vertical list handles many rows and short screens;
-  long list names, picker labels, and replacement filenames use ellipses.
+  row names stay on one line with ellipses; picker labels and replacement filenames
+  also use ellipses. Info displays the full list name.
 - **Edit** allows names to be changed for File/URL lists; URLs can also be
   changed. A changed URL is fetched and validated before replacing the stored
   rules, URL, and name together. Unchanged URLs are not refetched on rename.
   Local File lists can be edited inline when smaller than 128 KiB, or replaced
   from a new text file; larger lists must be replaced via the file picker.
   Presets are read-only in Edit, but their rules can still be updated normally.
-- All list types offer **Clone** in the three-dot menu. Cloning immediately creates
+- File and Preset lists offer **Clone** in the three-dot menu. URL lists cannot be cloned.
+  Cloning immediately creates
   a copy with a new identity, the cached rules, and
   **disabled** status so they cannot silently change active blocking. A preset
-  clone is an editable URL list; File and URL clones retain their types.
+  clone is an editable URL list; File clones remain File lists. Preset cloning is disabled
+  when a URL list with its address already exists, and storage enforces the same rule.
   Use **Edit** on the copy to change its name, URL, or File rules without changing
   the original. Cloning never makes a network request. Presets remain read-only.
 - The Add dialog starts with the list type; field labels appear above the type,
@@ -126,8 +136,11 @@ finish before the startup gate opens or success feedback appears.
   intact. Previously imported AdGuard Base lists are retained as custom URLs.
 - Remote downloads require successful HTTPS responses (without downgrade),
   are performed on an IO dispatcher with timeouts, and use the same private-file,
-  UTF-8, and size validation as local file imports. Attempting to add the same
-  download source twice is rejected, though explicit clones may share a URL.
+  UTF-8, and size validation as local file imports. URL entries must have unique addresses
+  among URL entries, and each preset can be added only once, including disabled lists.
+  A URL entry and a preset may share the same address in either order. File lists may
+  be duplicated. URL entry/edit forms flag an existing URL address and disable submission;
+  download/storage checks enforce the rule as well. URL edits may use a preset's address.
 - Each file must be UTF-8, nonempty, and no larger than 8 MiB. Storage is
   bounded to 16 lists / 32 MiB total; imports and replacements are staged as
   validated temporary files before changing the active rules. A failed

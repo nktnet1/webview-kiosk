@@ -40,6 +40,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -56,6 +57,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -82,16 +85,23 @@ import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.ui.components.common.MinimumLoadingState
 import java.io.IOException
 import java.text.DateFormat
 import java.text.NumberFormat
 import java.util.Date
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 
 private fun ImportedFilterList.displayName(): String =
     if (sourceUrl == null) name else name.removeSuffix(".txt")
 
 private fun validListName(name: String): Boolean =
     name.isNotBlank() && name.trim().length <= 100 && name.none { it.isISOControl() }
+
+private fun List<ImportedFilterList>.hasUrlList(url: String, exceptId: String? = null): Boolean {
+    val normalized = url.trim().toHttpUrlOrNull()?.toString() ?: return false
+    return any { it.id != exceptId && it.type == FilterListType.URL && it.sourceUrl == normalized }
+}
 
 @Composable
 fun SettingsContentBlockingScreen(navController: NavController) {
@@ -105,8 +115,19 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     val blockingError by blocker.lastError.collectAsState()
     var lists by remember { mutableStateOf(store.list()) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
-    var busy by remember { mutableStateOf(false) }
+    var working by remember { mutableStateOf(false) }
     var workingMessage by remember { mutableStateOf("") }
+    val loading = remember { MinimumLoadingState() }
+    val displayedLoadingMessage by loading.message.collectAsState()
+    val currentLoadingMessage = when {
+        blockingStatus == BlockingStatus.LOADING -> loadStage?.description ?: "Loading filter rules…"
+        working -> workingMessage
+        else -> null
+    }
+    val busy = currentLoadingMessage != null || displayedLoadingMessage != null
+    LaunchedEffect(currentLoadingMessage) {
+        if (currentLoadingMessage != null) loading.show(currentLoadingMessage) else loading.hide()
+    }
     var bulkActionsExpanded by remember { mutableStateOf(false) }
     var pendingRemoval by remember { mutableStateOf<ImportedFilterList?>(null) }
     var pendingEdit by remember { mutableStateOf<ImportedFilterList?>(null) }
@@ -127,9 +148,10 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         onSuccess: (() -> Unit)? = null,
         block: () -> Unit,
     ) {
-        if (busy) return
-        busy = true
+        if (working || loading.message.value != null || blocker.status.value == BlockingStatus.LOADING) return
+        working = true
         workingMessage = progressMessage
+        loading.show(progressMessage)
         error = null
         scope.launch {
             try {
@@ -140,18 +162,26 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     store.list() to revision
                 }
                 lists = savedLists
-                onStored?.invoke()
+                onStored?.let { stored ->
+                    stored()
+                    // The main indicator has just become visible after its dialog closed.
+                    loading.show(loading.message.value ?: progressMessage, restartMinimum = true)
+                }
                 if (revision != null) blocker.awaitReload(revision)
-                // Clear the busy state before any success feedback is delivered.
-                busy = false
+                working = false
+                loading.hide()
+                loading.awaitHidden()
                 onSuccess?.invoke()
                 successMessage?.let { ToastManager.show(context, it) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                working = false
+                loading.hide()
+                loading.awaitHidden()
                 error = e.message ?: "Unable to change filter lists"
             } finally {
-                busy = false
+                working = false
             }
         }
     }
@@ -276,7 +306,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                         ) { Text("Add list", maxLines = 1, overflow = TextOverflow.Ellipsis) }
                     }
 
-                    if (busy || blockingStatus == BlockingStatus.LOADING) {
+                    if (busy) {
                         Column(
                             modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -284,11 +314,11 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                         ) {
                             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
                             Text(
-                                if (blockingStatus == BlockingStatus.LOADING) loadStage?.description ?: "Loading filter rules…"
-                                else workingMessage,
+                                currentLoadingMessage ?: displayedLoadingMessage.orEmpty(),
                                 modifier = Modifier.fillMaxWidth(),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                fontStyle = FontStyle.Italic,
                                 textAlign = TextAlign.Center,
                                 maxLines = 3,
                                 overflow = TextOverflow.Ellipsis,
@@ -338,6 +368,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 FilterListRow(
                     item = item,
                     busy = busy,
+                    canClone = item.type != FilterListType.PRESET || !lists.hasUrlList(item.sourceUrl.orEmpty()),
                     onEnabledChange = { enabled -> update { store.setEnabled(item.id, enabled) } },
                     onRefresh = {
                         update(reloadRules = item.enabled, successMessage = "List refreshed",
@@ -385,7 +416,9 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     pendingEdit?.let { item ->
         val changedFile = replacementUri != null || (originalText != editText && editText != null)
         val changedUrl = item.sourceUrl != null && editUrl.trim() != item.sourceUrl
+        val duplicateUrl = item.type == FilterListType.URL && changedUrl && lists.hasUrlList(editUrl, item.id)
         val canSave = !busy && editFileLoaded && validListName(editName) &&
+            !duplicateUrl &&
             item.type != FilterListType.PRESET &&
             (item.type == FilterListType.FILE || editUrl.trim().startsWith("https://", ignoreCase = true)) &&
             (editName.trim() != item.displayName() || changedUrl || changedFile)
@@ -404,7 +437,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 replaceFilePicker.launch(arrayOf("*/*"))
             },
             onClearReplacement = { replacementUri = null },
-            error = error,
+            error = if (duplicateUrl) "A URL list with this address already exists" else error,
             busy = busy,
             canSave = canSave,
             onDismiss = { if (!busy) pendingEdit = null },
@@ -506,7 +539,7 @@ private fun FilterListInfoDialog(item: ImportedFilterList, store: FilterListStor
         onDismissRequest = onDismiss,
         title = {
             SelectionContainer {
-                Text(item.displayName(), maxLines = 3, overflow = TextOverflow.Ellipsis)
+                Text(item.displayName(), modifier = Modifier.heightIn(max = 120.dp).verticalScroll(rememberScrollState()))
             }
         },
         text = {
@@ -576,6 +609,7 @@ private fun InfoStat(label: String, value: String?, unavailable: Boolean = false
 private fun FilterListRow(
     item: ImportedFilterList,
     busy: Boolean,
+    canClone: Boolean,
     onEnabledChange: (Boolean) -> Unit,
     onRefresh: () -> Unit,
     onEdit: () -> Unit,
@@ -608,7 +642,7 @@ private fun FilterListRow(
                 Text(
                     name,
                     style = MaterialTheme.typography.bodyLarge,
-                    maxLines = 2,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -656,12 +690,14 @@ private fun FilterListRow(
                         onClick = { menuExpanded = false; onInfo() },
                         enabled = !busy,
                     )
-                    DropdownMenuItem(
-                        text = { Text("Clone") },
-                        leadingIcon = { Icon(painterResource(R.drawable.baseline_content_copy_24), contentDescription = null) },
-                        onClick = { menuExpanded = false; onClone() },
-                        enabled = !busy,
-                    )
+                    if (item.type != FilterListType.URL) {
+                        DropdownMenuItem(
+                            text = { Text("Clone") },
+                            leadingIcon = { Icon(painterResource(R.drawable.baseline_content_copy_24), contentDescription = null) },
+                            onClick = { menuExpanded = false; onClone() },
+                            enabled = !busy && canClone,
+                        )
+                    }
                     DropdownMenuItem(
                         text = { Text("Delete") },
                         leadingIcon = { Icon(painterResource(R.drawable.baseline_delete_24), contentDescription = null) },
@@ -730,7 +766,8 @@ private fun AddFilterListDialog(
     var name by rememberSaveable { mutableStateOf("") }
     var suggestion by remember { mutableStateOf(SuggestedFilterLists.all.first()) }
     var presetsExpanded by remember { mutableStateOf(false) }
-    val installed = lists.any { it.sourceUrl == suggestion.url }
+    val installed = lists.any { it.type == FilterListType.PRESET && it.sourceUrl == suggestion.url }
+    val duplicateUrl = lists.hasUrlList(url)
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add filter list") },
@@ -763,6 +800,8 @@ private fun AddFilterListDialog(
                                 modifier = Modifier.fillMaxWidth().semantics { contentDescription = "HTTPS list URL" },
                                 singleLine = true,
                                 enabled = !busy,
+                                isError = duplicateUrl,
+                                supportingText = if (duplicateUrl) ({ Text("This address is already in a URL list") }) else null,
                             )
                         }
                         FilterListField("Name") {
@@ -789,7 +828,15 @@ private fun AddFilterListDialog(
                                 DropdownMenu(expanded = presetsExpanded, onDismissRequest = { presetsExpanded = false }) {
                                     SuggestedFilterLists.all.forEach { preset ->
                                         DropdownMenuItem(
-                                            text = { Text(preset.name) },
+                                            text = {
+                                                Column {
+                                                    Text(preset.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                                    if (lists.any { it.type == FilterListType.PRESET && it.sourceUrl == preset.url }) {
+                                                        Text("Already added", style = MaterialTheme.typography.labelMedium,
+                                                            fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                                                    }
+                                                }
+                                            },
                                             onClick = { suggestion = preset; presetsExpanded = false },
                                         )
                                     }
@@ -797,10 +844,18 @@ private fun AddFilterListDialog(
                             }
                         }
                         Text(
-                            suggestion.description + if (installed) " · Already added" else "",
+                            suggestion.description,
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
+                        if (installed) {
+                            Surface(modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.small,
+                                color = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer) {
+                                Text("Already added", modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                    style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
                         SelectionContainer {
                             Text(suggestion.url, style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -808,7 +863,8 @@ private fun AddFilterListDialog(
                         }
                     }
                 }
-                if (busy) Text("Downloading and validating the filter list…", style = MaterialTheme.typography.bodySmall)
+                if (busy) Text("Downloading and validating the filter list…", style = MaterialTheme.typography.bodySmall,
+                    fontStyle = FontStyle.Italic, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
         },
@@ -824,7 +880,7 @@ private fun AddFilterListDialog(
                     },
                     enabled = !busy && when (type) {
                         FilterListType.FILE -> true
-                        FilterListType.URL -> url.trim().startsWith("https://", ignoreCase = true) && validListName(name)
+                        FilterListType.URL -> url.trim().startsWith("https://", ignoreCase = true) && validListName(name) && !duplicateUrl
                         FilterListType.PRESET -> !installed
                     },
                 ) {

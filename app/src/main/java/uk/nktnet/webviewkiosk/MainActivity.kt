@@ -39,6 +39,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -72,6 +73,7 @@ import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 import uk.nktnet.webviewkiosk.states.WaitingForUnlockStateSingleton
 import uk.nktnet.webviewkiosk.ui.components.auth.CustomAuthPasswordDialog
+import uk.nktnet.webviewkiosk.ui.components.common.MinimumLoadingState
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.ClientCertificateInstaller
 import uk.nktnet.webviewkiosk.ui.components.webview.KeepScreenOnOption
 import uk.nktnet.webviewkiosk.ui.placeholders.UploadFileProgress
@@ -233,6 +235,13 @@ open class MainActivity : AppCompatActivity() {
             val blocker = remember { ContentBlockingService.get(applicationContext) }
             val ruleLoadStage by blocker.loadStage.collectAsState()
             val rulesReady by blocker.initialLoadComplete.collectAsState()
+            val startupLoading = remember { MinimumLoadingState() }
+            val displayedStartupMessage by startupLoading.message.collectAsState()
+            val startupMessage = if (webViewReady) null else if (rulesReady) "Starting WebView…"
+                else ruleLoadStage?.description ?: "Preparing content blocking…"
+            LaunchedEffect(startupMessage) {
+                if (startupMessage != null) startupLoading.show(startupMessage) else startupLoading.hide()
+            }
 
             KeepScreenOnOption()
 
@@ -389,7 +398,7 @@ open class MainActivity : AppCompatActivity() {
                             CustomAuthPasswordDialog()
                         }
                         if (handlesApplicationEvents) {
-                            if (webViewReady) {
+                            if (webViewReady && displayedStartupMessage == null) {
                                 // Avoid racing the first WebView constructor against native startup.
                                 // Keep the controller alive while the provider initializes.
                                 SetupNavHost(navController)
@@ -402,9 +411,10 @@ open class MainActivity : AppCompatActivity() {
                                     ) {
                                         CircularProgressIndicator()
                                         Text(
-                                            if (rulesReady) "Starting WebView…"
-                                            else ruleLoadStage?.description ?: "Preparing content blocking…",
+                                            startupMessage ?: displayedStartupMessage.orEmpty(),
                                             style = MaterialTheme.typography.bodyMedium,
+                                            fontStyle = FontStyle.Italic,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             textAlign = TextAlign.Center,
                                         )
                                     }

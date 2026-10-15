@@ -59,7 +59,7 @@ internal class SuggestedFilterListDownloader(
     /** Call on Dispatchers.IO. No automatic refreshing or silent list activation. */
     fun download(suggestion: SuggestedFilterList, store: FilterListStore): ImportedFilterList {
         require(suggestion in SuggestedFilterLists.all) { "Unknown suggested filter list" }
-        require(!store.containsSource(suggestion.url)) { "This filter list has already been downloaded" }
+        require(!store.containsPreset(suggestion.url)) { "This preset has already been added" }
         return fetch(suggestion.url) { stream ->
             store.importFrom(
                 name = "${suggestion.name}.txt",
@@ -73,7 +73,7 @@ internal class SuggestedFilterListDownloader(
     /** Download a manually entered URL using the same limits as presets. */
     fun downloadUrl(url: String, name: String, store: FilterListStore): ImportedFilterList {
         val validated = requireHttpsUrl(url)
-        require(!store.containsSource(validated)) { "This filter list has already been downloaded" }
+        require(!store.containsUrl(validated)) { "A URL list with this address already exists" }
         return fetch(validated) { stream -> store.importFrom(name, stream, validated, FilterListType.URL) }
     }
 
@@ -96,9 +96,7 @@ internal class SuggestedFilterListDownloader(
             store.rename(current.id, name)
             return store.list().first { it.id == current.id }
         }
-        require(store.list().none { it.id != current.id && it.sourceUrl == validated }) {
-            "This filter list has already been downloaded"
-        }
+        require(!store.containsUrl(validated)) { "A URL list with this address already exists" }
         return fetch(validated) { stream ->
             store.updateUrl(current.id, original, validated, name, stream)
         }

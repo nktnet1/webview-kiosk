@@ -113,6 +113,51 @@ class SuggestedFilterListDownloaderTest {
     }
 
     @Test
+    fun presetAndUrlCanShareASourceAndDuplicateTypesAreRejectedBeforeFetching() {
+        for (presetFirst in listOf(true, false)) {
+            val calls = AtomicInteger()
+            val client = downloader(requests = calls)
+            if (presetFirst) {
+                client.download(preset, store)
+                client.downloadUrl(preset.url, "Custom URL", store)
+            } else {
+                client.downloadUrl(preset.url, "Custom URL", store)
+                client.download(preset, store)
+            }
+            assertEquals(2, calls.get())
+            assertEquals(setOf(FilterListType.PRESET, FilterListType.URL), store.list().map { it.type }.toSet())
+            assertThrows(IllegalArgumentException::class.java) { client.download(preset, store) }
+            assertThrows(IllegalArgumentException::class.java) { client.downloadUrl(preset.url, "Duplicate", store) }
+            assertEquals(2, calls.get())
+            store.list().forEach { store.remove(it.id) }
+        }
+    }
+
+    @Test
+    fun duplicateUrlEditsAreRejectedBeforeFetchingWithoutChangingSavedData() {
+        val first = store.importFrom("First", "||first.example^".byteInputStream(), "https://example.org/one.txt")
+        val second = store.importFrom("Second", "||second.example^".byteInputStream(), preset.url)
+        val calls = AtomicInteger()
+        assertThrows(IllegalArgumentException::class.java) {
+            downloader(requests = calls).editUrl(first, "Duplicate", second.sourceUrl!!, store)
+        }
+        assertEquals(0, calls.get())
+        assertEquals(listOf(first, second), store.list())
+    }
+
+    @Test
+    fun aUrlEditMayMatchAnExistingPreset() {
+        val installed = downloader().download(preset, store)
+        val url = store.importFrom("Custom", "||old.example^".byteInputStream(), "https://example.org/old.txt")
+        val calls = AtomicInteger()
+        val updated = downloader(requests = calls).editUrl(url, "Matching preset", preset.url, store)
+        assertEquals(1, calls.get())
+        assertEquals(preset.url, updated.sourceUrl)
+        assertEquals(FilterListType.URL, updated.type)
+        assertEquals(installed, store.list().first())
+    }
+
+    @Test
     fun errorsAndHtmlDoNotImportOrActivateLists() {
         assertTrue(runCatching { downloader(status = 503).download(preset, store) }.exceptionOrNull() is IOException)
         assertTrue(runCatching {

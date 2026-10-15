@@ -34,7 +34,7 @@ class FilterListStoreTest {
     }
 
     @Test
-    fun downloadTimesPersistAndArePreservedByMetadataChangesAndClones() {
+    fun downloadTimesPersistAndArePreservedByMetadataChanges() {
         val context = RuntimeEnvironment.getApplication()
         var time = 1_000L
         val timed = FilterListStore(context, FilterListValidator {}, now = { time })
@@ -45,8 +45,7 @@ class FilterListStoreTest {
         timed.rename(remote.id, "Renamed")
         timed.setEnabled(remote.id, false)
         timed.setAllEnabled(true)
-        val copy = timed.cloneList(remote.id)
-        assertEquals(1_000L, copy.lastRefreshedAt)
+        assertThrows(IllegalArgumentException::class.java) { timed.cloneList(remote.id) }
         assertEquals(1_000L, timed.info(remote.id).item.lastRefreshedAt)
         val file = timed.importFrom("Local", "||local.example^".byteInputStream())
         assertNull(file.lastRefreshedAt)
@@ -98,14 +97,15 @@ class FilterListStoreTest {
         val context = RuntimeEnvironment.getApplication()
         var time = 1_000L
         val timed = FilterListStore(context, FilterListValidator {}, now = { time })
-        val item = timed.importFrom("Remote", "||old.example^".byteInputStream(), "https://example.org/list.txt")
+        val item = timed.importFrom("Preset", "||old.example^".byteInputStream(),
+            SuggestedFilterLists.all.first().url, FilterListType.PRESET)
         val preferences = context.getSharedPreferences("content_blocking_lists", 0)
         val index = JSONArray(preferences.getString("imports", "[]"))
         index.getJSONObject(0).remove("lastRefreshedAt")
         preferences.edit().putString("imports", index.toString()).commit()
         assertNull(FilterListStore(context).list().single().lastRefreshedAt)
         time = 2_000L
-        timed.rename(item.id, "Renamed")
+        timed.setEnabled(item.id, false)
         val clone = timed.cloneList(item.id)
         assertNull(clone.lastRefreshedAt)
         val refreshed = timed.replaceFromSource(item.id, item.sourceUrl!!, "||new.example^".byteInputStream())
@@ -409,17 +409,58 @@ class FilterListStoreTest {
     }
 
     @Test
-    fun urlEditsRejectOtherSourcesButCanPreserveTheClonedSource() {
+    fun urlEditsRejectOtherUrlSourcesAndCanKeepTheirOwnSource() {
         val first = store.importFrom("First", "first".byteInputStream(), "https://example.org/one.txt")
         val second = store.importFrom("Second", "second".byteInputStream(), "https://example.org/two.txt")
         assertThrows(IllegalArgumentException::class.java) {
             store.updateUrl(first.id, first.sourceUrl!!, second.sourceUrl!!, "Invalid", "new".byteInputStream())
         }
         assertEquals(listOf(first, second), store.list())
-        val cloned = store.cloneList(first.id)
-        store.updateUrl(cloned.id, first.sourceUrl!!, first.sourceUrl, "Identical URL clone", "new".byteInputStream())
-        assertEquals("Identical URL clone", store.list().last().name)
-        assertFalse(store.list().last().enabled)
+        assertThrows(IllegalArgumentException::class.java) { store.cloneList(first.id) }
+        store.updateUrl(first.id, first.sourceUrl!!, first.sourceUrl, "Same source", "new".byteInputStream())
+        assertEquals("Same source", store.list().first().name)
+        assertEquals(2, store.list().size)
+    }
+
+    @Test
+    fun presetAndUrlSourcesMayOverlapButEachTypeRemainsUniqueInEitherOrder() {
+        val source = SuggestedFilterLists.all.first().url
+        for (types in listOf(listOf(FilterListType.URL, FilterListType.PRESET), listOf(FilterListType.PRESET, FilterListType.URL))) {
+            val added = types.map { type -> store.importFrom(type.name, "||ads.example^".byteInputStream(), source, type) }
+            assertTrue(store.containsUrl(source))
+            assertTrue(store.containsPreset(source))
+            for (type in types) {
+                assertThrows(IllegalArgumentException::class.java) {
+                    store.importFrom("Duplicate", "||other.example^".byteInputStream(), source, type)
+                }
+            }
+            val preset = added.first { it.type == FilterListType.PRESET }
+            assertThrows(IllegalArgumentException::class.java) { store.cloneList(preset.id) }
+            assertEquals(added, store.list())
+            added.forEach { store.remove(it.id) }
+        }
+    }
+
+    @Test
+    fun urlEditsMayAdoptAPresetAddressWithoutChangingThePreset() {
+        val source = SuggestedFilterLists.all.first().url
+        val preset = store.importFrom("Preset", "||preset.example^".byteInputStream(), source, FilterListType.PRESET)
+        val url = store.importFrom("URL", "||old.example^".byteInputStream(), "https://example.org/old.txt")
+        val edited = store.updateUrl(url.id, url.sourceUrl!!, source, "Matching preset", "||new.example^".byteInputStream())
+        assertEquals(source, edited.sourceUrl)
+        assertEquals(FilterListType.URL, edited.type)
+        assertEquals(preset, store.list().first())
+        assertEquals(listOf("||preset.example^", "||new.example^"), store.enabledTexts())
+    }
+
+    @Test
+    fun identicalLocalFilesCanBeAddedWithIndependentIds() {
+        val first = store.importFrom("Same name", "||ads.example^".byteInputStream())
+        val second = store.importFrom("Same name", "||ads.example^".byteInputStream())
+        assertNotEquals(first.id, second.id)
+        assertEquals(2, store.list().size)
+        store.setEnabled(first.id, false)
+        assertTrue(store.list().last().enabled)
     }
 
     @Test
