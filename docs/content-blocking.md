@@ -12,15 +12,11 @@ The parser and indexed matcher are Kotlin/JVM code under `blocking/engine`.
 replacement is atomic and a failed compilation retains the last working snapshot.
 The engine reuses the app's existing OkHttp URL/IDN parser and public-suffix data
 for first/third-party classification, including multi-label and private suffixes.
-Suffix data is initialized on the compilation worker when needed. No new library,
-filter list, native binary, or domain database is bundled.
+Suffix data is initialized on the compilation worker when needed.
 
-Builds use the existing JDK 21, Gradle 9.8.0, and Android SDK. Rust, Cargo, JNI, and
-an Android NDK are no longer needed for content blocking. The native crate, Gradle
-native task, generated JNI source set, and CI/toolchain provisioning are removed.
-The Python test-asset exporter retains Gradle/Android exports, optional verified
-Gradle/JBR/SDK downloads, and automatic 180 MB archive splitting. Its obsolete
-Rust-only/combined export modes are removed; `--assets gradle` remains accepted.
+Builds use JDK 21, Gradle 9.8.0, and the Android SDK. The Python test-asset exporter
+exports Gradle/Android dependencies, offers verified Gradle/JBR/SDK downloads, and
+automatically splits archives above 180 MB.
 
 Initial WebView creation waits for provider warmup and the first rule load without
 blocking the UI or request threads. An initial load failure releases the startup
@@ -28,7 +24,17 @@ gate, permits browsing, and reports the error in settings. Reloading keeps old
 rules active until the new snapshot is ready. Requests use hostname and mandatory
 literal-token indexes; unconditional host rules have a separate compact fast path.
 There is no full-list scan per request, except a bounded fallback for patterns
-without a usable index. No compiled binary cache is persisted between launches.
+without a usable index.
+
+Imported rule text is saved in private files. Startup and list changes read the
+enabled files on the loader thread and compile them into hostname/token maps,
+rule conditions, and CSS-selector indexes. The compiled snapshot stays in RAM
+while blocking is active. Compilation prepares these data structures for matching;
+it does not turn the rules into executable code or remove their memory cost.
+During a reload, the old and new snapshots can briefly coexist. Temporary input
+text and parsing objects become eligible for collection after loading finishes;
+the old snapshot does so when readers release it. No compiled disk cache is saved,
+so the indexes are rebuilt on startup. Disabling all lists clears the active snapshot.
 
 ## Filter-list management
 
@@ -74,8 +80,7 @@ without a usable index. No compiled binary cache is persisted between launches.
   validated temporary files before changing the active rules. A failed
   download or file edit retains the previous list. A successful refresh or
   content change recompiles active rules; renaming alone does not.
-- The original text is retained for rebuilding on startup. No compiled
-  binary cache is persisted in this increment. Imported list files are
+- The original text is retained for rebuilding on startup. Imported list files are
   not yet included in the app's existing settings JSON/Base64 export.
 - Removing or disabling the last list clears the compiled engine snapshot.
 
@@ -119,9 +124,8 @@ cannot infer filter intent and does not blacklist JSON/XML by filename or shape.
 An unsupported option discards the **whole rule**, including exception rules; its
 remaining URL pattern is never applied without its restrictions. Settings shows
 the number of skipped unsupported/invalid rules in the active snapshot. Old stored
-lists remain readable and useful supported rules still compile. Coverage can differ
-from Brave because this is an explicitly documented subset, not a complete EasyList,
-AdGuard, or uBlock implementation. Document-type rules do not introduce site-wide
+lists remain readable and useful supported rules still compile. This is a documented
+subset of EasyList, AdGuard, and uBlock syntax. Document-type rules do not introduce site-wide
 allowlisting, and parsing a resource type does not make WebView expose that type.
 
 Lists retain the existing 8 MiB/file, 16-list, and 32 MiB total storage limits. A file
@@ -179,6 +183,17 @@ and subsequent redirect destinations cannot be intercepted using this API.
 Scriptlets, `$redirect` resources, response-body modification, per-site
 allowlists, and periodically refreshed subscriptions are intentionally out of scope.
 
+Popup rules need a separate new-window filtering path, which this integration
+does not implement. WebView can reject new windows through
+[`WebChromeClient.onCreateWindow`](https://developer.android.com/reference/android/webkit/WebChromeClient#onCreateWindow(android.webkit.WebView,boolean,boolean,android.os.Message)).
+That callback exposes a user-gesture flag, but no target URL or trustworthy
+initiating-frame identity. A separate child-WebView navigation path could support
+some URL-based popup filtering, with incomplete source context. With multiple-window
+support disabled, new-window requests are treated as top-level navigations instead;
+they cannot safely be classified as popups by the request matcher alone. See the
+[Chromium new-window flow](https://chromium.googlesource.com/chromium/src/+/HEAD/android_webview/docs/how-does-on-create-window-work.md)
+and [`WebSettings.setSupportMultipleWindows`](https://developer.android.com/reference/android/webkit/WebSettings#setSupportMultipleWindows(boolean)).
+
 ## Verification
 
 Run the Kotlin parser/matcher, storage, startup, interception, and bridge tests with:
@@ -197,10 +212,9 @@ sh scripts/ci/test-local.sh checks
 method restrictions, public/private suffixes, exceptions and priority, cross-list
 `$badfilter`, mixed file formats, CSS scopes and exceptions, hiding gates, bounded
 replies, malformed imports, failed compilation, pathological wildcard work, and
-concurrent replacement. The network fixture corpus records 384 queries run against
-the previous Brave 0.13.3 engine; expected Kotlin behavior and the recorded Brave
-output are retained separately, including four intentional normalization/case differences.
-See `app/src/test/resources/filter-engine/README.md`. Rust is not a test dependency.
+concurrent replacement. The network fixture corpus contains 384 request/rule cases
+with expected blocking decisions. See `app/src/test/resources/filter-engine/README.md`
+for the fixture format and maintenance guidance.
 
 EasyList import regressions cover CSS selectors with colons and spaces (which
 must not be mistaken for IPv6 hosts records), partial numeric hostname anchors,

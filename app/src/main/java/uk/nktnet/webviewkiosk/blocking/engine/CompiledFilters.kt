@@ -3,7 +3,7 @@ package uk.nktnet.webviewkiosk.blocking.engine
 import okhttp3.HttpUrl
 import java.util.Locale
 
-/** List compilation/validation has no Android, JNI, network, or storage dependencies. */
+/** Validates rule text and builds the immutable indexes used by request threads. */
 internal object FilterCompiler {
     private const val MAX_RULES = 500_000
 

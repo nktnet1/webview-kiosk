@@ -620,7 +620,7 @@ Use --download-tools to include verified Linux amd64 Gradle/JBR/Android tools;
 use --download-only to fetch these packages without an SDK, Java, or Docker.
 """)
     parser.add_argument("--assets", choices=("gradle",), default="gradle",
-                        help="compatibility option; only Gradle/Android assets are needed")
+                        help="asset type (Gradle/Android dependencies)")
     parser.add_argument("--output", type=path_argument, help=(
         "output directory (default: build/android-test-assets)"
     ))

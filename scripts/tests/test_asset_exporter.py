@@ -433,11 +433,10 @@ class DispatchTest(unittest.TestCase):
         self.assertIn("180,000,000", result.stdout)
         self.assertIn("--download-only", result.stdout)
 
-    def test_defaults_and_removed_native_options(self):
+    def test_defaults_and_invalid_options(self):
         self.assertEqual("gradle", ASSETS.parse_args([]).assets)
         self.assertEqual("gradle", ASSETS.parse_args(["--assets", "gradle"]).assets)
-        for arguments in (("--assets", "rust"), ("--assets", "all"), ("--with-rust",),
-                          ("--rustup-home", "/rustup"), ("--cargo-bin-dir", "/cargo"),
+        for arguments in (("--assets", "unknown"),
                           ("--output", ""), ("--output",), ("--download-only",)):
             with self.subTest(arguments=arguments), contextlib.redirect_stderr(io.StringIO()):
                 with self.assertRaises(SystemExit) as error:

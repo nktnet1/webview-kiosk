@@ -165,9 +165,7 @@ macOS or Windows. Normal asset export on those hosts still uses Docker.
 
 ### Kotlin content-blocking tests
 
-The content blocker is Kotlin and uses the existing OkHttp dependency. It requires
-no Rust toolchain, Cargo vendor archive, JNI library, or Android NDK. The Gradle
+The content blocker is Kotlin and uses the existing OkHttp dependency. The Gradle
 JVM suite includes parser/matcher and storage/integration regressions. See
 [`docs/content-blocking.md`](../docs/content-blocking.md) for supported syntax,
-limits, and device checks. `--assets gradle` remains accepted by the exporter;
-obsolete `--assets rust`, `--assets all`, and `--with-rust` modes have been removed.
+limits, runtime storage, and device checks.
