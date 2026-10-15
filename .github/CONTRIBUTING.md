@@ -66,7 +66,8 @@ python3 scripts/export-android-test-assets.py --output build/android-test-assets
 
 The command requires Python 3.10 or newer and uses only the standard library.
 On Linux x86_64, the script uses the locally installed Android SDK, JetBrains
-JDK 21 and version-matched Gradle executable. On macOS and other architectures,
+JDK 21, and version-matched Gradle executable, or the optional downloads below.
+On macOS and other architectures,
 it automatically builds `scripts/Dockerfile.android-test-assets` and runs the
 Linux exporter inside Docker (Docker Desktop on macOS). The image downloads the
 pinned Gradle/JBR/SDK components. The export also requires network access to
@@ -87,7 +88,8 @@ native execution. Existing exports are replaced by the native exporter rules.
 The exporter always includes the Gradle dependencies and resolution metadata
 from `caches/modules-2` in `gradle-deps.tar.gz`, alongside
 `android-sdk.tar.gz` and `robolectric-maven.tar.gz`. It excludes Gradle lock
-files, credentials, keystores, and the Gradle distribution. The script runs
+files, credentials, and keystores. Original tool distributions are optional
+downloads kept separately in `tools/`. The script runs
 `resolveAndroidTestAssets`, which resolves the required debug/JVM-test and
 available Kotlin compiler configurations **without compiling or running
 `testDebugUnitTest`**.
@@ -97,16 +99,60 @@ dependencies specific to this project. Passing `--gradle-user-home` on Linux
 reuses previously cached modules and Robolectric runtimes. Docker reuses them
 by default through its named volume.
 
-All compressed archives at or below **250,000,000 bytes (250 MB, decimal)**
+All exported archives at or below **180,000,000 bytes (180 MB, decimal)**
 have no `.part-000` suffix. Larger archives, including Gradle dependencies,
 Cargo vendor sources, SDKs, and toolchains, are streamed into numbered
-`.tar.gz.part-000`, `.part-001`, and subsequent files of at most 250 MB.
-The exporter never buffers a complete oversized archive in memory or on disk.
+`<filename>.part-000`, `.part-001`, and subsequent files of at most 180 MB.
+This includes the downloaded ZIP/tar archives. Generated archives are streamed
+without buffering a complete oversized archive in memory or on disk.
 Concatenate those parts in order before extraction. `SHA256SUMS` verifies each
 exported file, and
 `CONTENTS.txt` records their installation destinations. Extract
 `gradle-deps.tar.gz` into `$GRADLE_USER_HOME` (or `~/.gradle` by default)
 before running Gradle with `--offline`.
+
+#### Optional tool downloads
+
+Use `--download-tools` to download all three Linux x86_64 tool packages, or
+select any combination of:
+
+- `--download-gradle`: the exact ZIP URL, version, and SHA-256 from
+  `gradle/wrapper/gradle-wrapper.properties`. A valid `distributionSha256Sum`
+  is required. This avoids accidentally using a milestone in a stable build.
+- `--download-jbr`: the pinned JetBrains JDK 21 SDK, matching the Docker image.
+- `--download-android-tools`: the pinned Android command-line tools ZIP,
+  matching the Docker image.
+
+The original packages are exported into `<output>/tools/`, with independent
+`SHA256SUMS` and `CONTENTS.txt` files, and the same 180 MB splitting rule.
+`--download-cache DIR` changes the cache location (default:
+`build/test-asset-downloads`). Cached originals may exceed 180 MB and remain
+outside `tools/`; every cache entry is checksum-verified before reuse. Failed
+downloads or checksum mismatches preserve previous exports.
+
+To download and export packages on any host without Java, an SDK, Rust, or
+Docker, use download-only mode:
+
+```bash
+python3 scripts/export-android-test-assets.py --download-tools --download-only
+```
+
+Without `--download-only`, the selected downloads accompany the normal asset
+export. On native Linux, downloaded Gradle is used automatically unless
+`--gradle-bin` is explicit, and downloaded JBR supplies Java for that invocation.
+Extracted tools are temporary; global installations and shell settings are
+not changed. Android tools can initialize an SDK under the download cache when
+no SDK is selected. To accept SDK licences noninteractively when installing
+the pinned SDK packages, explicitly pass `--accept-sdk-licenses`:
+
+```bash
+python3 scripts/export-android-test-assets.py --download-tools --accept-sdk-licenses
+```
+
+Only Linux x86_64 packages are downloaded, including in download-only mode on
+macOS or Windows. Normal asset export on those hosts still uses Docker. Rust
+host toolchain and vendored-crate exports remain selected with `--assets rust`
+or `--assets all`.
 
 ### Offline native-adblock Rust host tests
 

@@ -66,8 +66,8 @@ Use `python3 scripts/export-android-test-assets.py --assets all` to generate the
 Android/Gradle and Rust archives in one invocation. The Rust exporter records
 a lockfile (generating it only in a disposable copy if absent), preserves the
 original checkout, and emits SHA-256 verified archives. Compressed archives
-larger than 250 MB (250,000,000 bytes) automatically use numbered parts, each
-at most 250 MB; concatenate them in suffix order before extraction.
+larger than 180 MB (180,000,000 bytes) automatically use numbered parts, each
+at most 180 MB; concatenate them in suffix order before extraction.
 Restore `cargo/bin`, `rustup/toolchains`, `Cargo.lock`, `vendor/`, and
 `.cargo/config.toml` as
 documented in [the contributor guide](../.github/CONTRIBUTING.md#offline-native-adblock-rust-host-tests).

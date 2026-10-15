@@ -34,7 +34,7 @@ def write(path, value, *, executable=False):
 
 class ArchiveTest(unittest.TestCase):
     def test_stream_limits_and_reconstruction(self):
-        self.assertEqual(250_000_000, ASSETS.MAX_ARCHIVE_BYTES)
+        self.assertEqual(180_000_000, ASSETS.MAX_ARCHIVE_BYTES)
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             for length in (1, 11, 12, 13, 24, 25, 40):
@@ -92,7 +92,7 @@ if sys.argv[1:] == ['--version']:
     sys.exit(0)
 root = pathlib.Path(os.environ['CAPTURE_DIR'])
 with (root / 'gradle-calls.jsonl').open('a') as log:
-    log.write(json.dumps({'args': sys.argv[1:], 'home': os.environ['GRADLE_USER_HOME'],
+    log.write(json.dumps({'args': sys.argv[1:], 'home': os.environ['GRADLE_USER_HOME'], 'java': os.environ.get('JAVA_HOME'),
                          'sdk': os.environ['ANDROID_SDK_ROOT']}) + '\\n')
 if os.environ.get('FAIL_RESOLVE'):
     sys.exit(23)
@@ -181,6 +181,7 @@ class ExporterTest(unittest.TestCase):
         write(self.cargo / "private-tool", "not exported", executable=True)
         write(self.cargo.parent / "credentials.toml", "secret")
         self.downloads = []
+        self.tool_packages = {}
         self.stack = contextlib.ExitStack()
         self.addCleanup(self.stack.close)
         self.stack.enter_context(mock.patch.object(ASSETS, "PROJECT_ROOT", self.project))
@@ -192,8 +193,59 @@ class ExporterTest(unittest.TestCase):
 
     def download(self, url, destination):
         self.downloads.append(url)
+        name = url.rsplit("/", 1)[-1]
+        if name in self.tool_packages:
+            destination.write_bytes(self.tool_packages[name])
+            return
         data = b"test runtime" if ".jar" in url else b"test pom"
         destination.write_bytes(hashlib.sha512(data).hexdigest().encode() if url.endswith(".sha512") else data)
+
+    def tool_fixtures(self):
+        for name, entries in (
+            ("gradle-9.8.0-bin.zip", {"gradle-9.8.0/bin/gradle": GRADLE_STUB}),
+            (ASSETS.CMDLINE_TOOLS_ZIP, {"cmdline-tools/bin/sdkmanager": """#!/usr/bin/env python3
+import os, pathlib, sys
+root = pathlib.Path(os.environ['CAPTURE_DIR'])
+with (root / 'sdkmanager-calls.txt').open('a') as output:
+    output.write(' '.join(sys.argv[1:]) + '\\n')
+if '--licenses' in sys.argv:
+    (root / 'sdkmanager-input.txt').write_text(sys.stdin.read())
+else:
+    sdk = pathlib.Path(os.environ['ANDROID_SDK_ROOT'])
+    for name in ('platforms/android-37.0/android.jar', 'build-tools/36.0.0/source.properties'):
+        path = sdk / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text('SDK fixture')
+"""}),
+        ):
+            stream = io.BytesIO()
+            with zipfile.ZipFile(stream, "w") as archive:
+                for path, text in entries.items():
+                    member = zipfile.ZipInfo(path)
+                    member.external_attr = 0o100755 << 16
+                    archive.writestr(member, text)
+            self.tool_packages[name] = stream.getvalue()
+        stream = io.BytesIO()
+        with tarfile.open(fileobj=stream, mode="w:gz") as archive:
+            for name in ("java", "javac"):
+                data = b"#!/bin/sh\nexit 0\n"
+                member = tarfile.TarInfo(f"{ASSETS.JBR_ARCHIVE.removesuffix('.tar.gz')}/bin/{name}")
+                member.mode, member.size = 0o755, len(data)
+                archive.addfile(member, io.BytesIO(data))
+        self.tool_packages[ASSETS.JBR_ARCHIVE] = stream.getvalue()
+        self.stack.enter_context(mock.patch.object(ASSETS, "JBR_SHA256", hashlib.sha256(stream.getvalue()).hexdigest()))
+        self.stack.enter_context(mock.patch.object(ASSETS, "CMDLINE_TOOLS_SHA256",
+                                                  hashlib.sha256(self.tool_packages[ASSETS.CMDLINE_TOOLS_ZIP]).hexdigest()))
+        wrapper = self.project / "gradle/wrapper/gradle-wrapper.properties"
+        with wrapper.open("a") as output:
+            output.write("distributionSha256Sum=" + hashlib.sha256(self.tool_packages['gradle-9.8.0-bin.zip']).hexdigest() + "\n")
+
+    def download_export(self, *arguments):
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()) as errors:
+            result = ASSETS.main(["--output", str(self.output), "--download-cache", str(self.root / "download cache"),
+                                  *arguments])
+        self.error = errors.getvalue()
+        return result
 
     def export(self, kind="gradle", *extra, output=None):
         args = ["--assets", kind, "--output", str(output or self.output)]
@@ -222,7 +274,7 @@ class ExporterTest(unittest.TestCase):
         for line in records:
             expected, name = line.split("  ", 1)
             self.assertEqual(expected, hashlib.sha256((root / name).read_bytes()).hexdigest())
-        expected_names = {path.name for path in root.iterdir() if ".tar.gz" in path.name}
+        expected_names = {path.name for path in root.iterdir() if ".tar.gz" in path.name or ".zip" in path.name}
         self.assertEqual(expected_names, {line.split("  ", 1)[1] for line in records})
 
     def test_gradle_exports_only_offline_inputs_and_cleans_stale_parts(self):
@@ -385,6 +437,101 @@ class ExporterTest(unittest.TestCase):
         self.assertFalse(list(self.output.glob("*.part-*")))
         self.assertFalse(list((self.output / "rust").glob("*.part-*")))
 
+    def test_download_only_needs_no_host_tools_and_splits_original_packages(self):
+        self.tool_fixtures()
+        original_writer = ASSETS.SplitArchiveWriter
+        with mock.patch.object(ASSETS.platform, "system", return_value="Darwin"), \
+             mock.patch.object(ASSETS, "run") as run, \
+             mock.patch.object(ASSETS, "prepare_downloaded_tools") as prepare, \
+             mock.patch.object(ASSETS, "SplitArchiveWriter", side_effect=lambda name: original_writer(name, 100)):
+            self.assertEqual(0, self.download_export("--download-tools", "--download-only"), self.error)
+        run.assert_not_called()
+        prepare.assert_not_called()
+        self.assertEqual(3, len(self.downloads))
+        self.assertIn("https://services.gradle.org/distributions/gradle-9.8.0-bin.zip", self.downloads)
+        tools = self.output / "tools"
+        for name, expected in self.tool_packages.items():
+            with self.subTest(name=name):
+                parts = sorted(tools.glob(name + ".part-*"))
+                self.assertGreater(len(parts), 1)
+                self.assertEqual(expected, b"".join(part.read_bytes() for part in parts))
+                self.assertTrue(all(part.stat().st_size <= 100 for part in parts))
+        self.verify_checksums(tools)
+        self.assertFalse((self.root / "gradle-calls.jsonl").exists())
+
+    def test_native_export_uses_downloaded_gradle_jbr_and_sdk_tools(self):
+        self.tool_fixtures()
+        sdk = self.root / "new SDK"
+        self.assertEqual(0, self.download_export("--download-tools", "--sdk-root", str(sdk),
+                                                "--accept-sdk-licenses"), self.error)
+        self.assertTrue(ASSETS.sdk_installed(sdk))
+        calls = (self.root / "sdkmanager-calls.txt").read_text().splitlines()
+        self.assertIn("--licenses", calls[0])
+        self.assertIn("platforms;android-37.0", calls[1])
+        self.assertEqual("y\n" * 100, (self.root / "sdkmanager-input.txt").read_text())
+        gradle = self.calls("gradle")[0]
+        self.assertEqual(str(sdk), gradle["sdk"])
+        self.assertIn(".prepared.", gradle["java"])
+        self.assertFalse(Path(gradle["java"]).exists())
+        self.verify_checksums()
+        self.verify_checksums(self.output / "tools")
+
+    def test_tool_download_cache_repairs_corruption_and_rejects_bad_downloads(self):
+        self.tool_fixtures()
+        arguments = ("--download-jbr", "--download-only")
+        self.assertEqual(0, self.download_export(*arguments), self.error)
+        self.assertEqual(0, self.download_export(*arguments), self.error)
+        self.assertEqual(1, len(self.downloads))
+        cache = self.root / "download cache/archives" / ASSETS.JBR_ARCHIVE
+        cache.write_bytes(b"corrupted")
+        self.assertEqual(0, self.download_export(*arguments), self.error)
+        self.assertEqual(2, len(self.downloads))
+        previous = {path.name: path.read_bytes() for path in (self.output / "tools").iterdir()}
+        cache.write_bytes(b"corrupted again")
+        self.tool_packages[ASSETS.JBR_ARCHIVE] = b"bad download"
+        self.assertEqual(1, self.download_export(*arguments))
+        self.assertIn("SHA-256 mismatch", self.error)
+        self.assertEqual(previous, {path.name: path.read_bytes() for path in (self.output / "tools").iterdir()})
+        self.assertEqual(b"corrupted again", cache.read_bytes())
+        self.assertFalse(list((self.output / "tools").glob(".staging.*")))
+
+    def test_individual_downloads_preserve_other_tools_and_remove_stale_parts(self):
+        self.tool_fixtures()
+        original_writer = ASSETS.SplitArchiveWriter
+        with mock.patch.object(ASSETS, "SplitArchiveWriter", side_effect=lambda name: original_writer(name, 100)):
+            self.assertEqual(0, self.download_export("--download-tools", "--download-only"), self.error)
+        write(self.output / "tools/unrelated.txt", "keep")
+        self.assertEqual(0, self.download_export("--download-jbr", "--download-only"), self.error)
+        tools = self.output / "tools"
+        self.assertTrue((tools / ASSETS.JBR_ARCHIVE).is_file())
+        self.assertFalse(list(tools.glob(ASSETS.JBR_ARCHIVE + ".part-*")))
+        self.assertEqual(self.tool_packages["gradle-9.8.0-bin.zip"], (tools / "gradle-9.8.0-bin.zip").read_bytes())
+        self.assertEqual("keep", (tools / "unrelated.txt").read_text())
+        self.verify_checksums(tools)
+
+    def test_previous_tool_exports_are_verified_before_being_preserved(self):
+        self.tool_fixtures()
+        self.assertEqual(0, self.download_export("--download-tools", "--download-only"), self.error)
+        tools = self.output / "tools"
+        sums = (tools / "SHA256SUMS").read_bytes()
+        (tools / "gradle-9.8.0-bin.zip").write_bytes(b"corrupted")
+        self.assertEqual(1, self.download_export("--download-jbr", "--download-only"))
+        self.assertIn("Previous export checksum mismatch", self.error)
+        self.assertEqual(sums, (tools / "SHA256SUMS").read_bytes())
+        self.assertEqual(0, self.download_export("--download-gradle", "--download-only"), self.error)
+        self.verify_checksums(tools)
+
+    def test_gradle_download_requires_pinned_checksum_and_https(self):
+        self.assertEqual(1, self.download_export("--download-gradle", "--download-only"))
+        self.assertIn("distributionSha256Sum", self.error)
+        self.assertFalse(self.downloads)
+        self.tool_fixtures()
+        wrapper = self.project / "gradle/wrapper/gradle-wrapper.properties"
+        wrapper.write_text(wrapper.read_text().replace("https", "http"))
+        self.assertEqual(1, self.download_export("--download-gradle", "--download-only"))
+        self.assertIn("HTTPS", self.error)
+        self.assertFalse(self.downloads)
+
 
 class DispatchTest(unittest.TestCase):
     def test_python_cli_help_without_tools(self):
@@ -394,7 +541,8 @@ class DispatchTest(unittest.TestCase):
         )
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertIn("--assets", result.stdout)
-        self.assertIn("250,000,000", result.stdout)
+        self.assertIn("180,000,000", result.stdout)
+        self.assertIn("--download-only", result.stdout)
 
     def test_defaults_and_compatibility_alias(self):
         self.assertEqual("gradle", ASSETS.parse_args([]).assets)
@@ -403,7 +551,7 @@ class DispatchTest(unittest.TestCase):
                          ASSETS.parse_args(["--assets", "rust"]).output)
         for arguments in (("--assets", "rust", "--sdk-root", "/sdk"),
                           ("--rustup-home", "/rustup"), ("--assets", "rust", "--with-rust"),
-                          ("--output", ""), ("--output",)):
+                          ("--output", ""), ("--output",), ("--download-only",)):
             with self.subTest(arguments=arguments), contextlib.redirect_stderr(io.StringIO()):
                 with self.assertRaises(SystemExit) as error:
                     ASSETS.parse_args(arguments)
@@ -457,9 +605,29 @@ class DispatchTest(unittest.TestCase):
             self.assertIn("python3", dockerfile)
         android = (ROOT / "scripts/Dockerfile.android-test-assets").read_text()
         self.assertIn("https://cache-redirector.jetbrains.com/intellij-jbr/${JBR_ARCHIVE}", android)
+        self.assertIn(f"ARG JBR_ARCHIVE={ASSETS.JBR_ARCHIVE}", android)
+        self.assertIn(f"ARG JBR_SHA256={ASSETS.JBR_SHA256}", android)
 
 
 class DownloadTest(unittest.TestCase):
+    def test_extraction_rejects_paths_and_links_outside_destination(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "tools.zip"
+            with zipfile.ZipFile(source, "w") as archive:
+                archive.writestr("../outside", "must not be extracted")
+            with self.assertRaisesRegex(ASSETS.ExportError, "Unsafe path"):
+                ASSETS.extract_zip(source, root / "destination")
+            self.assertFalse((root / "outside").exists())
+            source = root / "tools.tar.gz"
+            with tarfile.open(source, "w:gz") as archive:
+                member = tarfile.TarInfo("link")
+                member.type, member.linkname = tarfile.SYMTYPE, "../outside"
+                archive.addfile(member)
+            with self.assertRaisesRegex(ASSETS.ExportError, "Unsafe link"):
+                ASSETS.extract_tar(source, root / "destination")
+            self.assertFalse((root / "destination/link").exists())
+
     def test_transient_download_retries_and_publishes_complete_bytes(self):
         with tempfile.TemporaryDirectory() as directory, \
              mock.patch.object(ASSETS.time, "sleep"), \
