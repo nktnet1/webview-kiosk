@@ -13,7 +13,7 @@ internal enum class BlockingStatus { DISABLED, LOADING, ACTIVE, ERROR }
 
 /**
  * Serialises list compilation away from the UI and the WebView request threads.
- * A successful compilation atomically replaces the native engine; disabled lists use no JNI.
+ * A successful compilation atomically replaces the immutable Kotlin engine snapshot.
  */
 internal class ContentBlockingService(
     private val store: FilterListStore,
@@ -35,6 +35,8 @@ internal class ContentBlockingService(
     val status = _status.asStateFlow()
     private val _lastError = MutableStateFlow<String?>(null)
     val lastError = _lastError.asStateFlow()
+    private val _skippedRules = MutableStateFlow(0)
+    val skippedRules = _skippedRules.asStateFlow()
 
     @Synchronized
     fun start() {
@@ -66,6 +68,7 @@ internal class ContentBlockingService(
                     if (revision == generation.get()) {
                         _lastError.value = null
                         ready = texts.isNotEmpty()
+                        _skippedRules.value = engine.unsupportedRuleCount()
                         _status.value = if (ready) BlockingStatus.ACTIVE else BlockingStatus.DISABLED
                         _initialLoadComplete.value = true
                     }
@@ -83,7 +86,7 @@ internal class ContentBlockingService(
     private fun reportError(revision: Long, error: Throwable) {
         if (revision == generation.get()) {
             // Compilation is atomic. A failed update leaves the last working rules active.
-            _lastError.value = error.message ?: "Native content-blocking engine unavailable"
+            _lastError.value = error.message ?: "Content-blocking rules could not be loaded"
             _status.value = BlockingStatus.ERROR
             _initialLoadComplete.value = true
             Log.e(TAG, "Failed to load content-blocking rules", error)
@@ -119,11 +122,16 @@ internal class ContentBlockingService(
         fun get(context: Context): ContentBlockingService = instance ?: synchronized(this) {
             instance ?: ContentBlockingService(
                 FilterListStore(context.applicationContext),
-                NativeAdblockEngine(),
+                KotlinFilterEngine(),
                 Executors.newSingleThreadExecutor { task ->
                     Thread(task, "content-blocking-loader").apply { isDaemon = true }
                 },
-            ).also { instance = it }
+            ).also {
+                // Explicit initialization also covers test/headless entry points where
+                // AndroidX Startup has not initialized OkHttp's existing suffix asset.
+                okhttp3.OkHttp.initialize(context.applicationContext)
+                instance = it
+            }
         }
     }
 }

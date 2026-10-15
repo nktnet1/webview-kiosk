@@ -6,7 +6,7 @@ import org.junit.Test
 
 class FilterFileFormatTest {
     @Test
-    fun documentPunctuationAndFilterSyntaxAreLeftToTheNativeRuleParser() {
+    fun documentPunctuationAndFilterSyntaxAreLeftToTheRuleParser() {
         for (text in listOf(
             "{}",
             "[]",

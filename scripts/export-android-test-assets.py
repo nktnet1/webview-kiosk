@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Export Linux x86_64 Gradle/Android and Rust assets using Python 3.10+."""
+"""Export Linux x86_64 Gradle/Android assets using Python 3.10+."""
 
 import argparse
 import contextlib
@@ -35,13 +35,6 @@ CMDLINE_TOOLS_ZIP = "commandlinetools-linux-15859902_latest.zip"
 CMDLINE_TOOLS_SHA256 = "4e4c464f145a7512b57d088ac6c278c03c9eea610886b35a5e0804e74eedf583"
 JBR_ARCHIVE = "jbrsdk-21.0.11-linux-x64-b1163.116.tar.gz"
 JBR_SHA256 = "097bf328b5bf5a236c095b8c8e5204c0eda91e5baa06b37383a7754b10671d8b"
-HOST_TRIPLE = "x86_64-unknown-linux-gnu"
-TOOLCHAIN = f"stable-{HOST_TRIPLE}"
-RUST_PROXIES = ("cargo", "rustup", "rustc", "rustdoc")
-ANDROID_TARGETS = (
-    "aarch64-linux-android", "armv7-linux-androideabi",
-    "i686-linux-android", "x86_64-linux-android",
-)
 
 
 class ExportError(Exception):
@@ -137,7 +130,7 @@ def export_archive(path, entries, *, exclude=None, dereference=False):
                         if exclude is not None:
                             member = exclude(member)
                         # tarfile disables hard-link detection with dereference.
-                        # Rustup proxies and LLVM soname symlinks share large files;
+                        # Tool distributions can contain symlinks to shared large files;
                         # retain their archive hard links while following symlinks.
                         if member is not None and dereference and member.isfile():
                             relative = member.name[len(destination):].lstrip("/")
@@ -570,167 +563,35 @@ Robolectric Maven destination: ~/.m2/repository/ (default)
             )
 
 
-def copy_crate(source, destination):
-    destination.mkdir(parents=True, exist_ok=True)
-    for name in ("Cargo.toml", "rust-toolchain.toml", "src"):
-        path = source / name
-        if path.is_dir():
-            shutil.copytree(path, destination / name)
-        else:
-            shutil.copy2(path, destination / name)
-    if (source / "Cargo.lock").is_file():
-        shutil.copy2(source / "Cargo.lock", destination / "Cargo.lock")
-
-
-def export_rust(args, output):
-    source = PROJECT_ROOT / "app/native-adblock"
-    if not all((source / name).exists() for name in ("Cargo.toml", "rust-toolchain.toml", "src")):
-        raise ExportError("Native adblock Cargo manifest, toolchain declaration, or sources are missing")
-    rustup = (args.rustup_home or Path(os.environ.get("RUSTUP_HOME", Path.home() / ".rustup"))).resolve()
-    cargo_on_path = shutil.which("cargo")
-    if not args.cargo_bin_dir and not cargo_on_path:
-        raise ExportError("cargo is required on native Linux; pass --cargo-bin-dir to the rustup proxies")
-    # Do not resolve the cargo proxy symlink: its directory contains all proxies.
-    binaries = (args.cargo_bin_dir or Path(cargo_on_path).parent).absolute()
-    for binary in RUST_PROXIES:
-        if not executable(binaries / binary):
-            raise ExportError(f"Rustup proxy {binary} is missing from {binaries}")
-    settings_file = rustup / "settings.toml"
-    if not settings_file.is_file():
-        raise ExportError(f"Rustup settings.toml is missing from {rustup}")
-    # These rustup fields contain only format numbers and toolchain identifiers.
-    # Read top-level quoted fields only, excluding user override tables. Avoid a
-    # TOML dependency so the Ubuntu 22.04 Gradle image can use its Python 3.10.
-    settings_text = re.split(
-        r"^\s*\[", settings_file.read_text(encoding="utf-8"), maxsplit=1, flags=re.MULTILINE,
-    )[0]
-    settings = dict(re.findall(
-        r'^\s*(version|default_toolchain)\s*=\s*"([^"\\]*)"\s*(?:#[^\n]*)?$',
-        settings_text, re.MULTILINE,
-    ))
-    source_toolchain = TOOLCHAIN
-    if not executable(rustup / f"toolchains/{source_toolchain}/bin/rustc"):
-        source_toolchain = settings.get("default_toolchain", "")
-        if not re.fullmatch(rf"[0-9]+(?:\.[0-9]+){{1,2}}-{HOST_TRIPLE}", source_toolchain) or not executable(
-            rustup / f"toolchains/{source_toolchain}/bin/rustc"
-        ):
-            raise ExportError(f"No installed stable or version-numbered {HOST_TRIPLE} toolchain in {rustup}")
-    env = dict(os.environ, RUSTUP_HOME=str(rustup), RUSTUP_TOOLCHAIN=source_toolchain,
-               RUSTUP_AUTO_INSTALL="0", PATH=str(binaries) + os.pathsep + os.environ.get("PATH", ""))
-    host = re.search(r"^host: (.+)$", run([binaries / "rustc", "-vV"], env=env, capture=True), re.MULTILINE)
-    if not host or host[1] != HOST_TRIPLE:
-        raise ExportError(f"Expected {HOST_TRIPLE} rustc, found: {host[1] if host else 'unknown'}")
-    version = str(settings.get("version", ""))
-    if not version.isdigit():
-        raise ExportError("Cannot determine the rustup settings format version")
-    output.mkdir(parents=True, exist_ok=True)
-    build = PROJECT_ROOT / "build"
-    build.mkdir(exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix=".rust-test-export.", dir=build) as directory:
-        with tempfile.TemporaryDirectory(prefix=".staging.", dir=output) as staging_directory:
-            work, staging = Path(directory), Path(staging_directory)
-            crate = work / "native-adblock"
-            copy_crate(source, crate)
-            say("Resolving and vendoring native-adblock Cargo dependencies")
-            cargo = binaries / "cargo"
-            if not (crate / "Cargo.lock").is_file():
-                run([cargo, "generate-lockfile"], cwd=crate, env=env,
-                    message="Cargo could not generate the native-adblock lockfile")
-            (crate / ".cargo").mkdir()
-            with (crate / ".cargo/config.toml").open("w", encoding="utf-8") as config:
-                run([cargo, "vendor", "--locked", "--versioned-dirs", "vendor"], cwd=crate, env=env, stdout=config,
-                    message="Cargo could not vendor the locked native-adblock dependencies")
-            if (not (crate / "Cargo.lock").is_file() or not (crate / "vendor").is_dir() or
-                    not (crate / ".cargo/config.toml").stat().st_size):
-                raise ExportError("Cargo vendoring did not produce the expected source config and lockfile")
-            run([cargo, "metadata", "--locked", "--offline", "--format-version", "1"],
-                cwd=crate, env=env, stdout=subprocess.DEVNULL,
-                message="Cargo cannot resolve the exported dependencies offline")
-            clean_settings = work / "settings.toml"
-            clean_settings.write_text(f'version = "{version}"\ndefault_host_triple = "{HOST_TRIPLE}"\n'
-                                      f'default_toolchain = "{TOOLCHAIN}"\nprofile = "minimal"\n', encoding="utf-8")
-            toolchain_path = f"rustup/toolchains/{TOOLCHAIN}"
-
-            def exclude_android(member):
-                return None if any(
-                    member.name == f"{toolchain_path}/lib/rustlib/{target}" or
-                    member.name.startswith(f"{toolchain_path}/lib/rustlib/{target}/")
-                    for target in ANDROID_TARGETS
-                ) else member
-
-            say("Exporting the Linux host Rust toolchain and vendored Cargo dependencies")
-            entries = [(binaries / name, f"cargo/bin/{name}") for name in RUST_PROXIES]
-            entries.extend(((rustup / "toolchains" / source_toolchain, toolchain_path),
-                            (clean_settings, "rustup/settings.toml")))
-            export_archive(staging / "rust-toolchain-linux-x86_64.tar.gz", entries,
-                           exclude=exclude_android, dereference=True)
-            export_archive(staging / "native-adblock-vendor.tar.gz", [
-                (crate / name, name) for name in ("Cargo.lock", ".cargo/config.toml", "vendor")
-            ])
-            contents = f"""Platform: Linux x86_64 ({HOST_TRIPLE})
-Rust channel: {TOOLCHAIN} (host toolchain; no Android targets)
-Installed source toolchain: {source_toolchain}
-Rust version: {run([binaries / 'rustc', '--version'], env=env, capture=True)}
-Cargo version: {run([cargo, '--version'], env=env, capture=True)}
-Crate: app/native-adblock/Cargo.toml
-Cargo dependencies: vendored from Cargo.lock; verified with cargo metadata --locked --offline
-Cargo tests: not run (no compilation or tests)
-Android NDK: not required, installed, or exported
-Rust toolchain destination: extract into a writable directory
-Rust environment: CARGO_HOME=<dir>/cargo, RUSTUP_HOME=<dir>/rustup, PATH=$CARGO_HOME/bin:$PATH
-Cargo dependencies destination: extract into app/native-adblock/; cd app/native-adblock before running cargo test --offline --locked
-Toolchain selection: set RUSTUP_TOOLCHAIN={TOOLCHAIN} to avoid installing Android targets from rust-toolchain.toml
-"""
-            publish(staging, output,
-                    ("rust-toolchain-linux-x86_64.tar.gz", "native-adblock-vendor.tar.gz"), contents)
-
 
 # Run Python inside the container too, including checkout isolation. No host
 # shell interpolation is used for paths or user arguments.
 DOCKER_BOOTSTRAP = """
 import pathlib, shutil, subprocess, sys
-kind = sys.argv[1]
 root = pathlib.Path('/tmp/project')
 pathlib.Path('/tmp/assets-home').mkdir(exist_ok=True)
-if kind == 'gradle':
-    shutil.copytree('/source', root, ignore=shutil.ignore_patterns(
-        '.git', '.gradle', '.idea', 'build', 'docs', 'local.properties',
-        'release', '*.jks', '.env*', '*.bundle', '*.patch', 'target', 'vendor',
-        '__pycache__', '.cargo'))
-    pathlib.Path('/var/cache/android-test-assets/gradle').mkdir(parents=True, exist_ok=True)
-    options = ['--sdk-root', '/opt/android-sdk', '--gradle-bin', '/opt/gradle/bin/gradle',
-               '--gradle-user-home', '/var/cache/android-test-assets/gradle']
-else:
-    source = pathlib.Path('/source/app/native-adblock')
-    crate = root / 'app/native-adblock'
-    crate.mkdir(parents=True)
-    for name in ('Cargo.toml', 'rust-toolchain.toml', 'Cargo.lock'):
-        if (source / name).is_file():
-            shutil.copy2(source / name, crate / name)
-    shutil.copytree(source / 'src', crate / 'src')
-    (root / 'scripts').mkdir()
-    shutil.copy2('/source/scripts/export-android-test-assets.py', root / 'scripts')
-    pathlib.Path('/var/cache/native-adblock-rust/cargo').mkdir(parents=True, exist_ok=True)
-    options = ['--cargo-bin-dir', '/usr/local/cargo/bin', '--rustup-home', '/usr/local/rustup']
+shutil.copytree('/source', root, ignore=shutil.ignore_patterns(
+    '.git', '.gradle', '.idea', 'build', 'docs', 'local.properties',
+    'release', '*.jks', '.env*', '*.bundle', '*.patch', '__pycache__'))
+pathlib.Path('/var/cache/android-test-assets/gradle').mkdir(parents=True, exist_ok=True)
+options = ['--sdk-root', '/opt/android-sdk', '--gradle-bin', '/opt/gradle/bin/gradle',
+           '--gradle-user-home', '/var/cache/android-test-assets/gradle']
 subprocess.run([sys.executable, str(root / 'scripts/export-android-test-assets.py'),
-                '--assets', kind, '--output', '/export', *options], check=True)
+                '--output', '/export', *options], check=True)
 """
 
 
-def export_docker(kind, output):
+def export_docker(output):
     if not shutil.which("docker"):
         raise ExportError("Docker is required to export Linux x86_64 test assets on this host")
     operating_system = run(["docker", "info", "--format", "{{.OSType}}"], capture=True,
                            message="The Docker daemon is unavailable; start Docker and try again")
     if operating_system != "linux":
         raise ExportError("Docker must be configured to run Linux containers")
-    rust = kind == "rust"
-    image = ("webview-kiosk-rust-test-assets:stable-bookworm" if rust else
-             "webview-kiosk-android-test-assets:gradle-9.8.0-jbr21")
-    dockerfile = f"Dockerfile.{'rust' if rust else 'android'}-test-assets"
-    cache = ("webview-kiosk-rust-test-assets-cargo:/var/cache/native-adblock-rust" if rust else
-             "webview-kiosk-android-test-assets-deps:/var/cache/android-test-assets")
-    say(f"Preparing the Linux x86_64 {kind} exporter image (cached after first use)")
+    image = "webview-kiosk-android-test-assets:gradle-9.8.0-jbr21"
+    dockerfile = "Dockerfile.android-test-assets"
+    cache = "webview-kiosk-android-test-assets-deps:/var/cache/android-test-assets"
+    say("Preparing the Linux x86_64 Gradle exporter image (cached after first use)")
     run(["docker", "build", "--platform", "linux/amd64", "--tag", image,
          "--file", PROJECT_ROOT / "scripts" / dockerfile, PROJECT_ROOT / "scripts"])
     output.mkdir(parents=True, exist_ok=True)
@@ -738,12 +599,9 @@ def export_docker(kind, output):
     if hasattr(os, "getuid"):
         command.extend(["--user", f"{os.getuid()}:{os.getgid()}"])
     command.extend(["--env", "HOME=/tmp/assets-home"])
-    if rust:
-        command.extend(["--env", "CARGO_HOME=/var/cache/native-adblock-rust/cargo",
-                        "--env", "RUSTUP_HOME=/usr/local/rustup"])
     command.extend(["--volume", f"{PROJECT_ROOT}:/source:ro", "--volume", f"{output}:/export",
                     "--volume", cache, "--workdir", "/tmp", image,
-                    "python3", "-c", DOCKER_BOOTSTRAP, kind])
+                    "python3", "-c", DOCKER_BOOTSTRAP])
     run(command)
 
 
@@ -754,25 +612,21 @@ def parse_args(argv=None):
         return Path(value)
 
     parser = argparse.ArgumentParser(description=__doc__, epilog="""
-On Linux x86_64, use preinstalled Gradle/JetBrains JDK 21/Android SDK or a
-rustup-managed host toolchain. Other hosts use Docker with Linux amd64 images.
-Exports resolve dependencies without compiling or running tests. Cargo.lock is
-preserved, or generated in a disposable crate copy. SHA256SUMS and CONTENTS.txt
+On Linux x86_64, use preinstalled Gradle/JetBrains JDK 21/Android SDK.
+Other hosts use Docker with Linux amd64 images. Exports resolve dependencies
+without compiling or running tests. SHA256SUMS and CONTENTS.txt
 accompany the archives. All exported files automatically split above 180,000,000 bytes.
 Use --download-tools to include verified Linux amd64 Gradle/JBR/Android tools;
-use --download-only to fetch these packages without an SDK, Java, Rust, or Docker.
+use --download-only to fetch these packages without an SDK, Java, or Docker.
 """)
-    parser.add_argument("--assets", choices=("gradle", "rust", "all"), default="gradle",
-                        help="assets to export (default: gradle; all puts Rust assets in output/rust)")
-    parser.add_argument("--with-rust", action="store_true", help="compatibility alias for --assets all")
+    parser.add_argument("--assets", choices=("gradle",), default="gradle",
+                        help="compatibility option; only Gradle/Android assets are needed")
     parser.add_argument("--output", type=path_argument, help=(
-        "output directory (default: build/android-test-assets, or its rust/ subdirectory in Rust-only mode)"
+        "output directory (default: build/android-test-assets)"
     ))
     parser.add_argument("--sdk-root", type=path_argument, help="native Linux Android SDK directory")
     parser.add_argument("--gradle-user-home", type=path_argument, help="reuse an existing native Gradle cache")
     parser.add_argument("--gradle-bin", type=path_argument, help="preinstalled native Gradle executable matching the wrapper")
-    parser.add_argument("--cargo-bin-dir", type=path_argument, help="native rustup proxy binary directory")
-    parser.add_argument("--rustup-home", type=path_argument, help="native installed rustup directory")
     downloads = parser.add_argument_group("Optional tool downloads (Linux x86_64 packages)")
     downloads.add_argument("--download-tools", action="store_true",
                            help="download Gradle, JetBrains JDK 21, and Android command-line tools")
@@ -788,20 +642,11 @@ use --download-only to fetch these packages without an SDK, Java, Rust, or Docke
     downloads.add_argument("--accept-sdk-licenses", action="store_true",
                            help="accept Android SDK licences noninteractively when installing SDK packages")
     args = parser.parse_args(argv)
-    if args.with_rust:
-        if args.assets == "rust":
-            parser.error("--with-rust cannot be combined with --assets rust")
-        args.assets = "all"
-    if args.assets == "rust" and any((args.sdk_root, args.gradle_bin, args.gradle_user_home)):
-        parser.error("Gradle toolchain options require --assets gradle or all")
-    if args.assets == "gradle" and any((args.cargo_bin_dir, args.rustup_home)):
-        parser.error("Rust toolchain options require --assets rust or all")
     if args.download_tools:
         args.download_gradle = args.download_jbr = args.download_android_tools = True
     if args.download_only and not any((args.download_gradle, args.download_jbr, args.download_android_tools)):
         parser.error("--download-only requires --download-tools or at least one specific --download-* option")
-    args.output = (args.output or PROJECT_ROOT / "build/android-test-assets" /
-                   ("rust" if args.assets == "rust" else "")).resolve()
+    args.output = (args.output or PROJECT_ROOT / "build/android-test-assets").resolve()
     args.download_cache = args.download_cache.resolve()
     if args.download_cache.is_relative_to(args.output / "tools"):
         parser.error("--download-cache must be outside output/tools so cached originals are not exported")
@@ -813,27 +658,21 @@ def main(argv=None):
     args = parse_args(argv)
     native = platform.system() == "Linux" and platform.machine() == "x86_64"
     try:
-        if not native and not args.download_only and any((args.sdk_root, args.gradle_bin, args.gradle_user_home,
-                                                        args.cargo_bin_dir, args.rustup_home)):
+        if not native and not args.download_only and any((args.sdk_root, args.gradle_bin, args.gradle_user_home)):
             raise ExportError("Toolchain overrides are native Linux options; Docker supplies its own Linux toolchains")
         downloaded = export_downloaded_tools(args)
         if args.download_only:
             return 0
-        kinds = ("gradle", "rust") if args.assets == "all" else (args.assets,)
         with contextlib.ExitStack() as stack:
             env = None
-            if native and "gradle" in kinds and downloaded:
+            if native and downloaded:
                 directory = stack.enter_context(tempfile.TemporaryDirectory(prefix=".prepared.", dir=args.download_cache))
                 env = prepare_downloaded_tools(args, downloaded, Path(directory))
                 args.sdk_tools_archive = downloaded.get("android-tools")
-            for kind in kinds:
-                output = args.output / "rust" if args.assets == "all" and kind == "rust" else args.output
-                if not native:
-                    export_docker(kind, output)
-                elif kind == "gradle":
-                    export_gradle(args, output, env=env)
-                else:
-                    export_rust(args, output)
+            if native:
+                export_gradle(args, args.output, env=env)
+            else:
+                export_docker(args.output)
     except (ExportError, OSError, ValueError, tarfile.TarError, zipfile.BadZipFile) as error:
         print(f"Error: {error}", file=sys.stderr)
         return 1

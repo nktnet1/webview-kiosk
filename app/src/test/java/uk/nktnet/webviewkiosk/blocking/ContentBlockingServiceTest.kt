@@ -34,7 +34,7 @@ class ContentBlockingServiceTest {
     }
 
     @Test
-    fun noImportNeverLoadsNativeEngine() {
+    fun noImportDoesNotCompileRules() {
         service.start()
         executor.runAll()
         assertEquals(0, engine.replacements)
@@ -112,6 +112,24 @@ class ContentBlockingServiceTest {
     }
 
     @Test
+    fun skippedRuleCountTracksOnlyTheCommittedSnapshotAndClearsWhenDisabled() {
+        val item = store.importFrom("test.txt", "||ads.example^".byteInputStream())
+        engine.skipped = 2
+        service.start()
+        executor.runAll()
+        assertEquals(2, service.skippedRules.value)
+        engine.skipped = 99
+        engine.failReplace = true
+        service.reload()
+        executor.runAll()
+        assertEquals(2, service.skippedRules.value)
+        store.setEnabled(item.id, false)
+        service.reload()
+        executor.runAll()
+        assertEquals(0, service.skippedRules.value)
+    }
+
+    @Test
     fun rejectedLoaderReleasesTheStartupGate() = runBlocking {
         val rejected = ContentBlockingService(store, engine, Executor { throw java.util.concurrent.RejectedExecutionException("closed") })
         rejected.awaitInitialLoad()
@@ -123,13 +141,15 @@ class ContentBlockingServiceTest {
         var replacements = 0
         var clears = 0
         var failReplace = false
+        var skipped = 0
         private var list = ""
         override fun replace(lists: List<String>) {
             if (failReplace) throw IllegalStateException("failed to compile")
             replacements++
             list = lists.joinToString("\n")
         }
-        override fun clear() { clears++; list = "" }
+        override fun clear() { clears++; list = ""; skipped = 0 }
+        override fun unsupportedRuleCount(): Int = skipped
         override fun shouldBlock(url: String, sourceUrl: String, type: String, method: String) =
             list.contains("||ads.example^") && url.contains("ads.example")
     }

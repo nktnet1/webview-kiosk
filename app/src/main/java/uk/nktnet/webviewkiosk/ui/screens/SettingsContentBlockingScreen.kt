@@ -91,7 +91,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     val downloader = remember { SuggestedFilterListDownloader() }
     val scope = rememberCoroutineScope()
     val blockingStatus by blocker.status.collectAsState()
-    val nativeError by blocker.lastError.collectAsState()
+    val blockingError by blocker.lastError.collectAsState()
+    val skippedRules by blocker.skippedRules.collectAsState()
     var lists by remember { mutableStateOf(store.list()) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
@@ -237,9 +238,16 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             }
             if (blockingStatus == BlockingStatus.ERROR) {
                 Text(
-                    nativeError?.takeIf { it.isNotBlank() }?.let { "Blocking unavailable: $it" }
+                    blockingError?.takeIf { it.isNotBlank() }?.let { "Rule update failed: $it" }
                         ?: "Blocking unavailable",
                     color = MaterialTheme.colorScheme.error,
+                )
+            }
+            if (skippedRules > 0) {
+                Text(
+                    "$skippedRules unsupported or invalid rules were skipped.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodySmall,
                 )
             }
 
@@ -628,7 +636,7 @@ private fun AddFilterListDialog(
 @Composable
 private fun FilterValidationNotice() {
     Text(
-                    "At least one supported network or CSS-hiding rule is required. Scriptlets, custom styles, and procedural filters are ignored. Reload the page after changing cosmetic rules.",
+        "At least one supported network or CSS-hiding rule is required. Rules with unsupported options, regex filters, scriptlets, and procedural filters are skipped. Reload the page after changing cosmetic rules.",
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )

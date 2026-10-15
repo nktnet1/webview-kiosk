@@ -41,7 +41,7 @@ internal object WebViewBlocker {
         val uri = Uri.parse(url)
         if (!uri.scheme.equals("http", true) && !uri.scheme.equals("https", true)) return false
         val host = uri.host?.takeIf { it.isNotBlank() } ?: return false
-        // Compare hosts, including origins without a trailing slash, before invoking JNI.
+        // Compare hosts, including origins without a trailing slash, before matching.
         return !host.equals("appassets.androidplatform.net", true) &&
             !host.equals(Uri.parse(Constants.PDF_JS_ASSETS_DUMMY_URL).host, true)
     }

@@ -87,8 +87,8 @@ Java or Gradle setup is necessary in Docker mode. Docker on Apple Silicon runs
 an x86_64 container, which can be slower than native Linux due to emulation.
 
 The `--assets` selection and `--output` carry over to Docker mode. The
-native-only `--sdk-root`, `--gradle-user-home`, `--gradle-bin`,
-`--cargo-bin-dir`, and `--rustup-home` options are rejected on other hosts.
+native-only `--sdk-root`, `--gradle-user-home`, and `--gradle-bin` options are
+rejected on other hosts.
 Docker uses a disposable copy of the checkout without `local.properties`,
 keystores, or host build caches and writes the archives to the requested output
 directory. A project-specific Docker volume keeps Gradle caches and Robolectric
@@ -112,7 +112,7 @@ by default through its named volume.
 
 All exported archives at or below **180,000,000 bytes (180 MB, decimal)**
 have no `.part-000` suffix. Larger archives, including Gradle dependencies,
-Cargo vendor sources, SDKs, and toolchains, are streamed into numbered
+SDKs and toolchains, are streamed into numbered
 `<filename>.part-000`, `.part-001`, and subsequent files of at most 180 MB.
 This includes the downloaded ZIP/tar archives. Generated archives are streamed
 without buffering a complete oversized archive in memory or on disk.
@@ -141,7 +141,7 @@ The original packages are exported into `<output>/tools/`, with independent
 outside `tools/`; every cache entry is checksum-verified before reuse. Failed
 downloads or checksum mismatches preserve previous exports.
 
-To download and export packages on any host without Java, an SDK, Rust, or
+To download and export packages on any host without Java, an SDK, or
 Docker, use download-only mode:
 
 ```bash
@@ -161,71 +161,13 @@ python3 scripts/export-android-test-assets.py --download-tools --accept-sdk-lice
 ```
 
 Only Linux x86_64 packages are downloaded, including in download-only mode on
-macOS or Windows. Normal asset export on those hosts still uses Docker. Rust
-host toolchain and vendored-crate exports remain selected with `--assets rust`
-or `--assets all`.
+macOS or Windows. Normal asset export on those hosts still uses Docker.
 
-### Offline native-adblock Rust host tests
+### Kotlin content-blocking tests
 
-To export the Linux x86_64 stable Rust compiler, Cargo, rustup, and the
-`app/native-adblock/Cargo.toml` dependencies alongside the Gradle assets, use:
-
-```bash
-python3 scripts/export-android-test-assets.py --assets all --output build/android-test-assets
-```
-
-The default command remains Gradle-only; `--assets all` exports both, and
-`--assets rust` exports Rust alone. Use the Python command directly;
-`--with-rust` remains an alias for `--assets all`.
-If the Android/Gradle exports already exist, run only the Rust exporter instead:
-
-```bash
-python3 scripts/export-android-test-assets.py --assets rust --output build/android-test-assets/rust
-```
-
-On macOS, Apple Silicon, and non-x86_64 Linux, the Rust exporter builds a
-small Docker image based on the official `rust:1-bookworm` Linux amd64 image.
-It needs Python 3.10+, Docker, and internet access for the initial image and
-dependency downloads, but no host Rust, Java, or Android SDK installation. Its
-separate named Docker volume retains downloaded Cargo dependencies. The official Docker image has
-a version-numbered stable release, which the exporter reuses without downloading
-another toolchain. On Linux x86_64, it uses an existing rustup-managed stable
-toolchain or a version-numbered default; neither route downloads the Android
-NDK or compiles the native JNI library.
-
-The Rust exporter creates these files in the `rust/` output directory, with
-independent `SHA256SUMS` and `CONTENTS.txt` metadata:
-
-- `rust-toolchain-linux-x86_64.tar.gz`: Cargo/rustup proxies and an installed
-  Rust host toolchain (`cargo/bin`, `rustup/toolchains`, and sanitized rustup
-  settings), **without** registry caches, credentials, or Android targets.
-- `native-adblock-vendor.tar.gz`: `Cargo.lock`, `vendor/`, and
-  `.cargo/config.toml`. Cargo's `--locked` vendoring preserves an existing
-  lockfile, or generates one in a temporary checkout if none exists. `cargo
-  metadata --locked --offline` validates the vendored dependency resolution.
-
-As with the Android archives, files over the upload limit are split into
-`.part-*` pieces, and `SHA256SUMS` verifies the results. Reassemble any
-numbered pieces in order before extraction. To run the parser tests on a Linux
-x86_64 host after restoring both archives:
-
-```bash
-mkdir -p "$PWD/.rust-offline"
-tar -xzf build/android-test-assets/rust/rust-toolchain-linux-x86_64.tar.gz -C "$PWD/.rust-offline"
-tar -xzf build/android-test-assets/rust/native-adblock-vendor.tar.gz -C app/native-adblock
-export CARGO_HOME="$PWD/.rust-offline/cargo"
-export RUSTUP_HOME="$PWD/.rust-offline/rustup"
-export RUSTUP_TOOLCHAIN=stable-x86_64-unknown-linux-gnu
-export PATH="$CARGO_HOME/bin:$PATH"
-cd app/native-adblock
-cargo test --locked --offline
-```
-
-Run Cargo from the crate directory so it discovers the restored
-`app/native-adblock/.cargo/config.toml`; the `--manifest-path` flag alone does
-not change Cargo's configuration-file search path. `RUSTUP_TOOLCHAIN` is
-important: the checked-in `rust-toolchain.toml` lists
-Android targets for APK builds, but the host parser tests use only the Linux
-standard library and a normal Linux linker, **not** the Android NDK. Nothing
-under `app/native-adblock/vendor/`, `.cargo/config.toml`, or `Cargo.lock` is
-committed; these are locally restored test assets.
+The content blocker is Kotlin and uses the existing OkHttp dependency. It requires
+no Rust toolchain, Cargo vendor archive, JNI library, or Android NDK. The Gradle
+JVM suite includes parser/matcher and storage/integration regressions. See
+[`docs/content-blocking.md`](../docs/content-blocking.md) for supported syntax,
+limits, and device checks. `--assets gradle` remains accepted by the exporter;
+obsolete `--assets rust`, `--assets all`, and `--with-rust` modes have been removed.

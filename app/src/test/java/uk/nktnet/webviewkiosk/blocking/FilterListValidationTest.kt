@@ -11,7 +11,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import java.io.File
 
-/** Storage/validator boundary tests. Real filter syntax is exercised in the Rust suite. */
+/** Storage/validator boundary tests. Real filter syntax is exercised in KotlinFilterEngineTest. */
 @RunWith(RobolectricTestRunner::class)
 class FilterListValidationTest {
     private lateinit var store: FilterListStore
@@ -31,6 +31,20 @@ class FilterListValidationTest {
             validated += text
             failure?.let { throw it }
         })
+    }
+
+    @Test
+    fun defaultKotlinValidatorRejectsMalformedReplacementWithoutChangingSavedRules() {
+        val realStore = FilterListStore(RuntimeEnvironment.getApplication())
+        val item = realStore.importFrom("Working", "||ads.example^\n||cdn.example^\$future-option".byteInputStream())
+        assertThrows(IllegalArgumentException::class.java) {
+            realStore.updateFile(item.id, "Changed", "||ads.example^\$domain=".byteInputStream())
+        }
+        assertEquals(listOf(item), realStore.list())
+        val engine = KotlinFilterEngine().also { it.replace(realStore.enabledTexts()) }
+        assertTrue(engine.shouldBlock("https://ads.example/a", "https://site.example/", "other", "GET"))
+        assertFalse(engine.shouldBlock("https://cdn.example/a", "https://site.example/", "other", "GET"))
+        assertEquals(1, engine.unsupportedRuleCount())
     }
 
     @Test
@@ -144,7 +158,7 @@ class FilterListValidationTest {
     }
 
     @Test
-    fun nativeValidationUnavailableCannotOverwriteAWorkingList() {
+    fun validatorFailureCannotOverwriteAWorkingList() {
         val item = store.importFrom("Working", "||working.example^".byteInputStream())
         failure = IllegalStateException("Filter syntax validation is unavailable; no changes were saved")
         assertThrows(IllegalStateException::class.java) {

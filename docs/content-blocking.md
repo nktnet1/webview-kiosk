@@ -1,4 +1,4 @@
-# Native content blocking
+# Content blocking
 
 **Status:** Network filtering and basic CSS element hiding. No automatic downloads
 or updates, bundled filter rules, or scriptlets. Manage lists in **Settings → Web Content →
@@ -7,94 +7,28 @@ downloaded list is enabled.
 
 ## Engine and build
 
-The JNI library in `app/native-adblock` uses Brave `adblock-rust` 0.13.3
-(MPL-2.0) and the `jni` Rust crate 0.21.1. The Rust wrapper follows
-this repository's AGPL-3.0-or-later license; distributors must also satisfy
-the MPL-2.0 obligations for the upstream engine (license notice and source
-availability).
-Do not bundle filter lists. The native library is lazy-loaded for syntax validation
-or the first enabled list, and holds no compiled rules when all lists are disabled.
+The parser and indexed matcher are Kotlin/JVM code under `blocking/engine`.
+`KotlinFilterEngine` publishes immutable compiled snapshots to request threads;
+replacement is atomic and a failed compilation retains the last working snapshot.
+The engine reuses the app's existing OkHttp URL/IDN parser and public-suffix data
+for first/third-party classification, including multi-label and private suffixes.
+Suffix data is initialized on the compilation worker when needed. No new library,
+filter list, native binary, or domain database is bundled.
 
-Building an APK requires **Android NDK 29.0.14206865**, a Rust toolchain, Cargo,
-and Rust's four Android cross-compilation targets. The NDK version is pinned in
-`app/build.gradle.kts` and CI. For local builds, install it with **Android Studio →
-Settings → Languages & Frameworks → Android SDK → SDK Tools → Show Package Details →
-NDK (Side by side)** (select **29.0.14206865**), or with:
+Builds use the existing JDK 21, Gradle 9.8.0, and Android SDK. Rust, Cargo, JNI, and
+an Android NDK are no longer needed for content blocking. The native crate, Gradle
+native task, generated JNI source set, and CI/toolchain provisioning are removed.
+The Python test-asset exporter retains Gradle/Android exports, optional verified
+Gradle/JBR/SDK downloads, and automatic 180 MB archive splitting. Its obsolete
+Rust-only/combined export modes are removed; `--assets gradle` remains accepted.
 
-```sh
-sdkmanager --install "ndk;29.0.14206865"
-```
-
-Gradle reads the Android SDK directory through AGP, including the SDK from
-`local.properties`, not only `ANDROID_HOME`. An externally installed NDK may
-be selected with `ANDROID_NDK_HOME` or `ANDROID_NDK_ROOT` pointing to its root
-(the directory containing `toolchains/llvm/prebuilt`). An incomplete/missing
-NDK produces an actionable error rather than building an APK without the
-native engine.
-
-Install Rust with [rustup](https://rustup.rs/). The
-`app/native-adblock/rust-toolchain.toml` file selects the **stable** toolchain
-(with a minimal installation profile) and lists all four Android targets.
-When Gradle invokes rustup-managed Cargo from the crate directory, rustup
-automatically installs any missing toolchain components, including the Android
-Rust standard libraries, on first use. This requires an internet connection.
-It does **not** install the NDK, which is handled separately above.
-
-If automatic installation is disabled (`RUSTUP_AUTO_INSTALL=0`), the Rust
-installation is not managed by rustup, or a download fails, provision the
-Android targets for the toolchain used by Cargo:
-
-```sh
-rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-```
-
-A manual Cargo invocation should be made from `app/native-adblock` so rustup
-can discover its `rust-toolchain.toml` toolchain configuration. The file is a
-Gradle task input: changing the toolchain declaration invalidates the native
-library task's up-to-date state.
-
-For **host parser and validation tests only**, the Android NDK is not
-required. On Linux x86_64, a helper can export the host Rust toolchain and
-vendored Cargo crates for offline tests (Python 3.10+), using Docker on macOS
-and other architectures:
-
-```sh
-python3 scripts/export-android-test-assets.py --assets rust --output build/android-test-assets/rust
-```
-
-Use `python3 scripts/export-android-test-assets.py --assets all` to generate the
-Android/Gradle and Rust archives in one invocation. The Rust exporter records
-a lockfile (generating it only in a disposable copy if absent), preserves the
-original checkout, and emits SHA-256 verified archives. Compressed archives
-larger than 180 MB (180,000,000 bytes) automatically use numbered parts, each
-at most 180 MB; concatenate them in suffix order before extraction.
-Restore `cargo/bin`, `rustup/toolchains`, `Cargo.lock`, `vendor/`, and
-`.cargo/config.toml` as
-documented in [the contributor guide](../.github/CONTRIBUTING.md#offline-native-adblock-rust-host-tests).
-Set `RUSTUP_TOOLCHAIN=stable-x86_64-unknown-linux-gnu` for host tests so
-rustup does not try to install the four Android targets declared above.
-
-The Gradle `buildNativeAdblock` task runs Cargo with the NDK clang linker for
-each target and includes the resulting `.so` files in the APK. On macOS,
-`~/.cargo/bin/cargo` is used even when Android Studio is launched without a
-shell `PATH`; `CARGO` or `CARGO_HOME` can override its location. Gradle's
-configuration cache is supported: source changes cause a rebuild, while a
-second unchanged build reuses the cached task graph. JVM/Robolectric tests
-do not require native tools.
-
-The native outputs are not Gradle **build-cache relocatable**, because external
-Cargo dependencies and the Rust toolchain are not fully declared as Gradle
-inputs. Standard up-to-date checks are still used; reinstalling or upgrading
-Rust or NDK may require a native rebuild. The release GitHub Actions workflow
-installs matching NDK and Rust Android targets.
-
-The engine is compiled on a single background executor and then swapped into
-use under a short native write lock. Request matching takes a native read lock
-and does not parse rules, access preferences, or download data. Initial WebView
-creation waits for provider warmup and the first rule load, without blocking the
-UI or request threads. An initial load failure releases that gate, **allows
-requests**, and surfaces the error in settings. Later reloads keep the working
-rules active until a replacement is ready; a failed update retains those rules.
+Initial WebView creation waits for provider warmup and the first rule load without
+blocking the UI or request threads. An initial load failure releases the startup
+gate, permits browsing, and reports the error in settings. Reloading keeps old
+rules active until the new snapshot is ready. Requests use hostname and mandatory
+literal-token indexes; unconditional host rules have a separate compact fast path.
+There is no full-list scan per request, except a bounded fallback for patterns
+without a usable index. No compiled binary cache is persisted between launches.
 
 ## Filter-list management
 
@@ -143,85 +77,60 @@ rules active until a replacement is ready; a failed update retains those rules.
 - The original text is retained for rebuilding on startup. No compiled
   binary cache is persisted in this increment. Imported list files are
   not yet included in the app's existing settings JSON/Base64 export.
-- Removing or disabling the last list unloads native engine state.
+- Removing or disabling the last list clears the compiled engine snapshot.
 
-## File syntax validation
+## File syntax validation and supported rules
 
-Imports, inline file edits, replacement files, and clones all validate the staged
-UTF-8 text **before** changing saved rules or metadata. Downloads, URL edits, and
-refreshes use the same gate. Validation runs on the settings screen's IO dispatcher,
-with one JNI call per file, without compiling or swapping the active engine. The
-existing 8 MiB per-file and 32 MiB total limits still apply. Parser failures leave
-the old name, ID, source URL, enablement, and rule bytes intact and remove the
-temporary file. If the native validator cannot load, the operation fails with an
-explanation; it never silently saves unvalidated content. Existing stored lists
-remain readable, and name-only edits do not revalidate their existing rules.
+Imports, edits, replacement files, URL updates, refreshes, and clones validate the
+complete staged UTF-8 text before changing saved content or metadata. Rejections
+leave the old list intact. Validation uses the same Kotlin parser as compilation,
+without replacing the active snapshot. BOMs, CRLF, headers, comments, mixed hosts/
+Adblock files, IPv4/IPv6 hosts records, aliases, and inline hosts comments work.
+Existing hosts files beginning with an IP record retain hostname semantics for
+subsequent bare domains. In ordinary Adblock files, bare text is a URL substring
+pattern. Local machine aliases without a blocking-domain equivalent are skipped.
 
-All files use the same content validation, regardless of filename, extension, or
-document shape. There is no JSON detection or other document-format blacklist.
-Every candidate rejects control characters other than tab, CR, and LF,
-with the original line number. This check scans all text, including comments and
-leading/trailing characters, rather than checking only particular document types.
-The native parser must accept at least one network or supported CSS-hiding rule
-before the file is saved. Exception rules and literal URL substring rules count; a file containing only
-unsupported rules gets a distinct error instead of being imported with no effect.
+Control characters other than tab/CR/LF are rejected with their original line
+numbers. A file needs at least one supported network or CSS-hiding rule; exceptions
+and `$badfilter` directives count. Empty/comment-only files and unsupported-only
+files have distinct errors. Known malformed syntax reports original 1-based line
+numbers with at most five diagnostic details and a count of additional errors.
+Arbitrary document-shaped text may still be a legal substring pattern; validation
+cannot infer filter intent and does not blacklist JSON/XML by filename or shape.
 
-The validator calls [`adblock::lists::parse_filter` from the pinned 0.13.3 engine](https://docs.rs/adblock/0.13.3/adblock/lists/fn.parse_filter.html)
-with the same network/cosmetic options and cosmetic restrictions used by
-compilation. It does not use a custom Adblock grammar or a JVM regex approximation.
-Explicit structural/hostname errors,
-invalid negations of supported options, and missing redirect values produce an
-error with original **1-based line numbers**. At most five error details are shown,
-followed by the number of additional errors, keeping diagnostics bounded for large
-files. Whitespace-only and comment-only files get a separate "no rules" message;
-empty lines, list headers, `!` comments, and hosts `#` comments within a useful list
-are benign. UTF-8 BOMs and CRLF line endings are supported.
+| Syntax | Support |
+| --- | --- |
+| Hosts records; `||host^` domain rules | Yes, with domain-label boundaries |
+| Literal URL substrings, `*`, `^`, start/end `|` | Yes |
+| `@@` exceptions; `$important` blocks | Yes; important blocks override ordinary exceptions |
+| `$badfilter` | Disables the matching parsed rule across enabled lists, regardless of option order |
+| `$domain=` / `$from=` | Positive/negated source-domain restrictions |
+| `$third-party` / `$first-party`, `$3p` / `$1p`, negations | Public-suffix-based classification, within WebView's available context |
+| Resource types and negations | `other`, `script`, `image`, `stylesheet`/`css`, `font`, `media`, `subdocument`/`frame`, `xmlhttprequest`/`xhr`, `object`, `ping`, `websocket`, `document` |
+| `$method=` | Positive/negated method names joined by `|` |
+| `$match-case` | Case-sensitive URL matching; default patterns are case-insensitive |
+| `##` / `#@#` | Basic CSS hiding/exceptions, with positive/negated domain scopes |
+| `@@...$generichide` / `$ghide`; `$elemhide` / `$ehide` | Disable generic/all cosmetic hiding for matching page URLs |
+| Full regex rules, regex/entity domain scopes, wildcard hostname anchors | Skipped |
+| Scriptlets, procedural selectors, custom styles/removal actions | Skipped |
+| Redirects, response rewriting, CSP, parameter stripping, unknown modifiers | Skipped |
 
-Validation and compilation share line routing. Adblock network/exception rules
-may be mixed with IP-prefixed hosts records in either order. IPv4/IPv6 hosts
-records support multiple aliases and trailing comments; the upstream hosts parser
-validates each hostname. Local machine aliases such as `localhost` and
-`ip6-loopback` are ignored. Existing hosts lists beginning with an IP record keep
-their hostname semantics for subsequent bare domains, using the upstream hosts
-parser to recognise them. Other bare patterns/domains keep their existing Adblock
-interpretation. IP-looking prefixes followed by a hostname are checked as IP
-addresses; standalone IP patterns retain their Adblock interpretation.
+An unsupported option discards the **whole rule**, including exception rules; its
+remaining URL pattern is never applied without its restrictions. Settings shows
+the number of skipped unsupported/invalid rules in the active snapshot. Old stored
+lists remain readable and useful supported rules still compile. Coverage can differ
+from Brave because this is an explicitly documented subset, not a complete EasyList,
+AdGuard, or uBlock implementation. Document-type rules do not introduce site-wide
+allowlisting, and parsing a resource type does not make WebView expose that type.
 
-### Compatibility limits
-
-Upstream bulk list loading silently discards errors; its per-rule API exposes
-enough detail to reject known malformed network syntax. It also reports engine
-limitations as errors. Unknown options, unsupported domain forms, full regex
-filters (disabled in this build), unsupported modifier combinations, custom cosmetic
-actions, procedural filters, and scriptlets are therefore **compatibility warnings,
-not malformed rules**. They are skipped, and the dialogs explain that unsupported
-filters are ignored when supported network or CSS-hiding rules remain. A file
-containing only unsupported rules is rejected with a "no supported network or
-CSS-hiding rules" explanation, without labelling those rules malformed.
-
-Upstream's optional CSS parser is disabled to avoid adding dependencies. Only
-single CSS selector operations without actions are exposed. Known procedural
-extensions are conservatively excluded, including when their names occur in
-selector strings. WebView validates the remaining selectors on a detached element
-before inserting a fixed `display: none !important` rule; invalid or unsupported
-CSS is ignored per selector. Import validation does not guarantee CSS compatibility
-with a particular WebView provider.
-
-Some malformed-looking text is legal as an Adblock substring pattern, and the
-upstream parser accepts some incomplete option values (for example `$domain`
-without a value). Unknown options may also be misspellings; they cannot reliably
-be distinguished from another engine's extensions. These cases are accepted rather
-than inventing stricter syntax rules. The validator does not promise that every
-accepted line takes effect, and it does not verify filter intent or resource
-availability. Future unclassified upstream errors are treated conservatively as
-unsupported syntax. No alternate parser or new dependency is added.
-
-The engine accepts literal URL substring patterns, including plain words, numbers,
-and punctuation that can also occur in structured documents. Those contents are
-validated by the same rule parser, without a separate document-format decision.
-File validation cannot reliably infer the author's intent from arbitrary text;
-it is not a guarantee that every unrelated text document will be recognised or
-that every accepted pattern is useful.
+Lists retain the existing 8 MiB/file, 16-list, and 32 MiB total storage limits. A file
+or combined enabled set is limited to 500,000 parsed rules. At most 2,048 unique
+network patterns without a hostname, positive domain scope, or mandatory four-character
+literal token can be active. Exceeding compilation limits reports an error and keeps
+the previous engine. Matching has a shared work budget for candidate evaluation and
+glob processing; pathological requests fail open if that budget is exhausted. Selector
+and page-token caps remain in place. Unsupported CSS is also rejected per selector
+by WebView before a fixed `display: none !important` rule is inserted.
 
 ## CSS element hiding
 
@@ -271,29 +180,36 @@ allowlists, and periodically refreshed subscriptions are intentionally out of sc
 
 ## Verification
 
-Robolectric tests exercise persistence, migration, import/refresh limits, file edits,
-custom URL downloads and edits, preset immutability and clones, bulk refresh
-with partial failure, duplicate/rejection handling, enable/disable/reload, and resource
-classification with a fake native matcher. Startup tests cover the first-load
-gate, initial failure, rejected scheduling, and retaining active rules on failed
-updates. Service-worker tests cover source headers and unknown/private context;
-bridge tests cover frame-origin checks and message/token bounds.
-Storage validation tests inject a parser
-result to verify staging, cleanup, error propagation, failed replacements/clone edits,
-native-unavailable failures, and metadata preservation without Android JNI.
-Native Rust tests use the real parser for valid/invalid/empty/comment-only files,
-unsupported rules, BOM/CRLF text, IPv4/IPv6 hosts, mixed formats, line numbers,
-bounded diagnostics, blocking, exceptions, malformed requests, cosmetic domains,
-observed generic tokens, and `$generichide`. Dependency-free Node tests execute the
-shipped cosmetic script with a DOM/bridge fixture, checking dynamic changes,
-bounded batches, retries, CSS rejection, style restoration, and cleanup. They run
-in `sh scripts/ci/test-local.sh checks` and the Tests workflow.
-The workflow runs host Rust tests separately from Robolectric, without an NDK; Android
-cross-compilation and real-device WebView tests are still required before
-claiming production-level compatibility or latency.
+Run the Kotlin parser/matcher, storage, startup, interception, and bridge tests with:
 
-On a device, check a cold start with an enabled list, third-party blocked resources,
-domain-specific/generic hiding and exceptions in frames, dynamically inserted ads,
-service-worker fetches with and without initiator headers, JavaScript disabled,
-strict CSP, list disable/re-enable plus reload, and pages that do not use any
-cosmetic rules. There is no measured coverage percentage or performance guarantee.
+```sh
+sh scripts/ci/test-local.sh jvm
+```
+
+Run the asset-exporter, local-runner, and cosmetic JavaScript tests with:
+
+```sh
+sh scripts/ci/test-local.sh checks
+```
+
+`KotlinFilterEngineTest` covers URL/domain boundaries, pattern tokens, resource and
+method restrictions, public/private suffixes, exceptions and priority, cross-list
+`$badfilter`, mixed file formats, CSS scopes and exceptions, hiding gates, bounded
+replies, malformed imports, failed compilation, pathological wildcard work, and
+concurrent replacement. The network fixture corpus records 384 queries run against
+the previous Brave 0.13.3 engine; expected Kotlin behavior and the recorded Brave
+output are retained separately, including four intentional normalization/case differences.
+See `app/src/test/resources/filter-engine/README.md`. Rust is not a test dependency.
+
+Robolectric tests also cover persisted list management, staged validation, partial
+refresh failures, startup readiness, retaining active rules on failed updates,
+service-worker source headers, and message/frame-origin bounds. Dependency-free
+Node tests execute the shipped cosmetic script with a DOM/bridge fixture to check
+dynamic changes, batching, retries, CSS rejection, style restoration, and cleanup.
+
+Host tests are not a device compatibility or performance measurement. On Android,
+check cold startup, first-/third-party requests, domain/generic hiding and exceptions
+in frames, dynamic ads, service-worker fetches with/without source headers, JavaScript
+disabled, CSP, list disable/re-enable plus reload, and large enabled lists. Compare
+release APK size, list-compilation time, request-matching latency, and peak RAM on
+representative devices. No ad-coverage percentage or Android latency is guaranteed.

@@ -27,7 +27,7 @@ internal data class ImportedFilterList(
 /** Stores only user-imported plain-text lists in private app storage. No built-in rules. */
 internal class FilterListStore(
     context: Context,
-    private val validator: FilterListValidator = NativeAdblockEngine(),
+    private val validator: FilterListValidator = KotlinFilterEngine(),
 ) {
     private val preferences: SharedPreferences = context.applicationContext.getSharedPreferences(
         "content_blocking_lists", Context.MODE_PRIVATE,
