@@ -61,9 +61,10 @@ To export Linux x86_64 Android SDK components and Robolectric runtime archives
 for use when running Android unit tests, use:
 
 ```bash
-scripts/export-android-test-assets.sh --output build/android-test-assets
+python3 scripts/export-android-test-assets.py --output build/android-test-assets
 ```
 
+The command requires Python 3.10 or newer and uses only the standard library.
 On Linux x86_64, the script uses the locally installed Android SDK, JetBrains
 JDK 21 and version-matched Gradle executable. On macOS and other architectures,
 it automatically builds `scripts/Dockerfile.android-test-assets` and runs the
@@ -73,8 +74,9 @@ resolve the project's dependencies on its first run. No host Android SDK,
 Java or Gradle setup is necessary in Docker mode. Docker on Apple Silicon runs
 an x86_64 container, which can be slower than native Linux due to emulation.
 
-Only `--output` carries over to Docker mode. The native-only `--sdk-root`,
-`--gradle-user-home` and `--gradle-bin` options are rejected on other hosts.
+The `--assets` selection and `--output` carry over to Docker mode. The
+native-only `--sdk-root`, `--gradle-user-home`, `--gradle-bin`,
+`--cargo-bin-dir`, and `--rustup-home` options are rejected on other hosts.
 Docker uses a disposable copy of the checkout without `local.properties`,
 keystores, or host build caches and writes the archives to the requested output
 directory. A project-specific Docker volume keeps Gradle caches and Robolectric
@@ -95,9 +97,13 @@ dependencies specific to this project. Passing `--gradle-user-home` on Linux
 reuses previously cached modules and Robolectric runtimes. Docker reuses them
 by default through its named volume.
 
-Archives below 512,000,000 bytes have no `.part-000` suffix. Larger archives
-are split into numbered `.part-*` files. Concatenate those parts in order
-before extraction. `SHA256SUMS` verifies each exported file, and
+All compressed archives at or below **250,000,000 bytes (250 MB, decimal)**
+have no `.part-000` suffix. Larger archives, including Gradle dependencies,
+Cargo vendor sources, SDKs, and toolchains, are streamed into numbered
+`.tar.gz.part-000`, `.part-001`, and subsequent files of at most 250 MB.
+The exporter never buffers a complete oversized archive in memory or on disk.
+Concatenate those parts in order before extraction. `SHA256SUMS` verifies each
+exported file, and
 `CONTENTS.txt` records their installation destinations. Extract
 `gradle-deps.tar.gz` into `$GRADLE_USER_HOME` (or `~/.gradle` by default)
 before running Gradle with `--offline`.
@@ -108,21 +114,23 @@ To export the Linux x86_64 stable Rust compiler, Cargo, rustup, and the
 `app/native-adblock/Cargo.toml` dependencies alongside the Gradle assets, use:
 
 ```bash
-scripts/export-android-test-assets.sh --with-rust --output build/android-test-assets
+python3 scripts/export-android-test-assets.py --assets all --output build/android-test-assets
 ```
 
-The existing command **without `--with-rust` remains Gradle-only**. If its
-Android/Gradle exports already exist, run only the Rust exporter instead:
+The default command remains Gradle-only; `--assets all` exports both, and
+`--assets rust` exports Rust alone. The old `.sh` entry points and
+`--with-rust` option remain compatibility wrappers around the Python command.
+If the Android/Gradle exports already exist, run only the Rust exporter instead:
 
 ```bash
-scripts/export-rust-test-assets.sh --output build/android-test-assets/rust
+python3 scripts/export-android-test-assets.py --assets rust --output build/android-test-assets/rust
 ```
 
 On macOS, Apple Silicon, and non-x86_64 Linux, the Rust exporter builds a
 small Docker image based on the official `rust:1-bookworm` Linux amd64 image.
-It needs Docker and internet access for the initial image/dependency download,
-but no host Rust, Java, or Android SDK installation. Its separate named Docker
-volume retains downloaded Cargo dependencies. The official Docker image has
+It needs Python 3.10+, Docker, and internet access for the initial image and
+dependency downloads, but no host Rust, Java, or Android SDK installation. Its
+separate named Docker volume retains downloaded Cargo dependencies. The official Docker image has
 a version-numbered stable release, which the exporter reuses without downloading
 another toolchain. On Linux x86_64, it uses an existing rustup-managed stable
 toolchain or a version-numbered default; neither route downloads the Android

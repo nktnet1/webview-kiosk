@@ -4,7 +4,7 @@ FROM gradle:9.8.0-jdk21-jammy
 
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        ca-certificates curl unzip \
+        ca-certificates curl unzip python3 \
     && rm -rf /var/lib/apt/lists/*
 
 # The project pins the Gradle daemon vendor to JetBrains. A generic JDK 21
