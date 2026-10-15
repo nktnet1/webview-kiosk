@@ -151,15 +151,9 @@ temporary file. If the native validator cannot load, the operation fails with an
 explanation; it never silently saves unvalidated content. Existing stored lists
 remain readable, and name-only edits do not revalidate their existing rules.
 
-Before native rule parsing, a streaming file-format check rejects complete JSON
-objects and arrays, including pretty-printed documents and arrays of filter
-strings. Checking the entire document avoids relying on filenames or incorrectly
-rejecting `[Adblock Plus 2.0]` headers, bracket-shaped patterns, and JSON fragments
-inside URLs/rules. UTF-8 BOMs and surrounding whitespace do not bypass this check.
-The check uses Android's existing `JsonReader` without building a JSON tree and
-runs on the same IO dispatcher. Imports, replacements, inline edits, URL updates,
-and clones all use it; rejected documents never replace saved rules or metadata.
-Every candidate also rejects control characters other than tab, CR, and LF,
+All files use the same content validation, regardless of filename, extension, or
+document shape. There is no JSON detection or other document-format blacklist.
+Every candidate rejects control characters other than tab, CR, and LF,
 with the original line number. This check scans all text, including comments and
 leading/trailing characters, rather than checking only particular document types.
 The native parser must accept at least one network rule before the file is saved.
@@ -207,12 +201,12 @@ accepted line takes effect, and it does not verify filter intent or resource
 availability. Future unclassified upstream errors are treated conservatively as
 unsupported syntax. No alternate parser or new dependency is added.
 
-The JSON document check deliberately targets complete objects/arrays. Scalar
-values and literal patterns such as `true` or `123`, malformed JSON-shaped literals, and
-fragments embedded in actual rules can also be valid Adblock substring patterns,
-so they remain the rule parser's responsibility. File validation cannot reliably
-infer the author's intent from arbitrary text; it is not a guarantee that every
-unrelated text document will be recognised or that every accepted pattern is useful.
+The engine accepts literal URL substring patterns, including plain words, numbers,
+and punctuation that can also occur in structured documents. Those contents are
+validated by the same rule parser, without a separate document-format decision.
+File validation cannot reliably infer the author's intent from arbitrary text;
+it is not a guarantee that every unrelated text document will be recognised or
+that every accepted pattern is useful.
 
 ## Known WebView limitations
 

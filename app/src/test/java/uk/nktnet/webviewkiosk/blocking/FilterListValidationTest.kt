@@ -192,64 +192,99 @@ class FilterListValidationTest {
     }
 
     @Test
-    fun jsonImportIsRejectedBeforeNativeParsingRegardlessOfFilename() {
-        for (name in listOf("settings.json", "renamed.txt")) {
-            val error = assertThrows(IllegalArgumentException::class.java) {
-                store.importFrom(name, """{"setting":true}""".byteInputStream())
-            }
-            assertTrue(error.message!!.contains("JSON document"))
+    fun allFileContentsReachTheSameValidatorRegardlessOfFilenameOrDocumentShape() {
+        // This injected validator accepts the candidates. The storage layer must
+        // defer rule syntax decisions to it, without classifying document formats.
+        val candidates = listOf(
+            "filters.json" to "||ads.example^",
+            "filters.xml" to "0.0.0.0 ads.example",
+            "settings.txt" to """{"setting":true}""",
+            "settings.json" to """{"setting":true}""",
+            "array.rules" to """["||ads.example^"]""",
+            "document.html" to "<rule>ads.example</rule>",
+            "document.csv" to "ad,tracking",
+            "document.yaml" to "ad: true",
+        )
+        for ((name, text) in candidates) {
+            val item = store.importFrom(name, text.byteInputStream())
+            assertEquals(text, validated.last())
+            assertEquals(text, store.editableFileText(item.id))
         }
-        assertTrue(validated.isEmpty())
+        assertEquals(candidates.map { it.second }, validated)
+        assertEquals(candidates.size, store.list().size)
+    }
+
+    @Test
+    fun validatorErrorsArePreservedRegardlessOfFilenameOrDocumentShape() {
+        failure = IllegalArgumentException("Invalid filter syntax:\nLine 1: parser error")
+        val candidates = listOf(
+            "filters.txt" to "||bad.example^\$redirect=",
+            "settings.json" to "{}",
+            "settings.txt" to "{}",
+            "document.xml" to "<rules/>",
+            "document.csv" to "ad,tracking",
+        )
+        for ((name, text) in candidates) {
+            val error = assertThrows(IllegalArgumentException::class.java) {
+                store.importFrom(name, text.byteInputStream())
+            }
+            assertEquals(failure!!.message, error.message)
+        }
+        assertEquals(candidates.map { it.second }, validated)
         assertTrue(store.list().isEmpty())
         assertTrue(directory.listFiles().orEmpty().isEmpty())
     }
 
     @Test
-    fun jsonReplacementCannotChangeAWorkingListsNameRulesOrEnablement() {
+    fun replacementValidatesCompleteContentsWithoutDocumentFormatDetection() {
         val item = store.importFrom("Working", "||working.example^".byteInputStream())
-        assertThrows(IllegalArgumentException::class.java) {
-            store.updateFile(item.id, "Changed", """["||new.example^"]""".byteInputStream())
-        }
-        assertEquals(listOf(item), store.list())
-        assertEquals(listOf("||working.example^"), store.enabledTexts())
-        assertEquals(listOf("||working.example^"), validated)
+        store.setEnabled(item.id, false)
+        val replacement = """["||new.example^"]"""
+        val updated = store.updateFile(item.id, "Changed", replacement.byteInputStream())
+        assertEquals(item.copy(name = "Changed", enabled = false), updated)
+        assertEquals(listOf(updated), store.list())
+        assertEquals(replacement, store.editableFileText(item.id))
+        assertEquals(listOf("||working.example^", replacement), validated)
         assertEquals(1, directory.listFiles().orEmpty().size)
     }
 
     @Test
-    fun fileCloneCannotBeEditedToJsonAndRemainsDisabled() {
+    fun editedCloneUsesTheSameValidatorAndRemainsDisabled() {
         val item = store.importFrom("Original", "||working.example^".byteInputStream())
         val copy = store.cloneList(item.id)
-        assertThrows(IllegalArgumentException::class.java) {
-            store.updateFile(copy.id, "Changed", "{}".byteInputStream())
-        }
-        assertEquals(listOf(item, copy), store.list())
+        val updated = store.updateFile(copy.id, "Changed", "{}".byteInputStream())
+        assertEquals(copy.copy(name = "Changed"), updated)
+        assertEquals(listOf(item, updated), store.list())
         assertFalse(store.list().last().enabled)
-        assertEquals("||working.example^", store.editableFileText(copy.id))
+        assertEquals("{}", store.editableFileText(copy.id))
+        assertEquals(listOf("||working.example^", "||working.example^", "{}"), validated)
         assertEquals(listOf("||working.example^"), store.enabledTexts())
         assertEquals(2, directory.listFiles().orEmpty().size)
     }
 
     @Test
-    fun legacyJsonCannotBeClonedButExistingDataIsPreserved() {
+    fun legacyContentsAreRevalidatedByTheSameValidatorWhenCloned() {
         val item = store.importFrom("Legacy", "||working.example^".byteInputStream())
-        val json = """{"setting":true}"""
-        File(directory, "${item.id}.txt").writeText(json)
-        assertThrows(IllegalArgumentException::class.java) { store.cloneList(item.id) }
-        assertEquals(listOf(item), store.list())
-        assertEquals(json, store.editableFileText(item.id))
-        assertEquals(1, directory.listFiles().orEmpty().size)
+        val text = """{"setting":true}"""
+        File(directory, "${item.id}.txt").writeText(text)
+        val copy = store.cloneList(item.id)
+        assertEquals(listOf("||working.example^", text), validated)
+        assertEquals(listOf(item, copy), store.list())
+        assertEquals(text, store.editableFileText(item.id))
+        assertEquals(text, store.editableFileText(copy.id))
+        assertFalse(copy.enabled)
+        assertEquals(2, directory.listFiles().orEmpty().size)
     }
 
     @Test
-    fun jsonUrlEditCannotChangeTheWorkingSourceOrRules() {
+    fun urlEditsValidateTheSameContentsWithoutDocumentFormatDetection() {
         val item = store.importFrom("URL", "||working.example^".byteInputStream(), "https://example.org/old.txt")
-        assertThrows(IllegalArgumentException::class.java) {
-            store.updateUrl(item.id, item.sourceUrl!!, "https://example.org/new.txt", "Changed",
-                "{}".byteInputStream())
-        }
-        assertEquals(listOf(item), store.list())
-        assertEquals(listOf("||working.example^"), store.enabledTexts())
+        val updated = store.updateUrl(item.id, item.sourceUrl!!, "https://example.org/new.txt", "Changed",
+            "{}".byteInputStream())
+        assertEquals(item.copy(name = "Changed", sourceUrl = "https://example.org/new.txt"), updated)
+        assertEquals(listOf(updated), store.list())
+        assertEquals(listOf("||working.example^", "{}"), validated)
+        assertEquals(listOf("{}"), store.enabledTexts())
         assertEquals(1, directory.listFiles().orEmpty().size)
     }
 
