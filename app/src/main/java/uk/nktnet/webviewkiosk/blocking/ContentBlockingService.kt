@@ -6,11 +6,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import uk.nktnet.webviewkiosk.BuildConfig
-import uk.nktnet.webviewkiosk.blocking.engine.CompiledFilterCache
 import java.io.File
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicLong
+import uk.nktnet.webviewkiosk.filterengine.KotlinFilterEngine
+import uk.nktnet.webviewkiosk.filterengine.NetworkFilterEngine
+import uk.nktnet.webviewkiosk.filterengine.RuleLoadStage
 
 internal enum class BlockingStatus { DISABLED, LOADING, ACTIVE, ERROR }
 
@@ -159,10 +161,10 @@ internal class ContentBlockingService(
         fun get(context: Context): ContentBlockingService = instance ?: synchronized(this) {
             instance ?: ContentBlockingService(
                 FilterListStore(context.applicationContext),
-                KotlinFilterEngine(CompiledFilterCache(
-                    File(context.applicationContext.cacheDir, "content-blocking/compiled-rules.bin"),
-                    BuildConfig.VERSION_CODE,
-                )),
+                KotlinFilterEngine(
+                    cacheFile = File(context.applicationContext.cacheDir, "content-blocking/compiled-rules.bin"),
+                    cacheVersion = BuildConfig.VERSION_CODE,
+                ),
                 Executors.newSingleThreadExecutor { task ->
                     Thread(task, "content-blocking-loader").apply { isDaemon = true }
                 },

@@ -19,7 +19,7 @@ class CiCachingTest(unittest.TestCase):
         self.assertIn("cache-read-only:", TESTS)
         self.assertIn("head.repo.full_name != github.repository", TESTS)
         self.assertIn(
-            "run: sh gradlew :app:testDebugUnitTest --build-cache --profile --stacktrace",
+            "run: sh gradlew :filter-engine:test :app:testDebugUnitTest --build-cache --profile --stacktrace",
             TESTS,
         )
         self.assertEqual(1, TESTS.count("build/reports/profile/"))

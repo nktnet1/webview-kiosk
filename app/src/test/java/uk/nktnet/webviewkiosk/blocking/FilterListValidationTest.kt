@@ -10,6 +10,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import java.io.File
+import uk.nktnet.webviewkiosk.filterengine.FilterListValidator
+import uk.nktnet.webviewkiosk.filterengine.KotlinFilterEngine
 
 /** Storage/validator boundary tests. Real filter syntax is exercised in KotlinFilterEngineTest. */
 @RunWith(RobolectricTestRunner::class)

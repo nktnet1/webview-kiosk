@@ -57,7 +57,7 @@ fun SettingsWebContentScreen(navController: NavController) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 SettingListItem(
                     title = stringResource(R.string.settings_content_blocking_title),
                     description = stringResource(R.string.settings_content_blocking_description),

@@ -1,6 +1,6 @@
-package uk.nktnet.webviewkiosk.blocking
+package uk.nktnet.webviewkiosk.filterengine
 
-internal enum class RuleLoadStage(val description: String) {
+enum class RuleLoadStage(val description: String) {
     READING_LISTS("Reading saved filter lists…"),
     CHECKING_CACHE("Checking for saved compiled rules…"),
     RESTORING("Loading compiled rules into memory…"),
@@ -11,7 +11,7 @@ internal enum class RuleLoadStage(val description: String) {
 }
 
 /** Injectable request/selector boundary shared by production and host tests. */
-internal interface NetworkFilterEngine {
+interface NetworkFilterEngine {
     fun replace(lists: List<String>)
     fun replace(lists: List<String>, onProgress: (RuleLoadStage) -> Unit) {
         onProgress(RuleLoadStage.COMPILING)
@@ -24,6 +24,6 @@ internal interface NetworkFilterEngine {
     fun unsupportedRuleCount(): Int = 0
 }
 
-internal fun interface FilterListValidator {
+fun interface FilterListValidator {
     fun validate(text: String)
 }

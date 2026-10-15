@@ -69,7 +69,7 @@ class LocalTestRunnerTest(unittest.TestCase):
         result = self.run_suite("jvm")
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(
-            ":app:testDebugUnitTest\n--build-cache\n--profile\n--stacktrace\n",
+            ":filter-engine:test\n:app:testDebugUnitTest\n--build-cache\n--profile\n--stacktrace\n",
             self.read_gradle_args(),
         )
 
@@ -121,7 +121,7 @@ class LocalTestRunnerTest(unittest.TestCase):
         result = self.run_suite("all")
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(
-            ":app:testDebugUnitTest\n--build-cache\n--profile\n--stacktrace\n",
+            ":filter-engine:test\n:app:testDebugUnitTest\n--build-cache\n--profile\n--stacktrace\n",
             self.read_gradle_args(),
         )
         self.assertEqual(

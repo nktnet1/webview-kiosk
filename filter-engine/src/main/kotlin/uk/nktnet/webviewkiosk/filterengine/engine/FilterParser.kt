@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.blocking.engine
+package uk.nktnet.webviewkiosk.filterengine.engine
 
 import java.util.Locale
 

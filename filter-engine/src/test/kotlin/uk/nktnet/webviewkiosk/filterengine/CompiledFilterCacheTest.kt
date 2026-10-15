@@ -1,37 +1,26 @@
-package uk.nktnet.webviewkiosk.blocking
+package uk.nktnet.webviewkiosk.filterengine
 
 import org.junit.Assert.*
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
-import org.robolectric.RuntimeEnvironment
-import uk.nktnet.webviewkiosk.blocking.engine.CompiledFilterCache
-import uk.nktnet.webviewkiosk.blocking.engine.FilterCompiler
+import uk.nktnet.webviewkiosk.filterengine.engine.CompiledFilterCache
+import uk.nktnet.webviewkiosk.filterengine.engine.FilterCompiler
 import java.io.File
 
-@RunWith(RobolectricTestRunner::class)
 class CompiledFilterCacheTest {
     @get:Rule val folder = TemporaryFolder()
-
-    @Before
-    fun initializeSuffixData() {
-        okhttp3.OkHttp.initialize(RuntimeEnvironment.getApplication())
-    }
 
     @Test
     fun cachedEngineMatchesTheEntireNetworkFixtureCorpusWithoutReparsing() {
         val file = File(folder.root, "compiled.bin")
-        val cache = CompiledFilterCache(file)
         javaClass.getResourceAsStream("/filter-engine/network.tsv")!!.bufferedReader().useLines { lines ->
             for (line in lines.drop(1)) {
                 val fields = line.split('\t')
                 val lists = listOf(fields[1].replace("\\n", "\n"))
-                KotlinFilterEngine(cache).replace(lists)
+                KotlinFilterEngine(file).replace(lists)
                 val stages = mutableListOf<RuleLoadStage>()
-                val restored = KotlinFilterEngine(cache)
+                val restored = KotlinFilterEngine(file)
                 restored.replace(lists, stages::add)
                 assertFalse(fields[0], RuleLoadStage.COMPILING in stages)
                 assertTrue(fields[0], RuleLoadStage.RESTORING in stages)
@@ -57,7 +46,7 @@ class CompiledFilterCacheTest {
         assertEquals(original.networks.toList(), restored.networks.toList())
         assertEquals(original.cosmetics.toList(), restored.cosmetics.toList())
         assertEquals(original.skippedRules, restored.skippedRules)
-        val engine = KotlinFilterEngine(cache).also { it.replace(lists) }
+        val engine = KotlinFilterEngine(file).also { it.replace(lists) }
         assertFalse(engine.shouldBlock("https://ads.example/pixel", "https://site.example/", "other", "GET"))
         assertTrue(engine.shouldBlock("https://hosts.example/pixel", "https://site.example/", "other", "GET"))
         assertTrue(engine.shouldBlock("https://tracker.example/a", "https://site.example/", "script", "GET"))
@@ -70,9 +59,10 @@ class CompiledFilterCacheTest {
 
     @Test
     fun exactContentAndListBoundariesInvalidateTheCache() {
-        val cache = CompiledFilterCache(File(folder.root, "compiled.bin"))
+        val file = File(folder.root, "compiled.bin")
+        val cache = CompiledFilterCache(file)
         assertFalse(cache.key(listOf("ab", "c")).contentEquals(cache.key(listOf("a", "bc"))))
-        val engine = KotlinFilterEngine(cache)
+        val engine = KotlinFilterEngine(file)
         engine.replace(listOf("||old.example^", "@@||old.example^"))
         val stages = mutableListOf<RuleLoadStage>()
         engine.replace(listOf("||new.example^"), stages::add)
@@ -89,7 +79,7 @@ class CompiledFilterCacheTest {
         val file = File(folder.root, "compiled.bin")
         val cache = CompiledFilterCache(file, buildVersion = 1)
         val lists = listOf("||ads.example^\n##.ad")
-        KotlinFilterEngine(cache).replace(lists)
+        KotlinFilterEngine(file, cacheVersion = 1).replace(lists)
         val valid = file.readBytes()
         val variants = listOf(
             byteArrayOf(),
@@ -102,7 +92,7 @@ class CompiledFilterCacheTest {
         for (bytes in variants) {
             file.writeBytes(bytes)
             val stages = mutableListOf<RuleLoadStage>()
-            val engine = KotlinFilterEngine(cache)
+            val engine = KotlinFilterEngine(file, cacheVersion = 1)
             engine.replace(lists, stages::add)
             assertTrue(RuleLoadStage.COMPILING in stages)
             assertTrue(engine.shouldBlock("https://ads.example/a", "https://site.example/", "other", "GET"))
@@ -110,14 +100,14 @@ class CompiledFilterCacheTest {
         }
         file.delete()
         val stages = mutableListOf<RuleLoadStage>()
-        KotlinFilterEngine(cache).replace(lists, stages::add)
+        KotlinFilterEngine(file, cacheVersion = 1).replace(lists, stages::add)
         assertTrue(RuleLoadStage.COMPILING in stages)
     }
 
     @Test
     fun unavailableCacheStorageDoesNotPreventBlocking() {
         val parent = folder.newFile("not-a-directory")
-        val engine = KotlinFilterEngine(CompiledFilterCache(File(parent, "compiled.bin")))
+        val engine = KotlinFilterEngine(File(parent, "compiled.bin"))
         engine.replace(listOf("||ads.example^"))
         assertTrue(engine.shouldBlock("https://ads.example/a", "https://site.example/", "other", "GET"))
     }

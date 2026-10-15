@@ -1,15 +1,22 @@
 import org.gradle.api.artifacts.ProjectDependency
 
-// Resolve only the artifacts needed for the Android JVM/Robolectric test suite.
+// Resolve only the artifacts needed for the engine JVM and Android/Robolectric tests.
 // This init script deliberately registers no dependency on a build or test task.
 gradle.beforeProject { project ->
-    if (project.path == ':app') {
+    if (project.path in [':app', ':filter-engine']) {
+        def engine = project.path == ':filter-engine'
         project.tasks.register('resolveAndroidTestAssets') {
             group = 'help'
-            description = 'Download debug JVM test dependencies without compiling or running tests.'
+            description = 'Download JVM test dependencies without compiling or running tests.'
+            if (!engine) dependsOn(':filter-engine:resolveAndroidTestAssets')
 
             doLast {
-                def required = [
+                def required = engine ? [
+                    'compileClasspath',
+                    'runtimeClasspath',
+                    'testCompileClasspath',
+                    'testRuntimeClasspath',
+                ] : [
                     'debugCompileClasspath',
                     'debugRuntimeClasspath',
                     'debugUnitTestCompileClasspath',
@@ -21,6 +28,8 @@ gradle.beforeProject { project ->
                 def optional = [
                     'kotlinCompilerClasspath',
                     'kotlinCompilerPluginClasspath',
+                    'kotlinCompilerPluginClasspathMain',
+                    'kotlinCompilerPluginClasspathTest',
                     'kotlinCompilerPluginClasspathDebug',
                     'kotlinCompilerPluginClasspathDebugUnitTest',
                 ]
@@ -38,11 +47,14 @@ gradle.beforeProject { project ->
                     // application project itself. Resolving that project as a
                     // library is ambiguous with AGP 9.4.x; the exporter only
                     // needs external artifacts, not the app's build outputs.
-                    def externalOnly = configuration.copyRecursive { dependency ->
+                    // The JVM engine has only external dependencies. Resolve its
+                    // original configuration so Kotlin's lazy stdlib defaults and
+                    // version alignment are retained by the exporter.
+                    def externalOnly = engine ? configuration : configuration.copyRecursive { dependency ->
                         !(dependency instanceof ProjectDependency)
                     }
                     def files = externalOnly.incoming.artifacts.artifactFiles.files
-                    logger.lifecycle("Resolved ${configurationName}: ${files.size()} files")
+                    logger.lifecycle("Resolved ${project.path}:${configurationName}: ${files.size()} files")
                 }
             }
         }

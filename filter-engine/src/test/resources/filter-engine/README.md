@@ -8,6 +8,6 @@ allow). `KotlinFilterEngineTest` runs every case against the matcher.
 
 This corpus is regression evidence, not proof of compatibility with every rule in
 EasyList or uBlock. Unsupported features and remaining WebView constraints are
-listed in `docs/content-blocking.md`. Add meaningful request/rule pairs when fixing
+listed in the repository's `docs/content-blocking.md`. Add meaningful request/rule pairs when fixing
 matching bugs; derive expected results from the filter's meaning rather than
 regenerating them from the implementation under test.

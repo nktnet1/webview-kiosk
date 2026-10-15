@@ -7,12 +7,25 @@ downloaded list is enabled.
 
 ## Engine and build
 
-The parser and indexed matcher are Kotlin/JVM code under `blocking/engine`.
+The parser and indexed matcher live in the internal Kotlin/JVM `:filter-engine` module.
 `KotlinFilterEngine` publishes immutable compiled snapshots to request threads;
 replacement is atomic and a failed compilation retains the last working snapshot.
 The engine reuses the app's existing OkHttp URL/IDN parser and public-suffix data
 for first/third-party classification, including multi-label and private suffixes.
 Suffix data is initialized on the compilation worker when needed.
+
+The engine is an internal Kotlin/JVM module, `:filter-engine`, consumed by `:app`
+through a normal Gradle project dependency. It owns parsing, text validation,
+immutable matching indexes, cosmetic selector selection, rule counts, and the
+compiled disk cache. Its public API is in `uk.nktnet.webviewkiosk.filterengine`;
+parser and cache representations remain internal. The app supplies the cache file
+and cache version, and owns list persistence, downloads, loading orchestration,
+WebView callbacks, page-script injection, and settings UI.
+
+The module runs in the app's process using ordinary method calls. Extraction adds
+no service, IPC, JNI, reflection, per-request adapter, or additional runtime dependency.
+It adds a Gradle compilation task; APK bytes may vary with packaging and shrinking.
+The cache path, binary format, rules, and matching algorithms remain the same.
 
 Builds use JDK 21, Gradle 9.8.0, and the Android SDK. The Python test-asset exporter
 exports Gradle/Android dependencies, offers verified Gradle/JBR/SDK downloads, and
@@ -283,7 +296,7 @@ method restrictions, public/private suffixes, exceptions and priority, cross-lis
 `$badfilter`, mixed file formats, CSS scopes and exceptions, hiding gates, bounded
 replies, malformed imports, failed compilation, pathological wildcard work, and
 concurrent replacement. The network fixture corpus contains 384 request/rule cases
-with expected blocking decisions. See `app/src/test/resources/filter-engine/README.md`
+with expected blocking decisions. See `filter-engine/src/test/resources/filter-engine/README.md`
 for the fixture format and maintenance guidance.
 
 EasyList import regressions cover CSS selectors with colons and spaces (which

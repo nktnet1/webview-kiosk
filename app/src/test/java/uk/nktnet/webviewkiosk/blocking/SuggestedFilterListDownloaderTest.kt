@@ -16,6 +16,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import java.io.IOException
 import java.util.concurrent.atomic.AtomicInteger
+import uk.nktnet.webviewkiosk.filterengine.FilterListValidator
 
 @RunWith(RobolectricTestRunner::class)
 class SuggestedFilterListDownloaderTest {

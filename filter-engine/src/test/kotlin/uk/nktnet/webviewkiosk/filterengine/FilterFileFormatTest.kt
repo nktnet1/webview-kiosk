@@ -1,4 +1,4 @@
-package uk.nktnet.webviewkiosk.blocking
+package uk.nktnet.webviewkiosk.filterengine
 
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue

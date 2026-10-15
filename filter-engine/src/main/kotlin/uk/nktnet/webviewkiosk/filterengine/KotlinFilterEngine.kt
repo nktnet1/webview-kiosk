@@ -1,11 +1,13 @@
-package uk.nktnet.webviewkiosk.blocking
+package uk.nktnet.webviewkiosk.filterengine
 
-import uk.nktnet.webviewkiosk.blocking.engine.CompiledFilterCache
-import uk.nktnet.webviewkiosk.blocking.engine.CompiledFilters
-import uk.nktnet.webviewkiosk.blocking.engine.FilterCompiler
+import uk.nktnet.webviewkiosk.filterengine.engine.CompiledFilterCache
+import uk.nktnet.webviewkiosk.filterengine.engine.CompiledFilters
+import uk.nktnet.webviewkiosk.filterengine.engine.FilterCompiler
+import java.io.File
 
 /** Compile on the loader thread, then publish one immutable snapshot to all readers. */
-internal class KotlinFilterEngine(private val cache: CompiledFilterCache? = null) : NetworkFilterEngine, FilterListValidator {
+class KotlinFilterEngine(cacheFile: File? = null, cacheVersion: Int = 0) : NetworkFilterEngine, FilterListValidator {
+    private val cache = cacheFile?.let { CompiledFilterCache(it, cacheVersion) }
     @Volatile private var compiled = CompiledFilters.EMPTY
 
     override fun replace(lists: List<String>) = replace(lists) {}

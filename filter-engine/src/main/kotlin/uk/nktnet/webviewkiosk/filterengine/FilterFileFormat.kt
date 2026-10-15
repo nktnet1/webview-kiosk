@@ -1,7 +1,7 @@
-package uk.nktnet.webviewkiosk.blocking
+package uk.nktnet.webviewkiosk.filterengine
 
 /** Check text integrity for every candidate before the Kotlin engine validates its rules. */
-internal fun validateFilterFileFormat(text: String) {
+fun validateFilterFileFormat(text: String) {
     var lineNumber = 1
     for (character in text) {
         require(!character.isISOControl() || character == '\t' || character == '\r' || character == '\n') {

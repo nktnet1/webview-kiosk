@@ -14,6 +14,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import java.util.ArrayDeque
 import java.util.concurrent.Executor
+import uk.nktnet.webviewkiosk.filterengine.FilterListValidator
+import uk.nktnet.webviewkiosk.filterengine.NetworkFilterEngine
+import uk.nktnet.webviewkiosk.filterengine.RuleLoadStage
 
 @RunWith(RobolectricTestRunner::class)
 class ContentBlockingServiceTest {

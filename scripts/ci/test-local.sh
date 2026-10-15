@@ -12,7 +12,7 @@ Usage: sh scripts/ci/test-local.sh <suite>
 
 Suites:
   checks          Offline CI, asset-exporter and cosmetic script tests (Python/Node)
-  jvm             Android JVM/Robolectric unit tests
+  jvm             Filter-engine JVM and Android JVM/Robolectric unit tests
   docs            Documentation format/lint and Vitest tests
   docs-browser    Build docs and run Playwright Chromium tests
   all             Run all four suites in the order above
@@ -70,8 +70,8 @@ checks() {
 
 jvm() {
     require_tool java
-    printf 'Local tests: running Android JVM/Robolectric tests\n'
-    sh gradlew :app:testDebugUnitTest --build-cache --profile --stacktrace
+    printf 'Local tests: running filter-engine JVM and Android JVM/Robolectric tests\n'
+    sh gradlew :filter-engine:test :app:testDebugUnitTest --build-cache --profile --stacktrace
 }
 
 prepare_docs() {

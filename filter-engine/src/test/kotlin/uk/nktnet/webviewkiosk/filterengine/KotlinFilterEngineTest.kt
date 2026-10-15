@@ -1,22 +1,11 @@
-package uk.nktnet.webviewkiosk.blocking
+package uk.nktnet.webviewkiosk.filterengine
 
 import org.junit.Assert.*
 import org.junit.Test
-import org.junit.Before
-import org.junit.runner.RunWith
-import org.robolectric.RobolectricTestRunner
 import java.util.concurrent.Callable
 import java.util.concurrent.Executors
 
-// The app resolves OkHttp's Android variant, whose public-suffix data is an Android
-// asset. The engine's source itself has no Android APIs; a JVM library uses OkHttp/JVM.
-@RunWith(RobolectricTestRunner::class)
 class KotlinFilterEngineTest {
-    @Before
-    fun initializeSuffixData() {
-        okhttp3.OkHttp.initialize(org.robolectric.RuntimeEnvironment.getApplication())
-    }
-
     private fun engine(vararg lists: String) = KotlinFilterEngine().also { it.replace(lists.toList()) }
     private fun blocked(engine: KotlinFilterEngine, url: String, source: String = "https://publisher.example/",
                         type: String = "other", method: String = "GET") = engine.shouldBlock(url, source, type, method)

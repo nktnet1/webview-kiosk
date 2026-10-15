@@ -13,6 +13,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import java.io.ByteArrayInputStream
 import org.json.JSONArray
+import uk.nktnet.webviewkiosk.filterengine.FilterListValidator
 
 @RunWith(RobolectricTestRunner::class)
 class FilterListStoreTest {

@@ -13,8 +13,10 @@ import java.nio.charset.CharacterCodingException
 import java.nio.charset.CodingErrorAction
 import java.nio.charset.StandardCharsets
 import java.util.UUID
-import uk.nktnet.webviewkiosk.blocking.engine.FilterParser
-import uk.nktnet.webviewkiosk.blocking.engine.ParsedFilter
+import uk.nktnet.webviewkiosk.filterengine.FilterListValidator
+import uk.nktnet.webviewkiosk.filterengine.KotlinFilterEngine
+import uk.nktnet.webviewkiosk.filterengine.inspectFilterList
+import uk.nktnet.webviewkiosk.filterengine.validateFilterFileFormat
 
 internal enum class FilterListType { FILE, URL, PRESET }
 
@@ -367,19 +369,9 @@ internal class FilterListStore(
     fun info(id: String): FilterListInfo {
         val (item, file) = infoFile(id)
         val size = file.length()
-        var network = 0
-        var cosmetic = 0
-        var unsupported = 0
-        var invalid = 0
-        FilterParser.visit(file.readText(Charsets.UTF_8)) { _, rule ->
-            when (rule) {
-                is ParsedFilter.Network -> network++
-                is ParsedFilter.Cosmetic -> cosmetic++
-                ParsedFilter.Unsupported -> unsupported++
-                is ParsedFilter.Invalid -> invalid++
-            }
-        }
-        return FilterListInfo(item, size, network, cosmetic, unsupported, invalid)
+        val counts = inspectFilterList(file.readText(Charsets.UTF_8))
+        return FilterListInfo(item, size, counts.networkRules, counts.cosmeticRules,
+            counts.unsupportedRules, counts.invalidRules)
     }
 
     /** Available before the rule scan; does not read or parse the file contents. */

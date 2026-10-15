@@ -11,6 +11,8 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import java.util.concurrent.Executor
+import uk.nktnet.webviewkiosk.filterengine.FilterListValidator
+import uk.nktnet.webviewkiosk.filterengine.NetworkFilterEngine
 
 @RunWith(RobolectricTestRunner::class)
 class ServiceWorkerBlockerTest {
