@@ -156,6 +156,19 @@ class FilterListValidationTest {
     }
 
     @Test
+    fun presetCloneIsRejectedBeforeReadingOrValidatingAnotherCopy() {
+        val item = store.importFrom("Preset", "||working.example^".byteInputStream(),
+            SuggestedFilterLists.all.first().url, FilterListType.PRESET)
+        // A missing cached file must not obscure the clone restriction or invoke validation.
+        File(directory, "${item.id}.txt").delete()
+        val error = assertThrows(IllegalArgumentException::class.java) { store.cloneList(item.id) }
+        assertEquals("Preset lists cannot be cloned", error.message)
+        assertEquals(listOf("||working.example^"), validated)
+        assertEquals(listOf(item), store.list())
+        assertTrue(directory.listFiles().orEmpty().isEmpty())
+    }
+
+    @Test
     fun invalidLegacyFileCannotBeClonedAndOriginalIsRetained() {
         val item = store.importFrom("Legacy", "||old.example^".byteInputStream())
         val invalid = "||bad.example^\$redirect="

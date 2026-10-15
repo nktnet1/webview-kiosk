@@ -55,20 +55,20 @@ finish before the startup gate opens or success feedback appears.
 ## Filter-list management
 
 - In **Settings → Web Content → Content Blocking**, **Add list** starts with a **Type**
-  dropdown defaulting to **Preset**, with **File** (Android's document picker),
+  dropdown defaulting to **Preset**, with **Custom** (typed rules or a text file),
   **URL** (a custom HTTPS link and display name), or **Preset** (a compact second dropdown of [EasyList](https://easylist.to/easylist/easylist.txt),
   [EasyPrivacy](https://easylist.to/easylist/easyprivacy.txt), and
   [HaGeZi Multi NORMAL](https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/multi.txt)).
-  The selected preset's URL is visible and selectable. Installed presets have a prominent
-  **Already added** notice and are marked in the preset dropdown; a matching URL entry
+  The selected preset's category and selectable source URL appear in a details card.
+  Installed presets have red **Already added** text and are marked in the preset dropdown; a matching URL entry
   does not mark the preset as installed. The app bundles only shortcut URLs,
   never the filter content. All downloads
   require an explicit user action; no subscriptions or automatic refreshes run.
 - Each row has a switch on the left and a three-dot actions menu on the right:
   **Edit**, **Refresh** (for URL/preset lists), **Info**, **Clone**, and **Delete**. Deletion requires
-  confirmation. While work is in progress, a small centered spinner and italic gray phase text
-  appear below the buttons. When idle, they are removed entirely, leaving only the
-  normal 12 dp list spacing. The compact **Actions** menu beside **Add list** contains
+  confirmation. While work is in progress, an overlay covers the list with a centered
+  spinner and italic gray phase text. The buttons, heading, and rows keep their positions;
+  the normal 12 dp list spacing stays the same during work. The compact **Actions** menu beside **Add list** contains
   **Enable all**, **Disable all**, and **Refresh all**. **Refresh all** refetches every URL/preset list, including
   disabled ones, but not locally imported files. Individual failures are shown
   without stopping remaining downloads or overwriting their old rules; the
@@ -76,7 +76,7 @@ finish before the startup gate opens or success feedback appears.
 - A **Filter Lists** heading appears directly above the list, with total and enabled
   counts on the right. Counts include disabled clones and update after saved changes.
   Each row's type label has a matching icon: a checklist for Preset, a link for URL,
-  and a document for File.
+  and a document for Custom.
 - **Enable all** and **Disable all** toggle every saved list, including clones,
   with one metadata save and one rule reload. Each menu item is disabled when all
   lists already have the requested state or there are no lists. No file contents
@@ -105,40 +105,39 @@ finish before the startup gate opens or success feedback appears.
 - **Last refreshed** records successful source downloads, including the initial download,
   identical-content refreshes, and URL changes. It is saved with the list metadata and shown
   immediately in Info using the device's date/time format and timezone. Failed downloads
-  or validation leave it unchanged; renaming and toggling do not alter it. Preset clones inherit
-  their source's timestamp. Older lists without a recorded timestamp show **Unknown** until
-  their next successful refresh. Local File lists show **Not applicable**.
+  or validation leave it unchanged; renaming and toggling do not alter it. Older lists without a recorded timestamp show **Unknown** until
+  their next successful refresh. Custom lists show **Not applicable**.
 - The empty screen uses a card containing only **No filter lists have been added**.
   The two compact controls share one row, with additional space
   before the list. A lazy vertical list handles many rows and short screens;
   row names stay on one line with ellipses; picker labels and replacement filenames
   also use ellipses. Info displays the full list name.
-- **Edit** allows names to be changed for File/URL lists; URLs can also be
+- **Edit** allows names to be changed for Custom/URL lists; URLs can also be
   changed. A changed URL is fetched and validated before replacing the stored
   rules, URL, and name together. Unchanged URLs are not refetched on rename.
-  Local File lists can be edited inline when smaller than 128 KiB, or replaced
+  Custom lists can be edited inline when smaller than 128 KiB, or replaced
   from a new text file; larger lists must be replaced via the file picker.
   Presets are read-only in Edit, but their rules can still be updated normally.
-- File and Preset lists offer **Clone** in the three-dot menu. URL lists cannot be cloned.
-  Cloning immediately creates
-  a copy with a new identity, the cached rules, and
-  **disabled** status so they cannot silently change active blocking. A preset
-  clone is an editable URL list; File clones remain File lists. Preset cloning is disabled
-  when a URL list with its address already exists, and storage enforces the same rule.
-  Use **Edit** on the copy to change its name, URL, or File rules without changing
-  the original. Cloning never makes a network request. Presets remain read-only.
-- The Add dialog starts with the list type; field labels appear above the type,
-  URL, name, file picker, and preset picker controls. The **Filter Lists** heading sits
-  below the page's action buttons and any active loading status.
+- Only Custom lists offer **Clone** in the three-dot menu. URL and Preset lists cannot
+  be cloned; storage enforces this before reading or validating another copy. Custom
+  clones have a new identity and start disabled. Editing the copy leaves the original intact.
+- The Add dialog starts with the list type. Custom and URL forms place **Name** first.
+  Custom accepts typed/pasted rules or a file, and requires an explicit **Add** after file
+  selection. Uploaded files stay as URIs until import; their contents never fill the text
+  editor, regardless of size. File reads and validation run on IO. The text area rejects
+  pastes above 128 KiB with an inline message and keeps the previous text; it never silently
+  truncates rules. Choose a file for larger lists. Import errors stay inside Add and clear
+  when the input changes or the dialog closes. The **Filter Lists** heading stays below
+  the page's action buttons, including while the loading overlay is visible.
 - Existing stored metadata without a type field is migrated at read time:
-  local imports remain File, known preset URLs become Preset, and other
+  local imports remain Custom (stored internally as `FILE` for compatibility), known preset URLs become Preset, and other
   downloaded links become URL. Existing IDs, enablement, and rule text remain
   intact. Previously imported AdGuard Base lists are retained as custom URLs.
 - Remote downloads require successful HTTPS responses (without downgrade),
   are performed on an IO dispatcher with timeouts, and use the same private-file,
   UTF-8, and size validation as local file imports. URL entries must have unique addresses
   among URL entries, and each preset can be added only once, including disabled lists.
-  A URL entry and a preset may share the same address in either order. File lists may
+  A URL entry and a preset may share the same address in either order. Custom lists may
   be duplicated. URL entry/edit forms flag an existing URL address and disable submission;
   download/storage checks enforce the rule as well. URL edits may use a preset's address.
 - Each file must be UTF-8, nonempty, and no larger than 8 MiB. Storage is

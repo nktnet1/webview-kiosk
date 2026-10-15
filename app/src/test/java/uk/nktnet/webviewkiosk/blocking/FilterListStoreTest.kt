@@ -66,12 +66,12 @@ class FilterListStoreTest {
         val refreshed = timed.replaceFromSource(preset.id, preset.sourceUrl!!, "||ads.example^".byteInputStream())
         assertEquals(preset.copy(lastRefreshedAt = 2_000L), refreshed)
         assertEquals(refreshed, FilterListStore(context).list().single())
-        val copy = timed.cloneList(preset.id)
+        val remote = timed.importFrom("Remote", "||ads.example^".byteInputStream(), "https://example.org/original.txt")
         time = 3_000L
-        val changed = timed.updateUrl(copy.id, copy.sourceUrl!!, "https://example.org/new.txt", "Changed",
+        val changed = timed.updateUrl(remote.id, remote.sourceUrl!!, "https://example.org/new.txt", "Changed",
             "||new.example^".byteInputStream())
         assertEquals(3_000L, changed.lastRefreshedAt)
-        assertEquals(3_000L, FilterListStore(context).info(copy.id).item.lastRefreshedAt)
+        assertEquals(3_000L, FilterListStore(context).info(remote.id).item.lastRefreshedAt)
         assertEquals(2_000L, timed.info(preset.id).item.lastRefreshedAt)
     }
 
@@ -93,7 +93,7 @@ class FilterListStoreTest {
     }
 
     @Test
-    fun legacyListsAndTheirClonesKeepAnUnknownTimeUntilRefreshed() {
+    fun legacyListsKeepAnUnknownTimeUntilRefreshed() {
         val context = RuntimeEnvironment.getApplication()
         var time = 1_000L
         val timed = FilterListStore(context, FilterListValidator {}, now = { time })
@@ -106,11 +106,9 @@ class FilterListStoreTest {
         assertNull(FilterListStore(context).list().single().lastRefreshedAt)
         time = 2_000L
         timed.setEnabled(item.id, false)
-        val clone = timed.cloneList(item.id)
-        assertNull(clone.lastRefreshedAt)
+        assertNull(timed.info(item.id).item.lastRefreshedAt)
         val refreshed = timed.replaceFromSource(item.id, item.sourceUrl!!, "||new.example^".byteInputStream())
         assertEquals(2_000L, refreshed.lastRefreshedAt)
-        assertNull(timed.info(clone.id).item.lastRefreshedAt)
     }
 
     @Test
@@ -229,7 +227,10 @@ class FilterListStoreTest {
     @Test
     fun listNamesCannotEscapePrivateDirectory() {
         val item = store.importFrom("../../untrusted.txt", "||ads.example^".byteInputStream())
-        assertEquals("untrusted.txt", item.name)
+        // User-entered names are display text; storage paths only use generated IDs.
+        assertEquals("../../untrusted.txt", item.name)
+        val directory = java.io.File(RuntimeEnvironment.getApplication().filesDir, "content-blocking-lists")
+        assertEquals(listOf("${item.id}.txt"), directory.listFiles().orEmpty().map { it.name })
         assertEquals(1, store.enabledTexts().size)
     }
 
@@ -341,32 +342,16 @@ class FilterListStoreTest {
     }
 
     @Test
-    fun presetClonesBecomeIndependentEditableUrlListsAndStartDisabled() {
+    fun presetCannotBeClonedEvenWithoutAMatchingUrlList() {
         val preset = store.importFrom(
             "EasyList.txt", "||ads.example^".byteInputStream(),
             sourceUrl = SuggestedFilterLists.all.first().url,
             type = FilterListType.PRESET,
         )
-        val copy = store.cloneList(preset.id)
-        assertNotEquals(preset.id, copy.id)
-        assertEquals("EasyList (copy)", copy.name)
-        assertEquals(FilterListType.URL, copy.type)
-        assertEquals(preset.sourceUrl, copy.sourceUrl)
-        assertFalse(copy.enabled)
-        assertThrows(IllegalArgumentException::class.java) { store.rename(preset.id, "Changed") }
-        assertThrows(IllegalArgumentException::class.java) {
-            store.importFrom("Duplicate", "rules".byteInputStream(), preset.sourceUrl)
-        }
-        store.rename(copy.id, "Editable copy")
-        store.updateUrl(
-            copy.id, preset.sourceUrl!!, "https://example.org/edited.txt",
-            "Changed source", "||changed.example^".byteInputStream(),
-        )
-        assertEquals(preset, store.list().first())
-        assertEquals("Changed source", store.list().last().name)
+        val failure = assertThrows(IllegalArgumentException::class.java) { store.cloneList(preset.id) }
+        assertEquals("Preset lists cannot be cloned", failure.message)
+        assertEquals(listOf(preset), store.list())
         assertEquals(listOf("||ads.example^"), store.enabledTexts())
-        store.setEnabled(copy.id, true)
-        assertEquals(listOf("||ads.example^", "||changed.example^"), store.enabledTexts())
     }
 
     @Test

@@ -105,7 +105,7 @@ internal class FilterListStore(
         input: InputStream,
         sourceUrl: String? = null,
         type: FilterListType = if (sourceUrl == null) FilterListType.FILE else FilterListType.URL,
-    ): ImportedFilterList = importNew(name, input, sourceUrl, type, enabled = true, cloning = false)
+    ): ImportedFilterList = importNew(name, input, sourceUrl, type, enabled = true)
 
     private fun importNew(
         name: String,
@@ -113,8 +113,6 @@ internal class FilterListStore(
         sourceUrl: String?,
         type: FilterListType,
         enabled: Boolean,
-        cloning: Boolean,
-        copiedRefreshTime: Long? = null,
     ): ImportedFilterList {
         require((type == FilterListType.FILE) == (sourceUrl == null)) {
             "A file has no download URL; a URL or preset needs one"
@@ -140,17 +138,11 @@ internal class FilterListStore(
         try {
             val item = ImportedFilterList(
                 id = UUID.randomUUID().toString(),
-                name = validateName(if (type == FilterListType.FILE && !cloning) {
-                    name.substringAfterLast('/').substringAfterLast('\\')
-                } else name),
+                name = validateName(name),
                 enabled = enabled,
                 sourceUrl = sourceUrl,
                 type = type,
-                lastRefreshedAt = when {
-                    cloning -> copiedRefreshTime // Cloning does not fetch the source again.
-                    sourceUrl != null -> now()
-                    else -> null
-                },
+                lastRefreshedAt = if (sourceUrl != null) now() else null,
             )
             val destination = fileFor(item.id)
             if (!temporary.renameTo(destination)) {
@@ -174,13 +166,13 @@ internal class FilterListStore(
         require(normalized.none { it.isISOControl() }) { "List name contains invalid characters" }
     }
 
-    /** Preset definitions are immutable; clone a preset to get an editable URL list. */
+    /** Preset definitions are immutable. */
     @Synchronized
     fun rename(id: String, name: String) {
         val existing = list()
         val item = existing.firstOrNull { it.id == id }
             ?: throw IllegalArgumentException("Unknown filter list")
-        require(item.type != FilterListType.PRESET) { "Clone a preset to edit it" }
+        require(item.type != FilterListType.PRESET) { "Preset lists are read-only" }
         val normalized = validateName(name)
         save(existing.map { if (it.id == id) it.copy(name = normalized) else it })
     }
@@ -191,17 +183,14 @@ internal class FilterListStore(
         val existing = list()
         val item = existing.firstOrNull { it.id == id }
             ?: throw IllegalArgumentException("Unknown filter list")
-        require(item.type != FilterListType.URL) { "URL lists cannot be cloned" }
+        require(item.type == FilterListType.FILE) { "${if (item.type == FilterListType.URL) "URL" else "Preset"} lists cannot be cloned" }
         val file = fileFor(id)
         if (!file.isFile) throw IOException("Original filter list is missing")
         val proposedName = name ?: "${item.name.removeSuffix(".txt")} (copy)".take(MAX_NAME_LENGTH)
-        // A preset clone is a regular URL list; the same-type uniqueness check still applies.
         return file.inputStream().use { input ->
             importNew(
-                proposedName, input, item.sourceUrl,
-                if (item.type == FilterListType.PRESET) FilterListType.URL else FilterListType.FILE,
-                enabled = false, cloning = true,
-                copiedRefreshTime = item.lastRefreshedAt,
+                proposedName, input, null, FilterListType.FILE,
+                enabled = false,
             )
         }
     }
@@ -430,7 +419,7 @@ internal class FilterListStore(
     companion object {
         private const val INDEX_KEY = "imports"
         private const val MAX_NAME_LENGTH = 100
-        private const val MAX_INLINE_EDIT_BYTES = 128L * 1024
+        internal const val MAX_INLINE_EDIT_BYTES = 128L * 1024
         private const val MAX_LISTS = 16
         internal const val MAX_LIST_BYTES = 8L * 1024 * 1024
         private const val MAX_TOTAL_BYTES = 32L * 1024 * 1024

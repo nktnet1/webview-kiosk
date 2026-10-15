@@ -89,7 +89,7 @@ internal class SuggestedFilterListDownloader(
     fun editUrl(item: ImportedFilterList, name: String, url: String, store: FilterListStore): ImportedFilterList {
         val current = store.list().firstOrNull { it.id == item.id }
             ?: throw IllegalArgumentException("Unknown filter list")
-        require(current.type == FilterListType.URL) { "Clone a preset to edit it" }
+        require(current.type == FilterListType.URL) { "Only URL lists have editable download addresses" }
         val validated = requireHttpsUrl(url)
         val original = current.sourceUrl ?: throw IllegalArgumentException("Missing list URL")
         if (validated == original) {
