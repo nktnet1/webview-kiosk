@@ -739,7 +739,7 @@ private fun ListTypeDropdown(value: FilterListType, onChange: (FilterListType) -
             Icon(painterResource(R.drawable.outline_keyboard_arrow_down_24), contentDescription = null)
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            FilterListType.entries.forEach { type ->
+            listOf(FilterListType.PRESET, FilterListType.URL, FilterListType.FILE).forEach { type ->
                 DropdownMenuItem(
                     text = {
                         Text(when (type) {
