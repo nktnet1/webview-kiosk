@@ -7,16 +7,19 @@ import java.util.Locale
 /** No Android APIs. URL/IDN/public-suffix handling reuses the app's existing OkHttp. */
 internal fun httpAddress(value: String): HttpUrl? = value.toHttpUrlOrNull()
 
-internal fun normalizedHost(value: String): String? {
-    val host = value.removeSuffix(".").lowercase(Locale.ROOT)
+internal fun normalizedHost(value: String, allowPrefix: Boolean = false): String? {
+    // An unbounded || anchor may contain only the start of a hostname/IP.
+    // Keep its final dot: ||ads. must not become the broader ||ads pattern.
+    val host = (if (allowPrefix) value else value.removeSuffix(".")).lowercase(Locale.ROOT)
     if (host.isEmpty() || host.length > 253) return null
     if (host.any { it == ':' }) {
         return "http://[${host.removeSurrounding("[", "]")}]/".toHttpUrlOrNull()?.host
     }
     if (host.all { it in 'a'..'z' || it in '0'..'9' || it in "-._" }) {
-        if (host.split('.').any { it.isEmpty() || it.length > 63 || it.startsWith('-') || it.endsWith('-') }) return null
+        val labels = (if (allowPrefix) host.removeSuffix(".") else host).split('.')
+        if (labels.any { it.isEmpty() || it.length > 63 || it.startsWith('-') || it.endsWith('-') }) return null
         // Reject invalid numeric IPv4 hosts rather than letting them become URL patterns.
-        if (host.all { it in '0'..'9' || it == '.' } && host.contains('.')) {
+        if (!allowPrefix && host.all { it in '0'..'9' || it == '.' } && host.contains('.')) {
             if (host.split('.').size != 4 || host.split('.').any { (it.toIntOrNull() ?: 256) !in 0..255 }) return null
         }
         return host

@@ -101,7 +101,8 @@ cannot infer filter intent and does not blacklist JSON/XML by filename or shape.
 | Syntax | Support |
 | --- | --- |
 | Hosts records; `||host^` domain rules | Yes, with domain-label boundaries |
-| Literal URL substrings, `*`, `^`, start/end `|` | Yes |
+| Literal URL substrings, `*`, `^`, start/end `|` | Yes; unbounded `||` anchors also preserve hostname/IP prefixes such as `||142.91.159.` |
+| Options-only rules, such as `$image,domain=example.com` or `@@$generichide,domain=example.com` | Implicit `*` URL pattern; all declared restrictions still apply |
 | `@@` exceptions; `$important` blocks | Yes; important blocks override ordinary exceptions |
 | `$badfilter` | Disables the matching parsed rule across enabled lists, regardless of option order |
 | `$domain=` / `$from=` | Positive/negated source-domain restrictions |
@@ -113,7 +114,7 @@ cannot infer filter intent and does not blacklist JSON/XML by filename or shape.
 | `@@...$generichide` / `$ghide`; `$elemhide` / `$ehide` | Disable generic/all cosmetic hiding for matching page URLs |
 | Full regex rules, regex/entity domain scopes, wildcard hostname anchors | Skipped |
 | Scriptlets, procedural selectors, custom styles/removal actions | Skipped |
-| Redirects, response rewriting, CSP, parameter stripping, unknown modifiers | Skipped |
+| Popup-specific rules, redirects, response rewriting, CSP, parameter stripping, unknown modifiers | Skipped |
 
 An unsupported option discards the **whole rule**, including exception rules; its
 remaining URL pattern is never applied without its restrictions. Settings shows
@@ -200,6 +201,16 @@ concurrent replacement. The network fixture corpus records 384 queries run again
 the previous Brave 0.13.3 engine; expected Kotlin behavior and the recorded Brave
 output are retained separately, including four intentional normalization/case differences.
 See `app/src/test/resources/filter-engine/README.md`. Rust is not a test dependency.
+
+EasyList import regressions cover CSS selectors with colons and spaces (which
+must not be mistaken for IPv6 hosts records), partial numeric hostname anchors,
+and options-only request/hiding rules. Real malformed IPv4/IPv6 hosts records and
+domain restrictions still fail validation; unsupported features are still skipped
+without dropping their restrictions or rejecting an otherwise usable list.
+For the uploaded EasyList snapshot `202610151103` (82,732 lines), validation has
+zero syntax errors: 78,828 network/CSS rules are supported and 3,628 rules are
+skipped, including 2,965 popup-specific rules. These are parser counts for this
+snapshot, not a measurement of ad-blocking coverage.
 
 Robolectric tests also cover persisted list management, staged validation, partial
 refresh failures, startup readiness, retaining active rules on failed updates,

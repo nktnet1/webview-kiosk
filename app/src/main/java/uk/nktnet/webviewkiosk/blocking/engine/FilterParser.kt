@@ -70,7 +70,11 @@ internal object FilterParser {
             val hasFields = fields.hasNext()
             val ip = isIp(firstField)
             if (first) { hosts = hasFields && ip; first = false }
-            val resemblesIp = firstField.count { it == ':' } >= 2 ||
+            // CSS attribute values and procedural selectors can contain several
+            // colons before their first space. Only an address-shaped token is
+            // a malformed hosts candidate; never route those selectors here.
+            val resemblesIp = (firstField.count { it == ':' } >= 2 &&
+                firstField.all { it.isLetterOrDigit() || it in ":.[]" }) ||
                 (firstField.contains('.') && firstField.all { it.isDigit() || it == '.' })
             if (hasFields && (ip || resemblesIp)) {
                 if (!ip) {
@@ -152,7 +156,9 @@ internal object FilterParser {
             (closingSlash == body.lastIndex || body.getOrNull(closingSlash + 1) == '$')
         ) throw Unsupported // Full regex rules are intentionally outside this subset.
         val dollar = body.lastIndexOf('$')
-        val rawPattern = if (dollar >= 0) body.substring(0, dollar) else body
+        // Options-only filters (including @@$generichide,domain=...) match
+        // every URL, while their options still restrict when they apply.
+        val rawPattern = if (dollar == 0) "*" else if (dollar > 0) body.substring(0, dollar) else body
         val options = if (dollar >= 0) body.substring(dollar + 1).split(',') else emptyList()
         var scope = DomainScope.ANY
         var types = 0
@@ -248,7 +254,8 @@ internal object FilterParser {
                 throw Invalid("missing host anchor")
             }
             if (!text.startsWith('[') && text.getOrNull(end) == '*') throw Unsupported
-            val normalized = normalizedHost(host) ?: throw Invalid("invalid host anchor")
+            val normalized = normalizedHost(host, allowPrefix = end == text.length && !endAnchor)
+                ?: throw Invalid("invalid host anchor")
             val literal = if (normalized.contains(':')) "[$normalized]" else normalized
             text = literal + text.substring(end)
             // Without an explicit boundary the pattern can match a hostname prefix.

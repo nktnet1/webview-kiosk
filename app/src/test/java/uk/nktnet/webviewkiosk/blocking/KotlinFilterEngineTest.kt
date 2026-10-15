@@ -118,6 +118,61 @@ class KotlinFilterEngineTest {
     }
 
     @Test
+    fun cssColonsAndSpacesAreNotMisclassifiedAsHostsRecords() {
+        val generic = "a[href^=\"https://affiliate.example/click/\"][href*=\"/adref:\"] > img"
+        val specific = "[style=\"height:120px;padding:10px 0;\"]"
+        val rules = "##$generic\nsite.example##$specific\nsite.example#?#div:has(span:has-text(Sponsored content))"
+        val engine = engine(rules)
+        engine.validate(rules)
+        assertEquals(setOf(generic, specific), engine.cosmeticSelectors("https://site.example/", emptyList(), emptyList()).toSet())
+        assertEquals(listOf(generic), engine.cosmeticSelectors("https://other.example/", emptyList(), emptyList()))
+        assertEquals(1, engine.unsupportedRuleCount())
+        // Hosts parsing still validates real address tokens and preserves aliases.
+        assertThrows(IllegalArgumentException::class.java) { engine.validate("2001:db8:::1 ads.example") }
+        assertThrows(IllegalArgumentException::class.java) { engine.validate("2001:db8:invalid::1 ads.example") }
+        assertThrows(IllegalArgumentException::class.java) { engine.validate("999.0.0.1 ads.example") }
+        engine.validate("::1 ads.example alias.example\n$rules")
+    }
+
+    @Test
+    fun hostnameAndIpPrefixesKeepTheirLiteralDotsAndDomainAnchor() {
+        val rules = "||142.91.159.\n||ads."
+        val engine = engine(rules)
+        engine.validate(rules)
+        for (url in listOf("https://142.91.159.1/a", "http://142.91.159.254:8080/a", "https://ads.example/a")) {
+            assertTrue(url, blocked(engine, url))
+        }
+        for (url in listOf(
+            "https://142.91.15.1/a", "https://142.91.160.1/a", "https://ads123.example/a",
+            "https://notads.example/a", "https://site.example/142.91.159.1", "https://ads.example@site.example/a",
+        )) assertFalse(url, blocked(engine, url))
+        assertThrows(IllegalArgumentException::class.java) { engine.validate("||142.91.159.^") }
+        assertThrows(IllegalArgumentException::class.java) { engine.validate("||bad..example^") }
+        assertThrows(IllegalArgumentException::class.java) { engine.validate("||bad..example") }
+        assertThrows(IllegalArgumentException::class.java) { engine.validate("||bad.example..^") }
+    }
+
+    @Test
+    fun optionsOnlyRulesKeepTypePartyDomainAndHidingRestrictions() {
+        val rules = "\$third-party,xmlhttprequest,domain=site.example"
+        val engine = engine(rules)
+        engine.validate(rules)
+        assertTrue(blocked(engine, "https://cdn.example/a", "https://site.example/", "xmlhttprequest"))
+        assertFalse(blocked(engine, "https://cdn.example/a", "https://site.example/", "image"))
+        assertFalse(blocked(engine, "https://site.example/a", "https://site.example/", "xmlhttprequest"))
+        assertFalse(blocked(engine, "https://cdn.example/a", "https://other.example/", "xmlhttprequest"))
+        val hiding = engine("##.ad\nsite.example##.sponsor\n@@\$generichide,domain=site.example")
+        hiding.validate("@@\$generichide,domain=site.example")
+        assertEquals(listOf(".sponsor"), hiding.cosmeticSelectors("https://site.example/", listOf("ad"), emptyList()))
+        assertEquals(listOf(".ad"), hiding.cosmeticSelectors("https://other.example/", listOf("ad"), emptyList()))
+        val unknown = engine("\$image,future-option")
+        assertFalse(blocked(unknown, "https://cdn.example/a", type = "image"))
+        assertEquals(1, unknown.unsupportedRuleCount())
+        assertThrows(IllegalArgumentException::class.java) { engine.validate("@@") }
+        assertThrows(IllegalArgumentException::class.java) { engine.validate("\$domain=") }
+    }
+
+    @Test
     fun domainAnchorsDoNotMatchCredentialsPathsOrSimilarHostnames() {
         val engine = engine("||ads.example^")
         for (url in listOf(
