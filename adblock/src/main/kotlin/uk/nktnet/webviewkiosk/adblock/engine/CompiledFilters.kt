@@ -4,6 +4,7 @@ import java.util.Locale
 import okhttp3.HttpUrl
 import uk.nktnet.webviewkiosk.adblock.BlockingResponse
 import uk.nktnet.webviewkiosk.adblock.CosmeticProcedure
+import uk.nktnet.webviewkiosk.adblock.FilterSource
 import uk.nktnet.webviewkiosk.adblock.ScriptletInjection
 import uk.nktnet.webviewkiosk.adblock.ScriptletInstruction
 
@@ -11,12 +12,12 @@ import uk.nktnet.webviewkiosk.adblock.ScriptletInstruction
 internal object FilterCompiler {
     internal const val MAX_RULES = 500_000
 
-    fun validate(text: String) {
+    fun validate(text: String, trusted: Boolean = false) {
         var supported = 0
         var unsupported = 0
         var invalid = 0
         val errors = mutableListOf<String>()
-        FilterParser.visit(text) { line, result ->
+        FilterParser.visit(text, trusted) { line, result ->
             when (result) {
                 is ParsedFilter.Network,
                 is ParsedFilter.Scriptlet,
@@ -55,48 +56,85 @@ internal object FilterCompiler {
     }
 
     fun parse(lists: List<String>): CompiledRuleSet {
-        val networks = LinkedHashSet<NetworkIdentity>()
-        val disabled = HashSet<NetworkIdentity>()
-        val cosmetics = LinkedHashSet<CosmeticRule>()
-        val scriptlets = LinkedHashSet<ScriptletRule>()
-        var skipped = 0
         var total = 0
-        for (text in lists) {
-            FilterParser.visit(text) { _, result ->
-                require(++total <= MAX_RULES) {
-                    "At most $MAX_RULES rules can be enabled together"
-                }
-                when (result) {
-                    is ParsedFilter.Network -> {
-                        if (result.rule.badfilter) {
-                            disabled += result.rule.identity
-                        } else {
-                            networks += result.rule.identity
-                        }
-                    }
-
-                    is ParsedFilter.Cosmetic -> cosmetics += result.rule
-
-                    is ParsedFilter.Scriptlet -> {
-                        require(
-                            scriptlets.size < ScriptletIndex.MAX_RULES ||
-                                result.rule in scriptlets
-                        ) {
-                            "At most ${ScriptletIndex.MAX_RULES} scriptlet rules can be enabled"
-                        }
-                        scriptlets += result.rule
-                    }
-
-                    // Old saved lists can contain syntax this subset does not
-                    // implement.
-                    // Keep their useful rules; staged imports still reject malformed
-                    // syntax.
-                    else -> skipped++
+        return merge(
+            lists.map {
+                parseSource(FilterSource(it), MAX_RULES - total).also { rules ->
+                    total += rules.totalRules
                 }
             }
+        )
+    }
+
+    fun parseSource(
+        source: FilterSource,
+        limit: Int = MAX_RULES,
+    ): CompiledRuleSet {
+        val networks = linkedSetOf<NetworkIdentity>()
+        val disabled = linkedSetOf<NetworkIdentity>()
+        val cosmetics = linkedSetOf<CosmeticRule>()
+        val scriptlets = linkedSetOf<ScriptletRule>()
+        var skipped = 0
+        var total = 0
+        FilterParser.visit(source.text, source.trusted) { _, result ->
+            require(++total <= limit) {
+                "At most $MAX_RULES rules can be enabled together"
+            }
+            when (result) {
+                is ParsedFilter.Network -> {
+                    if (result.rule.badfilter) {
+                        disabled += result.rule.identity
+                    } else {
+                        networks += result.rule.identity
+                    }
+                }
+                is ParsedFilter.Cosmetic -> cosmetics += result.rule
+                is ParsedFilter.Scriptlet -> {
+                    scriptlets += result.rule
+                    require(scriptlets.size <= ScriptletIndex.MAX_RULES) {
+                        "Too many scriptlet rules"
+                    }
+                }
+                else -> skipped++
+            }
+        }
+        // Keep badfilter identities until all sources are merged. A later source
+        // may disable a rule from an unchanged, independently cached source.
+        return CompiledRuleSet(
+            networks,
+            cosmetics,
+            skipped,
+            scriptlets.toList(),
+            disabled,
+            total,
+        )
+    }
+
+    fun merge(sources: List<CompiledRuleSet>): CompiledRuleSet {
+        require(sources.sumOf { it.totalRules.toLong() } <= MAX_RULES) {
+            "At most $MAX_RULES rules can be enabled together"
+        }
+        val networks = linkedSetOf<NetworkIdentity>()
+        val disabled = hashSetOf<NetworkIdentity>()
+        val cosmetics = linkedSetOf<CosmeticRule>()
+        val scriptlets = linkedSetOf<ScriptletRule>()
+        sources.forEach { rules ->
+            networks += rules.networks
+            disabled += rules.disabledNetworks
+            cosmetics += rules.cosmetics
+            scriptlets += rules.scriptlets
+        }
+        require(scriptlets.size <= ScriptletIndex.MAX_RULES) {
+            "At most ${ScriptletIndex.MAX_RULES} scriptlet rules can be enabled"
         }
         networks.removeAll(disabled)
-        return CompiledRuleSet(networks, cosmetics, skipped, scriptlets.toList())
+        return CompiledRuleSet(
+            networks,
+            cosmetics,
+            sources.sumOf { it.skippedRules },
+            scriptlets.toList(),
+            totalRules = sources.sumOf { it.totalRules },
+        )
     }
 }
 
@@ -106,6 +144,13 @@ internal data class CompiledRuleSet(
     val cosmetics: Collection<CosmeticRule>,
     val skippedRules: Int,
     val scriptlets: List<ScriptletRule> = emptyList(),
+    val disabledNetworks: Collection<NetworkIdentity> = emptyList(),
+    val totalRules: Int =
+        networks.size +
+            cosmetics.size +
+            skippedRules +
+            scriptlets.size +
+            disabledNetworks.size,
 ) {
     fun build(): CompiledFilters {
         if (

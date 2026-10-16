@@ -438,7 +438,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                 ) {
                                     DropdownMenuItem(
                                         text = {
-                                            Text("Add uBlock Origin defaults")
+                                            Text("Add Defaults")
                                         },
                                         enabled =
                                             !busy &&

@@ -23,7 +23,7 @@
 /* Modified for Webview Kiosk on 2026-10-16: bounded shared hooks and frame routing.
  * Source attribution: META-INF/ublock-NOTICE.txt. Keep this a function expression.
  */
-(function(domains, serialized, extension, resources) {
+(function(domains, serialized, extension, resources, network) {
     'use strict';
     if (location.protocol !== 'https:' && location.protocol !== 'http:') { return; }
     const host = location.hostname.toLowerCase().replace(/\.$/, '');
@@ -75,6 +75,7 @@
     const stringifyFunction = Function.prototype.toString;
     const nativeAdd = EventTarget.prototype.addEventListener;
     const nativeThen = Promise.prototype.then;
+    const nativeParse = JSON.parse;
     const resolved = Promise.resolve.bind(Promise);
     const rejected = Promise.reject.bind(Promise);
     const NativeResponse = self.Response;
@@ -182,7 +183,8 @@
                 for (const check of state.readers) { check(); }
                 if (state.constant && !state.constant.released) {
                     const fixed = state.constant.value;
-                    if (value == null || fixed == null || typeof value === typeof fixed) { return; }
+                    if (state.constant.trusted || value == null || fixed == null ||
+                        typeof value === typeof fixed) { return; }
                     // uBO relinquishes constants on a type-changing write.
                     state.constant.released = true;
                 }
@@ -263,15 +265,20 @@
     // Iterate the original list order, so conflicting terminal property hooks use
     // the first instruction. Multiple ACS checks share a single accessor pair.
     function installProperty(type, args) {
-        if (!['SET', 'ABORT_READ', 'ABORT_WRITE', 'ABORT_CURRENT_SCRIPT'].includes(type)) {
+        if (!['SET', 'TRUSTED_SET', 'ABORT_READ', 'ABORT_WRITE',
+            'ABORT_CURRENT_SCRIPT'].includes(type)) {
             return;
         }
         try {
             const check = type === 'ABORT_CURRENT_SCRIPT' ? scriptCheck(args) : null;
             trap(self, args[0].split('.'), state => {
                 if (state.mode && !(state.mode === type && check)) { return; }
-                if (type === 'SET') {
-                    let value = constant(args[1]);
+                if (type === 'SET' || type === 'TRUSTED_SET') {
+                    const trusted = type === 'TRUSTED_SET';
+                    let value = trusted && args[1].startsWith('json:')
+                        ? apply(nativeParse, JSON, [args[1].slice(5)])
+                        : trusted && args[1].startsWith('{') && args[1] !== '{}'
+                            ? apply(nativeParse, JSON, [args[1]]).value : constant(args[1]);
                     if (['noopFunc', 'trueFunc', 'falseFunc'].includes(args[1])) {
                         const name = args[0].split('.').slice(-1)[0];
                         define(value, 'name', { value: name });
@@ -284,9 +291,9 @@
                             },
                         });
                     }
-                    if (state.value != null && value != null &&
+                    if (!trusted && state.value != null && value != null &&
                         typeof state.value !== typeof value) { return; }
-                    state.constant = { value, released: false };
+                    state.constant = { value, released: false, trusted };
                 }
                 state.mode = type;
                 if (check) { state.readers.push(check); }
@@ -367,8 +374,8 @@
             });
         } catch {}
     }
-    function installJson() {
-        const tests = groups.get('JSON_PRUNE').map(args => ({
+    function jsonPruner(argumentsList) {
+        const tests = argumentsList.map(args => ({
             prune: args[0].split(' ').map(path => path.split('.')),
             needles: args[1] ? args[1].split(' ').map(path => path.split('.')) : [],
         }));
@@ -403,6 +410,10 @@
             }
             return value;
         }
+        return prune;
+    }
+    function installJson() {
+        const prune = jsonPruner(groups.get('JSON_PRUNE'));
         try {
             wrap(JSON, 'parse', (target, receiver, args) => prune(apply(target, receiver, args)));
             if (NativeResponse) {
@@ -413,7 +424,8 @@
     }
     function installFetch() {
         if (!NativeResponse) { return; }
-        const tests = groups.get('PREVENT_FETCH').map(args => ({
+        const tests = selected.filter(rule =>
+            ['PREVENT_FETCH', 'TRUSTED_PREVENT_FETCH'].includes(rule[0])).map(([type, args]) => ({
             fields: args[0].split(' ').map(part => {
                 const colon = part.indexOf(':');
                 const name = part.slice(0, colon);
@@ -421,7 +433,10 @@
                     ? [name, matcher(part.slice(colon + 1), true)]
                     : ['url', matcher(part, true)];
             }),
-            body: args[1] === 'emptyObj' ? '{}' : args[1] === 'emptyArr' ? '[]' : '',
+            body: args[1] === 'emptyObj' ? '{}' : args[1] === 'emptyArr' ? '[]'
+                : type === 'TRUSTED_PREVENT_FETCH' && !['', 'emptyStr'].includes(args[1])
+                    ? args[1] : '',
+
         }));
         try {
             wrap(self, 'fetch', (target, receiver, args) => {
@@ -463,13 +478,19 @@
         ['PREVENT_ADD_EVENT_LISTENER', installListener],
         ['PREVENT_SET_TIMEOUT', installTimeout],
         ['JSON_PRUNE', installJson],
-        ['PREVENT_FETCH', installFetch],
+        ['PREVENT_FETCH', installFetch], ['TRUSTED_PREVENT_FETCH', installFetch],
     ]);
-    const extra = typeof extension === 'function' ? extension({
+    const environment = {
         groups, selected, wrap, apply, define, descriptor, matcher, source, nativeAdd,
-        trap, abort, resources: resources || {},
-    }) : new Map();
-    for (const [type, installer] of extra) { installers.set(type, installer); }
+        trap, abort, resources: resources || {}, jsonPruner,
+        nativeThen, resolved, rejected, NativeResponse, NativeRequest,
+    };
+    const extra = typeof extension === 'function' ? extension(environment) : new Map();
+    const responses = typeof network === 'function' &&
+        ['PREVENT_XHR', 'TRUSTED_PREVENT_XHR', 'JSON_PRUNE_FETCH', 'JSON_PRUNE_XHR',
+            'XML_PRUNE', 'M3U_PRUNE', 'TRUSTED_REPLACE_FETCH', 'TRUSTED_REPLACE_XHR']
+            .some(type => groups.has(type)) ? network(environment) : new Map();
+    for (const [type, installer] of [...extra, ...responses]) { installers.set(type, installer); }
     const installed = new Set();
     for (const [type, args] of selected) {
         const install = installers.get(type);
@@ -477,7 +498,9 @@
         else if (type === 'RESOURCE' || type === 'SET_LOCAL_STORAGE' ||
             type === 'SET_SESSION_STORAGE' || type === 'SET_COOKIE' ||
             type === 'SET_COOKIE_RELOAD' || type === 'REMOVE_COOKIE' ||
-            type === 'CALL_NOTHROW' || type === 'ABORT_STACK_TRACE') {
+            type === 'CALL_NOTHROW' || type === 'ABORT_STACK_TRACE' ||
+            ['TRUSTED_LOCAL_STORAGE', 'TRUSTED_SESSION_STORAGE',
+                'TRUSTED_SET_COOKIE', 'TRUSTED_SET_COOKIE_RELOAD'].includes(type)) {
             try { install(args); } catch {}
         } else if (!installed.has(install)) {
             installed.add(install);

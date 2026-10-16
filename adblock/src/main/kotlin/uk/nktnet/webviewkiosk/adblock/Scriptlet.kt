@@ -42,6 +42,25 @@ enum class ScriptletType {
     PREVENT_NAVIGATION,
     MULTIUP,
     RESOURCE,
+    PREVENT_XHR,
+    JSON_PRUNE_FETCH,
+    JSON_PRUNE_XHR,
+    XML_PRUNE,
+    M3U_PRUNE,
+    OVERLAY_BUSTER,
+    TRUSTED_REPLACE_FETCH,
+    TRUSTED_REPLACE_XHR,
+    TRUSTED_PREVENT_FETCH,
+    TRUSTED_PREVENT_XHR,
+    TRUSTED_LOCAL_STORAGE,
+    TRUSTED_SESSION_STORAGE,
+    TRUSTED_SET_COOKIE,
+    TRUSTED_SET_COOKIE_RELOAD,
+    TRUSTED_SET,
+    TRUSTED_SET_ATTRIBUTE;
+
+    val requiresTrust: Boolean
+        get() = name.startsWith("TRUSTED_")
 }
 
 /** Arguments are validated during compilation and serialized as JSON data. */

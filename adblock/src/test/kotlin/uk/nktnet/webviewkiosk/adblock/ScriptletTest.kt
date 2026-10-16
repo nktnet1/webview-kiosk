@@ -148,7 +148,6 @@ class ScriptletTest {
                 "+js(no-fetch-if, ads, war:resource)",
                 "+js(no-fetch-if, ads, length:10, cors)",
                 "+js(no-fetch-if, mode:cors)",
-                "+js(no-xhr-if, ads)",
                 "+js(trusted-set, x, alert(1))",
                 "+js(aopr, 'unclosed)",
                 "+js(aopr, 'x' trailing)",

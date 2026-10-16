@@ -57,6 +57,7 @@ internal object AdditionalScriptlets {
             "rmnt" to ScriptletType.REMOVE_NODE_TEXT,
             "prevent-canvas" to ScriptletType.PREVENT_CANVAS,
             "multiup" to ScriptletType.MULTIUP,
+            "overlay-buster" to ScriptletType.OVERLAY_BUSTER,
         )
 
     fun validated(type: ScriptletType, input: List<String>): ScriptletInstruction? {
@@ -228,7 +229,8 @@ internal object AdditionalScriptlets {
                 ScriptletType.PREVENT_WEBRTC,
                 ScriptletType.PREVENT_BAB,
                 ScriptletType.ALERT_BUSTER,
-                ScriptletType.MULTIUP -> args.isEmpty()
+                ScriptletType.MULTIUP,
+                ScriptletType.OVERLAY_BUSTER -> args.isEmpty()
                 ScriptletType.PREVENT_REFRESH -> {
                     arity = 1
                     args.size <= 1 && (arg(0).isEmpty() || unsigned(arg(0), 86400))
@@ -277,10 +279,10 @@ internal object AdditionalScriptlets {
         Regex("[0-9]{1,9}").matches(value) &&
             (value.toIntOrNull() ?: Int.MAX_VALUE) <= limit
 
-    private fun attribute(value: String): Boolean =
+    internal fun attribute(value: String): Boolean =
         value.length in 1..100 && Regex("[A-Za-z_][A-Za-z0-9_:-]*").matches(value)
 
-    private fun selector(value: String): Boolean {
+    internal fun selector(value: String): Boolean {
         if (
             value.isBlank() ||
                 value.length > 256 ||

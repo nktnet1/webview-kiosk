@@ -59,14 +59,34 @@ private constructor(
                 }
                 val binding =
                     DocumentStartScriptBinding({ supported }) { injection ->
-                        val handler =
-                            WebViewCompat.addDocumentStartJavaScript(
-                                webView,
-                                injection.source,
-                                injection.allowedOrigins,
+                        // Keep explicit positive guards beside both optional APIs
+                        // so Android lint can verify them across these callbacks.
+                        if (
+                            WebViewFeature.isFeatureSupported(
+                                WebViewFeature.DOCUMENT_START_SCRIPT
                             )
-                        val remove: () -> Unit = { handler.remove() }
-                        remove
+                        ) {
+                            val handler =
+                                WebViewCompat.addDocumentStartJavaScript(
+                                    webView,
+                                    injection.source,
+                                    injection.allowedOrigins,
+                                )
+                            val remove: () -> Unit = {
+                                if (
+                                    WebViewFeature.isFeatureSupported(
+                                        WebViewFeature.DOCUMENT_START_SCRIPT
+                                    )
+                                ) {
+                                    handler.remove()
+                                }
+                            }
+                            remove
+                        } else {
+                            throw UnsupportedOperationException(
+                                "Document-start scripts are unavailable"
+                            )
+                        }
                     }
                 WebViewScriptlets(service, binding, scope)
             } catch (error: Exception) {

@@ -13,13 +13,13 @@ data class FilterRuleCounts(
 )
 
 /** Inspect text without compiling it or changing an engine's active snapshot. */
-fun inspectFilterList(text: String): FilterRuleCounts {
+fun inspectFilterList(text: String, trusted: Boolean = false): FilterRuleCounts {
     var network = 0
     var cosmetic = 0
     var unsupported = 0
     var invalid = 0
     var scriptlets = 0
-    FilterParser.visit(text) { _, rule ->
+    FilterParser.visit(text, trusted) { _, rule ->
         when (rule) {
             is ParsedFilter.Network -> network++
             is ParsedFilter.Cosmetic -> cosmetic++

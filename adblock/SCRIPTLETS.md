@@ -1,16 +1,14 @@
-# Scriptlet compatibility — v1.0.15
+# Scriptlet compatibility - v1.0.16
 
-The standalone Kotlin engine compiles validated `##+js(...)` data into a fixed,
-locally bundled JavaScript library. Downloaded filters never supply executable
-source, replacement functions, script URLs, HTML, or an unrestricted expression.
-The native `eval` hook handles page-originated calls; filter text is never evaluated.
+The engine compiles validated `##+js(...)` data into fixed local JavaScript.
+Ordinary imports cannot enable trusted operations. No downloaded list supplies
+replacement functions, remote scriptlet modules or unrestricted expressions to
+evaluate. Trusted replacements are strings; trusted constants use bounded JSON.
 
-The supplied upstream archive has 99 parameterized scriptlets and 30 JavaScript
-resources, totaling 129 canonical names (194 with aliases). Its 54 helper functions
-are separate. This patch implements 56 canonical names: 55 tested subsets and one
-conditional Navigation API operation. **27 implemented names are absent from the
-supplied active filter corpus.** See the complete
-[129-entry catalogue](SCRIPTLET-CATALOG.md), including aliases and exclusion reasons.
+The pinned upstream catalogue has 129 canonical names. This version implements
+72 names: 71 tested subsets and one conditional Navigation API operation. See the
+[complete catalogue](SCRIPTLET-CATALOG.md) for aliases and remaining exclusions.
+Support for a name does not imply support for all its upstream argument forms.
 
 ## Executable argument contracts
 
@@ -53,11 +51,14 @@ Unknown arguments discard the whole instruction. There is no approximate fallbac
 | ✅ | `multiup` | Direct form button link navigation, HTTP(S) destinations only |
 | ✅ | Fourteen fixed API shims | No filter arguments; see catalogue for exact names |
 | ⚠️ | `prevent-navigation` | Requires native Navigation API and cancelable automatic events |
-| ❌ | `no-xhr-if` / `prevent-xhr` | Async state, reuse, abort and events unverified |
-| ❌ | Fetch/XHR response prune/edit | Response lifecycle/stream contracts not implemented |
-| ❌ | Trusted scriptlets | Subscription storage has no trusted-source provenance |
-| ❌ | XML, media, object editing DSLs | Complete parsers and lifecycle contracts unverified |
-| ❌ | Overlay/debug/close-window | Polling, debugger or missing native-window adapter |
+| ✅ | `no-xhr-if` / `prevent-xhr` | URL/method predicates, canned responses and native instances |
+| ✅ | JSON Fetch/XHR pruning | Own paths, guards, URL/method and optional stack predicates |
+| ✅ | Ten trusted operations | Approved download provenance and contracts below |
+| ✅ | `xml-prune` | CSS element selector, guard selector and URL pattern |
+| ✅ | `m3u-prune` | HLS EXTINF/URI segment pairs and following discontinuity |
+| ✅ | `overlay-buster` | Shared observer, bounded sweep and 30-second deadline |
+| ❌ | Other object/media editing DSLs | JSON edit, JSONL, XPath and MPEG-DASH DSLs remain unimplemented |
+| ❌ | Debug/close-window | Deliberate debugger exclusion and no native window lifecycle |
 
 The safe constant set is empty string, undefined/null, booleans, empty arrays or
 objects, noop/true/false/throw functions, and bounded integers. Functions are locally
@@ -88,10 +89,74 @@ Recognized extended scopes skip the whole rule, including exceptions, without re
 the subscription or broadening its hostname. Genuinely malformed hostnames still fail
 import validation. These scopes are implementation gaps, not WebView API restrictions.
 
-Compiled snapshots use schema 7, so schema 6 is recompiled. Cached instructions undergo
+Compiled snapshots use schema 8, so older schemas are recompiled. Cached instructions undergo
 validation again, including fixed resource keys. Filters cannot choose a resource path.
-Only shims needed by the compiled snapshot are bundled into its injection. No JS bridge
+Only shims and the response adapter needed by the snapshot are bundled into injection. No JS bridge
 or privileged page-callable method is introduced.
+
+## Response and trusted-operation contracts
+
+Response operations accept the existing bounded pattern grammar. Limits are 32
+response edits and 32 XHR preventers per frame, 1 MiB per body, and 4 MiB of text
+work per body. Fetch inspection also has a two-second deadline. Exceeding a limit
+retains the original response and untouched body. UTF-8 text is supported; other
+declared character sets, opaque responses, bodyless statuses, invalid data and
+missing APIs fail open. No interception happens for nonmatching calls.
+
+Fetch uses native Response readers, streams and body-used errors. Status, URL,
+redirected/type metadata and cloning are retained. Changed bodies discard stale
+content-length, content-encoding, ETag and Content-MD5 headers. Unchanged bodies
+return the original Response. Native rejection reasons are preserved. Matching
+fetch promises can be delayed up to two seconds during body inspection; this is
+not transparent stream editing.
+
+XHR retains the native constructor/prototype and validates `open` natively.
+Prevention handles reuse, cancellation, reentrant handlers, duplicate sends,
+headers, async progress/load ordering and native synchronous event sequencing.
+Text, JSON, empty arraybuffer/blob/document responses are supported. Read-only or
+frozen instances fail open. Pruning starts only at DONE; partial responses remain
+native. Prevention uses the requested literal body for text responses; typed
+responses use `{}` or empty binary/document values. This is a documented subset,
+not every XHR IDL edge case.
+
+JSON response syntax is `paths [, guards [, propsToMatch, predicate
+[, stackToMatch, pattern]]]`. Options can appear in either order and normalize.
+Own-property handling, guards and work budgets match `json-prune`. Unknown
+options discard the whole instruction. XML supports CSS element selectors and
+optional guard/URL matching, not XPath or attribute nodes; malformed XML and
+DOCTYPE/entity inputs pass through. HLS supports EXTINF followed immediately by
+a matching segment URI, optionally followed by a discontinuity tag. Multiline
+regex and wildcard-string forms are rejected; other playlist tags are retained.
+
+Only successful downloads of the five immutable uBlock presets carry trusted
+provenance. Includes and redirects retain the existing same-origin restrictions.
+A matching URL, list name, old preset record, directive or custom import cannot
+grant trust. Existing presets gain trust only after a successful refresh.
+EasyList and other presets remain untrusted. Trust is persisted with saved bytes
+and included in aggregate/per-source cache identity. Failed refreshes retain the
+prior bytes and trust. This is provenance policy, not signature verification.
+
+| Trusted operation | Supported subset |
+| --- | --- |
+| `trusted-prevent-fetch`, `trusted-prevent-xhr` | URL/method predicate and literal/empty body; WAR, generated-length and random-body directives skipped |
+| `trusted-replace-fetch-response`, `trusted-replace-xhr-response` | Bounded literal/regex pattern, replacement string and optional URL/method predicate; no extras |
+| `trusted-set-local-storage-item`, `trusted-set-session-storage-item` | Key and literal string; dynamic `$...$` tokens skipped |
+| `trusted-set-cookie`, `trusted-set-cookie-reload` | Name, literal string and root/none path; dynamic, expiry and domain extras skipped |
+| `trusted-set-constant` / `trusted-set` | Safe constant, `json:` JSON or object with `value`, depth at most 16; no extras |
+| `trusted-set-attr` | Safe selector, explicitly allowed attribute and literal value; all other attributes skipped |
+
+Trusted constants remain locked across type changes. JSON parsing never evaluates
+source. Trusted attributes use literal values, not attribute-copy shorthand.
+Allowed attribute names are `data-*`, `aria-*`, `class`, `id`, `role`, `title`,
+`alt`, `hidden`, `disabled`, `checked`, `selected`, `readonly`, `tabindex`, `dir`,
+`lang`, `open`, `value` and `name`; matching is case-insensitive.
+Other trusted names remain unimplemented despite the available provenance model.
+
+Overlay removal shares the DOM observer/frame batch, checks at most 64 centre-point
+ancestors and removes at most eight viewport-covering fixed/high-z-index elements
+per sweep. It restores scrolling and stops after 30 seconds using one protected
+deadline timer, without recurring polling. It remains an explicit heuristic:
+matching intentional full-screen UI can be removed, as with upstream.
 
 ## WebView integration and limits
 
@@ -108,6 +173,7 @@ Cross-origin frames match their own hostname, not their parent. about:blank, dat
 file frames are excluded. Unrelated pages install no hooks. The routing table uses
 literal host buckets, not prototype-keyed objects.
 
+Registration and removal have positive feature checks verified by Android lint.
 Providers lacking DOCUMENT_START_SCRIPT skip scriptlets and retain network/cosmetic
 filtering. There is no late injection fallback. Native API-dependent operations fail
 open when their API is absent. Existing documents, including restored BFCache documents,
@@ -195,7 +261,29 @@ correction, not an increase in scriptlet support. SHA-256 values identify the te
 - URLHaus AdGuard: `77038af09b0c3a0b74c803f1e19313cc47d9880b7970f85f2cfb0127cc3bfc8b`
 - URLHaus Vivaldi/Brave: `676bba3c308420a93a4b7ee4d178c129286fafd05ca01f2da9b55fdbee9a532f`
 
-## Exact-input measurements
+## Cache and current verification
+
+[CACHE.md](CACHE.md) assesses all four opportunities, records the binary format and
+recovery design, and measures parse/restore/index costs. The app version no longer
+invalidates cache identity. Per-source records survive changes to other lists.
+
+Coverage includes JVM engine and app/Robolectric tests, Android lint, offline
+Python/Node tests and an opt-in native Chromium suite. The latter exercises Fetch
+streams, XHR, DOMParser/XMLSerializer, native synchronous events, cloning, abort,
+reuse, XML/HLS pruning, trusted data, oversized/stalled bodies and overlays.
+These are host Chromium tests, not Android WebView device tests. Android provider
+checks remain necessary for document-start/frame timing, Navigation API, BFCache,
+and representative authentication/media pages.
+
+`SCRIPTLET_CHROMIUM` opts in to the browser suite using an installed executable;
+Playwright must be available. Offline checks never install a browser.
+`FILTER_CACHE_BENCHMARK=1` enables the JVM cache benchmark.
+
+## Historical measurements through v1.0.15
+
+The following data describes the previous baseline, not v1.0.16.
+
+### Exact-input measurements
 
 Input: the supplied `ublock-origin-filters.txt`, 473295 bytes. SHA-256:
 `3bde7d558863ea2431b868f4d910a8d6d484486fbd576e464d0ecc85446ef3c6`.

@@ -103,6 +103,8 @@ internal object SuggestedFilterLists {
             ),
         )
 
+    val trustedUrls = ublock.map { it.url }.toSet()
+
     val all = ublock + others
 
     // The nine globally enabled subscriptions in upstream assets/assets.json.
@@ -158,6 +160,7 @@ internal class SuggestedFilterListDownloader(
                 input = stream,
                 sourceUrl = suggestion.url,
                 type = FilterListType.PRESET,
+                trusted = suggestion.url in SuggestedFilterLists.trustedUrls,
             )
         }
     }
@@ -216,7 +219,14 @@ internal class SuggestedFilterListDownloader(
             current.sourceUrl
                 ?: throw IllegalArgumentException("Local lists cannot be refreshed")
         return fetch(url) { stream ->
-            store.replaceFromSource(current.id, url, stream)
+            store.replaceFromSource(
+                current.id,
+                url,
+                stream,
+                trusted =
+                    current.type == FilterListType.PRESET &&
+                        url in SuggestedFilterLists.trustedUrls,
+            )
         }
     }
 

@@ -4,10 +4,10 @@ The supplied archive contains 99 parameterized scriptlets and 30 JavaScript reso
 129 canonical names, or 194 names including aliases. Its 54 helper functions are separate.
 Only 21 of the 30 resources have upstream inline-injection eligibility (`data: text`).
 
-This patch implements 56 canonical names: 55 behavior-tested supported subsets plus
-`prevent-navigation`, which requires a native Navigation API. The other 73 remain skipped.
-The active supplied list uses 39 names resolving to 38 canonical names; 91 canonical
-names are absent. Absence is not a reason for exclusion: 27 supported names are absent.
+This version implements 72 canonical names: 71 tested subsets plus
+`prevent-navigation`, which requires a native Navigation API. The other 57 remain skipped.
+The earlier supplied list used 39 names resolving to 38 canonical names. Absence from
+that list is not a reason for exclusion.
 All ✅ entries remain subject to the argument contracts in [SCRIPTLETS.md](SCRIPTLETS.md).
 API availability, matching documents, and documented resource limits also apply.
 
@@ -21,21 +21,17 @@ Supported entries also reject unimplemented argument forms rather than approxima
 
 | Reason | Examples | What would be needed |
 | --- | --- | --- |
-| Implementation | XHR prevention; Fetch/XHR pruning | Lifecycle, events, streams and tests |
-| Implementation | JSON/object editing; XML, media playlists | Argument DSLs and parser contracts |
-| Implementation | Eval-data pruning | Eval contracts and tests |
-| Implementation gap | Media SDK and iframe shims | Audited adapters and browser behavior tests |
-| Trust model | `trusted-*`, clipboard suppression | Source provenance and restricted capabilities |
-| Missing native integration | `close-window` | An app-controlled window-closing adapter |
-| Scope/performance | Overlay, debug/break helpers | Avoid polling and debugger behavior |
-| Resource role | Redirect-only files, `nobab2` | Redirect or original script-element context |
-| No blocking effect | `noop` | Not counted as executable blocking support |
+| Implementation | Other JSON/object editing, JSONL and MPEG-DASH DSLs | Complete bounded parsers and behavior tests |
+| Implementation | Other trusted operations | Provenance is enforced; each operation still needs a tested implementation |
+| Native integration | `close-window` | A native window lifecycle and a defined kiosk close policy |
+| Deliberate exclusion | Debug helpers | Debugger hooks are not installed in the production blocker |
+| Provider capability | Document start | `DOCUMENT_START_SCRIPT`; late injection cannot intercept earlier page scripts |
 | Provider capability | `prevent-navigation` | Native Navigation API |
 
-The missing trust model is a security decision in this engine, not a general inability
-of WebView to execute these operations. Ordinary downloaded lists must not gain the
-arbitrary values, HTML, replacements or native privileges reserved for trusted filters.
-Several redirect-only files in the archive are resources, not upstream `+js` entry points.
+Fresh approved uBlock preset downloads now carry trusted provenance. A custom list,
+matching source URL or directive does not gain trust. Ten trusted operations have
+explicit tested contracts; the others remain skipped. Several redirect-only files
+in the archive are resources, not upstream `+js` entry points.
 
 The concrete WebView constraint for all property/function hooks is reliable page-world
 document-start injection. Providers without `DOCUMENT_START_SCRIPT` skip scriptlets.
@@ -50,52 +46,52 @@ network/CSP/response-rewrite pipeline is not supplied by the current WebView int
 | --- | --- |
 | `abort-current-script.js` | ✅ current-script |
 | `set-attr.js` | ✅ attributes |
-| `trusted-set-attr.js` | ❌ trust provenance required |
+| `trusted-set-attr.js` | ✅ trusted safe attribute / literal value |
 | `remove-attr.js` | ✅ attributes |
-| `trusted-create-html.js` | ❌ trust provenance required |
+| `trusted-create-html.js` | ❌ operation not implemented; trust is enforced |
 | `href-sanitizer.js` | ✅ links |
 | `proxy-apply-config.js` | ❌ configuration/debug |
 | `edit-outbound-object.js` | ❌ unimplemented editing DSL |
-| `trusted-edit-outbound-object.js` | ❌ trust provenance required |
+| `trusted-edit-outbound-object.js` | ❌ operation not implemented; trust is enforced |
 | `json-edit.js` | ❌ unimplemented editing DSL |
-| `trusted-json-edit.js` | ❌ trust provenance required |
+| `trusted-json-edit.js` | ❌ operation not implemented; trust is enforced |
 | `edit-inbound-object.js` | ❌ unimplemented editing DSL |
-| `trusted-edit-inbound-object.js` | ❌ trust provenance required |
+| `trusted-edit-inbound-object.js` | ❌ operation not implemented; trust is enforced |
 | `edit-this-object.js` | ❌ unimplemented editing DSL |
-| `trusted-edit-this-object.js` | ❌ trust provenance required |
+| `trusted-edit-this-object.js` | ❌ operation not implemented; trust is enforced |
 | `edit-object-on-getter.js` | ❌ unimplemented editing DSL |
-| `trusted-edit-object-on-getter.js` | ❌ trust provenance required |
+| `trusted-edit-object-on-getter.js` | ❌ operation not implemented; trust is enforced |
 | `edit-object-on-setter.js` | ❌ unimplemented editing DSL |
-| `trusted-edit-object-on-setter.js` | ❌ trust provenance required |
+| `trusted-edit-object-on-setter.js` | ❌ operation not implemented; trust is enforced |
 | `edit-element-object.js` | ❌ unimplemented editing DSL |
-| `trusted-edit-element-object.js` | ❌ trust provenance required |
+| `trusted-edit-element-object.js` | ❌ operation not implemented; trust is enforced |
 | `json-edit-xhr-response.js` | ❌ unimplemented editing DSL |
-| `trusted-json-edit-xhr-response.js` | ❌ trust provenance required |
+| `trusted-json-edit-xhr-response.js` | ❌ operation not implemented; trust is enforced |
 | `json-edit-xhr-request.js` | ❌ unimplemented editing DSL |
-| `trusted-json-edit-xhr-request.js` | ❌ trust provenance required |
+| `trusted-json-edit-xhr-request.js` | ❌ operation not implemented; trust is enforced |
 | `json-edit-fetch-response.js` | ❌ unimplemented editing DSL |
-| `trusted-json-edit-fetch-response.js` | ❌ trust provenance required |
-| `trusted-edit-inbound-element.js` | ❌ trust provenance required |
+| `trusted-json-edit-fetch-response.js` | ❌ operation not implemented; trust is enforced |
+| `trusted-edit-inbound-element.js` | ❌ operation not implemented; trust is enforced |
 | `json-edit-fetch-request.js` | ❌ unimplemented editing DSL |
-| `trusted-json-edit-fetch-request.js` | ❌ trust provenance required |
+| `trusted-json-edit-fetch-request.js` | ❌ operation not implemented; trust is enforced |
 | `jsonl-edit-xhr-response.js` | ❌ unimplemented editing DSL |
-| `trusted-jsonl-edit-xhr-response.js` | ❌ trust provenance required |
+| `trusted-jsonl-edit-xhr-response.js` | ❌ operation not implemented; trust is enforced |
 | `jsonl-edit-fetch-response.js` | ❌ unimplemented editing DSL |
-| `trusted-jsonl-edit-fetch-response.js` | ❌ trust provenance required |
+| `trusted-jsonl-edit-fetch-response.js` | ❌ operation not implemented; trust is enforced |
 | `abort-on-stack-trace.js` | ✅ stack |
-| `trusted-prune-inbound-object.js` | ❌ trust provenance required |
-| `trusted-prune-outbound-object.js` | ❌ trust provenance required |
+| `trusted-prune-inbound-object.js` | ❌ operation not implemented; trust is enforced |
+| `trusted-prune-outbound-object.js` | ❌ operation not implemented; trust is enforced |
 | `json-prune.js` | ✅ json |
-| `json-prune-fetch-response.js` | ❌ response lifecycle |
-| `json-prune-xhr-response.js` | ❌ response lifecycle |
+| `json-prune-fetch-response.js` | ✅ bounded response pruning |
+| `json-prune-xhr-response.js` | ✅ bounded response pruning |
 | `evaldata-prune.js` | ❌ unverified eval contract |
 | `noeval-if.js` | ✅ eval |
 | `prevent-addEventListener.js` | ✅ listeners |
 | `prevent-bab.js` | ✅ BAB |
-| `prevent-clipboard-write.js` | ❌ trust provenance required |
+| `prevent-clipboard-write.js` | ❌ operation not implemented; trust is enforced |
 | `prevent-dialog.js` | ✅ dialog |
 | `prevent-fetch.js` | ✅ fetch |
-| `trusted-prevent-fetch.js` | ❌ trust provenance required |
+| `trusted-prevent-fetch.js` | ✅ trusted literal response |
 | `freeze-element-property.js` | ✅ freeze |
 | `prevent-innerHTML.js` | ✅ freeze |
 | `prevent-navigation.js` | ⚠️ Navigation API |
@@ -103,21 +99,21 @@ network/CSP/response-rewrite pipeline is not supplied by the current WebView int
 | `prevent-setInterval.js` | ✅ timers |
 | `prevent-requestAnimationFrame.js` | ✅ animation |
 | `set-constant.js` | ✅ constants |
-| `trusted-set-constant.js` | ❌ trust provenance required |
-| `trusted-replace-argument.js` | ❌ trust provenance required |
+| `trusted-set-constant.js` | ✅ trusted bounded JSON constant |
+| `trusted-replace-argument.js` | ❌ operation not implemented; trust is enforced |
 | `spoof-css.js` | ✅ style |
-| `prevent-xhr.js` | ❌ XHR emulation |
-| `trusted-prevent-xhr.js` | ❌ trust provenance required |
+| `prevent-xhr.js` | ✅ bounded native XHR emulation |
+| `trusted-prevent-xhr.js` | ✅ trusted literal response |
 | `mpegdash-prune.js` | ❌ unverified stream/parser contract |
 | `set-cookie.js` | ✅ cookies |
 | `set-cookie-reload.js` | ✅ cookies |
-| `trusted-set-cookie.js` | ❌ trust provenance required |
-| `trusted-set-cookie-reload.js` | ❌ trust provenance required |
+| `trusted-set-cookie.js` | ✅ trusted literal cookie |
+| `trusted-set-cookie-reload.js` | ✅ trusted literal cookie / reload |
 | `remove-cookie.js` | ✅ cookies |
 | `set-local-storage-item.js` | ✅ storage |
 | `set-session-storage-item.js` | ✅ storage |
-| `trusted-set-local-storage-item.js` | ❌ trust provenance required |
-| `trusted-set-session-storage-item.js` | ❌ trust provenance required |
+| `trusted-set-local-storage-item.js` | ✅ trusted literal storage |
+| `trusted-set-session-storage-item.js` | ✅ trusted literal storage |
 | `abort-on-property-read.js` | ✅ properties |
 | `abort-on-property-write.js` | ✅ properties |
 | `adjust-setInterval.js` | ✅ boosters |
@@ -128,25 +124,25 @@ network/CSP/response-rewrite pipeline is not supplied by the current WebView int
 | `prevent-window-open.js` | ✅ window-open |
 | `close-window.js` | ❌ native window adapter |
 | `window.name-defuser.js` | ✅ name |
-| `overlay-buster.js` | ❌ polling and heuristic scope |
+| `overlay-buster.js` | ✅ bounded shared observer / no polling |
 | `alert-buster.js` | ✅ alert |
 | `nowebrtc.js` | ✅ webrtc |
 | `disable-newtab-links.js` | ✅ links |
-| `xml-prune.js` | ❌ unverified stream/parser contract |
-| `m3u-prune.js` | ❌ unverified stream/parser contract |
+| `xml-prune.js` | ✅ bounded CSS element pruning |
+| `m3u-prune.js` | ✅ HLS EXTINF segment pruning |
 | `call-nothrow.js` | ✅ calls |
 | `remove-node-text.js` | ✅ node-text |
 | `prevent-canvas.js` | ✅ canvas |
 | `multiup.js` | ✅ multiup |
 | `break-on-call.js` | ❌ debugger |
-| `trusted-replace-node-text.js` | ❌ trust provenance required |
-| `trusted-replace-fetch-response.js` | ❌ trust provenance required |
-| `trusted-replace-xhr-response.js` | ❌ trust provenance required |
-| `trusted-click-element.js` | ❌ trust provenance required |
-| `trusted-replace-outbound-text.js` | ❌ trust provenance required |
-| `trusted-suppress-native-method.js` | ❌ trust provenance required |
-| `trusted-prevent-dom-bypass.js` | ❌ trust provenance required |
-| `trusted-override-element-method.js` | ❌ trust provenance required |
+| `trusted-replace-node-text.js` | ❌ operation not implemented; trust is enforced |
+| `trusted-replace-fetch-response.js` | ✅ trusted bounded response text |
+| `trusted-replace-xhr-response.js` | ✅ trusted bounded response text |
+| `trusted-click-element.js` | ❌ operation not implemented; trust is enforced |
+| `trusted-replace-outbound-text.js` | ❌ operation not implemented; trust is enforced |
+| `trusted-suppress-native-method.js` | ❌ operation not implemented; trust is enforced |
+| `trusted-prevent-dom-bypass.js` | ❌ operation not implemented; trust is enforced |
+| `trusted-override-element-method.js` | ❌ operation not implemented; trust is enforced |
 | `amazon_ads.js` | ✅ fixed API shim |
 | `amazon_apstag.js` | ❌ redirect-only upstream resource |
 | `ampproject_v0.js` | ❌ redirect-only upstream resource |
@@ -160,7 +156,7 @@ network/CSP/response-rewrite pipeline is not supplied by the current WebView int
 | `google-analytics_ga.js` | ✅ fixed API shim |
 | `google-analytics_inpage_linkid.js` | ❌ redirect-only upstream resource |
 | `google-ima.js` | ❌ unverified media adapter |
-| `google-ima-dai.js` | ❌ trust provenance required |
+| `google-ima-dai.js` | ❌ operation not implemented; trust is enforced |
 | `googlesyndication_adsbygoogle.js` | ❌ unverified iframe adapter |
 | `googletagservices_gpt.js` | ✅ fixed API shim |
 | `hd-main.js` | ❌ redirect-only upstream resource |

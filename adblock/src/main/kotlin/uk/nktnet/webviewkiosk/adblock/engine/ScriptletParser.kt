@@ -59,7 +59,7 @@ internal object ScriptletParser {
             "throwFunc",
         )
 
-    fun parse(expression: String): ScriptletInstruction? {
+    fun parse(expression: String, trusted: Boolean = false): ScriptletInstruction? {
         val fields = arguments(expression) ?: return null
         val name = fields.first().removeSuffix(".js")
         ScriptletResources.aliases[name]?.let { resource ->
@@ -76,7 +76,11 @@ internal object ScriptletParser {
                 null
             }
         }
-        val type = aliases[name] ?: AdditionalScriptlets.aliases[name] ?: return null
+        val type =
+            aliases[name]
+                ?: AdditionalScriptlets.aliases[name]
+                ?: ResponseScriptlets.aliases[name]
+                ?: return null
         val args =
             if (name == "prevent-innerHTML") {
                 listOf("innerHTML") + fields.drop(1)
@@ -88,15 +92,22 @@ internal object ScriptletParser {
         ) {
             return null
         }
-        return validated(type, args)
+        return validated(type, args, trusted)
     }
 
     internal fun validated(
         type: ScriptletType,
         arguments: List<String>,
+        trusted: Boolean = false,
     ): ScriptletInstruction? {
+        if (type.requiresTrust && !trusted) {
+            return null
+        }
         if (arguments.any { it.length > 512 || it.any(Char::isISOControl) }) {
             return null
+        }
+        if (type in ResponseScriptlets.aliases.values) {
+            return ResponseScriptlets.validated(type, arguments)
         }
         if (type.ordinal > ScriptletType.PREVENT_FETCH.ordinal) {
             return AdditionalScriptlets.validated(type, arguments)
@@ -254,7 +265,7 @@ internal object ScriptletParser {
                     }
             }
 
-    private fun constant(value: String): Boolean =
+    internal fun constant(value: String): Boolean =
         value in constants ||
             (Regex("-?[0-9]{1,5}").matches(value) &&
                 (value.toIntOrNull() ?: 32768) in -32767..32767)

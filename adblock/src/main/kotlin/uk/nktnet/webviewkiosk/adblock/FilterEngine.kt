@@ -35,6 +35,9 @@ data class CosmeticProcedure(
     val upwardSelector: String? = null,
 )
 
+/** Trust is assigned by the subscription loader, never by text inside a list. */
+data class FilterSource(val text: String, val trusted: Boolean = false)
+
 /** Injectable request/selector boundary shared by production and host tests. */
 interface NetworkFilterEngine {
     fun replace(lists: List<String>)
@@ -42,6 +45,13 @@ interface NetworkFilterEngine {
     fun replace(lists: List<String>, onProgress: (RuleLoadStage) -> Unit) {
         onProgress(RuleLoadStage.COMPILING)
         replace(lists)
+    }
+
+    fun replaceSources(
+        sources: List<FilterSource>,
+        onProgress: (RuleLoadStage) -> Unit,
+    ) {
+        replace(sources.map { it.text }, onProgress)
     }
 
     fun clear()
@@ -84,4 +94,8 @@ interface NetworkFilterEngine {
 
 fun interface FilterListValidator {
     fun validate(text: String)
+
+    fun validateSource(source: FilterSource) {
+        validate(source.text)
+    }
 }

@@ -15,6 +15,9 @@
     const cancelFrame = typeof self.cancelAnimationFrame === 'function'
         ? self.cancelAnimationFrame.bind(self) : null;
     const NativeStackError = self.Error;
+    const nativeStyle = self.getComputedStyle?.bind(self);
+    const nativeRect = self.Element?.prototype.getBoundingClientRect;
+    const now = Date.now.bind(Date);
     const rules = type => groups.get(type) || [];
     const listen = (owner, name, fn, options) => apply(nativeAdd, owner, [name, fn, options]);
     const range = raw => {
@@ -360,8 +363,9 @@
     // One observer and one frame batch for all selected DOM instructions; no polling.
     function dom() {
         if (!self.MutationObserver || !frame) { return; }
-        const types = ['SET_ATTRIBUTE', 'REMOVE_ATTRIBUTE', 'REMOVE_CLASS', 'REMOVE_NODE_TEXT',
-            'PREVENT_DIALOG', 'HREF_SANITIZER'];
+        const types = ['SET_ATTRIBUTE', 'TRUSTED_SET_ATTRIBUTE', 'REMOVE_ATTRIBUTE',
+            'REMOVE_CLASS', 'REMOVE_NODE_TEXT',
+            'PREVENT_DIALOG', 'HREF_SANITIZER', 'OVERLAY_BUSTER'];
         const entries = selected.filter(rule => types.includes(rule[0])).slice(0, 32)
             .map(([type, args]) => ({ type, args, done: false,
                 name: type !== 'REMOVE_NODE_TEXT' ? null : args[0].startsWith('/')
@@ -389,7 +393,9 @@
         }
         function ready(entry) {
             const [type, args] = [entry.type, entry.args];
-            if (type === 'SET_ATTRIBUTE') { return document.readyState === 'complete'; }
+            if (['SET_ATTRIBUTE', 'TRUSTED_SET_ATTRIBUTE'].includes(type)) {
+                return document.readyState === 'complete';
+            }
             if (type === 'REMOVE_ATTRIBUTE' || type === 'REMOVE_CLASS') {
                 if (args[2].split(' ').includes('complete')) {
                     return document.readyState === 'complete';
@@ -398,7 +404,37 @@
                     args[2].split(' ').includes('asap')) { return true; }
                 return document.readyState !== 'loading';
             }
-            return type !== 'HREF_SANITIZER' || document.readyState !== 'loading';
+            return !['HREF_SANITIZER', 'OVERLAY_BUSTER'].includes(type) ||
+                document.readyState !== 'loading';
+        }
+        let overlayStarted;
+        function overlays(budget) {
+            if (!nativeStyle || !nativeRect || !document.elementFromPoint ||
+                self !== self.top || !document.body || !document.documentElement) { return; }
+            const root = document.documentElement;
+            const width = Math.min(root.clientWidth, self.innerWidth);
+            const height = Math.min(root.clientHeight, self.innerHeight);
+            if (!(width > 0 && height > 0)) { return; }
+            const tolerance = Math.min(width, height) * 0.05;
+            let node = document.elementFromPoint(width / 2, height / 2);
+            let removed = 0;
+            while (node && node !== document.body && node !== root && budget-- > 0) {
+                const style = nativeStyle(node);
+                if (style.position === 'fixed' || Number.parseInt(style.zIndex, 10) >= 1000) {
+                    const rect = apply(nativeRect, node, []);
+                    if (rect.left <= tolerance && rect.top <= tolerance &&
+                        width - rect.right <= tolerance && height - rect.bottom < tolerance &&
+                        node.parentNode) {
+                        node.remove();
+                        document.body.style.setProperty('overflow', 'auto', 'important');
+                        root.style.setProperty('overflow', 'auto', 'important');
+                        if (++removed >= 8) { return; }
+                        node = document.elementFromPoint(width / 2, height / 2);
+                        continue;
+                    }
+                }
+                node = node.parentElement;
+            }
         }
         function sweep() {
             pending = undefined;
@@ -408,8 +444,21 @@
                 if (!active(entry) || !ready(entry)) { continue; }
                 const { type, args } = entry;
                 if (type === 'REMOVE_NODE_TEXT') { continue; }
+                if (type === 'OVERLAY_BUSTER') {
+                    if (overlayStarted === undefined) {
+                        overlayStarted = now();
+                        timeout(() => { entry.done = true; sweep(); }, 30000);
+                    }
+                    if (now() - overlayStarted < 30000) {
+                        try { overlays(Math.min(budget, 64)); } catch {}
+                        budget -= Math.min(budget, 64);
+                    } else { entry.done = true; }
+                    continue;
+                }
                 let selector;
-                if (type === 'SET_ATTRIBUTE' || type === 'HREF_SANITIZER') { selector = args[0]; }
+                if (['SET_ATTRIBUTE', 'TRUSTED_SET_ATTRIBUTE', 'HREF_SANITIZER'].includes(type)) {
+                    selector = args[0];
+                }
                 else if (type === 'PREVENT_DIALOG') { selector = 'dialog' + args[0]; }
                 else {
                     const escape = name => name.replace(/:/g, '\\:');
@@ -425,10 +474,11 @@
                 for (let i = 0; i < length; i++) {
                     const node = nodes[i];
                     try {
-                        if (type === 'SET_ATTRIBUTE') {
-                            let value = args[2].startsWith('[')
+                        if (['SET_ATTRIBUTE', 'TRUSTED_SET_ATTRIBUTE'].includes(type)) {
+                            const copy = type === 'SET_ATTRIBUTE' && args[2].startsWith('[');
+                            let value = copy
                                 ? node.getAttribute(args[2].slice(1, -1)) || '' : args[2];
-                            if (!args[2].startsWith('[') && /^\d+$/.test(value)) {
+                            if (type === 'SET_ATTRIBUTE' && !copy && /^\d+$/.test(value)) {
                                 value = String(Number(value));
                             }
                             if (node.getAttribute(args[1]) !== value) {
@@ -487,6 +537,10 @@
         });
         const attributeNames = new Set();
         const dialogs = entries.some(entry => entry.type === 'PREVENT_DIALOG');
+        if (entries.some(entry => entry.type === 'OVERLAY_BUSTER')) {
+            attributeNames.add('class'); attributeNames.add('style');
+            listen(self, 'resize', schedule);
+        }
         for (const entry of entries) {
             if (entry.type === 'REMOVE_CLASS') { attributeNames.add('class'); }
             if (entry.type === 'REMOVE_ATTRIBUTE') {
@@ -538,6 +592,10 @@
         ['PREVENT_BAB', bab], ['ABORT_STACK_TRACE', stackAbort],
         ['SET_LOCAL_STORAGE', args => storage('localStorage', args)],
         ['SET_SESSION_STORAGE', args => storage('sessionStorage', args)],
+        ['TRUSTED_LOCAL_STORAGE', args => storage('localStorage', args)],
+        ['TRUSTED_SESSION_STORAGE', args => storage('sessionStorage', args)],
+        ['TRUSTED_SET_COOKIE', args => cookie(args, false)],
+        ['TRUSTED_SET_COOKIE_RELOAD', args => cookie(args, true)],
         ['SET_COOKIE', args => cookie(args, false)],
         ['SET_COOKIE_RELOAD', args => cookie(args, true)], ['REMOVE_COOKIE', removeCookie],
         ['CALL_NOTHROW', noThrow], ['PREVENT_CANVAS', canvas],
@@ -551,7 +609,8 @@
             if (typeof factory === 'function') { factory(timeout, clearTimeout); }
         }],
     ]);
-    for (const type of ['SET_ATTRIBUTE', 'REMOVE_ATTRIBUTE', 'REMOVE_CLASS', 'REMOVE_NODE_TEXT',
-        'PREVENT_DIALOG', 'HREF_SANITIZER']) { installers.set(type, dom); }
+    for (const type of ['SET_ATTRIBUTE', 'TRUSTED_SET_ATTRIBUTE', 'REMOVE_ATTRIBUTE',
+        'REMOVE_CLASS', 'REMOVE_NODE_TEXT',
+        'PREVENT_DIALOG', 'HREF_SANITIZER', 'OVERLAY_BUSTER']) { installers.set(type, dom); }
     return installers;
 })

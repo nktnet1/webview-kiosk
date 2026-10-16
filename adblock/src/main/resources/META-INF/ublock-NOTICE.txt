@@ -10,15 +10,18 @@ Source: user-supplied uBlock-master.zip, commit
 Archive SHA-256:
   02eb8dbacc8ff09fd51524acd718998865c69a06041d3619def9d7204856311a
 
-adblock/scriptlets.js and scriptlets-extra.js adapt behavior and implementation
+adblock/scriptlets.js, scriptlets-extra.js and scriptlets-network.js adapt behavior
+and implementation
 patterns from src/js/resources at that commit: scriptlets.js, utils.js,
 set-constant.js, abort-current-script.js, prevent-addeventlistener.js,
 prevent-settimeout.js, json-prune.js, object-prune.js, prevent-fetch.js,
 stack-trace.js, cookie.js, localstorage.js, attribute.js, href-sanitizer.js,
 prevent-innerHTML.js, prevent-dialog.js, prevent-navigation.js, prevent-bab.js,
-noeval.js, and spoof-css.js. Modification date: 2026-10-16. Local changes include
+noeval.js, spoof-css.js, prevent-xhr.js, and the XML/HLS/overlay implementations
+in scriptlets.js. Modification date: 2026-10-16. Local changes include
 strict typed arguments, shared hooks, frame routing, protected timers, and
-bounded resource use. This is a subset of the extension's behavior.
+bounded resource use, recoverable XHR lifecycle state, response limits, and
+trusted-source enforcement. This is a subset of the extension's behavior.
 
 The timer boosters retain upstream's NanoFilters reference:
 Repository: https://github.com/NanoAdblocker/NanoFilters

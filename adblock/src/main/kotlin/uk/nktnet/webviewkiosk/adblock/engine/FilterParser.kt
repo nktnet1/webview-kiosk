@@ -205,7 +205,11 @@ internal object FilterParser {
     /**
      * Pre-process conditional branches before parsing, never as ordinary comments.
      */
-    fun visit(text: String, visitor: (line: Int, ParsedFilter) -> Unit) {
+    fun visit(
+        text: String,
+        trusted: Boolean = false,
+        visitor: (line: Int, ParsedFilter) -> Unit,
+    ) {
         var first = true
         var hosts = false
         val branches = ArrayDeque<Branch>()
@@ -289,7 +293,7 @@ internal object FilterParser {
             ) {
                 visitor(index + 1, parseHost(line))
             } else {
-                visitor(index + 1, parse(line))
+                visitor(index + 1, parse(line, trusted))
             }
         }
         if (branches.isNotEmpty()) {
@@ -462,7 +466,7 @@ internal object FilterParser {
         )
     }
 
-    private fun parse(line: String): ParsedFilter =
+    private fun parse(line: String, trusted: Boolean): ParsedFilter =
         try {
             if (line.length > 8192) {
                 throw Unsupported()
@@ -473,15 +477,15 @@ internal object FilterParser {
             val cosmetic = line.indexOf("##")
             when {
                 proceduralException >= 0 ->
-                    parseCosmetic(line, proceduralException, true, 4)
+                    parseCosmetic(line, proceduralException, true, 4, trusted)
 
                 proceduralCosmetic >= 0 ->
-                    parseCosmetic(line, proceduralCosmetic, false, 3)
+                    parseCosmetic(line, proceduralCosmetic, false, 3, trusted)
 
                 exception >= 0 && cosmetic !in 0..exception ->
-                    parseCosmetic(line, exception, true, 3)
+                    parseCosmetic(line, exception, true, 3, trusted)
 
-                cosmetic >= 0 -> parseCosmetic(line, cosmetic, false, 2)
+                cosmetic >= 0 -> parseCosmetic(line, cosmetic, false, 2, trusted)
 
                 listOf("#$#", "#@$#", "#%#", "#@%#").any(line::contains) ->
                     throw Unsupported()
@@ -499,6 +503,7 @@ internal object FilterParser {
         separator: Int,
         exception: Boolean,
         delimiterLength: Int,
+        trusted: Boolean,
     ): ParsedFilter {
         val selector = line.substring(separator + delimiterLength).trim()
         if (selector.isEmpty()) {
@@ -540,7 +545,7 @@ internal object FilterParser {
                 if (exception && selector == "+js()") {
                     null
                 } else {
-                    ScriptletParser.parse(selector) ?: throw Unsupported()
+                    ScriptletParser.parse(selector, trusted) ?: throw Unsupported()
                 }
             return ParsedFilter.Scriptlet(
                 ScriptletRule(instruction, scope, exception)

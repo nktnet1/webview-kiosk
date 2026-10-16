@@ -65,6 +65,57 @@ class SuggestedFilterListDownloaderTest {
         )
 
     @Test
+    fun onlyFreshApprovedPresetDownloadsCarryTrustedProvenance() {
+        val text =
+            "||ads.example^\n" +
+                "site.example##+js(trusted-prevent-xhr, ads, literal response)"
+        val ublock = SuggestedFilterLists.all.first { it.name == "uBlock Ads" }
+        // Metadata alone does not attest that stored bytes passed the loader.
+        val legacy =
+            store.importFrom(
+                "Legacy",
+                text.byteInputStream(),
+                ublock.url,
+                FilterListType.PRESET,
+            )
+        assertFalse(legacy.trusted)
+        assertFalse(store.enabledSources().single().trusted)
+        val refreshed =
+            downloader(content = text, suggestion = ublock).refresh(legacy, store)
+        assertTrue(refreshed.trusted)
+        assertTrue(store.list().single().trusted)
+        assertTrue(store.enabledSources().single().trusted)
+        val easy = SuggestedFilterLists.all.first { it.name == "EasyList" }
+        val ordinary =
+            downloader(content = text, suggestion = easy).download(easy, store)
+        assertFalse(ordinary.trusted)
+        val custom = store.importFrom("Custom", text.byteInputStream(), ublock.url)
+        assertFalse(custom.trusted)
+        assertFalse(store.enabledSources().last().trusted)
+        assertThrows(IllegalArgumentException::class.java) {
+            store.importFrom(
+                "Spoofed",
+                text.byteInputStream(),
+                ublock.url,
+                trusted = true,
+            )
+        }
+    }
+
+    @Test
+    fun trustedOnlyPresetPassesValidationAndIsCountedAsExecutable() {
+        val validatedStore = FilterListStore(RuntimeEnvironment.getApplication())
+        val text = "site.example##+js(trusted-prevent-xhr, ads, literal response)"
+        val imported = downloader(content = text).download(preset, validatedStore)
+        assertTrue(imported.trusted)
+        assertEquals(1, validatedStore.info(imported.id).scriptletRules)
+        assertEquals(0, validatedStore.info(imported.id).unsupportedRules)
+        assertThrows(IllegalArgumentException::class.java) {
+            validatedStore.importFrom("Custom", text.byteInputStream())
+        }
+    }
+
+    @Test
     fun officialUBlockIncludesResolveSameOriginAndSkipInactiveBranches() {
         val ublock = SuggestedFilterLists.all.first { it.name == "uBlock Ads" }
         val requested = mutableListOf<String>()

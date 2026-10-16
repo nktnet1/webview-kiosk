@@ -52,11 +52,12 @@ class AdditionalScriptletTest {
             ScriptletType.HREF_SANITIZER to "href-sanitizer, a, ?to",
             ScriptletType.PREVENT_NAVIGATION to "prevent-navigation, ads.example",
             ScriptletType.MULTIUP to "multiup",
+            ScriptletType.OVERLAY_BUSTER to "overlay-buster",
         )
 
     @Test
     fun examplesCompileToExecutableOperations() {
-        assertEquals(ScriptletType.entries.size - 10, examples.size)
+        assertEquals(AdditionalScriptlets.aliases.values.toSet(), examples.keys)
         examples.forEach { (type, example) ->
             val rule = "site.example##+js($example)"
             val engine = KotlinFilterEngine()
@@ -164,7 +165,6 @@ class AdditionalScriptletTest {
                 "href-sanitizer, a, ?url -base64",
                 "prevent-navigation",
                 "trusted-set, flag, true",
-                "no-xhr-if, ads",
                 "json-edit, ads",
                 "noop",
             )
@@ -197,8 +197,8 @@ class AdditionalScriptletTest {
         file.writeBytes(bytes)
         stages.clear()
         second.replace(rules, stages::add)
-        assertTrue(RuleLoadStage.COMPILING in stages)
-        assertFalse(RuleLoadStage.RESTORING in stages)
+        assertFalse(RuleLoadStage.COMPILING in stages)
+        assertTrue(RuleLoadStage.RESTORING in stages)
         assertEquals(
             first.scriptlets("https://site.example"),
             second.scriptlets("https://site.example"),
