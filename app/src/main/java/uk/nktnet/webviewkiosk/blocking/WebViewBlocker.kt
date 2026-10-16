@@ -4,6 +4,7 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import androidx.core.net.toUri
 import java.io.ByteArrayInputStream
+import uk.nktnet.webviewkiosk.adblock.BlockingResponse
 import uk.nktnet.webviewkiosk.config.Constants
 
 /**
@@ -21,16 +22,33 @@ internal object WebViewBlocker {
         requestHeaders: Map<String, String>,
         method: String,
         service: ContentBlockingService,
-    ): Boolean {
-        return !isMainFrame &&
-            isFilterableUrl(url) &&
-            isFilterableUrl(pageUrl) &&
-            service.shouldBlock(
-                url,
-                pageUrl,
-                resourceType(requestHeaders),
-                method,
-            )
+    ): Boolean =
+        responseFor(
+            url,
+            isMainFrame,
+            pageUrl,
+            requestHeaders,
+            method,
+            service,
+        ) != BlockingResponse.ALLOW
+
+    private fun responseFor(
+        url: String,
+        isMainFrame: Boolean,
+        pageUrl: String,
+        requestHeaders: Map<String, String>,
+        method: String,
+        service: ContentBlockingService,
+    ): BlockingResponse {
+        if (isMainFrame || !isFilterableUrl(url) || !isFilterableUrl(pageUrl)) {
+            return BlockingResponse.ALLOW
+        }
+        return service.responseFor(
+            url,
+            pageUrl,
+            resourceType(requestHeaders),
+            method,
+        )
     }
 
     fun intercept(
@@ -38,8 +56,8 @@ internal object WebViewBlocker {
         pageUrl: String,
         service: ContentBlockingService,
     ): WebResourceResponse? {
-        if (
-            !shouldBlock(
+        val response =
+            responseFor(
                 request.url.toString(),
                 request.isForMainFrame,
                 pageUrl,
@@ -47,14 +65,16 @@ internal object WebViewBlocker {
                 request.method,
                 service,
             )
-        ) {
-            return null
-        }
-        return WebResourceResponse(
-            "text/plain",
-            "UTF-8",
-            ByteArrayInputStream(empty),
-        )
+        val type =
+            when (response) {
+                BlockingResponse.ALLOW -> return null
+                BlockingResponse.EMPTY_SCRIPT -> "application/javascript"
+                BlockingResponse.EMPTY_STYLESHEET -> "text/css"
+                BlockingResponse.EMPTY_HTML -> "text/html"
+                BlockingResponse.EMPTY_TEXT,
+                BlockingResponse.BLOCK -> "text/plain"
+            }
+        return WebResourceResponse(type, "UTF-8", ByteArrayInputStream(empty))
     }
 
     internal fun isFilterableUrl(url: String): Boolean {

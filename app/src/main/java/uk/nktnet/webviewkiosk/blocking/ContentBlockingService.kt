@@ -15,6 +15,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import uk.nktnet.webviewkiosk.BuildConfig
+import uk.nktnet.webviewkiosk.adblock.BlockingResponse
+import uk.nktnet.webviewkiosk.adblock.CosmeticProcedure
 import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
 import uk.nktnet.webviewkiosk.adblock.NetworkFilterEngine
 import uk.nktnet.webviewkiosk.adblock.RuleLoadStage
@@ -284,6 +286,24 @@ internal class ContentBlockingService(
             }
     }
 
+    fun responseFor(
+        url: String,
+        sourceUrl: String,
+        type: String,
+        method: String,
+    ): BlockingResponse {
+        if (!ready) {
+            return BlockingResponse.ALLOW
+        }
+        return try {
+            engine.responseFor(url, sourceUrl, type, method)
+        } catch (error: LinkageError) {
+            ready = false
+            reportError(generation.get(), error)
+            BlockingResponse.ALLOW
+        }
+    }
+
     fun cosmeticSelectors(
         url: String,
         classes: List<String>,
@@ -297,6 +317,19 @@ internal class ContentBlockingService(
         } catch (e: LinkageError) {
             ready = false
             reportError(generation.get(), e)
+            emptyList()
+        }
+    }
+
+    fun cosmeticProcedures(url: String): List<CosmeticProcedure> {
+        if (!ready) {
+            return emptyList()
+        }
+        return try {
+            engine.cosmeticProcedures(url)
+        } catch (error: LinkageError) {
+            ready = false
+            reportError(generation.get(), error)
             emptyList()
         }
     }

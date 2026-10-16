@@ -1,14 +1,28 @@
 package uk.nktnet.webviewkiosk.adblock.engine
 
 import java.util.Locale
+import uk.nktnet.webviewkiosk.adblock.BlockingResponse
+import uk.nktnet.webviewkiosk.adblock.CosmeticProcedure
 
 internal data class DomainScope(
     val included: Set<String> = emptySet(),
     val excluded: Set<String> = emptySet(),
+    val includedEntities: Set<String> = emptySet(),
+    val excludedEntities: Set<String> = emptySet(),
 ) {
-    fun matches(host: String): Boolean =
-        excluded.none { domainMatches(host, it) } &&
-            (included.isEmpty() || included.any { domainMatches(host, it) })
+    val usesEntities: Boolean
+        get() = includedEntities.isNotEmpty() || excludedEntities.isNotEmpty()
+
+    fun matches(host: String, registeredDomain: String? = null): Boolean {
+        fun entityMatches(name: String): Boolean =
+            registeredDomain?.startsWith("$name.") == true
+
+        return excluded.none { domainMatches(host, it) } &&
+            excludedEntities.none(::entityMatches) &&
+            (included.isEmpty() && includedEntities.isEmpty() ||
+                included.any { domainMatches(host, it) } ||
+                includedEntities.any(::entityMatches))
+    }
 
     companion object {
         val ANY = DomainScope()
@@ -50,6 +64,7 @@ internal object ResourceTypes {
 
 internal data class Conditions(
     val domains: DomainScope = DomainScope.ANY,
+    val targets: DomainScope = DomainScope.ANY,
     val types: Int = 0,
     val excludedTypes: Int = 0,
     val thirdParty: Boolean? = null,
@@ -68,6 +83,7 @@ internal data class NetworkIdentity(
     val important: Boolean,
     /** 0: request filter; 1: generic hiding exception; 2: all hiding exception. */
     val hide: Int,
+    val redirect: BlockingResponse? = null,
 )
 
 internal data class NetworkRule(
@@ -79,6 +95,7 @@ internal data class CosmeticRule(
     val selector: String,
     val domains: DomainScope,
     val exception: Boolean,
+    val procedure: CosmeticProcedure? = null,
 )
 
 internal sealed interface ParsedFilter {
@@ -129,14 +146,50 @@ internal object FilterParser {
             ":remove-class(",
         )
 
+    /**
+     * Pre-process conditional branches before parsing, never as ordinary comments.
+     */
     fun visit(text: String, visitor: (line: Int, ParsedFilter) -> Unit) {
         var first = true
         var hosts = false
+        val branches = ArrayDeque<Branch>()
         text.removePrefix("\uFEFF").lineSequence().forEachIndexed { index, original
             ->
             val line = original.trim()
+            when {
+                line.startsWith("!#if ") -> {
+                    val active = condition(line.removePrefix("!#if "))
+                    branches.addLast(
+                        Branch(branches.lastOrNull()?.enabled != false, active)
+                    )
+                    return@forEachIndexed
+                }
+
+                line == "!#else" -> {
+                    val branch = branches.lastOrNull()
+                    if (branch == null || branch.elseSeen) {
+                        visitor(index + 1, ParsedFilter.Invalid("unexpected !#else"))
+                    } else {
+                        branch.elseSeen = true
+                    }
+                    return@forEachIndexed
+                }
+
+                line == "!#endif" -> {
+                    if (branches.isEmpty()) {
+                        visitor(
+                            index + 1,
+                            ParsedFilter.Invalid("unexpected !#endif"),
+                        )
+                    } else {
+                        branches.removeLast()
+                    }
+                    return@forEachIndexed
+                }
+            }
             if (
-                line.isEmpty() ||
+                branches.lastOrNull()?.enabled == false ||
+                    line.isEmpty() ||
                     line.startsWith('!') ||
                     line.startsWith("[Adblock") ||
                     (line.startsWith('#') &&
@@ -152,9 +205,6 @@ internal object FilterParser {
                 hosts = hasFields && ip
                 first = false
             }
-            // CSS attribute values and procedural selectors can contain several
-            // colons before their first space. Only an address-shaped token is
-            // a malformed hosts candidate; never route those selectors here.
             val resemblesIp =
                 (firstField.count { it == ':' } >= 2 &&
                     firstField.all { it.isLetterOrDigit() || it in ":.[]" }) ||
@@ -186,6 +236,127 @@ internal object FilterParser {
                 visitor(index + 1, parse(line))
             }
         }
+        if (branches.isNotEmpty()) {
+            visitor(
+                text.lineSequence().count(),
+                ParsedFilter.Invalid("unclosed !#if"),
+            )
+        }
+    }
+
+    private class Branch(val parentEnabled: Boolean, val match: Boolean?) {
+        var elseSeen = false
+        val enabled: Boolean
+            get() =
+                parentEnabled &&
+                    (if (elseSeen) {
+                        match == false
+                    } else {
+                        match == true
+                    })
+    }
+
+    /** Unknown tokens are indeterminate, including under negation: fail closed. */
+    private fun condition(expression: String): Boolean? {
+        // Both input and recursion are bounded for untrusted subscription files.
+        if (expression.length > 512) {
+            return null
+        }
+        val tokens =
+            Regex("\\(|\\)|&&|\\|\\||!|[a-z_0-9]+")
+                .findAll(expression)
+                .map { it.value }
+                .toList()
+        if (
+            tokens.size > 128 ||
+                tokens.joinToString("") != expression.filterNot(Char::isWhitespace)
+        ) {
+            return null
+        }
+        var position = 0
+        fun primary(): Boolean? {
+            val token = tokens.getOrNull(position++) ?: return null
+            return when (token) {
+                "true",
+                "env_mobile",
+                "env_chromium" -> true
+                "false",
+                "cap_html_filtering",
+                "cap_user_stylesheet",
+                "ext_ublock",
+                "ext_ubol",
+                "ext_abp",
+                "ext_devbuild",
+                "env_firefox",
+                "env_safari",
+                "env_edge",
+                "env_mv3",
+                "adguard",
+                "adguard_app_android",
+                "adguard_ext_chromium" -> false
+                "(" -> null // Parentheses are parsed by the recursive reader below.
+                else -> null
+            }
+        }
+        // The real expression parser is below; it keeps unknown values distinct
+        // from false, so !ext_ublock never silently enables extension-only rules.
+        fun combineAnd(left: Boolean?, right: Boolean?): Boolean? =
+            if (left == false || right == false) {
+                false
+            } else if (left == true && right == true) {
+                true
+            } else {
+                null
+            }
+        fun combineOr(left: Boolean?, right: Boolean?): Boolean? =
+            if (left == true || right == true) {
+                true
+            } else if (left == false && right == false) {
+                false
+            } else {
+                null
+            }
+        // Local recursion is implemented by a class to keep Kotlin/JVM 11
+        // compatible.
+        class Reader {
+            fun atom(): Boolean? {
+                val token = tokens.getOrNull(position) ?: return null
+                position++
+                return when (token) {
+                    "!" -> atom()?.not()
+                    "(" ->
+                        expression().also {
+                            if (tokens.getOrNull(position++) != ")") {
+                                position = tokens.size + 1
+                            }
+                        }
+                    else -> {
+                        position--
+                        primary()
+                    }
+                }
+            }
+
+            fun and(): Boolean? {
+                var value = atom()
+                while (tokens.getOrNull(position) == "&&") {
+                    position++
+                    value = combineAnd(value, atom())
+                }
+                return value
+            }
+
+            fun expression(): Boolean? {
+                var value = and()
+                while (tokens.getOrNull(position) == "||") {
+                    position++
+                    value = combineOr(value, and())
+                }
+                return value
+            }
+        }
+        val result = Reader().expression()
+        return result.takeIf { position == tokens.size }
     }
 
     private fun isIp(value: String): Boolean =
@@ -281,13 +452,66 @@ internal object FilterParser {
         if (
             selector.length > 4096 ||
                 selector.startsWith("+js(") ||
-                selector.startsWith("^") ||
-                procedural.any(selector::contains)
+                selector.startsWith("^")
         ) {
             throw Unsupported()
         }
         val scope = domains(line.substring(0, separator), ',')
-        return ParsedFilter.Cosmetic(CosmeticRule(selector, scope, exception))
+        val action =
+            if (procedural.any(selector::contains)) {
+                parseProcedure(selector, scope)
+            } else {
+                null
+            }
+        return ParsedFilter.Cosmetic(
+            CosmeticRule(selector, scope, exception, action)
+        )
+    }
+
+    /** Do not turn uBO procedural syntax into invalid CSS or executable JS. */
+    private fun parseProcedure(
+        expression: String,
+        scope: DomainScope,
+    ): CosmeticProcedure {
+        // Generic text scanning is too costly. Restrict it to named sites.
+        if (scope.included.isEmpty() && scope.includedEntities.isEmpty()) {
+            throw Unsupported()
+        }
+        var selector = expression
+        val remove = selector.endsWith(":remove()")
+        if (remove) {
+            selector = selector.removeSuffix(":remove()")
+        }
+        val upward = Regex(":upward\\(([1-4])\\)$").find(selector)
+        if (upward != null) {
+            selector = selector.substring(0, upward.range.first)
+        }
+        val textMatch = Regex(":has-text\\(([^()]*)\\)$").find(selector)
+        val text = textMatch?.groupValues?.get(1)
+        if (textMatch != null) {
+            selector = selector.substring(0, textMatch.range.first)
+        }
+        if (
+            text == null && upward == null && !remove ||
+                text != null &&
+                    (text.isEmpty() ||
+                        text.length > 128 ||
+                        text.startsWith('/') ||
+                        text.startsWith('"')) ||
+                selector.isBlank() ||
+                selector == "*" ||
+                selector.length > 256 ||
+                procedural.any(selector::contains) ||
+                upward != null && remove
+        ) {
+            throw Unsupported()
+        }
+        return CosmeticProcedure(
+            selector,
+            text,
+            upward?.groupValues?.get(1)?.toInt() ?: 0,
+            remove,
+        )
     }
 
     private fun domains(value: String, separator: Char): DomainScope {
@@ -296,25 +520,36 @@ internal object FilterParser {
         }
         val included = mutableSetOf<String>()
         val excluded = mutableSetOf<String>()
+        val includedEntities = mutableSetOf<String>()
+        val excludedEntities = mutableSetOf<String>()
         for (entry in value.split(separator)) {
             if (entry.isEmpty()) {
                 throw Invalid("empty domain restriction")
             }
             val raw = entry.removePrefix("~")
-            // Entity and regex scopes need distinct semantics; do not approximate
-            // them.
-            if (raw.contains('*') || raw.startsWith('/')) {
+            val entity = raw.endsWith(".*")
+            if (raw.contains('*') && !entity || raw.startsWith('/')) {
                 throw Unsupported()
             }
+            val name =
+                if (entity) {
+                    raw.removeSuffix(".*")
+                } else {
+                    raw
+                }
             val domain =
-                normalizedHost(raw) ?: throw Invalid("invalid domain restriction")
-            if (entry.startsWith('~')) {
-                excluded += domain
-            } else {
-                included += domain
+                normalizedHost(name) ?: throw Invalid("invalid domain restriction")
+            if (entity && ('.' in domain || ':' in domain)) {
+                throw Unsupported()
+            }
+            when {
+                entity && entry.startsWith('~') -> excludedEntities += domain
+                entity -> includedEntities += domain
+                entry.startsWith('~') -> excluded += domain
+                else -> included += domain
             }
         }
-        return DomainScope(included, excluded)
+        return DomainScope(included, excluded, includedEntities, excludedEntities)
     }
 
     private fun parseNetwork(line: String): ParsedFilter {
@@ -353,6 +588,7 @@ internal object FilterParser {
                 emptyList()
             }
         var scope = DomainScope.ANY
+        var targets = DomainScope.ANY
         var types = 0
         var excludedTypes = 0
         var thirdParty: Boolean? = null
@@ -362,6 +598,7 @@ internal object FilterParser {
         var important = false
         var badfilter = false
         var hide = 0
+        var redirect: BlockingResponse? = null
         // Check unknown options before interpreting any remaining restriction.
         for (option in options) {
             val name =
@@ -372,6 +609,10 @@ internal object FilterParser {
                         setOf(
                             "domain",
                             "from",
+                            "to",
+                            "denyallow",
+                            "redirect",
+                            "empty",
                             "third-party",
                             "3p",
                             "first-party",
@@ -416,6 +657,58 @@ internal object FilterParser {
                         throw Unsupported()
                     }
                     scope = domains(value, '|')
+                }
+
+                "redirect",
+                "empty" -> {
+                    if (
+                        exception ||
+                            negated ||
+                            redirect != null ||
+                            name == "empty" && option.contains('=')
+                    ) {
+                        throw Unsupported()
+                    }
+                    val resource = value.substringBeforeLast(':', value)
+                    if (
+                        resource != value &&
+                            value.substringAfterLast(':').toIntOrNull() == null
+                    ) {
+                        throw Unsupported()
+                    }
+                    redirect =
+                        when {
+                            name == "empty" || resource == "empty" ->
+                                BlockingResponse.EMPTY_TEXT
+                            resource in setOf("noopjs", "noop.js") ->
+                                BlockingResponse.EMPTY_SCRIPT
+                            resource in setOf("noopcss", "noop.css") ->
+                                BlockingResponse.EMPTY_STYLESHEET
+                            resource in setOf("noophtml", "noop.html") ->
+                                BlockingResponse.EMPTY_HTML
+                            resource in setOf("nooptext", "noop.txt") ->
+                                BlockingResponse.EMPTY_TEXT
+                            else -> throw Unsupported()
+                        }
+                }
+
+                "to",
+                "denyallow" -> {
+                    if (negated || value.isEmpty() || targets != DomainScope.ANY) {
+                        throw Unsupported()
+                    }
+                    targets =
+                        if (name == "denyallow") {
+                            if (value.split('|').any { it.startsWith('~') }) {
+                                throw Unsupported()
+                            }
+                            domains(
+                                value.split('|').joinToString("|") { "~$it" },
+                                '|',
+                            )
+                        } else {
+                            domains(value, '|')
+                        }
                 }
 
                 "method" -> {
@@ -503,6 +796,7 @@ internal object FilterParser {
         val conditions =
             Conditions(
                 scope,
+                targets,
                 types,
                 excludedTypes,
                 thirdParty,
@@ -517,6 +811,7 @@ internal object FilterParser {
                     exception,
                     important,
                     hide,
+                    redirect,
                 ),
                 badfilter,
             )

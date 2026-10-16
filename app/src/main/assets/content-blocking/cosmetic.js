@@ -13,6 +13,9 @@
   var ids = new Set();
   var selectors = new Set();
   var installedSelectors = new Set();
+  var procedures = new Map();
+  var procedureCursor = 0;
+  var procedurePending = false;
   var selectorProbe = document.createElement("div");
   var work = [];
   var style = null;
@@ -93,6 +96,41 @@
     });
   }
 
+  // Strictly declarative rules: filter text never becomes executable JavaScript.
+  // Bound selector evaluation even on pages with very large/dynamic DOMs.
+  function applyProcedures() {
+    procedurePending = false;
+    if (!procedures.size || !document.documentElement) return;
+    var rules = Array.from(procedures.values());
+    var budget = 2000;
+    var deadline = Date.now() + 8;
+    var processed = 0;
+    for (; processed < rules.length && budget > 0; processed++) {
+      if (Date.now() >= deadline) break;
+      var rule = rules[(procedureCursor + processed) % rules.length];
+      try {
+        selectorProbe.matches(rule.selector);
+        var matches = document.querySelectorAll(rule.selector);
+        for (var i = 0; i < matches.length && i < 256 && budget > 0; i++) {
+          budget--;
+          var element = matches[i];
+          if (rule.text !== null &&
+              (!element.textContent || element.textContent.indexOf(rule.text) < 0)) continue;
+          for (var depth = 0; depth < rule.upward && element; depth++) {
+            element = element.parentElement;
+          }
+          if (!element || element === document.documentElement) continue;
+          if (rule.remove) element.remove();
+          else element.style.setProperty("display", "none", "important");
+        }
+      } catch (_) {
+        // A selector unsupported by this WebView cannot affect other rules.
+      }
+    }
+    procedureCursor = (procedureCursor + processed) % rules.length;
+    procedurePending = processed < rules.length;
+  }
+
   function take(values) {
     var batch = [];
     values.forEach(function (value) {
@@ -111,6 +149,8 @@
     classes.clear();
     ids.clear();
     if (style) style.remove();
+    procedures.clear();
+    procedurePending = false;
   }
 
   function flush() {
@@ -118,6 +158,7 @@
     if (stopped) return;
     scan();
     applySelectors();
+    applyProcedures();
     if (!inFlight && (initial || classes.size || ids.size)) {
       inFlight = {
         id: ++sequence,
@@ -129,6 +170,7 @@
       bridge.postMessage(JSON.stringify(inFlight));
     }
     if (work.length) schedule(16);
+    else if (procedurePending) schedule(120);
   }
 
   bridge.onmessage = function (event) {
@@ -151,19 +193,32 @@
         selectors.add(selector);
       }
     });
+    (response.procedures || []).forEach(function (entry) {
+      if (!entry || typeof entry.selector !== "string" || entry.selector.length > 256 ||
+          !(entry.text === null || typeof entry.text === "string") ||
+          (entry.text !== null && entry.text.length > 128) ||
+          !Number.isInteger(entry.upward) || entry.upward < 0 || entry.upward > 4 ||
+          typeof entry.remove !== "boolean" || procedures.size >= 128) return;
+      var key = JSON.stringify(entry);
+      procedures.set(key, entry);
+    });
     applySelectors();
-    if (classes.size || ids.size || work.length) schedule();
+    applyProcedures();
+    if (classes.size || ids.size || work.length || procedurePending) schedule();
   };
 
   var observer = new MutationObserver(function (records) {
     if (stopped) return;
     records.forEach(function (record) {
       if (record.type === "attributes") queue(record.target);
+      else if (record.type === "characterData") queue(record.target.parentElement);
       else record.addedNodes.forEach(queue);
     });
     if (style && !style.isConnected) schedule();
+    if (procedures.size) schedule(120);
   });
-  observer.observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "id"] });
+  observer.observe(document, { childList: true, characterData: true, subtree: true,
+    attributes: true, attributeFilter: ["class", "id"] });
   window.addEventListener("pagehide", function () {
     observer.disconnect();
     if (timer !== null) clearTimeout(timer);
@@ -171,7 +226,8 @@
   });
   window.addEventListener("pageshow", function () {
     if (stopped) return;
-    observer.observe(document, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "id"] });
+    observer.observe(document, { childList: true, characterData: true, subtree: true,
+    attributes: true, attributeFilter: ["class", "id"] });
     queue(document);
   });
   queue(document);

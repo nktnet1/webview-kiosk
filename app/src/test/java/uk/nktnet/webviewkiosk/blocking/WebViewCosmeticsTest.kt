@@ -8,9 +8,28 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import uk.nktnet.webviewkiosk.adblock.CosmeticProcedure
 
 @RunWith(RobolectricTestRunner::class)
 class WebViewCosmeticsTest {
+    @Test
+    fun sendsNullableProcedureTextAsExplicitJsonNull() {
+        val serialized =
+            WebViewCosmetics.proceduresJson(
+                listOf(
+                    CosmeticProcedure(".advert", remove = true),
+                    CosmeticProcedure(".banner", text = "Sponsored", upward = 2),
+                )
+            )
+        val removal = serialized.getJSONObject(0)
+        assertEquals(".advert", removal.getString("selector"))
+        assertEquals(true, removal.isNull("text"))
+        assertEquals(true, removal.getBoolean("remove"))
+        val textMatch = serialized.getJSONObject(1)
+        assertEquals("Sponsored", textMatch.getString("text"))
+        assertEquals(2, textMatch.getInt("upward"))
+    }
+
     @Test
     fun acceptsBoundedTokensFromTheActualFrameOrigin() {
         val parsed =
