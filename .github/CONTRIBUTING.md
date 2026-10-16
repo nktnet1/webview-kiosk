@@ -128,7 +128,9 @@ an x86_64 container, which can be slower than native Linux due to emulation.
 The Docker base image and exporter image tag use the Gradle version from
 `gradle/wrapper/gradle-wrapper.properties`. Updating the wrapper also updates
 the container's Gradle version; no separate version pin is needed in the
-Dockerfile, exporter, or tests.
+Dockerfile, exporter, or tests. The Dockerfile has a valid `gradle:jdk21-jammy`
+default for direct builds; the exporter overrides it with the wrapper's exact
+version.
 
 The download flags and `--output` carry over to Docker mode. The
 native-only `--sdk-root`, `--gradle-user-home`, and `--gradle-bin` options are

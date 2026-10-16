@@ -49,8 +49,6 @@ internal object FilterCompiler {
         }
     }
 
-    fun compile(lists: List<String>): CompiledFilters = parse(lists).build()
-
     fun parse(lists: List<String>): CompiledRuleSet {
         val networks = LinkedHashSet<NetworkIdentity>()
         val disabled = HashSet<NetworkIdentity>()
