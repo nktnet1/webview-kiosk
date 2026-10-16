@@ -69,8 +69,9 @@ class SuggestedFilterListDownloaderTest {
         assertEquals(
             listOf(
                 "EasyList",
-                "AdGuard Base",
                 "EasyPrivacy",
+                "AdGuard Base",
+                "uBlock Origin",
                 "HaGeZi Multi LIGHT",
                 "HaGeZi Multi NORMAL",
                 "HaGeZi Multi PRO",
@@ -93,7 +94,11 @@ class SuggestedFilterListDownloaderTest {
         )
         assertEquals(
             "https://filters.adtidy.org/extension/ublock/filters/2.txt",
-            SuggestedFilterLists.all[1].url,
+            SuggestedFilterLists.all[2].url,
+        )
+        assertEquals(
+            "https://ublockorigin.github.io/uAssets/filters/filters.txt",
+            SuggestedFilterLists.all[3].url,
         )
         assertTrue(SuggestedFilterLists.all.all { it.url.startsWith("https://") })
         assertTrue(store.list().isEmpty())
@@ -126,6 +131,33 @@ class SuggestedFilterListDownloaderTest {
         assertEquals(
             old,
             FilterListStore(RuntimeEnvironment.getApplication()).list().single(),
+        )
+    }
+
+    @Test
+    fun manuallyAddedUBlockUrlRemainsEditableAfterAddingThePreset() {
+        val source = SuggestedFilterLists.all[3].url
+        val existing =
+            store.importFrom(
+                "Custom uBlock",
+                "||ads.example^\n".byteInputStream(),
+                sourceUrl = source,
+            )
+        assertEquals(FilterListType.URL, existing.type)
+        assertEquals(existing, store.list().single())
+        assertEquals(
+            FilterListType.URL,
+            FilterListStore(RuntimeEnvironment.getApplication())
+                .list()
+                .single()
+                .type,
+        )
+
+        downloader(suggestion = SuggestedFilterLists.all[3])
+            .download(SuggestedFilterLists.all[3], store)
+        assertEquals(
+            listOf(FilterListType.URL, FilterListType.PRESET),
+            store.list().map { it.type },
         )
     }
 

@@ -138,6 +138,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     var workingMessage by remember { mutableStateOf<String?>(null) }
     val busy = working
     var bulkActionsExpanded by remember { mutableStateOf(false) }
+    var rearranging by rememberSaveable { mutableStateOf(false) }
     var pendingRemoval by remember { mutableStateOf<ImportedFilterList?>(null) }
     var pendingEdit by remember { mutableStateOf<ImportedFilterList?>(null) }
     var pendingInfo by remember { mutableStateOf<ImportedFilterList?>(null) }
@@ -211,7 +212,11 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 pendingRemoval == null
     ) {
         if (!working) {
-            goBack()
+            if (rearranging) {
+                rearranging = false
+            } else {
+                goBack()
+            }
         }
     }
 
@@ -290,7 +295,11 @@ fun SettingsContentBlockingScreen(navController: NavController) {
             stringResource(R.string.settings_content_blocking_title),
             onBackClick = {
                 if (!working) {
-                    goBack()
+                    if (rearranging) {
+                        rearranging = false
+                    } else {
+                        goBack()
+                    }
                 }
             },
             onExitClick = {
@@ -331,96 +340,123 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                             Arrangement.spacedBy(8.dp, Alignment.End),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Box(modifier = Modifier.weight(1f, fill = false)) {
-                            OutlinedButton(
-                                onClick = { bulkActionsExpanded = true },
-                                enabled = !busy && lists.isNotEmpty(),
+                        if (rearranging) {
+                            Button(
+                                onClick = { rearranging = false },
+                                enabled = !busy,
+                            ) {
+                                Text("Done")
+                            }
+                        } else {
+                            Box(modifier = Modifier.weight(1f, fill = false)) {
+                                OutlinedButton(
+                                    onClick = { bulkActionsExpanded = true },
+                                    enabled = !busy && lists.isNotEmpty(),
+                                ) {
+                                    Text(
+                                        "Actions",
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    Icon(
+                                        painterResource(
+                                            R.drawable.outline_keyboard_arrow_down_24
+                                        ),
+                                        contentDescription = null,
+                                    )
+                                }
+                                DropdownMenu(
+                                    expanded = bulkActionsExpanded,
+                                    onDismissRequest = {
+                                        bulkActionsExpanded = false
+                                    },
+                                ) {
+                                    DropdownMenuItem(
+                                        text = { Text("Enable all") },
+                                        enabled = !busy && lists.any { !it.enabled },
+                                        onClick = {
+                                            bulkActionsExpanded = false
+                                            update(
+                                                successMessage = "All lists enabled"
+                                            ) {
+                                                store.setAllEnabled(true)
+                                            }
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Disable all") },
+                                        enabled = !busy && lists.any { it.enabled },
+                                        onClick = {
+                                            bulkActionsExpanded = false
+                                            update(
+                                                successMessage = "All lists disabled"
+                                            ) {
+                                                store.setAllEnabled(false)
+                                            }
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Refresh all") },
+                                        enabled =
+                                            !busy &&
+                                                lists.any { it.sourceUrl != null },
+                                        onClick = {
+                                            bulkActionsExpanded = false
+                                            var summary =
+                                                FilterRefreshResult(
+                                                    0,
+                                                    0,
+                                                    emptyList(),
+                                                )
+                                            update(
+                                                progressMessage =
+                                                    "Downloading and validating filter lists…",
+                                                onSuccess = {
+                                                    ToastManager.show(
+                                                        context,
+                                                        "Refreshed ${summary.updated} " +
+                                                            "of ${summary.total} lists",
+                                                    )
+                                                    if (
+                                                        summary.failures.isNotEmpty()
+                                                    ) {
+                                                        error =
+                                                            summary.failures
+                                                                .joinToString("\n") {
+                                                                    "${it.name}: ${it.message}"
+                                                                }
+                                                    }
+                                                },
+                                            ) {
+                                                summary =
+                                                    downloader.refreshAll(store)
+                                            }
+                                        },
+                                    )
+                                    DropdownMenuItem(
+                                        text = { Text("Rearrange lists") },
+                                        enabled = !busy && lists.size > 1,
+                                        onClick = {
+                                            bulkActionsExpanded = false
+                                            rearranging = true
+                                        },
+                                    )
+                                }
+                            }
+                            Button(
+                                onClick = {
+                                    error = null
+                                    addError = null
+                                    showAddDialog = true
+                                },
+                                enabled = !busy,
                             ) {
                                 Text(
-                                    "Actions",
+                                    "Add list",
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
-                                Icon(
-                                    painterResource(
-                                        R.drawable.outline_keyboard_arrow_down_24
-                                    ),
-                                    contentDescription = null,
-                                )
                             }
-                            DropdownMenu(
-                                expanded = bulkActionsExpanded,
-                                onDismissRequest = { bulkActionsExpanded = false },
-                            ) {
-                                DropdownMenuItem(
-                                    text = { Text("Enable all") },
-                                    enabled = !busy && lists.any { !it.enabled },
-                                    onClick = {
-                                        bulkActionsExpanded = false
-                                        update(
-                                            successMessage = "All lists enabled"
-                                        ) {
-                                            store.setAllEnabled(true)
-                                        }
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Disable all") },
-                                    enabled = !busy && lists.any { it.enabled },
-                                    onClick = {
-                                        bulkActionsExpanded = false
-                                        update(
-                                            successMessage = "All lists disabled"
-                                        ) {
-                                            store.setAllEnabled(false)
-                                        }
-                                    },
-                                )
-                                DropdownMenuItem(
-                                    text = { Text("Refresh all") },
-                                    enabled =
-                                        !busy && lists.any { it.sourceUrl != null },
-                                    onClick = {
-                                        bulkActionsExpanded = false
-                                        var summary =
-                                            FilterRefreshResult(0, 0, emptyList())
-                                        update(
-                                            progressMessage =
-                                                "Downloading and validating filter lists…",
-                                            onSuccess = {
-                                                ToastManager.show(
-                                                    context,
-                                                    "Refreshed ${summary.updated} " +
-                                                        "of ${summary.total} lists",
-                                                )
-                                                if (summary.failures.isNotEmpty()) {
-                                                    error =
-                                                        summary.failures
-                                                            .joinToString("\n") {
-                                                                "${it.name}: ${it.message}"
-                                                            }
-                                                }
-                                            },
-                                        ) {
-                                            summary = downloader.refreshAll(store)
-                                        }
-                                    },
-                                )
-                            }
-                        }
-                        Button(
-                            onClick = {
-                                error = null
-                                addError = null
-                                showAddDialog = true
-                            },
-                            enabled = !busy,
-                        ) {
-                            Text(
-                                "Add list",
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
                         }
                     }
                 }
@@ -480,7 +516,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                         ReorderableColumn(
                             list = lists,
                             onSettle = { from, to ->
-                                if (!busy && from != to) {
+                                if (rearranging && !busy && from != to) {
                                     val reordered =
                                         lists.toMutableList().apply {
                                             add(to, removeAt(from))
@@ -510,6 +546,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                     FilterListRow(
                                         item = item,
                                         busy = busy,
+                                        rearranging = rearranging,
                                         onEnabledChange = { enabled ->
                                             update {
                                                 store.setEnabled(item.id, enabled)
@@ -541,9 +578,11 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                         dragHandle = {
                                             Box(
                                                 modifier =
-                                                    Modifier.size(36.dp)
+                                                    Modifier.size(48.dp)
                                                         .then(
-                                                            if (busy) {
+                                                            if (
+                                                                busy || !rearranging
+                                                            ) {
                                                                 Modifier
                                                             } else {
                                                                 Modifier
@@ -1049,6 +1088,7 @@ private fun InfoStat(
 private fun FilterListRow(
     item: ImportedFilterList,
     busy: Boolean,
+    rearranging: Boolean,
     onEnabledChange: (Boolean) -> Unit,
     onRefresh: () -> Unit,
     onEdit: () -> Unit,
@@ -1070,7 +1110,7 @@ private fun FilterListRow(
         ) {
             Switch(
                 checked = item.enabled,
-                enabled = !busy,
+                enabled = !busy && !rearranging,
                 onCheckedChange = onEnabledChange,
                 modifier =
                     Modifier.semantics { contentDescription = "Filter $name" },
@@ -1113,98 +1153,103 @@ private fun FilterListRow(
                     )
                 }
             }
-            Box {
-                IconButton(onClick = { menuExpanded = true }, enabled = !busy) {
-                    Icon(
-                        painterResource(R.drawable.outline_more_vert_24),
-                        contentDescription = "Options for $name",
-                    )
-                }
-                DropdownMenu(
-                    expanded = menuExpanded,
-                    onDismissRequest = { menuExpanded = false },
-                ) {
-                    if (item.type != FilterListType.PRESET) {
-                        DropdownMenuItem(
-                            text = { Text("Edit") },
-                            leadingIcon = {
-                                Icon(
-                                    painterResource(R.drawable.baseline_edit_24),
-                                    contentDescription = null,
-                                )
-                            },
-                            onClick = {
-                                menuExpanded = false
-                                onEdit()
-                            },
-                            enabled = !busy,
+            if (rearranging) {
+                dragHandle()
+            } else {
+                Box {
+                    IconButton(onClick = { menuExpanded = true }, enabled = !busy) {
+                        Icon(
+                            painterResource(R.drawable.outline_more_vert_24),
+                            contentDescription = "Options for $name",
                         )
                     }
-                    if (item.sourceUrl != null) {
-                        DropdownMenuItem(
-                            text = { Text("Refresh") },
-                            leadingIcon = {
-                                Icon(
-                                    painterResource(R.drawable.baseline_refresh_24),
-                                    contentDescription = null,
-                                )
-                            },
-                            onClick = {
-                                menuExpanded = false
-                                onRefresh()
-                            },
-                            enabled = !busy,
-                        )
-                    }
-                    DropdownMenuItem(
-                        text = { Text("Info") },
-                        leadingIcon = {
-                            Icon(
-                                painterResource(R.drawable.baseline_info_24),
-                                contentDescription = null,
+                    DropdownMenu(
+                        expanded = menuExpanded,
+                        onDismissRequest = { menuExpanded = false },
+                    ) {
+                        if (item.type != FilterListType.PRESET) {
+                            DropdownMenuItem(
+                                text = { Text("Edit") },
+                                leadingIcon = {
+                                    Icon(
+                                        painterResource(R.drawable.baseline_edit_24),
+                                        contentDescription = null,
+                                    )
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    onEdit()
+                                },
+                                enabled = !busy,
                             )
-                        },
-                        onClick = {
-                            menuExpanded = false
-                            onInfo()
-                        },
-                        enabled = !busy,
-                    )
-                    if (item.type == FilterListType.FILE) {
+                        }
+                        if (item.sourceUrl != null) {
+                            DropdownMenuItem(
+                                text = { Text("Refresh") },
+                                leadingIcon = {
+                                    Icon(
+                                        painterResource(
+                                            R.drawable.baseline_refresh_24
+                                        ),
+                                        contentDescription = null,
+                                    )
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    onRefresh()
+                                },
+                                enabled = !busy,
+                            )
+                        }
                         DropdownMenuItem(
-                            text = { Text("Clone") },
+                            text = { Text("Info") },
                             leadingIcon = {
                                 Icon(
-                                    painterResource(
-                                        R.drawable.baseline_content_copy_24
-                                    ),
+                                    painterResource(R.drawable.baseline_info_24),
                                     contentDescription = null,
                                 )
                             },
                             onClick = {
                                 menuExpanded = false
-                                onClone()
+                                onInfo()
+                            },
+                            enabled = !busy,
+                        )
+                        if (item.type == FilterListType.FILE) {
+                            DropdownMenuItem(
+                                text = { Text("Clone") },
+                                leadingIcon = {
+                                    Icon(
+                                        painterResource(
+                                            R.drawable.baseline_content_copy_24
+                                        ),
+                                        contentDescription = null,
+                                    )
+                                },
+                                onClick = {
+                                    menuExpanded = false
+                                    onClone()
+                                },
+                                enabled = !busy,
+                            )
+                        }
+                        DropdownMenuItem(
+                            text = { Text("Delete") },
+                            leadingIcon = {
+                                Icon(
+                                    painterResource(R.drawable.baseline_delete_24),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onRemove()
                             },
                             enabled = !busy,
                         )
                     }
-                    DropdownMenuItem(
-                        text = { Text("Delete") },
-                        leadingIcon = {
-                            Icon(
-                                painterResource(R.drawable.baseline_delete_24),
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = {
-                            menuExpanded = false
-                            onRemove()
-                        },
-                        enabled = !busy,
-                    )
                 }
             }
-            dragHandle()
         }
     }
 }

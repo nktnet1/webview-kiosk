@@ -30,14 +30,19 @@ internal object SuggestedFilterLists {
                 url = "https://easylist.to/easylist/easylist.txt",
             ),
             SuggestedFilterList(
+                name = "EasyPrivacy",
+                description = "Trackers",
+                url = "https://easylist.to/easylist/easyprivacy.txt",
+            ),
+            SuggestedFilterList(
                 name = "AdGuard Base",
                 description = "Ads",
                 url = "https://filters.adtidy.org/extension/ublock/filters/2.txt",
             ),
             SuggestedFilterList(
-                name = "EasyPrivacy",
-                description = "Trackers",
-                url = "https://easylist.to/easylist/easyprivacy.txt",
+                name = "uBlock Origin",
+                description = "Ads",
+                url = "https://ublockorigin.github.io/uAssets/filters/filters.txt",
             ),
             SuggestedFilterList(
                 name = "HaGeZi Multi LIGHT",
