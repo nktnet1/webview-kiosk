@@ -21,8 +21,6 @@ fun EnableContentBlockingSetting() {
             """
             Block ads and trackers using enabled filter lists.
 
-            Disabling keeps your lists and their individual enabled states.
-
             In Content Blocking, select Add list to choose a preset, enter a URL,
             or paste or import custom rules.
             """
