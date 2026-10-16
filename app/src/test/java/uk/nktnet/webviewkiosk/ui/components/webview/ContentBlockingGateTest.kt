@@ -147,6 +147,53 @@ class ContentBlockingGateTest {
     }
 
     @Test
+    fun savedSettingsEditsCompileOnlyWhenWebViewIsShownAgain() {
+        blocker.start()
+        worker.runAll()
+        showPage.value = true
+        frames()
+        assertEquals(listOf(true), createdWithRules)
+
+        // Back to Web Content settings: edits stay pending without any worker job.
+        showPage.value = false
+        frames()
+        store.setEnabled(store.list().single().id, false)
+        blocker.markRulesChanged()
+        assertTrue(blocker.rulesPending.value)
+        assertTrue(worker.tasks.isEmpty())
+        assertEquals(BlockingStatus.ACTIVE, blocker.status.value)
+
+        showPage.value = true
+        frames()
+        assertFalse(mounted)
+        assertEquals(BlockingStatus.LOADING, blocker.status.value)
+        worker.runAll()
+        frames()
+        assertTrue(mounted)
+        assertEquals(listOf(true, false), createdWithRules)
+        assertFalse(blocker.rulesPending.value)
+    }
+
+    @Test
+    fun editsWhileWebViewIsVisibleTemporarilyGateThePage() {
+        blocker.start()
+        worker.runAll()
+        showPage.value = true
+        frames()
+        assertTrue(mounted)
+
+        store.setEnabled(store.list().single().id, false)
+        blocker.markRulesChanged()
+        frames()
+        assertFalse(mounted)
+        assertEquals(BlockingStatus.LOADING, blocker.status.value)
+        worker.runAll()
+        frames()
+        assertTrue(mounted)
+        assertEquals(listOf(true, false), createdWithRules)
+    }
+
+    @Test
     fun aSettingChangeReplacesTheVisiblePageAfterCompilation() {
         blocker.setEnabled(false)
         blocker.start()

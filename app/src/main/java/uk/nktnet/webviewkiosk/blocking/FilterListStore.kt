@@ -539,6 +539,23 @@ internal class FilterListStore(
         }
     }
 
+    /** Persist display order and engine input order without touching rule files. */
+    @Synchronized
+    fun reorder(ids: List<String>) {
+        val existing = list()
+        require(
+            ids.size == existing.size &&
+                ids.toSet().size == ids.size &&
+                ids.toSet() == existing.map { it.id }.toSet()
+        ) {
+            "Reordered lists must contain every saved list exactly once"
+        }
+        if (ids != existing.map { it.id }) {
+            val byId = existing.associateBy { it.id }
+            save(ids.map { byId.getValue(it) })
+        }
+    }
+
     @Synchronized
     fun remove(id: String) {
         val existing = list()

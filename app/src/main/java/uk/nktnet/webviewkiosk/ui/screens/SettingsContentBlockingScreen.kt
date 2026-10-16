@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -47,10 +46,10 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -82,9 +81,9 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import sh.calvin.reorderable.ReorderableColumn
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.blocking.BlockingStatus
-import uk.nktnet.webviewkiosk.blocking.ContentBlockingEditSession
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import uk.nktnet.webviewkiosk.blocking.FilterListInfo
 import uk.nktnet.webviewkiosk.blocking.FilterListStore
@@ -97,7 +96,6 @@ import uk.nktnet.webviewkiosk.blocking.SuggestedFilterLists
 import uk.nktnet.webviewkiosk.blocking.toFilterListUrlOrNull
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
-import uk.nktnet.webviewkiosk.ui.components.common.MinimumLoadingState
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
@@ -129,36 +127,16 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     val context = LocalContext.current
     val store = remember(context) { FilterListStore(context) }
     val blocker = remember(context) { ContentBlockingService.get(context) }
-    val edits = remember(blocker) { ContentBlockingEditSession(blocker) }
     val downloader = remember { SuggestedFilterListDownloader() }
     val scope = rememberCoroutineScope()
     val blockingEnabled by blocker.enabled.collectAsState()
     val blockingStatus by blocker.status.collectAsState()
-    val loadStage by blocker.loadStage.collectAsState()
     val blockingError by blocker.lastError.collectAsState()
     var lists by remember { mutableStateOf(store.list()) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var working by remember { mutableStateOf(false) }
-    var workingMessage by remember { mutableStateOf("") }
-    val loading = remember { MinimumLoadingState() }
-    val displayedLoadingMessage by loading.message.collectAsState()
-    val currentLoadingMessage =
-        when {
-            blockingStatus == BlockingStatus.LOADING ->
-                loadStage?.description ?: "Loading filter rules…"
-
-            working -> workingMessage
-
-            else -> null
-        }
-    val busy = currentLoadingMessage != null || displayedLoadingMessage != null
-    LaunchedEffect(currentLoadingMessage) {
-        if (currentLoadingMessage != null) {
-            loading.show(currentLoadingMessage)
-        } else {
-            loading.hide()
-        }
-    }
+    var workingMessage by remember { mutableStateOf<String?>(null) }
+    val busy = working
     var bulkActionsExpanded by remember { mutableStateOf(false) }
     var pendingRemoval by remember { mutableStateOf<ImportedFilterList?>(null) }
     var pendingEdit by remember { mutableStateOf<ImportedFilterList?>(null) }
@@ -172,63 +150,40 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     var error by remember { mutableStateOf<String?>(null) }
     var addError by remember { mutableStateOf<String?>(null) }
 
-    // Also cover unexpected navigation away from this destination. The WebView
-    // gate will wait for this reload before displaying any page content.
-    DisposableEffect(edits) {
-        onDispose { edits.flush() }
-    }
-
     fun update(
         affectsRules: Boolean = true,
         successMessage: String? = null,
-        progressMessage: String = "Saving filter-list changes…",
+        progressMessage: String? = null,
         onStored: (() -> Unit)? = null,
         onSuccess: (() -> Unit)? = null,
         onFailure: ((String) -> Unit)? = null,
         block: () -> Unit,
     ) {
-        if (
-            working ||
-                loading.message.value != null ||
-                blocker.status.value == BlockingStatus.LOADING
-        ) {
+        if (working) {
             return
         }
         working = true
         workingMessage = progressMessage
-        loading.show(progressMessage)
         error = null
         scope.launch {
             try {
                 val savedLists =
                     withContext(Dispatchers.IO) {
                         block()
+                        if (affectsRules) {
+                            blocker.markRulesChanged()
+                        }
                         store.list()
                     }
                 lists = savedLists
-                if (affectsRules) {
-                    edits.markChanged()
-                }
-                onStored?.let { stored ->
-                    stored()
-                    // The main indicator has just become visible after its dialog
-                    // closed.
-                    loading.show(
-                        loading.message.value ?: progressMessage,
-                        restartMinimum = true,
-                    )
-                }
+                onStored?.invoke()
                 working = false
-                loading.hide()
-                loading.awaitHidden()
+                workingMessage = null
                 onSuccess?.invoke()
                 successMessage?.let { ToastManager.show(context, it) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                working = false
-                loading.hide()
-                loading.awaitHidden()
                 val message = e.message ?: "Unable to change filter lists"
                 if (onFailure != null) {
                     onFailure(message)
@@ -237,44 +192,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 }
             } finally {
                 working = false
-            }
-        }
-    }
-
-    fun leave(onLeave: () -> Unit) {
-        if (
-            working ||
-                loading.message.value != null ||
-                blocker.status.value == BlockingStatus.LOADING
-        ) {
-            return
-        }
-        val revision = edits.flush()
-        if (revision == null) {
-            onLeave()
-            return
-        }
-        working = true
-        workingMessage = "Applying filter rules…"
-        loading.show(workingMessage)
-        error = null
-        scope.launch {
-            try {
-                blocker.awaitReload(revision)
-                working = false
-                loading.hide()
-                loading.awaitHidden()
-                onLeave()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                // Retry on the next exit attempt; keep the saved lists intact.
-                edits.markChanged()
-                error = e.message ?: "Unable to apply filter rules"
-                working = false
-                loading.hide()
-            } finally {
-                working = false
+                workingMessage = null
             }
         }
     }
@@ -292,7 +210,9 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 pendingInfo == null &&
                 pendingRemoval == null
     ) {
-        leave(::goBack)
+        if (!working) {
+            goBack()
+        }
     }
 
     fun displayName(uri: Uri): String =
@@ -368,8 +288,16 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         SettingLabel(
             navController,
             stringResource(R.string.settings_content_blocking_title),
-            onBackClick = { leave(::goBack) },
-            onExitClick = { leave { navigateToWebViewScreen(navController) } },
+            onBackClick = {
+                if (!working) {
+                    goBack()
+                }
+            },
+            onExitClick = {
+                if (!working) {
+                    navigateToWebViewScreen(navController)
+                }
+            },
         )
         SettingDivider()
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -381,11 +309,14 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 if (!blockingEnabled) {
                     item(key = "blocking-disabled") {
                         Text(
-                            "Content blocking is disabled.",
+                            "Content blocking is disabled. " +
+                                "The settings below will not take effect.",
                             modifier =
-                                Modifier.fillMaxWidth().semantics {
-                                    liveRegion = LiveRegionMode.Polite
-                                },
+                                Modifier.fillMaxWidth()
+                                    .padding(horizontal = 6.dp)
+                                    .semantics {
+                                        liveRegion = LiveRegionMode.Polite
+                                    },
                             color = MaterialTheme.colorScheme.error,
                             style = MaterialTheme.typography.bodyMedium,
                             fontStyle = FontStyle.Italic,
@@ -544,38 +475,103 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 if (lists.isEmpty()) {
                     item(key = "empty") { EmptyFilterListsCard() }
                 }
-                items(lists, key = { it.id }) { item ->
-                    FilterListRow(
-                        item = item,
-                        busy = busy,
-                        onEnabledChange = { enabled ->
-                            update { store.setEnabled(item.id, enabled) }
-                        },
-                        onRefresh = {
-                            update(
-                                affectsRules = item.enabled,
-                                successMessage = "List refreshed",
-                                progressMessage =
-                                    "Downloading and validating ${item.displayName()}…",
-                            ) {
-                                downloader.refresh(item, store)
+                if (lists.isNotEmpty()) {
+                    item(key = "filter-list-items") {
+                        ReorderableColumn(
+                            list = lists,
+                            onSettle = { from, to ->
+                                if (!busy && from != to) {
+                                    val reordered =
+                                        lists.toMutableList().apply {
+                                            add(to, removeAt(from))
+                                        }
+                                    val affectsRules =
+                                        lists.filter { it.enabled }.map { it.id } !=
+                                            reordered
+                                                .filter { it.enabled }
+                                                .map { it.id }
+                                    lists = reordered
+                                    update(
+                                        affectsRules = affectsRules,
+                                        onFailure = { message ->
+                                            lists = store.list()
+                                            error = message
+                                        },
+                                    ) {
+                                        store.reorder(reordered.map { it.id })
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                        ) { _, item, _ ->
+                            key(item.id) {
+                                ReorderableItem {
+                                    FilterListRow(
+                                        item = item,
+                                        busy = busy,
+                                        onEnabledChange = { enabled ->
+                                            update {
+                                                store.setEnabled(item.id, enabled)
+                                            }
+                                        },
+                                        onRefresh = {
+                                            update(
+                                                affectsRules = item.enabled,
+                                                successMessage = "List refreshed",
+                                                progressMessage =
+                                                    "Downloading and validating " +
+                                                        "${item.displayName()}…",
+                                            ) {
+                                                downloader.refresh(item, store)
+                                            }
+                                        },
+                                        onEdit = { openEditor(item) },
+                                        onInfo = { pendingInfo = item },
+                                        onClone = {
+                                            update(
+                                                affectsRules = false,
+                                                successMessage =
+                                                    "List cloned (disabled)",
+                                            ) {
+                                                store.cloneList(item.id)
+                                            }
+                                        },
+                                        onRemove = { pendingRemoval = item },
+                                        dragHandle = {
+                                            Box(
+                                                modifier =
+                                                    Modifier.size(36.dp)
+                                                        .then(
+                                                            if (busy) {
+                                                                Modifier
+                                                            } else {
+                                                                Modifier
+                                                                    .draggableHandle()
+                                                            }
+                                                        ),
+                                                contentAlignment = Alignment.Center,
+                                            ) {
+                                                Icon(
+                                                    painterResource(
+                                                        R.drawable.drag_indicator_24
+                                                    ),
+                                                    contentDescription =
+                                                        "Reorder ${item.displayName()}",
+                                                    tint =
+                                                        MaterialTheme.colorScheme
+                                                            .onSurfaceVariant,
+                                                )
+                                            }
+                                        },
+                                    )
+                                }
                             }
-                        },
-                        onEdit = { openEditor(item) },
-                        onInfo = { pendingInfo = item },
-                        onClone = {
-                            update(
-                                affectsRules = false,
-                                successMessage = "List cloned (disabled)",
-                            ) {
-                                store.cloneList(item.id)
-                            }
-                        },
-                        onRemove = { pendingRemoval = item },
-                    )
+                        }
+                    }
                 }
             }
-            if (busy) {
+            if (working && workingMessage != null) {
                 Box(
                     modifier =
                         Modifier.matchParentSize()
@@ -606,8 +602,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                             strokeWidth = 3.dp,
                         )
                         Text(
-                            currentLoadingMessage
-                                ?: displayedLoadingMessage.orEmpty(),
+                            workingMessage.orEmpty(),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontStyle = FontStyle.Italic,
@@ -762,8 +757,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         AddFilterListDialog(
             lists = lists,
             busy = busy,
-            progressMessage =
-                currentLoadingMessage ?: displayedLoadingMessage.orEmpty(),
+            progressMessage = workingMessage.orEmpty(),
             error = addError,
             onClearError = { addError = null },
             onDismiss = {
@@ -870,7 +864,7 @@ private fun FilterListInfoDialog(
             Column(
                 modifier =
                     Modifier.fillMaxWidth()
-                        .heightIn(max = 460.dp)
+                        .heightIn(max = 540.dp)
                         .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
@@ -894,7 +888,7 @@ private fun FilterListInfoDialog(
                         },
                     )
                     InfoStat(
-                        "Last refreshed",
+                        "Refreshed",
                         when {
                             item.type == FilterListType.FILE -> "Not applicable"
 
@@ -903,13 +897,12 @@ private fun FilterListInfoDialog(
                             else ->
                                 remember(item.lastRefreshedAt) {
                                     DateFormat.getDateTimeInstance(
-                                            DateFormat.MEDIUM,
+                                            DateFormat.SHORT,
                                             DateFormat.SHORT,
                                         )
                                         .format(Date(item.lastRefreshedAt))
                                 }
                         },
-                        stacked = true,
                     )
                     InfoStat(
                         "File size",
@@ -984,6 +977,7 @@ private fun InfoStat(
     value: String?,
     unavailable: Boolean = false,
     stacked: Boolean = false,
+    singleLine: Boolean = false,
 ) {
     Column {
         if (stacked) {
@@ -1022,6 +1016,13 @@ private fun InfoStat(
                     Text(
                         value ?: "Unavailable",
                         style = MaterialTheme.typography.bodySmall,
+                        maxLines =
+                            if (singleLine) {
+                                1
+                            } else {
+                                Int.MAX_VALUE
+                            },
+                        overflow = TextOverflow.Ellipsis,
                         textAlign =
                             if (stacked) {
                                 TextAlign.Start
@@ -1054,6 +1055,7 @@ private fun FilterListRow(
     onInfo: () -> Unit,
     onClone: () -> Unit,
     onRemove: () -> Unit,
+    dragHandle: @Composable () -> Unit,
 ) {
     val name = item.displayName()
     var menuExpanded by remember { mutableStateOf(false) }
@@ -1064,7 +1066,7 @@ private fun FilterListRow(
                     .heightIn(min = 64.dp)
                     .padding(start = 12.dp, end = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Switch(
                 checked = item.enabled,
@@ -1202,6 +1204,7 @@ private fun FilterListRow(
                     )
                 }
             }
+            dragHandle()
         }
     }
 }

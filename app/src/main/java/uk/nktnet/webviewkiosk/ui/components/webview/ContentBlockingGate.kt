@@ -31,17 +31,19 @@ internal fun ContentBlockingGate(
 ) {
     val enabled by blocker.enabled.collectAsState()
     val initialLoadComplete by blocker.initialLoadComplete.collectAsState()
+    val rulesPending by blocker.rulesPending.collectAsState()
     val status by blocker.status.collectAsState()
     val stage by blocker.loadStage.collectAsState()
     val displayedMessage by loading.message.collectAsState()
-    val waiting = !initialLoadComplete || status == BlockingStatus.LOADING
+    val waiting =
+        rulesPending || !initialLoadComplete || status == BlockingStatus.LOADING
     val message =
         if (waiting) {
             stage?.description ?: "Loading content-blocking rules…"
         } else {
             null
         }
-    LaunchedEffect(blocker) { blocker.start() }
+    LaunchedEffect(blocker, rulesPending) { blocker.prepareForWebView() }
     LaunchedEffect(message) {
         if (message != null) {
             loading.show(message)

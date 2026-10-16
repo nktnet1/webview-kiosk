@@ -7,7 +7,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -60,53 +59,68 @@ class ContentBlockingServiceTest {
     }
 
     @Test
-    fun editsCompileOnlyOnceWhenTheSettingsSessionIsFlushed() {
+    fun settingsEditsWaitForTheNextWebViewBeforeCompilingOnce() {
         service.start()
         executor.runAll()
-        val edits = ContentBlockingEditSession(service)
-        assertNull(edits.flush())
 
         val first = store.importFrom("first.txt", "||ads.example^".byteInputStream())
-        edits.markChanged()
+        service.markRulesChanged()
         store.importFrom("second.txt", "||trackers.example^".byteInputStream())
-        edits.markChanged()
+        service.markRulesChanged()
         store.setEnabled(first.id, false)
-        edits.markChanged()
+        service.markRulesChanged()
 
+        // Returning to the parent settings screen does not trigger a reload.
+        assertTrue(service.rulesPending.value)
         assertEquals(0, engine.replacements)
         assertEquals(1, engine.clears)
         assertEquals(BlockingStatus.DISABLED, service.status.value)
+        assertTrue(executor.queue.isEmpty())
 
-        val revision = edits.flush()
-        assertNotNull(revision)
-        assertNull(edits.flush())
+        service.prepareForWebView()
+        assertFalse(service.rulesPending.value)
         assertEquals(BlockingStatus.LOADING, service.status.value)
         executor.runAll()
 
         assertEquals(1, engine.replacements)
         assertEquals(BlockingStatus.ACTIVE, service.status.value)
-        assertNull(edits.flush())
+        service.prepareForWebView()
+        assertTrue(executor.queue.isEmpty())
     }
 
     @Test
-    fun subsequentEditsRequestAnotherReloadOnlyAfterBeingFlushed() {
+    fun pendingEditsAreConsumedOnlyWhenReenteringTheWebView() {
         val item = store.importFrom("test.txt", "||ads.example^".byteInputStream())
         service.start()
         executor.runAll()
-        val edits = ContentBlockingEditSession(service)
 
         store.setEnabled(item.id, false)
-        edits.markChanged()
-        edits.flush()
+        service.markRulesChanged()
+        assertEquals(1, engine.replacements)
+        assertTrue(executor.queue.isEmpty())
+
+        service.prepareForWebView()
         executor.runAll()
         assertEquals(1, engine.clears)
 
         store.setEnabled(item.id, true)
-        edits.markChanged()
+        service.markRulesChanged()
         assertEquals(1, engine.replacements)
-        edits.flush()
+        service.prepareForWebView()
         executor.runAll()
         assertEquals(2, engine.replacements)
+    }
+
+    @Test
+    fun editsBeforeFirstStartAreIncludedInAOneTimeInitialLoad() {
+        store.importFrom("test.txt", "||ads.example^".byteInputStream())
+        service.markRulesChanged()
+        assertTrue(service.rulesPending.value)
+        service.prepareForWebView()
+        assertFalse(service.rulesPending.value)
+        executor.runAll()
+        assertEquals(1, engine.replacements)
+        assertTrue(executor.queue.isEmpty())
     }
 
     @Test

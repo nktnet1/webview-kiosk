@@ -53,6 +53,11 @@ internal class ContentBlockingService(
 
     private val _initialLoadComplete = MutableStateFlow(false)
     val initialLoadComplete = _initialLoadComplete.asStateFlow()
+
+    // Saved list changes do not need recompiling while Settings is open.
+    // The WebView gate consumes this flag before creating the next page.
+    private val _rulesPending = MutableStateFlow(false)
+    val rulesPending = _rulesPending.asStateFlow()
     val hasActiveRules: Boolean
         get() = ready
 
@@ -129,6 +134,27 @@ internal class ContentBlockingService(
         }
         started = true
         reload()
+    }
+
+    /**
+     * Save the need to reload; do not compile merely because Settings was edited.
+     */
+    @Synchronized
+    fun markRulesChanged() {
+        _rulesPending.value = true
+    }
+
+    /** Called when the WebView destination is entered, before page creation. */
+    @Synchronized
+    fun prepareForWebView() {
+        if (!started) {
+            // The initial load reads the latest saved lists already.
+            _rulesPending.value = false
+            start()
+        } else if (_rulesPending.value) {
+            reload()
+            _rulesPending.value = false
+        }
     }
 
     /** Suspend the first navigation, never the UI or request-interception thread. */
