@@ -7,6 +7,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -56,6 +57,56 @@ class ContentBlockingServiceTest {
         )
         assertNull(service.lastError.value)
         assertNull(service.loadStage.value)
+    }
+
+    @Test
+    fun editsCompileOnlyOnceWhenTheSettingsSessionIsFlushed() {
+        service.start()
+        executor.runAll()
+        val edits = ContentBlockingEditSession(service)
+        assertNull(edits.flush())
+
+        val first = store.importFrom("first.txt", "||ads.example^".byteInputStream())
+        edits.markChanged()
+        store.importFrom("second.txt", "||trackers.example^".byteInputStream())
+        edits.markChanged()
+        store.setEnabled(first.id, false)
+        edits.markChanged()
+
+        assertEquals(0, engine.replacements)
+        assertEquals(1, engine.clears)
+        assertEquals(BlockingStatus.DISABLED, service.status.value)
+
+        val revision = edits.flush()
+        assertNotNull(revision)
+        assertNull(edits.flush())
+        assertEquals(BlockingStatus.LOADING, service.status.value)
+        executor.runAll()
+
+        assertEquals(1, engine.replacements)
+        assertEquals(BlockingStatus.ACTIVE, service.status.value)
+        assertNull(edits.flush())
+    }
+
+    @Test
+    fun subsequentEditsRequestAnotherReloadOnlyAfterBeingFlushed() {
+        val item = store.importFrom("test.txt", "||ads.example^".byteInputStream())
+        service.start()
+        executor.runAll()
+        val edits = ContentBlockingEditSession(service)
+
+        store.setEnabled(item.id, false)
+        edits.markChanged()
+        edits.flush()
+        executor.runAll()
+        assertEquals(1, engine.clears)
+
+        store.setEnabled(item.id, true)
+        edits.markChanged()
+        assertEquals(1, engine.replacements)
+        edits.flush()
+        executor.runAll()
+        assertEquals(2, engine.replacements)
     }
 
     @Test

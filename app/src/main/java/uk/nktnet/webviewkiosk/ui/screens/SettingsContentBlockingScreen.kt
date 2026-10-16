@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.ui.screens
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.text.format.Formatter
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -25,6 +26,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -45,9 +47,11 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -56,7 +60,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -78,6 +84,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.blocking.BlockingStatus
+import uk.nktnet.webviewkiosk.blocking.ContentBlockingEditSession
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import uk.nktnet.webviewkiosk.blocking.FilterListInfo
 import uk.nktnet.webviewkiosk.blocking.FilterListStore
@@ -93,6 +100,7 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.common.MinimumLoadingState
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
+import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 
 private fun ImportedFilterList.displayName(): String =
     if (sourceUrl == null) {
@@ -121,6 +129,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     val context = LocalContext.current
     val store = remember(context) { FilterListStore(context) }
     val blocker = remember(context) { ContentBlockingService.get(context) }
+    val edits = remember(blocker) { ContentBlockingEditSession(blocker) }
     val downloader = remember { SuggestedFilterListDownloader() }
     val scope = rememberCoroutineScope()
     val blockingEnabled by blocker.enabled.collectAsState()
@@ -163,8 +172,14 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     var error by remember { mutableStateOf<String?>(null) }
     var addError by remember { mutableStateOf<String?>(null) }
 
+    // Also cover unexpected navigation away from this destination. The WebView
+    // gate will wait for this reload before displaying any page content.
+    DisposableEffect(edits) {
+        onDispose { edits.flush() }
+    }
+
     fun update(
-        reloadRules: Boolean = true,
+        affectsRules: Boolean = true,
         successMessage: String? = null,
         progressMessage: String = "Saving filter-list changes…",
         onStored: (() -> Unit)? = null,
@@ -185,20 +200,15 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         error = null
         scope.launch {
             try {
-                val (savedLists, revision) =
+                val savedLists =
                     withContext(Dispatchers.IO) {
                         block()
-                        // Queue the reload on IO even if this screen is then
-                        // navigated away from.
-                        val revision =
-                            if (reloadRules) {
-                                blocker.reload()
-                            } else {
-                                null
-                            }
-                        store.list() to revision
+                        store.list()
                     }
                 lists = savedLists
+                if (affectsRules) {
+                    edits.markChanged()
+                }
                 onStored?.let { stored ->
                     stored()
                     // The main indicator has just become visible after its dialog
@@ -207,9 +217,6 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                         loading.message.value ?: progressMessage,
                         restartMinimum = true,
                     )
-                }
-                if (revision != null) {
-                    blocker.awaitReload(revision)
                 }
                 working = false
                 loading.hide()
@@ -232,6 +239,60 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 working = false
             }
         }
+    }
+
+    fun leave(onLeave: () -> Unit) {
+        if (
+            working ||
+                loading.message.value != null ||
+                blocker.status.value == BlockingStatus.LOADING
+        ) {
+            return
+        }
+        val revision = edits.flush()
+        if (revision == null) {
+            onLeave()
+            return
+        }
+        working = true
+        workingMessage = "Applying filter rules…"
+        loading.show(workingMessage)
+        error = null
+        scope.launch {
+            try {
+                blocker.awaitReload(revision)
+                working = false
+                loading.hide()
+                loading.awaitHidden()
+                onLeave()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Retry on the next exit attempt; keep the saved lists intact.
+                edits.markChanged()
+                error = e.message ?: "Unable to apply filter rules"
+                working = false
+                loading.hide()
+            } finally {
+                working = false
+            }
+        }
+    }
+
+    fun goBack() {
+        if (!navController.popBackStack()) {
+            navigateToWebViewScreen(navController)
+        }
+    }
+
+    BackHandler(
+        enabled =
+            !showAddDialog &&
+                pendingEdit == null &&
+                pendingInfo == null &&
+                pendingRemoval == null
+    ) {
+        leave(::goBack)
     }
 
     fun displayName(uri: Uri): String =
@@ -307,6 +368,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         SettingLabel(
             navController,
             stringResource(R.string.settings_content_blocking_title),
+            onBackClick = { leave(::goBack) },
+            onExitClick = { leave { navigateToWebViewScreen(navController) } },
         )
         SettingDivider()
         Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
@@ -490,7 +553,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                         },
                         onRefresh = {
                             update(
-                                reloadRules = item.enabled,
+                                affectsRules = item.enabled,
                                 successMessage = "List refreshed",
                                 progressMessage =
                                     "Downloading and validating ${item.displayName()}…",
@@ -502,7 +565,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                         onInfo = { pendingInfo = item },
                         onClone = {
                             update(
-                                reloadRules = false,
+                                affectsRules = false,
                                 successMessage = "List cloned (disabled)",
                             ) {
                                 store.cloneList(item.id)
@@ -649,7 +712,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     } else {
                         null
                     }
-                val reloadRules =
+                val affectsRules =
                     item.enabled &&
                         when (item.type) {
                             FilterListType.FILE -> changedFile
@@ -657,7 +720,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                             FilterListType.PRESET -> false
                         }
                 update(
-                    reloadRules = reloadRules,
+                    affectsRules = affectsRules,
                     successMessage = "List saved",
                     progressMessage = "Validating and saving the filter list…",
                     onStored = { pendingEdit = null },
@@ -856,28 +919,28 @@ private fun FilterListInfoDialog(
                 }
                 InfoSection("Rules") {
                     InfoStat(
-                        "Total rules",
-                        details?.let { numbers.format(it.totalRules) },
-                        unavailable,
-                    )
-                    InfoStat(
-                        "Network rules",
+                        "Network",
                         details?.let { numbers.format(it.networkRules) },
                         unavailable,
                     )
                     InfoStat(
-                        "Cosmetic rules",
+                        "Cosmetic",
                         details?.let { numbers.format(it.cosmeticRules) },
                         unavailable,
                     )
                     InfoStat(
-                        "Skipped rules",
+                        "Skipped",
                         details?.let { numbers.format(it.skippedRules) },
                         unavailable,
                     )
                     InfoStat(
-                        "Invalid rules",
+                        "Invalid",
                         details?.let { numbers.format(it.invalidRules) },
+                        unavailable,
+                    )
+                    InfoStat(
+                        "Total",
+                        details?.let { numbers.format(it.totalRules) },
                         unavailable,
                     )
                 }
@@ -958,7 +1021,7 @@ private fun InfoStat(
                 if (value != null || unavailable) {
                     Text(
                         value ?: "Unavailable",
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = MaterialTheme.typography.bodySmall,
                         textAlign =
                             if (stacked) {
                                 TextAlign.Start
@@ -1150,17 +1213,21 @@ private fun ListTypeDropdown(
     enabled: Boolean,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var anchorWidth by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
     val label =
         when (value) {
             FilterListType.FILE -> "Custom"
             FilterListType.URL -> "URL"
             FilterListType.PRESET -> "Preset"
         }
-    Box(modifier = Modifier.fillMaxWidth()) {
+    Box(
+        modifier = Modifier.fillMaxWidth().onSizeChanged { anchorWidth = it.width }
+    ) {
         OutlinedButton(
             onClick = { expanded = true },
             enabled = enabled,
-            shape = MaterialTheme.shapes.extraSmall,
+            shape = RoundedCornerShape(12.dp),
             modifier =
                 Modifier.fillMaxWidth().semantics {
                     contentDescription = "List type"
@@ -1177,10 +1244,15 @@ private fun ListTypeDropdown(
                 contentDescription = null,
             )
         }
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.width(with(density) { anchorWidth.toDp() }),
+        ) {
             listOf(FilterListType.PRESET, FilterListType.URL, FilterListType.FILE)
                 .forEach { type ->
                     DropdownMenuItem(
+                        modifier = Modifier.fillMaxWidth(),
                         text = {
                             Text(
                                 when (type) {
@@ -1231,6 +1303,8 @@ private fun AddFilterListDialog(
     var textError by rememberSaveable { mutableStateOf<String?>(null) }
     var suggestion by remember { mutableStateOf(SuggestedFilterLists.all.first()) }
     var presetsExpanded by remember { mutableStateOf(false) }
+    var presetDropdownWidth by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
     val installed = lists.any {
         it.type == FilterListType.PRESET && it.sourceUrl == suggestion.url
     }
@@ -1461,11 +1535,16 @@ private fun AddFilterListDialog(
 
                         FilterListType.PRESET -> {
                             FilterListField("Preset") {
-                                Box(modifier = Modifier.fillMaxWidth()) {
+                                Box(
+                                    modifier =
+                                        Modifier.fillMaxWidth().onSizeChanged {
+                                            presetDropdownWidth = it.width
+                                        }
+                                ) {
                                     OutlinedButton(
                                         onClick = { presetsExpanded = true },
                                         enabled = !busy,
-                                        shape = MaterialTheme.shapes.extraSmall,
+                                        shape = RoundedCornerShape(12.dp),
                                         modifier =
                                             Modifier.fillMaxWidth().semantics {
                                                 contentDescription = "Preset"
@@ -1490,9 +1569,16 @@ private fun AddFilterListDialog(
                                         onDismissRequest = {
                                             presetsExpanded = false
                                         },
+                                        modifier =
+                                            Modifier.width(
+                                                with(density) {
+                                                    presetDropdownWidth.toDp()
+                                                }
+                                            ),
                                     ) {
                                         SuggestedFilterLists.all.forEach { preset ->
                                             DropdownMenuItem(
+                                                modifier = Modifier.fillMaxWidth(),
                                                 text = {
                                                     Text(
                                                         preset.name,
@@ -1709,7 +1795,12 @@ private fun EditFilterListDialog(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    OutlinedButton(onClick = onPickReplacement, enabled = !busy) {
+                    OutlinedButton(
+                        onClick = onPickReplacement,
+                        enabled = !busy,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                    ) {
                         Text(
                             if (replacementName == null) {
                                 "Replace from file"
