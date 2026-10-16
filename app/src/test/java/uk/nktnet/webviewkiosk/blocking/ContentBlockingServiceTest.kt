@@ -351,6 +351,36 @@ class ContentBlockingServiceTest {
         assertTrue(service.hasActiveRules)
     }
 
+    @Test
+    fun disabledStartupAndListChangesDoNotCompileOrWait() = runBlocking {
+        val item = store.importFrom("test.txt", "||ads.example^".byteInputStream())
+        service.setEnabled(false)
+        service.start()
+        service.awaitInitialLoad()
+        service.awaitReload(service.reload())
+        executor.runAll()
+        assertEquals(0, engine.replacements)
+        assertEquals(BlockingStatus.DISABLED, service.status.value)
+        assertTrue(store.list().single { it.id == item.id }.enabled)
+
+        service.setEnabled(true)
+        executor.runAll()
+        assertEquals(1, engine.replacements)
+        assertTrue(service.hasActiveRules)
+    }
+
+    @Test
+    fun disablingDuringCompilationPreventsItsResultFromReactivatingBlocking() {
+        store.importFrom("test.txt", "||ads.example^".byteInputStream())
+        engine.duringReplace = { service.setEnabled(false) }
+        service.start()
+        executor.runAll()
+        assertEquals(BlockingStatus.DISABLED, service.status.value)
+        assertFalse(service.hasActiveRules)
+        assertTrue(service.initialLoadComplete.value)
+        assertNull(service.lastError.value)
+    }
+
     private class FakeEngine : NetworkFilterEngine {
         var replacements = 0
         var clears = 0

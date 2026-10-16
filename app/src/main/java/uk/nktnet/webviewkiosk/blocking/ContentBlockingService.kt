@@ -1,7 +1,12 @@
 package uk.nktnet.webviewkiosk.blocking
 
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.util.Log
+import androidx.core.content.ContextCompat
 import java.io.File
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
@@ -13,6 +18,8 @@ import uk.nktnet.webviewkiosk.BuildConfig
 import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
 import uk.nktnet.webviewkiosk.adblock.NetworkFilterEngine
 import uk.nktnet.webviewkiosk.adblock.RuleLoadStage
+import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 
 internal enum class BlockingStatus {
     DISABLED,
@@ -37,6 +44,9 @@ internal class ContentBlockingService(
 ) {
     private val generation = AtomicLong(0)
     private var started = false
+    private var settingsBinding: AutoCloseable? = null
+
+    @Volatile private var enabled = true
 
     @Volatile private var ready = false
 
@@ -58,6 +68,59 @@ internal class ContentBlockingService(
     val skippedRules = _skippedRules.asStateFlow()
     private val completedLoad = MutableStateFlow(RuleLoadCompletion(0))
 
+    fun bindSettings(context: Context): AutoCloseable {
+        check(settingsBinding == null) { "Settings are already bound" }
+        val application = context.applicationContext
+        val settings = UserSettings(application)
+        val preferences =
+            application.getSharedPreferences(
+                UserSettingsKeys.PREFS_NAME,
+                Context.MODE_PRIVATE,
+            )
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (
+                key == null ||
+                    key == UserSettingsKeys.WebContent.ENABLE_CONTENT_BLOCKING
+            ) {
+                setEnabled(settings.enableContentBlocking)
+            }
+        }
+        val receiver =
+            object : BroadcastReceiver() {
+                override fun onReceive(context: Context, intent: Intent) {
+                    setEnabled(settings.enableContentBlocking)
+                }
+            }
+        preferences.registerOnSharedPreferenceChangeListener(listener)
+        ContextCompat.registerReceiver(
+            application,
+            receiver,
+            IntentFilter(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED),
+            ContextCompat.RECEIVER_EXPORTED,
+        )
+        setEnabled(settings.enableContentBlocking)
+        val binding = AutoCloseable {
+            preferences.unregisterOnSharedPreferenceChangeListener(listener)
+            application.unregisterReceiver(receiver)
+            settingsBinding = null
+        }
+        settingsBinding = binding
+        return binding
+    }
+
+    @Synchronized
+    fun setEnabled(value: Boolean) {
+        if (enabled == value) {
+            return
+        }
+        enabled = value
+        if (started || !value) {
+            reload()
+        } else {
+            _initialLoadComplete.value = false
+        }
+    }
+
     @Synchronized
     fun start() {
         if (started) {
@@ -76,6 +139,16 @@ internal class ContentBlockingService(
     @Synchronized
     fun reload(): Long {
         val revision = generation.incrementAndGet()
+        if (!enabled) {
+            ready = false
+            _status.value = BlockingStatus.DISABLED
+            _loadStage.value = null
+            _lastError.value = null
+            _skippedRules.value = 0
+            _initialLoadComplete.value = true
+            completedLoad.value = RuleLoadCompletion(revision)
+            return revision
+        }
         _loadStage.value = RuleLoadStage.READING_LISTS
         _status.value = BlockingStatus.LOADING
         try {
@@ -234,6 +307,7 @@ internal class ContentBlockingService(
                                 // existing suffix
                                 // asset.
                                 okhttp3.OkHttp.initialize(context.applicationContext)
+                                it.bindSettings(context)
                                 instance = it
                             }
                 }

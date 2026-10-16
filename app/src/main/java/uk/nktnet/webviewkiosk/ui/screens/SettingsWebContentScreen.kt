@@ -22,6 +22,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingListItem
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.AllowLocalFilesSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.EnableContentBlockingSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.HomeUrlSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.SupportPdfRenderingSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.WebsiteBlacklistSetting
@@ -52,20 +53,11 @@ fun SettingsWebContentScreen(navController: NavController) {
             WebsiteBookmarksSetting()
             SupportPdfRenderingSetting()
             AllowLocalFilesSetting()
+            EnableContentBlockingSetting()
 
             Spacer(modifier = Modifier.height(16.dp))
 
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                SettingListItem(
-                    title = stringResource(R.string.settings_content_blocking_title),
-                    description =
-                        stringResource(
-                            R.string.settings_content_blocking_description
-                        ),
-                    onClick = {
-                        navController.navigate(Screen.SettingsContentBlocking.route)
-                    },
-                )
                 SettingListItem(
                     title = stringResource(R.string.settings_files_title),
                     description =
@@ -74,6 +66,16 @@ fun SettingsWebContentScreen(navController: NavController) {
                         ),
                     onClick = {
                         navController.navigate(Screen.SettingsWebContentFiles.route)
+                    },
+                )
+                SettingListItem(
+                    title = stringResource(R.string.settings_content_blocking_title),
+                    description =
+                        stringResource(
+                            R.string.settings_content_blocking_description
+                        ),
+                    onClick = {
+                        navController.navigate(Screen.SettingsContentBlocking.route)
                     },
                 )
             }

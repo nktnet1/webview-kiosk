@@ -37,6 +37,13 @@
         android:title="@string/web_content_allow_local_files_title"
         android:description="@string/web_content_allow_local_files_description"
     />
+    <restriction
+        android:key="web_content.enable_content_blocking"
+        android:restrictionType="bool"
+        android:defaultValue="true"
+        android:title="@string/web_content_enable_content_blocking_title"
+        android:description="@string/web_content_enable_content_blocking_description"
+    />
 
     <!-- Web Browsing -->
     <restriction

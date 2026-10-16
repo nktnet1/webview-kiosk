@@ -24,6 +24,7 @@ const KEYS = {
   boolean: [
     "web_content.support_pdf_rendering",
     "web_content.allow_local_files",
+    "web_content.enable_content_blocking",
     "web_browsing.allow_refresh",
     "web_browsing.allow_pull_to_refresh",
     "web_browsing.allow_backwards_navigation",

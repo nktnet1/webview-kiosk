@@ -96,6 +96,13 @@ class UserSettings(val context: Context) {
             UserSettingsKeys.WebContent.ALLOW_LOCAL_FILES,
             true,
         )
+    var enableContentBlocking by
+        booleanPref(
+            getRestrictions,
+            prefs,
+            UserSettingsKeys.WebContent.ENABLE_CONTENT_BLOCKING,
+            true,
+        )
 
     // Web Browsing
     var allowRefresh by
@@ -1204,6 +1211,10 @@ class UserSettings(val context: Context) {
                     supportPdfRendering,
                 )
                 put(UserSettingsKeys.WebContent.ALLOW_LOCAL_FILES, allowLocalFiles)
+                put(
+                    UserSettingsKeys.WebContent.ENABLE_CONTENT_BLOCKING,
+                    enableContentBlocking,
+                )
 
                 put(UserSettingsKeys.WebBrowsing.ALLOW_REFRESH, allowRefresh)
                 put(
@@ -1662,6 +1673,11 @@ class UserSettings(val context: Context) {
                 json.optBoolean(
                     UserSettingsKeys.WebContent.ALLOW_LOCAL_FILES,
                     allowLocalFiles,
+                )
+            enableContentBlocking =
+                json.optBoolean(
+                    UserSettingsKeys.WebContent.ENABLE_CONTENT_BLOCKING,
+                    enableContentBlocking,
                 )
 
             allowRefresh =
