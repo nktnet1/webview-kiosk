@@ -100,7 +100,7 @@ internal object FilterParser {
 
     private class Invalid(message: String) : RuntimeException(message)
 
-    private object Unsupported : RuntimeException() {
+    private class Unsupported : RuntimeException() {
         // The four-argument constructor is unavailable before Android 7.
         override fun fillInStackTrace(): Throwable = this
     }
@@ -219,17 +219,17 @@ internal object FilterParser {
             NetworkRule(
                 NetworkIdentity(
                     UrlPattern(
-                        "$literal^",
-                        true,
-                        false,
-                        false,
-                        false,
-                        normalized,
+                        text = "$literal^",
+                        domainAnchor = true,
+                        startAnchor = false,
+                        endAnchor = false,
+                        matchCase = false,
+                        hostIndex = normalized,
                     ),
-                    Conditions.ANY,
-                    false,
-                    false,
-                    0,
+                    conditions = Conditions.ANY,
+                    exception = false,
+                    important = false,
+                    hide = 0,
                 )
             )
         )
@@ -238,18 +238,18 @@ internal object FilterParser {
     private fun parse(line: String): ParsedFilter =
         try {
             if (line.length > 8192) {
-                throw Unsupported
+                throw Unsupported()
             }
             val cosmetic = line.indexOf("##")
             val exception = line.indexOf("#@#")
             when {
-                exception >= 0 && (cosmetic < 0 || exception < cosmetic) ->
+                exception >= 0 && cosmetic !in 0..exception ->
                     parseCosmetic(line, exception, true)
 
                 cosmetic >= 0 -> parseCosmetic(line, cosmetic, false)
 
                 listOf("#?#", "#@?#", "#$#", "#@$#", "#%#", "#@%#")
-                    .any(line::contains) -> throw Unsupported
+                    .any(line::contains) -> throw Unsupported()
 
                 else -> parseNetwork(line)
             }
@@ -284,7 +284,7 @@ internal object FilterParser {
                 selector.startsWith("^") ||
                 procedural.any(selector::contains)
         ) {
-            throw Unsupported
+            throw Unsupported()
         }
         val scope = domains(line.substring(0, separator), ',')
         return ParsedFilter.Cosmetic(CosmeticRule(selector, scope, exception))
@@ -304,7 +304,7 @@ internal object FilterParser {
             // Entity and regex scopes need distinct semantics; do not approximate
             // them.
             if (raw.contains('*') || raw.startsWith('/')) {
-                throw Unsupported
+                throw Unsupported()
             }
             val domain =
                 normalizedHost(raw) ?: throw Invalid("invalid domain restriction")
@@ -332,7 +332,7 @@ internal object FilterParser {
                 (closingSlash == body.lastIndex ||
                     body.getOrNull(closingSlash + 1) == '$')
         ) {
-            throw Unsupported // Full regex rules are intentionally outside this
+            throw Unsupported() // Full regex rules are intentionally outside this
             // subset.
         }
         val dollar = body.lastIndexOf('$')
@@ -386,7 +386,7 @@ internal object FilterParser {
                             "ehide",
                         )
             ) {
-                throw Unsupported
+                throw Unsupported()
             }
         }
         for (option in options) {
@@ -397,7 +397,7 @@ internal object FilterParser {
             val type = ResourceTypes.known(name)
             if (type != null) {
                 if (option.contains('=')) {
-                    throw Unsupported
+                    throw Unsupported()
                 }
                 if (negated) {
                     excludedTypes = excludedTypes or type
@@ -413,7 +413,7 @@ internal object FilterParser {
                         throw Invalid("missing or negated domain restriction")
                     }
                     if (scope != DomainScope.ANY) {
-                        throw Unsupported
+                        throw Unsupported()
                     }
                     scope = domains(value, '|')
                 }
@@ -425,7 +425,7 @@ internal object FilterParser {
                             methods.isNotEmpty() ||
                             excludedMethods.isNotEmpty()
                     ) {
-                        throw Unsupported
+                        throw Unsupported()
                     }
                     val positive = mutableSetOf<String>()
                     val negative = mutableSetOf<String>()
@@ -435,7 +435,7 @@ internal object FilterParser {
                             token.isEmpty() ||
                                 token.any { it !in 'A'..'Z' && it != '-' }
                         ) {
-                            throw Unsupported
+                            throw Unsupported()
                         }
                         if (method.startsWith('~')) {
                             negative += token
@@ -452,12 +452,12 @@ internal object FilterParser {
                 "first-party",
                 "1p" -> {
                     if (option.contains('=')) {
-                        throw Unsupported
+                        throw Unsupported()
                     }
                     val restriction =
                         (name == "third-party" || name == "3p") != negated
                     if (thirdParty != null && thirdParty != restriction) {
-                        throw Unsupported
+                        throw Unsupported()
                     }
                     thirdParty = restriction
                 }
@@ -467,14 +467,14 @@ internal object FilterParser {
                         throw Invalid("invalid negation of $name")
                     }
                     if (option.contains('=')) {
-                        throw Unsupported
+                        throw Unsupported()
                     }
                     when (name) {
                         "match-case" -> matchCase = true
 
                         "important" -> {
                             if (exception) {
-                                throw Unsupported
+                                throw Unsupported()
                             }
                             important = true
                         }
@@ -484,7 +484,7 @@ internal object FilterParser {
                         "generichide",
                         "ghide" -> {
                             if (!exception) {
-                                throw Unsupported
+                                throw Unsupported()
                             }
                             hide = maxOf(hide, 1)
                         }
@@ -492,7 +492,7 @@ internal object FilterParser {
                         "elemhide",
                         "ehide" -> {
                             if (!exception) {
-                                throw Unsupported
+                                throw Unsupported()
                             }
                             hide = 2
                         }
@@ -528,7 +528,7 @@ internal object FilterParser {
             throw Invalid("missing URL pattern")
         }
         if (raw.length > 4096) {
-            throw Unsupported
+            throw Unsupported()
         }
         val domainAnchor = raw.startsWith("||")
         val startAnchor = !domainAnchor && raw.startsWith('|')
@@ -556,7 +556,7 @@ internal object FilterParser {
             throw Invalid("missing URL pattern")
         }
         if (text.contains('|') || text.contains('\\')) {
-            throw Unsupported
+            throw Unsupported()
         }
         var hostIndex: String? = null
         if (domainAnchor) {
@@ -578,12 +578,12 @@ internal object FilterParser {
             val host = text.substring(0, end)
             if (host.isEmpty()) {
                 if (text.startsWith('*')) {
-                    throw Unsupported
+                    throw Unsupported()
                 }
                 throw Invalid("missing host anchor")
             }
             if (!text.startsWith('[') && text.getOrNull(end) == '*') {
-                throw Unsupported
+                throw Unsupported()
             }
             val normalized =
                 normalizedHost(host, allowPrefix = end == text.length && !endAnchor)

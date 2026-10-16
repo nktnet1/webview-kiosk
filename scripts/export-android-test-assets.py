@@ -625,7 +625,7 @@ def export_docker(args):
     cache = "webview-kiosk-android-test-assets-deps:/var/cache/android-test-assets"
     say("Preparing the Linux x86_64 Gradle exporter image (cached after first use)")
     run(["docker", "build", "--platform", "linux/amd64", "--tag", image,
-         "--build-arg", f"GRADLE_VERSION={version}",
+         "--build-arg", f"GRADLE_IMAGE=gradle:{version}-jdk21-jammy",
          "--file", PROJECT_ROOT / "scripts" / dockerfile, PROJECT_ROOT / "scripts"])
     args.output.mkdir(parents=True, exist_ok=True)
     command = ["docker", "run", "--rm", "--platform", "linux/amd64"]

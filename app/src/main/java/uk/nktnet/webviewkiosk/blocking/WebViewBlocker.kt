@@ -22,15 +22,15 @@ internal object WebViewBlocker {
         method: String,
         service: ContentBlockingService,
     ): Boolean {
-        if (isMainFrame || !isFilterableUrl(url) || !isFilterableUrl(pageUrl)) {
-            return false
-        }
-        return service.shouldBlock(
-            url,
-            pageUrl,
-            resourceType(requestHeaders),
-            method,
-        )
+        return !isMainFrame &&
+            isFilterableUrl(url) &&
+            isFilterableUrl(pageUrl) &&
+            service.shouldBlock(
+                url,
+                pageUrl,
+                resourceType(requestHeaders),
+                method,
+            )
     }
 
     fun intercept(

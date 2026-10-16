@@ -526,7 +526,7 @@ class DispatchTest(unittest.TestCase):
                 build = builds[0]
                 version = ASSETS.required_gradle_version()
                 self.assertEqual(
-                    f"GRADLE_VERSION={version}",
+                    f"GRADLE_IMAGE=gradle:{version}-jdk21-jammy",
                     build[build.index("--build-arg") + 1],
                 )
                 image = build[build.index("--tag") + 1]
@@ -562,7 +562,9 @@ class DispatchTest(unittest.TestCase):
                     call.args[0] for call in run.call_args_list
                     if call.args[0][1] == "build"
                 )
-                self.assertIn(f"GRADLE_VERSION={version}", build)
+                self.assertIn(
+                    f"GRADLE_IMAGE=gradle:{version}-jdk21-jammy", build
+                )
                 images.add(build[build.index("--tag") + 1])
         self.assertEqual(2, len(images))
 
@@ -612,8 +614,8 @@ class DispatchTest(unittest.TestCase):
     def test_dockerfiles_supply_python_and_use_jbr_cdn(self):
         android = (ROOT / "scripts/Dockerfile.android-test-assets").read_text()
         self.assertLess(
-            android.index("ARG GRADLE_VERSION\n"),
-            android.index("FROM gradle:${GRADLE_VERSION}-jdk21-jammy"),
+            android.index("ARG GRADLE_IMAGE=gradle:jdk21-jammy\n"),
+            android.index("FROM ${GRADLE_IMAGE}"),
         )
         self.assertIn("python3", android)
         self.assertIn("https://cache-redirector.jetbrains.com/intellij-jbr/${JBR_ARCHIVE}", android)

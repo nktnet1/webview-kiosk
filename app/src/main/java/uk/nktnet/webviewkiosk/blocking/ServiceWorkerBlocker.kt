@@ -59,14 +59,12 @@ internal object ServiceWorkerBlocker {
         // first/third-party context.
         // Without an initiator header, keep the existing fail-open policy.
         val source =
-            sequenceOf("referer", "origin")
-                .mapNotNull { name ->
-                    headers.entries
-                        .firstOrNull { it.key.equals(name, ignoreCase = true) }
-                        ?.value
-                        ?.takeIf(WebViewBlocker::isFilterableUrl)
-                }
-                .firstOrNull() ?: return null
+            sequenceOf("referer", "origin").firstNotNullOfOrNull { name ->
+                headers.entries
+                    .firstOrNull { it.key.equals(name, ignoreCase = true) }
+                    ?.value
+                    ?.takeIf(WebViewBlocker::isFilterableUrl)
+            } ?: return null
         return WebViewBlocker.intercept(request, source, service)
     }
 }

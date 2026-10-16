@@ -174,16 +174,14 @@ internal class ContentBlockingService(
         type: String,
         method: String,
     ): Boolean {
-        if (!ready) {
-            return false
-        }
-        return try {
-            engine.shouldBlock(url, sourceUrl, type, method)
-        } catch (e: LinkageError) {
-            ready = false
-            reportError(generation.get(), e)
-            false
-        }
+        return ready &&
+            try {
+                engine.shouldBlock(url, sourceUrl, type, method)
+            } catch (e: LinkageError) {
+                ready = false
+                reportError(generation.get(), e)
+                false
+            }
     }
 
     fun cosmeticSelectors(

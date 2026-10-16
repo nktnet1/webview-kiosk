@@ -49,8 +49,6 @@ internal object FilterCompiler {
         }
     }
 
-    fun compile(lists: List<String>): CompiledFilters = parse(lists).build()
-
     fun parse(lists: List<String>): CompiledRuleSet {
         val networks = LinkedHashSet<NetworkIdentity>()
         val disabled = HashSet<NetworkIdentity>()
@@ -328,13 +326,11 @@ internal class CompiledFilters(
             )
         val important =
             requests.any(facts) { rule ->
-                if (
-                    (rule.important ||
-                        (rule.exception && !allowed) ||
-                        (!rule.exception && !blocked)) &&
-                        facts.matches(rule.conditions) &&
-                        rule.pattern.matches(target, facts.url, facts.budget)
-                ) {
+                (rule.important ||
+                    (rule.exception && !allowed) ||
+                    (!rule.exception && !blocked)) &&
+                    facts.matches(rule.conditions) &&
+                    rule.pattern.matches(target, facts.url, facts.budget) &&
                     if (rule.important) {
                         true
                     } else {
@@ -345,9 +341,6 @@ internal class CompiledFilters(
                         }
                         false
                     }
-                } else {
-                    false
-                }
             }
         return !facts.budget.exhausted && (important || (blocked && !allowed))
     }
@@ -449,7 +442,7 @@ internal class CompiledFilters(
                 (1 until end).firstOrNull {
                     selector[it] == '.' || selector[it] == '#'
                 } ?: end
-            return if (tokenEnd > 1 && tokenEnd <= 129) {
+            return if (tokenEnd in 2..129) {
                 selector[0] to selector.substring(1, tokenEnd)
             } else {
                 null

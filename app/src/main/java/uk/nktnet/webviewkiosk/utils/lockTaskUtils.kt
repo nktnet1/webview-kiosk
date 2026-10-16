@@ -29,7 +29,7 @@ private fun tryLockAction(
     onFailed: (String) -> Unit,
 ): Boolean {
     return try {
-        activity.lockAction()
+        lockAction(activity)
         onSuccess()
         true
     } catch (e: SecurityException) {

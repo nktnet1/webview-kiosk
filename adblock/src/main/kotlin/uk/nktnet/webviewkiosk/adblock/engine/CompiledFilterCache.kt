@@ -170,8 +170,8 @@ internal class CompiledFilterCache(
                     val strings = StringWriter(output)
                     output.writeInt(rules.skippedRules)
                     output.writeInt(rules.networks.size)
-                    for (rule in rules.networks) {
-                        val pattern = rule.pattern
+                    for ((pattern, conditions, exception, important, hide) in
+                        rules.networks) {
                         strings.write(pattern.text)
                         output.writeByte(
                             (if (pattern.domainAnchor) {
@@ -196,27 +196,27 @@ internal class CompiledFilterCache(
                                 })
                         )
                         strings.write(pattern.hostIndex.orEmpty())
-                        strings.scope(rule.conditions.domains)
-                        output.writeInt(rule.conditions.types)
-                        output.writeInt(rule.conditions.excludedTypes)
+                        strings.scope(conditions.domains)
+                        output.writeInt(conditions.types)
+                        output.writeInt(conditions.excludedTypes)
                         output.writeByte(
-                            when (rule.conditions.thirdParty) {
+                            when (conditions.thirdParty) {
                                 null -> -1
                                 false -> 0
                                 true -> 1
                             }
                         )
-                        strings.set(rule.conditions.methods)
-                        strings.set(rule.conditions.excludedMethods)
-                        output.writeBoolean(rule.exception)
-                        output.writeBoolean(rule.important)
-                        output.writeInt(rule.hide)
+                        strings.set(conditions.methods)
+                        strings.set(conditions.excludedMethods)
+                        output.writeBoolean(exception)
+                        output.writeBoolean(important)
+                        output.writeInt(hide)
                     }
                     output.writeInt(rules.cosmetics.size)
-                    for (rule in rules.cosmetics) {
-                        strings.write(rule.selector)
-                        strings.scope(rule.domains)
-                        output.writeBoolean(rule.exception)
+                    for ((selector, domains, exception) in rules.cosmetics) {
+                        strings.write(selector)
+                        strings.scope(domains)
+                        output.writeBoolean(exception)
                     }
                     output.writeLong(checksum.value)
                 }
