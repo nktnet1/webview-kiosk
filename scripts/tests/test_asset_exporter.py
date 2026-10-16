@@ -88,7 +88,7 @@ class ArchiveTest(unittest.TestCase):
 GRADLE_STUB = """#!/usr/bin/env python3
 import json, os, pathlib, sys
 if sys.argv[1:] == ['--version']:
-    print('Gradle ' + os.environ.get('FAKE_GRADLE_VERSION', '9.8.0'))
+    print('Gradle ' + os.environ['FAKE_GRADLE_VERSION'])
     sys.exit(0)
 root = pathlib.Path(os.environ['CAPTURE_DIR'])
 with (root / 'gradle-calls.jsonl').open('a') as log:
@@ -118,6 +118,11 @@ class ExporterTest(unittest.TestCase):
         self.root = Path(self.directory.name)
         self.project = self.root / "project with spaces"
         self.project.mkdir()
+        self.gradle_version = ASSETS.required_gradle_version()
+        self.gradle_archive = f"gradle-{self.gradle_version}-bin.zip"
+        self.gradle_url = (
+            "https://services.gradle.org/distributions/" + self.gradle_archive
+        )
         self.output = self.root / "exports with spaces"
         self.bin = self.root / "bin"
         self.bin.mkdir()
@@ -130,7 +135,7 @@ class ExporterTest(unittest.TestCase):
         write(self.sdk / "licenses/license", "licence fixture")
         write(self.sdk / "ndk/secret", "not exported")
         write(self.project / "gradle/wrapper/gradle-wrapper.properties",
-              "distributionUrl=https\\://services.gradle.org/distributions/gradle-9.8.0-bin.zip\n")
+              "distributionUrl=" + self.gradle_url.replace(":", "\\:") + "\n")
         write(self.project / "docs/pnpm-workspace.yaml", "packages: []\n")
         self.downloads = []
         self.tool_packages = {}
@@ -140,6 +145,7 @@ class ExporterTest(unittest.TestCase):
         self.stack.enter_context(mock.patch.object(ASSETS.platform, "system", return_value="Linux"))
         self.stack.enter_context(mock.patch.object(ASSETS.platform, "machine", return_value="x86_64"))
         self.stack.enter_context(mock.patch.dict(os.environ, {"CAPTURE_DIR": str(self.root),
+            "FAKE_GRADLE_VERSION": self.gradle_version,
             "PATH": str(self.bin) + os.pathsep + os.environ.get("PATH", "")}))
         self.stack.enter_context(mock.patch.object(ASSETS, "download", side_effect=self.download))
 
@@ -154,7 +160,9 @@ class ExporterTest(unittest.TestCase):
 
     def tool_fixtures(self):
         for name, entries in (
-            ("gradle-9.8.0-bin.zip", {"gradle-9.8.0/bin/gradle": GRADLE_STUB}),
+            (self.gradle_archive, {
+                f"gradle-{self.gradle_version}/bin/gradle": GRADLE_STUB,
+            }),
             (ASSETS.CMDLINE_TOOLS_ZIP, {"cmdline-tools/bin/sdkmanager": """#!/usr/bin/env python3
 import os, pathlib, sys
 root = pathlib.Path(os.environ['CAPTURE_DIR'])
@@ -194,7 +202,8 @@ else:
                                                   hashlib.sha256(self.tool_packages[ASSETS.CMDLINE_TOOLS_ZIP]).hexdigest()))
         wrapper = self.project / "gradle/wrapper/gradle-wrapper.properties"
         with wrapper.open("a") as output:
-            output.write("distributionSha256Sum=" + hashlib.sha256(self.tool_packages['gradle-9.8.0-bin.zip']).hexdigest() + "\n")
+            checksum = hashlib.sha256(self.tool_packages[self.gradle_archive])
+            output.write("distributionSha256Sum=" + checksum.hexdigest() + "\n")
 
     def download_export(self, *arguments):
         with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()) as errors:
@@ -298,11 +307,15 @@ else:
 
     def test_gradle_wrapper_versions_and_sdk_mismatch(self):
         wrapper = self.project / "gradle/wrapper/gradle-wrapper.properties"
-        wrapper.write_text("distributionUrl=https\\://services.gradle.org/distributions/gradle-9.8.0-milestone-1-bin.zip\n")
-        self.assertEqual("9.8.0-milestone-1", ASSETS.required_gradle_version())
+        version = self.gradle_version + "-milestone-1"
+        wrapper.write_text(
+            "distributionUrl=https\\://services.gradle.org/distributions/"
+            f"gradle-{version}-bin.zip\n"
+        )
+        self.assertEqual(version, ASSETS.required_gradle_version())
         self.assertEqual(1, self.export())
         self.assertIn("does not match wrapper version", self.error)
-        with mock.patch.dict(os.environ, {"FAKE_GRADLE_VERSION": "9.8.0-milestone-1"}):
+        with mock.patch.dict(os.environ, {"FAKE_GRADLE_VERSION": version}):
             self.assertEqual(0, self.export(), self.error)
             write(self.project / "local.properties", f"sdk.dir={self.root}/another-sdk\n")
             self.assertEqual(1, self.export())
@@ -346,7 +359,7 @@ else:
         run.assert_not_called()
         prepare.assert_not_called()
         self.assertEqual(3, len(self.downloads))
-        self.assertIn("https://services.gradle.org/distributions/gradle-9.8.0-bin.zip", self.downloads)
+        self.assertIn(self.gradle_url, self.downloads)
         tools = self.output / "tools"
         for name, expected in self.tool_packages.items():
             with self.subTest(name=name):
@@ -433,7 +446,10 @@ else:
         tools = self.output / "tools"
         self.assertTrue((tools / ASSETS.JBR_ARCHIVE).is_file())
         self.assertFalse(list(tools.glob(ASSETS.JBR_ARCHIVE + ".part-*")))
-        self.assertEqual(self.tool_packages["gradle-9.8.0-bin.zip"], (tools / "gradle-9.8.0-bin.zip").read_bytes())
+        self.assertEqual(
+            self.tool_packages[self.gradle_archive],
+            (tools / self.gradle_archive).read_bytes(),
+        )
         self.assertEqual("keep", (tools / "unrelated.txt").read_text())
         self.verify_checksums(tools)
 
@@ -442,7 +458,7 @@ else:
         self.assertEqual(0, self.download_export("--download-tools", "--download-only"), self.error)
         tools = self.output / "tools"
         sums = (tools / "SHA256SUMS").read_bytes()
-        (tools / "gradle-9.8.0-bin.zip").write_bytes(b"corrupted")
+        (tools / self.gradle_archive).write_bytes(b"corrupted")
         self.assertEqual(1, self.download_export("--download-jbr", "--download-only"))
         self.assertIn("Previous export checksum mismatch", self.error)
         self.assertEqual(sums, (tools / "SHA256SUMS").read_bytes())
@@ -507,12 +523,48 @@ class DispatchTest(unittest.TestCase):
                 containers = [command for command in commands if command[1] == "run"]
                 self.assertEqual(1, len(builds))
                 self.assertEqual(1, len(containers))
+                build = builds[0]
+                version = ASSETS.required_gradle_version()
+                self.assertEqual(
+                    f"GRADLE_VERSION={version}",
+                    build[build.index("--build-arg") + 1],
+                )
+                image = build[build.index("--tag") + 1]
+                self.assertIn(f"gradle-{version}-", image)
+                self.assertIn(image, containers[0])
                 for command in builds + containers:
                     self.assertIn("linux/amd64", command)
                 self.assertIn(f"{output}:/export", containers[0])
                 self.assertIn("python3", containers[0])
                 self.assertIn(ASSETS.DOCKER_BOOTSTRAP, containers[0])
                 compile(ASSETS.DOCKER_BOOTSTRAP, "docker-bootstrap", "exec")
+
+    def test_docker_tracks_changes_to_the_wrapper_version(self):
+        pinned_version = ASSETS.required_gradle_version()
+        images = set()
+        for version in (pinned_version, pinned_version + "-rc-1"):
+            with self.subTest(version=version), \
+                 tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                write(root / "gradle/wrapper/gradle-wrapper.properties",
+                      "distributionUrl=https\\://services.gradle.org/distributions/"
+                      f"gradle-{version}-bin.zip\n")
+                with mock.patch.object(ASSETS, "PROJECT_ROOT", root), \
+                     mock.patch.object(
+                         ASSETS.shutil, "which", return_value="docker"
+                     ), \
+                     mock.patch.object(ASSETS, "run", return_value="linux") as run, \
+                     contextlib.redirect_stdout(io.StringIO()):
+                    ASSETS.export_docker(ASSETS.parse_args([
+                        "--output", str(root / "output"),
+                    ]))
+                build = next(
+                    call.args[0] for call in run.call_args_list
+                    if call.args[0][1] == "build"
+                )
+                self.assertIn(f"GRADLE_VERSION={version}", build)
+                images.add(build[build.index("--tag") + 1])
+        self.assertEqual(2, len(images))
 
     def test_docker_forwards_android_only_downloads(self):
         with tempfile.TemporaryDirectory() as directory, \
@@ -559,6 +611,10 @@ class DispatchTest(unittest.TestCase):
 
     def test_dockerfiles_supply_python_and_use_jbr_cdn(self):
         android = (ROOT / "scripts/Dockerfile.android-test-assets").read_text()
+        self.assertLess(
+            android.index("ARG GRADLE_VERSION\n"),
+            android.index("FROM gradle:${GRADLE_VERSION}-jdk21-jammy"),
+        )
         self.assertIn("python3", android)
         self.assertIn("https://cache-redirector.jetbrains.com/intellij-jbr/${JBR_ARCHIVE}", android)
         self.assertIn(f"ARG JBR_ARCHIVE={ASSETS.JBR_ARCHIVE}", android)

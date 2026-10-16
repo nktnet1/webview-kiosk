@@ -619,11 +619,13 @@ def export_docker(args):
                            message="The Docker daemon is unavailable; start Docker and try again")
     if operating_system != "linux":
         raise ExportError("Docker must be configured to run Linux containers")
-    image = "webview-kiosk-android-test-assets:gradle-9.8.0-jbr21"
+    version = required_gradle_version()
+    image = f"webview-kiosk-android-test-assets:gradle-{version}-jbr21"
     dockerfile = "Dockerfile.android-test-assets"
     cache = "webview-kiosk-android-test-assets-deps:/var/cache/android-test-assets"
     say("Preparing the Linux x86_64 Gradle exporter image (cached after first use)")
     run(["docker", "build", "--platform", "linux/amd64", "--tag", image,
+         "--build-arg", f"GRADLE_VERSION={version}",
          "--file", PROJECT_ROOT / "scripts" / dockerfile, PROJECT_ROOT / "scripts"])
     args.output.mkdir(parents=True, exist_ok=True)
     command = ["docker", "run", "--rm", "--platform", "linux/amd64"]

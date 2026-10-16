@@ -27,9 +27,9 @@ no service, IPC, JNI, reflection, per-request adapter, or additional runtime dep
 It adds a Gradle compilation task; APK bytes may vary with packaging and shrinking.
 The cache path, binary format, rules, and matching algorithms remain the same.
 
-Builds use JDK 21, Gradle 9.8.0, and the Android SDK. The Python test-asset exporter
-exports Gradle/Android dependencies, offers verified Gradle/JBR/SDK downloads, and
-automatically splits archives above 180 MB.
+Builds use JDK 21, the Gradle version pinned by the wrapper, and the Android SDK.
+The Python test-asset exporter exports Gradle/Android dependencies, offers verified
+Gradle/JBR/SDK downloads, and automatically splits archives above 180 MB.
 
 Initial WebView creation waits for provider warmup and the first rule load without
 blocking the UI or request threads. An initial load failure releases the startup

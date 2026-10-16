@@ -125,6 +125,11 @@ resolve the project's dependencies on its first run. No host Android SDK,
 Java or Gradle setup is necessary in Docker mode. Docker on Apple Silicon runs
 an x86_64 container, which can be slower than native Linux due to emulation.
 
+The Docker base image and exporter image tag use the Gradle version from
+`gradle/wrapper/gradle-wrapper.properties`. Updating the wrapper also updates
+the container's Gradle version; no separate version pin is needed in the
+Dockerfile, exporter, or tests.
+
 The download flags and `--output` carry over to Docker mode. The
 native-only `--sdk-root`, `--gradle-user-home`, and `--gradle-bin` options are
 rejected on other hosts.
