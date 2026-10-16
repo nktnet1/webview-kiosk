@@ -396,11 +396,10 @@ internal object ScriptletParser {
             }
             previous = char
         }
-        if (
-            repeats > 0 && (!regex.startsWith('^') || topAlternative || 'm' in flags)
-        ) {
-            return false
-        }
-        return !escaped && !inClass && runCatching { Regex(regex) }.isSuccess
+        return !(repeats > 0 &&
+            (!regex.startsWith('^') || topAlternative || 'm' in flags)) &&
+            !escaped &&
+            !inClass &&
+            runCatching { Regex(regex) }.isSuccess
     }
 }

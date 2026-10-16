@@ -97,7 +97,7 @@ internal object AdditionalScriptlets {
                 ScriptletType.SET_SESSION_STORAGE ->
                     args.size == 2 &&
                         arg(0).isNotEmpty() &&
-                        if (arg(1) == "\$remove\$") {
+                        if (arg(1) == $$"$remove$") {
                             patterns(0)
                         } else {
                             safeValue(arg(1)) ||
