@@ -53,6 +53,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import java.text.SimpleDateFormat
+import java.util.Locale
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
@@ -61,8 +63,6 @@ import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 @Composable
 fun SettingsMqttDebugScreen(navController: NavController) {
@@ -90,72 +90,88 @@ fun SettingsMqttDebugScreen(navController: NavController) {
         derivedStateOf {
             logs
                 .filter {
-                    it.tag.contains(searchQuery.text, ignoreCase = true)
-                    || (it.message?.contains(searchQuery.text, ignoreCase = true) == true)
-                    || (it.messageId?.contains(searchQuery.text, ignoreCase = true) == true)
+                    it.tag.contains(searchQuery.text, ignoreCase = true) ||
+                        (it.message?.contains(searchQuery.text, ignoreCase = true) ==
+                            true) ||
+                        (it.messageId?.contains(
+                            searchQuery.text,
+                            ignoreCase = true,
+                        ) == true)
                 }
                 .sortedBy { it.timestamp }
-                .let { if (ascending) it else it.reversed() }
+                .let {
+                    if (ascending) {
+                        it
+                    } else {
+                        it.reversed()
+                    }
+                }
         }
     }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(top = 4.dp)
-            .padding(horizontal = 16.dp),
+        modifier =
+            Modifier.fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(top = 4.dp)
+                .padding(horizontal = 16.dp)
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             SettingLabel(
                 navController = navController,
-                label = stringResource(R.string.settings_debug_log_title)
+                label = stringResource(R.string.settings_debug_log_title),
             )
             SettingDivider()
 
             Row(
-                modifier = Modifier
-                    .height(50.dp)
-                    .fillMaxWidth(),
+                modifier = Modifier.height(50.dp).fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 BasicTextField(
                     value = searchQuery.text,
                     onValueChange = { searchQuery = TextFieldValue(it) },
                     singleLine = true,
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                    textStyle = LocalTextStyle.current.copy(
-                        color = MaterialTheme.colorScheme.onSurface,
-                        fontSize = MaterialTheme.typography.bodySmall.fontSize
-                    ),
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(43.dp),
+                    textStyle =
+                        LocalTextStyle.current.copy(
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontSize = MaterialTheme.typography.bodySmall.fontSize,
+                        ),
+                    modifier = Modifier.weight(1f).height(43.dp),
                     decorationBox = { innerTextField ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .border(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                                    MaterialTheme.shapes.small
-                                )
-                                .padding(start = 14.dp, end = 8.dp)
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .border(
+                                        1.dp,
+                                        MaterialTheme.colorScheme.onSurface.copy(
+                                            alpha = 0.5f
+                                        ),
+                                        MaterialTheme.shapes.small,
+                                    )
+                                    .padding(start = 14.dp, end = 8.dp),
                         ) {
                             Box(
                                 modifier = Modifier.weight(1f),
-                                contentAlignment = Alignment.CenterStart
+                                contentAlignment = Alignment.CenterStart,
                             ) {
                                 if (searchQuery.text.isEmpty()) {
                                     Text(
                                         text = "Search the last ${logs.size} logs",
-                                        style = LocalTextStyle.current.copy(
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-                                            fontSize = MaterialTheme.typography.bodySmall.fontSize,
-                                            fontStyle = FontStyle.Italic,
-                                        )
+                                        style =
+                                            LocalTextStyle.current.copy(
+                                                color =
+                                                    MaterialTheme.colorScheme
+                                                        .onSurface
+                                                        .copy(alpha = 0.3f),
+                                                fontSize =
+                                                    MaterialTheme.typography
+                                                        .bodySmall
+                                                        .fontSize,
+                                                fontStyle = FontStyle.Italic,
+                                            ),
                                     )
                                 }
                                 innerTextField()
@@ -164,39 +180,49 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                             IconButton(
                                 enabled = searchQuery.text.isNotEmpty(),
                                 onClick = { searchQuery = TextFieldValue("") },
-                                modifier = Modifier
-                                    .size(26.dp)
+                                modifier = Modifier.size(26.dp),
                             ) {
                                 Icon(
-                                    painter = painterResource(R.drawable.baseline_clear_24),
+                                    painter =
+                                        painterResource(
+                                            R.drawable.baseline_clear_24
+                                        ),
                                     contentDescription = "Clear",
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .padding(2.dp),
+                                    modifier = Modifier.size(24.dp).padding(2.dp),
                                 )
                             }
                         }
-                    }
+                    },
                 )
 
                 IconButton(
                     onClick = { ascending = !ascending },
                     shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier
-                        .align(Alignment.CenterVertically)
-                        .graphicsLayer(scaleX = 0.9f, scaleY = 0.9f)
-                        .border(
-                            1.dp,
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                            MaterialTheme.shapes.small
-                        )
+                    modifier =
+                        Modifier.align(Alignment.CenterVertically)
+                            .graphicsLayer(scaleX = 0.9f, scaleY = 0.9f)
+                            .border(
+                                1.dp,
+                                MaterialTheme.colorScheme.onSurface.copy(
+                                    alpha = 0.5f
+                                ),
+                                MaterialTheme.shapes.small,
+                            ),
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.baseline_sort_24),
                         contentDescription = "Sort Order",
-                        modifier = Modifier
-                            .size(22.dp)
-                            .graphicsLayer(scaleY = if (ascending) -1f else 1f, scaleX = -1f)
+                        modifier =
+                            Modifier.size(22.dp)
+                                .graphicsLayer(
+                                    scaleY =
+                                        if (ascending) {
+                                            -1f
+                                        } else {
+                                            1f
+                                        },
+                                    scaleX = -1f,
+                                ),
                     )
                 }
             }
@@ -204,57 +230,53 @@ fun SettingsMqttDebugScreen(navController: NavController) {
             HorizontalDivider(
                 modifier = Modifier.padding(vertical = 8.dp),
                 thickness = DividerDefaults.Thickness,
-                color = DividerDefaults.color
+                color = DividerDefaults.color,
             )
 
             if (filteredLogs.isEmpty()) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.fillMaxWidth().weight(1f).padding(16.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = "No logs yet.",
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                ) {
+                LazyColumn(modifier = Modifier.fillMaxWidth().weight(1f)) {
                     items(filteredLogs) { logEntry ->
                         Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .combinedClickable(
-                                    onClick = {
-                                        ToastManager.show(
-                                            context,
-                                            "Click and hold to copy message."
-                                        )
-                                    },
-                                    onLongClick = {
-                                        scope.launch {
-                                            clipboard.setClipEntry(
-                                                ClipData.newPlainText(
-                                                    logEntry.tag,
-                                                    logEntry.message
-                                                ).toClipEntry()
+                            modifier =
+                                Modifier.fillMaxWidth()
+                                    .combinedClickable(
+                                        onClick = {
+                                            ToastManager.show(
+                                                context,
+                                                "Click and hold to copy message.",
                                             )
-                                        }
-                                    }
-                                )
-                         ) {
+                                        },
+                                        onLongClick = {
+                                            scope.launch {
+                                                clipboard.setClipEntry(
+                                                    ClipData.newPlainText(
+                                                            logEntry.tag,
+                                                            logEntry.message,
+                                                        )
+                                                        .toClipEntry()
+                                                )
+                                            }
+                                        },
+                                    )
+                        ) {
                             Text(
-                                text = "${dateFormat.format(logEntry.timestamp)} - ${logEntry.tag}",
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontWeight = FontWeight.Bold
-                                ),
+                                text =
+                                    "${dateFormat.format(logEntry.timestamp)} - ${logEntry.tag}",
+                                style =
+                                    MaterialTheme.typography.bodySmall.copy(
+                                        fontWeight = FontWeight.Bold
+                                    ),
                                 color = MaterialTheme.colorScheme.onSurface,
                             )
                             logEntry.messageId?.let {
@@ -262,21 +284,22 @@ fun SettingsMqttDebugScreen(navController: NavController) {
                                     text = "messageId: $it",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.padding(top = 4.dp)
+                                    modifier = Modifier.padding(top = 4.dp),
                                 )
                             }
                             logEntry.message?.let {
                                 Text(
                                     text = it,
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.padding(top = 4.dp)
+                                    color =
+                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(top = 4.dp),
                                 )
                             }
                             HorizontalDivider(
                                 thickness = DividerDefaults.Thickness,
                                 color = DividerDefaults.color,
-                                modifier = Modifier.padding(vertical = 8.dp)
+                                modifier = Modifier.padding(vertical = 8.dp),
                             )
                         }
                     }
@@ -293,15 +316,15 @@ fun SettingsMqttDebugScreen(navController: NavController) {
             },
             shape = RoundedCornerShape(12.dp),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .padding(bottom = 10.dp)
+            modifier =
+                Modifier.align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp),
         ) {
             Icon(
                 painter = painterResource(R.drawable.baseline_clear_24),
                 contentDescription = null,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.size(18.dp),
             )
             Spacer(Modifier.width(8.dp))
             Text("Clear Logs", style = MaterialTheme.typography.labelLarge)

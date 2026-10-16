@@ -19,27 +19,27 @@ import androidx.compose.ui.unit.dp
 fun AddressBarSearchSuggestions(
     suggestions: List<String>,
     onSelect: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .background(
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
-            )
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
+                .background(
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
+                )
     ) {
         suggestions.forEach { suggestion ->
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onSelect(suggestion) }
+                modifier = Modifier.fillMaxWidth().clickable { onSelect(suggestion) }
             ) {
                 Text(
                     text = suggestion,
                     style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.fillMaxWidth()
-                        .padding(horizontal = 25.dp, vertical = 15.dp)
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .padding(horizontal = 25.dp, vertical = 15.dp),
                 )
             }
         }

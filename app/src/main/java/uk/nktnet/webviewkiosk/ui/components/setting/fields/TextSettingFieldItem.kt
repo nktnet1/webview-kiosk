@@ -55,22 +55,19 @@ fun TextSettingFieldItem(
     descriptionFormatter: ((String) -> String)? = null,
     descriptionStyle: @Composable (String) -> TextStyle = { v ->
         if (v.isBlank()) {
-            MaterialTheme.typography.bodyMedium.copy(
-                fontStyle = FontStyle.Italic
-            )
+            MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic)
         } else {
             MaterialTheme.typography.bodyMedium
         }
     },
     saveText: String = "Save",
-    extraContent: (
-        @Composable (
-            (
-                draftValue: String,
-                setValue: (String) -> Unit,
-            ) -> Unit
-        )
-    )? = null,
+    extraContent:
+        (@Composable
+        ((
+            draftValue: String,
+            setValue: (String) -> Unit,
+        ) -> Unit))? =
+        null,
 ) {
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
@@ -84,24 +81,28 @@ fun TextSettingFieldItem(
         label = label,
         value = value,
         restricted = restricted,
-        onLongClick = onLongClick ?: if (isPassword || value.isEmpty()) {
-            { /* Do nothing */ }
-        } else {
-            null
-        },
+        onLongClick =
+            onLongClick
+                ?: if (isPassword || value.isEmpty()) {
+                    { /* Do nothing */ }
+                } else {
+                    null
+                },
         onClick = {
             draftValue = value
             draftError = !validator(value)
             showDialog = true
         },
     ) { v ->
-        val description = descriptionFormatter?.invoke(v) ?: run {
-            if (isMultiline) {
-                v.split("\n").joinToString(" | ").ifBlank { "(blank)" }
-            } else {
-                v.ifBlank { "(blank)" }
-            }
-        }
+        val description =
+            descriptionFormatter?.invoke(v)
+                ?: run {
+                    if (isMultiline) {
+                        v.split("\n").joinToString(" | ").ifBlank { "(blank)" }
+                    } else {
+                        v.ifBlank { "(blank)" }
+                    }
+                }
 
         Text(
             text = description,
@@ -109,7 +110,7 @@ fun TextSettingFieldItem(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 
@@ -134,29 +135,33 @@ fun TextSettingFieldItem(
                         showDialog = false
                     }
                 }
-            }
+            },
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 OutlinedTextField(
-                    value = if (restricted && isPassword && draftValue.isNotEmpty()) {
-                        "*".repeat(20)
-                    } else {
-                        draftValue
-                    },
+                    value =
+                        if (restricted && isPassword && draftValue.isNotEmpty()) {
+                            "*".repeat(20)
+                        } else {
+                            draftValue
+                        },
                     enabled = !restricted,
                     readOnly = readOnly,
-                    visualTransformation = if (isPassword) {
-                        PasswordVisualTransformation()
-                    } else {
-                        VisualTransformation.None
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = if (isPassword) {
-                            KeyboardType.Password
+                    visualTransformation =
+                        if (isPassword) {
+                            PasswordVisualTransformation()
                         } else {
-                            KeyboardType.Text
-                        }
-                    ),
+                            VisualTransformation.None
+                        },
+                    keyboardOptions =
+                        KeyboardOptions(
+                            keyboardType =
+                                if (isPassword) {
+                                    KeyboardType.Password
+                                } else {
+                                    KeyboardType.Text
+                                }
+                        ),
                     onValueChange = {
                         draftValue = it
                         draftError = !validator(it)
@@ -167,51 +172,59 @@ fun TextSettingFieldItem(
                             placeholder,
                             style = MaterialTheme.typography.bodyMedium,
                             fontStyle = FontStyle.Italic,
-                            maxLines = if (isMultiline) {
-                                Constants.MAX_INT_SETTING
-                            } else {
-                                1
-                            },
-                            overflow = if (isMultiline) {
-                                TextOverflow.Visible
-                            } else {
-                                TextOverflow.Ellipsis
-                            }
+                            maxLines =
+                                if (isMultiline) {
+                                    Constants.MAX_INT_SETTING
+                                } else {
+                                    1
+                                },
+                            overflow =
+                                if (isMultiline) {
+                                    TextOverflow.Visible
+                                } else {
+                                    TextOverflow.Ellipsis
+                                },
                         )
                     },
                     singleLine = !isMultiline,
-                    modifier = if (!isMultiline) {
-                        modifier
-                            .fillMaxWidth()
-                    } else {
-                        modifier
-                            .fillMaxWidth()
-                            .defaultMinSize(minHeight = 200.dp)
-                            .heightIn(max = 400.dp)
-                    },
-                    trailingIcon = if (!isMultiline && !restricted) {
-                        {
-                            IconButton(
-                                onClick = {
-                                    draftValue = ""
-                                    draftError = !validator("")
-                                },
-                                enabled = draftValue.isNotEmpty()
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.baseline_clear_24),
-                                    contentDescription = "Clear"
-                                )
+                    modifier =
+                        if (!isMultiline) {
+                            modifier.fillMaxWidth()
+                        } else {
+                            modifier
+                                .fillMaxWidth()
+                                .defaultMinSize(minHeight = 200.dp)
+                                .heightIn(max = 400.dp)
+                        },
+                    trailingIcon =
+                        if (!isMultiline && !restricted) {
+                            {
+                                IconButton(
+                                    onClick = {
+                                        draftValue = ""
+                                        draftError = !validator("")
+                                    },
+                                    enabled = draftValue.isNotEmpty(),
+                                ) {
+                                    Icon(
+                                        painter =
+                                            painterResource(
+                                                R.drawable.baseline_clear_24
+                                            ),
+                                        contentDescription = "Clear",
+                                    )
+                                }
                             }
-                        }
-                    } else null
+                        } else {
+                            null
+                        },
                 )
 
                 if (isMultiline && !restricted) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         IconButton(
                             enabled = draftValue.isNotEmpty(),
@@ -221,30 +234,34 @@ fun TextSettingFieldItem(
                             },
                         ) {
                             Icon(
-                                painter = painterResource(R.drawable.baseline_clear_24),
+                                painter =
+                                    painterResource(R.drawable.baseline_clear_24),
                                 contentDescription = "Clear",
-                                tint = MaterialTheme.colorScheme.error
+                                tint = MaterialTheme.colorScheme.error,
                             )
                         }
                         IconButton(
                             onClick = {
                                 scope.launch {
                                     val clipEntry = clipboard.getClipEntry()
-                                    val pasteData = clipEntry
-                                        ?.clipData
-                                        ?.getItemAt(0)
-                                        ?.text
-                                        ?.toString()
-                                        ?: ""
+                                    val pasteData =
+                                        clipEntry
+                                            ?.clipData
+                                            ?.getItemAt(0)
+                                            ?.text
+                                            ?.toString() ?: ""
                                     draftValue = pasteData
                                     draftError = !validator(pasteData)
                                 }
                             }
                         ) {
                             Icon(
-                                painter = painterResource(R.drawable.outline_content_paste_24),
+                                painter =
+                                    painterResource(
+                                        R.drawable.outline_content_paste_24
+                                    ),
                                 contentDescription = "Paste",
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.primary,
                             )
                         }
                     }
@@ -255,9 +272,7 @@ fun TextSettingFieldItem(
                         text = validationMessage ?: "Invalid input",
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp)
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     )
                 }
                 extraContent?.invoke(draftValue) {

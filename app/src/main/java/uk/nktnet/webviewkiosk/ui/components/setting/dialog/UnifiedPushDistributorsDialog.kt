@@ -39,8 +39,8 @@ fun UnifiedPushSelectorDialog(
         progress = progress,
         onSelectApp = onSelectedApp,
         appFilter = { app, query ->
-            app.name.contains(query, ignoreCase = true)
-            || app.packageName.contains(query, ignoreCase = true)
-        }
+            app.name.contains(query, ignoreCase = true) ||
+                app.packageName.contains(query, ignoreCase = true)
+        },
     )
 }

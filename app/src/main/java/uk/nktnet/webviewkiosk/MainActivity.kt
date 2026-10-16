@@ -18,12 +18,11 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.ui.Alignment
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -36,10 +35,11 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -47,13 +47,14 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
+import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
@@ -91,10 +92,9 @@ import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 import uk.nktnet.webviewkiosk.utils.tryUnlockTask
 import uk.nktnet.webviewkiosk.utils.updateDeviceSettings
-import uk.nktnet.webviewkiosk.utils.webview.WebViewStartup
 import uk.nktnet.webviewkiosk.utils.webview.NfcBridgeManager
+import uk.nktnet.webviewkiosk.utils.webview.WebViewStartup
 import uk.nktnet.webviewkiosk.utils.webview.getNfcAdapterOrNull
-import kotlin.time.Duration.Companion.milliseconds
 
 open class MainActivity : AppCompatActivity() {
     private lateinit var navController: NavHostController
@@ -111,8 +111,10 @@ open class MainActivity : AppCompatActivity() {
     private var deviceOwnerInitJob: Job? = null
     private var unregisterMqttCommandHost: (() -> Unit)? = null
 
-    // Android 6 can keep the HOME routing activity and private kiosk host alive together.
-    // Track their shared lifecycle on the main thread, retaining one event/UI host in background.
+    // Android 6 can keep the HOME routing activity and private kiosk host alive
+    // together.
+    // Track their shared lifecycle on the main thread, retaining one event/UI host
+    // in background.
     companion object {
         private val createdHosts = mutableSetOf<MainActivity>()
         private val startedHosts = mutableSetOf<MainActivity>()
@@ -122,60 +124,75 @@ open class MainActivity : AppCompatActivity() {
     internal fun isApplicationEventHost(): Boolean =
         Build.VERSION.SDK_INT != Build.VERSION_CODES.M || android6EventHost === this
 
-    val broadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            if (!isApplicationEventHost()) {
-                return
-            }
-            when (intent.action) {
-                Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED -> {
-                    if (this@MainActivity::navController.isInitialized) {
-                        val currentRoute = navController.currentBackStackEntry?.destination?.route
-                        if (currentRoute != Screen.AdminRestrictionsChanged.route) {
-                            navController.navigate(Screen.AdminRestrictionsChanged.route)
+    val broadcastReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                if (!isApplicationEventHost()) {
+                    return
+                }
+                when (intent.action) {
+                    Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED -> {
+                        if (this@MainActivity::navController.isInitialized) {
+                            val currentRoute =
+                                navController.currentBackStackEntry
+                                    ?.destination
+                                    ?.route
+                            if (
+                                currentRoute != Screen.AdminRestrictionsChanged.route
+                            ) {
+                                navController.navigate(
+                                    Screen.AdminRestrictionsChanged.route
+                                )
+                            }
                         }
+                        updateDeviceSettings(context)
+                        userSettings.refreshMutualTlsState()
+                        AuthenticationManager.resetAuthentication()
+                        AuthenticationManager.hideCustomAuthPrompt()
+                        MqttManager.publishApplicationRestrictionsChangedEvent()
                     }
-                    updateDeviceSettings(context)
-                    userSettings.refreshMutualTlsState()
-                    AuthenticationManager.resetAuthentication()
-                    AuthenticationManager.hideCustomAuthPrompt()
-                    MqttManager.publishApplicationRestrictionsChangedEvent()
+                    Intent.ACTION_POWER_CONNECTED -> {
+                        MqttManager.publishPowerPluggedEvent()
+                    }
+                    Intent.ACTION_POWER_DISCONNECTED -> {
+                        MqttManager.publishPowerUnpluggedEvent()
+                    }
+                    else -> Unit
                 }
-                Intent.ACTION_POWER_CONNECTED -> {
-                    MqttManager.publishPowerPluggedEvent()
-                }
-                Intent.ACTION_POWER_DISCONNECTED -> {
-                    MqttManager.publishPowerUnpluggedEvent()
-                }
-                else -> Unit
             }
         }
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
-        // Register both KeyChain-related activity results before STARTED, even when the
-        // mutual-TLS settings screen is not composed (e.g. while the picker is visible).
-        clientCertificateInstaller = ClientCertificateInstaller(
-            context = applicationContext,
-            lifecycleOwner = this,
-            activityResultRegistry = activityResultRegistry,
-            activityScope = lifecycleScope,
-        )
+        // Register both KeyChain-related activity results before STARTED, even when
+        // the
+        // mutual-TLS settings screen is not composed (e.g. while the picker is
+        // visible).
+        clientCertificateInstaller =
+            ClientCertificateInstaller(
+                context = applicationContext,
+                lifecycleOwner = this,
+                activityResultRegistry = activityResultRegistry,
+                activityScope = lifecycleScope,
+            )
         WebViewStartup.start(applicationContext)
         createdHosts.add(this)
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-            // On API 23, enableEdgeToEdge() uses legacy systemUiVisibility layout flags.
-            // AppCompat can overwrite those flags while creating the decor view, leaving the
-            // content already inset by the framework before Compose applies its own insets.
+            // On API 23, enableEdgeToEdge() uses legacy systemUiVisibility layout
+            // flags.
+            // AppCompat can overwrite those flags while creating the decor view,
+            // leaving the
+            // content already inset by the framework before Compose applies its own
+            // insets.
             WindowCompat.setDecorFitsSystemWindows(window, false)
         }
         CustomNotificationManager.init(applicationContext)
         userSettings = UserSettings(this)
         systemSettings = SystemSettings(this)
         DeviceOwnerManager.init(this)
-        pendingDhizukuPermissionRequest = userSettings.dhizukuRequestPermissionOnLaunch
+        pendingDhizukuPermissionRequest =
+            userSettings.dhizukuRequestPermissionOnLaunch
         // https://github.com/nktnet1/webview-kiosk/pull/195
         getExternalFilesDir(null)
 
@@ -185,9 +202,7 @@ open class MainActivity : AppCompatActivity() {
 
         LockStateSingleton.startMonitoring(application)
 
-        backButtonService = BackButtonManager(
-            lifecycleScope = lifecycleScope,
-        )
+        backButtonService = BackButtonManager(lifecycleScope = lifecycleScope)
         onBackPressedDispatcher.addCallback(
             this,
             backButtonService.onBackPressedCallback,
@@ -199,7 +214,7 @@ open class MainActivity : AppCompatActivity() {
                 addAction(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED)
                 addAction(Intent.ACTION_POWER_CONNECTED)
                 addAction(Intent.ACTION_POWER_DISCONNECTED)
-            }
+            },
         )
 
         if (!MqttManager.isInitialized()) {
@@ -214,13 +229,16 @@ open class MainActivity : AppCompatActivity() {
         systemSettings.isFreshLaunch = true
 
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-            // API 23 must enter lock task only after the activity is resumed. Keep these as
-            // one-shot launch actions so returning HOME after an unlock does not lock again.
+            // API 23 must enter lock task only after the activity is resumed. Keep
+            // these as
+            // one-shot launch actions so returning HOME after an unlock does not
+            // lock again.
             val lockRequested = consumeAndroid6LockRequest(intent)
             pendingAndroid6HomeRedirect =
                 javaClass == MainActivity::class.java && isAndroid6HomeIntent(intent)
             pendingAndroid6LockRequest =
-                !pendingAndroid6HomeRedirect && (userSettings.lockOnLaunch || lockRequested)
+                !pendingAndroid6HomeRedirect &&
+                    (userSettings.lockOnLaunch || lockRequested)
         } else if (userSettings.lockOnLaunch) {
             tryLockTask(this)
         }
@@ -237,32 +255,50 @@ open class MainActivity : AppCompatActivity() {
             val rulesReady by blocker.initialLoadComplete.collectAsState()
             val startupLoading = remember { MinimumLoadingState() }
             val displayedStartupMessage by startupLoading.message.collectAsState()
-            val startupMessage = if (webViewReady) null else if (rulesReady) "Starting WebView…"
-                else ruleLoadStage?.description ?: "Preparing content blocking…"
+            val startupMessage =
+                if (webViewReady) {
+                    null
+                } else if (rulesReady) {
+                    "Starting WebView…"
+                } else {
+                    ruleLoadStage?.description ?: "Preparing content blocking…"
+                }
             LaunchedEffect(startupMessage) {
-                if (startupMessage != null) startupLoading.show(startupMessage) else startupLoading.hide()
+                if (startupMessage != null) {
+                    startupLoading.show(startupMessage)
+                } else {
+                    startupLoading.hide()
+                }
             }
 
             KeepScreenOnOption()
 
-            val waitingForUnlock by WaitingForUnlockStateSingleton.waitingForUnlock.collectAsState()
-            val biometricResult by AuthenticationManager.promptResults.collectAsState()
+            val waitingForUnlock by
+                WaitingForUnlockStateSingleton.waitingForUnlock.collectAsState()
+            val biometricResult by
+                AuthenticationManager.promptResults.collectAsState()
             val context = LocalContext.current
 
             val activity = LocalActivity.current
             val handlesApplicationEvents = isApplicationEventHost()
-            val handlesAuthentication = if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-                // The API 23 workaround keeps both MainActivity and Android6KioskActivity alive.
-                // Only the resumed host may display or consume the process-wide auth prompt.
-                val lifecycleState by lifecycle.currentStateFlow.collectAsState()
-                handlesApplicationEvents && lifecycleState == Lifecycle.State.RESUMED
-            } else {
-                true
-            }
+            val handlesAuthentication =
+                if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
+                    // The API 23 workaround keeps both MainActivity and
+                    // Android6KioskActivity alive.
+                    // Only the resumed host may display or consume the process-wide
+                    // auth prompt.
+                    val lifecycleState by lifecycle.currentStateFlow.collectAsState()
+                    handlesApplicationEvents &&
+                        lifecycleState == Lifecycle.State.RESUMED
+                } else {
+                    true
+                }
 
             LaunchedEffect(Unit) {
                 RemoteMessageManager.settingsAppliedFlow.collect { settings ->
-                    if (isApplicationEventHost() && settings.message.reloadActivity) {
+                    if (
+                        isApplicationEventHost() && settings.message.reloadActivity
+                    ) {
                         lifecycleScope.launch(Dispatchers.Main) {
                             delay(100.milliseconds)
                             if (settings.message.reloadActivity) {
@@ -270,51 +306,70 @@ open class MainActivity : AppCompatActivity() {
                             }
                         }
 
-                        // Counterintuitive, but this acts as a "Refresh" of the webview screen,
+                        // Counterintuitive, but this acts as a "Refresh" of the
+                        // webview screen,
                         // which will recreate + apply settings.
-                        // If we're on another screen though (e.g. settings), then let the user
+                        // If we're on another screen though (e.g. settings), then
+                        // let the user
                         // decide when to navigate back.
-                        if (navController.currentDestination?.route == Screen.WebView.route) {
+                        if (
+                            navController.currentDestination?.route ==
+                                Screen.WebView.route
+                        ) {
                             navigateToWebViewScreen(navController)
                         }
                     }
                 }
             }
 
-            LaunchedEffect(waitingForUnlock, biometricResult, handlesAuthentication) {
+            LaunchedEffect(
+                waitingForUnlock,
+                biometricResult,
+                handlesAuthentication,
+            ) {
                 val isAndroid6 = Build.VERSION.SDK_INT == Build.VERSION_CODES.M
                 if (
-                    isAndroid6 && (
-                        !handlesAuthentication
-                            || lifecycle.currentState != Lifecycle.State.RESUMED
-                            || !WaitingForUnlockStateSingleton.waitingForUnlock.value
-                    )
+                    isAndroid6 &&
+                        (!handlesAuthentication ||
+                            lifecycle.currentState != Lifecycle.State.RESUMED ||
+                            !WaitingForUnlockStateSingleton.waitingForUnlock.value)
                 ) {
                     return@LaunchedEffect
                 }
                 if (waitingForUnlock) {
                     if (
-                        biometricResult == AuthenticationManager.AuthenticationResult.Loading
-                        || biometricResult == AuthenticationManager.AuthenticationResult.Pending
+                        biometricResult ==
+                            AuthenticationManager.AuthenticationResult.Loading ||
+                            biometricResult ==
+                                AuthenticationManager.AuthenticationResult.Pending
                     ) {
                         return@LaunchedEffect
                     }
                     if (isAndroid6) {
-                        // Consume the result before emitting a suspending event. A second host
-                        // must not process the same unlock if activity lifecycles change.
+                        // Consume the result before emitting a suspending event. A
+                        // second host
+                        // must not process the same unlock if activity lifecycles
+                        // change.
                         WaitingForUnlockStateSingleton.stopWaiting()
                     }
                     if (
-                        biometricResult == AuthenticationManager.AuthenticationResult.AuthenticationSuccess
-                        || biometricResult == AuthenticationManager.AuthenticationResult.AuthenticationNotSet
+                        biometricResult ==
+                            AuthenticationManager.AuthenticationResult
+                                .AuthenticationSuccess ||
+                            biometricResult ==
+                                AuthenticationManager.AuthenticationResult
+                                    .AuthenticationNotSet
                     ) {
                         val unlocked = tryUnlockTask(activity)
                         if (isAndroid6) {
                             if (unlocked) {
-                                // stopWaiting changes this effect's key. Send the notification
-                                // in the activity scope so that recomposition cannot cancel it.
+                                // stopWaiting changes this effect's key. Send the
+                                // notification
+                                // in the activity scope so that recomposition cannot
+                                // cancel it.
                                 lifecycleScope.launch {
-                                    WaitingForUnlockStateSingleton.emitUnlockSuccess()
+                                    WaitingForUnlockStateSingleton
+                                        .emitUnlockSuccess()
                                 }
                             }
                         } else if (unlocked) {
@@ -329,11 +384,12 @@ open class MainActivity : AppCompatActivity() {
 
             val isDarkTheme = resolveTheme(ThemeStateSingleton.currentTheme.value)
             val window = (this as? AppCompatActivity)?.window
-            val insetsController = remember(window) {
-                window?.let {
-                    WindowInsetsControllerCompat(it, it.decorView)
+            val insetsController =
+                remember(window) {
+                    window?.let {
+                        WindowInsetsControllerCompat(it, it.decorView)
+                    }
                 }
-            }
 
             LaunchedEffect(isDarkTheme) {
                 insetsController?.isAppearanceLightStatusBars = !isDarkTheme
@@ -342,32 +398,45 @@ open class MainActivity : AppCompatActivity() {
                 }
                 if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
                     window?.run {
-                        addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS)
+                        addFlags(
+                            WindowManager.LayoutParams
+                                .FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS
+                        )
 
-                        // API 21-22 cannot render dark status-bar icons, so a white status bar
-                        // would make the fixed light icons unreadable in light theme.
+                        // API 21-22 cannot render dark status-bar icons, so a white
+                        // status bar
+                        // would make the fixed light icons unreadable in light
+                        // theme.
                         @Suppress("DEPRECATION")
-                        statusBarColor = if (
-                            !isDarkTheme && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
-                        ) {
-                            Color.WHITE
-                        } else if (isDarkTheme) {
-                            Color.BLACK
-                        } else {
-                            Color.argb(0x80, 0x1B, 0x1B, 0x1B)
-                        }
+                        statusBarColor =
+                            if (
+                                !isDarkTheme &&
+                                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
+                            ) {
+                                Color.WHITE
+                            } else if (isDarkTheme) {
+                                Color.BLACK
+                            } else {
+                                Color.argb(0x80, 0x1B, 0x1B, 0x1B)
+                            }
 
-                        // Dark navigation-bar icons were added in API 26. Keep a dark scrim on
-                        // API 21-25 in light theme so the fixed light navigation buttons remain
-                        // visible, while API 26+ retains the original light/dark bar colours.
+                        // Dark navigation-bar icons were added in API 26. Keep a
+                        // dark scrim on
+                        // API 21-25 in light theme so the fixed light navigation
+                        // buttons remain
+                        // visible, while API 26+ retains the original light/dark bar
+                        // colours.
                         @Suppress("DEPRECATION")
-                        navigationBarColor = if (isDarkTheme) {
-                            Color.BLACK
-                        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            Color.WHITE
-                        } else {
-                            Color.argb(0x80, 0x1B, 0x1B, 0x1B)
-                        }
+                        navigationBarColor =
+                            if (isDarkTheme) {
+                                Color.BLACK
+                            } else if (
+                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                            ) {
+                                Color.WHITE
+                            } else {
+                                Color.argb(0x80, 0x1B, 0x1B, 0x1B)
+                            }
                     }
                 }
             }
@@ -375,8 +444,7 @@ open class MainActivity : AppCompatActivity() {
             WebviewKioskTheme(darkTheme = isDarkTheme) {
                 Surface(
                     color = MaterialTheme.colorScheme.background,
-                    modifier = Modifier
-                        .fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     uploadingFileUri?.let { uri ->
                         UploadFileProgress(
@@ -393,74 +461,101 @@ open class MainActivity : AppCompatActivity() {
                                 uploadProgress = 0f
                             },
                         )
-                    } ?: run {
-                        if (handlesAuthentication) {
-                            CustomAuthPasswordDialog()
-                        }
-                        if (handlesApplicationEvents) {
-                            if (webViewReady && displayedStartupMessage == null) {
-                                // Avoid racing the first WebView constructor against native startup.
-                                // Keep the controller alive while the provider initializes.
-                                SetupNavHost(navController)
-                            } else {
-                                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                                    Column(
-                                        modifier = Modifier.padding(24.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    }
+                        ?: run {
+                            if (handlesAuthentication) {
+                                CustomAuthPasswordDialog()
+                            }
+                            if (handlesApplicationEvents) {
+                                if (
+                                    webViewReady && displayedStartupMessage == null
+                                ) {
+                                    // Avoid racing the first WebView constructor
+                                    // against native startup.
+                                    // Keep the controller alive while the provider
+                                    // initializes.
+                                    SetupNavHost(navController)
+                                } else {
+                                    Box(
+                                        Modifier.fillMaxSize(),
+                                        contentAlignment = Alignment.Center,
                                     ) {
-                                        CircularProgressIndicator()
-                                        Text(
-                                            startupMessage ?: displayedStartupMessage.orEmpty(),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            fontStyle = FontStyle.Italic,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            textAlign = TextAlign.Center,
-                                        )
+                                        Column(
+                                            modifier = Modifier.padding(24.dp),
+                                            horizontalAlignment =
+                                                Alignment.CenterHorizontally,
+                                            verticalArrangement =
+                                                Arrangement.spacedBy(16.dp),
+                                        ) {
+                                            CircularProgressIndicator()
+                                            Text(
+                                                startupMessage
+                                                    ?: displayedStartupMessage
+                                                        .orEmpty(),
+                                                style =
+                                                    MaterialTheme.typography
+                                                        .bodyMedium,
+                                                fontStyle = FontStyle.Italic,
+                                                color =
+                                                    MaterialTheme.colorScheme
+                                                        .onSurfaceVariant,
+                                                textAlign = TextAlign.Center,
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
                 }
             }
         }
     }
 
-    internal fun openClientCertificatePicker() = clientCertificateInstaller.openPicker()
+    internal fun openClientCertificatePicker() =
+        clientCertificateInstaller.openPicker()
 
     private fun canHandleMqttMessages(): Boolean =
-        isApplicationEventHost()
-            && this in startedHosts
-            && userSettings.mqttEnabled
-            && !MqttForegroundService.isHandlingMessages()
+        isApplicationEventHost() &&
+            this in startedHosts &&
+            userSettings.mqttEnabled &&
+            !MqttForegroundService.isHandlingMessages()
 
     private fun startMqttMessageProcessing() {
-        unregisterMqttCommandHost = RemoteMessageManager.registerMqttCommandHost(applicationContext) {
-            canHandleMqttMessages()
-        }
-        // Subscribe before onStart connects MQTT; composition may not exist for its first delivery.
-        // Keep one pair for this activity and recheck eligibility before claiming queued messages.
+        unregisterMqttCommandHost =
+            RemoteMessageManager.registerMqttCommandHost(applicationContext) {
+                canHandleMqttMessages()
+            }
+        // Subscribe before onStart connects MQTT; composition may not exist for its
+        // first delivery.
+        // Keep one pair for this activity and recheck eligibility before claiming
+        // queued messages.
         lifecycleScope.launch(start = CoroutineStart.UNDISPATCHED) {
             RemoteMessageManager.requestsFlow.collect { request ->
                 if (
-                    canHandleMqttMessages()
-                    && request.source == RemoteMessageManager.RemoteMessage.Source.MQTT
-                    && request.tryClaim()
+                    canHandleMqttMessages() &&
+                        request.source ==
+                            RemoteMessageManager.RemoteMessage.Source.MQTT &&
+                        request.tryClaim()
                 ) {
-                    RemoteInboundHandler.handleInboundMqttRequest(this@MainActivity, request.message)
+                    RemoteInboundHandler.handleInboundMqttRequest(
+                        this@MainActivity,
+                        request.message,
+                    )
                 }
             }
         }
         lifecycleScope.launch(start = CoroutineStart.UNDISPATCHED) {
             RemoteMessageManager.settingsFlow.collect { settings ->
                 if (
-                    canHandleMqttMessages()
-                    && settings.source == RemoteMessageManager.RemoteMessage.Source.MQTT
-                    && settings.tryClaim()
+                    canHandleMqttMessages() &&
+                        settings.source ==
+                            RemoteMessageManager.RemoteMessage.Source.MQTT &&
+                        settings.tryClaim()
                 ) {
                     RemoteInboundHandler.handleInboundSettings(
-                        this@MainActivity, settings.message, settings.source
+                        this@MainActivity,
+                        settings.message,
+                        settings.source,
                     )
                 }
             }
@@ -499,8 +594,8 @@ open class MainActivity : AppCompatActivity() {
         DeviceOwnerManager.init(this)
         updateDeviceSettings(this)
         if (
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
-            && DeviceOwnerManager.status.value.mode != DeviceOwnerMode.DeviceOwner
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                DeviceOwnerManager.status.value.mode != DeviceOwnerMode.DeviceOwner
         ) {
             deviceOwnerInitJob?.cancel()
             deviceOwnerInitJob = lifecycleScope.launch {
@@ -513,15 +608,13 @@ open class MainActivity : AppCompatActivity() {
                             context = this@MainActivity,
                             onGranted = {
                                 setupLockTaskPackage(this@MainActivity)
-                            }
+                            },
                         )
                     }
                 }
             }
         }
-        if (
-            userSettings.mqttEnabled
-        ) {
+        if (userSettings.mqttEnabled) {
             MqttManager.connect(applicationContext)
             if (userSettings.mqttUseForegroundService && MqttManager.isConnected()) {
                 MqttManager.publishAppForegroundEvent()
@@ -562,24 +655,31 @@ open class MainActivity : AppCompatActivity() {
         super.onStop()
         startedHosts.remove(this)
         if (
-            Build.VERSION.SDK_INT == Build.VERSION_CODES.M
-            && android6EventHost === this
-            && startedHosts.isNotEmpty()
+            Build.VERSION.SDK_INT == Build.VERSION_CODES.M &&
+                android6EventHost === this &&
+                startedHosts.isNotEmpty()
         ) {
-            // The separate HOME and kiosk tasks may both stay alive. If the active owner
-            // stops while the other remains started, do not strand event/MQTT handling on
-            // the stopped activity until it is eventually destroyed or started again.
+            // The separate HOME and kiosk tasks may both stay alive. If the active
+            // owner
+            // stops while the other remains started, do not strand event/MQTT
+            // handling on
+            // the stopped activity until it is eventually destroyed or started
+            // again.
             android6EventHost = startedHosts.last()
         }
         if (!isChangingConfigurations && startedHosts.isEmpty()) {
-            AuthenticationManager.resetAuthentication(preserveExternalActivitySession = true)
+            AuthenticationManager.resetAuthentication(
+                preserveExternalActivitySession = true
+            )
             if (MqttForegroundService.isHandlingMessages()) {
                 if (MqttManager.isConnected()) {
                     MqttManager.publishAppBackgroundEvent()
                 }
             } else {
                 MqttManager.disconnect(
-                    cause = OutboundDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_STOPPED
+                    cause =
+                        OutboundDisconnectingEvent.DisconnectCause
+                            .SYSTEM_ACTIVITY_STOPPED
                 )
             }
         }
@@ -590,8 +690,11 @@ open class MainActivity : AppCompatActivity() {
 
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
             setIntent(intent)
-            if (javaClass == MainActivity::class.java && isAndroid6HomeIntent(intent)) {
-                // Always route HOME back to the private task. Reusing that task must not
+            if (
+                javaClass == MainActivity::class.java && isAndroid6HomeIntent(intent)
+            ) {
+                // Always route HOME back to the private task. Reusing that task must
+                // not
                 // request a new lock after the user has deliberately unlocked it.
                 pendingAndroid6HomeRedirect = true
                 pendingAndroid6LockRequest = false
@@ -612,7 +715,7 @@ open class MainActivity : AppCompatActivity() {
         if (
             intent.getBooleanExtraSafely(
                 Constants.INTENT_NAVIGATE_TO_WEBVIEW_SCREEN,
-                false
+                false,
             )
         ) {
             if (callingPackage == packageName) {
@@ -621,15 +724,16 @@ open class MainActivity : AppCompatActivity() {
             return
         }
         val isHomeLaunch =
-            isAndroid6HomeIntent(intent)
-                || (
-                    Build.VERSION.SDK_INT == Build.VERSION_CODES.M
-                        && intent.getBooleanExtraSafely(Constants.INTENT_HOME_LAUNCH, false)
-                    )
+            isAndroid6HomeIntent(intent) ||
+                (Build.VERSION.SDK_INT == Build.VERSION_CODES.M &&
+                    intent.getBooleanExtraSafely(
+                        Constants.INTENT_HOME_LAUNCH,
+                        false,
+                    ))
         if (
-            System.currentTimeMillis() - lastOnStartTime > 100L
-            && isHomeLaunch
-            && userSettings.allowGoHome
+            System.currentTimeMillis() - lastOnStartTime > 100L &&
+                isHomeLaunch &&
+                userSettings.allowGoHome
         ) {
             UserInteractionStateSingleton.onUserInteraction()
             systemSettings.intentUrl = userSettings.homeUrl
@@ -643,14 +747,17 @@ open class MainActivity : AppCompatActivity() {
     }
 
     private fun isAndroid6HomeIntent(intent: Intent?): Boolean {
-        return intent?.action == Intent.ACTION_MAIN
-            && intent.hasCategory(Intent.CATEGORY_HOME)
+        return intent?.action == Intent.ACTION_MAIN &&
+            intent.hasCategory(Intent.CATEGORY_HOME)
     }
 
     private fun consumeAndroid6LockRequest(intent: Intent?): Boolean {
         if (
-            javaClass != Android6KioskActivity::class.java
-            || intent?.getBooleanExtraSafely(Constants.INTENT_ANDROID6_LOCK_TASK, false) != true
+            javaClass != Android6KioskActivity::class.java ||
+                intent?.getBooleanExtraSafely(
+                    Constants.INTENT_ANDROID6_LOCK_TASK,
+                    false,
+                ) != true
         ) {
             return false
         }
@@ -669,23 +776,24 @@ open class MainActivity : AppCompatActivity() {
         unregisterMqttCommandHost?.invoke()
         unregisterMqttCommandHost = null
         if (android6EventHost === this) {
-            android6EventHost = startedHosts.lastOrNull() ?: createdHosts.lastOrNull()
+            android6EventHost =
+                startedHosts.lastOrNull() ?: createdHosts.lastOrNull()
         }
         unregisterReceiver(broadcastReceiver)
-        if (
-            !isChangingConfigurations
-            && createdHosts.isEmpty()
-        ) {
+        if (!isChangingConfigurations && createdHosts.isEmpty()) {
             if (!MqttForegroundService.isHandlingMessages()) {
                 MqttManager.disconnect(
-                    cause = OutboundDisconnectingEvent.DisconnectCause.SYSTEM_ACTIVITY_DESTROYED
+                    cause =
+                        OutboundDisconnectingEvent.DisconnectCause
+                            .SYSTEM_ACTIVITY_DESTROYED
                 )
             }
-            // Keep an opted-in start request queued; an accepted service can restore MQTT.
-            if (!(userSettings.mqttEnabled && userSettings.mqttUseForegroundService)) {
-                stopService(
-                    Intent(this, MqttForegroundService::class.java)
-                )
+            // Keep an opted-in start request queued; an accepted service can restore
+            // MQTT.
+            if (
+                !(userSettings.mqttEnabled && userSettings.mqttUseForegroundService)
+            ) {
+                stopService(Intent(this, MqttForegroundService::class.java))
             }
         }
         AuthenticationManager.clear(this)
@@ -696,7 +804,10 @@ open class MainActivity : AppCompatActivity() {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
-            AuthenticationManager.handleLollipopDeviceCredentialResult(requestCode, resultCode)
+            AuthenticationManager.handleLollipopDeviceCredentialResult(
+                requestCode,
+                resultCode,
+            )
         }
     }
 
@@ -705,7 +816,8 @@ open class MainActivity : AppCompatActivity() {
             return true
         }
         if (backButtonService.onKeyDown(keyCode)) {
-            // The Huawei fallback consumes Back-down; retain framework tracking for short taps.
+            // The Huawei fallback consumes Back-down; retain framework tracking for
+            // short taps.
             event.startTracking()
             return true
         }
@@ -713,18 +825,14 @@ open class MainActivity : AppCompatActivity() {
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
-        return (
-            handleKeyEvent(this, event)
-            || backButtonService.onKeyUp(keyCode)
-            || super.onKeyUp(keyCode, event)
-        )
+        return (handleKeyEvent(this, event) ||
+            backButtonService.onKeyUp(keyCode) ||
+            super.onKeyUp(keyCode, event))
     }
 
     override fun onKeyLongPress(keyCode: Int, event: KeyEvent): Boolean {
-        return (
-            backButtonService.onKeyLongPress(keyCode)
-            || super.onKeyLongPress(keyCode, event)
-        )
+        return (backButtonService.onKeyLongPress(keyCode) ||
+            super.onKeyLongPress(keyCode, event))
     }
 
     private fun enableNfcForegroundDispatch() {
@@ -734,30 +842,33 @@ open class MainActivity : AppCompatActivity() {
 
         val adapter = getNfcAdapterOrNull(this) ?: return
 
-        val intent = Intent(this, javaClass).apply {
-            addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        }
-
-        val flags = PendingIntent.FLAG_UPDATE_CURRENT or
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                PendingIntent.FLAG_MUTABLE
-            } else {
-                0
+        val intent =
+            Intent(this, javaClass).apply {
+                addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP)
             }
 
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            intent,
-            flags
-        )
+        val flags =
+            PendingIntent.FLAG_UPDATE_CURRENT or
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    PendingIntent.FLAG_MUTABLE
+                } else {
+                    0
+                }
+
+        val pendingIntent =
+            PendingIntent.getActivity(
+                this,
+                0,
+                intent,
+                flags,
+            )
 
         runCatching {
             adapter.enableForegroundDispatch(
                 this,
                 pendingIntent,
                 null,
-                null
+                null,
             )
         }
     }
@@ -778,13 +889,14 @@ open class MainActivity : AppCompatActivity() {
         @Suppress("DEPRECATION")
         if (
             intent.action != NfcAdapter.ACTION_TAG_DISCOVERED &&
-            intent.action != NfcAdapter.ACTION_TECH_DISCOVERED &&
-            intent.action != NfcAdapter.ACTION_NDEF_DISCOVERED
+                intent.action != NfcAdapter.ACTION_TECH_DISCOVERED &&
+                intent.action != NfcAdapter.ACTION_NDEF_DISCOVERED
         ) {
             return false
         }
 
-        val tag = intent.getParcelableExtraSafely(NfcAdapter.EXTRA_TAG, Tag::class.java)
+        val tag =
+            intent.getParcelableExtraSafely(NfcAdapter.EXTRA_TAG, Tag::class.java)
 
         tag ?: return false
 

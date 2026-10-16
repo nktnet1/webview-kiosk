@@ -15,32 +15,34 @@ fun AppIcon(
     icon: Drawable,
     modifier: Modifier = Modifier,
 ) {
-    val bitmap = remember(icon) {
-        val width = icon.intrinsicWidth.coerceAtLeast(1)
-        val height = icon.intrinsicHeight.coerceAtLeast(1)
+    val bitmap =
+        remember(icon) {
+            val width = icon.intrinsicWidth.coerceAtLeast(1)
+            val height = icon.intrinsicHeight.coerceAtLeast(1)
 
-        val maxSize = 128
+            val maxSize = 128
 
-        val scale = minOf(
-            maxSize.toFloat() / width,
-            maxSize.toFloat() / height,
-            1f
-        )
+            val scale =
+                minOf(
+                    maxSize.toFloat() / width,
+                    maxSize.toFloat() / height,
+                    1f,
+                )
 
-        val bitmapWidth = (width * scale).toInt().coerceAtLeast(1)
-        val bitmapHeight = (height * scale).toInt().coerceAtLeast(1)
+            val bitmapWidth = (width * scale).toInt().coerceAtLeast(1)
+            val bitmapHeight = (height * scale).toInt().coerceAtLeast(1)
 
-        createBitmap(bitmapWidth, bitmapHeight).also { bitmap ->
-            val canvas = Canvas(bitmap)
-            icon.setBounds(0, 0, bitmap.width, bitmap.height)
-            icon.draw(canvas)
+            createBitmap(bitmapWidth, bitmapHeight).also { bitmap ->
+                val canvas = Canvas(bitmap)
+                icon.setBounds(0, 0, bitmap.width, bitmap.height)
+                icon.draw(canvas)
+            }
         }
-    }
 
     Image(
         bitmap = bitmap.asImageBitmap(),
         contentDescription = null,
         modifier = modifier,
-        contentScale = ContentScale.Fit
+        contentScale = ContentScale.Fit,
     )
 }

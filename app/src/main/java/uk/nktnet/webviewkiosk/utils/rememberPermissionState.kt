@@ -20,13 +20,13 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 
 data class PermissionState(
     val granted: Boolean,
-    val shouldShowRationale: Boolean
+    val shouldShowRationale: Boolean,
 )
 
 @Composable
 fun rememberPermissionState(
     permission: String,
-    customOpenAction: (context: Context) -> Unit = ::openAppDetailsSettings
+    customOpenAction: (context: Context) -> Unit = ::openAppDetailsSettings,
 ): Pair<PermissionState, () -> Unit> {
     val context = LocalContext.current
     val activity = LocalActivity.current
@@ -35,28 +35,35 @@ fun rememberPermissionState(
     var granted by remember { mutableStateOf(false) }
     var shouldShowRationale by remember { mutableStateOf(false) }
 
-    val launcher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        granted = isGranted
-        shouldShowRationale = activity?.let {
-            ActivityCompat.shouldShowRequestPermissionRationale(it, permission)
-        } ?: false
-    }
+    val launcher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted ->
+            granted = isGranted
+            shouldShowRationale =
+                activity?.let {
+                    ActivityCompat.shouldShowRequestPermissionRationale(
+                        it,
+                        permission,
+                    )
+                } ?: false
+        }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                granted = ContextCompat.checkSelfPermission(
-                    context,
-                    permission
-                ) == PackageManager.PERMISSION_GRANTED
-                shouldShowRationale = activity?.let {
-                    ActivityCompat.shouldShowRequestPermissionRationale(
-                        it,
-                        permission
-                    )
-                } ?: false
+                granted =
+                    ContextCompat.checkSelfPermission(
+                        context,
+                        permission,
+                    ) == PackageManager.PERMISSION_GRANTED
+                shouldShowRationale =
+                    activity?.let {
+                        ActivityCompat.shouldShowRequestPermissionRationale(
+                            it,
+                            permission,
+                        )
+                    } ?: false
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)

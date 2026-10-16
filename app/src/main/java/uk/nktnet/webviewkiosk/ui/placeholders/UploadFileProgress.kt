@@ -21,10 +21,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import java.io.File
 import kotlinx.coroutines.CancellationException
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.saveContentIntentToFile
-import java.io.File
 
 @Composable
 fun UploadFileProgress(
@@ -39,10 +39,11 @@ fun UploadFileProgress(
 
     LaunchedEffect(uri) {
         try {
-            val file = saveContentIntentToFile(context, uri, targetDir) { p ->
-                progress = p
-                onProgress(p)
-            }
+            val file =
+                saveContentIntentToFile(context, uri, targetDir) { p ->
+                    progress = p
+                    onProgress(p)
+                }
             onComplete(file)
         } catch (e: CancellationException) {
             throw e
@@ -55,7 +56,7 @@ fun UploadFileProgress(
     Column(
         modifier = Modifier.fillMaxSize(),
         verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text("Uploading file...", style = MaterialTheme.typography.bodyMedium)
         Spacer(Modifier.height(16.dp))
@@ -67,6 +68,9 @@ fun UploadFileProgress(
             strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
         )
         Spacer(Modifier.height(8.dp))
-        Text("${(progress * 100).toInt()}%", style = MaterialTheme.typography.bodySmall)
+        Text(
+            "${(progress * 100).toInt()}%",
+            style = MaterialTheme.typography.bodySmall,
+        )
     }
 }

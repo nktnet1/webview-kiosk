@@ -166,13 +166,17 @@ class WebViewNavigationSessionTest {
         assertFalse(session.acceptsPageStart(queryNoSlash))
         assertFalse(session.acceptsHistory(queryNoSlash, queryNoSlash, queryNoSlash))
         assertFalse(session.acceptsCompletion(queryNoSlash, queryNoSlash))
-        assertFalse(session.acceptsError(queryNoSlash, queryNoSlash, isMainFrame = true))
+        assertFalse(
+            session.acceptsError(queryNoSlash, queryNoSlash, isMainFrame = true)
+        )
 
         val fragmentSlash = "$first#/route/"
         val fragmentNoSlash = "$first#/route"
         session.beginLoad(fragmentSlash, null, null)
         assertFalse(session.acceptsPageStart(fragmentNoSlash))
-        assertFalse(session.acceptsHistory(fragmentNoSlash, fragmentNoSlash, fragmentNoSlash))
+        assertFalse(
+            session.acceptsHistory(fragmentNoSlash, fragmentNoSlash, fragmentNoSlash)
+        )
         assertTrue(session.acceptsPageStart(fragmentSlash))
     }
 
@@ -185,7 +189,9 @@ class WebViewNavigationSessionTest {
 
         assertEquals("entry", session.traversalEntryId())
         assertTrue(session.acceptsPageStart(withoutPathSlash))
-        assertTrue(session.acceptsHistory(withoutPathSlash, withPathSlash, withoutPathSlash))
+        assertTrue(
+            session.acceptsHistory(withoutPathSlash, withPathSlash, withoutPathSlash)
+        )
         session.historyCommitted(withoutPathSlash, withPathSlash)
         assertTrue(session.acceptsCompletion(withPathSlash, withoutPathSlash))
     }

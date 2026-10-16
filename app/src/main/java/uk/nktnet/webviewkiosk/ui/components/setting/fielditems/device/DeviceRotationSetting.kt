@@ -19,10 +19,12 @@ fun DeviceRotationSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.device_rotation_title),
-        infoText = """
+        infoText =
+            """
             Choose a fixed device rotation or select 'Auto' to allow
             the system to rotate the screen automatically.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         options = DeviceRotationOption.entries,
         initialValue = userSettings.rotation,
         settingKey = settingKey,

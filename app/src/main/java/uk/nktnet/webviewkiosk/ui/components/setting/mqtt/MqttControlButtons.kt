@@ -23,13 +23,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.hivemq.client.mqtt.MqttClientState
+import kotlin.math.max
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundDisconnectingEvent
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
-import kotlin.math.max
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun MqttControlButtons() {
@@ -53,42 +53,46 @@ fun MqttControlButtons() {
     }
 
     mqttClientState.let { state ->
-        val statusColor = when (state) {
-            MqttClientState.CONNECTING,
-            MqttClientState.CONNECTING_RECONNECT -> MaterialTheme.colorScheme.tertiary
-            MqttClientState.CONNECTED -> MaterialTheme.colorScheme.primary
-            MqttClientState.DISCONNECTED_RECONNECT -> MaterialTheme.colorScheme.secondary
-            MqttClientState.DISCONNECTED -> MaterialTheme.colorScheme.error
-        }
+        val statusColor =
+            when (state) {
+                MqttClientState.CONNECTING,
+                MqttClientState.CONNECTING_RECONNECT ->
+                    MaterialTheme.colorScheme.tertiary
+                MqttClientState.CONNECTED -> MaterialTheme.colorScheme.primary
+                MqttClientState.DISCONNECTED_RECONNECT ->
+                    MaterialTheme.colorScheme.secondary
+                MqttClientState.DISCONNECTED -> MaterialTheme.colorScheme.error
+            }
 
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp)
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 4.dp)
-                    .border(
-                        width = 1.dp,
-                        color = statusColor,
-                        shape = MaterialTheme.shapes.small
-                    )
-                    .padding(vertical = 8.dp),
-                contentAlignment = Alignment.Center
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .padding(bottom = 4.dp)
+                        .border(
+                            width = 1.dp,
+                            color = statusColor,
+                            shape = MaterialTheme.shapes.small,
+                        )
+                        .padding(vertical = 8.dp),
+                contentAlignment = Alignment.Center,
             ) {
                 Row {
                     Text(
                         text = "Status: ",
-                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                        color = MaterialTheme.colorScheme.onBackground
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                fontWeight = FontWeight.Bold
+                            ),
+                        color = MaterialTheme.colorScheme.onBackground,
                     )
                     Text(
                         text = state.toString(),
                         style = MaterialTheme.typography.bodyMedium,
-                        color = statusColor
+                        color = statusColor,
                     )
                 }
             }
@@ -100,22 +104,33 @@ fun MqttControlButtons() {
                         onClick = {
                             isDisconnecting = true
                             MqttManager.disconnect(
-                                cause = OutboundDisconnectingEvent.DisconnectCause.USER_INITIATED_DISCONNECT,
+                                cause =
+                                    OutboundDisconnectingEvent.DisconnectCause
+                                        .USER_INITIATED_DISCONNECT,
                                 onDisconnected = {
                                     isDisconnecting = false
-                                    ToastManager.show(context, "MQTT disconnected successfully")
+                                    ToastManager.show(
+                                        context,
+                                        "MQTT disconnected successfully",
+                                    )
                                 },
                                 onError = { err ->
                                     isDisconnecting = false
-                                    ToastManager.show(context, "MQTT disconnected failed: $err")
+                                    ToastManager.show(
+                                        context,
+                                        "MQTT disconnected failed: $err",
+                                    )
                                 },
                             )
                         },
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer,
-                            contentColor = MaterialTheme.colorScheme.onErrorContainer
-                        )
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor =
+                                    MaterialTheme.colorScheme.errorContainer,
+                                contentColor =
+                                    MaterialTheme.colorScheme.onErrorContainer,
+                            ),
                     ) {
                         Text("Disconnect")
                     }
@@ -126,49 +141,66 @@ fun MqttControlButtons() {
                             isRestarting = true
                             MqttManager.restart(
                                 context = context.applicationContext,
-                                cause = OutboundDisconnectingEvent.DisconnectCause.USER_INITIATED_RESTART,
+                                cause =
+                                    OutboundDisconnectingEvent.DisconnectCause
+                                        .USER_INITIATED_RESTART,
                                 onConnected = {
                                     isRestarting = false
-                                    ToastManager.show(context, "Restarted successfully.")
+                                    ToastManager.show(
+                                        context,
+                                        "Restarted successfully.",
+                                    )
                                 },
                                 onError = {
                                     isRestarting = false
-                                    ToastManager.show(context, "Error restarting: $it")
-                                }
+                                    ToastManager.show(
+                                        context,
+                                        "Error restarting: $it",
+                                    )
+                                },
                             )
-
                         },
-                        modifier = Modifier.weight(1f)
-                    ) { Text("Restart") }
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Restart")
+                    }
                 }
             } else if (
-                state in listOf(
-                    MqttClientState.CONNECTING,
-                    MqttClientState.CONNECTING_RECONNECT,
-                    MqttClientState.DISCONNECTED_RECONNECT
-                )
+                state in
+                    listOf(
+                        MqttClientState.CONNECTING,
+                        MqttClientState.CONNECTING_RECONNECT,
+                        MqttClientState.DISCONNECTED_RECONNECT,
+                    )
             ) {
                 Button(
                     onClick = {
                         val res = MqttManager.cancelConnect()
-                        val maxWait = max(
-                            userSettings.mqttSocketConnectTimeout,
-                            userSettings.mqttConnectTimeout
-                        )
+                        val maxWait =
+                            max(
+                                userSettings.mqttSocketConnectTimeout,
+                                userSettings.mqttConnectTimeout,
+                            )
                         if (res) {
-                            ToastManager.show(context, "Cancelling... (max $maxWait seconds)")
+                            ToastManager.show(
+                                context,
+                                "Cancelling... (max $maxWait seconds)",
+                            )
                         } else {
                             ToastManager.show(
                                 context,
-                                "Already cancelling - please wait up to $maxWait seconds."
+                                "Already cancelling - please wait up to $maxWait seconds.",
                             )
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    ),
-                    modifier = Modifier.fillMaxWidth()
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor =
+                                MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor =
+                                MaterialTheme.colorScheme.onSecondaryContainer,
+                        ),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Cancel Connection")
                 }
@@ -181,15 +213,21 @@ fun MqttControlButtons() {
                             context.applicationContext,
                             onConnected = {
                                 isConnecting = false
-                                ToastManager.show(context, "MQTT connected successfully.")
+                                ToastManager.show(
+                                    context,
+                                    "MQTT connected successfully.",
+                                )
                             },
                             onError = {
                                 isConnecting = false
-                                ToastManager.show(context, "MQTT connection failed: $it")
-                            }
+                                ToastManager.show(
+                                    context,
+                                    "MQTT connection failed: $it",
+                                )
+                            },
                         )
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Connect")
                 }

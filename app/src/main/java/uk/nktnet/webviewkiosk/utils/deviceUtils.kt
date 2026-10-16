@@ -16,6 +16,7 @@ import android.view.WindowManager
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.webkit.WebViewCompat
+import java.util.TimeZone
 import uk.nktnet.webviewkiosk.BuildConfig
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -28,7 +29,6 @@ import uk.nktnet.webviewkiosk.config.option.DeviceRotationOption
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.states.KeepScreenOnStateSingleton
 import uk.nktnet.webviewkiosk.states.ThemeStateSingleton
-import java.util.TimeZone
 
 fun getWindowBrightness(context: Context): Int {
     val activity = context as? Activity ?: return -1
@@ -55,13 +55,18 @@ fun setWindowBrightness(context: Context, value: Int) {
 
 fun setDeviceRotation(context: Context, rotation: DeviceRotationOption) {
     val activity = context as? AppCompatActivity ?: return
-    activity.requestedOrientation = when(rotation) {
-        DeviceRotationOption.AUTO -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-        DeviceRotationOption.ROTATION_0 -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        DeviceRotationOption.ROTATION_90 -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        DeviceRotationOption.ROTATION_180 -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
-        DeviceRotationOption.ROTATION_270 -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
-    }
+    activity.requestedOrientation =
+        when (rotation) {
+            DeviceRotationOption.AUTO -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            DeviceRotationOption.ROTATION_0 ->
+                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            DeviceRotationOption.ROTATION_90 ->
+                ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            DeviceRotationOption.ROTATION_180 ->
+                ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
+            DeviceRotationOption.ROTATION_270 ->
+                ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+        }
 }
 
 fun applyBlockScreenCapture(context: Context, shouldBlock: Boolean) {
@@ -69,7 +74,7 @@ fun applyBlockScreenCapture(context: Context, shouldBlock: Boolean) {
         if (shouldBlock) {
             context.window.setFlags(
                 WindowManager.LayoutParams.FLAG_SECURE,
-                WindowManager.LayoutParams.FLAG_SECURE
+                WindowManager.LayoutParams.FLAG_SECURE,
             )
         } else {
             context.window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
@@ -94,49 +99,54 @@ fun updateDeviceSettings(context: Context) {
 fun getAppInfo(context: Context): SystemAppInfo {
     val pm = context.packageManager
     val packageName = context.packageName
-    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-    val dhizukuPermissionGranted = (
-        DeviceOwnerManager.status.value.mode == DeviceOwnerMode.Dhizuku
-        && DeviceOwnerManager.hasOwnerPermission(context)
-    )
+    val dpm =
+        context.getSystemService(Context.DEVICE_POLICY_SERVICE)
+            as DevicePolicyManager
+    val dhizukuPermissionGranted =
+        (DeviceOwnerManager.status.value.mode == DeviceOwnerMode.Dhizuku &&
+            DeviceOwnerManager.hasOwnerPermission(context))
     val systemSettings = SystemSettings(context)
 
-    val versionName = try {
-        pm.getPackageInfo(packageName, 0).versionName ?: "N/A"
-    } catch (_: PackageManager.NameNotFoundException) {
-        "N/A"
-    }
-
-    val versionCode = try {
-        val info = pm.getPackageInfo(packageName, 0)
-        PackageInfoCompat.getLongVersionCode(info)
-    } catch (_: PackageManager.NameNotFoundException) {
-        -1L
-    }
-
-    val targetSdk = try {
-        pm.getPackageInfo(packageName, 0).applicationInfo?.targetSdkVersion ?: -1
-    } catch (_: PackageManager.NameNotFoundException) {
-        -1
-    }
-
-    val isDebug = try {
-        val info = pm.getApplicationInfo(packageName, 0)
-        (info.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
-    } catch (_: PackageManager.NameNotFoundException) {
-        false
-    }
-
-    val installer = try {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            pm.getInstallSourceInfo(packageName).installingPackageName
-        } else {
-            @Suppress("DEPRECATION")
-            pm.getInstallerPackageName(packageName)
+    val versionName =
+        try {
+            pm.getPackageInfo(packageName, 0).versionName ?: "N/A"
+        } catch (_: PackageManager.NameNotFoundException) {
+            "N/A"
         }
-    } catch (_: Exception) {
-        null
-    }
+
+    val versionCode =
+        try {
+            val info = pm.getPackageInfo(packageName, 0)
+            PackageInfoCompat.getLongVersionCode(info)
+        } catch (_: PackageManager.NameNotFoundException) {
+            -1L
+        }
+
+    val targetSdk =
+        try {
+            pm.getPackageInfo(packageName, 0).applicationInfo?.targetSdkVersion ?: -1
+        } catch (_: PackageManager.NameNotFoundException) {
+            -1
+        }
+
+    val isDebug =
+        try {
+            val info = pm.getApplicationInfo(packageName, 0)
+            (info.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) != 0
+        } catch (_: PackageManager.NameNotFoundException) {
+            false
+        }
+
+    val installer =
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                pm.getInstallSourceInfo(packageName).installingPackageName
+            } else {
+                @Suppress("DEPRECATION") pm.getInstallerPackageName(packageName)
+            }
+        } catch (_: Exception) {
+            null
+        }
 
     return SystemAppInfo(
         name = context.applicationInfo.loadLabel(pm).toString(),
@@ -163,30 +173,34 @@ fun getDeviceInfo(context: Context): SystemDeviceInfo {
     val stat = StatFs(Environment.getDataDirectory().path)
 
     val um = context.getSystemService(Context.USER_SERVICE) as UserManager
-    val isManagedProfile = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        um.isManagedProfile
-    } else {
-        null
-    }
+    val isManagedProfile =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            um.isManagedProfile
+        } else {
+            null
+        }
 
-    val securityPatch = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        Build.VERSION.SECURITY_PATCH
-    } else {
-        null
-    }
+    val securityPatch =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Build.VERSION.SECURITY_PATCH
+        } else {
+            null
+        }
 
-    val webViewVersion = try {
-        WebViewCompat.getCurrentWebViewPackage(context)?.versionName
-    } catch (_: Exception) {
-        null
-    }
+    val webViewVersion =
+        try {
+            WebViewCompat.getCurrentWebViewPackage(context)?.versionName
+        } catch (_: Exception) {
+            null
+        }
 
-    val locale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-        context.resources.configuration.locales[0].toString()
-    } else {
-        @Suppress("DEPRECATION")
-        context.resources.configuration.locale.toString()
-    }
+    val locale =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            context.resources.configuration.locales[0].toString()
+        } else {
+            @Suppress("DEPRECATION")
+            context.resources.configuration.locale.toString()
+        }
 
     return SystemDeviceInfo(
         releaseVersion = Build.VERSION.RELEASE,
@@ -213,14 +227,14 @@ fun getDeviceInfo(context: Context): SystemDeviceInfo {
         supportedAbis = Build.SUPPORTED_ABIS.toList(),
         supported32BitAbis = Build.SUPPORTED_32_BIT_ABIS.toList(),
         supported64BitAbis = Build.SUPPORTED_64_BIT_ABIS.toList(),
-        buildFingerprint = Build.FINGERPRINT
+        buildFingerprint = Build.FINGERPRINT,
     )
 }
 
 fun getSystemInfo(context: Context): SystemInfo {
     return SystemInfo(
         app = getAppInfo(context),
-        device = getDeviceInfo(context)
+        device = getDeviceInfo(context),
     )
 }
 
@@ -232,12 +246,13 @@ fun wakeScreen(context: Context) {
     try {
         val pm = context.getSystemService(Context.POWER_SERVICE) as PowerManager
         @Suppress("DEPRECATION")
-        val wakeLock = pm.newWakeLock(
-            PowerManager.FULL_WAKE_LOCK
-                or PowerManager.ACQUIRE_CAUSES_WAKEUP
-                or PowerManager.ON_AFTER_RELEASE,
-            "${context.packageName}::WakeScreen"
-        )
+        val wakeLock =
+            pm.newWakeLock(
+                PowerManager.FULL_WAKE_LOCK or
+                    PowerManager.ACQUIRE_CAUSES_WAKEUP or
+                    PowerManager.ON_AFTER_RELEASE,
+                "${context.packageName}::WakeScreen",
+            )
         wakeLock.acquire(30_000L)
         wakeLock.release()
     } catch (e: Exception) {

@@ -12,13 +12,15 @@ object ToastManager {
         Handler(context.mainLooper).post {
             try {
                 toastRef?.cancel()
-                toastRef = Toast.makeText(
-                    context,
-                    text,
-                    duration,
-                ).apply {
-                    show()
-                }
+                toastRef =
+                    Toast.makeText(
+                            context,
+                            text,
+                            duration,
+                        )
+                        .apply {
+                            show()
+                        }
             } catch (e: Exception) {
                 Log.e(javaClass.simpleName, "Failed to show toast", e)
             }

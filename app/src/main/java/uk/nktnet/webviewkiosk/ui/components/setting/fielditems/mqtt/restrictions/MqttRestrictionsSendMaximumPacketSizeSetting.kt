@@ -16,16 +16,21 @@ fun MqttRestrictionsSendMaximumPacketSizeSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Restrictions.SEND_MAXIMUM_PACKET_SIZE
 
     NumberSettingFieldItem(
-        label = stringResource(R.string.mqtt_restrictions_send_maximum_packet_size_title),
-        infoText = """
+        label =
+            stringResource(
+                R.string.mqtt_restrictions_send_maximum_packet_size_title
+            ),
+        infoText =
+            """
             Maximum size in bytes of MQTT packets the client can send.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         placeholder = "e.g. 1024",
         initialValue = userSettings.mqttRestrictionsSendMaximumPacketSize,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         min = 0,
         max = 268_435_460,
-        onSave = { userSettings.mqttRestrictionsSendMaximumPacketSize = it }
+        onSave = { userSettings.mqttRestrictionsSendMaximumPacketSize = it },
     )
 }

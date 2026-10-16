@@ -16,7 +16,7 @@ fun <T : AppInfo> AppList(
     onSelectApp: (T) -> Unit,
     getKey: ((T) -> String)? = null,
     getDescription: ((T) -> String)? = null,
-    listState: LazyListState = rememberLazyListState()
+    listState: LazyListState = rememberLazyListState(),
 ) {
     LazyColumn(
         modifier = modifier.fillMaxSize(),
@@ -24,12 +24,12 @@ fun <T : AppInfo> AppList(
     ) {
         items(
             apps,
-            key = { app -> getKey?.invoke(app) ?: app.packageName }
+            key = { app -> getKey?.invoke(app) ?: app.packageName },
         ) { app ->
             AppCard(
                 app = app,
                 description = getDescription?.invoke(app),
-                onClick = { onSelectApp(app) }
+                onClick = { onSelectApp(app) },
             )
         }
     }

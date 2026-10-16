@@ -41,6 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import java.util.concurrent.CancellationException
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
@@ -54,7 +55,6 @@ import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
 import uk.nktnet.webviewkiosk.utils.listLocalFiles
 import uk.nktnet.webviewkiosk.utils.supportedMimeTypesArray
 import uk.nktnet.webviewkiosk.utils.uploadFile
-import java.util.concurrent.CancellationException
 
 @Composable
 fun SettingsWebContentFilesScreen(navController: NavController) {
@@ -109,27 +109,25 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                 if (uri != null) {
                     startUpload(uri)
                 }
-            }
+            },
         )
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(top = 4.dp)
-            .padding(horizontal = 16.dp),
+        modifier =
+            Modifier.fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(top = 4.dp)
+                .padding(horizontal = 16.dp)
     ) {
         SettingLabel(
             navController = navController,
-            label = stringResource(R.string.settings_files_title)
+            label = stringResource(R.string.settings_files_title),
         )
         SettingDivider()
 
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 8.dp),
-            contentAlignment = Alignment.Center
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            contentAlignment = Alignment.Center,
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Button(
@@ -138,18 +136,22 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                             fileUploadLauncher.launch(supportedMimeTypesArray)
                             AuthenticationManager.bypassAuthForWindow(60_000)
                         } catch (e: Exception) {
-                            Log.e(Constants.APP_SCHEME, "File picker failed to launch", e)
+                            Log.e(
+                                Constants.APP_SCHEME,
+                                "File picker failed to launch",
+                                e,
+                            )
                             ToastManager.show(context, "Error: ${e.message}")
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !uploading
+                    enabled = !uploading,
                 ) {
                     Text("Upload")
                     Spacer(modifier = Modifier.width(8.dp))
                     Icon(
                         painter = painterResource(R.drawable.outline_upload_file_24),
-                        contentDescription = "Upload"
+                        contentDescription = "Upload",
                     )
                 }
 
@@ -167,32 +169,28 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
         }
 
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 4.dp, start = 4.dp, end = 2.dp),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .padding(top = 4.dp, start = 4.dp, end = 2.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Text(
                 text = "Total: ${filesList.size}",
                 fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = "legacy file://",
                     fontSize = 12.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(modifier = Modifier.width(5.dp))
                 Box(
-                    modifier = Modifier
-                        .width(40.dp)
-                        .height(28.dp),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.width(40.dp).height(28.dp),
+                    contentAlignment = Alignment.Center,
                 ) {
                     Switch(
                         checked = showLegacyLocalFileLinks,
@@ -200,7 +198,7 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                             showLegacyLocalFileLinks = it
                             systemSettings.showLegacyLocalFileLinks = it
                         },
-                        modifier = Modifier.scale(0.72f)
+                        modifier = Modifier.scale(0.72f),
                     )
                 }
             }
@@ -208,15 +206,13 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
 
         if (filesList.isEmpty()) {
             Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 32.dp),
-                contentAlignment = Alignment.TopCenter
+                modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
+                contentAlignment = Alignment.TopCenter,
             ) {
                 Text(
                     text = "No files uploaded yet.",
                     fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         } else {
@@ -226,7 +222,7 @@ fun SettingsWebContentFilesScreen(navController: NavController) {
                 filesDir = filesDir,
                 showLegacyLocalFileLinks = showLegacyLocalFileLinks,
                 modifier = Modifier.padding(top = 8.dp),
-                refreshFiles = ::refreshFiles
+                refreshFiles = ::refreshFiles,
             )
         }
     }

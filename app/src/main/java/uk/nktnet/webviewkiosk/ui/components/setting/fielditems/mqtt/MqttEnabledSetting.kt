@@ -7,8 +7,8 @@ import androidx.compose.ui.res.stringResource
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
-import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundDisconnectingEvent
+import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.initMqttForegroundService
 
@@ -20,7 +20,8 @@ fun MqttEnabledSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_enabled_title),
-        infoText = """
+        infoText =
+            """
             When enabled, ${stringResource(R.string.app_name)} will connect to your
             configured MQTT broker and subscribe/publish to the defined topics.
 
@@ -28,7 +29,8 @@ fun MqttEnabledSetting() {
 
             If you are currently in a disconnected state, you will need to manually click
             the "Connect" button after enabling this option (or simply restarts the app).
-        """.trimIndent(),
+        """
+                .trimIndent(),
         initialValue = userSettings.mqttEnabled,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
@@ -39,14 +41,16 @@ fun MqttEnabledSetting() {
                 MqttManager.updateConfig(context.applicationContext, false)
                 if (!isEnabled) {
                     MqttManager.disconnect(
-                        cause = OutboundDisconnectingEvent.DisconnectCause.USER_INITIATED_SETTINGS_DISABLED
+                        cause =
+                            OutboundDisconnectingEvent.DisconnectCause
+                                .USER_INITIATED_SETTINGS_DISABLED
                     )
                 }
                 initMqttForegroundService(
                     context,
-                    isEnabled && userSettings.mqttUseForegroundService
+                    isEnabled && userSettings.mqttUseForegroundService,
                 )
             }
-        }
+        },
     )
 }

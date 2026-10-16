@@ -23,13 +23,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlin.math.max
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
-import kotlin.math.max
-import kotlin.time.Duration.Companion.milliseconds
 
 const val RESET_TIMEOUT_INT = -1
 
@@ -44,15 +44,18 @@ fun ResetOnInactivityTimeoutHandler(
     val currentLoadUrl by rememberUpdatedState(customLoadUrl)
     val currentCanHandleEvents by rememberUpdatedState(canHandleEvents)
 
-    val timeoutDuration = max(
-        userSettings.resetOnInactivitySeconds,
-        Constants.MIN_INACTIVITY_TIMEOUT_SECONDS
-    ) * 1000L
+    val timeoutDuration =
+        max(
+            userSettings.resetOnInactivitySeconds,
+            Constants.MIN_INACTIVITY_TIMEOUT_SECONDS,
+        ) * 1000L
 
-    val countdownStartDuration = timeoutDuration - Constants.INACTIVITY_COUNTDOWN_SECONDS * 1000L
+    val countdownStartDuration =
+        timeoutDuration - Constants.INACTIVITY_COUNTDOWN_SECONDS * 1000L
     var countdown by remember { mutableIntStateOf(RESET_TIMEOUT_INT) }
 
-    val lastInteraction by UserInteractionStateSingleton.lastInteractionState.collectAsState()
+    val lastInteraction by
+        UserInteractionStateSingleton.lastInteractionState.collectAsState()
 
     val handleTimeoutReached = {
         if (currentCanHandleEvents()) {
@@ -66,16 +69,17 @@ fun ResetOnInactivityTimeoutHandler(
         countdown = RESET_TIMEOUT_INT
         while (true) {
             delay(500.milliseconds)
-            val elapsed = try {
-                System.currentTimeMillis() - lastInteraction
-            } catch (e: IllegalStateException) {
-                Log.w(
-                    Constants.APP_SCHEME,
-                    "Failed to check last interaction time for resetting on inactivity",
-                    e
-                )
-                continue
-            }
+            val elapsed =
+                try {
+                    System.currentTimeMillis() - lastInteraction
+                } catch (e: IllegalStateException) {
+                    Log.w(
+                        Constants.APP_SCHEME,
+                        "Failed to check last interaction time for resetting on inactivity",
+                        e,
+                    )
+                    continue
+                }
             if (elapsed >= countdownStartDuration) {
                 countdown = Constants.INACTIVITY_COUNTDOWN_SECONDS
                 while (countdown > 0) {
@@ -89,16 +93,14 @@ fun ResetOnInactivityTimeoutHandler(
     }
 
     if (countdown > 0) {
-        Box(
-            Modifier.fillMaxSize()
-        ) {
+        Box(Modifier.fillMaxSize()) {
             Box(
                 contentAlignment = Alignment.Center,
-                modifier=  Modifier
-                    .fillMaxWidth(0.5f)
-                    .align(Alignment.Center)
-                    .background(Color.Black.copy(alpha = 0.7f))
-                    .padding(24.dp)
+                modifier =
+                    Modifier.fillMaxWidth(0.5f)
+                        .align(Alignment.Center)
+                        .background(Color.Black.copy(alpha = 0.7f))
+                        .padding(24.dp),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Resetting in", fontSize = 16.sp, color = Color.White)
@@ -106,7 +108,7 @@ fun ResetOnInactivityTimeoutHandler(
                         "$countdown",
                         fontSize = 64.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color.White
+                        color = Color.White,
                     )
                     Text("Tap to cancel", fontSize = 16.sp, color = Color.White)
                 }

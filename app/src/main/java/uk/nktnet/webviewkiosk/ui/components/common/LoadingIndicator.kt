@@ -17,8 +17,9 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun LoadingIndicator(text: String) {
     Box(
-        modifier = Modifier.fillMaxSize().padding(top = 100.dp, start = 16.dp, end = 16.dp),
-        contentAlignment = Alignment.TopCenter
+        modifier =
+            Modifier.fillMaxSize().padding(top = 100.dp, start = 16.dp, end = 16.dp),
+        contentAlignment = Alignment.TopCenter,
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             CircularProgressIndicator()
@@ -26,7 +27,7 @@ fun LoadingIndicator(text: String) {
             Text(
                 text,
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onSurface,
             )
         }
     }

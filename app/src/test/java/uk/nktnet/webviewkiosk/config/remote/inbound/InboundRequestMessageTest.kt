@@ -15,16 +15,18 @@ import org.junit.Test
 class InboundRequestMessageTest {
     @Test
     fun preservesMqttResponseRoutingMetadata() {
-        val request = InboundRequestJsonParser.decodeFromString<InboundRequestMessage>(
-            """
+        val request =
+            InboundRequestJsonParser.decodeFromString<InboundRequestMessage>(
+                """
                 {
                     "requestType": "get_status",
                     "responseTopic": "kiosk/response",
                     "correlationData": "request-1",
                     "futureField": true
                 }
-            """.trimIndent(),
-        )
+                """
+                    .trimIndent()
+            )
 
         assertTrue(request is InboundStatusRequest)
         assertEquals("kiosk/response", request.responseTopic)
@@ -33,17 +35,19 @@ class InboundRequestMessageTest {
 
     @Test
     fun settingsRequestsDefaultToRequestingAllSettings() {
-        val request = InboundRequestJsonParser.decodeFromString<InboundRequestMessage>(
-            """{"requestType":"get_settings"}""",
-        ) as InboundSettingsRequest
+        val request =
+            InboundRequestJsonParser.decodeFromString<InboundRequestMessage>(
+                """{"requestType":"get_settings"}"""
+            ) as InboundSettingsRequest
 
         assertTrue(request.data.settings.isEmpty())
     }
 
     @Test
     fun preservesStructuredAndUntrustedSettingsFiltersForSafeFiltering() {
-        val request = InboundRequestJsonParser.decodeFromString<InboundRequestMessage>(
-            """
+        val request =
+            InboundRequestJsonParser.decodeFromString<InboundRequestMessage>(
+                """
                 {
                     "requestType": "get_settings",
                     "data": {
@@ -55,8 +59,9 @@ class InboundRequestMessageTest {
                         ]
                     }
                 }
-            """.trimIndent(),
-        ) as InboundSettingsRequest
+                """
+                    .trimIndent()
+            ) as InboundSettingsRequest
 
         assertArrayEquals(
             arrayOf(
@@ -74,11 +79,17 @@ class InboundRequestMessageTest {
 
     @Test
     fun requestDataUsesValueEqualityAcrossSerializationRoundTrips() {
-        val original: InboundRequestMessage = InboundSettingsRequest(
-            data = InboundSettingsRequest.SettingsRequestData(arrayOf(JsonPrimitive("web_content.home_url"))),
-        )
-        val encoded = InboundRequestJsonParser.encodeToString<InboundRequestMessage>(original)
-        val decoded = InboundRequestJsonParser.decodeFromString<InboundRequestMessage>(encoded)
+        val original: InboundRequestMessage =
+            InboundSettingsRequest(
+                data =
+                    InboundSettingsRequest.SettingsRequestData(
+                        arrayOf(JsonPrimitive("web_content.home_url"))
+                    )
+            )
+        val encoded =
+            InboundRequestJsonParser.encodeToString<InboundRequestMessage>(original)
+        val decoded =
+            InboundRequestJsonParser.decodeFromString<InboundRequestMessage>(encoded)
 
         assertEquals(original, decoded)
         assertEquals(original.hashCode(), decoded.hashCode())
@@ -86,13 +97,16 @@ class InboundRequestMessageTest {
 
     @Test
     fun rejectsUnknownRequestTypesAndNonArraySettingsFilters() {
-        val payloads = listOf(
-            """{"requestType":"unknown"}""",
-            """{"requestType":"get_settings","data":{"settings":{}}}""",
-        )
+        val payloads =
+            listOf(
+                """{"requestType":"unknown"}""",
+                """{"requestType":"get_settings","data":{"settings":{}}}""",
+            )
         for (payload in payloads) {
             assertThrows(SerializationException::class.java) {
-                InboundRequestJsonParser.decodeFromString<InboundRequestMessage>(payload)
+                InboundRequestJsonParser.decodeFromString<InboundRequestMessage>(
+                    payload
+                )
             }
         }
     }

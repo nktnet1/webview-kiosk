@@ -24,49 +24,60 @@ fun AllowMicrophoneSetting() {
     val userSettings = UserSettings(context)
     val settingKey = UserSettingsKeys.Device.ALLOW_MICROPHONE
 
-    val (
-        permissionState,
-        requestPermission
-    ) = rememberPermissionState(Manifest.permission.RECORD_AUDIO)
+    val (permissionState, requestPermission) =
+        rememberPermissionState(Manifest.permission.RECORD_AUDIO)
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.device_allow_microphone_title),
-        infoText = """
+        infoText =
+            """
             Set to true to give WebView access to your device's microphone.
 
             You will need to grant the RECORD_AUDIO permission, which is required for the
             WebView's RESOURCE_AUDIO_CAPTURE feature.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.allowMicrophone,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.allowMicrophone = it },
         itemText = { v ->
-            val statusText = if (permissionState.granted) "" else "(no permission)"
-            if (v) "True $statusText" else "False $statusText"
+            val statusText =
+                if (permissionState.granted) {
+                    ""
+                } else {
+                    "(no permission)"
+                }
+            if (v) {
+                "True $statusText"
+            } else {
+                "False $statusText"
+            }
         },
         extraContent = {
             Button(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                onClick = requestPermission
+                onClick = requestPermission,
             ) {
-                val buttonText = when {
-                    permissionState.granted -> {
-                        "Disable in App Info"
+                val buttonText =
+                    when {
+                        permissionState.granted -> {
+                            "Disable in App Info"
+                        }
+                        !permissionState.granted &&
+                            !permissionState.shouldShowRationale -> {
+                            "Request Microphone Permission"
+                        }
+                        else -> {
+                            "Enable in App Info"
+                        }
                     }
-                    !permissionState.granted && !permissionState.shouldShowRationale -> {
-                        "Request Microphone Permission"
-                    }
-                    else -> {
-                        "Enable in App Info"
-                    }
-                }
                 Text(
                     text = buttonText,
                     textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.labelMedium
+                    style = MaterialTheme.typography.labelMedium,
                 )
             }
-        }
+        },
     )
 }

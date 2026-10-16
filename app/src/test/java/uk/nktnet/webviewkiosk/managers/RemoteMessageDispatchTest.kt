@@ -25,15 +25,17 @@ class RemoteMessageDispatchTest {
     @Test
     fun commandsRunInSubmissionOrderAndFlowObservesCompletedUiWork() = runBlocking {
         val events = mutableListOf<String>()
-        val unregister = RemoteMessageManager.registerWebViewCommandHandler(
-            canHandle = { true },
-            handle = { command -> events.add("handled:${command.messageId}") },
-        )
-        val collector = launch(Dispatchers.Unconfined) {
-            RemoteMessageManager.commandsFlow.take(3).collect { message ->
-                events.add("observed:${message.message.messageId}")
+        val unregister =
+            RemoteMessageManager.registerWebViewCommandHandler(
+                canHandle = { true },
+                handle = { command -> events.add("handled:${command.messageId}") },
+            )
+        val collector =
+            launch(Dispatchers.Unconfined) {
+                RemoteMessageManager.commandsFlow.take(3).collect { message ->
+                    events.add("observed:${message.message.messageId}")
+                }
             }
-        }
 
         try {
             for (id in listOf("first", "second", "third")) {
@@ -46,9 +48,12 @@ class RemoteMessageDispatchTest {
 
             assertEquals(
                 listOf(
-                    "handled:first", "observed:first",
-                    "handled:second", "observed:second",
-                    "handled:third", "observed:third",
+                    "handled:first",
+                    "observed:first",
+                    "handled:second",
+                    "observed:second",
+                    "handled:third",
+                    "observed:third",
                 ),
                 events,
             )
@@ -61,20 +66,22 @@ class RemoteMessageDispatchTest {
     @Test
     fun handlerFailureReportsErrorWithoutDroppingSubsequentCommands() = runBlocking {
         val events = mutableListOf<String>()
-        val unregister = RemoteMessageManager.registerWebViewCommandHandler(
-            canHandle = { true },
-            handle = { command ->
-                if (command.messageId == "broken") {
-                    throw IllegalStateException("simulated failure")
+        val unregister =
+            RemoteMessageManager.registerWebViewCommandHandler(
+                canHandle = { true },
+                handle = { command ->
+                    if (command.messageId == "broken") {
+                        throw IllegalStateException("simulated failure")
+                    }
+                    events.add("handled:${command.messageId}")
+                },
+            )
+        val collector =
+            launch(Dispatchers.Unconfined) {
+                RemoteMessageManager.commandsFlow.take(2).collect { message ->
+                    events.add("observed:${message.message.messageId}")
                 }
-                events.add("handled:${command.messageId}")
-            },
-        )
-        val collector = launch(Dispatchers.Unconfined) {
-            RemoteMessageManager.commandsFlow.take(2).collect { message ->
-                events.add("observed:${message.message.messageId}")
             }
-        }
 
         try {
             RemoteMessageManager.emitCommand(
@@ -90,8 +97,10 @@ class RemoteMessageDispatchTest {
 
             assertEquals(
                 listOf(
-                    "failed:simulated failure", "observed:broken",
-                    "handled:next", "observed:next",
+                    "failed:simulated failure",
+                    "observed:broken",
+                    "handled:next",
+                    "observed:next",
                 ),
                 events,
             )
@@ -105,20 +114,23 @@ class RemoteMessageDispatchTest {
     fun activeScreenIsResolvedForEveryCommandNotAtRegistrationTime() = runBlocking {
         val handledBy = mutableListOf<String>()
         var firstIsActive = true
-        val unregisterFirst = RemoteMessageManager.registerWebViewCommandHandler(
-            canHandle = { firstIsActive },
-            handle = {
-                handledBy.add("first:${it.messageId}")
-                firstIsActive = false
-            },
-        )
-        val unregisterSecond = RemoteMessageManager.registerWebViewCommandHandler(
-            canHandle = { true },
-            handle = { handledBy.add("second:${it.messageId}") },
-        )
-        val collector = launch(Dispatchers.Unconfined) {
-            RemoteMessageManager.commandsFlow.take(2).collect { }
-        }
+        val unregisterFirst =
+            RemoteMessageManager.registerWebViewCommandHandler(
+                canHandle = { firstIsActive },
+                handle = {
+                    handledBy.add("first:${it.messageId}")
+                    firstIsActive = false
+                },
+            )
+        val unregisterSecond =
+            RemoteMessageManager.registerWebViewCommandHandler(
+                canHandle = { true },
+                handle = { handledBy.add("second:${it.messageId}") },
+            )
+        val collector =
+            launch(Dispatchers.Unconfined) {
+                RemoteMessageManager.commandsFlow.take(2).collect {}
+            }
 
         try {
             RemoteMessageManager.emitCommand(
@@ -142,19 +154,24 @@ class RemoteMessageDispatchTest {
     @Test
     fun failedScreenEligibilityDoesNotHideTheNextActiveScreen() = runBlocking {
         val events = mutableListOf<String>()
-        val unregisterStale = RemoteMessageManager.registerWebViewCommandHandler(
-            canHandle = { throw IllegalStateException("old screen unavailable") },
-            handle = { events.add("stale:${it.messageId}") },
-        )
-        val unregisterActive = RemoteMessageManager.registerWebViewCommandHandler(
-            canHandle = { true },
-            handle = { events.add("active:${it.messageId}") },
-        )
-        val collector = launch(Dispatchers.Unconfined) {
-            RemoteMessageManager.commandsFlow.take(1).collect {
-                events.add("observed:${it.message.messageId}")
+        val unregisterStale =
+            RemoteMessageManager.registerWebViewCommandHandler(
+                canHandle = {
+                    throw IllegalStateException("old screen unavailable")
+                },
+                handle = { events.add("stale:${it.messageId}") },
+            )
+        val unregisterActive =
+            RemoteMessageManager.registerWebViewCommandHandler(
+                canHandle = { true },
+                handle = { events.add("active:${it.messageId}") },
+            )
+        val collector =
+            launch(Dispatchers.Unconfined) {
+                RemoteMessageManager.commandsFlow.take(1).collect {
+                    events.add("observed:${it.message.messageId}")
+                }
             }
-        }
         try {
             RemoteMessageManager.emitCommand(
                 InboundGoBackCommand(messageId = "fallback", interact = false),
@@ -164,7 +181,11 @@ class RemoteMessageDispatchTest {
             awaitDispatch(collector)
 
             assertEquals(
-                listOf("failure:old screen unavailable", "active:fallback", "observed:fallback"),
+                listOf(
+                    "failure:old screen unavailable",
+                    "active:fallback",
+                    "observed:fallback",
+                ),
                 events,
             )
         } finally {
@@ -175,93 +196,108 @@ class RemoteMessageDispatchTest {
     }
 
     @Test
-    fun unregisteredScreenDuringEligibilityIsNotAllowedToHandleTheCommand() = runBlocking {
-        val events = mutableListOf<String>()
-        var unregisterOld: (() -> Unit)? = null
-        unregisterOld = RemoteMessageManager.registerWebViewCommandHandler(
-            canHandle = {
-                unregisterOld?.invoke()
-                true
-            },
-            handle = { events.add("retired:${it.messageId}") },
-        )
-        val unregisterActive = RemoteMessageManager.registerWebViewCommandHandler(
-            canHandle = { true },
-            handle = { events.add("active:${it.messageId}") },
-        )
-        val collector = launch(Dispatchers.Unconfined) {
-            RemoteMessageManager.commandsFlow.take(1).collect {
-                events.add("observed:${it.message.messageId}")
+    fun unregisteredScreenDuringEligibilityIsNotAllowedToHandleTheCommand() =
+        runBlocking {
+            val events = mutableListOf<String>()
+            var unregisterOld: (() -> Unit)? = null
+            unregisterOld =
+                RemoteMessageManager.registerWebViewCommandHandler(
+                    canHandle = {
+                        unregisterOld?.invoke()
+                        true
+                    },
+                    handle = { events.add("retired:${it.messageId}") },
+                )
+            val unregisterActive =
+                RemoteMessageManager.registerWebViewCommandHandler(
+                    canHandle = { true },
+                    handle = { events.add("active:${it.messageId}") },
+                )
+            val collector =
+                launch(Dispatchers.Unconfined) {
+                    RemoteMessageManager.commandsFlow.take(1).collect {
+                        events.add("observed:${it.message.messageId}")
+                    }
+                }
+            try {
+                RemoteMessageManager.emitCommand(
+                    InboundGoBackCommand(messageId = "replaced", interact = false),
+                    Source.UNIFIEDPUSH,
+                )
+                awaitDispatch(collector)
+
+                assertEquals(listOf("active:replaced", "observed:replaced"), events)
+            } finally {
+                unregisterOld.invoke()
+                unregisterActive()
+                collector.cancel()
             }
         }
-        try {
-            RemoteMessageManager.emitCommand(
-                InboundGoBackCommand(messageId = "replaced", interact = false),
-                Source.UNIFIEDPUSH,
-            )
-            awaitDispatch(collector)
-
-            assertEquals(listOf("active:replaced", "observed:replaced"), events)
-        } finally {
-            unregisterOld.invoke()
-            unregisterActive()
-            collector.cancel()
-        }
-    }
 
     @Test
-    fun mqttHostEligibilityFailureDoesNotSuppressNativeDispatchOrCompletion() = runBlocking {
-        val context = RuntimeEnvironment.getApplication()
-        val events = mutableListOf<String>()
-        val unregisterStale = RemoteMessageManager.registerMqttCommandHost(context) {
-            throw IllegalStateException("old service unavailable")
-        }
-        val unregisterActive = RemoteMessageManager.registerMqttCommandHost(context) {
-            events.add("current-host")
-            true
-        }
-        val collector = launch(Dispatchers.Unconfined) {
-            RemoteMessageManager.commandsFlow.take(1).collect {
-                events.add("observed:${it.message.messageId}")
+    fun mqttHostEligibilityFailureDoesNotSuppressNativeDispatchOrCompletion() =
+        runBlocking {
+            val context = RuntimeEnvironment.getApplication()
+            val events = mutableListOf<String>()
+            val unregisterStale =
+                RemoteMessageManager.registerMqttCommandHost(context) {
+                    throw IllegalStateException("old service unavailable")
+                }
+            val unregisterActive =
+                RemoteMessageManager.registerMqttCommandHost(context) {
+                    events.add("current-host")
+                    true
+                }
+            val collector =
+                launch(Dispatchers.Unconfined) {
+                    RemoteMessageManager.commandsFlow.take(1).collect {
+                        events.add("observed:${it.message.messageId}")
+                    }
+                }
+            try {
+                RemoteMessageManager.emitCommand(
+                    InboundGoBackCommand(messageId = "mqtt", interact = false),
+                    Source.MQTT,
+                    onFailure = { events.add("failure:${it.message}") },
+                )
+                awaitDispatch(collector)
+
+                assertEquals(
+                    listOf(
+                        "failure:old service unavailable",
+                        "current-host",
+                        "observed:mqtt",
+                    ),
+                    events,
+                )
+            } finally {
+                unregisterStale()
+                unregisterActive()
+                collector.cancel()
             }
         }
-        try {
-            RemoteMessageManager.emitCommand(
-                InboundGoBackCommand(messageId = "mqtt", interact = false),
-                Source.MQTT,
-                onFailure = { events.add("failure:${it.message}") },
-            )
-            awaitDispatch(collector)
-
-            assertEquals(
-                listOf("failure:old service unavailable", "current-host", "observed:mqtt"),
-                events,
-            )
-        } finally {
-            unregisterStale()
-            unregisterActive()
-            collector.cancel()
-        }
-    }
 
     @Test
     fun unregisteredMqttHostDuringEligibilityDoesNotWinSelection() = runBlocking {
         val context = RuntimeEnvironment.getApplication()
         val events = mutableListOf<String>()
         var unregisterOld: (() -> Unit)? = null
-        unregisterOld = RemoteMessageManager.registerMqttCommandHost(context) {
-            unregisterOld?.invoke()
-            true
-        }
-        val unregisterActive = RemoteMessageManager.registerMqttCommandHost(context) {
-            events.add("current-host")
-            true
-        }
-        val collector = launch(Dispatchers.Unconfined) {
-            RemoteMessageManager.commandsFlow.take(1).collect {
-                events.add("observed:${it.message.messageId}")
+        unregisterOld =
+            RemoteMessageManager.registerMqttCommandHost(context) {
+                unregisterOld?.invoke()
+                true
             }
-        }
+        val unregisterActive =
+            RemoteMessageManager.registerMqttCommandHost(context) {
+                events.add("current-host")
+                true
+            }
+        val collector =
+            launch(Dispatchers.Unconfined) {
+                RemoteMessageManager.commandsFlow.take(1).collect {
+                    events.add("observed:${it.message.messageId}")
+                }
+            }
         try {
             RemoteMessageManager.emitCommand(
                 InboundGoBackCommand(messageId = "handoff", interact = false),
@@ -278,53 +314,58 @@ class RemoteMessageDispatchTest {
     }
 
     @Test
-    fun throwingFailureObserverCannotStopCompletionOrNextTransportCommand() = runBlocking {
-        val events = mutableListOf<String>()
-        var failuresReported = 0
-        val unregister = RemoteMessageManager.registerWebViewCommandHandler(
-            canHandle = { true },
-            handle = { command ->
-                if (command.messageId == "broken") {
-                    throw IllegalStateException("screen crashed")
+    fun throwingFailureObserverCannotStopCompletionOrNextTransportCommand() =
+        runBlocking {
+            val events = mutableListOf<String>()
+            var failuresReported = 0
+            val unregister =
+                RemoteMessageManager.registerWebViewCommandHandler(
+                    canHandle = { true },
+                    handle = { command ->
+                        if (command.messageId == "broken") {
+                            throw IllegalStateException("screen crashed")
+                        }
+                        events.add("handled:${command.messageId}")
+                    },
+                )
+            val collector =
+                launch(Dispatchers.Unconfined) {
+                    RemoteMessageManager.commandsFlow.take(2).collect {
+                        events.add("observed:${it.message.messageId}")
+                    }
                 }
-                events.add("handled:${command.messageId}")
-            },
-        )
-        val collector = launch(Dispatchers.Unconfined) {
-            RemoteMessageManager.commandsFlow.take(2).collect {
-                events.add("observed:${it.message.messageId}")
+            try {
+                RemoteMessageManager.emitCommand(
+                    InboundGoBackCommand(messageId = "broken", interact = false),
+                    Source.MQTT,
+                    onFailure = {
+                        failuresReported++
+                        throw IllegalStateException("failure observer retired")
+                    },
+                )
+                RemoteMessageManager.emitCommand(
+                    InboundGoBackCommand(messageId = "healthy", interact = false),
+                    Source.UNIFIEDPUSH,
+                )
+                awaitDispatch(collector)
+
+                assertEquals(1, failuresReported)
+                assertEquals(
+                    listOf("observed:broken", "handled:healthy", "observed:healthy"),
+                    events,
+                )
+            } finally {
+                unregister()
+                collector.cancel()
             }
         }
-        try {
-            RemoteMessageManager.emitCommand(
-                InboundGoBackCommand(messageId = "broken", interact = false),
-                Source.MQTT,
-                onFailure = {
-                    failuresReported++
-                    throw IllegalStateException("failure observer retired")
-                },
-            )
-            RemoteMessageManager.emitCommand(
-                InboundGoBackCommand(messageId = "healthy", interact = false),
-                Source.UNIFIEDPUSH,
-            )
-            awaitDispatch(collector)
-
-            assertEquals(1, failuresReported)
-            assertEquals(
-                listOf("observed:broken", "handled:healthy", "observed:healthy"),
-                events,
-            )
-        } finally {
-            unregister()
-            collector.cancel()
-        }
-    }
 
     private suspend fun awaitDispatch(collector: Job) {
         withTimeout(5_000) {
-            // Each command may resume the next mutex waiter on a background dispatcher.
-            // Pump the main looper repeatedly so queued follow-up commands cannot stall.
+            // Each command may resume the next mutex waiter on a background
+            // dispatcher.
+            // Pump the main looper repeatedly so queued follow-up commands cannot
+            // stall.
             while (!collector.isCompleted) {
                 shadowOf(Looper.getMainLooper()).idle()
                 delay(10)

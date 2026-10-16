@@ -16,12 +16,14 @@ fun LockTaskFeatureHomeSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.device_owner_lock_task_feature_home_title),
-        infoText = """
+        infoText =
+            """
             Shows the Home button.
 
             Enable for custom launchers - tapping an enabled Home button has no
             action unless you allowlist the default Android launcher.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.lockTaskFeatureHome,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

@@ -30,8 +30,9 @@ import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.utils.tryLockTask
 
 /**
- * Runs the Android 6 routing and activity-owner policy against production callbacks. Robolectric
- * uses the exported API 28 runtime; overriding the SDK gate does not emulate an API 23 device.
+ * Runs the Android 6 routing and activity-owner policy against production callbacks.
+ * Robolectric uses the exported API 28 runtime; overriding the SDK gate does not
+ * emulate an API 23 device.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -48,19 +49,26 @@ class Android6KioskLifecycleTest {
     fun setUp() {
         app = RuntimeEnvironment.getApplication()
         app.getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().clear().commit()
+            .edit()
+            .clear()
+            .commit()
         app.getSharedPreferences("system_settings", Context.MODE_PRIVATE)
-            .edit().clear().commit()
-        settings = UserSettings(app).apply {
-            mqttEnabled = false
-            lockOnLaunch = false
-            homeUrl = "about:blank"
-            resetOnLaunch = false
-            resetOnInactivitySeconds = 0
-            supportPdfRendering = false
-        }
-        savedMonitoringJob = monitoringField("monitoringJob").get(LockStateSingleton) as Job?
-        savedMonitoringStarted = monitoringField("isStarted").getBoolean(LockStateSingleton)
+            .edit()
+            .clear()
+            .commit()
+        settings =
+            UserSettings(app).apply {
+                mqttEnabled = false
+                lockOnLaunch = false
+                homeUrl = "about:blank"
+                resetOnLaunch = false
+                resetOnInactivitySeconds = 0
+                supportPdfRendering = false
+            }
+        savedMonitoringJob =
+            monitoringField("monitoringJob").get(LockStateSingleton) as Job?
+        savedMonitoringStarted =
+            monitoringField("isStarted").getBoolean(LockStateSingleton)
         originalSdk = Build.VERSION.SDK_INT
         setSdk(Build.VERSION_CODES.M)
     }
@@ -70,17 +78,30 @@ class Android6KioskLifecycleTest {
         try {
             activities.asReversed().forEach { controller ->
                 val state = controller.get().lifecycle.currentState
-                if (state.isAtLeast(Lifecycle.State.RESUMED)) controller.pause()
-                if (controller.get().lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+                if (state.isAtLeast(Lifecycle.State.RESUMED)) {
+                    controller.pause()
+                }
+                if (
+                    controller
+                        .get()
+                        .lifecycle
+                        .currentState
+                        .isAtLeast(Lifecycle.State.STARTED)
+                ) {
                     controller.stop()
                 }
                 controller.destroy()
             }
         } finally {
-            val currentMonitoringJob = monitoringField("monitoringJob").get(LockStateSingleton) as Job?
-            if (currentMonitoringJob !== savedMonitoringJob) currentMonitoringJob?.cancel()
-            monitoringField("monitoringJob").set(LockStateSingleton, savedMonitoringJob)
-            monitoringField("isStarted").setBoolean(LockStateSingleton, savedMonitoringStarted)
+            val currentMonitoringJob =
+                monitoringField("monitoringJob").get(LockStateSingleton) as Job?
+            if (currentMonitoringJob !== savedMonitoringJob) {
+                currentMonitoringJob?.cancel()
+            }
+            monitoringField("monitoringJob")
+                .set(LockStateSingleton, savedMonitoringJob)
+            monitoringField("isStarted")
+                .setBoolean(LockStateSingleton, savedMonitoringStarted)
             setSdk(originalSdk)
         }
     }
@@ -99,7 +120,11 @@ class Android6KioskLifecycleTest {
         assertNull(shadowOf(controller.get()).nextStartedActivity)
 
         controller.resume()
-        assertPrivateTaskIntent(controller.get(), fromHome = true, lockRequested = false)
+        assertPrivateTaskIntent(
+            controller.get(),
+            fromHome = true,
+            lockRequested = false,
+        )
         assertNull(shadowOf(controller.get()).nextStartedActivity)
     }
 
@@ -108,7 +133,11 @@ class Android6KioskLifecycleTest {
         settings.lockOnLaunch = true
         val controller = mainActivity(launcherIntent()).start().resume()
 
-        assertPrivateTaskIntent(controller.get(), fromHome = false, lockRequested = true)
+        assertPrivateTaskIntent(
+            controller.get(),
+            fromHome = false,
+            lockRequested = true,
+        )
         assertNull(shadowOf(controller.get()).nextStartedActivity)
     }
 
@@ -117,7 +146,11 @@ class Android6KioskLifecycleTest {
         settings.lockOnLaunch = true
         val controller = mainActivity(homeIntent()).start().resume()
 
-        assertPrivateTaskIntent(controller.get(), fromHome = true, lockRequested = false)
+        assertPrivateTaskIntent(
+            controller.get(),
+            fromHome = true,
+            lockRequested = false,
+        )
     }
 
     @Test
@@ -125,7 +158,11 @@ class Android6KioskLifecycleTest {
         val controller = mainActivity(launcherIntent()).start().resume()
         assertTrue(tryLockTask(controller.get()))
 
-        assertPrivateTaskIntent(controller.get(), fromHome = false, lockRequested = true)
+        assertPrivateTaskIntent(
+            controller.get(),
+            fromHome = false,
+            lockRequested = true,
+        )
     }
 
     @Test
@@ -134,7 +171,11 @@ class Android6KioskLifecycleTest {
         val controller = mainActivity(launcherIntent()).start()
         controller.newIntent(homeIntent()).resume()
 
-        assertPrivateTaskIntent(controller.get(), fromHome = true, lockRequested = false)
+        assertPrivateTaskIntent(
+            controller.get(),
+            fromHome = true,
+            lockRequested = false,
+        )
     }
 
     @Test
@@ -145,7 +186,11 @@ class Android6KioskLifecycleTest {
         assertNull(shadowOf(controller.get()).nextStartedActivity)
 
         controller.pause().resume()
-        assertPrivateTaskIntent(controller.get(), fromHome = true, lockRequested = false)
+        assertPrivateTaskIntent(
+            controller.get(),
+            fromHome = true,
+            lockRequested = false,
+        )
         assertNull(shadowOf(controller.get()).nextStartedActivity)
     }
 
@@ -153,7 +198,11 @@ class Android6KioskLifecycleTest {
     fun returningToTheRoutingActivityDoesNotRepeatItsConsumedLockRequest() {
         settings.lockOnLaunch = true
         val controller = mainActivity(launcherIntent()).start().resume()
-        assertPrivateTaskIntent(controller.get(), fromHome = false, lockRequested = true)
+        assertPrivateTaskIntent(
+            controller.get(),
+            fromHome = false,
+            lockRequested = true,
+        )
 
         controller.pause().stop().start().resume()
         assertNull(shadowOf(controller.get()).nextStartedActivity)
@@ -161,19 +210,28 @@ class Android6KioskLifecycleTest {
 
     @Test
     fun privateHostConsumesExplicitLockExtraBeforeASecondLaunch() {
-        val launch = Intent(app, Android6KioskActivity::class.java).apply {
-            action = Intent.ACTION_MAIN
-            putExtra(Constants.INTENT_ANDROID6_LOCK_TASK, true)
-        }
+        val launch =
+            Intent(app, Android6KioskActivity::class.java).apply {
+                action = Intent.ACTION_MAIN
+                putExtra(Constants.INTENT_ANDROID6_LOCK_TASK, true)
+            }
         val controller = privateActivity(launch).start().resume()
 
-        assertFalse(controller.get().intent.hasExtra(Constants.INTENT_ANDROID6_LOCK_TASK))
+        assertFalse(
+            controller.get().intent.hasExtra(Constants.INTENT_ANDROID6_LOCK_TASK)
+        )
         assertTrue(shadowLockTaskStarted(controller.get()))
-        controller.get().stopLockTask() // Model the user deliberately unlocking the private task.
+        controller
+            .get()
+            .stopLockTask() // Model the user deliberately unlocking the private
+        // task.
         assertFalse(shadowLockTaskStarted(controller.get()))
         assertNull(shadowOf(controller.get()).nextStartedActivity)
         controller.pause().stop().start().resume()
-        assertFalse("an old lock request must not replay", shadowLockTaskStarted(controller.get()))
+        assertFalse(
+            "an old lock request must not replay",
+            shadowLockTaskStarted(controller.get()),
+        )
         assertNull(shadowOf(controller.get()).nextStartedActivity)
     }
 
@@ -202,15 +260,22 @@ class Android6KioskLifecycleTest {
 
         private.pause().stop()
 
-        assertTrue("the remaining started host must own events", routing.get().isApplicationEventHost())
-        assertFalse("a stopped host must not keep ownership", private.get().isApplicationEventHost())
+        assertTrue(
+            "the remaining started host must own events",
+            routing.get().isApplicationEventHost(),
+        )
+        assertFalse(
+            "a stopped host must not keep ownership",
+            private.get().isApplicationEventHost(),
+        )
     }
 
     @Test
     fun onlyTheRemainingStartedHostCanClaimMqttAfterTheActiveHostStops() {
         val routing = mainActivity().start().resume()
         val private = privateActivity().start().resume()
-        // Enable the claim gate after the starts so no transport is opened by this policy test.
+        // Enable the claim gate after the starts so no transport is opened by this
+        // policy test.
         settings.mqttEnabled = true
         assertFalse(canClaimMqtt(routing.get()))
         assertTrue(canClaimMqtt(private.get()))
@@ -276,25 +341,33 @@ class Android6KioskLifecycleTest {
         }
     }
 
-    private fun mainActivity(intent: Intent = launcherIntent()): ActivityController<MainActivity> =
-        Robolectric.buildActivity(MainActivity::class.java, intent).create().also { activities.add(it) }
+    private fun mainActivity(
+        intent: Intent = launcherIntent()
+    ): ActivityController<MainActivity> =
+        Robolectric.buildActivity(MainActivity::class.java, intent).create().also {
+            activities.add(it)
+        }
 
     private fun privateActivity(
         intent: Intent = Intent(app, Android6KioskActivity::class.java)
     ): ActivityController<Android6KioskActivity> =
-        Robolectric.buildActivity(Android6KioskActivity::class.java, intent).create().also {
-            activities.add(it)
+        Robolectric.buildActivity(Android6KioskActivity::class.java, intent)
+            .create()
+            .also {
+                activities.add(it)
+            }
+
+    private fun launcherIntent() =
+        Intent(Intent.ACTION_MAIN).apply {
+            addCategory(Intent.CATEGORY_LAUNCHER)
+            setClass(app, MainActivity::class.java)
         }
 
-    private fun launcherIntent() = Intent(Intent.ACTION_MAIN).apply {
-        addCategory(Intent.CATEGORY_LAUNCHER)
-        setClass(app, MainActivity::class.java)
-    }
-
-    private fun homeIntent() = Intent(Intent.ACTION_MAIN).apply {
-        addCategory(Intent.CATEGORY_HOME)
-        setClass(app, MainActivity::class.java)
-    }
+    private fun homeIntent() =
+        Intent(Intent.ACTION_MAIN).apply {
+            addCategory(Intent.CATEGORY_HOME)
+            setClass(app, MainActivity::class.java)
+        }
 
     private fun assertPrivateTaskIntent(
         activity: MainActivity,
@@ -304,27 +377,39 @@ class Android6KioskLifecycleTest {
         val redirect = shadowOf(activity).nextStartedActivity
         assertNotNull("private kiosk redirect", redirect)
         requireNotNull(redirect)
-        assertEquals(Android6KioskActivity::class.java.name, redirect.component?.className)
+        assertEquals(
+            Android6KioskActivity::class.java.name,
+            redirect.component?.className,
+        )
         assertEquals(Intent.ACTION_MAIN, redirect.action)
         assertTrue(redirect.hasCategory(Intent.CATEGORY_LAUNCHER))
         assertFalse(redirect.hasCategory(Intent.CATEGORY_HOME))
         assertTrue(redirect.flags and Intent.FLAG_ACTIVITY_NEW_TASK != 0)
         assertTrue(redirect.flags and Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED != 0)
-        assertEquals(fromHome, redirect.getBooleanExtra(Constants.INTENT_HOME_LAUNCH, false))
-        assertEquals(lockRequested, redirect.getBooleanExtra(Constants.INTENT_ANDROID6_LOCK_TASK, false))
+        assertEquals(
+            fromHome,
+            redirect.getBooleanExtra(Constants.INTENT_HOME_LAUNCH, false),
+        )
+        assertEquals(
+            lockRequested,
+            redirect.getBooleanExtra(Constants.INTENT_ANDROID6_LOCK_TASK, false),
+        )
     }
 
     private fun canClaimMqtt(activity: MainActivity): Boolean =
         ReflectionHelpers.callInstanceMethod(activity, "canHandleMqttMessages")
 
-    @Suppress("DEPRECATION") // Robolectric's lock-task flag has no non-deprecated shadow accessor.
+    @Suppress(
+        "DEPRECATION"
+    ) // Robolectric's lock-task flag has no non-deprecated shadow accessor.
     private fun shadowLockTaskStarted(activity: MainActivity): Boolean =
         shadowOf(activity).isLockTask
 
     private fun setSdk(sdk: Int) =
         ReflectionHelpers.setStaticField(Build.VERSION::class.java, "SDK_INT", sdk)
 
-    private fun monitoringField(name: String) = LockStateSingleton.javaClass.getDeclaredField(name).apply {
-        isAccessible = true
-    }
+    private fun monitoringField(name: String) =
+        LockStateSingleton.javaClass.getDeclaredField(name).apply {
+            isAccessible = true
+        }
 }

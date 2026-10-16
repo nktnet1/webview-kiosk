@@ -26,7 +26,7 @@ private fun tryLockAction(
     activity: Activity,
     lockAction: Activity.() -> Unit,
     onSuccess: () -> Unit = {},
-    onFailed: (String) -> Unit
+    onFailed: (String) -> Unit,
 ): Boolean {
     return try {
         activity.lockAction()
@@ -67,7 +67,8 @@ fun applyLockTaskFeatures(context: Context) {
         }
 
         if (userSettings.lockTaskFeatureNotifications) {
-            features = features or DevicePolicyManager.LOCK_TASK_FEATURE_NOTIFICATIONS
+            features =
+                features or DevicePolicyManager.LOCK_TASK_FEATURE_NOTIFICATIONS
         }
     }
 
@@ -82,10 +83,12 @@ fun applyLockTaskFeatures(context: Context) {
         features = features or DevicePolicyManager.LOCK_TASK_FEATURE_KEYGUARD
     }
     if (
-        userSettings.lockTaskFeatureBlockActivityStartInTask
-        && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+        userSettings.lockTaskFeatureBlockActivityStartInTask &&
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
     ) {
-        features = features or DevicePolicyManager.LOCK_TASK_FEATURE_BLOCK_ACTIVITY_START_IN_TASK
+        features =
+            features or
+                DevicePolicyManager.LOCK_TASK_FEATURE_BLOCK_ACTIVITY_START_IN_TASK
     }
 
     try {
@@ -110,28 +113,39 @@ fun launchAndroid6KioskTask(
     Log.d(
         Constants.APP_SCHEME,
         "Android 6 kiosk redirect: activity=${activity.javaClass.simpleName} " +
-            "taskId=${activity.taskId} fromHome=$fromHome lockRequested=$lockRequested"
+            "taskId=${activity.taskId} fromHome=$fromHome lockRequested=$lockRequested",
     )
-    val launchIntent = Intent(activity, Android6KioskActivity::class.java).apply {
-        action = Intent.ACTION_MAIN
-        addCategory(Intent.CATEGORY_LAUNCHER)
-        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED)
-        putExtra(Constants.INTENT_HOME_LAUNCH, fromHome)
-        putExtra(Constants.INTENT_ANDROID6_LOCK_TASK, lockRequested)
-    }
+    val launchIntent =
+        Intent(activity, Android6KioskActivity::class.java).apply {
+            action = Intent.ACTION_MAIN
+            addCategory(Intent.CATEGORY_LAUNCHER)
+            addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
+            )
+            putExtra(Constants.INTENT_HOME_LAUNCH, fromHome)
+            putExtra(Constants.INTENT_ANDROID6_LOCK_TASK, lockRequested)
+        }
     activity.startActivity(launchIntent)
 
-    // Hide the routing task, not the kiosk host. Keep the private task available in Recents
+    // Hide the routing task, not the kiosk host. Keep the private task available in
+    // Recents
     // and do not clear or finish it when HOME is pressed after an unlock.
     try {
         val activityManager =
             activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
         @Suppress("DEPRECATION") // RecentTaskInfo.taskId is not available on API 23.
-        val routingTask = activityManager.appTasks
-            .firstOrNull { it.taskInfo?.id == activity.taskId }
+        val routingTask =
+            activityManager.appTasks.firstOrNull {
+                it.taskInfo?.id == activity.taskId
+            }
         routingTask?.setExcludeFromRecents(true)
     } catch (e: Exception) {
-        Log.w(Constants.APP_SCHEME, "Failed to hide Android 6 routing task from Recents", e)
+        Log.w(
+            Constants.APP_SCHEME,
+            "Failed to hide Android 6 routing task from Recents",
+            e,
+        )
     }
 }
 
@@ -144,37 +158,49 @@ private fun logAndroid6LockAction(activity: Activity, action: String) {
     Log.d(
         Constants.APP_SCHEME,
         "Android 6 $action: activity=${activity.javaClass.simpleName} " +
-            "taskId=${activity.taskId} state=${activityManager.lockTaskModeState}"
+            "taskId=${activity.taskId} state=${activityManager.lockTaskModeState}",
     )
 }
 
 @RequiresApi(Build.VERSION_CODES.M)
-private fun prepareAndroid6LockTask(activity: Activity): Android6LockTaskPreparation {
-    val isDeviceOwner = try {
-        DeviceOwnerManager.DPM.isDeviceOwnerApp(activity.packageName)
-    } catch (e: Exception) {
-        Log.w(Constants.APP_SCHEME, "Failed to check Android 6 device owner state", e)
-        false
-    }
+private fun prepareAndroid6LockTask(
+    activity: Activity
+): Android6LockTaskPreparation {
+    val isDeviceOwner =
+        try {
+            DeviceOwnerManager.DPM.isDeviceOwnerApp(activity.packageName)
+        } catch (e: Exception) {
+            Log.w(
+                Constants.APP_SCHEME,
+                "Failed to check Android 6 device owner state",
+                e,
+            )
+            false
+        }
 
     if (!isDeviceOwner) {
         return Android6LockTaskPreparation.CONTINUE
     }
 
-    val lockTaskPermitted = try {
-        if (!DeviceOwnerManager.DPM.isLockTaskPermitted(activity.packageName)) {
-            setupLockTaskPackage(activity)
+    val lockTaskPermitted =
+        try {
+            if (!DeviceOwnerManager.DPM.isLockTaskPermitted(activity.packageName)) {
+                setupLockTaskPackage(activity)
+            }
+            DeviceOwnerManager.DPM.isLockTaskPermitted(activity.packageName)
+        } catch (e: Exception) {
+            Log.e(
+                Constants.APP_SCHEME,
+                "Failed to verify Android 6 lock task permission",
+                e,
+            )
+            false
         }
-        DeviceOwnerManager.DPM.isLockTaskPermitted(activity.packageName)
-    } catch (e: Exception) {
-        Log.e(Constants.APP_SCHEME, "Failed to verify Android 6 lock task permission", e)
-        false
-    }
 
     if (!lockTaskPermitted) {
         ToastManager.show(
             activity,
-            "Failed to lock: app is not permitted for lock task mode."
+            "Failed to lock: app is not permitted for lock task mode.",
         )
         return Android6LockTaskPreparation.FAILED
     }
@@ -183,15 +209,20 @@ private fun prepareAndroid6LockTask(activity: Activity): Android6LockTaskPrepara
         activity.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
 
     return when (activityManager.lockTaskModeState) {
-        ActivityManager.LOCK_TASK_MODE_LOCKED -> Android6LockTaskPreparation.ALREADY_LOCKED
+        ActivityManager.LOCK_TASK_MODE_LOCKED ->
+            Android6LockTaskPreparation.ALREADY_LOCKED
         ActivityManager.LOCK_TASK_MODE_PINNED -> {
-            val unpinned = tryLockAction(
-                activity,
-                lockAction = Activity::stopLockTask,
-                onFailed = {
-                    ToastManager.show(activity, "Failed to leave screen pinning: $it")
-                }
-            )
+            val unpinned =
+                tryLockAction(
+                    activity,
+                    lockAction = Activity::stopLockTask,
+                    onFailed = {
+                        ToastManager.show(
+                            activity,
+                            "Failed to leave screen pinning: $it",
+                        )
+                    },
+                )
             if (unpinned) {
                 Android6LockTaskPreparation.CONTINUE
             } else {
@@ -209,12 +240,14 @@ fun tryLockTask(activity: Activity?): Boolean {
 
     if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
         if (activity.javaClass == MainActivity::class.java) {
-            // MainActivity may have been reused as HOME even after an app-menu launch.
-            // Only lock the separate task; the resumed host consumes this explicit request.
+            // MainActivity may have been reused as HOME even after an app-menu
+            // launch.
+            // Only lock the separate task; the resumed host consumes this explicit
+            // request.
             return tryLockAction(
                 activity,
                 lockAction = { launchAndroid6KioskTask(this, lockRequested = true) },
-                onFailed = { ToastManager.show(activity, "Failed to lock: $it") }
+                onFailed = { ToastManager.show(activity, "Failed to lock: $it") },
             )
         }
 
@@ -239,7 +272,7 @@ fun tryLockTask(activity: Activity?): Boolean {
         },
         onFailed = {
             ToastManager.show(activity, "Failed to lock: $it")
-        }
+        },
     )
 }
 
@@ -252,29 +285,34 @@ fun tryUnlockTask(activity: Activity?): Boolean {
         activity,
         lockAction = {
             if (
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
-                && DeviceOwnerManager.hasOwnerPermission(activity)
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+                    DeviceOwnerManager.hasOwnerPermission(activity)
             ) {
                 try {
-                    val savedPackages = DeviceOwnerManager.DPM.getLockTaskPackages(
-                        DeviceOwnerManager.DAR
-                    )
-                    val savedFeatures = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                        DeviceOwnerManager.DPM.getLockTaskFeatures(
+                    val savedPackages =
+                        DeviceOwnerManager.DPM.getLockTaskPackages(
                             DeviceOwnerManager.DAR
                         )
-                    } else {
-                        null
-                    }
+                    val savedFeatures =
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                            DeviceOwnerManager.DPM.getLockTaskFeatures(
+                                DeviceOwnerManager.DAR
+                            )
+                        } else {
+                            null
+                        }
                     DeviceOwnerManager.DPM.setLockTaskPackages(
                         DeviceOwnerManager.DAR,
-                        arrayOf(activity.packageName)
+                        arrayOf(activity.packageName),
                     )
                     DeviceOwnerManager.DPM.setLockTaskPackages(
                         DeviceOwnerManager.DAR,
                         savedPackages,
                     )
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && savedFeatures != null) {
+                    if (
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                            savedFeatures != null
+                    ) {
                         DeviceOwnerManager.DPM.setLockTaskFeatures(
                             DeviceOwnerManager.DAR,
                             savedFeatures,
@@ -284,11 +322,11 @@ fun tryUnlockTask(activity: Activity?): Boolean {
                     Log.w(
                         Constants.APP_SCHEME,
                         "Lock task packages or features operation failed",
-                        e
+                        e,
                     )
                     ToastManager.show(
                         activity,
-                        "DPM ${DeviceOwnerManager.status.value.mode}) error: ${e.message}"
+                        "DPM ${DeviceOwnerManager.status.value.mode}) error: ${e.message}",
                     )
                 }
             }
@@ -299,20 +337,22 @@ fun tryUnlockTask(activity: Activity?): Boolean {
         },
         onFailed = {
             ToastManager.show(activity, "Failed to unlock: $it")
-        }
+        },
     )
 }
 
 fun setupLockTaskPackage(context: Context): Boolean {
     try {
-        if (!DeviceOwnerManager.hasOwnerPermission(context)){
+        if (!DeviceOwnerManager.hasOwnerPermission(context)) {
             return false
         }
         val packages =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                val current = DeviceOwnerManager.DPM.getLockTaskPackages(
-                    DeviceOwnerManager.DAR
-                ).toMutableSet()
+                val current =
+                    DeviceOwnerManager.DPM.getLockTaskPackages(
+                            DeviceOwnerManager.DAR
+                        )
+                        .toMutableSet()
                 current.add(context.packageName)
                 current.toTypedArray()
             } else {
@@ -320,7 +360,7 @@ fun setupLockTaskPackage(context: Context): Boolean {
             }
         DeviceOwnerManager.DPM.setLockTaskPackages(
             DeviceOwnerManager.DAR,
-            packages
+            packages,
         )
 
         updateDeviceSettings(context)
@@ -333,7 +373,8 @@ fun setupLockTaskPackage(context: Context): Boolean {
 
 fun getIsLocked(activityManager: ActivityManager): Boolean {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        return activityManager.lockTaskModeState != ActivityManager.LOCK_TASK_MODE_NONE
+        return activityManager.lockTaskModeState !=
+            ActivityManager.LOCK_TASK_MODE_NONE
     } else {
         @Suppress("DEPRECATION")
         return activityManager.isInLockTaskMode
@@ -347,7 +388,9 @@ fun requireAuthForUnlock(context: Context, userSettings: UserSettings): Boolean 
     if (userSettings.unlockAuthRequirement == UnlockAuthRequirementOption.REQUIRE) {
         return true
     }
-    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+    val dpm =
+        context.getSystemService(Context.DEVICE_POLICY_SERVICE)
+            as DevicePolicyManager
     return dpm.isLockTaskPermitted(context.packageName)
 }
 
@@ -358,10 +401,12 @@ fun unlockWithAuthIfRequired(activity: Activity) {
         WaitingForUnlockStateSingleton.startWaiting()
         AuthenticationManager.showAuthenticationPrompt(
             title = "Authentication Required",
-            description = "Please authenticate to unlock ${activity.getString(R.string.app_name)}"
+            description =
+                "Please authenticate to unlock ${activity.getString(R.string.app_name)}",
         )
     } else if (tryUnlockTask(activity)) {
-        // A rejected stopLockTask must not dismiss the controls as if the kiosk unlocked.
+        // A rejected stopLockTask must not dismiss the controls as if the kiosk
+        // unlocked.
         CoroutineScope(Dispatchers.Main).launch {
             WaitingForUnlockStateSingleton.emitUnlockSuccess()
         }

@@ -14,11 +14,17 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldIte
 fun RefreshOnLoadingErrorIntervalSecondsSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-    val settingKey = UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS
+    val settingKey =
+        UserSettingsKeys.WebLifecycle.REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS
 
     NumberSettingFieldItem(
-        label = stringResource(R.string.web_lifecycle_refresh_on_loading_error_interval_seconds_title),
-        infoText = """
+        label =
+            stringResource(
+                R.string
+                    .web_lifecycle_refresh_on_loading_error_interval_seconds_title
+            ),
+        infoText =
+            """
             Interval in seconds between automatic refresh attempts when a page fails
             to load. This usually indicates a connection failure, such as
             when the device is offline or the server is unavailable.
@@ -26,13 +32,14 @@ fun RefreshOnLoadingErrorIntervalSecondsSetting() {
             Minimum: ${Constants.MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS}
 
             To disable, use the value 0.
-        """.trimIndent(),
+        """
+                .trimIndent(),
         placeholder = "e.g. 5",
         initialValue = userSettings.refreshOnLoadingErrorIntervalSeconds,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         min = Constants.MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS,
         max = Constants.MAX_INT_SETTING,
-        onSave = { userSettings.refreshOnLoadingErrorIntervalSeconds = it }
+        onSave = { userSettings.refreshOnLoadingErrorIntervalSeconds = it },
     )
 }

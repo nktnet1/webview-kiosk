@@ -20,27 +20,33 @@ fun MqttWillTopicSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_will_topic_title),
-        infoText = $$"""
+        infoText =
+            $$"""
             The MQTT topic to publish the last will message if the client
             disconnects unexpectedly.
 
             All global variables are supported, e.g. you can use
             - wk/${$${MqttVariableName.USERNAME.name}}/${$${MqttVariableName.APP_INSTANCE_ID.name}}/will
-        """.trimIndent(),
+        """
+                .trimIndent(),
         placeholder = "e.g. wk/will",
         initialValue = userSettings.mqttWillTopic,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         validator = {
-            it.isEmpty() || isValidMqttPublishTopic(
-                mqttVariableReplacement(
-                    it,
-                    mapOf(MqttVariableName.USERNAME.name to userSettings.mqttUsername),
+            it.isEmpty() ||
+                isValidMqttPublishTopic(
+                    mqttVariableReplacement(
+                        it,
+                        mapOf(
+                            MqttVariableName.USERNAME.name to
+                                userSettings.mqttUsername
+                        ),
+                    )
                 )
-            )
         },
         descriptionFormatter = {
-            mqttVariableReplacement( it)
+            mqttVariableReplacement(it)
         },
         isMultiline = false,
         onSave = { userSettings.mqttWillTopic = it },

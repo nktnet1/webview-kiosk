@@ -58,19 +58,20 @@ fun <T : AppInfo> BaseAppListDialog(
     var searchQuery by remember { mutableStateOf(TextFieldValue("")) }
     var ascending by remember { mutableStateOf(true) }
 
-    val filteredApps by remember(searchQuery.text, apps, ascending) {
-        derivedStateOf {
-            apps
-                .filter { app -> appFilter(app, searchQuery.text) }
-                .let { filtered ->
-                    if (ascending) {
-                        filtered.sortedBy { it.name }
-                    } else {
-                        filtered.sortedByDescending { it.name }
+    val filteredApps by
+        remember(searchQuery.text, apps, ascending) {
+            derivedStateOf {
+                apps
+                    .filter { app -> appFilter(app, searchQuery.text) }
+                    .let { filtered ->
+                        if (ascending) {
+                            filtered.sortedBy { it.name }
+                        } else {
+                            filtered.sortedByDescending { it.name }
+                        }
                     }
-                }
+            }
         }
-    }
 
     LaunchedEffect(filteredApps) {
         if (filteredApps.isNotEmpty()) {
@@ -80,13 +81,12 @@ fun <T : AppInfo> BaseAppListDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp, vertical = 12.dp),
+            modifier =
+                Modifier.fillMaxSize().padding(horizontal = 4.dp, vertical = 12.dp),
             color = MaterialTheme.colorScheme.background,
-            shape = MaterialTheme.shapes.medium
+            shape = MaterialTheme.shapes.medium,
         ) {
-            Column(
-                modifier = Modifier.fillMaxSize().padding(16.dp)
-            ) {
+            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                 Text(title, style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(16.dp))
 
@@ -106,10 +106,8 @@ fun <T : AppInfo> BaseAppListDialog(
                         color = ProgressIndicatorDefaults.linearColor,
                         trackColor = ProgressIndicatorDefaults.linearTrackColor,
                         strokeCap = ProgressIndicatorDefaults.LinearStrokeCap,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp)
-                            .height(4.dp)
+                        modifier =
+                            Modifier.fillMaxWidth().padding(top = 4.dp).height(4.dp),
                     )
                 } else {
                     Spacer(Modifier.height(8.dp))
@@ -119,11 +117,11 @@ fun <T : AppInfo> BaseAppListDialog(
 
                 if (filteredApps.isEmpty() && progress == 1f) {
                     Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth()
-                            .padding(top = 24.dp, start = 8.dp, end = 8.dp),
-                        contentAlignment = Alignment.TopCenter
+                        modifier =
+                            Modifier.weight(1f)
+                                .fillMaxWidth()
+                                .padding(top = 24.dp, start = 8.dp, end = 8.dp),
+                        contentAlignment = Alignment.TopCenter,
                     ) {
                         SelectionContainer {
                             emptyContent.invoke()
@@ -136,23 +134,27 @@ fun <T : AppInfo> BaseAppListDialog(
                         getKey = getKey,
                         getDescription = getDescription,
                         listState = listState,
-                        modifier = Modifier.weight(1f)
+                        modifier = Modifier.weight(1f),
                     )
                 }
 
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Row {
                         IconButton(
                             enabled = listState.canScrollBackward,
-                            onClick = { scope.launch { listState.animateScrollToItem(0) } }
+                            onClick = {
+                                scope.launch { listState.animateScrollToItem(0) }
+                            },
                         ) {
                             Icon(
-                                painterResource(R.drawable.keyboard_double_arrow_up_24),
-                                "Scroll to top"
+                                painterResource(
+                                    R.drawable.keyboard_double_arrow_up_24
+                                ),
+                                "Scroll to top",
                             )
                         }
 
@@ -161,13 +163,16 @@ fun <T : AppInfo> BaseAppListDialog(
                             onClick = {
                                 scope.launch {
                                     listState.animateScrollToItem(
-                                        listState.layoutInfo.totalItemsCount - 1)
+                                        listState.layoutInfo.totalItemsCount - 1
+                                    )
                                 }
-                            }
+                            },
                         ) {
                             Icon(
-                                painterResource(R.drawable.keyboard_double_arrow_down_24),
-                                "Scroll to bottom"
+                                painterResource(
+                                    R.drawable.keyboard_double_arrow_down_24
+                                ),
+                                "Scroll to bottom",
                             )
                         }
                     }

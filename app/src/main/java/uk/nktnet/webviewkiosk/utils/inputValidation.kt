@@ -8,9 +8,10 @@ import java.net.URI
 import java.net.URISyntaxException
 
 fun isDataSchemeUrl(url: String): Boolean {
-    val dataUrlRegex = Regex(
-        """^data:(?:[a-zA-Z0-9!#$&.+\-^_]+/[a-zA-Z0-9!#$&.+\-^_]+)?(?:;base64)?,.*"""
-    )
+    val dataUrlRegex =
+        Regex(
+            """^data:(?:[a-zA-Z0-9!#$&.+\-^_]+/[a-zA-Z0-9!#$&.+\-^_]+)?(?:;base64)?,.*"""
+        )
     return url.startsWith("data:") && dataUrlRegex.matches(url)
 }
 
@@ -30,12 +31,10 @@ fun validateUrl(input: String): Boolean {
             isValidUrl(trimmedInput)
         }
         "https" -> {
-            isValidUrl(trimmedInput)
-            && (
-                Patterns.WEB_URL.matcher(trimmedInput).matches()
-                || isIpv6Url(trimmedInput)
-                || uri.host.equals("localhost", ignoreCase = true)
-            )
+            isValidUrl(trimmedInput) &&
+                (Patterns.WEB_URL.matcher(trimmedInput).matches() ||
+                    isIpv6Url(trimmedInput) ||
+                    uri.host.equals("localhost", ignoreCase = true))
         }
         "data" -> {
             isDataSchemeUrl(trimmedInput)
@@ -56,7 +55,9 @@ private fun isIpv6Url(url: String): Boolean {
 fun validateMultilineRegex(text: String): Boolean {
     return text.lines().all { line ->
         val trimmed = line.trim()
-        if (trimmed.isEmpty()) return@all true
+        if (trimmed.isEmpty()) {
+            return@all true
+        }
         try {
             Regex(trimmed)
             true

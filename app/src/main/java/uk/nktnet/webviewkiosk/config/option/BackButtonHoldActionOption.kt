@@ -8,8 +8,8 @@ enum class BackButtonHoldActionOption(val label: String) {
     companion object {
         fun fromString(value: String?): BackButtonHoldActionOption {
             return entries.find {
-                it.name.equals(value, ignoreCase = true)
-                || it.label.equals(value, ignoreCase = true)
+                it.name.equals(value, ignoreCase = true) ||
+                    it.label.equals(value, ignoreCase = true)
             } ?: OPEN_KIOSK_CONTROL_PANEL
         }
     }

@@ -18,7 +18,8 @@ fun SslErrorModeSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.web_engine_ssl_error_mode_title),
-        infoText = """
+        infoText =
+            """
             Controls how the WebView handles SSL errors when loading pages.
 
             - BLOCK: cancels all failed SSL requests (default).
@@ -26,7 +27,8 @@ fun SslErrorModeSetting() {
             - PROCEED: always proceeds despite SSL errors (dangerous, NOT RECOMMENDED).
 
             Please use this setting carefully. Proceeding on SSL errors can compromise security.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         options = SslErrorModeOption.entries,
         initialValue = userSettings.sslErrorMode,
         settingKey = settingKey,

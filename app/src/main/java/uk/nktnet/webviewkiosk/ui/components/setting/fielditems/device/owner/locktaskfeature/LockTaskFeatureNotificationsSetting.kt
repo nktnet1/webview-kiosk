@@ -15,8 +15,12 @@ fun LockTaskFeatureNotificationsSetting() {
     val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.NOTIFICATIONS
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.device_owner_lock_task_feature_notifications_title),
-        infoText = """
+        label =
+            stringResource(
+                R.string.device_owner_lock_task_feature_notifications_title
+            ),
+        infoText =
+            """
             Enables notifications for all apps.
 
             This shows notification icons in the status bar, heads-up notifications, and
@@ -26,7 +30,8 @@ fun LockTaskFeatureNotificationsSetting() {
 
             Tapping notification actions and buttons that open new panels doesn't
             work in lock task mode.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.lockTaskFeatureNotifications,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

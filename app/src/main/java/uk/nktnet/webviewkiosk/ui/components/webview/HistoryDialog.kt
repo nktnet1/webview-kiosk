@@ -39,6 +39,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import java.util.Date
+import java.util.concurrent.TimeUnit
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.HistoryEntry
@@ -50,20 +52,22 @@ import uk.nktnet.webviewkiosk.utils.boundedBreakableTextPreview
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
-import java.util.Date
-import java.util.concurrent.TimeUnit
 
 private fun formatDatetime(context: Context, timestamp: Long): String {
     val now = System.currentTimeMillis()
     val diff = now - timestamp
-    val timeAgo = when {
-        diff < TimeUnit.MINUTES.toMillis(1) -> "Just now"
-        diff < TimeUnit.HOURS.toMillis(1) -> "${TimeUnit.MILLISECONDS.toMinutes(diff)} min ago"
-        diff < TimeUnit.DAYS.toMillis(1) -> "${TimeUnit.MILLISECONDS.toHours(diff)} h ago"
-        else -> "${TimeUnit.MILLISECONDS.toDays(diff)} d ago"
-    }
+    val timeAgo =
+        when {
+            diff < TimeUnit.MINUTES.toMillis(1) -> "Just now"
+            diff < TimeUnit.HOURS.toMillis(1) ->
+                "${TimeUnit.MILLISECONDS.toMinutes(diff)} min ago"
+            diff < TimeUnit.DAYS.toMillis(1) ->
+                "${TimeUnit.MILLISECONDS.toHours(diff)} h ago"
+            else -> "${TimeUnit.MILLISECONDS.toDays(diff)} d ago"
+        }
 
-    val dateTime = DateFormat.getMediumDateFormat(context).format(Date(timestamp)) +
+    val dateTime =
+        DateFormat.getMediumDateFormat(context).format(Date(timestamp)) +
             " " +
             DateFormat.getTimeFormat(context).format(Date(timestamp))
 
@@ -91,16 +95,21 @@ fun HistoryDialog(
     fun displayUrl(url: String): String {
         val prefix = "file://"
         val dir = Constants.WEB_CONTENT_FILES_DIR
-        return if (url.startsWith(prefix) && url.contains( Constants.WEB_CONTENT_FILES_DIR)) {
+        return if (
+            url.startsWith(prefix) && url.contains(Constants.WEB_CONTENT_FILES_DIR)
+        ) {
             val start = url.indexOf(prefix) + prefix.length
             val end = url.indexOf(dir) + dir.length
             url.take(start) + "..." + url.substring(end)
-        } else url
+        } else {
+            url
+        }
     }
 
     LaunchedEffect(Unit) {
         if (history.isNotEmpty()) {
-            val currentIndex = systemSettings.historyIndex.coerceIn(0, history.lastIndex)
+            val currentIndex =
+                systemSettings.historyIndex.coerceIn(0, history.lastIndex)
             listState.scrollToItem(currentIndex)
         }
     }
@@ -109,7 +118,8 @@ fun HistoryDialog(
         RemoteMessageManager.commandsFlow.collect { commandMessage ->
             when (commandMessage.message) {
                 is InboundClearHistoryCommand -> {
-                    // Command dispatch has already completed the native history clear.
+                    // Command dispatch has already completed the native history
+                    // clear.
                     history = systemSettings.historyStack
                 }
                 else -> Unit
@@ -119,11 +129,11 @@ fun HistoryDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            modifier = Modifier
-                .handleUserTouchEvent()
-                .handleUserKeyEvent(context, showHistoryDialog)
-                .fillMaxSize()
-                .padding(vertical = 16.dp),
+            modifier =
+                Modifier.handleUserTouchEvent()
+                    .handleUserKeyEvent(context, showHistoryDialog)
+                    .fillMaxSize()
+                    .padding(vertical = 16.dp),
             color = MaterialTheme.colorScheme.background,
             shape = MaterialTheme.shapes.medium,
         ) {
@@ -133,58 +143,79 @@ fun HistoryDialog(
 
                 LazyColumn(
                     modifier = Modifier.weight(1f),
-                    state = listState
+                    state = listState,
                 ) {
                     items(history, key = { it.id }) { item ->
                         val index = history.indexOf(item)
                         val isCurrent = index == systemSettings.historyIndex
                         Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 4.dp)
+                            modifier =
+                                Modifier.fillMaxWidth().padding(vertical = 4.dp)
                         ) {
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable(
-                                        enabled = !disableCurrent || (!isUpdating && !isCurrent),
-                                        onClick = {
-                                            isUpdating = true
-                                            onItemClick(item, index)
-                                            isUpdating = false
-                                            onDismiss()
-                                        }
-                                    )
-                                    .padding(start = 12.dp, top = 12.dp, bottom = 12.dp),
+                                modifier =
+                                    Modifier.fillMaxWidth()
+                                        .clickable(
+                                            enabled =
+                                                !disableCurrent ||
+                                                    (!isUpdating && !isCurrent),
+                                            onClick = {
+                                                isUpdating = true
+                                                onItemClick(item, index)
+                                                isUpdating = false
+                                                onDismiss()
+                                            },
+                                        )
+                                        .padding(
+                                            start = 12.dp,
+                                            top = 12.dp,
+                                            bottom = 12.dp,
+                                        ),
                                 horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = buildAnnotatedString {
-                                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                                append("[$index] ")
-                                            }
-                                            append(
-                                                boundedBreakableTextPreview(displayUrl(item.url))
-                                            )
-                                        },
+                                        text =
+                                            buildAnnotatedString {
+                                                withStyle(
+                                                    style =
+                                                        SpanStyle(
+                                                            fontWeight =
+                                                                FontWeight.Bold
+                                                        )
+                                                ) {
+                                                    append("[$index] ")
+                                                }
+                                                append(
+                                                    boundedBreakableTextPreview(
+                                                        displayUrl(item.url)
+                                                    )
+                                                )
+                                            },
                                         maxLines = 3,
                                         overflow = TextOverflow.Ellipsis,
-                                        style = if (isCurrent && highlightCurrent) {
-                                            MaterialTheme.typography.bodyMedium.copy(
-                                                color = MaterialTheme.colorScheme.primary,
-                                            )
-                                        } else {
-                                            MaterialTheme.typography.bodyMedium
-                                        }
+                                        style =
+                                            if (isCurrent && highlightCurrent) {
+                                                MaterialTheme.typography.bodyMedium
+                                                    .copy(
+                                                        color =
+                                                            MaterialTheme.colorScheme
+                                                                .primary
+                                                    )
+                                            } else {
+                                                MaterialTheme.typography.bodyMedium
+                                            },
                                     )
                                     Text(
-                                        text = formatDatetime(context, item.visitedAt),
+                                        text =
+                                            formatDatetime(context, item.visitedAt),
                                         fontStyle = FontStyle.Italic,
                                         modifier = Modifier.padding(top = 2.dp),
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color =
+                                            MaterialTheme.colorScheme
+                                                .onSurfaceVariant,
                                     )
                                 }
                                 IconButton(
@@ -193,19 +224,24 @@ fun HistoryDialog(
                                         isUpdating = true
                                         WebViewNavigation.removeHistoryAtIndex(
                                             systemSettings,
-                                            index
+                                            index,
                                         )
                                         history = systemSettings.historyStack
                                         isUpdating = false
-                                    }
+                                    },
                                 ) {
                                     Icon(
-                                        painter = painterResource(R.drawable.baseline_clear_24),
+                                        painter =
+                                            painterResource(
+                                                R.drawable.baseline_clear_24
+                                            ),
                                         contentDescription = "Delete",
-                                        tint = if (!isUpdating && !isCurrent)
-                                            MaterialTheme.colorScheme.error
-                                        else
-                                            LocalContentColor.current
+                                        tint =
+                                            if (!isUpdating && !isCurrent) {
+                                                MaterialTheme.colorScheme.error
+                                            } else {
+                                                LocalContentColor.current
+                                            },
                                     )
                                 }
                             }
@@ -217,21 +253,26 @@ fun HistoryDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     TextButton(
-                        enabled = !isUpdating && history.any {
-                            it != history.getOrNull(
-                                systemSettings.historyIndex
-                            )
-                        },
+                        enabled =
+                            !isUpdating &&
+                                history.any {
+                                    it !=
+                                        history.getOrNull(
+                                            systemSettings.historyIndex
+                                        )
+                                },
                         onClick = {
                             isUpdating = true
                             WebViewNavigation.clearHistory(systemSettings)
                             history = systemSettings.historyStack
                             isUpdating = false
-                        }
-                    ) { Text("Clear All") }
+                        },
+                    ) {
+                        Text("Clear All")
+                    }
                     TextButton(onClick = onDismiss) {
                         Text("Close")
                     }

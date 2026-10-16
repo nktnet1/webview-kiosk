@@ -16,7 +16,8 @@ fun EnableErudaConsoleSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.js_scripts_enable_eruda_console_title),
-        infoText = """
+        infoText =
+            """
             Automatically inject the Eruda console into web pages.
 
             - https://github.com/liriliri/eruda
@@ -31,10 +32,11 @@ fun EnableErudaConsoleSetting() {
 
             Useful for debugging web applications on Android devices without
             desktop developer tools.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.enableErudaConsole,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.enableErudaConsole = it }
+        onSave = { userSettings.enableErudaConsole = it },
     )
 }

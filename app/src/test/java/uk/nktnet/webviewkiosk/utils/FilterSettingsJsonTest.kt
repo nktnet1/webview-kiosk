@@ -17,7 +17,8 @@ import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 class FilterSettingsJsonTest {
     @Test
     fun unfilteredSettingsPreservePrimitiveTypes() {
-        val settings = JSONObject().put("text", "value").put("enabled", true).put("count", 42)
+        val settings =
+            JSONObject().put("text", "value").put("enabled", true).put("count", 42)
 
         assertEquals(
             buildJsonObject {
@@ -32,15 +33,16 @@ class FilterSettingsJsonTest {
     @Test
     fun skipsUnknownKeysAndMalformedFilterElements() {
         val settings = JSONObject().put("enabled", true).put("count", 42)
-        val filters = arrayOf<JsonElement>(
-            JsonPrimitive("enabled"),
-            buildJsonObject { put("key", "count") },
-            JsonPrimitive("unknown"),
-            JsonNull,
-            JsonArray(emptyList()),
-            buildJsonObject { put("key", JsonArray(emptyList())) },
-            buildJsonObject { put("parseAsArray", true) },
-        )
+        val filters =
+            arrayOf<JsonElement>(
+                JsonPrimitive("enabled"),
+                buildJsonObject { put("key", "count") },
+                JsonPrimitive("unknown"),
+                JsonNull,
+                JsonArray(emptyList()),
+                buildJsonObject { put("key", JsonArray(emptyList())) },
+                buildJsonObject { put("parseAsArray", true) },
+            )
 
         assertEquals(
             buildJsonObject {
@@ -54,21 +56,28 @@ class FilterSettingsJsonTest {
     @Test
     fun parsesMultilineArraysOnlyForSupportedSettings() {
         val key = UserSettingsKeys.WebContent.WEBSITE_BLACKLIST
-        val settings = JSONObject().put(key, "first\n\nsecond\n").put("other", "first\nsecond")
-        val filters = arrayOf<JsonElement>(
-            buildJsonObject {
-                put("key", key)
-                put("parseAsArray", true)
-            },
-            buildJsonObject {
-                put("key", "other")
-                put("parseAsArray", true)
-            },
-        )
+        val settings =
+            JSONObject().put(key, "first\n\nsecond\n").put("other", "first\nsecond")
+        val filters =
+            arrayOf<JsonElement>(
+                buildJsonObject {
+                    put("key", key)
+                    put("parseAsArray", true)
+                },
+                buildJsonObject {
+                    put("key", "other")
+                    put("parseAsArray", true)
+                },
+            )
 
         assertEquals(
             buildJsonObject {
-                put(key, JsonArray(listOf(JsonPrimitive("first"), JsonPrimitive("second"))))
+                put(
+                    key,
+                    JsonArray(
+                        listOf(JsonPrimitive("first"), JsonPrimitive("second"))
+                    ),
+                )
                 put("other", "first\nsecond")
             },
             filterSettingsJson(settings, filters),
@@ -79,14 +88,18 @@ class FilterSettingsJsonTest {
     fun nonPrimitiveOptionsAreIgnoredWithoutCrashing() {
         val key = UserSettingsKeys.WebContent.WEBSITE_BOOKMARKS
         val settings = JSONObject().put(key, "first\nsecond")
-        val filters = arrayOf<JsonElement>(
-            buildJsonObject {
-                put("key", key)
-                put("parseAsArray", JsonArray(emptyList()))
-                put("evaluateVariables", buildJsonObject {})
-            },
-        )
+        val filters =
+            arrayOf<JsonElement>(
+                buildJsonObject {
+                    put("key", key)
+                    put("parseAsArray", JsonArray(emptyList()))
+                    put("evaluateVariables", buildJsonObject {})
+                }
+            )
 
-        assertEquals(buildJsonObject { put(key, "first\nsecond") }, filterSettingsJson(settings, filters))
+        assertEquals(
+            buildJsonObject { put(key, "first\nsecond") },
+            filterSettingsJson(settings, filters),
+        )
     }
 }

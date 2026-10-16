@@ -14,6 +14,10 @@ import android.os.Environment
 import android.os.Looper
 import android.provider.MediaStore
 import android.util.Base64
+import java.io.ByteArrayOutputStream
+import java.io.FileNotFoundException
+import java.io.IOException
+import java.io.OutputStream
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -32,12 +36,10 @@ import org.robolectric.shadows.ShadowToast
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BlobInterface
-import java.io.ByteArrayOutputStream
-import java.io.FileNotFoundException
-import java.io.IOException
-import java.io.OutputStream
 
-/** Exercises the scoped-storage branch through the real resolver and BlobInterface. */
+/**
+ * Exercises the scoped-storage branch through the real resolver and BlobInterface.
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.Q])
 @LooperMode(LooperMode.Mode.PAUSED)
@@ -53,11 +55,17 @@ class BlobMediaStoreTest {
         val settings = UserSettings(context)
         previousAllowNotifications = settings.allowNotifications
         settings.allowNotifications = false
-        provider = Robolectric.buildContentProvider(RecordingDownloadsProvider::class.java)
-            .create(ProviderInfo().apply {
-                authority = requireNotNull(MediaStore.Downloads.EXTERNAL_CONTENT_URI.authority)
-            })
-            .get()
+        provider =
+            Robolectric.buildContentProvider(RecordingDownloadsProvider::class.java)
+                .create(
+                    ProviderInfo().apply {
+                        authority =
+                            requireNotNull(
+                                MediaStore.Downloads.EXTERNAL_CONTENT_URI.authority
+                            )
+                    }
+                )
+                .get()
         blob = BlobInterface(context)
     }
 
@@ -76,10 +84,22 @@ class BlobMediaStoreTest {
         assertTrue(blob.startDownload("report", null, "report.pdf"))
         val row = provider.created.single()
 
-        assertEquals(MediaStore.Downloads.EXTERNAL_CONTENT_URI, provider.insertedAt.single())
-        assertEquals("report.pdf", row.values.getAsString(MediaStore.Downloads.DISPLAY_NAME))
-        assertEquals("application/octet-stream", row.values.getAsString(MediaStore.Downloads.MIME_TYPE))
-        assertEquals(Environment.DIRECTORY_DOWNLOADS, row.values.getAsString(MediaStore.Downloads.RELATIVE_PATH))
+        assertEquals(
+            MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+            provider.insertedAt.single(),
+        )
+        assertEquals(
+            "report.pdf",
+            row.values.getAsString(MediaStore.Downloads.DISPLAY_NAME),
+        )
+        assertEquals(
+            "application/octet-stream",
+            row.values.getAsString(MediaStore.Downloads.MIME_TYPE),
+        )
+        assertEquals(
+            Environment.DIRECTORY_DOWNLOADS,
+            row.values.getAsString(MediaStore.Downloads.RELATIVE_PATH),
+        )
         assertEquals(1, pending(row))
         assertTrue(provider.publicationAttempts.isEmpty())
 
@@ -104,7 +124,10 @@ class BlobMediaStoreTest {
         provider.nextSavedName = "report (1).pdf"
         assertTrue(blob.startDownload("renamed", "application/pdf", "report.pdf"))
         val row = provider.created.single()
-        assertEquals("application/pdf", row.values.getAsString(MediaStore.Downloads.MIME_TYPE))
+        assertEquals(
+            "application/pdf",
+            row.values.getAsString(MediaStore.Downloads.MIME_TYPE),
+        )
 
         assertTrue(blob.appendChunk("renamed", encode(byteArrayOf(1, 2, 3))))
         assertTrue(blob.finishDownload("renamed"))
@@ -184,14 +207,25 @@ class BlobMediaStoreTest {
         val kept = provider.created.single()
 
         for (writeFailure in listOf(false, true)) {
-            val id = if (writeFailure) "write-failed" else "invalid-base64"
+            val id =
+                if (writeFailure) {
+                    "write-failed"
+                } else {
+                    "invalid-base64"
+                }
             assertTrue(blob.startDownload(id, null, "discard.bin"))
             val failed = provider.created.last()
             assertTrue(blob.appendChunk(id, encode("partial".toByteArray())))
             failed.output.failWrite = writeFailure
 
-            // A single Base64 digit is an incomplete group, rather than ignored whitespace.
-            val chunk = if (writeFailure) encode("late bytes".toByteArray()) else "a"
+            // A single Base64 digit is an incomplete group, rather than ignored
+            // whitespace.
+            val chunk =
+                if (writeFailure) {
+                    encode("late bytes".toByteArray())
+                } else {
+                    "a"
+                }
             assertFalse(blob.appendChunk(id, chunk))
 
             assertTrue(failed.output.closed)
@@ -256,20 +290,30 @@ class BlobMediaStoreTest {
     @Test
     fun obsoleteFinishCannotDeleteOrPublishItsReplacement() {
         for (flushFails in listOf(false, true)) {
-            val id = if (flushFails) "failed-flush" else "completed-flush"
+            val id =
+                if (flushFails) {
+                    "failed-flush"
+                } else {
+                    "completed-flush"
+                }
             assertTrue(blob.startDownload(id, null, "original.bin"))
             val original = provider.created.last()
             assertTrue(blob.appendChunk(id, encode("partial".toByteArray())))
             original.output.onFlush = {
                 assertTrue(blob.startDownload(id, null, "replacement.bin"))
-                if (flushFails) throw IOException("Old flush failed after replacement")
+                if (flushFails) {
+                    throw IOException("Old flush failed after replacement")
+                }
             }
             ToastManager.show(context, "replacement in progress")
             shadowOf(Looper.getMainLooper()).idle()
 
             assertFalse(blob.finishDownload(id))
             shadowOf(Looper.getMainLooper()).idle()
-            assertEquals("replacement in progress", ShadowToast.getTextOfLatestToast())
+            assertEquals(
+                "replacement in progress",
+                ShadowToast.getTextOfLatestToast(),
+            )
 
             val replacement = provider.created.last()
             assertTrue(original.output.closed)
@@ -288,7 +332,12 @@ class BlobMediaStoreTest {
     @Test
     fun flushAndCloseFailuresAbortWithoutPublishing() {
         for (flushFailure in listOf(true, false)) {
-            val id = if (flushFailure) "flush-failed" else "close-failed"
+            val id =
+                if (flushFailure) {
+                    "flush-failed"
+                } else {
+                    "close-failed"
+                }
             assertTrue(blob.startDownload(id, null, "report.bin"))
             val row = provider.created.last()
             assertTrue(blob.appendChunk(id, encode("complete bytes".toByteArray())))
@@ -313,7 +362,12 @@ class BlobMediaStoreTest {
             assertTrue(blob.startDownload(id, null, "report.bin"))
             val row = provider.created.last()
             assertTrue(blob.appendChunk(id, encode("complete bytes".toByteArray())))
-            provider.publicationResult = if (failure == "no-row") 0 else 1
+            provider.publicationResult =
+                if (failure == "no-row") {
+                    0
+                } else {
+                    1
+                }
             provider.failPublication = failure == "exception"
 
             assertFalse(blob.finishDownload(id))
@@ -394,16 +448,24 @@ class BlobMediaStoreTest {
     private fun pending(row: StoredDownload): Int =
         requireNotNull(row.values.getAsInteger(MediaStore.Downloads.IS_PENDING))
 
-    private fun encode(bytes: ByteArray) = Base64.encodeToString(bytes, Base64.NO_WRAP)
+    private fun encode(bytes: ByteArray) =
+        Base64.encodeToString(bytes, Base64.NO_WRAP)
 
-    enum class OpenFailure { NONE, RETURN_NULL, THROW }
+    enum class OpenFailure {
+        NONE,
+        RETURN_NULL,
+        THROW,
+    }
 
     class StoredDownload(val uri: Uri, val values: ContentValues) {
         val output = RecordingOutputStream()
         var openAttempts = 0
     }
 
-    /** Records storage effects; collision naming is supplied by the provider, as on Android. */
+    /**
+     * Records storage effects; collision naming is supplied by the provider, as on
+     * Android.
+     */
     class RecordingDownloadsProvider : ContentProvider() {
         val rows = linkedMapOf<Uri, StoredDownload>()
         val created = mutableListOf<StoredDownload>()
@@ -422,24 +484,31 @@ class BlobMediaStoreTest {
 
         override fun insert(uri: Uri, values: ContentValues?): Uri? {
             insertedAt.add(uri)
-            if (rejectInsert) return null
-            val row = StoredDownload(
-                ContentUris.withAppendedId(uri, nextId++),
-                ContentValues(requireNotNull(values)).apply {
-                    nextSavedName?.let { put(MediaStore.Downloads.DISPLAY_NAME, it) }
-                },
-            )
+            if (rejectInsert) {
+                return null
+            }
+            val row =
+                StoredDownload(
+                    ContentUris.withAppendedId(uri, nextId++),
+                    ContentValues(requireNotNull(values)).apply {
+                        nextSavedName?.let {
+                            put(MediaStore.Downloads.DISPLAY_NAME, it)
+                        }
+                    },
+                )
             rows[row.uri] = row
             created.add(row)
             val openFailure = nextOpenFailure
-            shadowOf(requireNotNull(context).contentResolver).registerOutputStreamSupplier(row.uri) {
-                row.openAttempts++
-                when (openFailure) {
-                    OpenFailure.NONE -> row.output
-                    OpenFailure.RETURN_NULL -> null
-                    OpenFailure.THROW -> throw FileNotFoundException("Output unavailable")
+            shadowOf(requireNotNull(context).contentResolver)
+                .registerOutputStreamSupplier(row.uri) {
+                    row.openAttempts++
+                    when (openFailure) {
+                        OpenFailure.NONE -> row.output
+                        OpenFailure.RETURN_NULL -> null
+                        OpenFailure.THROW ->
+                            throw FileNotFoundException("Output unavailable")
+                    }
                 }
-            }
             return row.uri
         }
 
@@ -450,7 +519,9 @@ class BlobMediaStoreTest {
             selectionArgs: Array<out String>?,
             sortOrder: String?,
         ): Cursor {
-            if (failQuery) throw IllegalStateException("Display name unavailable")
+            if (failQuery) {
+                throw IllegalStateException("Display name unavailable")
+            }
             val row = requireNotNull(rows[uri])
             val columns = projection ?: arrayOf(MediaStore.Downloads.DISPLAY_NAME)
             return MatrixCursor(columns).apply {
@@ -458,8 +529,10 @@ class BlobMediaStoreTest {
             }
         }
 
-        // A registered null stream falls through to the real resolver, which accepts this null.
-        override fun openAssetFile(uri: Uri, mode: String): AssetFileDescriptor? = null
+        // A registered null stream falls through to the real resolver, which accepts
+        // this null.
+        override fun openAssetFile(uri: Uri, mode: String): AssetFileDescriptor? =
+            null
 
         override fun update(
             uri: Uri,
@@ -470,14 +543,26 @@ class BlobMediaStoreTest {
             val row = requireNotNull(rows[uri])
             publicationAttempts.add(uri)
             row.output.events.add("publish")
-            if (failPublication) throw SecurityException("Publication refused")
-            if (publicationResult == 1) row.values.putAll(requireNotNull(values))
+            if (failPublication) {
+                throw SecurityException("Publication refused")
+            }
+            if (publicationResult == 1) {
+                row.values.putAll(requireNotNull(values))
+            }
             return publicationResult
         }
 
-        override fun delete(uri: Uri, selection: String?, selectionArgs: Array<out String>?): Int {
+        override fun delete(
+            uri: Uri,
+            selection: String?,
+            selectionArgs: Array<out String>?,
+        ): Int {
             deleted.add(uri)
-            return if (rows.remove(uri) == null) 0 else 1
+            return if (rows.remove(uri) == null) {
+                0
+            } else {
+                1
+            }
         }
 
         override fun getType(uri: Uri): String? =
@@ -489,6 +574,7 @@ class BlobMediaStoreTest {
         val events = mutableListOf<String>()
         var closed = false
             private set
+
         var failWrite = false
         var failFlush = false
         var failNextClose = false
@@ -498,7 +584,9 @@ class BlobMediaStoreTest {
         override fun write(value: Int) = write(byteArrayOf(value.toByte()), 0, 1)
 
         override fun write(bytes: ByteArray, offset: Int, length: Int) {
-            if (closed || failWrite) throw IOException("Write failed")
+            if (closed || failWrite) {
+                throw IOException("Write failed")
+            }
             onWrite?.invoke()
             events.add("write")
             contents.write(bytes, offset, length)
@@ -507,7 +595,9 @@ class BlobMediaStoreTest {
         override fun flush() {
             events.add("flush")
             onFlush?.invoke()
-            if (failFlush) throw IOException("Flush failed")
+            if (failFlush) {
+                throw IOException("Flush failed")
+            }
         }
 
         override fun close() {

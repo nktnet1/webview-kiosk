@@ -24,8 +24,8 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
+import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
 
 @Composable
 fun BasicAuthDialog(authRequest: HttpAuthRequest?, onDismiss: () -> Unit) {
@@ -36,7 +36,9 @@ fun BasicAuthDialog(authRequest: HttpAuthRequest?, onDismiss: () -> Unit) {
 
     if (authRequest != null) {
         fun completeAuthentication(submit: Boolean) {
-            if (requestCompleted) return
+            if (requestCompleted) {
+                return
+            }
             requestCompleted = true
             val submittedUsername = username
             val submittedPassword = password
@@ -63,52 +65,75 @@ fun BasicAuthDialog(authRequest: HttpAuthRequest?, onDismiss: () -> Unit) {
                         onValueChange = { username = it },
                         label = { Text("Username") },
                         singleLine = true,
-                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+                        keyboardOptions =
+                            KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
                         keyboardActions = KeyboardActions(),
-                        modifier = Modifier.padding(top = 12.dp)
+                        modifier = Modifier.padding(top = 12.dp),
                     )
                     OutlinedTextField(
                         value = password,
                         onValueChange = { password = it },
                         label = { Text("Password") },
-                        visualTransformation = if (showPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                        visualTransformation =
+                            if (showPassword) {
+                                VisualTransformation.None
+                            } else {
+                                PasswordVisualTransformation()
+                            },
                         singleLine = true,
                         trailingIcon = {
                             IconButton(onClick = { showPassword = !showPassword }) {
                                 Icon(
-                                    painter = painterResource(
-                                        if (showPassword) R.drawable.outline_visibility_24
-                                        else R.drawable.outline_visibility_off_24
-                                    ),
-                                    contentDescription = if (showPassword) "Hide password" else "Show password"
+                                    painter =
+                                        painterResource(
+                                            if (showPassword) {
+                                                R.drawable.outline_visibility_24
+                                            } else {
+                                                R.drawable.outline_visibility_off_24
+                                            }
+                                        ),
+                                    contentDescription =
+                                        if (showPassword) {
+                                            "Hide password"
+                                        } else {
+                                            "Show password"
+                                        },
                                 )
                             }
                         },
-                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = {
-                            completeAuthentication(submit = true)
-                        }),
-                        modifier = Modifier.padding(top = 4.dp)
+                        keyboardOptions =
+                            KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                        keyboardActions =
+                            KeyboardActions(
+                                onDone = {
+                                    completeAuthentication(submit = true)
+                                }
+                            ),
+                        modifier = Modifier.padding(top = 4.dp),
                     )
                 }
             },
             confirmButton = {
                 Button(
                     onClick = { completeAuthentication(submit = true) },
-                    modifier = Modifier.width(95.dp)
-                ) { Text("Login") }
+                    modifier = Modifier.width(95.dp),
+                ) {
+                    Text("Login")
+                }
             },
             dismissButton = {
                 Button(
                     onClick = { completeAuthentication(submit = false) },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError
-                    ),
-                    modifier = Modifier.width(95.dp)
-                ) { Text("Cancel") }
-            }
-
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError,
+                        ),
+                    modifier = Modifier.width(95.dp),
+                ) {
+                    Text("Cancel")
+                }
+            },
         )
     }
 }

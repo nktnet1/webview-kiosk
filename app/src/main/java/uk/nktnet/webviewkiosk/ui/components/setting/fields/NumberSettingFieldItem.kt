@@ -34,7 +34,10 @@ fun NumberSettingFieldItem(
     validationMessage: String? = null,
     descriptionFormatter: ((String) -> String)? = null,
     onSave: (Int) -> Unit,
-    extraContent: (@Composable ((draftValue: String, setValue: (newValue: String) -> Unit) -> Unit))? = null
+    extraContent:
+        (@Composable
+        ((draftValue: String, setValue: (newValue: String) -> Unit) -> Unit))? =
+        null,
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var value by remember { mutableIntStateOf(initialValue) }
@@ -42,22 +45,18 @@ fun NumberSettingFieldItem(
     var draftError by remember { mutableStateOf(false) }
 
     fun validateNumber(input: String): Boolean {
-        val number = if (input.isEmpty()) {
-            0
-        } else {
-            val parsed = input.toLongOrNull() ?: return false
-            if (parsed > Int.MAX_VALUE || parsed < Int.MIN_VALUE) {
-                return false
+        val number =
+            if (input.isEmpty()) {
+                0
+            } else {
+                val parsed = input.toLongOrNull() ?: return false
+                if (parsed > Int.MAX_VALUE || parsed < Int.MIN_VALUE) {
+                    return false
+                }
+                parsed.toInt()
             }
-            parsed.toInt()
-        }
-        return (
-            number == 0
-            || (
-                (min == null || number >= min)
-                && (max == null || number <= max)
-            )
-        )
+        return (number == 0 ||
+            ((min == null || number >= min) && (max == null || number <= max)))
     }
 
     GenericSettingFieldItem(
@@ -71,22 +70,25 @@ fun NumberSettingFieldItem(
         },
     ) { v ->
         Text(
-            text = if (descriptionFormatter != null) {
-                descriptionFormatter(v)
-            } else if (v == "0") {
-                "0 (disabled)"
-            } else {
-                v
-            },
-            style = MaterialTheme.typography.bodyMedium.copy(
-                fontStyle = if (v == "0" && descriptionFormatter == null) {
-                    FontStyle.Italic
+            text =
+                if (descriptionFormatter != null) {
+                    descriptionFormatter(v)
+                } else if (v == "0") {
+                    "0 (disabled)"
                 } else {
-                    FontStyle.Normal
-                }
-            ),
+                    v
+                },
+            style =
+                MaterialTheme.typography.bodyMedium.copy(
+                    fontStyle =
+                        if (v == "0" && descriptionFormatter == null) {
+                            FontStyle.Italic
+                        } else {
+                            FontStyle.Normal
+                        }
+                ),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1
+            maxLines = 1,
         )
     }
 
@@ -99,12 +101,17 @@ fun NumberSettingFieldItem(
             onDismiss = { showDialog = false },
             onSave = {
                 if (!draftError) {
-                    val number = if (draftValue.isEmpty()) 0 else draftValue.toIntOrNull() ?: 0
+                    val number =
+                        if (draftValue.isEmpty()) {
+                            0
+                        } else {
+                            draftValue.toIntOrNull() ?: 0
+                        }
                     value = number
                     onSave(number)
                     showDialog = false
                 }
-            }
+            },
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 TextField(
@@ -116,7 +123,9 @@ fun NumberSettingFieldItem(
                     },
                     isError = draftError,
                     singleLine = true,
-                    placeholder = { Text(placeholder, fontStyle = FontStyle.Italic) },
+                    placeholder = {
+                        Text(placeholder, fontStyle = FontStyle.Italic)
+                    },
                     trailingIcon = {
                         if (restricted) {
                             return@TextField
@@ -126,29 +135,35 @@ fun NumberSettingFieldItem(
                                 draftValue = ""
                                 draftError = !validateNumber("")
                             },
-                            enabled = draftValue.isNotEmpty()
+                            enabled = draftValue.isNotEmpty(),
                         ) {
                             Icon(
-                                painter = painterResource(R.drawable.baseline_clear_24),
-                                contentDescription = "Clear"
+                                painter =
+                                    painterResource(R.drawable.baseline_clear_24),
+                                contentDescription = "Clear",
                             )
                         }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 if (draftError) {
                     Text(
-                        text = validationMessage ?: run {
-                            when {
-                                min != null && max != null -> "Enter a number between $min and $max"
-                                min != null -> "Enter a number ≥ $min (or 0 to disable)"
-                                max != null -> "Enter a number ≤ $max (or 0 to disable)"
-                                else -> "Invalid number"
-                            }
-                        },
+                        text =
+                            validationMessage
+                                ?: run {
+                                    when {
+                                        min != null && max != null ->
+                                            "Enter a number between $min and $max"
+                                        min != null ->
+                                            "Enter a number ≥ $min (or 0 to disable)"
+                                        max != null ->
+                                            "Enter a number ≤ $max (or 0 to disable)"
+                                        else -> "Invalid number"
+                                    }
+                                },
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     )
                 }
                 extraContent?.invoke(draftValue) { newValue ->

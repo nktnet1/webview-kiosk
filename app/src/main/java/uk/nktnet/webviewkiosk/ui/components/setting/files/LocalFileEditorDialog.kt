@@ -29,6 +29,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -37,7 +38,6 @@ import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog as Dialog
 import uk.nktnet.webviewkiosk.utils.getDisplayName
 import uk.nktnet.webviewkiosk.utils.writeEditableTextFile
-import java.io.File
 
 @Composable
 fun LocalFileEditorDialog(
@@ -61,18 +61,12 @@ fun LocalFileEditorDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
+            modifier = Modifier.fillMaxSize().padding(16.dp),
             color = MaterialTheme.colorScheme.background,
             shape = MaterialTheme.shapes.medium,
             tonalElevation = 6.dp,
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp),
-            ) {
+            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                 Text(
                     text = "Edit file",
                     style = MaterialTheme.typography.headlineSmall,
@@ -90,9 +84,7 @@ fun LocalFileEditorDialog(
                 OutlinedTextField(
                     value = text,
                     onValueChange = { text = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
+                    modifier = Modifier.fillMaxWidth().weight(1f),
                     enabled = !isSaving,
                     textStyle = MaterialTheme.typography.bodySmall,
                 )
@@ -106,7 +98,8 @@ fun LocalFileEditorDialog(
                         onClick = { text = initialText },
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.baseline_refresh_24),
+                            painter =
+                                painterResource(R.drawable.baseline_refresh_24),
                             contentDescription = "Reset",
                             tint = MaterialTheme.colorScheme.primary,
                         )
@@ -127,17 +120,18 @@ fun LocalFileEditorDialog(
                         onClick = {
                             scope.launch {
                                 val clipEntry = clipboard.getClipEntry()
-                                text = clipEntry
-                                    ?.clipData
-                                    ?.getItemAt(0)
-                                    ?.text
-                                    ?.toString()
-                                    ?: ""
+                                text =
+                                    clipEntry
+                                        ?.clipData
+                                        ?.getItemAt(0)
+                                        ?.text
+                                        ?.toString() ?: ""
                             }
                         },
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.outline_content_paste_24),
+                            painter =
+                                painterResource(R.drawable.outline_content_paste_24),
                             contentDescription = "Paste",
                             tint = MaterialTheme.colorScheme.primary,
                         )
@@ -162,9 +156,10 @@ fun LocalFileEditorDialog(
                             }
                             isSaving = true
                             scope.launch {
-                                val saved = withContext(Dispatchers.IO) {
-                                    writeEditableTextFile(file, text)
-                                }
+                                val saved =
+                                    withContext(Dispatchers.IO) {
+                                        writeEditableTextFile(file, text)
+                                    }
                                 isSaving = false
                                 if (saved) {
                                     ToastManager.show(context, "File saved")
@@ -176,7 +171,13 @@ fun LocalFileEditorDialog(
                         },
                         enabled = !isSaving && text != initialText,
                     ) {
-                        Text(if (isSaving) "Saving..." else "Save")
+                        Text(
+                            if (isSaving) {
+                                "Saving..."
+                            } else {
+                                "Save"
+                            }
+                        )
                     }
                 }
             }

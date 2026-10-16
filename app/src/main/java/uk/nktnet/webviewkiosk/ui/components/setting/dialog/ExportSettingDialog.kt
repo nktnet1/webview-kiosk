@@ -38,11 +38,11 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.unit.dp
+import java.io.OutputStream
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.OutputStream
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
@@ -52,8 +52,14 @@ import uk.nktnet.webviewkiosk.utils.boundedTextPreview
 
 private const val EXPORT_PREVIEW_MAX_CHARS = 2048
 
-/** SAF providers may block or reject an output stream; success requires a completed close. */
-internal suspend fun writeSettingsExport(text: String, openOutput: () -> OutputStream?) {
+/**
+ * SAF providers may block or reject an output stream; success requires a completed
+ * close.
+ */
+internal suspend fun writeSettingsExport(
+    text: String,
+    openOutput: () -> OutputStream?,
+) {
     withContext(Dispatchers.IO) {
         val stream = openOutput() ?: error("Unable to open selected export file.")
         stream.use { it.write(text.toByteArray(Charsets.UTF_8)) }
@@ -62,7 +68,7 @@ internal suspend fun writeSettingsExport(text: String, openOutput: () -> OutputS
 
 enum class ExportTab {
     Base64,
-    JSON
+    JSON,
 }
 
 @Composable
@@ -95,54 +101,55 @@ fun ExportSettingsDialog(
 
     var selectedTab by remember { mutableStateOf(ExportTab.Base64) }
     val tabs = ExportTab.entries.toTypedArray()
-    val textDisplay = if (selectedTab == ExportTab.Base64) {
-        base64Text
-    } else {
-        jsonText
-    }
+    val textDisplay =
+        if (selectedTab == ExportTab.Base64) {
+            base64Text
+        } else {
+            jsonText
+        }
 
-    val exportLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument(
-            if (selectedTab == ExportTab.Base64) {
-                "text/plain"
-            } else {
-                "application/json"
-            }
-        )
-    ) { uri ->
-        if (uri != null) {
-            scope.launch {
-                try {
-                    writeSettingsExport(textDisplay) {
-                        context.contentResolver.openOutputStream(uri)
+    val exportLauncher =
+        rememberLauncherForActivityResult(
+            contract =
+                ActivityResultContracts.CreateDocument(
+                    if (selectedTab == ExportTab.Base64) {
+                        "text/plain"
+                    } else {
+                        "application/json"
                     }
-                    ToastManager.show(context, "Exported to $uri")
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    Log.e(Constants.APP_SCHEME, "Failed to export", e)
-                    ToastManager.show(context, "Export Error: ${e.message}")
+                )
+        ) { uri ->
+            if (uri != null) {
+                scope.launch {
+                    try {
+                        writeSettingsExport(textDisplay) {
+                            context.contentResolver.openOutputStream(uri)
+                        }
+                        ToastManager.show(context, "Exported to $uri")
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Log.e(Constants.APP_SCHEME, "Failed to export", e)
+                        ToastManager.show(context, "Export Error: ${e.message}")
+                    }
                 }
             }
         }
-    }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             tonalElevation = 6.dp,
             shape = MaterialTheme.shapes.medium,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 600.dp)
-                    .padding(16.dp)
+                modifier =
+                    Modifier.fillMaxWidth().heightIn(max = 600.dp).padding(16.dp)
             ) {
                 Text(
                     text = "Export Settings",
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp),
                 )
 
                 PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
@@ -152,7 +159,8 @@ fun ExportSettingsDialog(
                             onClick = { selectedTab = tab },
                             text = { Text(tab.name) },
                             selectedContentColor = MaterialTheme.colorScheme.primary,
-                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedContentColor =
+                                MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -160,20 +168,25 @@ fun ExportSettingsDialog(
                 Spacer(Modifier.height(8.dp))
 
                 Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
+                    modifier =
+                        Modifier.weight(1f)
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
                 ) {
                     Text(
-                        text = boundedTextPreview(textDisplay, EXPORT_PREVIEW_MAX_CHARS),
-                        style = MaterialTheme.typography.bodySmall
+                        text =
+                            boundedTextPreview(
+                                textDisplay,
+                                EXPORT_PREVIEW_MAX_CHARS,
+                            ),
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 }
 
                 if (textDisplay.length > EXPORT_PREVIEW_MAX_CHARS) {
                     Text(
-                        text = "Preview shortened. Copy or save the file to view all settings.",
+                        text =
+                            "Preview shortened. Copy or save the file to view all settings.",
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.padding(top = 8.dp),
                     )
@@ -183,19 +196,17 @@ fun ExportSettingsDialog(
 
                 if (selectedTab == ExportTab.JSON) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp),
+                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
                         horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             text = "Prettify",
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodySmall,
                         )
                         Checkbox(
                             checked = prettyJson,
-                            onCheckedChange = { prettyJson = it }
+                            onCheckedChange = { prettyJson = it },
                         )
                     }
                 }
@@ -216,15 +227,16 @@ fun ExportSettingsDialog(
                                     Log.e(
                                         Constants.APP_SCHEME,
                                         "Failed to launch file picker for export",
-                                        e
+                                        e,
                                     )
                                     ToastManager.show(context, "Error: ${e.message}")
                                 }
                             }
                         },
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.tertiary
-                        ),
+                        colors =
+                            ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.tertiary
+                            ),
                     ) {
                         Text("Save File")
                     }
@@ -232,9 +244,10 @@ fun ExportSettingsDialog(
                     Row {
                         TextButton(
                             onClick = onDismiss,
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            ),
+                            colors =
+                                ButtonDefaults.textButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                ),
                         ) {
                             Text("Cancel")
                         }
@@ -242,14 +255,15 @@ fun ExportSettingsDialog(
                         TextButton(
                             onClick = {
                                 scope.launch {
-                                    val clipData = ClipData.newPlainText(
-                                        "Exported Data",
-                                        textDisplay
-                                    )
+                                    val clipData =
+                                        ClipData.newPlainText(
+                                            "Exported Data",
+                                            textDisplay,
+                                        )
                                     clipboard.setClipEntry(clipData.toClipEntry())
                                     onDismiss()
                                 }
-                            },
+                            }
                         ) {
                             Text("Copy")
                         }

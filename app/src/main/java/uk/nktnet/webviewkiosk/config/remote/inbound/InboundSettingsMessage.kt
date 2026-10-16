@@ -14,7 +14,5 @@ data class InboundSettingsMessage(
     val data: SettingsUpdateData = SettingsUpdateData(),
 ) {
     @Serializable
-    data class SettingsUpdateData(
-        val settings: JsonObject = buildJsonObject {},
-    )
+    data class SettingsUpdateData(val settings: JsonObject = buildJsonObject {})
 }

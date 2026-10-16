@@ -17,8 +17,12 @@ fun OverrideUrlLoadingBlockActionSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.OVERRIDE_URL_LOADING_BLOCK_ACTION
 
     DropdownSettingFieldItem(
-        label = stringResource(R.string.web_browsing_override_url_loading_block_action_title),
-        infoText = """
+        label =
+            stringResource(
+                R.string.web_browsing_override_url_loading_block_action_title
+            ),
+        infoText =
+            """
             Action to take when a URL navigation (via shouldOverrideUrlLoading)
             matches the blacklist regex.
 
@@ -34,7 +38,8 @@ fun OverrideUrlLoadingBlockActionSetting() {
             - Custom URL loading, e.g. from the Address Bar, Bookmarks, History, etc
 
             In those other cases, the block page will simply be shown.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         options = OverrideUrlLoadingBlockActionOption.entries,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

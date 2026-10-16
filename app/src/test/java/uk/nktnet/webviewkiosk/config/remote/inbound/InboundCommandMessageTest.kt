@@ -13,8 +13,9 @@ import uk.nktnet.webviewkiosk.config.remote.RemoteNotifyCommandPriority
 class InboundCommandMessageTest {
     @Test
     fun dispatchesByCommandAndPreservesTargetingAndBehaviorFlags() {
-        val command = InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(
-            """
+        val command =
+            InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(
+                """
                 {
                     "command": "go_to_url",
                     "messageId": "message-1",
@@ -25,8 +26,9 @@ class InboundCommandMessageTest {
                     "data": {"url": "https://example.com"},
                     "futureField": true
                 }
-            """.trimIndent(),
-        )
+                """
+                    .trimIndent()
+            )
 
         assertTrue(command is InboundGoToUrlCommand)
         command as InboundGoToUrlCommand
@@ -40,14 +42,16 @@ class InboundCommandMessageTest {
 
     @Test
     fun acceptsCommentsAndTrailingCommasUsingTheSharedParserPolicy() {
-        val command = InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(
-            """
+        val command =
+            InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(
+                """
                 {
                     // Optional fields retain their defaults.
                     "command": "refresh",
                 }
-            """.trimIndent(),
-        )
+                """
+                    .trimIndent()
+            )
 
         assertTrue(command is InboundRefreshCommand)
         assertTrue(command.interact)
@@ -56,46 +60,65 @@ class InboundCommandMessageTest {
 
     @Test
     fun rejectsUnknownCommandsMissingDiscriminatorsAndRequiredData() {
-        for (payload in listOf(
-            """{"command":"unknown"}""",
-            """{"command":"go_to_url"}""",
-            """{"command":"go_to_url","data":{}}""",
-            """{"command":"launch_package","data":{}}""",
-            """{}""",
-        )) {
+        for (payload in
+            listOf(
+                """{"command":"unknown"}""",
+                """{"command":"go_to_url"}""",
+                """{"command":"go_to_url","data":{}}""",
+                """{"command":"launch_package","data":{}}""",
+                """{}""",
+            )) {
             assertThrows(SerializationException::class.java) {
-                InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(payload)
+                InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(
+                    payload
+                )
             }
         }
     }
 
     @Test
     fun notifyDefaultsAndPriorityAliasesRemainCompatible() {
-        val defaultCommand = InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(
-            """{"command":"notify"}""",
-        ) as InboundNotifyCommand
+        val defaultCommand =
+            InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(
+                """{"command":"notify"}"""
+            ) as InboundNotifyCommand
         assertEquals(InboundNotifyCommand.NotifyData(), defaultCommand.data)
 
         for (priority in listOf("HIGH", "high", "High", "1")) {
-            val command = InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(
-                """{"command":"notify","data":{"priority":"$priority"}}""",
-            ) as InboundNotifyCommand
-            assertEquals(priority, RemoteNotifyCommandPriority.HIGH, command.data.priority)
+            val command =
+                InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(
+                    """{"command":"notify","data":{"priority":"$priority"}}"""
+                ) as InboundNotifyCommand
+            assertEquals(
+                priority,
+                RemoteNotifyCommandPriority.HIGH,
+                command.data.priority,
+            )
         }
     }
 
     @Test
     fun roundTripsUsingTheWireDiscriminatorInsteadOfTheKotlinClassName() {
-        val original: InboundCommandMessage = InboundSearchCommand(
-            messageId = "search-1",
-            data = InboundSearchCommand.QueryData("coffee & tea"),
-        )
-        val encoded = InboundCommandJsonParser.encodeToString<InboundCommandMessage>(original)
+        val original: InboundCommandMessage =
+            InboundSearchCommand(
+                messageId = "search-1",
+                data = InboundSearchCommand.QueryData("coffee & tea"),
+            )
+        val encoded =
+            InboundCommandJsonParser.encodeToString<InboundCommandMessage>(original)
 
         assertEquals(
             "search",
-            InboundCommandJsonParser.parseToJsonElement(encoded).jsonObject["command"]?.jsonPrimitive?.content,
+            InboundCommandJsonParser.parseToJsonElement(encoded)
+                .jsonObject["command"]
+                ?.jsonPrimitive
+                ?.content,
         )
-        assertEquals(original, InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(encoded))
+        assertEquals(
+            original,
+            InboundCommandJsonParser.decodeFromString<InboundCommandMessage>(
+                encoded
+            ),
+        )
     }
 }

@@ -3,7 +3,8 @@ package uk.nktnet.webviewkiosk.utils.webview.scripts
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 
 fun generateDarkReaderScript(appName: String): String {
-    val rawScript = """
+    val rawScript =
+        """
         if (window.DarkReader || document.getElementById('__darkreader_loader')) {
             return;
         }
@@ -40,7 +41,8 @@ fun generateDarkReaderScript(appName: String): String {
         if (target) {
             target.appendChild(script);
         }
-    """.trimIndent()
+    """
+            .trimIndent()
 
     return wrapJsInIIFE(rawScript)
 }

@@ -17,15 +17,20 @@ fun RefreshOnNetworkAvailableSetting() {
     val settingKey = UserSettingsKeys.WebLifecycle.REFRESH_ON_NETWORK_AVAILABLE
 
     DropdownSettingFieldItem(
-        label = stringResource(R.string.web_lifecycle_refresh_on_network_available_title),
-        infoText = """
+        label =
+            stringResource(
+                R.string.web_lifecycle_refresh_on_network_available_title
+            ),
+        infoText =
+            """
             Select when the page should automatically refresh when network
             connectivity is restored.
 
             - Always: refresh whenever a network connection is available
             - On Page Error: only refresh if the previous page load failed
             - Never: do not refresh automatically
-        """.trimIndent(),
+            """
+                .trimIndent(),
         options = RefreshOnNetworkAvailableOption.entries,
         initialValue = userSettings.refreshOnNetworkAvailable,
         settingKey = settingKey,

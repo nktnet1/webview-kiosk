@@ -39,6 +39,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -53,10 +57,6 @@ import uk.nktnet.webviewkiosk.utils.getUUID
 import uk.nktnet.webviewkiosk.utils.humanReadableSize
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 import uk.nktnet.webviewkiosk.utils.readEditableTextFile
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 @Composable
 fun LocalFileList(
@@ -65,7 +65,7 @@ fun LocalFileList(
     filesDir: File,
     showLegacyLocalFileLinks: Boolean,
     modifier: Modifier = Modifier,
-    refreshFiles: () -> Unit
+    refreshFiles: () -> Unit,
 ) {
     val context = LocalContext.current
     val systemSettings = SystemSettings(context)
@@ -86,70 +86,81 @@ fun LocalFileList(
         items(filesList, key = { it.getUUID() }) { file ->
             val uuidPart = file.getUUID()
             val displayName = file.getDisplayName()
-            val fileLink = if (showLegacyLocalFileLinks) {
-                file.getLegacyLocalFileUrl()
-            } else {
-                file.getLocalFileLink()
-            }
-            val openLinkLabel = if (showLegacyLocalFileLinks) "Open file://" else "Open link"
-            val copyLinkLabel = if (showLegacyLocalFileLinks) "Copy file://" else "Copy link"
+            val fileLink =
+                if (showLegacyLocalFileLinks) {
+                    file.getLegacyLocalFileUrl()
+                } else {
+                    file.getLocalFileLink()
+                }
+            val openLinkLabel =
+                if (showLegacyLocalFileLinks) {
+                    "Open file://"
+                } else {
+                    "Open link"
+                }
+            val copyLinkLabel =
+                if (showLegacyLocalFileLinks) {
+                    "Copy file://"
+                } else {
+                    "Copy link"
+                }
 
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                ) {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = displayName,
                         fontSize = 14.sp,
                         fontWeight = FontWeight.Bold,
                         maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        overflow = TextOverflow.Ellipsis,
                     )
                     Text(
                         text = "ID: $uuidPart",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
                         text = "Size: ${humanReadableSize(context, file.length())}",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Text(
-                        text = "Time: ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(file.lastModified()))}",
+                        text =
+                            "Time: ${SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault()).format(Date(file.lastModified()))}",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
 
                 Box {
-                    IconButton(onClick = {
-                        activeFile = file
-                        newName = displayName
-                        editableText = null
-                        canEditActiveFile = false
-                        menuExpanded = false
-                        scope.launch {
-                            val inspectedText = withContext(Dispatchers.IO) {
-                                readEditableTextFile(file)
-                            }
-                            if (activeFile == file) {
-                                editableText = inspectedText
-                                canEditActiveFile = inspectedText != null
-                                menuExpanded = true
+                    IconButton(
+                        onClick = {
+                            activeFile = file
+                            newName = displayName
+                            editableText = null
+                            canEditActiveFile = false
+                            menuExpanded = false
+                            scope.launch {
+                                val inspectedText =
+                                    withContext(Dispatchers.IO) {
+                                        readEditableTextFile(file)
+                                    }
+                                if (activeFile == file) {
+                                    editableText = inspectedText
+                                    canEditActiveFile = inspectedText != null
+                                    menuExpanded = true
+                                }
                             }
                         }
-                    }) {
+                    ) {
                         Icon(
-                            painter = painterResource(R.drawable.outline_more_vert_24),
+                            painter =
+                                painterResource(R.drawable.outline_more_vert_24),
                             contentDescription = "Menu",
-                            modifier = Modifier.size(32.dp)
+                            modifier = Modifier.size(32.dp),
                         )
                     }
 
@@ -159,7 +170,7 @@ fun LocalFileList(
                             menuExpanded = false
                             activeFile = null
                             editableText = null
-                        }
+                        },
                     ) {
                         DropdownMenuItem(
                             text = { Text(openLinkLabel) },
@@ -172,8 +183,11 @@ fun LocalFileList(
                             },
                             leadingIcon = {
                                 Icon(
-                                    painter = painterResource(R.drawable.baseline_file_open_24),
-                                    contentDescription = null
+                                    painter =
+                                        painterResource(
+                                            R.drawable.baseline_file_open_24
+                                        ),
+                                    contentDescription = null,
                                 )
                             },
                         )
@@ -181,10 +195,11 @@ fun LocalFileList(
                             text = { Text(copyLinkLabel) },
                             onClick = {
                                 scope.launch {
-                                    val clipData = ClipData.newPlainText(
-                                        "File Link",
-                                        fileLink
-                                    )
+                                    val clipData =
+                                        ClipData.newPlainText(
+                                            "File Link",
+                                            fileLink,
+                                        )
                                     clipboard.setClipEntry(clipData.toClipEntry())
                                     menuExpanded = false
                                     activeFile = null
@@ -193,8 +208,11 @@ fun LocalFileList(
                             },
                             leadingIcon = {
                                 Icon(
-                                    painter = painterResource(R.drawable.baseline_content_copy_24),
-                                    contentDescription = null
+                                    painter =
+                                        painterResource(
+                                            R.drawable.baseline_content_copy_24
+                                        ),
+                                    contentDescription = null,
                                 )
                             },
                         )
@@ -207,8 +225,11 @@ fun LocalFileList(
                                 },
                                 leadingIcon = {
                                     Icon(
-                                        painter = painterResource(R.drawable.baseline_edit_24),
-                                        contentDescription = null
+                                        painter =
+                                            painterResource(
+                                                R.drawable.baseline_edit_24
+                                            ),
+                                        contentDescription = null,
                                     )
                                 },
                             )
@@ -221,8 +242,12 @@ fun LocalFileList(
                             },
                             leadingIcon = {
                                 Icon(
-                                    painter = painterResource(R.drawable.baseline_drive_file_rename_outline_24),
-                                    contentDescription = null
+                                    painter =
+                                        painterResource(
+                                            R.drawable
+                                                .baseline_drive_file_rename_outline_24
+                                        ),
+                                    contentDescription = null,
                                 )
                             },
                         )
@@ -234,8 +259,11 @@ fun LocalFileList(
                             },
                             leadingIcon = {
                                 Icon(
-                                    painter = painterResource(R.drawable.baseline_clear_24),
-                                    contentDescription = null
+                                    painter =
+                                        painterResource(
+                                            R.drawable.baseline_clear_24
+                                        ),
+                                    contentDescription = null,
                                 )
                             },
                         )
@@ -246,7 +274,7 @@ fun LocalFileList(
             HorizontalDivider(
                 modifier = Modifier,
                 thickness = DividerDefaults.Thickness,
-                color = DividerDefaults.color
+                color = DividerDefaults.color,
             )
         }
     }
@@ -291,46 +319,54 @@ fun LocalFileList(
                                 },
                             ) {
                                 Icon(
-                                    painter = painterResource(R.drawable.baseline_clear_24),
-                                    contentDescription = "Clear"
+                                    painter =
+                                        painterResource(
+                                            R.drawable.baseline_clear_24
+                                        ),
+                                    contentDescription = "Clear",
                                 )
                             }
-                        }
+                        },
                     )
                     Spacer(Modifier.height(8.dp))
                     Text(
                         text = "NOTE: this may break existing links/bookmarks.",
                         fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.secondary
+                        color = MaterialTheme.colorScheme.secondary,
                     )
                 }
             },
             confirmButton = {
-                TextButton(onClick = {
-                    activeFile?.let { file ->
-                        val newFile = File(filesDir, "${file.getUUID()}|$newName")
-                        if (file.renameTo(newFile)) {
-                            refreshFiles()
-                        } else {
-                            ToastManager.show(context, "Rename failed")
+                TextButton(
+                    onClick = {
+                        activeFile?.let { file ->
+                            val newFile =
+                                File(filesDir, "${file.getUUID()}|$newName")
+                            if (file.renameTo(newFile)) {
+                                refreshFiles()
+                            } else {
+                                ToastManager.show(context, "Rename failed")
+                            }
+                            showRenameDialog = false
+                            activeFile = null
+                            editableText = null
                         }
-                        showRenameDialog = false
-                        activeFile = null
-                        editableText = null
                     }
-                }) {
+                ) {
                     Text("Save")
                 }
             },
             dismissButton = {
-                TextButton(onClick = {
-                    showRenameDialog = false
-                    activeFile = null
-                    editableText = null
-                }) {
+                TextButton(
+                    onClick = {
+                        showRenameDialog = false
+                        activeFile = null
+                        editableText = null
+                    }
+                ) {
                     Text("Cancel")
                 }
-            }
+            },
         )
     }
 
@@ -343,31 +379,38 @@ fun LocalFileList(
             },
             title = { Text("Delete File") },
             text = {
-                Text("""
+                Text(
+                    """
                     Are you sure you want to delete this file?
 
                       ${activeFile?.getDisplayName()}
 
                     This will only remove the app's copy and not the original file on your device.
-                """.trimIndent())
+                """
+                        .trimIndent()
+                )
             },
             confirmButton = {
                 TextButton(
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    ),
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        ),
                     onClick = {
                         activeFile?.let { file ->
                             if (file.delete()) {
                                 refreshFiles()
                             } else {
-                                ToastManager.show(context, "Failed to delete ${file.getDisplayName()}")
+                                ToastManager.show(
+                                    context,
+                                    "Failed to delete ${file.getDisplayName()}",
+                                )
                             }
                             showDeleteDialog = false
                             activeFile = null
                             editableText = null
                         }
-                    }
+                    },
                 ) {
                     Text("Delete")
                 }
@@ -382,7 +425,7 @@ fun LocalFileList(
                 ) {
                     Text("Cancel")
                 }
-            }
+            },
         )
     }
 }

@@ -16,10 +16,16 @@ import uk.nktnet.webviewkiosk.testing.ShadowKeyEventWithNames
 class KeyEventUtilsTest {
     @Test
     fun usesAStableModifierOrder() {
-        val modifiers = KeyEvent.META_META_ON or KeyEvent.META_ALT_ON or
-            KeyEvent.META_SHIFT_ON or KeyEvent.META_CTRL_ON
+        val modifiers =
+            KeyEvent.META_META_ON or
+                KeyEvent.META_ALT_ON or
+                KeyEvent.META_SHIFT_ON or
+                KeyEvent.META_CTRL_ON
 
-        assertEquals("Ctrl+Shift+Alt+Meta+K", keyEventToShortcutString(key(modifiers = modifiers)))
+        assertEquals(
+            "Ctrl+Shift+Alt+Meta+K",
+            keyEventToShortcutString(key(modifiers = modifiers)),
+        )
     }
 
     @Test
@@ -43,7 +49,10 @@ class KeyEventUtilsTest {
 
     @Test
     fun preservesMultiwordKeyNamesAndNumericUnknownKeyCodes() {
-        assertEquals("Ctrl+DPAD_UP", keyEventToShortcutString(key(keyCode = KeyEvent.KEYCODE_DPAD_UP)))
+        assertEquals(
+            "Ctrl+DPAD_UP",
+            keyEventToShortcutString(key(keyCode = KeyEvent.KEYCODE_DPAD_UP)),
+        )
         assertEquals("Ctrl+1001", keyEventToShortcutString(key(keyCode = 1001)))
     }
 

@@ -2,6 +2,9 @@ package uk.nktnet.webviewkiosk.utils.webview.html
 
 import android.content.Context
 import android.text.Html
+import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Locale
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
@@ -9,9 +12,6 @@ import uk.nktnet.webviewkiosk.config.option.ThemeOption
 import uk.nktnet.webviewkiosk.utils.getDisplayName
 import uk.nktnet.webviewkiosk.utils.getUUID
 import uk.nktnet.webviewkiosk.utils.humanReadableSize
-import java.io.File
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 private fun fileDisplayCommonCss(theme: ThemeOption): String {
     return """
@@ -42,7 +42,8 @@ private fun fileDisplayCommonCss(theme: ThemeOption): String {
             margin: 4px 0;
         }
         ${generateThemeCss(theme)}
-    """.trimIndent()
+    """
+        .trimIndent()
 }
 
 fun generateFileMissingPage(file: File, theme: ThemeOption): String {
@@ -63,14 +64,15 @@ fun generateFileMissingPage(file: File, theme: ThemeOption): String {
             <p>${Html.escapeHtml(file.absolutePath)}</p>
           </body>
         </html>
-    """.trimIndent()
+    """
+        .trimIndent()
 }
 
 fun generateUnsupportedMimeTypePage(
     context: Context,
     file: File,
     mimeType: String?,
-    theme: ThemeOption
+    theme: ThemeOption,
 ): String {
     val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault())
     val lastModified = sdf.format(file.lastModified())
@@ -143,5 +145,6 @@ fun generateUnsupportedMimeTypePage(
             <div>${file.isDirectory}</div>
           </body>
         </html>
-    """.trimIndent()
+    """
+        .trimIndent()
 }

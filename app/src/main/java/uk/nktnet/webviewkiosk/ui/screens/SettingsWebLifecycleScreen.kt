@@ -26,22 +26,20 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.weblifecycle.Rese
 @Composable
 fun SettingsWebLifecycleScreen(navController: NavController) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(top = 4.dp)
-            .padding(horizontal = 16.dp),
+        modifier =
+            Modifier.fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(top = 4.dp)
+                .padding(horizontal = 16.dp)
     ) {
         SettingLabel(
             navController = navController,
-            label = stringResource(R.string.settings_web_lifecycle_title)
+            label = stringResource(R.string.settings_web_lifecycle_title),
         )
         SettingDivider()
 
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
         ) {
             LockOnLaunchSetting()
             ResetOnLaunchSetting()

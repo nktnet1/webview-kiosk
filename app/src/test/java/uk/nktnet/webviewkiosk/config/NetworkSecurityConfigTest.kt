@@ -12,7 +12,9 @@ import org.xmlpull.v1.XmlPullParser
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.option.SslErrorModeOption
 
-/** Guard the packaged WebView trust policy, not just an XML fixture in test sources. */
+/**
+ * Guard the packaged WebView trust policy, not just an XML fixture in test sources.
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [29])
 class NetworkSecurityConfigTest {
@@ -43,8 +45,11 @@ class NetworkSecurityConfigTest {
     @Test
     fun sslErrorsRemainBlockedByDefault() {
         val context = RuntimeEnvironment.getApplication()
-        context.getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().remove(UserSettingsKeys.WebEngine.SSL_ERROR_MODE).commit()
+        context
+            .getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .remove(UserSettingsKeys.WebEngine.SSL_ERROR_MODE)
+            .commit()
 
         assertEquals(SslErrorModeOption.BLOCK, UserSettings(context).sslErrorMode)
     }
@@ -73,25 +78,41 @@ class NetworkSecurityConfigTest {
 
             while (parser.eventType != XmlPullParser.END_DOCUMENT) {
                 when (parser.eventType) {
-                    XmlPullParser.START_TAG -> when (parser.name) {
-                        "base-config" -> {
-                            inBaseConfig = true
-                            baseConfigCount++
-                            cleartextTrafficPermitted =
-                                parser.getAttributeValue(null, "cleartextTrafficPermitted")
+                    XmlPullParser.START_TAG ->
+                        when (parser.name) {
+                            "base-config" -> {
+                                inBaseConfig = true
+                                baseConfigCount++
+                                cleartextTrafficPermitted =
+                                    parser.getAttributeValue(
+                                        null,
+                                        "cleartextTrafficPermitted",
+                                    )
+                            }
+                            "trust-anchors" ->
+                                if (inBaseConfig) {
+                                    inTrustAnchors = true
+                                }
+                            "certificates" ->
+                                if (inBaseConfig && inTrustAnchors) {
+                                    baseTrustAnchors +=
+                                        requireNotNull(
+                                            parser.getAttributeValue(null, "src")
+                                        )
+                                    pinOverrides +=
+                                        parser.getAttributeValue(
+                                            null,
+                                            "overridePins",
+                                        )
+                                }
+                            "domain-config" -> hasDomainConfig = true
+                            "debug-overrides" -> hasDebugOverrides = true
                         }
-                        "trust-anchors" -> if (inBaseConfig) inTrustAnchors = true
-                        "certificates" -> if (inBaseConfig && inTrustAnchors) {
-                            baseTrustAnchors += requireNotNull(parser.getAttributeValue(null, "src"))
-                            pinOverrides += parser.getAttributeValue(null, "overridePins")
+                    XmlPullParser.END_TAG ->
+                        when (parser.name) {
+                            "trust-anchors" -> inTrustAnchors = false
+                            "base-config" -> inBaseConfig = false
                         }
-                        "domain-config" -> hasDomainConfig = true
-                        "debug-overrides" -> hasDebugOverrides = true
-                    }
-                    XmlPullParser.END_TAG -> when (parser.name) {
-                        "trust-anchors" -> inTrustAnchors = false
-                        "base-config" -> inBaseConfig = false
-                    }
                 }
                 parser.next()
             }

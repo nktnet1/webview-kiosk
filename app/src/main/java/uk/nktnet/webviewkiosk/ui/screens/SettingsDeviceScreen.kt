@@ -40,22 +40,20 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.UnlockAuth
 @Composable
 fun SettingsDeviceScreen(navController: NavController) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(top = 4.dp)
-            .padding(horizontal = 16.dp),
+        modifier =
+            Modifier.fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(top = 4.dp)
+                .padding(horizontal = 16.dp)
     ) {
         SettingLabel(
             navController = navController,
-            label = stringResource(R.string.settings_device_title)
+            label = stringResource(R.string.settings_device_title),
         )
         SettingDivider()
 
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
         ) {
             KeepScreenOnSetting()
             DeviceRotationSetting()
@@ -75,7 +73,9 @@ fun SettingsDeviceScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(12.dp))
 
             Button(
-                onClick = { navController.navigate(Screen.SettingsDeviceOwner.route) },
+                onClick = {
+                    navController.navigate(Screen.SettingsDeviceOwner.route)
+                },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("Manage Device Owner")

@@ -17,7 +17,8 @@ fun ApplyAppThemeSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.js_scripts_apply_app_theme_title),
-        infoText = """
+        infoText =
+            """
             This script injects JavaScript code that will set prefers-color-scheme
             according to your selected theme in ${stringResource(R.string.app_name)}
             Appearance settings, thus keeping the Webpage's theme consistent with the
@@ -26,10 +27,11 @@ fun ApplyAppThemeSetting() {
             This script will run immediately "on page start".
 
             If the theme setting is "System", this script is a no-op (does nothing).
-        """.trimIndent(),
+        """
+                .trimIndent(),
         initialValue = userSettings.applyAppTheme,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.applyAppTheme = it }
+        onSave = { userSettings.applyAppTheme = it },
     )
 }

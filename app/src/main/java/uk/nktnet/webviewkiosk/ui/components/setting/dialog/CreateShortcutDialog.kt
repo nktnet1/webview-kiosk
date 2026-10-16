@@ -7,6 +7,7 @@ import android.content.pm.ShortcutManager
 import android.graphics.Bitmap
 import android.graphics.drawable.Icon as AndroidIcon
 import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -38,20 +39,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.annotation.RequiresApi
 import androidx.core.net.toUri
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
 import uk.nktnet.webviewkiosk.ui.components.webview.HistoryDialog
-import uk.nktnet.webviewkiosk.utils.boundedTextPreview
 import uk.nktnet.webviewkiosk.utils.IconUtils
+import uk.nktnet.webviewkiosk.utils.boundedTextPreview
 import uk.nktnet.webviewkiosk.utils.validateUrl
 
 @Composable
 fun CreateShortcutDialog(
     showDialog: Boolean,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     if (!showDialog) {
         return
@@ -73,14 +73,13 @@ fun CreateShortcutDialog(
         mutableStateOf(IconUtils.buildLetterIcon(shortLabel))
     }
 
-    val canCreate = (
-        shortLabelError == null
-        && longLabelError == null
-        && urlError == null
-        && shortLabel.isNotBlank()
-        && longLabel.isNotBlank()
-        && url.isNotBlank()
-    )
+    val canCreate =
+        (shortLabelError == null &&
+            longLabelError == null &&
+            urlError == null &&
+            shortLabel.isNotBlank() &&
+            longLabel.isNotBlank() &&
+            url.isNotBlank())
 
     fun setShortLabel(value: String) {
         shortLabel = value
@@ -91,28 +90,26 @@ fun CreateShortcutDialog(
     fun setUrl(value: String) {
         val trimmed = value.trim()
         url = trimmed
-        urlError = if (!validateUrl(trimmed)) {
-            "Invalid URL"
-        } else {
-            null
-        }
+        urlError =
+            if (!validateUrl(trimmed)) {
+                "Invalid URL"
+            } else {
+                null
+            }
     }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Create Shortcut") },
         text = {
-            Column (
-                modifier = Modifier
-                    .verticalScroll(rememberScrollState())
-            ) {
+            Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                 SimpleOutlinedTextField(
                     value = shortLabel,
                     onValueChange = {
                         setShortLabel(it)
                     },
                     label = "Short Label",
-                    error = shortLabelError
+                    error = shortLabelError,
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -124,7 +121,7 @@ fun CreateShortcutDialog(
                         longLabelError = validateLongLabel(it)
                     },
                     label = "Long Label",
-                    error = longLabelError
+                    error = longLabelError,
                 )
 
                 Spacer(modifier = Modifier.height(4.dp))
@@ -135,18 +132,16 @@ fun CreateShortcutDialog(
                         setUrl(it)
                     },
                     label = "URL",
-                    error = urlError
+                    error = urlError,
                 )
 
                 Button(
                     onClick = {
                         setUrl(systemSettings.currentUrl)
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 12.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                     shape = RoundedCornerShape(4.dp),
-                    colors = ButtonDefaults.buttonColors()
+                    colors = ButtonDefaults.buttonColors(),
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
@@ -155,33 +150,32 @@ fun CreateShortcutDialog(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimary,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         )
                         Text(
-                            text = boundedTextPreview(systemSettings.currentUrl, 256),
+                            text =
+                                boundedTextPreview(systemSettings.currentUrl, 256),
                             style = MaterialTheme.typography.bodySmall,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
                 Button(
                     onClick = { isOpenHistoryDialog = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp)
-                        .padding(top = 6.dp),
+                    modifier =
+                        Modifier.fillMaxWidth().height(50.dp).padding(top = 6.dp),
                     shape = RoundedCornerShape(4.dp),
-                    colors = ButtonDefaults.buttonColors()
+                    colors = ButtonDefaults.buttonColors(),
                 ) {
                     Text(
                         text = "Select from History",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimary,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
 
@@ -190,9 +184,7 @@ fun CreateShortcutDialog(
                 Image(
                     bitmap = generatedIcon.bitmap.asImageBitmap(),
                     contentDescription = "Shortcut preview",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
                 )
             }
         },
@@ -204,11 +196,14 @@ fun CreateShortcutDialog(
                     val safeLongLabel = longLabel.trim()
                     val safeUrl = url.trim()
 
-                    val intent = Intent(Intent.ACTION_VIEW).apply {
-                        data = safeUrl.toUri()
-                        setPackage(context.packageName)
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    }
+                    val intent =
+                        Intent(Intent.ACTION_VIEW).apply {
+                            data = safeUrl.toUri()
+                            setPackage(context.packageName)
+                            flags =
+                                Intent.FLAG_ACTIVITY_NEW_TASK or
+                                    Intent.FLAG_ACTIVITY_CLEAR_TASK
+                        }
 
                     requestPinnedShortcut(
                         context,
@@ -216,10 +211,10 @@ fun CreateShortcutDialog(
                         shortLabel = safeShortLabel,
                         longLabel = safeLongLabel,
                         icon = generatedIcon.bitmap,
-                        intent = intent
+                        intent = intent,
                     )
                     onDismiss()
-                }
+                },
             ) {
                 Text("Create")
             }
@@ -228,7 +223,7 @@ fun CreateShortcutDialog(
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
     )
 
     HistoryDialog(
@@ -248,7 +243,7 @@ private fun requestPinnedShortcut(
     shortLabel: String,
     longLabel: String,
     icon: Bitmap,
-    intent: Intent
+    intent: Intent,
 ) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         requestPinnedShortcutApi26(
@@ -257,14 +252,14 @@ private fun requestPinnedShortcut(
             shortLabel = shortLabel,
             longLabel = longLabel,
             icon = icon,
-            intent = intent
+            intent = intent,
         )
     } else {
         requestPinnedShortcutLegacy(
             context = context,
             shortLabel = shortLabel,
             icon = icon,
-            intent = intent
+            intent = intent,
         )
     }
 }
@@ -276,19 +271,21 @@ private fun requestPinnedShortcutApi26(
     shortLabel: String,
     longLabel: String,
     icon: Bitmap,
-    intent: Intent
+    intent: Intent,
 ) {
-    val shortcutManager = context.getSystemService(ShortcutManager::class.java) ?: return
+    val shortcutManager =
+        context.getSystemService(ShortcutManager::class.java) ?: return
     if (!shortcutManager.isRequestPinShortcutSupported) {
         return
     }
 
-    val shortcut = ShortcutInfo.Builder(context, id)
-        .setShortLabel(shortLabel)
-        .setLongLabel(longLabel)
-        .setIcon(AndroidIcon.createWithBitmap(icon))
-        .setIntent(intent)
-        .build()
+    val shortcut =
+        ShortcutInfo.Builder(context, id)
+            .setShortLabel(shortLabel)
+            .setLongLabel(longLabel)
+            .setIcon(AndroidIcon.createWithBitmap(icon))
+            .setIntent(intent)
+            .build()
 
     shortcutManager.requestPinShortcut(shortcut, null)
 }
@@ -298,13 +295,14 @@ private fun requestPinnedShortcutLegacy(
     context: Context,
     shortLabel: String,
     icon: Bitmap,
-    intent: Intent
+    intent: Intent,
 ) {
-    val installIntent = Intent("com.android.launcher.action.INSTALL_SHORTCUT").apply {
-        putExtra(Intent.EXTRA_SHORTCUT_INTENT, intent)
-        putExtra(Intent.EXTRA_SHORTCUT_NAME, shortLabel)
-        putExtra(Intent.EXTRA_SHORTCUT_ICON, icon)
-    }
+    val installIntent =
+        Intent("com.android.launcher.action.INSTALL_SHORTCUT").apply {
+            putExtra(Intent.EXTRA_SHORTCUT_INTENT, intent)
+            putExtra(Intent.EXTRA_SHORTCUT_NAME, shortLabel)
+            putExtra(Intent.EXTRA_SHORTCUT_ICON, icon)
+        }
     context.sendBroadcast(installIntent)
 }
 
@@ -314,9 +312,9 @@ private fun SimpleOutlinedTextField(
     onValueChange: (String) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
-    error: String?
+    error: String?,
 ) {
-    Column { }
+    Column {}
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
@@ -326,23 +324,24 @@ private fun SimpleOutlinedTextField(
         trailingIcon = {
             IconButton(
                 onClick = { onValueChange("") },
-                enabled = value.isNotEmpty()
+                enabled = value.isNotEmpty(),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.baseline_clear_24),
-                    contentDescription = "Clear"
+                    contentDescription = "Clear",
                 )
             }
-        }
+        },
     )
     if (error != null) {
         Text(
             text = error,
-            modifier = Modifier.padding(
-                top = 6.dp,
-                bottom = 4.dp
-            ),
-            color = MaterialTheme.colorScheme.error
+            modifier =
+                Modifier.padding(
+                    top = 6.dp,
+                    bottom = 4.dp,
+                ),
+            color = MaterialTheme.colorScheme.error,
         )
     }
 }
@@ -350,7 +349,7 @@ private fun SimpleOutlinedTextField(
 private fun validateLabel(
     value: String,
     fieldName: String,
-    maxLength: Int
+    maxLength: Int,
 ): String? {
     val trimmed = value.trim()
 
@@ -372,7 +371,7 @@ private fun validateShortLabel(value: String): String? {
     return validateLabel(
         value = value,
         fieldName = "Short label",
-        maxLength = 10
+        maxLength = 10,
     )
 }
 
@@ -380,6 +379,6 @@ private fun validateLongLabel(value: String): String? {
     return validateLabel(
         value = value,
         fieldName = "Long label",
-        maxLength = 25
+        maxLength = 25,
     )
 }

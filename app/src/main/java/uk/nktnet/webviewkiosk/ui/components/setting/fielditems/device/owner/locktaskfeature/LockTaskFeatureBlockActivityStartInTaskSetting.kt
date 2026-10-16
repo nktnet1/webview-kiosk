@@ -12,16 +12,23 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun LockTaskFeatureBlockActivityStartInTaskSetting() {
     val context = LocalContext.current
     val userSettings = UserSettings(context)
-    val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.BLOCK_ACTIVITY_START_IN_TASK
+    val settingKey =
+        UserSettingsKeys.Device.Owner.LockTaskFeature.BLOCK_ACTIVITY_START_IN_TASK
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.device_owner_lock_task_feature_block_activity_start_in_task_title),
-        infoText = """
+        label =
+            stringResource(
+                R.string
+                    .device_owner_lock_task_feature_block_activity_start_in_task_title
+            ),
+        infoText =
+            """
             Enable blocking of non-allowlisted activities from being started
             into a locked task.
 
             This requires Android 11 (API Level 30).
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.lockTaskFeatureBlockActivityStartInTask,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

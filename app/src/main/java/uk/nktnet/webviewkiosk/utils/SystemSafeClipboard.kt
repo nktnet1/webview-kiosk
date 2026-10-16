@@ -7,16 +7,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.Clipboard
 import androidx.compose.ui.platform.LocalClipboard
-import uk.nktnet.webviewkiosk.config.Constants
 import java.util.Collections
 import java.util.IdentityHashMap
 import java.util.concurrent.CancellationException
+import uk.nktnet.webviewkiosk.config.Constants
 
-// DeadSystemRuntimeException is hidden, and DeadSystemException was added after our minimum SDK.
-private val systemRestartExceptionNames = setOf(
-    "android.os.DeadSystemRuntimeException",
-    "android.os.DeadSystemException",
-)
+// DeadSystemRuntimeException is hidden, and DeadSystemException was added after our
+// minimum SDK.
+private val systemRestartExceptionNames =
+    setOf(
+        "android.os.DeadSystemRuntimeException",
+        "android.os.DeadSystemException",
+    )
 
 internal fun hasCauseNamed(failure: Throwable, names: Set<String>): Boolean {
     val visited = Collections.newSetFromMap(IdentityHashMap<Throwable, Boolean>())
@@ -38,12 +40,13 @@ internal class SystemSafeClipboard(
     private val onSystemRestart: (RuntimeException) -> Unit,
     private val isSystemRestart: (Throwable) -> Boolean = ::isSystemRestartFailure,
 ) : Clipboard by delegate {
-    override suspend fun getClipEntry(): ClipEntry? = try {
-        delegate.getClipEntry()
-    } catch (error: RuntimeException) {
-        handleFailure(error)
-        null
-    }
+    override suspend fun getClipEntry(): ClipEntry? =
+        try {
+            delegate.getClipEntry()
+        } catch (error: RuntimeException) {
+            handleFailure(error)
+            null
+        }
 
     override suspend fun setClipEntry(clipEntry: ClipEntry?) {
         try {
@@ -65,18 +68,22 @@ internal class SystemSafeClipboard(
 @Composable
 fun ProvideSystemSafeClipboard(content: @Composable () -> Unit) {
     val clipboard = LocalClipboard.current
-    val guardedClipboard = remember(clipboard) {
-        clipboard as? SystemSafeClipboard
-            ?: SystemSafeClipboard(
-                delegate = clipboard,
-                onSystemRestart = { error ->
-                    Log.w(
-                        Constants.APP_SCHEME,
-                        "Clipboard unavailable during Android system restart",
-                        error,
-                    )
-                },
-            )
-    }
-    CompositionLocalProvider(LocalClipboard provides guardedClipboard, content = content)
+    val guardedClipboard =
+        remember(clipboard) {
+            clipboard as? SystemSafeClipboard
+                ?: SystemSafeClipboard(
+                    delegate = clipboard,
+                    onSystemRestart = { error ->
+                        Log.w(
+                            Constants.APP_SCHEME,
+                            "Clipboard unavailable during Android system restart",
+                            error,
+                        )
+                    },
+                )
+        }
+    CompositionLocalProvider(
+        LocalClipboard provides guardedClipboard,
+        content = content,
+    )
 }

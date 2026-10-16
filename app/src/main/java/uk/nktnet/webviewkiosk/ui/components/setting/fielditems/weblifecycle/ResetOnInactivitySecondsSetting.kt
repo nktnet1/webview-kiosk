@@ -17,8 +17,10 @@ fun ResetOnInactivitySecondsSetting() {
     val settingKey = UserSettingsKeys.WebLifecycle.RESET_ON_INACTIVITY_SECONDS
 
     NumberSettingFieldItem(
-        label = stringResource(R.string.web_lifecycle_reset_on_inactivity_seconds_title),
-        infoText = """
+        label =
+            stringResource(R.string.web_lifecycle_reset_on_inactivity_seconds_title),
+        infoText =
+            """
             Number of seconds of inactivity before the app resets to the home URL.
 
             When there is 5 seconds left, a warning countdown will be shown on
@@ -31,13 +33,14 @@ fun ResetOnInactivitySecondsSetting() {
             Minimum: ${Constants.MIN_INACTIVITY_TIMEOUT_SECONDS}
 
             To disable, use the value 0.
-        """.trimIndent(),
+        """
+                .trimIndent(),
         placeholder = "e.g. 3600 (for 1 hour)",
         initialValue = userSettings.resetOnInactivitySeconds,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         min = Constants.MIN_INACTIVITY_TIMEOUT_SECONDS,
         max = Constants.MAX_INT_SETTING,
-        onSave = { userSettings.resetOnInactivitySeconds = it }
+        onSave = { userSettings.resetOnInactivitySeconds = it },
     )
 }

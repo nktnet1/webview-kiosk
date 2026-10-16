@@ -98,10 +98,13 @@ class WebViewNavigationTest {
         seed()
         val target = settings.historyStack[1]
         val session = WebViewNavigationSession { true }
-        WebViewNavigation.goBack({ url ->
-            val entry = settings.historyStack[settings.historyIndex]
-            session.beginLoad(url, entry.id, entry.url)
-        }, settings)
+        WebViewNavigation.goBack(
+            { url ->
+                val entry = settings.historyStack[settings.historyIndex]
+                session.beginLoad(url, entry.id, entry.url)
+            },
+            settings,
+        )
         settings.urlBeforeNavigation = second
 
         commit(session, second, second)
@@ -253,7 +256,8 @@ class WebViewNavigationTest {
         val failure = IllegalStateException("load failed")
         val thrown = runCatching {
             WebViewNavigation.goBack({ throw failure }, settings)
-        }.exceptionOrNull()
+        }
+            .exceptionOrNull()
 
         assertSame(failure, thrown)
         assertEquals(2, settings.historyIndex)
@@ -266,11 +270,15 @@ class WebViewNavigationTest {
         seed()
         val failure = IllegalStateException("old load failed")
         val thrown = runCatching {
-            WebViewNavigation.goBack({
-                WebViewNavigation.navigateToIndex(loaded::add, settings, 0)
-                throw failure
-            }, settings)
-        }.exceptionOrNull()
+            WebViewNavigation.goBack(
+                {
+                    WebViewNavigation.navigateToIndex(loaded::add, settings, 0)
+                    throw failure
+                },
+                settings,
+            )
+        }
+            .exceptionOrNull()
 
         assertSame(failure, thrown)
         assertEquals(listOf(first), loaded)
@@ -413,11 +421,15 @@ class WebViewNavigationTest {
     fun homeClearsHistoryBeforeLoadingEvenWhenAlreadyAtHome() {
         seed(index = 0)
         userSettings.clearHistoryOnHome = true
-        WebViewNavigation.goHome({ url ->
-            assertHistory(-1)
-            loaded.add(url)
-            append(url)
-        }, settings, userSettings)
+        WebViewNavigation.goHome(
+            { url ->
+                assertHistory(-1)
+                loaded.add(url)
+                append(url)
+            },
+            settings,
+            userSettings,
+        )
 
         assertEquals(listOf(first), loaded)
         assertHistory(0, first)
@@ -432,18 +444,26 @@ class WebViewNavigationTest {
         assertTrue(loaded.isEmpty())
 
         userSettings.allowRefresh = true
-        WebViewNavigation.refresh({ url -> loaded.add(url); append(url) }, settings, userSettings)
+        WebViewNavigation.refresh(
+            { url ->
+                loaded.add(url)
+                append(url)
+            },
+            settings,
+            userSettings,
+        )
         assertEquals(listOf(second), loaded)
         assertEquals(entries, settings.historyStack)
         assertEquals(1, settings.historyIndex)
     }
 
     private fun seed(index: Int = 2) {
-        settings.historyStack = listOf(
-            HistoryEntry("first-entry", first, 100),
-            HistoryEntry("second-entry", second, 200),
-            HistoryEntry("third-entry", third, 300),
-        )
+        settings.historyStack =
+            listOf(
+                HistoryEntry("first-entry", first, 100),
+                HistoryEntry("second-entry", second, 200),
+                HistoryEntry("third-entry", third, 300),
+            )
         settings.historyIndex = index
         settings.urlBeforeNavigation = ""
     }
@@ -453,7 +473,14 @@ class WebViewNavigationTest {
         originalUrl: String? = null,
         replace: Boolean = true,
         traversalEntryId: String? = null,
-    ) = WebViewNavigation.appendWebviewHistory(settings, url, originalUrl, replace, traversalEntryId)
+    ) =
+        WebViewNavigation.appendWebviewHistory(
+            settings,
+            url,
+            originalUrl,
+            replace,
+            traversalEntryId,
+        )
 
     private fun commit(
         session: WebViewNavigationSession,
@@ -461,10 +488,13 @@ class WebViewNavigationTest {
         originalUrl: String?,
         nativeHistoryIndex: Int? = null,
     ) {
-        if (!session.acceptsHistory(url, originalUrl, currentUrl = url)) return
+        if (!session.acceptsHistory(url, originalUrl, currentUrl = url)) {
+            return
+        }
         session.historyCommitted(url, originalUrl, nativeHistoryIndex)
         append(
-            url, originalUrl,
+            url,
+            originalUrl,
             replace = !session.isSameDocumentNavigation(),
             traversalEntryId = session.traversalEntryId(),
         )

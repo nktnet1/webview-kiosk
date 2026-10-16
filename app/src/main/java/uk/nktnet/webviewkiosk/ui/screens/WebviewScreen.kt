@@ -42,6 +42,8 @@ import androidx.core.net.toUri
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import java.io.File
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -117,17 +119,16 @@ import uk.nktnet.webviewkiosk.utils.webview.html.generateUnsupportedMimeTypePage
 import uk.nktnet.webviewkiosk.utils.webview.loadBlockedPage
 import uk.nktnet.webviewkiosk.utils.webview.resolveBlockPageUrl
 import uk.nktnet.webviewkiosk.utils.webview.resolveUrlOrSearch
-import java.io.File
-import kotlin.time.Duration.Companion.milliseconds
 
-fun Modifier.imePaddingCompat(): Modifier = if (
-    Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
-    || Build.VERSION.SDK_INT <= Build.VERSION_CODES.P
-) {
-    this.imePadding()
-} else {
-    this
-}
+fun Modifier.imePaddingCompat(): Modifier =
+    if (
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.R ||
+            Build.VERSION.SDK_INT <= Build.VERSION_CODES.P
+    ) {
+        this.imePadding()
+    } else {
+        this
+    }
 
 @Composable
 fun WebviewScreen(navController: NavController) {
@@ -138,23 +139,21 @@ fun WebviewScreen(navController: NavController) {
     val isCurrentEntry = currentBackStackEntry === lifecycleOwner
     val focusManager = LocalFocusManager.current
 
-    // A refresh can animate two entries with the same route; compare their owners instead.
+    // A refresh can animate two entries with the same route; compare their owners
+    // instead.
     fun canHandleEvents(): Boolean =
-        navController.currentBackStackEntry === lifecycleOwner
-            && (activity as? MainActivity)?.isApplicationEventHost() != false
+        navController.currentBackStackEntry === lifecycleOwner &&
+            (activity as? MainActivity)?.isApplicationEventHost() != false
 
     val userSettings = remember { UserSettings(context) }
     val systemSettings = remember { SystemSettings(context) }
     val isLocked by LockStateSingleton.isLocked
     val scope = rememberCoroutineScope()
 
-    val lastVisitedUrl = systemSettings.currentUrl.takeIf { it.isNotEmpty() } ?: userSettings.homeUrl
+    val lastVisitedUrl =
+        systemSettings.currentUrl.takeIf { it.isNotEmpty() } ?: userSettings.homeUrl
     var urlBarText by remember {
-        mutableStateOf(
-            TextFieldValue(
-                lastVisitedUrl
-            )
-        )
+        mutableStateOf(TextFieldValue(lastVisitedUrl))
     }
 
     var mqttLastPublishedUrl by remember { mutableStateOf(lastVisitedUrl) }
@@ -171,17 +170,19 @@ fun WebviewScreen(navController: NavController) {
     var imageToOpen by remember { mutableStateOf<String?>(null) }
     var progress by remember { mutableIntStateOf(0) }
 
-    val showAddressBar = when (userSettings.addressBarMode) {
-        AddressBarModeOption.SHOWN -> true
-        AddressBarModeOption.HIDDEN -> false
-        AddressBarModeOption.HIDDEN_WHEN_LOCKED -> !isLocked
-    }
+    val showAddressBar =
+        when (userSettings.addressBarMode) {
+            AddressBarModeOption.SHOWN -> true
+            AddressBarModeOption.HIDDEN -> false
+            AddressBarModeOption.HIDDEN_WHEN_LOCKED -> !isLocked
+        }
 
-    val showFloatingToolbar = when (userSettings.floatingToolbarMode) {
-        FloatingToolbarModeOption.SHOWN -> true
-        FloatingToolbarModeOption.HIDDEN -> false
-        FloatingToolbarModeOption.HIDDEN_WHEN_LOCKED -> !isLocked
-    }
+    val showFloatingToolbar =
+        when (userSettings.floatingToolbarMode) {
+            FloatingToolbarModeOption.SHOWN -> true
+            FloatingToolbarModeOption.HIDDEN -> false
+            FloatingToolbarModeOption.HIDDEN_WHEN_LOCKED -> !isLocked
+        }
 
     var authRequest by remember { mutableStateOf<HttpAuthRequest?>(null) }
     DisposableEffect(authRequest) {
@@ -198,13 +199,15 @@ fun WebviewScreen(navController: NavController) {
     }
 
     val blacklistRegexes: List<Regex> by lazy {
-        userSettings.websiteBlacklist.lines()
+        userSettings.websiteBlacklist
+            .lines()
             .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
             .mapNotNull { runCatching { Regex(it) }.getOrNull() }
     }
 
     val whitelistRegexes: List<Regex> by lazy {
-        userSettings.websiteWhitelist.lines()
+        userSettings.websiteWhitelist
+            .lines()
             .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
             .mapNotNull { runCatching { Regex(it) }.getOrNull() }
     }
@@ -213,19 +216,21 @@ fun WebviewScreen(navController: NavController) {
 
     var localNetworkPermissionRequestInFlight by remember { mutableStateOf(false) }
     var retryAfterLocalNetworkPermission by remember { mutableStateOf(false) }
-    val localNetworkPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        localNetworkPermissionRequestInFlight = false
-        if (isGranted && !LockStateSingleton.isLocked.value) {
-            retryAfterLocalNetworkPermission = true
+    val localNetworkPermissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) { isGranted ->
+            localNetworkPermissionRequestInFlight = false
+            if (isGranted && !LockStateSingleton.isLocked.value) {
+                retryAfterLocalNetworkPermission = true
+            }
         }
-    }
 
     var suggestions by remember { mutableStateOf(listOf<String>()) }
     var webViewRecreationKey by remember { mutableIntStateOf(0) }
     val creationKey = webViewRecreationKey
-    var mqttLastPublishedUrlJob by remember(creationKey) { mutableStateOf<Job?>(null) }
+    var mqttLastPublishedUrlJob by
+        remember(creationKey) { mutableStateOf<Job?>(null) }
 
     fun isCurrentWebView(): Boolean =
         canHandleEvents() && creationKey == webViewRecreationKey
@@ -233,21 +238,22 @@ fun WebviewScreen(navController: NavController) {
     if (userSettings.searchSuggestionEngine != SearchSuggestionEngineOption.NONE) {
         LaunchedEffect(addressBarHasFocus, urlBarText.text) {
             if (
-                addressBarHasFocus
-                && urlBarText.text.isNotBlank()
-                && !isValidUrl(urlBarText.text)
+                addressBarHasFocus &&
+                    urlBarText.text.isNotBlank() &&
+                    !isValidUrl(urlBarText.text)
             ) {
                 delay(300.milliseconds)
-                suggestions = try {
-                    withContext(Dispatchers.IO) {
-                        SearchSuggestionEngine.suggest(
-                            userSettings.searchSuggestionEngine,
-                            urlBarText.text
-                        )
+                suggestions =
+                    try {
+                        withContext(Dispatchers.IO) {
+                            SearchSuggestionEngine.suggest(
+                                userSettings.searchSuggestionEngine,
+                                urlBarText.text,
+                            )
+                        }
+                    } catch (_: Exception) {
+                        emptyList()
                     }
-                } catch (_: Exception) {
-                    emptyList()
-                }
             } else {
                 suggestions = emptyList()
             }
@@ -264,11 +270,12 @@ fun WebviewScreen(navController: NavController) {
             }
         }
         onDispose {
-            // A replacement WebView may already have set the same window's immersive mode
+            // A replacement WebView may already have set the same window's immersive
+            // mode
             // while this outgoing entry is still fading out.
             if (
-                navController.currentBackStackEntry === lifecycleOwner
-                || navController.currentDestination?.route != Screen.WebView.route
+                navController.currentBackStackEntry === lifecycleOwner ||
+                    navController.currentDestination?.route != Screen.WebView.route
             ) {
                 activity?.let { exitImmersiveMode(it) }
             }
@@ -284,8 +291,8 @@ fun WebviewScreen(navController: NavController) {
         }
         mqttLastPublishedUrlJob?.cancel()
         if (
-            userSettings.mqttEnabled
-            && url.trimEnd('/') != mqttLastPublishedUrl.trimEnd('/')
+            userSettings.mqttEnabled &&
+                url.trimEnd('/') != mqttLastPublishedUrl.trimEnd('/')
         ) {
             mqttLastPublishedUrlJob = scope.launch {
                 delay(1000.milliseconds)
@@ -297,64 +304,68 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
-    val webViewCreation = createCustomWebview(
-        context = context,
-        config = WebViewConfig(
-            systemSettings = systemSettings,
-            userSettings = userSettings,
-            blacklistRegexes = blacklistRegexes,
-            whitelistRegexes = whitelistRegexes,
-            isActive = ::isCurrentWebView,
-            setLastErrorUrl = { errorUrl ->
-                lastErrorUrl = errorUrl
-            },
-            onLocalNetworkPermissionMissing = {
-                if (
-                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.CINNAMON_BUN
-                    && !LockStateSingleton.isLocked.value
-                    && !localNetworkPermissionRequestInFlight
-                    && ContextCompat.checkSelfPermission(
-                        context,
-                        Manifest.permission.ACCESS_LOCAL_NETWORK
-                    ) != PackageManager.PERMISSION_GRANTED
-                ) {
-                    localNetworkPermissionRequestInFlight = true
-                    localNetworkPermissionLauncher.launch(
-                        Manifest.permission.ACCESS_LOCAL_NETWORK
-                    )
-                }
-            },
-            onProgressChanged = { newProgress -> progress = newProgress },
-            finishSwipeRefresh = {
-                isSwipeRefreshing = false
-            },
-            updateAddressBarAndHistory = { url, _ -> updateAddressBar(url) },
-            onHttpAuthRequest = { request ->
-                if (isCurrentWebView()) {
-                    authRequest?.cancel()
-                    authRequest = request
-                } else {
-                    request?.cancel()
-                }
-            },
-            onLinkLongClick = { link ->
-                linkToOpen = link
-            },
-            onImageLongClick = { image ->
-                imageToOpen = image
-            },
-            onPdfUrlRequested = ::handlePdfUrlRendering,
-            onRenderProcessGone = {
-                webViewRecreationKey++
-            },
-        ),
-        recreationKey = webViewRecreationKey,
-    )
+    val webViewCreation =
+        createCustomWebview(
+            context = context,
+            config =
+                WebViewConfig(
+                    systemSettings = systemSettings,
+                    userSettings = userSettings,
+                    blacklistRegexes = blacklistRegexes,
+                    whitelistRegexes = whitelistRegexes,
+                    isActive = ::isCurrentWebView,
+                    setLastErrorUrl = { errorUrl ->
+                        lastErrorUrl = errorUrl
+                    },
+                    onLocalNetworkPermissionMissing = {
+                        if (
+                            Build.VERSION.SDK_INT >=
+                                Build.VERSION_CODES.CINNAMON_BUN &&
+                                !LockStateSingleton.isLocked.value &&
+                                !localNetworkPermissionRequestInFlight &&
+                                ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.ACCESS_LOCAL_NETWORK,
+                                ) != PackageManager.PERMISSION_GRANTED
+                        ) {
+                            localNetworkPermissionRequestInFlight = true
+                            localNetworkPermissionLauncher.launch(
+                                Manifest.permission.ACCESS_LOCAL_NETWORK
+                            )
+                        }
+                    },
+                    onProgressChanged = { newProgress -> progress = newProgress },
+                    finishSwipeRefresh = {
+                        isSwipeRefreshing = false
+                    },
+                    updateAddressBarAndHistory = { url, _ -> updateAddressBar(url) },
+                    onHttpAuthRequest = { request ->
+                        if (isCurrentWebView()) {
+                            authRequest?.cancel()
+                            authRequest = request
+                        } else {
+                            request?.cancel()
+                        }
+                    },
+                    onLinkLongClick = { link ->
+                        linkToOpen = link
+                    },
+                    onImageLongClick = { image ->
+                        imageToOpen = image
+                    },
+                    onPdfUrlRequested = ::handlePdfUrlRendering,
+                    onRenderProcessGone = {
+                        webViewRecreationKey++
+                    },
+                ),
+            recreationKey = webViewRecreationKey,
+        )
 
-    val (webView, webViewError) = when (webViewCreation) {
-        is WebViewCreation.Success -> webViewCreation.webView to null
-        is WebViewCreation.Failure -> null to webViewCreation.error
-    }
+    val (webView, webViewError) =
+        when (webViewCreation) {
+            is WebViewCreation.Success -> webViewCreation.webView to null
+            is WebViewCreation.Failure -> null to webViewCreation.error
+        }
 
     if (webView == null) {
         WebViewUnavailable(navController, webViewError)
@@ -373,17 +384,24 @@ fun WebviewScreen(navController: NavController) {
     }
 
     fun customLoadUrl(newUrl: String) {
-        if (!isCurrentWebView()) return
-        val url = resolveBlockPageUrl(
-            newUrl, blacklistRegexes, whitelistRegexes, userSettings
-        ) ?: return
+        if (!isCurrentWebView()) {
+            return
+        }
+        val url =
+            resolveBlockPageUrl(
+                newUrl,
+                blacklistRegexes,
+                whitelistRegexes,
+                userSettings,
+            ) ?: return
         systemSettings.urlBeingHandled = url
-        val (schemeType, blockCause) = getBlockInfo(
-            url = url,
-            blacklistRegexes = blacklistRegexes,
-            whitelistRegexes = whitelistRegexes,
-            userSettings = userSettings
-        )
+        val (schemeType, blockCause) =
+            getBlockInfo(
+                url = url,
+                blacklistRegexes = blacklistRegexes,
+                whitelistRegexes = whitelistRegexes,
+                userSettings = userSettings,
+            )
         if (blockCause != null) {
             loadBlockedPage(
                 webView,
@@ -398,48 +416,51 @@ fun WebviewScreen(navController: NavController) {
         if (schemeType == SchemeType.FILE) {
             val mimeType = getMimeType(context, uri)
             val file = File(uri.path ?: "")
-            val isPdf = (
-                mimeType == "application/pdf"
-                    || file.extension.lowercase() == "pdf"
-            )
+            val isPdf =
+                (mimeType == "application/pdf" ||
+                    file.extension.lowercase() == "pdf")
 
             if (
-                file.exists()
-                && isPdf
-                && userSettings.supportPdfRendering
-                && PdfJsManager.areAssetsReady(context)
+                file.exists() &&
+                    isPdf &&
+                    userSettings.supportPdfRendering &&
+                    PdfJsManager.areAssetsReady(context)
             ) {
                 handlePdfUrlRendering(webView, url)
                 return
             }
 
-            val pageContent = when {
-                !file.exists() -> generateFileMissingPage(file, userSettings.theme)
-                !isSupportedFileURLMimeType(mimeType) -> generateUnsupportedMimeTypePage(
-                    context, file, mimeType, userSettings.theme
-                )
-                else -> null
-            }
+            val pageContent =
+                when {
+                    !file.exists() ->
+                        generateFileMissingPage(file, userSettings.theme)
+                    !isSupportedFileURLMimeType(mimeType) ->
+                        generateUnsupportedMimeTypePage(
+                            context,
+                            file,
+                            mimeType,
+                            userSettings.theme,
+                        )
+                    else -> null
+                }
             pageContent?.let {
                 webView.loadDataWithBaseURL(
                     url,
                     it,
                     "text/html",
                     "UTF-8",
-                    null
+                    null,
                 )
                 return
             }
         }
 
-        val isPdfRenderingSupported = (
-            userSettings.supportPdfRendering
-            && PdfJsManager.areAssetsReady(context)
-        )
-        val isWebPdf = (
-            schemeType == SchemeType.WEB
-            && uri.path?.lowercase()?.endsWith(".pdf") == true
-        )
+        val isPdfRenderingSupported =
+            (userSettings.supportPdfRendering &&
+                PdfJsManager.areAssetsReady(context))
+        val isWebPdf =
+            (schemeType == SchemeType.WEB &&
+                uri.path?.lowercase()?.endsWith(".pdf") == true)
         if (isPdfRenderingSupported && isWebPdf) {
             handlePdfUrlRendering(
                 webView,
@@ -459,21 +480,35 @@ fun WebviewScreen(navController: NavController) {
         }
     }
 
-    val isOnline by remember(context) {
-        NetworkManager.isOnline(context)
-    }.collectAsState(initial = true)
+    val isOnline by
+        remember(context) {
+                NetworkManager.isOnline(context)
+            }
+            .collectAsState(initial = true)
     var previousOnline by remember { mutableStateOf<Boolean?>(null) }
 
     LaunchedEffect(webView, isOnline) {
-        if (isCurrentWebView() && previousOnline != null && previousOnline != isOnline) {
+        if (
+            isCurrentWebView() &&
+                previousOnline != null &&
+                previousOnline != isOnline
+        ) {
             if (isOnline) {
                 when (userSettings.refreshOnNetworkAvailable) {
                     RefreshOnNetworkAvailableOption.ALWAYS -> {
-                        WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
+                        WebViewNavigation.refresh(
+                            ::customLoadUrl,
+                            systemSettings,
+                            userSettings,
+                        )
                     }
                     RefreshOnNetworkAvailableOption.ON_PAGE_ERROR -> {
                         if (lastErrorUrl.isNotEmpty()) {
-                            WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
+                            WebViewNavigation.refresh(
+                                ::customLoadUrl,
+                                systemSettings,
+                                userSettings,
+                            )
                         }
                     }
                     RefreshOnNetworkAvailableOption.NEVER -> Unit
@@ -484,32 +519,34 @@ fun WebviewScreen(navController: NavController) {
     }
 
     val addressBarSearch: (String) -> Unit = { input ->
-        val searchUrl = resolveUrlOrSearch(
-            userSettings.searchProviderUrl, input.trim()
-        )
-        if (
-            searchUrl.isNotBlank()
-            && (
-                searchUrl != systemSettings.currentUrl
-                || userSettings.allowRefresh
+        val searchUrl =
+            resolveUrlOrSearch(
+                userSettings.searchProviderUrl,
+                input.trim(),
             )
+        if (
+            searchUrl.isNotBlank() &&
+                (searchUrl != systemSettings.currentUrl || userSettings.allowRefresh)
         ) {
             customLoadUrl(searchUrl)
         }
     }
 
     if (
-        userSettings.refreshOnLoadingErrorIntervalSeconds
-        >= Constants.MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS
+        userSettings.refreshOnLoadingErrorIntervalSeconds >=
+            Constants.MIN_REFRESH_ON_LOADING_ERROR_INTERVAL_SECONDS
     ) {
         LaunchedEffect(webView, lastErrorUrl) {
             while (lastErrorUrl.isNotEmpty()) {
                 delay(
-                    (userSettings.refreshOnLoadingErrorIntervalSeconds * 1000L).milliseconds
+                    (userSettings.refreshOnLoadingErrorIntervalSeconds * 1000L)
+                        .milliseconds
                 )
                 if (isCurrentWebView()) {
                     WebViewNavigation.refresh(
-                        ::customLoadUrl, systemSettings, userSettings
+                        ::customLoadUrl,
+                        systemSettings,
+                        userSettings,
                     )
                 }
             }
@@ -519,131 +556,147 @@ fun WebviewScreen(navController: NavController) {
     val cookieManager = CookieManager.getInstance()
     cookieManager.setAcceptCookie(userSettings.acceptCookies)
     cookieManager.setAcceptThirdPartyCookies(
-        webView, userSettings.acceptThirdPartyCookies
+        webView,
+        userSettings.acceptThirdPartyCookies,
     )
 
-    val composableAddressBarView = @Composable {
-        key(webView) {
-            AndroidView(
-                factory = { ctx ->
-                    ComposeView(ctx).apply {
-                        setContent {
-                            // Keep the separate ComposeView needed for WebView autofill.
-                            ProvideSystemSafeClipboard {
-                                AddressBar(
-                                    navController = navController,
-                                    urlBarText = urlBarText,
-                                    onUrlBarTextChange = { urlBarText = it },
-                                    hasFocus = addressBarHasFocus,
-                                    onFocusChanged = { addressBarHasFocus = it.isFocused },
-                                    showFindInPage = showFindInPage,
-                                    addressBarSearch = addressBarSearch,
-                                    showHistoryDialog = { isOpenHistoryDialog = true },
-                                    showBookmarkDialog = { isOpenBookmarkDialog = true },
-                                    showFilesDialog = { isOpenFilesDialog = true },
-                                    showAppsDialog = { isOpenAppsDialog = true },
-                                    webView = webView,
-                                    customLoadUrl = ::customLoadUrl,
+    val composableAddressBarView =
+        @Composable {
+            key(webView) {
+                AndroidView(
+                    factory = { ctx ->
+                        ComposeView(ctx).apply {
+                            setContent {
+                                // Keep the separate ComposeView needed for WebView
+                                // autofill.
+                                ProvideSystemSafeClipboard {
+                                    AddressBar(
+                                        navController = navController,
+                                        urlBarText = urlBarText,
+                                        onUrlBarTextChange = { urlBarText = it },
+                                        hasFocus = addressBarHasFocus,
+                                        onFocusChanged = {
+                                            addressBarHasFocus = it.isFocused
+                                        },
+                                        showFindInPage = showFindInPage,
+                                        addressBarSearch = addressBarSearch,
+                                        showHistoryDialog = {
+                                            isOpenHistoryDialog = true
+                                        },
+                                        showBookmarkDialog = {
+                                            isOpenBookmarkDialog = true
+                                        },
+                                        showFilesDialog = {
+                                            isOpenFilesDialog = true
+                                        },
+                                        showAppsDialog = { isOpenAppsDialog = true },
+                                        webView = webView,
+                                        customLoadUrl = ::customLoadUrl,
+                                    )
+                                }
+                            }
+                        }
+                    },
+                    onRelease = { it.disposeComposition() },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+    val composableWebView =
+        @Composable {
+            key(webView) {
+                AndroidView(
+                    factory = { ctx ->
+                        var initialUrl = lastVisitedUrl
+
+                        if (systemSettings.intentUrl.isNotEmpty()) {
+                            initialUrl = systemSettings.intentUrl
+                            systemSettings.intentUrl = ""
+                        } else if (systemSettings.isFreshLaunch) {
+                            systemSettings.isFreshLaunch = false
+                            if (userSettings.resetOnLaunch) {
+                                initialUrl = userSettings.homeUrl
+                                systemSettings.clearHistory()
+                            }
+                        }
+
+                        urlBarText = urlBarText.copy(text = initialUrl)
+
+                        WebviewAwareSwipeRefreshLayout(ctx, webView).apply {
+                            isEnabled =
+                                userSettings.allowRefresh &&
+                                    userSettings.allowPullToRefresh
+                            setOnRefreshListener {
+                                isSwipeRefreshing = true
+                                WebViewNavigation.refresh(
+                                    ::customLoadUrl,
+                                    systemSettings,
+                                    userSettings,
                                 )
                             }
-                        }
-                    }
-                },
-                onRelease = { it.disposeComposition() },
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-    }
-
-    val composableWebView = @Composable {
-        key(webView) {
-            AndroidView(
-                factory = { ctx ->
-                    var initialUrl = lastVisitedUrl
-
-                    if (systemSettings.intentUrl.isNotEmpty()) {
-                        initialUrl = systemSettings.intentUrl
-                        systemSettings.intentUrl = ""
-                    } else if (systemSettings.isFreshLaunch) {
-                        systemSettings.isFreshLaunch = false
-                        if (userSettings.resetOnLaunch) {
-                            initialUrl = userSettings.homeUrl
-                            systemSettings.clearHistory()
-                        }
-                    }
-
-                    urlBarText = urlBarText.copy(text = initialUrl)
-
-                    WebviewAwareSwipeRefreshLayout(ctx, webView).apply {
-                        isEnabled = userSettings.allowRefresh && userSettings.allowPullToRefresh
-                        setOnRefreshListener {
-                            isSwipeRefreshing = true
-                            WebViewNavigation.refresh(
-                                ::customLoadUrl,
-                                systemSettings,
-                                userSettings
+                            addView(
+                                webView.apply {
+                                    customLoadUrl(initialUrl)
+                                }
                             )
                         }
-                        addView(
-                            webView.apply {
-                                customLoadUrl(initialUrl)
-                            }
-                        )
-                    }
-                },
-                update = { view ->
-                    view.isRefreshing = isSwipeRefreshing
-                },
-                modifier = Modifier.fillMaxSize()
-            )
+                    },
+                    update = { view ->
+                        view.isRefreshing = isSwipeRefreshing
+                    },
+                    modifier = Modifier.fillMaxSize(),
+                )
+            }
         }
-    }
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(userSettings.webViewInset.toWindowInsets())
-            .imePaddingCompat()
+        modifier =
+            Modifier.fillMaxSize()
+                .windowInsetsPadding(userSettings.webViewInset.toWindowInsets())
+                .imePaddingCompat()
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            if (showAddressBar && userSettings.addressBarPosition == AddressBarPositionOption.TOP) {
+            if (
+                showAddressBar &&
+                    userSettings.addressBarPosition == AddressBarPositionOption.TOP
+            ) {
                 composableAddressBarView()
             }
 
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-            ) {
+            Box(modifier = Modifier.weight(1f)) {
                 composableWebView()
 
                 if (progress < 100) {
                     LinearProgressIndicator(
                         progress = { progress / 100f },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.TopCenter)
+                        modifier =
+                            Modifier.fillMaxWidth().align(Alignment.TopCenter),
                     )
                 }
 
                 if (
-                    addressBarHasFocus
-                    && suggestions.isNotEmpty()
-                    && userSettings.searchSuggestionEngine != SearchSuggestionEngineOption.NONE
+                    addressBarHasFocus &&
+                        suggestions.isNotEmpty() &&
+                        userSettings.searchSuggestionEngine !=
+                            SearchSuggestionEngineOption.NONE
                 ) {
                     AddressBarSearchSuggestions(
                         suggestions = suggestions,
                         onSelect = { selected ->
                             addressBarSearch(selected)
                         },
-                        modifier = Modifier.align(
-                            if (
-                                userSettings.addressBarPosition == AddressBarPositionOption.TOP
-                            ) {
-                                Alignment.TopStart
-                            } else {
-                                Alignment.BottomStart
-                            }
-                        )
+                        modifier =
+                            Modifier.align(
+                                if (
+                                    userSettings.addressBarPosition ==
+                                        AddressBarPositionOption.TOP
+                                ) {
+                                    Alignment.TopStart
+                                } else {
+                                    Alignment.BottomStart
+                                }
+                            ),
                     )
                 }
             }
@@ -656,21 +709,24 @@ fun WebviewScreen(navController: NavController) {
                 focusRequestKey = findInPageFocusRequestKey,
             )
 
-            if (showAddressBar && userSettings.addressBarPosition == AddressBarPositionOption.BOTTOM) {
+            if (
+                showAddressBar &&
+                    userSettings.addressBarPosition ==
+                        AddressBarPositionOption.BOTTOM
+            ) {
                 composableAddressBarView()
             }
         }
 
         if (showFloatingToolbar) {
-            Box(modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Transparent)
-            ) {
+            Box(modifier = Modifier.fillMaxSize().background(Color.Transparent)) {
                 FloatingToolbar(
                     onHomeClick = {
                         focusManager.clearFocus()
                         WebViewNavigation.goHome(
-                            ::customLoadUrl, systemSettings, userSettings
+                            ::customLoadUrl,
+                            systemSettings,
+                            userSettings,
                         )
                     },
                     onLockClick = {
@@ -683,22 +739,24 @@ fun WebviewScreen(navController: NavController) {
                             unlockWithAuthIfRequired(activity)
                         }
                     },
-                    navController = navController
+                    navController = navController,
                 )
             }
         }
     }
 
     if (
-        isCurrentEntry
-        && userSettings.resetOnInactivitySeconds >= Constants.MIN_INACTIVITY_TIMEOUT_SECONDS
+        isCurrentEntry &&
+            userSettings.resetOnInactivitySeconds >=
+                Constants.MIN_INACTIVITY_TIMEOUT_SECONDS
     ) {
         ResetOnInactivityTimeoutHandler(::customLoadUrl, ::isCurrentWebView)
     }
 
     if (
-        isCurrentEntry
-        && userSettings.dimScreenOnInactivitySeconds >= Constants.MIN_INACTIVITY_TIMEOUT_SECONDS
+        isCurrentEntry &&
+            userSettings.dimScreenOnInactivitySeconds >=
+                Constants.MIN_INACTIVITY_TIMEOUT_SECONDS
     ) {
         DimScreenOnInactivityTimeoutHandler(::canHandleEvents)
     }
@@ -719,7 +777,9 @@ fun WebviewScreen(navController: NavController) {
 
     val displayedAuthRequest = authRequest
     BasicAuthDialog(displayedAuthRequest) {
-        if (authRequest === displayedAuthRequest) authRequest = null
+        if (authRequest === displayedAuthRequest) {
+            authRequest = null
+        }
     }
 
     LinkOptionsDialog(
@@ -731,32 +791,51 @@ fun WebviewScreen(navController: NavController) {
         webView = webView,
         imageUrl = imageToOpen,
         onDismiss = { imageToOpen = null },
-        onOpenImage = { url -> customLoadUrl(url) }
+        onOpenImage = { url -> customLoadUrl(url) },
     )
 
     DisposableEffect(webView) {
-        val unregister = RemoteMessageManager.registerWebViewCommandHandler(::isCurrentWebView) { command ->
-            // Navigation fades can keep both the outgoing and incoming WebViews composed.
-            when (command) {
-                is InboundGoBackCommand -> WebViewNavigation.goBack(::customLoadUrl, systemSettings)
-                is InboundGoForwardCommand -> WebViewNavigation.goForward(::customLoadUrl, systemSettings)
-                is InboundGoHomeCommand -> WebViewNavigation.goHome(::customLoadUrl, systemSettings, userSettings)
-                is InboundRefreshCommand -> WebViewNavigation.refresh(::customLoadUrl, systemSettings, userSettings)
-                is InboundGoToUrlCommand -> customLoadUrl(command.data.url)
-                is InboundSearchCommand -> addressBarSearch(command.data.query)
-                is InboundLockCommand -> tryLockTask(activity)
-                is InboundUnlockCommand -> tryUnlockTask(activity)
-                is InboundPageUpCommand -> { webView.pageUp(command.data.absolute) }
-                is InboundPageDownCommand -> { webView.pageDown(command.data.absolute) }
-                is InboundErrorCommand -> {
-                    ToastManager.show(
-                        context,
-                        "Received invalid MQTT command. See debug logs in MQTT settings."
-                    )
+        val unregister =
+            RemoteMessageManager.registerWebViewCommandHandler(::isCurrentWebView) {
+                command ->
+                // Navigation fades can keep both the outgoing and incoming WebViews
+                // composed.
+                when (command) {
+                    is InboundGoBackCommand ->
+                        WebViewNavigation.goBack(::customLoadUrl, systemSettings)
+                    is InboundGoForwardCommand ->
+                        WebViewNavigation.goForward(::customLoadUrl, systemSettings)
+                    is InboundGoHomeCommand ->
+                        WebViewNavigation.goHome(
+                            ::customLoadUrl,
+                            systemSettings,
+                            userSettings,
+                        )
+                    is InboundRefreshCommand ->
+                        WebViewNavigation.refresh(
+                            ::customLoadUrl,
+                            systemSettings,
+                            userSettings,
+                        )
+                    is InboundGoToUrlCommand -> customLoadUrl(command.data.url)
+                    is InboundSearchCommand -> addressBarSearch(command.data.query)
+                    is InboundLockCommand -> tryLockTask(activity)
+                    is InboundUnlockCommand -> tryUnlockTask(activity)
+                    is InboundPageUpCommand -> {
+                        webView.pageUp(command.data.absolute)
+                    }
+                    is InboundPageDownCommand -> {
+                        webView.pageDown(command.data.absolute)
+                    }
+                    is InboundErrorCommand -> {
+                        ToastManager.show(
+                            context,
+                            "Received invalid MQTT command. See debug logs in MQTT settings.",
+                        )
+                    }
+                    else -> Unit
                 }
-                else -> Unit
             }
-        }
         onDispose(unregister)
     }
 
@@ -767,32 +846,32 @@ fun WebviewScreen(navController: NavController) {
             WebViewNavigation.navigateToIndex(
                 ::customLoadUrl,
                 systemSettings,
-                index
+                index,
             )
-        }
+        },
     )
 
     BookmarksDialog(
         isOpenBookmarkDialog,
         { isOpenBookmarkDialog = false },
-        ::customLoadUrl
+        ::customLoadUrl,
     )
 
     LocalFilesDialog(
         isOpenFilesDialog,
         { isOpenFilesDialog = false },
-        ::customLoadUrl
+        ::customLoadUrl,
     )
 
     AppLauncherDialog(
         showDialog = isOpenAppsDialog,
-        onDismiss = { isOpenAppsDialog = false }
+        onDismiss = { isOpenAppsDialog = false },
     )
 }
 
 private fun handlePdfUrlRendering(
     webView: WebView,
-    targetPdfUrl: String
+    targetPdfUrl: String,
 ) {
     if (targetPdfUrl.isEmpty()) {
         return
@@ -811,6 +890,6 @@ private fun handlePdfUrlRendering(
         htmlContent,
         "text/html",
         "UTF-8",
-        targetPdfUrl
+        targetPdfUrl,
     )
 }

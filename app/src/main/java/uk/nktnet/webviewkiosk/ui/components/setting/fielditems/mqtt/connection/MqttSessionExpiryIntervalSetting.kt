@@ -17,14 +17,17 @@ fun MqttSessionExpiryIntervalSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Connection.SESSION_EXPIRY_INTERVAL
 
     NumberSettingFieldItem(
-        label = stringResource(R.string.mqtt_connection_session_expiry_interval_title),
-        infoText = """
+        label =
+            stringResource(R.string.mqtt_connection_session_expiry_interval_title),
+        infoText =
+            """
             Specify the maximum time a session is retained on the server after
             disconnecting from the network.
 
             The server will discard the corresponding session state when the
             expiration time is reached.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         placeholder = "e.g. 60",
         initialValue = userSettings.mqttSessionExpiryInterval,
         settingKey = settingKey,
@@ -38,6 +41,6 @@ fun MqttSessionExpiryIntervalSetting() {
                 value
             }
         },
-        onSave = { userSettings.mqttSessionExpiryInterval = it }
+        onSave = { userSettings.mqttSessionExpiryInterval = it },
     )
 }

@@ -24,49 +24,60 @@ fun AllowCameraSetting() {
     val userSettings = UserSettings(context)
     val settingKey = UserSettingsKeys.Device.ALLOW_CAMERA
 
-    val (
-        permissionState,
-        requestPermission
-    ) = rememberPermissionState(Manifest.permission.CAMERA)
+    val (permissionState, requestPermission) =
+        rememberPermissionState(Manifest.permission.CAMERA)
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.device_allow_camera_title),
-        infoText = """
+        infoText =
+            """
             Set to true to give WebView access to your device's camera.
 
             You will need to grant the CAMERA permission, which is required for the
             WebView's RESOURCE_VIDEO_CAPTURE feature.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.allowCamera,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.allowCamera = it },
         itemText = { v ->
-            val statusText = if (permissionState.granted) "" else "(no permission)"
-            if (v) "True $statusText" else "False $statusText"
+            val statusText =
+                if (permissionState.granted) {
+                    ""
+                } else {
+                    "(no permission)"
+                }
+            if (v) {
+                "True $statusText"
+            } else {
+                "False $statusText"
+            }
         },
         extraContent = {
             Button(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                onClick = requestPermission
+                onClick = requestPermission,
             ) {
-                val buttonText = when {
-                    permissionState.granted -> {
-                        "Disable in App Info"
+                val buttonText =
+                    when {
+                        permissionState.granted -> {
+                            "Disable in App Info"
+                        }
+                        !permissionState.granted &&
+                            !permissionState.shouldShowRationale -> {
+                            "Request Camera Permission"
+                        }
+                        else -> {
+                            "Enable in App Info"
+                        }
                     }
-                    !permissionState.granted && !permissionState.shouldShowRationale -> {
-                        "Request Camera Permission"
-                    }
-                    else -> {
-                        "Enable in App Info"
-                    }
-                }
                 Text(
                     text = buttonText,
                     textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.labelMedium
+                    style = MaterialTheme.typography.labelMedium,
                 )
             }
-        }
+        },
     )
 }

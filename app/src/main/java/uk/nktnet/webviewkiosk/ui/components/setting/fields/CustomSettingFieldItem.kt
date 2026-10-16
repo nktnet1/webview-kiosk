@@ -23,7 +23,7 @@ fun CustomSettingFieldItem(
     restricted: Boolean,
     onSave: () -> Unit,
     onDismissCallback: () -> Unit = {},
-    bodyContent: @Composable () -> Unit
+    bodyContent: @Composable () -> Unit,
 ) {
     var showDialog by remember { mutableStateOf(false) }
 
@@ -31,19 +31,22 @@ fun CustomSettingFieldItem(
         label = label,
         value = value.ifBlank { "(blank)" },
         restricted = restricted,
-        onClick = { showDialog = true }
+        onClick = { showDialog = true },
     ) { displayValue ->
         Text(
             text = displayValue,
-            style = if (value.isEmpty()) {
-                MaterialTheme.typography.bodyMedium.copy(fontStyle = FontStyle.Italic)
-            } else {
-                MaterialTheme.typography.bodyMedium
-            },
+            style =
+                if (value.isEmpty()) {
+                    MaterialTheme.typography.bodyMedium.copy(
+                        fontStyle = FontStyle.Italic
+                    )
+                } else {
+                    MaterialTheme.typography.bodyMedium
+                },
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 
@@ -60,7 +63,7 @@ fun CustomSettingFieldItem(
             onSave = {
                 onSave()
                 showDialog = false
-            }
+            },
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 bodyContent()

@@ -2,6 +2,15 @@ package uk.nktnet.webviewkiosk.managers
 
 import com.hivemq.client.mqtt.MqttClientState
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
+import java.io.IOException
+import java.lang.reflect.Proxy
+import java.util.Collections
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.runBlocking
@@ -20,24 +29,23 @@ import org.robolectric.RuntimeEnvironment
 import uk.nktnet.webviewkiosk.config.mqtt.MqttConfig
 import uk.nktnet.webviewkiosk.config.remote.outbound.OutboundDisconnectingEvent.DisconnectCause
 import uk.nktnet.webviewkiosk.testing.runConcurrently
-import java.io.IOException
-import java.lang.reflect.Proxy
-import java.util.Collections
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.atomic.AtomicReference
 
-/** Exercises the connected-client shutdown path, including delayed and failed acknowledgements. */
+/**
+ * Exercises the connected-client shutdown path, including delayed and failed
+ * acknowledgements.
+ */
 @RunWith(RobolectricTestRunner::class)
 class MqttShutdownTest {
     private val manager = MqttManager
-    private val fieldsToRestore = listOf(
-        "client", "config", "pendingDisconnect", "disconnectRequestId",
-        "reconnectCancellation", "configurationError",
-    )
+    private val fieldsToRestore =
+        listOf(
+            "client",
+            "config",
+            "pendingDisconnect",
+            "disconnectRequestId",
+            "reconnectCancellation",
+            "configurationError",
+        )
     private lateinit var savedFields: Map<String, Any?>
     private var savedCancellation = false
     private lateinit var scopeJob: Job
@@ -56,18 +64,23 @@ class MqttShutdownTest {
         field("disconnectRequestId").setLong(manager, 0)
         reconnectCancellation = completion()
         field("reconnectCancellation").set(manager, reconnectCancellation.api)
-        manager.updateConfig(RuntimeEnvironment.getApplication(), rebuildClient = false)
-        val config = field("config").get(manager) as MqttConfig
-        field("config").set(
-            manager,
-            config.copy(enabled = true, publishEventTopic = "wk/events"),
+        manager.updateConfig(
+            RuntimeEnvironment.getApplication(),
+            rebuildClient = false,
         )
+        val config = field("config").get(manager) as MqttConfig
+        field("config")
+            .set(
+                manager,
+                config.copy(enabled = true, publishEventTopic = "wk/events"),
+            )
     }
 
     @After
     fun tearDown() {
         try {
-            // Resolve every future before restoring singleton fields so no callback reaches a later test.
+            // Resolve every future before restoring singleton fields so no callback
+            // reaches a later test.
             clients.forEach { client ->
                 client.state.set(MqttClientState.DISCONNECTED)
                 client.event.succeed()
@@ -75,19 +88,27 @@ class MqttShutdownTest {
             }
         } finally {
             try {
-                // Cancel and join only work created by this fixture; keep the manager's scope usable.
+                // Cancel and join only work created by this fixture; keep the
+                // manager's scope usable.
                 runBlocking {
                     withTimeout(3_000) {
                         while (true) {
-                            val jobs = scopeJob.children.filterNot { it in savedJobs }.toList()
-                            if (jobs.isEmpty()) break
+                            val jobs =
+                                scopeJob.children
+                                    .filterNot { it in savedJobs }
+                                    .toList()
+                            if (jobs.isEmpty()) {
+                                break
+                            }
                             jobs.forEach { it.cancel() }
                             jobs.forEach { it.join() }
                         }
                     }
                 }
             } finally {
-                savedFields.forEach { (name, value) -> field(name).set(manager, value) }
+                savedFields.forEach { (name, value) ->
+                    field(name).set(manager, value)
+                }
                 cancellation().set(savedCancellation)
             }
         }
@@ -105,7 +126,15 @@ class MqttShutdownTest {
         assertTrue(reconnectCancellation.isDone())
         assertTrue(stopped.outcomes.isEmpty())
         client.event.succeed()
-        assertEquals(listOf("publish.build", "publish.send", "disconnect.build", "disconnect.send"), client.operations())
+        assertEquals(
+            listOf(
+                "publish.build",
+                "publish.send",
+                "disconnect.build",
+                "disconnect.send",
+            ),
+            client.operations(),
+        )
         assertTrue(stopped.outcomes.isEmpty())
         assertFalse(client.shutdown.isDone())
 
@@ -134,12 +163,18 @@ class MqttShutdownTest {
 
     @Test
     fun anEventBuilderExceptionFallsBackToClientDisconnect() {
-        val client = installClient().apply { publishBuilderFailure = IllegalStateException("cannot build event") }
+        val client =
+            installClient().apply {
+                publishBuilderFailure = IllegalStateException("cannot build event")
+            }
         val stopped = StopProbe()
 
         stop(stopped)
 
-        assertEquals(listOf("publish.build", "disconnect.build", "disconnect.send"), client.operations())
+        assertEquals(
+            listOf("publish.build", "disconnect.build", "disconnect.send"),
+            client.operations(),
+        )
         assertFalse(client.event.isDone())
         client.finishShutdown()
         assertOutcome(stopped, "disconnected")
@@ -154,7 +189,10 @@ class MqttShutdownTest {
 
         stop(stopped)
 
-        assertEquals(listOf("disconnect.build", "disconnect.send"), client.operations())
+        assertEquals(
+            listOf("disconnect.build", "disconnect.send"),
+            client.operations(),
+        )
         client.finishShutdown()
         assertOutcome(stopped, "disconnected")
     }
@@ -166,7 +204,10 @@ class MqttShutdownTest {
         stop(stopped)
         assertWaitingForEvent(client)
 
-        assertTrue("Event timeout never started client shutdown", client.shutdownStarted.await(8, TimeUnit.SECONDS))
+        assertTrue(
+            "Event timeout never started client shutdown",
+            client.shutdownStarted.await(8, TimeUnit.SECONDS),
+        )
 
         assertFalse(client.event.isDone())
         assertEquals(1, client.count("disconnect.send"))
@@ -222,7 +263,9 @@ class MqttShutdownTest {
             onError = { connectOutcomes.add("error:$it") },
         )
         assertEquals(
-            listOf("error:An MQTT connection or cancellation is already in progress."),
+            listOf(
+                "error:An MQTT connection or cancellation is already in progress."
+            ),
             connectOutcomes,
         )
         assertEquals(1, client.count("disconnect.send"))
@@ -242,11 +285,16 @@ class MqttShutdownTest {
         assertFalse(cancellation().get())
         assertEquals(0, client.count("disconnect.send"))
 
-        // Simulate the same HiveMQ client becoming connected again before the old PUBACK.
+        // Simulate the same HiveMQ client becoming connected again before the old
+        // PUBACK.
         client.state.set(MqttClientState.CONNECTED)
         client.event.succeed()
 
-        assertEquals("A retired disconnect must not close a new session", 0, client.count("disconnect.send"))
+        assertEquals(
+            "A retired disconnect must not close a new session",
+            0,
+            client.count("disconnect.send"),
+        )
         assertEquals(listOf("publish.build", "publish.send"), client.operations())
     }
 
@@ -260,7 +308,8 @@ class MqttShutdownTest {
         original.state.set(MqttClientState.DISCONNECTED)
         assertOutcome(stopped, "disconnected")
         val replacement = installClient()
-        // A disconnected old client may become connected again before the late callback.
+        // A disconnected old client may become connected again before the late
+        // callback.
         original.state.set(MqttClientState.CONNECTED)
         original.event.fail(IOException("late failure"))
 
@@ -281,7 +330,10 @@ class MqttShutdownTest {
         // A success callback is not sufficient if the connection has not closed.
         client.shutdown.succeed()
 
-        assertOutcome(stopped, "error:MQTT disconnect completed while the client is still connected.")
+        assertOutcome(
+            stopped,
+            "error:MQTT disconnect completed while the client is still connected.",
+        )
         assertTrue(cancellation().get())
         assertEquals(MqttClientState.CONNECTED, client.state.get())
         assertNull(field("pendingDisconnect").get(manager))
@@ -298,8 +350,14 @@ class MqttShutdownTest {
         installClient()
         original.event.succeed()
 
-        assertEquals(successes, manager.debugLogHistory.count { it.tag == "publish success" })
-        assertEquals(errors, manager.debugLogHistory.count { it.tag == "publish error" })
+        assertEquals(
+            successes,
+            manager.debugLogHistory.count { it.tag == "publish success" },
+        )
+        assertEquals(
+            errors,
+            manager.debugLogHistory.count { it.tag == "publish error" },
+        )
     }
 
     @Test
@@ -316,8 +374,14 @@ class MqttShutdownTest {
             epoch.incrementAndGet()
             client.event.succeed()
 
-            assertEquals(successes, manager.debugLogHistory.count { it.tag == "publish success" })
-            assertEquals(errors, manager.debugLogHistory.count { it.tag == "publish error" })
+            assertEquals(
+                successes,
+                manager.debugLogHistory.count { it.tag == "publish success" },
+            )
+            assertEquals(
+                errors,
+                manager.debugLogHistory.count { it.tag == "publish error" },
+            )
         } finally {
             epoch.set(initialEpoch)
         }
@@ -334,12 +398,15 @@ class MqttShutdownTest {
         // invoking whenComplete inline. Wait for this acknowledgement to be logged.
         val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2)
         while (
-            manager.debugLogHistory.count { it.tag == "publish success" } < successes + 1
-            && System.nanoTime() < deadline
+            manager.debugLogHistory.count { it.tag == "publish success" } <
+                successes + 1 && System.nanoTime() < deadline
         ) {
             Thread.sleep(5)
         }
-        assertEquals(successes + 1, manager.debugLogHistory.count { it.tag == "publish success" })
+        assertEquals(
+            successes + 1,
+            manager.debugLogHistory.count { it.tag == "publish success" },
+        )
     }
 
     @Test
@@ -363,7 +430,11 @@ class MqttShutdownTest {
 
     @Test
     fun clientDisconnectBuilderFailureNotifiesEveryWaitingCaller() {
-        val client = installClient().apply { disconnectBuilderFailure = IllegalStateException("cannot build disconnect") }
+        val client =
+            installClient().apply {
+                disconnectBuilderFailure =
+                    IllegalStateException("cannot build disconnect")
+            }
         val first = StopProbe()
         val second = StopProbe()
         stop(first)
@@ -388,9 +459,13 @@ class MqttShutdownTest {
         assertWaitingForEvent(original)
         original.event.succeed()
         assertEquals(1, original.count("disconnect.send"))
-        // The state poll can observe a closed connection before the wire future completes.
+        // The state poll can observe a closed connection before the wire future
+        // completes.
         original.state.set(MqttClientState.DISCONNECTED)
-        assertTrue("State polling never completed shutdown", originalStop.completed.await(3, TimeUnit.SECONDS))
+        assertTrue(
+            "State polling never completed shutdown",
+            originalStop.completed.await(3, TimeUnit.SECONDS),
+        )
         assertFalse(original.shutdown.isDone())
         val replacement = installClient()
         val replacementStop = StopProbe()
@@ -425,7 +500,10 @@ class MqttShutdownTest {
     }
 
     private fun assertOutcome(probe: StopProbe, expected: String) {
-        assertTrue("MQTT shutdown did not report its result", probe.completed.await(3, TimeUnit.SECONDS))
+        assertTrue(
+            "MQTT shutdown did not report its result",
+            probe.completed.await(3, TimeUnit.SECONDS),
+        )
         assertEquals(listOf(expected), probe.outcomes.toList())
     }
 
@@ -435,14 +513,17 @@ class MqttShutdownTest {
         assertFalse(client.shutdown.isDone())
     }
 
-    private fun installClient(): RecordingClient = RecordingClient().also {
-        clients.add(it)
-        field("client").set(manager, it.api)
-    }
+    private fun installClient(): RecordingClient =
+        RecordingClient().also {
+            clients.add(it)
+            field("client").set(manager, it.api)
+        }
 
-    private fun cancellation() = field("pendingCancelConnect").get(manager) as AtomicBoolean
+    private fun cancellation() =
+        field("pendingCancelConnect").get(manager) as AtomicBoolean
 
-    private fun field(name: String) = manager.javaClass.getDeclaredField(name).apply { isAccessible = true }
+    private fun field(name: String) =
+        manager.javaClass.getDeclaredField(name).apply { isAccessible = true }
 
     private fun completion() = Completion(field("reconnectCancellation").type)
 
@@ -456,7 +537,10 @@ class MqttShutdownTest {
         }
     }
 
-    /** Use the manager's runtime future class, including Android Retrofix's rewritten class. */
+    /**
+     * Use the manager's runtime future class, including Android Retrofix's rewritten
+     * class.
+     */
     private class Completion(private val type: Class<*>) {
         val api: Any = type.getDeclaredConstructor().newInstance()
 
@@ -465,7 +549,9 @@ class MqttShutdownTest {
         }
 
         fun fail(error: Throwable) {
-            type.getMethod("completeExceptionally", Throwable::class.java).invoke(api, error)
+            type
+                .getMethod("completeExceptionally", Throwable::class.java)
+                .invoke(api, error)
         }
 
         fun isDone(): Boolean = type.getMethod("isDone").invoke(api) as Boolean
@@ -480,55 +566,80 @@ class MqttShutdownTest {
         var disconnectBuilderFailure: RuntimeException? = null
         private val calls = Collections.synchronizedList(mutableListOf<String>())
 
-        val api: Mqtt5AsyncClient = Proxy.newProxyInstance(
-            Mqtt5AsyncClient::class.java.classLoader,
-            arrayOf(Mqtt5AsyncClient::class.java),
-        ) { proxy, method, arguments ->
-            when (method.name) {
-                "getState" -> state.get()
-                "equals" -> proxy === arguments?.firstOrNull()
-                "hashCode" -> System.identityHashCode(proxy)
-                "toString" -> "RecordingShutdownMqttClient"
-                "publishWith" -> {
-                    calls.add("publish.build")
-                    publishBuilderFailure?.let { throw it }
-                    builder(method.returnType, "publish")
+        val api: Mqtt5AsyncClient =
+            Proxy.newProxyInstance(
+                Mqtt5AsyncClient::class.java.classLoader,
+                arrayOf(Mqtt5AsyncClient::class.java),
+            ) { proxy, method, arguments ->
+                when (method.name) {
+                    "getState" -> state.get()
+                    "equals" -> proxy === arguments?.firstOrNull()
+                    "hashCode" -> System.identityHashCode(proxy)
+                    "toString" -> "RecordingShutdownMqttClient"
+                    "publishWith" -> {
+                        calls.add("publish.build")
+                        publishBuilderFailure?.let { throw it }
+                        builder(method.returnType, "publish")
+                    }
+                    "disconnectWith" -> {
+                        calls.add("disconnect.build")
+                        disconnectBuilderFailure?.let { throw it }
+                        builder(method.returnType, "disconnect")
+                    }
+                    else ->
+                        throw AssertionError(
+                            "Unexpected MQTT client operation: ${method.name}"
+                        )
                 }
-                "disconnectWith" -> {
-                    calls.add("disconnect.build")
-                    disconnectBuilderFailure?.let { throw it }
-                    builder(method.returnType, "disconnect")
-                }
-                else -> throw AssertionError("Unexpected MQTT client operation: ${method.name}")
-            }
-        } as Mqtt5AsyncClient
+            } as Mqtt5AsyncClient
 
         fun operations(): List<String> = synchronized(calls) { calls.toList() }
 
-        fun count(operation: String): Int = synchronized(calls) { calls.count { it == operation } }
+        fun count(operation: String): Int =
+            synchronized(calls) { calls.count { it == operation } }
 
         fun finishShutdown() {
             state.set(MqttClientState.DISCONNECTED)
             shutdown.succeed()
         }
 
-        private fun builder(type: Class<*>, operation: String, parent: Any? = null): Any {
-            check(type.isInterface) { "Expected a fluent MQTT builder interface: $type" }
-            // topic() returns Send.Complete; a proxy for Send alone fails that runtime cast.
-            val proxyType = type.declaredClasses.singleOrNull {
-                it.simpleName == "Complete" && type.isAssignableFrom(it)
-            } ?: type
-            return Proxy.newProxyInstance(proxyType.classLoader, arrayOf(proxyType)) { proxy, method, arguments ->
+        private fun builder(
+            type: Class<*>,
+            operation: String,
+            parent: Any? = null,
+        ): Any {
+            check(type.isInterface) {
+                "Expected a fluent MQTT builder interface: $type"
+            }
+            // topic() returns Send.Complete; a proxy for Send alone fails that
+            // runtime cast.
+            val proxyType =
+                type.declaredClasses.singleOrNull {
+                    it.simpleName == "Complete" && type.isAssignableFrom(it)
+                } ?: type
+            return Proxy.newProxyInstance(
+                proxyType.classLoader,
+                arrayOf(proxyType),
+            ) { proxy, method, arguments ->
                 when (method.name) {
                     "equals" -> proxy === arguments?.firstOrNull()
                     "hashCode" -> System.identityHashCode(proxy)
                     "toString" -> "RecordingMqttBuilder/$operation"
-                    "topic", "correlationData", "qos", "retain", "payloadFormatIndicator",
-                    "contentType", "payload", "add" -> proxy
-                    "userProperties" -> builder(method.returnType, operation, parent = proxy)
+                    "topic",
+                    "correlationData",
+                    "qos",
+                    "retain",
+                    "payloadFormatIndicator",
+                    "contentType",
+                    "payload",
+                    "add" -> proxy
+                    "userProperties" ->
+                        builder(method.returnType, operation, parent = proxy)
                     "applyUserProperties" -> requireNotNull(parent)
                     "send" -> {
-                        check(parent == null) { "Nested user-property builder must not send" }
+                        check(parent == null) {
+                            "Nested user-property builder must not send"
+                        }
                         calls.add("$operation.send")
                         if (operation == "publish") {
                             event.api
@@ -537,7 +648,10 @@ class MqttShutdownTest {
                             shutdown.api
                         }
                     }
-                    else -> throw AssertionError("Unexpected MQTT builder operation: ${method.name}")
+                    else ->
+                        throw AssertionError(
+                            "Unexpected MQTT builder operation: ${method.name}"
+                        )
                 }
             }
         }

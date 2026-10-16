@@ -6,16 +6,24 @@ import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.config.UserSettings
 
 object WebViewNavigation {
-    fun goBack(customLoadUrl: (newUrl: String) -> Unit, systemSettings: SystemSettings) {
+    fun goBack(
+        customLoadUrl: (newUrl: String) -> Unit,
+        systemSettings: SystemSettings,
+    ) {
         val index = systemSettings.historyIndex
         if (index in 1..systemSettings.historyStack.lastIndex) {
             navigateToIndex(customLoadUrl, systemSettings, index - 1)
         }
     }
 
-    fun goForward(customLoadUrl: (newUrl: String) -> Unit, systemSettings: SystemSettings) {
+    fun goForward(
+        customLoadUrl: (newUrl: String) -> Unit,
+        systemSettings: SystemSettings,
+    ) {
         val index = systemSettings.historyIndex
-        if (index !in systemSettings.historyStack.indices) return
+        if (index !in systemSettings.historyStack.indices) {
+            return
+        }
         val newIndex = index + 1
         navigateToIndex(customLoadUrl, systemSettings, newIndex)
     }
@@ -56,8 +64,8 @@ object WebViewNavigation {
             customLoadUrl(entry.url)
         } catch (error: Throwable) {
             if (
-                systemSettings.historyIndex == index
-                && systemSettings.historyStack.getOrNull(index)?.id == entry.id
+                systemSettings.historyIndex == index &&
+                    systemSettings.historyStack.getOrNull(index)?.id == entry.id
             ) {
                 systemSettings.historyIndex = previousIndex
             }
@@ -78,18 +86,17 @@ object WebViewNavigation {
         val currentEntry = stack.getOrNull(currentIndex)
         val currentUrl = currentEntry?.url?.let(::normalizedNavigationUrl)
 
-        val replace = (
-            shouldReplaceRedirect
-            && (
-                (traversalEntryId != null && traversalEntryId == currentEntry?.id)
-                || (
-                    !originalUrl.isNullOrEmpty()
-                    && isValidUrl(originalUrl)
-                    && !sameNavigationUrl(originalUrl, newUrl)
-                    && !sameNavigationUrl(systemSettings.urlBeforeNavigation, currentUrl)
-                )
-            )
-        )
+        val replace =
+            (shouldReplaceRedirect &&
+                ((traversalEntryId != null &&
+                    traversalEntryId == currentEntry?.id) ||
+                    (!originalUrl.isNullOrEmpty() &&
+                        isValidUrl(originalUrl) &&
+                        !sameNavigationUrl(originalUrl, newUrl) &&
+                        !sameNavigationUrl(
+                            systemSettings.urlBeforeNavigation,
+                            currentUrl,
+                        ))))
         if (replace && currentEntry != null) {
             stack[currentIndex] = currentEntry.copy(url = newUrl)
             systemSettings.historyStack = stack
@@ -98,11 +105,12 @@ object WebViewNavigation {
         }
 
         if (currentUrl != newUrl) {
-            val updatedStack = if (currentIndex < stack.lastIndex) {
-                stack.subList(0, currentIndex + 1).toMutableList()
-            } else {
-                stack
-            }
+            val updatedStack =
+                if (currentIndex < stack.lastIndex) {
+                    stack.subList(0, currentIndex + 1).toMutableList()
+                } else {
+                    stack
+                }
 
             updatedStack.add(HistoryEntry(url = newUrl))
             systemSettings.historyStack = updatedStack
@@ -118,10 +126,11 @@ object WebViewNavigation {
             systemSettings.historyIndex = -1
             return
         }
-        val currentIndex = systemSettings.historyIndex.coerceIn(
-            0,
-            stack.lastIndex
-        )
+        val currentIndex =
+            systemSettings.historyIndex.coerceIn(
+                0,
+                stack.lastIndex,
+            )
         val currentEntry = stack.getOrNull(currentIndex)
         if (currentEntry != null) {
             systemSettings.historyStack = listOf(currentEntry)

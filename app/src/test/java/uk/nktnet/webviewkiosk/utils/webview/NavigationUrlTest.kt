@@ -8,13 +8,21 @@ import org.junit.Test
 class NavigationUrlTest {
     @Test
     fun anOptionalPathSlashIsEquivalent() {
-        assertTrue(sameNavigationUrl("https://example.com/path/", "https://example.com/path"))
         assertTrue(
-            sameNavigationUrl("https://example.com/path/?q=ok", "https://example.com/path?q=ok")
+            sameNavigationUrl(
+                "https://example.com/path/",
+                "https://example.com/path",
+            )
+        )
+        assertTrue(
+            sameNavigationUrl(
+                "https://example.com/path/?q=ok",
+                "https://example.com/path?q=ok",
+            )
         )
         assertEquals(
             "https://example.com/path?q=ok",
-            normalizedNavigationUrl("https://example.com/path/?q=ok")
+            normalizedNavigationUrl("https://example.com/path/?q=ok"),
         )
     }
 
@@ -37,7 +45,10 @@ class NavigationUrlTest {
     @Test
     fun queryAndFragmentOrderingRemainsUnchanged() {
         val url = "https://example.com/app/?q=one/#/two/"
-        assertEquals("https://example.com/app?q=one/#/two/", normalizedNavigationUrl(url))
+        assertEquals(
+            "https://example.com/app?q=one/#/two/",
+            normalizedNavigationUrl(url),
+        )
         assertFalse(sameNavigationUrl(url, "https://example.com/app?q=one/#/two"))
     }
 

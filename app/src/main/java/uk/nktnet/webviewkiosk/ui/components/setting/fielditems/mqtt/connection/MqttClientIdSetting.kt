@@ -44,7 +44,8 @@ fun MqttClientIdSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_client_id_title),
-        infoText = """
+        infoText =
+            """
             A unique identifier for this client when connecting to the MQTT broker.
 
             Leave this field blank if you want the broker server to generate a
@@ -53,7 +54,8 @@ fun MqttClientIdSetting() {
             Supports global variables such as APP_INSTANCE_ID and USERNAME, which
             you can use like:
             - $recommendedClientId
-        """.trimIndent(),
+        """
+                .trimIndent(),
         placeholder = "e.g. $recommendedClientId",
         initialValue = userSettings.mqttClientId,
         descriptionFormatter = {
@@ -68,10 +70,11 @@ fun MqttClientIdSetting() {
         isMultiline = false,
         onLongClick = { v ->
             scope.launch {
-                val clipData = ClipData.newPlainText(
-                    "MQTT Client ID",
-                    MqttManager.mqttVariableReplacement(v)
-                )
+                val clipData =
+                    ClipData.newPlainText(
+                        "MQTT Client ID",
+                        MqttManager.mqttVariableReplacement(v),
+                    )
                 clipboard.setClipEntry(clipData.toClipEntry())
             }
         },
@@ -82,11 +85,9 @@ fun MqttClientIdSetting() {
             }
             Button(
                 onClick = { setDraftValue(recommendedClientId) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 shape = RoundedCornerShape(4.dp),
-                colors = ButtonDefaults.buttonColors()
+                colors = ButtonDefaults.buttonColors(),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
@@ -95,7 +96,7 @@ fun MqttClientIdSetting() {
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     Text(
                         text = recommendedClientId,
@@ -103,10 +104,10 @@ fun MqttClientIdSetting() {
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
-        }
+        },
     )
 }

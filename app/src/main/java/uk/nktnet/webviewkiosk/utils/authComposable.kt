@@ -9,7 +9,7 @@ import uk.nktnet.webviewkiosk.ui.components.auth.RequireAuthWrapper
 inline fun NavGraphBuilder.authComposable(
     route: String,
     navController: NavController,
-    crossinline content: @Composable () -> Unit
+    crossinline content: @Composable () -> Unit,
 ) {
     composable(route) {
         RequireAuthWrapper(navController) {

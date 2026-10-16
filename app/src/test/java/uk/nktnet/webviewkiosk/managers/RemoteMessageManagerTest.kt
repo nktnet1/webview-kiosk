@@ -31,7 +31,12 @@ class RemoteMessageManagerTest {
     fun competingCollectorsHaveExactlyOneWinner() {
         val message = RemoteMessage("settings", RemoteMessage.Source.MQTT)
 
-        val claims = runConcurrently({ message.tryClaim() }, { message.tryClaim() }, { message.tryClaim() })
+        val claims =
+            runConcurrently(
+                { message.tryClaim() },
+                { message.tryClaim() },
+                { message.tryClaim() },
+            )
 
         assertEquals(1, claims.count { it })
         assertFalse(message.tryClaim())

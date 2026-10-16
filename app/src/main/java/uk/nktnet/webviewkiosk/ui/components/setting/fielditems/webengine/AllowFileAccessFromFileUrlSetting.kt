@@ -16,8 +16,12 @@ fun AllowFileAccessFromFileURLsSetting() {
     val settingKey = UserSettingsKeys.WebEngine.ALLOW_FILE_ACCESS_FROM_FILE_URLS
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.web_engine_allow_file_access_from_file_urls_title),
-        infoText = """
+        label =
+            stringResource(
+                R.string.web_engine_allow_file_access_from_file_urls_title
+            ),
+        infoText =
+            """
             This method was deprecated in API level 30 (Android 11).
 
             Sets whether cross-origin requests in the context of a file scheme URL
@@ -29,10 +33,11 @@ fun AllowFileAccessFromFileURLsSetting() {
             by external sources. Enabling this setting allows malicious scripts loaded
             in a file:// context to access arbitrary local files including WebView
             cookies and app private data.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.allowFileAccessFromFileURLs,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.allowFileAccessFromFileURLs = it }
+        onSave = { userSettings.allowFileAccessFromFileURLs = it },
     )
 }

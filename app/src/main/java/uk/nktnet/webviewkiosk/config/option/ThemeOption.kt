@@ -8,8 +8,8 @@ enum class ThemeOption(val label: String) {
     companion object {
         fun fromString(value: String?): ThemeOption {
             return entries.find {
-                it.name.equals(value, ignoreCase = true)
-                || it.label.equals(value, ignoreCase = true)
+                it.name.equals(value, ignoreCase = true) ||
+                    it.label.equals(value, ignoreCase = true)
             } ?: SYSTEM
         }
     }

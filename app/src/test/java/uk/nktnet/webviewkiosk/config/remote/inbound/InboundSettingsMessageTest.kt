@@ -12,13 +12,17 @@ import uk.nktnet.webviewkiosk.utils.BaseJson
 class InboundSettingsMessageTest {
     @Test
     fun missingOptionalFieldsRetainTheirDefaults() {
-        assertEquals(InboundSettingsMessage(), BaseJson.decodeFromString<InboundSettingsMessage>("{}"))
+        assertEquals(
+            InboundSettingsMessage(),
+            BaseJson.decodeFromString<InboundSettingsMessage>("{}"),
+        )
     }
 
     @Test
     fun preservesSettingsValueTypesAndExplicitBehaviorFlags() {
-        val message = BaseJson.decodeFromString<InboundSettingsMessage>(
-            """
+        val message =
+            BaseJson.decodeFromString<InboundSettingsMessage>(
+                """
                 {
                     "showToast": false,
                     "reloadActivity": false,
@@ -31,8 +35,9 @@ class InboundSettingsMessageTest {
                     },
                     "futureField": true
                 }
-            """.trimIndent(),
-        )
+                """
+                    .trimIndent()
+            )
 
         assertFalse(message.showToast)
         assertFalse(message.reloadActivity)
@@ -49,7 +54,9 @@ class InboundSettingsMessageTest {
     @Test
     fun rejectsNonObjectSettingsPayloads() {
         assertThrows(SerializationException::class.java) {
-            BaseJson.decodeFromString<InboundSettingsMessage>("""{"data":{"settings":[]}}""")
+            BaseJson.decodeFromString<InboundSettingsMessage>(
+                """{"data":{"settings":[]}}"""
+            )
         }
     }
 }

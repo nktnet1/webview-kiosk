@@ -13,8 +13,8 @@ internal class AuthenticationSession(private val now: () -> Long) {
         fun withinWindow(start: Long?, duration: Long): Boolean =
             start != null && time >= start && time - start < duration
 
-        return withinWindow(lastAuthenticatedAt, AUTH_TIMEOUT_MS)
-            || withinWindow(externalActivityStartedAt, externalActivityWindowMs)
+        return withinWindow(lastAuthenticatedAt, AUTH_TIMEOUT_MS) ||
+            withinWindow(externalActivityStartedAt, externalActivityWindowMs)
     }
 
     fun authenticate() {
@@ -33,9 +33,8 @@ internal class AuthenticationSession(private val now: () -> Long) {
     }
 
     fun reset(preserveExternalActivitySession: Boolean = false) {
-        val preserveWindow = preserveExternalActivitySession
-            && externalActivityRoundTrip
-            && isValid()
+        val preserveWindow =
+            preserveExternalActivitySession && externalActivityRoundTrip && isValid()
         lastAuthenticatedAt = null
         if (!preserveWindow) {
             clearExternalActivityWindow()

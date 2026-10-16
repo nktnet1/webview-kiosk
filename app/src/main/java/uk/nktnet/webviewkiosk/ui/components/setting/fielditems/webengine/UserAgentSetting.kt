@@ -29,20 +29,24 @@ fun UserAgentSetting() {
     val userSettings = remember { UserSettings(context) }
     val settingKey = UserSettingsKeys.WebEngine.USER_AGENT
 
-    val desktopAgent = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
+    val desktopAgent =
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 " +
             "(KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36"
-    val mobileAgent = "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 " +
+    val mobileAgent =
+        "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 " +
             "(KHTML, like Gecko) Chrome/118.0.0.0 Mobile Safari/537.36"
     val restricted = userSettings.isRestricted(settingKey)
 
     TextSettingFieldItem(
         label = stringResource(R.string.web_engine_user_agent_title),
-        infoText = """
+        infoText =
+            """
             The User Agent string controls how the web engine identifies itself
             to websites. Some sites may behave differently depending on this value.
 
             Leave blank to use the system default User Agent.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         placeholder = "(leave blank for system default)",
         initialValue = userSettings.userAgent,
         settingKey = settingKey,
@@ -56,11 +60,9 @@ fun UserAgentSetting() {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Button(
                     onClick = { setValue(desktopAgent) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     shape = RoundedCornerShape(4.dp),
-                    colors = ButtonDefaults.buttonColors()
+                    colors = ButtonDefaults.buttonColors(),
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
@@ -69,7 +71,7 @@ fun UserAgentSetting() {
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimary,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         )
                         Text(
                             text = desktopAgent,
@@ -77,18 +79,16 @@ fun UserAgentSetting() {
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
 
                 Button(
                     onClick = { setValue(mobileAgent) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     shape = RoundedCornerShape(4.dp),
-                    colors = ButtonDefaults.buttonColors()
+                    colors = ButtonDefaults.buttonColors(),
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
@@ -97,7 +97,7 @@ fun UserAgentSetting() {
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimary,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         )
                         Text(
                             text = mobileAgent,
@@ -105,11 +105,11 @@ fun UserAgentSetting() {
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                             textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }
             }
-        }
+        },
     )
 }

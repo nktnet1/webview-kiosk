@@ -16,7 +16,8 @@ fun EnableBrightnessApiSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.js_scripts_enable_brightness_api_title),
-        infoText = """
+        infoText =
+            """
             Allow web pages to use:
 
             1. window.WebviewKioskBrightnessInterface.getBrightness(): number
@@ -28,10 +29,11 @@ fun EnableBrightnessApiSetting() {
                -1: use system brightness
                 0: very dim
               100: very bright
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.enableBrightnessApi,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.enableBrightnessApi = it }
+        onSave = { userSettings.enableBrightnessApi = it },
     )
 }

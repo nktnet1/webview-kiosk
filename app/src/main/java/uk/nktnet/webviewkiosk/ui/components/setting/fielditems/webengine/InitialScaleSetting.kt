@@ -18,7 +18,8 @@ fun InitialScaleSetting() {
 
     NumberSettingFieldItem(
         label = stringResource(R.string.web_engine_initial_scale_title),
-        infoText = """
+        infoText =
+            """
             Sets the initial scale for this WebView as a percentage. 0 means default.
 
             The behavior for the default scale depends on the state of
@@ -34,7 +35,8 @@ fun InitialScaleSetting() {
             If initial scale is greater than 0, WebView starts with this value as initial
             scale. Please note that unlike the scale properties in the viewport meta tag,
             this method doesn't take the screen density into account.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         placeholder = "e.g. 100",
         initialValue = userSettings.initialScale,
         settingKey = settingKey,

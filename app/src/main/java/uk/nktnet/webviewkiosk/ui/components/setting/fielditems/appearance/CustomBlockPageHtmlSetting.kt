@@ -18,12 +18,15 @@ fun CustomBlockPageHtmlSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.appearance_custom_block_page_html_title),
-        infoText = """
+        infoText =
+            """
             Define the custom HTML content to show when a page is blocked.
 
             Leave blank to use the default block page.
-        """.trimIndent(),
-        placeholder = """
+            """
+                .trimIndent(),
+        placeholder =
+            """
             e.g.
                 <div style="text-align:center; margin-top:10%;">
                   <h1 style="font-size:4rem;">Blocked</h1>
@@ -32,7 +35,8 @@ fun CustomBlockPageHtmlSetting() {
 
             or as a redirect:
                 <meta http-equiv="refresh" content="0; url=${Constants.WEBSITE_URL}">
-        """.trimIndent(),
+        """
+                .trimIndent(),
         initialValue = userSettings.customBlockPageHtml,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

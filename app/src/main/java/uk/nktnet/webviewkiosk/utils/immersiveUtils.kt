@@ -11,7 +11,8 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.ImmersiveModeOption
 
 fun shouldBeImmersed(activity: Activity, userSettings: UserSettings): Boolean {
-    val activityManager = activity.getSystemService(ACTIVITY_SERVICE) as ActivityManager
+    val activityManager =
+        activity.getSystemService(ACTIVITY_SERVICE) as ActivityManager
     val isLocked = getIsLocked(activityManager)
     return when (userSettings.immersiveMode) {
         ImmersiveModeOption.ALWAYS_ON -> true
@@ -25,8 +26,7 @@ fun enterImmersiveMode(activity: Activity) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         activity.window.insetsController?.let { controller ->
             controller.hide(
-                WindowInsets.Type.statusBars()
-                or WindowInsets.Type.navigationBars()
+                WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars()
             )
             controller.systemBarsBehavior =
                 WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
@@ -34,14 +34,13 @@ fun enterImmersiveMode(activity: Activity) {
     } else {
         val decorView = activity.window.decorView
         val currentFlags = decorView.systemUiVisibility
-        val immersiveFlags = (
-            View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-        )
+        val immersiveFlags =
+            (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                View.SYSTEM_UI_FLAG_FULLSCREEN or
+                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
         decorView.systemUiVisibility = currentFlags or immersiveFlags
     }
 }
@@ -50,38 +49,35 @@ fun enterImmersiveMode(activity: Activity) {
 fun exitImmersiveMode(activity: Activity) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
         activity.window.insetsController?.show(
-            WindowInsets.Type.statusBars()
-            or WindowInsets.Type.navigationBars()
+            WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars()
         )
-
     } else {
         val decorView = activity.window.decorView
         val currentFlags = decorView.systemUiVisibility
 
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.M) {
-            val hiddenFlags = (
-                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_FULLSCREEN
-                    or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-            )
-            // API 23 needs the edge-to-edge layout flags preserved while the system bars are
-            // visible. Expanding this workaround to later legacy releases changes IME resize
+            val hiddenFlags =
+                (View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
+            // API 23 needs the edge-to-edge layout flags preserved while the system
+            // bars are
+            // visible. Expanding this workaround to later legacy releases changes
+            // IME resize
             // behaviour (notably API 29 with a bottom address bar).
-            val edgeToEdgeLayoutFlags = (
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                    or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            )
+            val edgeToEdgeLayoutFlags =
+                (View.SYSTEM_UI_FLAG_LAYOUT_STABLE or
+                    View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN)
             decorView.systemUiVisibility =
                 (currentFlags and hiddenFlags.inv()) or edgeToEdgeLayoutFlags
         } else {
-            val flagsToRemove = (
-                View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                    or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                    or View.SYSTEM_UI_FLAG_FULLSCREEN
-                    or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-            )
+            val flagsToRemove =
+                (View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY)
             decorView.systemUiVisibility = currentFlags and flagsToRemove.inv()
         }
     }

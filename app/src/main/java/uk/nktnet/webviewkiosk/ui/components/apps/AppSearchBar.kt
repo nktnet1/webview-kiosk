@@ -34,52 +34,56 @@ fun AppSearchBar(
     ascending: Boolean,
 ) {
     Row(
-        modifier = Modifier
-            .wrapContentHeight()
-            .fillMaxWidth(),
+        modifier = Modifier.wrapContentHeight().fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         BasicTextField(
             value = searchQuery.text,
             onValueChange = onSearchChange,
             singleLine = true,
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-            textStyle = MaterialTheme.typography.bodyMedium.copy(
-                color = MaterialTheme.colorScheme.onSurface,
-            ),
-            modifier = Modifier
-                .weight(1f)
-                .height(43.dp),
+            textStyle =
+                MaterialTheme.typography.bodyMedium.copy(
+                    color = MaterialTheme.colorScheme.onSurface
+                ),
+            modifier = Modifier.weight(1f).height(43.dp),
             decorationBox = { innerTextField ->
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .border(
-                            1.dp,
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                            MaterialTheme.shapes.small
-                        )
-                        .padding(start = 14.dp, end = 8.dp)
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .border(
+                                1.dp,
+                                MaterialTheme.colorScheme.onSurface.copy(
+                                    alpha = 0.5f
+                                ),
+                                MaterialTheme.shapes.small,
+                            )
+                            .padding(start = 14.dp, end = 8.dp),
                 ) {
                     Box(
                         modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.CenterStart
+                        contentAlignment = Alignment.CenterStart,
                     ) {
                         if (searchQuery.text.isEmpty()) {
                             Text(
-                                text = if (filteredAppCount > 1) {
-                                    "Search $filteredAppCount apps"
-                                } else if (filteredAppCount == 1) {
-                                    "Search 1 app."
-                                } else {
-                                    "No apps available."
-                                },
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                                    fontStyle = FontStyle.Italic
-                                )
+                                text =
+                                    if (filteredAppCount > 1) {
+                                        "Search $filteredAppCount apps"
+                                    } else if (filteredAppCount == 1) {
+                                        "Search 1 app."
+                                    } else {
+                                        "No apps available."
+                                    },
+                                style =
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        color =
+                                            MaterialTheme.colorScheme.onSurface.copy(
+                                                alpha = 0.4f
+                                            ),
+                                        fontStyle = FontStyle.Italic,
+                                    ),
                             )
                         }
                         innerTextField()
@@ -88,41 +92,43 @@ fun AppSearchBar(
                     IconButton(
                         enabled = searchQuery.text.isNotEmpty(),
                         onClick = { onSearchChange("") },
-                        modifier = Modifier
-                            .size(26.dp)
+                        modifier = Modifier.size(26.dp),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.baseline_clear_24),
                             contentDescription = "Clear",
-                            modifier = Modifier
-                                .size(24.dp)
-                                .padding(2.dp),
-                            )
+                            modifier = Modifier.size(24.dp).padding(2.dp),
+                        )
                     }
                 }
-            }
+            },
         )
 
         IconButton(
             onClick = onSortToggle,
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .graphicsLayer(scaleX = 0.9f, scaleY = 0.9f)
-                .border(
-                    1.dp,
-                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                    MaterialTheme.shapes.small
-                )
+            modifier =
+                Modifier.align(Alignment.CenterVertically)
+                    .graphicsLayer(scaleX = 0.9f, scaleY = 0.9f)
+                    .border(
+                        1.dp,
+                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                        MaterialTheme.shapes.small,
+                    ),
         ) {
             Icon(
                 painter = painterResource(R.drawable.baseline_sort_24),
                 contentDescription = "Sort Order",
-                modifier = Modifier
-                    .size(22.dp)
-                    .graphicsLayer(
-                        scaleY = if (ascending) -1f else 1f,
-                        scaleX = -1f
-                    )
+                modifier =
+                    Modifier.size(22.dp)
+                        .graphicsLayer(
+                            scaleY =
+                                if (ascending) {
+                                    -1f
+                                } else {
+                                    1f
+                                },
+                            scaleX = -1f,
+                        ),
             )
         }
     }

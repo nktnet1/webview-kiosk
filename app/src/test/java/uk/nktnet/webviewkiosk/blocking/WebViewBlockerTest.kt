@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.blocking
 
+import java.util.concurrent.Executor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -10,7 +11,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import uk.nktnet.webviewkiosk.adblock.FilterListValidator
 import uk.nktnet.webviewkiosk.adblock.NetworkFilterEngine
-import java.util.concurrent.Executor
 
 @RunWith(RobolectricTestRunner::class)
 class WebViewBlockerTest {
@@ -19,7 +19,11 @@ class WebViewBlockerTest {
     @Before
     fun setup() {
         val context = RuntimeEnvironment.getApplication()
-        context.getSharedPreferences("content_blocking_lists", 0).edit().clear().commit()
+        context
+            .getSharedPreferences("content_blocking_lists", 0)
+            .edit()
+            .clear()
+            .commit()
         java.io.File(context.filesDir, "content-blocking-lists").deleteRecursively()
         val store = FilterListStore(context, validator = FilterListValidator {})
         store.importFrom("ads.txt", "||ads.example^".byteInputStream())
@@ -36,16 +40,39 @@ class WebViewBlockerTest {
                     method: String,
                 ) = true
             }
-        service = ContentBlockingService(store, engine, Executor { it.run() }).also { it.start() }
+        service =
+            ContentBlockingService(store, engine, Executor { it.run() }).also {
+                it.start()
+            }
     }
 
     @Test
     fun blocksOnlyHttpSubresourcesOnKnownWebPages() {
         val target = "https://ads.example/pixel"
         val page = "https://publisher.example/index"
-        assertTrue(WebViewBlocker.shouldBlock(target, false, page, emptyMap(), "GET", service))
-        assertFalse(WebViewBlocker.shouldBlock(target, true, page, emptyMap(), "GET", service))
-        assertFalse(WebViewBlocker.shouldBlock(target, false, "", emptyMap(), "GET", service))
+        assertTrue(
+            WebViewBlocker.shouldBlock(
+                target,
+                false,
+                page,
+                emptyMap(),
+                "GET",
+                service,
+            )
+        )
+        assertFalse(
+            WebViewBlocker.shouldBlock(
+                target,
+                true,
+                page,
+                emptyMap(),
+                "GET",
+                service,
+            )
+        )
+        assertFalse(
+            WebViewBlocker.shouldBlock(target, false, "", emptyMap(), "GET", service)
+        )
         assertFalse(
             WebViewBlocker.shouldBlock(
                 "file:///sdcard/x.js",
@@ -54,7 +81,7 @@ class WebViewBlockerTest {
                 emptyMap(),
                 "GET",
                 service,
-            ),
+            )
         )
         assertFalse(
             WebViewBlocker.shouldBlock(
@@ -64,7 +91,7 @@ class WebViewBlockerTest {
                 emptyMap(),
                 "GET",
                 service,
-            ),
+            )
         )
         assertFalse(
             WebViewBlocker.shouldBlock(
@@ -74,7 +101,7 @@ class WebViewBlockerTest {
                 emptyMap(),
                 "GET",
                 service,
-            ),
+            )
         )
         assertFalse(
             WebViewBlocker.shouldBlock(
@@ -84,18 +111,24 @@ class WebViewBlockerTest {
                 emptyMap(),
                 "GET",
                 service,
-            ),
+            )
         )
     }
 
     @Test
     fun onlyUsesKnownResourceTypes() {
-        assertEquals("script", WebViewBlocker.resourceType(mapOf("Sec-Fetch-Dest" to "script")))
+        assertEquals(
+            "script",
+            WebViewBlocker.resourceType(mapOf("Sec-Fetch-Dest" to "script")),
+        )
         assertEquals(
             "image",
             WebViewBlocker.resourceType(mapOf("accept" to "image/avif,image/webp")),
         )
-        assertEquals("stylesheet", WebViewBlocker.resourceType(mapOf("ACCEPT" to "text/css,*/*")))
+        assertEquals(
+            "stylesheet",
+            WebViewBlocker.resourceType(mapOf("ACCEPT" to "text/css,*/*")),
+        )
         assertEquals("other", WebViewBlocker.resourceType(mapOf("accept" to "*/*")))
     }
 }

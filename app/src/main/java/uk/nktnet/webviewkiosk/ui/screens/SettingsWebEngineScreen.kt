@@ -26,7 +26,6 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.AllowFi
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.AllowUniversalAccessFromFileURLsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.BuiltInZoomControlsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.CacheModeSetting
-import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.MutualTlsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.DisplayZoomControlsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.EnableDomStorageSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.EnableJavaScriptSetting
@@ -35,6 +34,7 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.LayoutA
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.LoadWithOverviewModeSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.MediaPlaybackRequiresUserGestureSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.MixedContentModeSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.MutualTlsSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.OverScrollModeSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.RequestFocusOnPageStartSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.SslErrorModeSetting
@@ -45,22 +45,20 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webengine.UserAge
 @Composable
 fun SettingsWebEngineScreen(navController: NavController) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(top = 4.dp)
-            .padding(horizontal = 16.dp),
+        modifier =
+            Modifier.fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(top = 4.dp)
+                .padding(horizontal = 16.dp)
     ) {
         SettingLabel(
             navController = navController,
-            label = stringResource(R.string.settings_web_engine_title)
+            label = stringResource(R.string.settings_web_engine_title),
         )
         SettingDivider()
 
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
         ) {
             EnableJavaScriptSetting()
             EnableDomStorageSetting()

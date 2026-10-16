@@ -1,5 +1,8 @@
 pre-commit:
   commands:
+    kotlin-format:
+      glob: "*.{kt,kts}"
+      run: sh gradlew checkFormatting
     typecheck:
       root: "docs/"
       glob: "*.{ts,cts,mts}"

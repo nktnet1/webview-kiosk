@@ -8,8 +8,8 @@ enum class OverrideUrlLoadingBlockActionOption(val label: String) {
     companion object {
         fun fromString(value: String?): OverrideUrlLoadingBlockActionOption {
             return entries.find {
-                it.name.equals(value, ignoreCase = true)
-                || it.label.equals(value, ignoreCase = true)
+                it.name.equals(value, ignoreCase = true) ||
+                    it.label.equals(value, ignoreCase = true)
             } ?: SHOW_BLOCK_PAGE
         }
     }

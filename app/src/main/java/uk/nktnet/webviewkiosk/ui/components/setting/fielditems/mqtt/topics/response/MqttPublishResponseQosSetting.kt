@@ -18,10 +18,12 @@ fun MqttPublishResponseQosSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.mqtt_publish_response_qos_title),
-        infoText = """
+        infoText =
+            """
             Quality of Service (QoS) ensures different message delivery guarantees
             for response messages in case of connection failures.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         options = MqttQosOption.entries,
         initialValue = userSettings.mqttPublishResponseQos,
         settingKey = settingKey,

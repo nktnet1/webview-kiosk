@@ -17,11 +17,14 @@ fun MqttSubscribeRequestRetainHandlingSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Topics.Subscribe.Request.RETAIN_HANDLING
 
     DropdownSettingFieldItem(
-        label = stringResource(R.string.mqtt_subscribe_request_retain_handling_title),
-        infoText = """
+        label =
+            stringResource(R.string.mqtt_subscribe_request_retain_handling_title),
+        infoText =
+            """
             Control whether ${stringResource(R.string.app_name)} should receive existing
             retained messages when subscribing.
-        """.trimIndent(),
+        """
+                .trimIndent(),
         options = MqttRetainHandlingOption.entries,
         initialValue = userSettings.mqttSubscribeRequestRetainHandling,
         settingKey = settingKey,

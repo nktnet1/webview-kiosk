@@ -46,11 +46,11 @@ fun LinkOptionsDialog(
                 shape = MaterialTheme.shapes.medium,
                 color = MaterialTheme.colorScheme.surface,
                 tonalElevation = 8.dp,
-                modifier = Modifier.padding(24.dp)
+                modifier = Modifier.padding(24.dp),
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                    verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                     Text(
                         text = boundedTextPreview(link),
@@ -70,7 +70,7 @@ fun LinkOptionsDialog(
                                 onDismiss()
                             }
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text("Copy Link")
                     }
@@ -80,7 +80,7 @@ fun LinkOptionsDialog(
                             onOpenLink(link)
                             onDismiss()
                         },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     ) {
                         Text("Open Link")
                     }
@@ -92,22 +92,24 @@ fun LinkOptionsDialog(
                                 safeStartActivity(context, intent)
                                 onDismiss()
                             },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text("Open in Browser")
                         }
 
                         Button(
                             onClick = {
-                                val intent = Intent(Intent.ACTION_SEND).apply {
-                                    type = "text/plain"
-                                    putExtra(Intent.EXTRA_TEXT, link)
-                                }
-                                val chooser = Intent.createChooser(intent, "Share Link")
+                                val intent =
+                                    Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_TEXT, link)
+                                    }
+                                val chooser =
+                                    Intent.createChooser(intent, "Share Link")
                                 safeStartActivity(context, chooser)
                                 onDismiss()
                             },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
                         ) {
                             Text("Share Link")
                         }

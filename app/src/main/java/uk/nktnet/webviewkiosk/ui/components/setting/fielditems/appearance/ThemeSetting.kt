@@ -19,11 +19,13 @@ fun ThemeSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.appearance_theme_title),
-        infoText = """
+        infoText =
+            """
             Select the app theme: System (default), Dark or Light.
 
             See also: Settings -> JS Scripts -> Apply App Theme .
-        """.trimIndent(),
+            """
+                .trimIndent(),
         options = ThemeOption.entries,
         initialValue = userSettings.theme,
         settingKey = settingKey,

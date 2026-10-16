@@ -16,10 +16,11 @@ fun UseWideViewPortSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_engine_use_wide_viewport_title),
-        infoText = "Enable wide viewport support in the WebView for responsive pages.",
+        infoText =
+            "Enable wide viewport support in the WebView for responsive pages.",
         initialValue = userSettings.useWideViewport,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.useWideViewport = it }
+        onSave = { userSettings.useWideViewport = it },
     )
 }

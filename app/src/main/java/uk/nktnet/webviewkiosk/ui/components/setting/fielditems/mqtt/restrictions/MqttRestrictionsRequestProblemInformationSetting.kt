@@ -16,14 +16,19 @@ fun MqttRestrictionsRequestProblemInformationSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Restrictions.REQUEST_PROBLEM_INFORMATION
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.mqtt_restrictions_request_problem_information_title),
-        infoText = """
+        label =
+            stringResource(
+                R.string.mqtt_restrictions_request_problem_information_title
+            ),
+        infoText =
+            """
             When enabled, the client requests additional problem information
             from the broker in MQTT responses.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.mqttRestrictionsRequestProblemInformation,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.mqttRestrictionsRequestProblemInformation = it }
+        onSave = { userSettings.mqttRestrictionsRequestProblemInformation = it },
     )
 }

@@ -23,79 +23,78 @@ import uk.nktnet.webviewkiosk.ui.components.setting.SettingListItem
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingsHeaderMenu
 
 @Composable
-fun SettingsListScreen(
-    navController: NavController,
-) {
-    val settingsItems = listOf(
-        Triple(
-            stringResource(R.string.settings_web_content_title),
-            stringResource(R.string.settings_web_content_description),
-            Screen.SettingsWebContent.route
-        ),
-        Triple(
-            stringResource(R.string.settings_web_browsing_title),
-            stringResource(R.string.settings_web_browsing_description),
-            Screen.SettingsWebBrowsing.route
-        ),
-        Triple(
-            stringResource(R.string.settings_web_engine_title),
-            stringResource(R.string.settings_web_engine_description),
-            Screen.SettingsWebEngine.route
-        ),
-        Triple(
-            stringResource(R.string.settings_web_lifecycle_title),
-            stringResource(R.string.settings_web_lifecycle_description),
-            Screen.SettingsWebLifecycle.route
-        ),
-        Triple(
-            stringResource(R.string.settings_appearance_title),
-            stringResource(R.string.settings_appearance_description),
-            Screen.SettingsAppearance.route
-        ),
-        Triple(
-            stringResource(R.string.settings_device_title),
-            stringResource(R.string.settings_device_description),
-            Screen.SettingsDevice.route
-        ),
-        Triple(
-            stringResource(R.string.settings_js_scripts_title),
-            stringResource(R.string.settings_js_scripts_description),
-            Screen.SettingsJsScript.route
-        ),
-        Triple(
-            stringResource(R.string.settings_mqtt_title),
-            stringResource(R.string.settings_mqtt_description),
-            Screen.SettingsMqtt.route
-        ),
-        Triple(
-            stringResource(R.string.settings_unifiedpush_title),
-            stringResource(R.string.settings_unifiedpush_description),
-            Screen.SettingsUnifiedPush.route
-        ),
-        Triple(
-            stringResource(R.string.settings_about_title),
-            stringResource(R.string.settings_about_description),
-            Screen.SettingsAbout.route
-        ),
-    )
+fun SettingsListScreen(navController: NavController) {
+    val settingsItems =
+        listOf(
+            Triple(
+                stringResource(R.string.settings_web_content_title),
+                stringResource(R.string.settings_web_content_description),
+                Screen.SettingsWebContent.route,
+            ),
+            Triple(
+                stringResource(R.string.settings_web_browsing_title),
+                stringResource(R.string.settings_web_browsing_description),
+                Screen.SettingsWebBrowsing.route,
+            ),
+            Triple(
+                stringResource(R.string.settings_web_engine_title),
+                stringResource(R.string.settings_web_engine_description),
+                Screen.SettingsWebEngine.route,
+            ),
+            Triple(
+                stringResource(R.string.settings_web_lifecycle_title),
+                stringResource(R.string.settings_web_lifecycle_description),
+                Screen.SettingsWebLifecycle.route,
+            ),
+            Triple(
+                stringResource(R.string.settings_appearance_title),
+                stringResource(R.string.settings_appearance_description),
+                Screen.SettingsAppearance.route,
+            ),
+            Triple(
+                stringResource(R.string.settings_device_title),
+                stringResource(R.string.settings_device_description),
+                Screen.SettingsDevice.route,
+            ),
+            Triple(
+                stringResource(R.string.settings_js_scripts_title),
+                stringResource(R.string.settings_js_scripts_description),
+                Screen.SettingsJsScript.route,
+            ),
+            Triple(
+                stringResource(R.string.settings_mqtt_title),
+                stringResource(R.string.settings_mqtt_description),
+                Screen.SettingsMqtt.route,
+            ),
+            Triple(
+                stringResource(R.string.settings_unifiedpush_title),
+                stringResource(R.string.settings_unifiedpush_description),
+                Screen.SettingsUnifiedPush.route,
+            ),
+            Triple(
+                stringResource(R.string.settings_about_title),
+                stringResource(R.string.settings_about_description),
+                Screen.SettingsAbout.route,
+            ),
+        )
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(top = 4.dp)
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.Top
+        modifier =
+            Modifier.fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(top = 4.dp)
+                .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.Top,
     ) {
         SettingsHeaderMenu(navController)
         SettingDivider()
 
         Column(
-            modifier = Modifier
-                .padding(top = 2.dp)
-                .weight(1f)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier =
+                Modifier.padding(top = 2.dp)
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             settingsItems.forEach { (title, description, route) ->
                 SettingListItem(

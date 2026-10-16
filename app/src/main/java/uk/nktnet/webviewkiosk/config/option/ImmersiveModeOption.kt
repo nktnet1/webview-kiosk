@@ -8,8 +8,8 @@ enum class ImmersiveModeOption(val label: String) {
     companion object {
         fun fromString(value: String?): ImmersiveModeOption {
             return entries.find {
-                it.name.equals(value, ignoreCase = true)
-                || it.label.equals(value, ignoreCase = true)
+                it.name.equals(value, ignoreCase = true) ||
+                    it.label.equals(value, ignoreCase = true)
             } ?: ONLY_WHEN_LOCKED
         }
     }

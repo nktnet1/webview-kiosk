@@ -6,7 +6,7 @@ class HttpAuthRequest(
     val host: String?,
     val realm: String?,
     private val onSubmit: (String, String) -> Unit,
-    private val onCancel: () -> Unit
+    private val onCancel: () -> Unit,
 ) {
     private val completed = AtomicBoolean(false)
 

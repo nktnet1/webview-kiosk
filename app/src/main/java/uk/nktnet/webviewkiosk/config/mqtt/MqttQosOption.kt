@@ -14,10 +14,10 @@ enum class MqttQosOption(val code: Int, val label: String) {
     companion object {
         fun fromString(value: String?): MqttQosOption =
             entries.find {
-                it.name.equals(value, ignoreCase = true)
-                || it.label.equals(value, ignoreCase = true)
-                || it.code.toString() == value
-                || it.getSettingLabel() == value
+                it.name.equals(value, ignoreCase = true) ||
+                    it.label.equals(value, ignoreCase = true) ||
+                    it.code.toString() == value ||
+                    it.getSettingLabel() == value
             } ?: AT_MOST_ONCE
     }
 }

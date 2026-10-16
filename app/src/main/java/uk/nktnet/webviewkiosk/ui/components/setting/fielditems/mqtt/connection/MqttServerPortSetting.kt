@@ -39,7 +39,8 @@ fun MqttServerPortSetting() {
 
     NumberSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_server_port_title),
-        infoText = """
+        infoText =
+            """
             The TCP port of the MQTT broker the app should connect to.
 
             Typically,
@@ -47,7 +48,8 @@ fun MqttServerPortSetting() {
             - 8883 - MQTTS (TCP with SSL/TLS)
             - 80 - WS (WebSocket, same port as HTTP)
             - 443 - WSS (WebSocket Secure, same port as HTTPS)
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.mqttServerPort,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
@@ -56,27 +58,28 @@ fun MqttServerPortSetting() {
         placeholder = "e.g. 1883",
         onSave = { userSettings.mqttServerPort = it },
         extraContent = { v, setValue ->
-            val tcpPorts = listOf(
-                1883,
-                8883,
-            )
-            val webSocketPorts = listOf(
-                80,
-                443,
-                8083,
-                8084,
-
-                1887,
-                8000,
-                8080,
-                8081,
-                8090,
-                8091,
-                8443,
-                9001,
-                15675,
-                15676,
-            )
+            val tcpPorts =
+                listOf(
+                    1883,
+                    8883,
+                )
+            val webSocketPorts =
+                listOf(
+                    80,
+                    443,
+                    8083,
+                    8084,
+                    1887,
+                    8000,
+                    8080,
+                    8081,
+                    8090,
+                    8091,
+                    8443,
+                    9001,
+                    15675,
+                    15676,
+                )
             val commonPorts = tcpPorts + webSocketPorts
 
             val visibleNum = 6
@@ -86,11 +89,12 @@ fun MqttServerPortSetting() {
             var moreExpanded by remember { mutableStateOf(false) }
 
             FlowRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp)
-                    .wrapContentHeight(align = Alignment.Top),
-                horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .padding(top = 8.dp)
+                        .wrapContentHeight(align = Alignment.Top),
+                horizontalArrangement =
+                    Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
                 verticalArrangement = Arrangement.spacedBy((-8).dp),
                 maxItemsInEachRow = 4,
             ) {
@@ -140,13 +144,15 @@ fun MqttServerPortSetting() {
                                         setValue("")
                                     }
                                 },
-                                colors = if (v.toIntOrNull() == port) {
-                                    MenuDefaults.itemColors(
-                                        textColor = MaterialTheme.colorScheme.primary,
-                                    )
-                                } else {
-                                    MenuDefaults.itemColors()
-                                },
+                                colors =
+                                    if (v.toIntOrNull() == port) {
+                                        MenuDefaults.itemColors(
+                                            textColor =
+                                                MaterialTheme.colorScheme.primary
+                                        )
+                                    } else {
+                                        MenuDefaults.itemColors()
+                                    },
                             )
                         }
                     }
@@ -165,19 +171,21 @@ fun MqttServerPortSetting() {
                         tint = MaterialTheme.colorScheme.tertiary,
                     )
                     Text(
-                        text = normaliseInfoText(
-                            """
+                        text =
+                            normaliseInfoText(
+                                """
                                 NOTE: if your broker accepts WebSocket connections on port $v,
                                 enable:
 
                                  - MQTT > Connection > Use WebSocket
-                            """.trimIndent()
-                        ),
+                            """
+                                    .trimIndent()
+                            ),
                         color = MaterialTheme.colorScheme.tertiary,
                         style = MaterialTheme.typography.bodySmall,
                     )
                 }
             }
-        }
+        },
     )
 }

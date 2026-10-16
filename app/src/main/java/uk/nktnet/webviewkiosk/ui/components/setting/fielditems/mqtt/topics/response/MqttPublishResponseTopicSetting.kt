@@ -20,7 +20,8 @@ fun MqttPublishResponseTopicSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_publish_response_topic_title),
-        infoText = $$"""
+        infoText =
+            $$"""
             Default MQTT topic to publish reply messages to requests.
 
             If a responseTopic is specified in the request, either in the
@@ -34,14 +35,16 @@ fun MqttPublishResponseTopicSetting() {
 
             Example:
             - wk/response/${$${MqttVariableName.RESPONSE_TYPE.name}}
-        """.trimIndent(),
-        placeholder = $$"e.g. wk/response/${$${MqttVariableName.RESPONSE_TYPE.name}}",
+        """
+                .trimIndent(),
+        placeholder =
+            $$"e.g. wk/response/${$${MqttVariableName.RESPONSE_TYPE.name}}",
         initialValue = userSettings.mqttPublishResponseTopic,
         descriptionFormatter = { mqttVariableReplacement(it) },
         validator = { it.isEmpty() || isValidMqttPublishTopic(it) },
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         isMultiline = false,
-        onSave = { userSettings.mqttPublishResponseTopic = it }
+        onSave = { userSettings.mqttPublishResponseTopic = it },
     )
 }

@@ -18,8 +18,10 @@ fun KioskControlPanelRegionSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_REGION
 
     DropdownSettingFieldItem(
-        label = stringResource(R.string.web_browsing_kiosk_control_panel_region_title),
-        infoText = """
+        label =
+            stringResource(R.string.web_browsing_kiosk_control_panel_region_title),
+        infoText =
+            """
             Controls which part of the screen can be multi-tapped 10 times in quick
             succession to show the Kiosk Control Panel.
 
@@ -29,30 +31,33 @@ fun KioskControlPanelRegionSetting() {
               1. [Appearance -> Floating Toolbar Mode] is set to Hidden
               2. [Device -> Back Button Hold Action] is not set to "Open Kiosk Control Panel"
             In that case, the region stays at Top Left so the panel remains accessible.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         options = KioskControlPanelRegionOption.entries,
         initialValue = userSettings.kioskControlPanelRegion,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.kioskControlPanelRegion = it },
         validator = {
-            it != KioskControlPanelRegionOption.DISABLED
-            || canDisableKioskControlPanelRegion(userSettings)
+            it != KioskControlPanelRegionOption.DISABLED ||
+                canDisableKioskControlPanelRegion(userSettings)
         },
-        validationMessage = """
+        validationMessage =
+            """
             The Kiosk Control Panel needs a way to open. You cannot disable
             this region while the floating toolbar is Hidden and Back Button
             Hold Action is not set to "Open Kiosk Control Panel".
-            """.trimIndent(),
+            """
+                .trimIndent(),
         itemText = {
             if (
-                it == KioskControlPanelRegionOption.DISABLED
-                && !canDisableKioskControlPanelRegion(userSettings)
+                it == KioskControlPanelRegionOption.DISABLED &&
+                    !canDisableKioskControlPanelRegion(userSettings)
             ) {
                 "Top Left (cannot disable)"
             } else {
                 it.label
             }
-        }
+        },
     )
 }

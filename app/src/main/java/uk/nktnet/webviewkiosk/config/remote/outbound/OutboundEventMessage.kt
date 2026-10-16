@@ -12,6 +12,7 @@ sealed interface OutboundEventMessage {
     val messageId: String
     val username: String
     val appInstanceId: String
+
     fun getEventType(): String
 }
 
@@ -32,12 +33,10 @@ data class OutboundDisconnectingEvent(
     override val messageId: String,
     override val username: String,
     override val appInstanceId: String,
-    val data: DisconnectingData
+    val data: DisconnectingData,
 ) : OutboundEventMessage {
-    @Serializable
-    data class DisconnectingData(
-        val cause: DisconnectCause
-    )
+    @Serializable data class DisconnectingData(val cause: DisconnectCause)
+
     @Serializable
     enum class DisconnectCause {
         USER_INITIATED_DISCONNECT,
@@ -47,6 +46,7 @@ data class OutboundDisconnectingEvent(
         SYSTEM_ACTIVITY_DESTROYED,
         MQTT_RECONNECT_COMMAND_RECEIVED,
     }
+
     override fun getEventType(): String = "disconnecting"
 }
 
@@ -56,14 +56,11 @@ data class OutboundUrlChangedEvent(
     override val messageId: String,
     override val username: String,
     override val appInstanceId: String,
-    val data: UrlData
+    val data: UrlData,
 ) : OutboundEventMessage {
     override fun getEventType(): String = "url_changed"
 
-    @Serializable
-    data class UrlData(
-        val url: String
-    )
+    @Serializable data class UrlData(val url: String)
 }
 
 @Serializable
@@ -76,10 +73,7 @@ data class OutboundLockEvent(
 ) : OutboundEventMessage {
     override fun getEventType(): String = "lock"
 
-    @Serializable
-    data class LockStateData(
-        val lockStateType: LockStateType
-    )
+    @Serializable data class LockStateData(val lockStateType: LockStateType)
 }
 
 @Serializable
@@ -157,7 +151,7 @@ data class OutboundPowerPluggedEvent(
 data class OutboundPowerUnpluggedEvent(
     override val messageId: String,
     override val username: String,
-    override val appInstanceId: String
+    override val appInstanceId: String,
 ) : OutboundEventMessage {
     override fun getEventType(): String = "power_unplugged"
 }
@@ -172,6 +166,7 @@ data class OutboundApplicationRestrictionsChangedEvent(
     override fun getEventType(): String = "application_restrictions_changed"
 }
 
-val OutboundEventJsonParser = Json(BaseJson) {
-    classDiscriminator = "eventType"
-}
+val OutboundEventJsonParser =
+    Json(BaseJson) {
+        classDiscriminator = "eventType"
+    }

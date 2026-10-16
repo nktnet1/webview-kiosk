@@ -12,7 +12,8 @@ class UnifiedPushService : PushService() {
     override fun onCreate() {
         super.onCreate()
         try {
-            // A push message can start the process before any activity or MQTT service.
+            // A push message can start the process before any activity or MQTT
+            // service.
             DeviceOwnerManager.init(applicationContext)
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, "Failed to initialise device owner state", e)
@@ -33,7 +34,6 @@ class UnifiedPushService : PushService() {
 
     override fun onTempUnavailable(instance: String) {
         UnifiedPushManager.handleTempUnavailable(this, instance)
-
     }
 
     override fun onRegistrationFailed(reason: FailedReason, instance: String) {

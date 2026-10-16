@@ -47,6 +47,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
@@ -55,15 +56,14 @@ import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog as Dialog
 import uk.nktnet.webviewkiosk.utils.requestFocusWhenPlaced
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun CustomAuthPasswordDialog() {
     val state by AuthenticationManager.promptResults.collectAsState()
 
     if (
-        !AuthenticationManager.showCustomAuth.value
-        || state != AuthenticationManager.AuthenticationResult.Pending
+        !AuthenticationManager.showCustomAuth.value ||
+            state != AuthenticationManager.AuthenticationResult.Pending
     ) {
         return
     }
@@ -84,9 +84,7 @@ private fun CustomAuthPasswordDialogContent(request: Any) {
     var waiting by remember { mutableStateOf(false) }
     var isError by remember { mutableStateOf(false) }
 
-    Dialog(
-        onDismissRequest = { AuthenticationManager.customAuthCancel(request) }
-    ) {
+    Dialog(onDismissRequest = { AuthenticationManager.customAuthCancel(request) }) {
         val focusManager = LocalFocusManager.current
         val keyboardController = LocalSoftwareKeyboardController.current
         val needsLegacyImeCleanup = Build.VERSION.SDK_INT == Build.VERSION_CODES.M
@@ -108,21 +106,35 @@ private fun CustomAuthPasswordDialogContent(request: Any) {
         }
 
         fun handleUnlock() {
-            if (waiting || !AuthenticationManager.isCurrentCustomAuthRequest(request)) return
+            if (
+                waiting || !AuthenticationManager.isCurrentCustomAuthRequest(request)
+            ) {
+                return
+            }
             waiting = true
             val enteredPassword = password
             scope.launch {
                 val start = System.currentTimeMillis()
                 try {
-                    if (!AuthenticationManager.isCurrentCustomAuthRequest(request)) return@launch
+                    if (!AuthenticationManager.isCurrentCustomAuthRequest(request)) {
+                        return@launch
+                    }
                     if (enteredPassword == userSettings.customAuthPassword) {
                         password = ""
                         dismissKeyboard()
                         AuthenticationManager.customAuthSuccess(request)
                     } else {
                         val remaining = 1000L - (System.currentTimeMillis() - start)
-                        if (remaining > 0) delay(remaining.milliseconds)
-                        if (!AuthenticationManager.isCurrentCustomAuthRequest(request)) return@launch
+                        if (remaining > 0) {
+                            delay(remaining.milliseconds)
+                        }
+                        if (
+                            !AuthenticationManager.isCurrentCustomAuthRequest(
+                                request
+                            )
+                        ) {
+                            return@launch
+                        }
                         isError = true
                         ToastManager.show(context, "Incorrect password")
                     }
@@ -133,16 +145,16 @@ private fun CustomAuthPasswordDialogContent(request: Any) {
         }
 
         Box(
-            modifier = Modifier
-                .background(MaterialTheme.colorScheme.background.copy(alpha = 0.95f))
-                .verticalScroll(rememberScrollState()),
-            contentAlignment = Alignment.TopCenter
+            modifier =
+                Modifier.background(
+                        MaterialTheme.colorScheme.background.copy(alpha = 0.95f)
+                    )
+                    .verticalScroll(rememberScrollState()),
+            contentAlignment = Alignment.TopCenter,
         ) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier
-                    .padding(32.dp)
-                    .fillMaxWidth()
+                modifier = Modifier.padding(32.dp).fillMaxWidth(),
             ) {
                 Spacer(modifier = Modifier.height(4.dp))
 
@@ -159,69 +171,72 @@ private fun CustomAuthPasswordDialogContent(request: Any) {
                     isError = isError,
                     label = { Text("Password") },
                     placeholder = { Text("Enter your password") },
-                    visualTransformation = if (showPassword) {
-                        VisualTransformation.None
-                    } else {
-                        PasswordVisualTransformation()
-                    },
-                    keyboardOptions = if (isNumeric) {
-                        KeyboardOptions(
-                            keyboardType = KeyboardType.NumberPassword,
-                            imeAction = ImeAction.Done
-                        )
-                    } else {
-                        KeyboardOptions(
-                            keyboardType = KeyboardType.Password,
-                            imeAction = ImeAction.Done
-                        )
-                    },
-                    keyboardActions = KeyboardActions(
-                        onDone = { handleUnlock() },
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
-                        .requestFocusWhenPlaced(focusRequester),
+                    visualTransformation =
+                        if (showPassword) {
+                            VisualTransformation.None
+                        } else {
+                            PasswordVisualTransformation()
+                        },
+                    keyboardOptions =
+                        if (isNumeric) {
+                            KeyboardOptions(
+                                keyboardType = KeyboardType.NumberPassword,
+                                imeAction = ImeAction.Done,
+                            )
+                        } else {
+                            KeyboardOptions(
+                                keyboardType = KeyboardType.Password,
+                                imeAction = ImeAction.Done,
+                            )
+                        },
+                    keyboardActions = KeyboardActions(onDone = { handleUnlock() }),
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
+                            .requestFocusWhenPlaced(focusRequester),
                     singleLine = true,
                     trailingIcon = {
                         IconButton(
                             onClick = {
                                 password = ""
                             },
-                            enabled = password.isNotEmpty() && !waiting
+                            enabled = password.isNotEmpty() && !waiting,
                         ) {
                             Icon(
-                                painter = painterResource(R.drawable.baseline_clear_24),
-                                contentDescription = "Clear"
+                                painter =
+                                    painterResource(R.drawable.baseline_clear_24),
+                                contentDescription = "Clear",
                             )
                         }
-                    }
+                    },
                 )
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth().padding(top = 2.dp, start = 2.dp),
+                    modifier =
+                        Modifier.fillMaxWidth().padding(top = 2.dp, start = 2.dp),
                 ) {
                     Checkbox(
                         checked = showPassword,
                         onCheckedChange = {
                             showPassword = it
-                        }
+                        },
                     )
 
                     Text(
                         text = "Show password",
                         style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier
-                            .combinedClickable(
-                                interactionSource = remember {
-                                    MutableInteractionSource()
-                                },
+                        modifier =
+                            Modifier.combinedClickable(
+                                interactionSource =
+                                    remember {
+                                        MutableInteractionSource()
+                                    },
                                 indication = null,
                                 onClick = {
                                     showPassword = !showPassword
-                                }
-                            )
+                                },
+                            ),
                     )
                 }
 
@@ -229,7 +244,7 @@ private fun CustomAuthPasswordDialogContent(request: Any) {
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     TextButton(
                         onClick = {
@@ -238,11 +253,13 @@ private fun CustomAuthPasswordDialogContent(request: Any) {
                             AuthenticationManager.customAuthCancel(request)
                         },
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondary,
-                        ),
-                        enabled = !waiting
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor =
+                                    MaterialTheme.colorScheme.secondaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onSecondary,
+                            ),
+                        enabled = !waiting,
                     ) {
                         Text("Cancel")
                     }
@@ -250,7 +267,7 @@ private fun CustomAuthPasswordDialogContent(request: Any) {
                     Button(
                         onClick = { handleUnlock() },
                         modifier = Modifier.weight(1f),
-                        enabled = !waiting
+                        enabled = !waiting,
                     ) {
                         Text("Unlock")
                     }

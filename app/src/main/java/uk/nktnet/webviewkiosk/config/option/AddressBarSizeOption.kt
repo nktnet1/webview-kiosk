@@ -1,9 +1,9 @@
 package uk.nktnet.webviewkiosk.config.option
 
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.unit.TextUnit
 
 enum class AddressBarSizeOption(
     val label: String,
@@ -63,8 +63,7 @@ enum class AddressBarSizeOption(
     companion object {
         fun fromString(value: String?): AddressBarSizeOption {
             return entries.find {
-                it.name.equals(value, true)
-                || it.label.equals(value, true)
+                it.name.equals(value, true) || it.label.equals(value, true)
             } ?: MEDIUM
         }
     }

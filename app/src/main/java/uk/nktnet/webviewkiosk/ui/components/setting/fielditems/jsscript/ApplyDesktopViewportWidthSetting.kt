@@ -17,8 +17,10 @@ fun ApplyDesktopViewportWidthSetting() {
     val settingKey = UserSettingsKeys.JsScripts.APPLY_DESKTOP_VIEWPORT_WIDTH
 
     NumberSettingFieldItem(
-        label = stringResource(R.string.js_scripts_apply_desktop_viewport_width_title),
-        infoText = """
+        label =
+            stringResource(R.string.js_scripts_apply_desktop_viewport_width_title),
+        infoText =
+            """
             This script creates or updates the page's viewport meta element,
             setting its content to 'width=YOUR_WIDTH_VALUE' to request a
             desktop-sized viewport.
@@ -40,13 +42,14 @@ fun ApplyDesktopViewportWidthSetting() {
             The minimum possible value is ${Constants.MIN_DESKTOP_WIDTH}.
 
             To disable, use the value 0.
-        """.trimIndent(),
+        """
+                .trimIndent(),
         initialValue = userSettings.applyDesktopViewportWidth,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         min = Constants.MIN_DESKTOP_WIDTH,
         max = Constants.MAX_INT_SETTING,
         placeholder = "e.g. 1024 (or 0 to disable)",
-        onSave = { userSettings.applyDesktopViewportWidth = it }
+        onSave = { userSettings.applyDesktopViewportWidth = it },
     )
 }

@@ -33,9 +33,7 @@ import uk.nktnet.webviewkiosk.utils.openSettings
 import uk.nktnet.webviewkiosk.utils.safeStartActivity
 
 @Composable
-fun SettingsHeaderMenu(
-    navController: NavController,
-) {
+fun SettingsHeaderMenu(navController: NavController) {
     val context = LocalContext.current
 
     val tintColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
@@ -57,25 +55,24 @@ fun SettingsHeaderMenu(
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         SettingLabel(
             navController = navController,
             label = stringResource(R.string.settings_title),
             endIcon = {
-                Box(
-                    modifier = Modifier.align(Alignment.Bottom)
-                ) {
+                Box(modifier = Modifier.align(Alignment.Bottom)) {
                     IconButton(onClick = { showMenu = true }) {
                         Icon(
-                            painter = painterResource(R.drawable.outline_more_vert_24),
+                            painter =
+                                painterResource(R.drawable.outline_more_vert_24),
                             contentDescription = "Menu",
-                            tint = MaterialTheme.colorScheme.onSurface
+                            tint = MaterialTheme.colorScheme.onSurface,
                         )
                     }
                     DropdownMenu(
                         expanded = showMenu,
-                        onDismissRequest = { showMenu = false }
+                        onDismissRequest = { showMenu = false },
                     ) {
                         DropdownMenuItem(
                             text = { Text("Import", color = tintColor) },
@@ -85,11 +82,14 @@ fun SettingsHeaderMenu(
                             },
                             leadingIcon = {
                                 Icon(
-                                    painter = painterResource(R.drawable.outline_drive_folder_upload_24),
+                                    painter =
+                                        painterResource(
+                                            R.drawable.outline_drive_folder_upload_24
+                                        ),
                                     contentDescription = null,
-                                    tint = tintColor
+                                    tint = tintColor,
                                 )
-                            }
+                            },
                         )
                         DropdownMenuItem(
                             text = { Text("Export", color = tintColor) },
@@ -99,17 +99,20 @@ fun SettingsHeaderMenu(
                             },
                             leadingIcon = {
                                 Icon(
-                                    painter = painterResource(R.drawable.outline_file_export_24),
+                                    painter =
+                                        painterResource(
+                                            R.drawable.outline_file_export_24
+                                        ),
                                     contentDescription = null,
-                                    tint = tintColor
+                                    tint = tintColor,
                                 )
-                            }
+                            },
                         )
                         DropdownMenuItem(
                             text = {
                                 Text(
                                     "Settings",
-                                    color = tintColor
+                                    color = tintColor,
                                 )
                             },
                             onClick = {
@@ -118,11 +121,14 @@ fun SettingsHeaderMenu(
                             },
                             leadingIcon = {
                                 Icon(
-                                    painter = painterResource(R.drawable.baseline_app_settings_alt_24),
+                                    painter =
+                                        painterResource(
+                                            R.drawable.baseline_app_settings_alt_24
+                                        ),
                                     contentDescription = null,
-                                    tint = tintColor
+                                    tint = tintColor,
                                 )
-                            }
+                            },
                         )
                         DropdownMenuItem(
                             text = { Text("Launcher", color = tintColor) },
@@ -132,44 +138,57 @@ fun SettingsHeaderMenu(
                             },
                             leadingIcon = {
                                 Icon(
-                                    painter = painterResource(R.drawable.baseline_rocket_24),
+                                    painter =
+                                        painterResource(
+                                            R.drawable.baseline_rocket_24
+                                        ),
                                     contentDescription = null,
                                     tint = tintColor,
                                 )
-                            }
+                            },
                         )
                         DropdownMenuItem(
                             text = { Text("Help", color = tintColor) },
                             onClick = {
                                 showMenu = false
-                                val intent = Intent(Intent.ACTION_VIEW, Constants.DOCUMENTATION_URL.toUri())
+                                val intent =
+                                    Intent(
+                                        Intent.ACTION_VIEW,
+                                        Constants.DOCUMENTATION_URL.toUri(),
+                                    )
                                 safeStartActivity(context, intent)
                             },
                             leadingIcon = {
                                 Icon(
-                                    painter = painterResource(R.drawable.baseline_info_24),
+                                    painter =
+                                        painterResource(R.drawable.baseline_info_24),
                                     contentDescription = null,
-                                    tint = tintColor
+                                    tint = tintColor,
                                 )
-                            }
+                            },
                         )
                         DropdownMenuItem(
                             text = { Text("More", color = tintColor) },
                             onClick = {
                                 showMenu = false
-                                navController.navigate(Screen.SettingsMoreActions.route)
+                                navController.navigate(
+                                    Screen.SettingsMoreActions.route
+                                )
                             },
                             leadingIcon = {
                                 Icon(
-                                    painter = painterResource(R.drawable.outline_widgets_24),
+                                    painter =
+                                        painterResource(
+                                            R.drawable.outline_widgets_24
+                                        ),
                                     contentDescription = null,
-                                    tint = tintColor
+                                    tint = tintColor,
                                 )
-                            }
+                            },
                         )
                     }
                 }
-            }
+            },
         )
     }
 }

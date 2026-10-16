@@ -13,9 +13,13 @@ fun resolveUrlOrSearch(searchProviderUrl: String, input: String): String {
     if (domainRegex.matches(trimmed)) {
         return "https://$trimmed"
     }
-    val ipWithOptionalPortRegex = Regex("""^(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?(?:/.*)?$""")
+    val ipWithOptionalPortRegex =
+        Regex("""^(?:\d{1,3}\.){3}\d{1,3}(?::\d+)?(?:/.*)?$""")
     val localhostWithPortRegex = Regex("""^localhost:\d+(?:/.*)?$""")
-    if (ipWithOptionalPortRegex.matches(trimmed) || localhostWithPortRegex.matches(trimmed)) {
+    if (
+        ipWithOptionalPortRegex.matches(trimmed) ||
+            localhostWithPortRegex.matches(trimmed)
+    ) {
         return "http://$trimmed"
     }
     return "${searchProviderUrl}${Uri.encode(trimmed)}"

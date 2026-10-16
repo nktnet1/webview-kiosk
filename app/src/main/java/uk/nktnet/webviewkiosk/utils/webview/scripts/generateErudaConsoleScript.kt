@@ -3,7 +3,8 @@ package uk.nktnet.webviewkiosk.utils.webview.scripts
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 
 fun generateErudaConsoleScript(appName: String): String {
-    val rawScript = """
+    val rawScript =
+        """
         if (window.eruda || document.getElementById('__eruda_loader')) {
             return;
         }
@@ -40,7 +41,8 @@ fun generateErudaConsoleScript(appName: String): String {
         if (target) {
             target.appendChild(script);
         }
-    """.trimIndent()
+    """
+            .trimIndent()
 
     return wrapJsInIIFE(rawScript)
 }

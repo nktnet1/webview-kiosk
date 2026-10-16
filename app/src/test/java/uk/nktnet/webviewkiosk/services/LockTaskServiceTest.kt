@@ -38,31 +38,48 @@ class LockTaskServiceTest {
     fun setUp() {
         context = RuntimeEnvironment.getApplication()
         // Android grants the app's declared signature permission to its own UID.
-        shadowOf(RuntimeEnvironment.getApplication()).grantPermissions(
-            "${context.packageName}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION",
-        )
+        shadowOf(RuntimeEnvironment.getApplication())
+            .grantPermissions(
+                "${context.packageName}.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+            )
         val activityManager = context.getSystemService(ActivityManager::class.java)
-        shadowOf(activityManager).setLockTaskModeState(ActivityManager.LOCK_TASK_MODE_LOCKED)
+        shadowOf(activityManager)
+            .setLockTaskModeState(ActivityManager.LOCK_TASK_MODE_LOCKED)
         controller = Robolectric.buildService(LockTaskService::class.java).create()
         service = controller.get()
     }
 
     @After
     fun tearDown() {
-        if (!destroyed) controller.destroy()
+        if (!destroyed) {
+            controller.destroy()
+        }
     }
 
     @Test
     fun nullIntentRestartCreatesItsNotificationChannelWithoutAnActivity() {
         val manager = context.getSystemService(NotificationManager::class.java)
-        assertEquals(null, manager.getNotificationChannel(CustomNotificationChannel.LockTaskMode.ID))
+        assertEquals(
+            null,
+            manager.getNotificationChannel(
+                CustomNotificationChannel.LockTaskMode.ID
+            ),
+        )
 
         assertEquals(Service.START_STICKY, start())
 
-        assertNotNull(manager.getNotificationChannel(CustomNotificationChannel.LockTaskMode.ID))
+        assertNotNull(
+            manager.getNotificationChannel(CustomNotificationChannel.LockTaskMode.ID)
+        )
         val notification = shadowOf(service).lastForegroundNotification
-        assertEquals(CustomNotificationType.LOCK_TASK_MODE, shadowOf(service).lastForegroundNotificationId)
-        assertEquals(CustomNotificationChannel.LockTaskMode.ID, notification.channelId)
+        assertEquals(
+            CustomNotificationType.LOCK_TASK_MODE,
+            shadowOf(service).lastForegroundNotificationId,
+        )
+        assertEquals(
+            CustomNotificationChannel.LockTaskMode.ID,
+            notification.channelId,
+        )
         assertTrue(notification.flags and Notification.FLAG_ONGOING_EVENT != 0)
         assertNotNull(notification.contentIntent)
     }
@@ -72,7 +89,9 @@ class LockTaskServiceTest {
     fun nullIntentRestartCreatesItsChannelOnTheApi29ForegroundPath() {
         assertEquals(Service.START_STICKY, start())
         val manager = context.getSystemService(NotificationManager::class.java)
-        assertNotNull(manager.getNotificationChannel(CustomNotificationChannel.LockTaskMode.ID))
+        assertNotNull(
+            manager.getNotificationChannel(CustomNotificationChannel.LockTaskMode.ID)
+        )
     }
 
     @Test
@@ -81,12 +100,16 @@ class LockTaskServiceTest {
         assertEquals(Service.START_STICKY, start(2))
 
         assertEquals(1, returnReceiverCount())
-        assertEquals(CustomNotificationType.LOCK_TASK_MODE, shadowOf(service).lastForegroundNotificationId)
+        assertEquals(
+            CustomNotificationType.LOCK_TASK_MODE,
+            shadowOf(service).lastForegroundNotificationId,
+        )
     }
 
     @Test
     fun foregroundDenialDoesNotLeaveAReturnReceiverUntilDestroy() {
-        shadowOf(service).setThrowInStartForeground(SecurityException("foreground denied"))
+        shadowOf(service)
+            .setThrowInStartForeground(SecurityException("foreground denied"))
 
         assertEquals(Service.START_NOT_STICKY, start(7))
 
@@ -97,7 +120,8 @@ class LockTaskServiceTest {
     @Test
     fun denialOfARepeatedStartRemovesThePreviousReceiverImmediately() {
         start()
-        shadowOf(service).setThrowInStartForeground(SecurityException("foreground revoked"))
+        shadowOf(service)
+            .setThrowInStartForeground(SecurityException("foreground revoked"))
 
         assertEquals(Service.START_NOT_STICKY, start(8))
 
@@ -109,7 +133,9 @@ class LockTaskServiceTest {
     fun returnBroadcastStopsMonitoringAndUnregistersImmediately() {
         start()
 
-        context.sendBroadcast(Intent(LockTaskService.RETURN_ACTION).setPackage(context.packageName))
+        context.sendBroadcast(
+            Intent(LockTaskService.RETURN_ACTION).setPackage(context.packageName)
+        )
         shadowOf(Looper.getMainLooper()).idle()
 
         assertTrue(shadowOf(service).isStoppedBySelf)
@@ -130,6 +156,8 @@ class LockTaskServiceTest {
 
     private fun hasReturnReceiver() = returnReceiverCount() > 0
 
-    private fun returnReceiverCount() = shadowOf(RuntimeEnvironment.getApplication())
-        .registeredReceivers.count { it.intentFilter.hasAction(LockTaskService.RETURN_ACTION) }
+    private fun returnReceiverCount() =
+        shadowOf(RuntimeEnvironment.getApplication()).registeredReceivers.count {
+            it.intentFilter.hasAction(LockTaskService.RETURN_ACTION)
+        }
 }

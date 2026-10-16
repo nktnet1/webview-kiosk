@@ -17,12 +17,14 @@ fun BlockVolumeKeysSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.device_block_volume_keys_title),
-        infoText = """
+        infoText =
+            """
             Prevent users from changing the device volume using hardware keys while in the kiosk app.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.blockVolumeKeys,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.blockVolumeKeys = it }
+        onSave = { userSettings.blockVolumeKeys = it },
     )
 }

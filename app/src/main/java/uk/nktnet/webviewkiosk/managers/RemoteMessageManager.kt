@@ -2,6 +2,8 @@ package uk.nktnet.webviewkiosk.managers
 
 import android.content.Context
 import android.util.Log
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
@@ -17,8 +19,6 @@ import uk.nktnet.webviewkiosk.config.remote.inbound.InboundCommandMessage
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundRequestMessage
 import uk.nktnet.webviewkiosk.config.remote.inbound.InboundSettingsMessage
 import uk.nktnet.webviewkiosk.handlers.RemoteInboundHandler
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicBoolean
 
 object RemoteMessageManager {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -27,20 +27,28 @@ object RemoteMessageManager {
     private val settingsAppliedMutex = Mutex()
     private val requestsMutex = Mutex()
 
-    private data class MqttCommandHost(val context: Context, val canHandle: () -> Boolean)
+    private data class MqttCommandHost(
+        val context: Context,
+        val canHandle: () -> Boolean,
+    )
+
     private data class WebViewCommandHandler(
         val canHandle: () -> Boolean,
         val handle: (InboundCommandMessage) -> Unit,
     )
 
     private val mqttCommandHosts = CopyOnWriteArrayList<MqttCommandHost>()
-    private val webViewCommandHandlers = CopyOnWriteArrayList<WebViewCommandHandler>()
+    private val webViewCommandHandlers =
+        CopyOnWriteArrayList<WebViewCommandHandler>()
 
     data class RemoteMessage<T>(
         val message: T,
-        val source: Source
+        val source: Source,
     ) {
-        enum class Source { MQTT, UNIFIEDPUSH }
+        enum class Source {
+            MQTT,
+            UNIFIEDPUSH,
+        }
 
         private val claimed = AtomicBoolean(false)
 
@@ -49,18 +57,33 @@ object RemoteMessageManager {
     }
 
     val commandsFlow: SharedFlow<RemoteMessage<InboundCommandMessage>>
-        field = MutableSharedFlow<RemoteMessage<InboundCommandMessage>>(extraBufferCapacity = 100)
+        field =
+            MutableSharedFlow<RemoteMessage<InboundCommandMessage>>(
+                extraBufferCapacity = 100
+            )
 
     val settingsFlow: SharedFlow<RemoteMessage<InboundSettingsMessage>>
-        field = MutableSharedFlow<RemoteMessage<InboundSettingsMessage>>(extraBufferCapacity = 100)
+        field =
+            MutableSharedFlow<RemoteMessage<InboundSettingsMessage>>(
+                extraBufferCapacity = 100
+            )
 
     val settingsAppliedFlow: SharedFlow<RemoteMessage<InboundSettingsMessage>>
-        field = MutableSharedFlow<RemoteMessage<InboundSettingsMessage>>(extraBufferCapacity = 100)
+        field =
+            MutableSharedFlow<RemoteMessage<InboundSettingsMessage>>(
+                extraBufferCapacity = 100
+            )
 
     val requestsFlow: SharedFlow<RemoteMessage<InboundRequestMessage>>
-        field = MutableSharedFlow<RemoteMessage<InboundRequestMessage>>(extraBufferCapacity = 100)
+        field =
+            MutableSharedFlow<RemoteMessage<InboundRequestMessage>>(
+                extraBufferCapacity = 100
+            )
 
-    fun registerMqttCommandHost(context: Context, canHandle: () -> Boolean): () -> Unit {
+    fun registerMqttCommandHost(
+        context: Context,
+        canHandle: () -> Boolean,
+    ): () -> Unit {
         val host = MqttCommandHost(context.applicationContext, canHandle)
         mqttCommandHosts.add(host)
         return { mqttCommandHosts.remove(host) }
@@ -82,39 +105,60 @@ object RemoteMessageManager {
         onFailure: ((Exception) -> Unit)? = null,
     ) {
         val appContext = context?.applicationContext
-        // Queue before dispatching, and hold the FIFO slot through native and UI execution.
-        // The process scope keeps pending commands alive if a connector callback ends.
+        // Queue before dispatching, and hold the FIFO slot through native and UI
+        // execution.
+        // The process scope keeps pending commands alive if a connector callback
+        // ends.
         scope.launch(start = CoroutineStart.UNDISPATCHED) {
             commandsMutex.withLock {
                 withContext(Dispatchers.Main) {
                     var nativeContext = appContext
 
                     fun reportFailure(e: Exception) {
-                        Log.e(javaClass.simpleName, "Failed to handle $source command", e)
-                        // A retired observer must not turn a handled command error into a
-                        // dropped completion event or prevent the next queued command.
+                        Log.e(
+                            javaClass.simpleName,
+                            "Failed to handle $source command",
+                            e,
+                        )
+                        // A retired observer must not turn a handled command error
+                        // into a
+                        // dropped completion event or prevent the next queued
+                        // command.
                         try {
                             if (onFailure != null) {
                                 onFailure(e)
                             } else {
-                                nativeContext?.let { ToastManager.show(it, "$source: failed to handle command.") }
+                                nativeContext?.let {
+                                    ToastManager.show(
+                                        it,
+                                        "$source: failed to handle command.",
+                                    )
+                                }
                             }
                         } catch (reportError: Exception) {
-                            Log.e(javaClass.simpleName, "Failed to report $source command error", reportError)
+                            Log.e(
+                                javaClass.simpleName,
+                                "Failed to report $source command error",
+                                reportError,
+                            )
                         }
                     }
 
-                    if (nativeContext == null && source == RemoteMessage.Source.MQTT) {
+                    if (
+                        nativeContext == null && source == RemoteMessage.Source.MQTT
+                    ) {
                         for (host in mqttCommandHosts) {
-                            val eligible = try {
-                                host.canHandle()
-                            } catch (e: CancellationException) {
-                                throw e
-                            } catch (e: Exception) {
-                                reportFailure(e)
-                                false
-                            }
-                            // canHandle may synchronously unregister its activity/service.
+                            val eligible =
+                                try {
+                                    host.canHandle()
+                                } catch (e: CancellationException) {
+                                    throw e
+                                } catch (e: Exception) {
+                                    reportFailure(e)
+                                    false
+                                }
+                            // canHandle may synchronously unregister its
+                            // activity/service.
                             if (eligible && mqttCommandHosts.contains(host)) {
                                 nativeContext = host.context
                                 break
@@ -126,7 +170,10 @@ object RemoteMessageManager {
                         val selectedNativeContext = nativeContext
                         if (selectedNativeContext != null) {
                             withContext(Dispatchers.IO) {
-                                RemoteInboundHandler.handleInboundCommand(selectedNativeContext, command)
+                                RemoteInboundHandler.handleInboundCommand(
+                                    selectedNativeContext,
+                                    command,
+                                )
                             }
                         }
                     } catch (e: CancellationException) {
@@ -135,18 +182,22 @@ object RemoteMessageManager {
                         reportFailure(e)
                     }
                     try {
-                        // Resolve the active screen after native work, since it may have changed
+                        // Resolve the active screen after native work, since it may
+                        // have changed
                         // while device-owner initialization was suspended.
                         for (handler in webViewCommandHandlers) {
-                            val eligible = try {
-                                handler.canHandle()
-                            } catch (e: CancellationException) {
-                                throw e
-                            } catch (e: Exception) {
-                                reportFailure(e)
-                                false
-                            }
-                            if (eligible && webViewCommandHandlers.contains(handler)) {
+                            val eligible =
+                                try {
+                                    handler.canHandle()
+                                } catch (e: CancellationException) {
+                                    throw e
+                                } catch (e: Exception) {
+                                    reportFailure(e)
+                                    false
+                                }
+                            if (
+                                eligible && webViewCommandHandlers.contains(handler)
+                            ) {
                                 handler.handle(command)
                                 break
                             }
@@ -156,30 +207,47 @@ object RemoteMessageManager {
                     } catch (e: Exception) {
                         reportFailure(e)
                     }
-                    // This flow is an observation of completed dispatch, not an execution queue.
+                    // This flow is an observation of completed dispatch, not an
+                    // execution queue.
                     commandsFlow.emit(RemoteMessage(command, source))
                 }
             }
         }
     }
 
-    fun emitSettings(settings: InboundSettingsMessage, source: RemoteMessage.Source) {
+    fun emitSettings(
+        settings: InboundSettingsMessage,
+        source: RemoteMessage.Source,
+    ) {
         emitOrdered(settingsFlow, settingsMutex, RemoteMessage(settings, source))
     }
 
-    fun emitSettingsApplied(settings: InboundSettingsMessage, source: RemoteMessage.Source) {
-        emitOrdered(settingsAppliedFlow, settingsAppliedMutex, RemoteMessage(settings, source))
+    fun emitSettingsApplied(
+        settings: InboundSettingsMessage,
+        source: RemoteMessage.Source,
+    ) {
+        emitOrdered(
+            settingsAppliedFlow,
+            settingsAppliedMutex,
+            RemoteMessage(settings, source),
+        )
     }
 
     fun emitRequest(request: InboundRequestMessage, source: RemoteMessage.Source) {
         emitOrdered(requestsFlow, requestsMutex, RemoteMessage(request, source))
     }
 
-    private fun <T> emitOrdered(flow: MutableSharedFlow<T>, mutex: Mutex, message: T) {
-        // Join this stream's FIFO queue before dispatching; other streams remain independent.
+    private fun <T> emitOrdered(
+        flow: MutableSharedFlow<T>,
+        mutex: Mutex,
+        message: T,
+    ) {
+        // Join this stream's FIFO queue before dispatching; other streams remain
+        // independent.
         scope.launch(start = CoroutineStart.UNDISPATCHED) {
             mutex.withLock {
-                // Emit in a dispatched child so a busy subscriber cannot block the callback.
+                // Emit in a dispatched child so a busy subscriber cannot block the
+                // callback.
                 launch { flow.emit(message) }.join()
             }
         }

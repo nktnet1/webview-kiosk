@@ -50,9 +50,7 @@ private fun RoundIconButton(
         enabled = enabled,
         onClick = onClick,
         modifier = Modifier.size(32.dp),
-        colors = IconButtonDefaults.iconButtonColors(
-            contentColor = iconTint,
-        )
+        colors = IconButtonDefaults.iconButtonColors(contentColor = iconTint),
     ) {
         Icon(
             painter = painterResource(iconRes),
@@ -81,7 +79,8 @@ fun WebViewFindBar(
     var doneSearching by remember { mutableStateOf(false) }
 
     LaunchedEffect(webView) {
-        webView.setFindListener { activeMatchOrdinal, numberOfMatches, isDoneCounting ->
+        webView.setFindListener { activeMatchOrdinal, numberOfMatches, isDoneCounting
+            ->
             currentMatch = activeMatchOrdinal + 1
             totalMatches = numberOfMatches
             doneSearching = isDoneCounting
@@ -89,12 +88,13 @@ fun WebViewFindBar(
     }
 
     Row(
-        modifier = modifier
-            .wrapContentSize()
-            .background(MaterialTheme.colorScheme.surface)
-            .padding(vertical = 4.dp, horizontal = 8.dp),
+        modifier =
+            modifier
+                .wrapContentSize()
+                .background(MaterialTheme.colorScheme.surface)
+                .padding(vertical = 4.dp, horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         BasicTextField(
             value = query,
@@ -104,87 +104,95 @@ fun WebViewFindBar(
                 webView.findAllAsync(it)
             },
             singleLine = true,
-            textStyle = LocalTextStyle.current.copy(
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 14.sp
-            ),
-            modifier = Modifier
-                .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
-                .requestFocusWhenPlaced(
-                    focusRequester = focusRequester,
-                    requestKey = focusRequestKey,
-                )
-                .weight(1f),
-            keyboardOptions = KeyboardOptions.Default.copy(
-                imeAction = ImeAction.Next
-            ),
-            keyboardActions = KeyboardActions(
-                onNext = { webView.findNext(true) }
-            ),
+            textStyle =
+                LocalTextStyle.current.copy(
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 14.sp,
+                ),
+            modifier =
+                Modifier.defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
+                    .requestFocusWhenPlaced(
+                        focusRequester = focusRequester,
+                        requestKey = focusRequestKey,
+                    )
+                    .weight(1f),
+            keyboardOptions =
+                KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = { webView.findNext(true) }),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             decorationBox = { innerTextField ->
                 Row(
-                    modifier = Modifier
-                        .wrapContentSize()
-                        .background(MaterialTheme.colorScheme.surface)
-                        .height(45.dp)
-                        .padding(horizontal = 6.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    modifier =
+                        Modifier.wrapContentSize()
+                            .background(MaterialTheme.colorScheme.surface)
+                            .height(45.dp)
+                            .padding(horizontal = 6.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(
                         modifier = Modifier.weight(1f),
-                        contentAlignment = Alignment.CenterStart
+                        contentAlignment = Alignment.CenterStart,
                     ) {
                         if (query.isEmpty()) {
                             Text(
                                 "Find in page",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                                ),
+                                style =
+                                    MaterialTheme.typography.bodyMedium.copy(
+                                        color =
+                                            MaterialTheme.colorScheme.onSurface.copy(
+                                                alpha = 0.6f
+                                            )
+                                    ),
                             )
                         }
                         innerTextField()
                     }
 
                     if (query.isNotEmpty()) {
-                        val displayMatch = if (totalMatches == 0) {
-                            0
-                        } else {
-                            currentMatch
-                        }
+                        val displayMatch =
+                            if (totalMatches == 0) {
+                                0
+                            } else {
+                                currentMatch
+                            }
                         Text(
                             "$displayMatch/$totalMatches",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = if (doneSearching && totalMatches == 0) {
-                                    MaterialTheme.colorScheme.error
-                                } else {
-                                    MaterialTheme.colorScheme.onSurface
-                                    MaterialTheme.colorScheme.onSurface.copy(
-                                        alpha = if (doneSearching) 1f else 0.5f
-                                    )
-                                },
-                            ),
-                            modifier = Modifier.padding(start = 4.dp)
+                            style =
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    color =
+                                        if (doneSearching && totalMatches == 0) {
+                                            MaterialTheme.colorScheme.error
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                            MaterialTheme.colorScheme.onSurface.copy(
+                                                alpha =
+                                                    if (doneSearching) {
+                                                        1f
+                                                    } else {
+                                                        0.5f
+                                                    }
+                                            )
+                                        }
+                                ),
+                            modifier = Modifier.padding(start = 4.dp),
                         )
                     }
                 }
-            }
+            },
         )
 
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             RoundIconButton(
                 enabled = totalMatches > 1,
                 iconRes = R.drawable.keyboard_arrow_up_24,
                 contentDesc = "Next",
-                onClick = { webView.findNext(false) }
+                onClick = { webView.findNext(false) },
             )
             RoundIconButton(
                 enabled = totalMatches > 1,
                 iconRes = R.drawable.keyboard_arrow_down_24,
                 contentDesc = "Previous",
-                onClick = { webView.findNext(true) }
+                onClick = { webView.findNext(true) },
             )
             RoundIconButton(
                 iconRes = R.drawable.baseline_clear_24,
@@ -195,7 +203,7 @@ fun WebViewFindBar(
                     webView.clearMatches()
                     currentMatch = 0
                     totalMatches = 0
-                }
+                },
             )
         }
     }

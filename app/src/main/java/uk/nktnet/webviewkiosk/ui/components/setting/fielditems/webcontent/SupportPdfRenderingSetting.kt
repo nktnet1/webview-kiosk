@@ -43,7 +43,9 @@ fun SupportPdfRenderingSetting() {
     var assetsBusy by remember { mutableStateOf(false) }
 
     fun updateAssets(download: Boolean) {
-        if (restricted || assetsBusy) return
+        if (restricted || assetsBusy) {
+            return
+        }
         assetsBusy = true
         coroutineScope.launch {
             try {
@@ -62,7 +64,8 @@ fun SupportPdfRenderingSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_content_support_pdf_rendering_title),
-        infoText = """
+        infoText =
+            """
             Set to true to support PDF Rendering using Mozilla's PDF.js renderer:
 
             - https://github.com/mozilla/pdf.js
@@ -79,17 +82,19 @@ fun SupportPdfRenderingSetting() {
             For more details, see:
 
             https://developer.android.com/reference/androidx/webkit/WebViewAssetLoader
-        """.trimIndent(),
+        """
+                .trimIndent(),
         initialValue = userSettings.supportPdfRendering,
         settingKey = settingKey,
-        restricted = restricted ,
+        restricted = restricted,
         onSave = { userSettings.supportPdfRendering = it },
         itemText = { value ->
-            val supportText = if (assetsReady) {
-                ""
-            } else {
-                "(missing assets)"
-            }
+            val supportText =
+                if (assetsReady) {
+                    ""
+                } else {
+                    "(missing assets)"
+                }
             if (value) {
                 "True $supportText"
             } else {
@@ -103,38 +108,50 @@ fun SupportPdfRenderingSetting() {
                     Button(
                         enabled = !restricted && !assetsBusy,
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError
-                        ),
-                        onClick = { updateAssets(download = false) }
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.error,
+                                contentColor = MaterialTheme.colorScheme.onError,
+                            ),
+                        onClick = { updateAssets(download = false) },
                     ) {
                         Text(
-                            text = if (assetsBusy) "Deleting PDF.js..." else "Delete PDF.js assets",
+                            text =
+                                if (assetsBusy) {
+                                    "Deleting PDF.js..."
+                                } else {
+                                    "Delete PDF.js assets"
+                                },
                             textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.labelMedium
+                            style = MaterialTheme.typography.labelMedium,
                         )
                     }
                 } else {
                     Button(
                         enabled = !restricted && !assetsBusy,
                         modifier = Modifier.fillMaxWidth(),
-                        onClick = { updateAssets(download = true) }
+                        onClick = { updateAssets(download = true) },
                     ) {
                         Text(
-                            text = if (assetsBusy) "Downloading PDF.js..." else "Download PDF.js assets",
+                            text =
+                                if (assetsBusy) {
+                                    "Downloading PDF.js..."
+                                } else {
+                                    "Download PDF.js assets"
+                                },
                             textAlign = TextAlign.Center,
-                            style = MaterialTheme.typography.labelMedium
+                            style = MaterialTheme.typography.labelMedium,
                         )
                     }
                     Text(
-                        text = "PDF rendering cannot be used until PDF.js assets are downloaded.",
+                        text =
+                            "PDF rendering cannot be used until PDF.js assets are downloaded.",
                         modifier = Modifier.padding(top = 6.dp),
                         color = MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.labelMedium,
                     )
                 }
             }
-        }
+        },
     )
 }

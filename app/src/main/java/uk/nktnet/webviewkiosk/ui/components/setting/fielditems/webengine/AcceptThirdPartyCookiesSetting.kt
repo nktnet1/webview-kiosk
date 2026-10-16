@@ -21,6 +21,6 @@ fun AcceptThirdPartyCookiesSetting() {
         initialValue = userSettings.acceptThirdPartyCookies,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.acceptThirdPartyCookies = it }
+        onSave = { userSettings.acceptThirdPartyCookies = it },
     )
 }

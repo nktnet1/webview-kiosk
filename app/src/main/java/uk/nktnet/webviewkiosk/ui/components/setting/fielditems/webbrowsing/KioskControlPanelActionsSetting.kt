@@ -17,8 +17,10 @@ fun KioskControlPanelActionsSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.KIOSK_CONTROL_PANEL_ACTIONS
 
     EnumListSettingFieldItem(
-        label = stringResource(R.string.web_browsing_kiosk_control_panel_actions_title),
-        infoText = """
+        label =
+            stringResource(R.string.web_browsing_kiosk_control_panel_actions_title),
+        infoText =
+            """
             Manage visible actions in the kiosk control panel.
 
             Use the drag handle at the end to reorder the items.
@@ -29,14 +31,16 @@ fun KioskControlPanelActionsSetting() {
             When in unlocked mode, if "Appearance -> Floating Toolbar Mode" is
             set to Hidden, the "SETTINGS" action will be appended to the end
             if not configured.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         entries = WebviewControlActionOption.entries,
         getLabel = { it.label },
-        getDefault = { WebviewControlActionOption.getDefaultKioskControlPanelOptions() },
+        getDefault = {
+            WebviewControlActionOption.getDefaultKioskControlPanelOptions()
+        },
         initialValue = userSettings.kioskControlPanelActions,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-
-        onSave = { newList -> userSettings.kioskControlPanelActions = newList }
+        onSave = { newList -> userSettings.kioskControlPanelActions = newList },
     )
 }

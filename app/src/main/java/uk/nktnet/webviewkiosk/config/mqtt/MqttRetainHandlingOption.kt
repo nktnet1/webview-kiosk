@@ -15,10 +15,10 @@ enum class MqttRetainHandlingOption(val code: Int, val label: String) {
     companion object {
         fun fromString(value: String?): MqttRetainHandlingOption =
             entries.find {
-                it.name.equals(value, ignoreCase = true)
-                || it.label.equals(value, ignoreCase = true)
-                || it.code.toString() == value
-                || it.getSettingLabel() == value
+                it.name.equals(value, ignoreCase = true) ||
+                    it.label.equals(value, ignoreCase = true) ||
+                    it.code.toString() == value ||
+                    it.getSettingLabel() == value
             } ?: DO_NOT_SEND
     }
 }

@@ -38,15 +38,18 @@ data class InboundSettingsRequest(
     val data: SettingsRequestData = SettingsRequestData(),
 ) : InboundRequestMessage {
     @Serializable
-    data class SettingsRequestData(
-        val settings: Array<JsonElement> = emptyArray(),
-    ) {
+    data class SettingsRequestData(val settings: Array<JsonElement> = emptyArray()) {
         override fun equals(other: Any?): Boolean {
-            if (this === other) return true
-            if (javaClass != other?.javaClass) return false
+            if (this === other) {
+                return true
+            }
+            if (javaClass != other?.javaClass) {
+                return false
+            }
             other as SettingsRequestData
             return settings.contentEquals(other.settings)
         }
+
         override fun hashCode(): Int {
             return settings.contentHashCode()
         }
@@ -73,13 +76,11 @@ data class InboundLaunchablePackagesRequest(
     override val targetUsernames: Set<String>? = null,
     override var responseTopic: String? = null,
     override var correlationData: String? = null,
-    val data: Data = Data()
+    val data: Data = Data(),
 ) : InboundRequestMessage {
     override fun toString() = "get_launchable_packages"
-    @Serializable
-    data class Data(
-        val filterLockTaskPermitted: Boolean = false,
-    )
+
+    @Serializable data class Data(val filterLockTaskPermitted: Boolean = false)
 }
 
 @Serializable
@@ -108,6 +109,7 @@ data class InboundErrorRequest(
     override fun toString() = "Request Error: $error"
 }
 
-val InboundRequestJsonParser = Json(BaseJson) {
-    classDiscriminator = "requestType"
-}
+val InboundRequestJsonParser =
+    Json(BaseJson) {
+        classDiscriminator = "requestType"
+    }

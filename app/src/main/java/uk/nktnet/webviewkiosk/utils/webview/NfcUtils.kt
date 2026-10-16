@@ -6,11 +6,13 @@ import android.nfc.NfcAdapter
 fun getNfcAdapterOrNull(context: Context): NfcAdapter? {
     return runCatching {
         NfcAdapter.getDefaultAdapter(context)
-    }.getOrNull()
+    }
+        .getOrNull()
 }
 
 fun isNfcEnabled(context: Context): Boolean {
     return runCatching {
-        getNfcAdapterOrNull(context)?.isEnabled == true
-    }.getOrDefault(false)
+            getNfcAdapterOrNull(context)?.isEnabled == true
+        }
+        .getOrDefault(false)
 }

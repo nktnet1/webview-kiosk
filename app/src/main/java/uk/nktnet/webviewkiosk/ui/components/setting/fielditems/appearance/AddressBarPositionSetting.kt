@@ -18,9 +18,11 @@ fun AddressBarPositionSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.appearance_address_bar_position_title),
-        infoText = """
+        infoText =
+            """
             Customise the position of the address bar - either top or bottom.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         options = AddressBarPositionOption.entries,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

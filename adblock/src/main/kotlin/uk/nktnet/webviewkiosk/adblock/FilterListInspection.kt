@@ -29,6 +29,6 @@ fun inspectFilterList(text: String): FilterRuleCounts {
         network,
         cosmetic,
         unsupported,
-        invalid
+        invalid,
     )
 }

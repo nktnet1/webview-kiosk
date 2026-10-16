@@ -21,12 +21,20 @@ interface NetworkFilterEngine {
 
     fun clear()
 
-    fun shouldBlock(url: String, sourceUrl: String, type: String, method: String): Boolean
+    fun shouldBlock(
+        url: String,
+        sourceUrl: String,
+        type: String,
+        method: String,
+    ): Boolean
 
     fun hasCosmeticRules(): Boolean = false
 
-    fun cosmeticSelectors(url: String, classes: List<String>, ids: List<String>): List<String> =
-        emptyList()
+    fun cosmeticSelectors(
+        url: String,
+        classes: List<String>,
+        ids: List<String>,
+    ): List<String> = emptyList()
 
     fun unsupportedRuleCount(): Int = 0
 }

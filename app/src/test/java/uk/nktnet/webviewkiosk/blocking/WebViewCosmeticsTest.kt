@@ -14,7 +14,10 @@ class WebViewCosmeticsTest {
     @Test
     fun acceptsBoundedTokensFromTheActualFrameOrigin() {
         val parsed =
-            WebViewCosmetics.parseQuery(query(), Uri.parse("https://publisher.example:443"))!!
+            WebViewCosmetics.parseQuery(
+                query(),
+                Uri.parse("https://publisher.example:443"),
+            )!!
         assertEquals("https://publisher.example/article", parsed.url)
         assertEquals(listOf("ad"), parsed.classes)
         assertEquals(listOf("sponsor"), parsed.ids)
@@ -22,21 +25,29 @@ class WebViewCosmeticsTest {
 
     @Test
     fun rejectsCrossOriginAndPrivateAssetQueries() {
-        assertNull(WebViewCosmetics.parseQuery(query(), Uri.parse("https://other.example")))
-        assertNull(WebViewCosmetics.parseQuery(query(), Uri.parse("http://publisher.example")))
         assertNull(
-            WebViewCosmetics.parseQuery(query(), Uri.parse("https://publisher.example:8443")),
+            WebViewCosmetics.parseQuery(query(), Uri.parse("https://other.example"))
+        )
+        assertNull(
+            WebViewCosmetics.parseQuery(
+                query(),
+                Uri.parse("http://publisher.example"),
+            )
+        )
+        assertNull(
+            WebViewCosmetics.parseQuery(
+                query(),
+                Uri.parse("https://publisher.example:8443"),
+            )
         )
         assertNull(WebViewCosmetics.parseQuery(query(), Uri.parse("null")))
-        for (
-        url in
-        listOf(
-            "file:///private.html",
-            "blob:https://publisher.example/id",
-            "https://appassets.androidplatform.net/private.html",
-            "https://pdf-dummy.webviewkiosk.nktnet.uk/private.html",
-        )
-        ) {
+        for (url in
+            listOf(
+                "file:///private.html",
+                "blob:https://publisher.example/id",
+                "https://appassets.androidplatform.net/private.html",
+                "https://pdf-dummy.webviewkiosk.nktnet.uk/private.html",
+            )) {
             assertNull(WebViewCosmetics.parseQuery(query(url), Uri.parse(url)))
         }
     }
@@ -48,28 +59,35 @@ class WebViewCosmeticsTest {
         assertNull(WebViewCosmetics.parseQuery(" ".repeat(262_145), origin))
         assertNull(
             WebViewCosmetics.parseQuery(
-                JSONObject(query()).put("classes", JSONArray(List(257) { "ad" })).toString(),
+                JSONObject(query())
+                    .put("classes", JSONArray(List(257) { "ad" }))
+                    .toString(),
                 origin,
-            ),
+            )
         )
         assertNull(
             WebViewCosmetics.parseQuery(
-                JSONObject(query()).put("classes", JSONArray().put("a".repeat(129))).toString(),
+                JSONObject(query())
+                    .put("classes", JSONArray().put("a".repeat(129)))
+                    .toString(),
                 origin,
-            ),
+            )
         )
         assertNull(
             WebViewCosmetics.parseQuery(
-                JSONObject(query()).put("classes", JSONArray().put(JSONObject())).toString(),
+                JSONObject(query())
+                    .put("classes", JSONArray().put(JSONObject()))
+                    .toString(),
                 origin,
-            ),
+            )
         )
     }
 
-    private fun query(url: String = "https://publisher.example/article") = JSONObject()
-        .put("id", 1)
-        .put("url", url)
-        .put("classes", JSONArray(listOf("ad", "ad")))
-        .put("ids", JSONArray(listOf("sponsor")))
-        .toString()
+    private fun query(url: String = "https://publisher.example/article") =
+        JSONObject()
+            .put("id", 1)
+            .put("url", url)
+            .put("classes", JSONArray(listOf("ad", "ad")))
+            .put("ids", JSONArray(listOf("sponsor")))
+            .toString()
 }

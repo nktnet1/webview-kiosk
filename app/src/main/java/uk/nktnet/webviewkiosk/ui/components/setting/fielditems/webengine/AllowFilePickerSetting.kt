@@ -17,12 +17,14 @@ fun AllowFilePickerSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_engine_allow_file_picker_title),
-        infoText = """
+        infoText =
+            """
             Allow websites to open the system file picker, e.g. for uploading files.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.allowFilePicker,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.allowFilePicker = it }
+        onSave = { userSettings.allowFilePicker = it },
     )
 }

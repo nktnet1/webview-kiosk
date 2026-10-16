@@ -44,32 +44,35 @@ fun isValidMqttSubscribeTopic(topic: String): Boolean {
     return true
 }
 
-private val ALLOW_PARSED_AS_ARRAY_SETTING_KEYS = setOf(
-    UserSettingsKeys.WebContent.WEBSITE_BLACKLIST,
-    UserSettingsKeys.WebContent.WEBSITE_WHITELIST,
-    UserSettingsKeys.WebContent.WEBSITE_BOOKMARKS,
-)
+private val ALLOW_PARSED_AS_ARRAY_SETTING_KEYS =
+    setOf(
+        UserSettingsKeys.WebContent.WEBSITE_BLACKLIST,
+        UserSettingsKeys.WebContent.WEBSITE_WHITELIST,
+        UserSettingsKeys.WebContent.WEBSITE_BOOKMARKS,
+    )
 
-private val ALLOW_EVALUATE_VARIABLES_SETTING_KEYS = setOf(
-    UserSettingsKeys.Mqtt.Connection.CLIENT_ID,
-    UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC,
-    UserSettingsKeys.Mqtt.Topics.Publish.Response.TOPIC,
-    UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC,
-    UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.TOPIC,
-    UserSettingsKeys.Mqtt.Will.TOPIC,
-    UserSettingsKeys.Mqtt.Will.PAYLOAD,
-)
+private val ALLOW_EVALUATE_VARIABLES_SETTING_KEYS =
+    setOf(
+        UserSettingsKeys.Mqtt.Connection.CLIENT_ID,
+        UserSettingsKeys.Mqtt.Topics.Publish.Event.TOPIC,
+        UserSettingsKeys.Mqtt.Topics.Publish.Response.TOPIC,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Command.TOPIC,
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Settings.TOPIC,
+        UserSettingsKeys.Mqtt.Will.TOPIC,
+        UserSettingsKeys.Mqtt.Will.PAYLOAD,
+    )
 
 fun filterSettingsJson(
     settings: JSONObject,
-    filterKeys: Array<JsonElement> = emptyArray()
+    filterKeys: Array<JsonElement> = emptyArray(),
 ): JsonObject {
-    fun getJsonValue(value: Any?): JsonElement = when (value) {
-        is Boolean -> JsonPrimitive(value)
-        is Number -> JsonPrimitive(value)
-        is String -> JsonPrimitive(value)
-        else -> JsonPrimitive(value.toString())
-    }
+    fun getJsonValue(value: Any?): JsonElement =
+        when (value) {
+            is Boolean -> JsonPrimitive(value)
+            is Number -> JsonPrimitive(value)
+            is String -> JsonPrimitive(value)
+            else -> JsonPrimitive(value.toString())
+        }
 
     if (filterKeys.isEmpty()) {
         return buildJsonObject {
@@ -82,37 +85,43 @@ fun filterSettingsJson(
 
     return buildJsonObject {
         for (keyElem in filterKeys) {
-            val keyStr = when (keyElem) {
-                is JsonPrimitive -> keyElem.content
-                is JsonObject -> (keyElem["key"] as? JsonPrimitive)?.content ?: continue
-                else -> continue
-            }
+            val keyStr =
+                when (keyElem) {
+                    is JsonPrimitive -> keyElem.content
+                    is JsonObject ->
+                        (keyElem["key"] as? JsonPrimitive)?.content ?: continue
+                    else -> continue
+                }
 
             if (!settings.has(keyStr)) {
                 continue
             }
 
             val options = keyElem as? JsonObject
-            val evaluateVariables = (
-                options?.get("evaluateVariables") as? JsonPrimitive
-            )?.booleanOrNull == true && keyStr in ALLOW_EVALUATE_VARIABLES_SETTING_KEYS
+            val evaluateVariables =
+                (options?.get("evaluateVariables") as? JsonPrimitive)
+                    ?.booleanOrNull == true &&
+                    keyStr in ALLOW_EVALUATE_VARIABLES_SETTING_KEYS
 
-            val value = if (evaluateVariables) {
-                MqttManager.mqttVariableReplacement(settings.getString(keyStr))
-            } else {
-                settings.get(keyStr)
-            }
+            val value =
+                if (evaluateVariables) {
+                    MqttManager.mqttVariableReplacement(settings.getString(keyStr))
+                } else {
+                    settings.get(keyStr)
+                }
 
-            val parseAsArray = (
-                (options?.get("parseAsArray") as? JsonPrimitive)?.booleanOrNull == true
-                && value is String
-                && keyStr in ALLOW_PARSED_AS_ARRAY_SETTING_KEYS
-            )
+            val parseAsArray =
+                ((options?.get("parseAsArray") as? JsonPrimitive)?.booleanOrNull ==
+                    true &&
+                    value is String &&
+                    keyStr in ALLOW_PARSED_AS_ARRAY_SETTING_KEYS)
 
             if (parseAsArray) {
-                val array = value.split("\n")
-                    .filter { it.isNotEmpty() }
-                    .map { JsonPrimitive(it) }
+                val array =
+                    value
+                        .split("\n")
+                        .filter { it.isNotEmpty() }
+                        .map { JsonPrimitive(it) }
                 put(keyStr, JsonArray(array))
             } else {
                 put(keyStr, getJsonValue(value))
@@ -134,11 +143,16 @@ fun initMqttForegroundService(context: Context, start: Boolean) {
             context.stopService(intent)
         }
     } catch (e: Exception) {
-        val errorMessage = "Failed to ${if (start) "start" else "stop"} MQTT foreground service"
+        val errorMessage =
+            "Failed to ${if (start) {
+"start"
+} else {
+"stop"
+}} MQTT foreground service"
         Log.e(
             Constants.APP_SCHEME,
             errorMessage,
-            e
+            e,
         )
         ToastManager.show(context, errorMessage)
     }

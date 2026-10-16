@@ -28,9 +28,11 @@ class WebViewDialogControllerTest {
 
     @Before
     fun setUp() {
-        activityController = Robolectric.buildActivity(ComponentActivity::class.java).setup()
+        activityController =
+            Robolectric.buildActivity(ComponentActivity::class.java).setup()
         activity = activityController.get()
-        controller = WebViewDialogController(ContextWrapper(ContextWrapper(activity)))
+        controller =
+            WebViewDialogController(ContextWrapper(ContextWrapper(activity)))
     }
 
     @After
@@ -47,8 +49,16 @@ class WebViewDialogControllerTest {
         val first = Dialog(activity)
         val second = Dialog(activity)
 
-        assertSame(first, controller.show(first, key = "location") { callbacks.add("first:$it") })
-        assertSame(second, controller.show(second, key = "location") { callbacks.add("second:$it") })
+        assertSame(
+            first,
+            controller.show(first, key = "location") { callbacks.add("first:$it") },
+        )
+        assertSame(
+            second,
+            controller.show(second, key = "location") {
+                callbacks.add("second:$it")
+            },
+        )
         shadowOf(Looper.getMainLooper()).idle()
 
         assertEquals(listOf("first:true"), callbacks)

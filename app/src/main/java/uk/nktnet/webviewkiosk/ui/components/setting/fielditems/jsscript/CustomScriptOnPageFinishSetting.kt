@@ -16,8 +16,10 @@ fun CustomScriptOnPageFinishSetting() {
     val settingKey = UserSettingsKeys.JsScripts.CUSTOM_SCRIPT_ON_PAGE_FINISH
 
     TextSettingFieldItem(
-        label = stringResource(R.string.js_scripts_custom_script_on_page_finish_title),
-        infoText = """
+        label =
+            stringResource(R.string.js_scripts_custom_script_on_page_finish_title),
+        infoText =
+            """
             JavaScript to run after the page has fully loaded.
             Useful for DOM updates, styling, or injecting behavior.
 
@@ -27,12 +29,13 @@ fun CustomScriptOnPageFinishSetting() {
                 (function() {
                     // <YOUR CODE>
                 })()
-            """.trimIndent(),
+            """
+                .trimIndent(),
         placeholder = "e.g. document.body.style.backgroundColor = 'green';",
         initialValue = userSettings.customScriptOnPageFinish,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         isMultiline = true,
-        onSave = { userSettings.customScriptOnPageFinish = it }
+        onSave = { userSettings.customScriptOnPageFinish = it },
     )
 }

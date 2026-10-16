@@ -20,13 +20,12 @@ fun MqttDebugLogsButton(navController: NavController) {
         onClick = {
             navController.navigate(Screen.SettingsMqttDebug.route)
         },
-        colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 10.dp),
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+            ),
+        modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
     ) {
         Text(stringResource(R.string.settings_debug_log_title))
     }

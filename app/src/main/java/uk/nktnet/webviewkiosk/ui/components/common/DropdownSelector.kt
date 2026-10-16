@@ -30,7 +30,7 @@ fun <T> DropdownSelector(
     onSelectedChange: (T) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    itemContent: @Composable (T) -> Unit
+    itemContent: @Composable (T) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
     var buttonWidth by remember { mutableIntStateOf(0) }
@@ -40,25 +40,24 @@ fun <T> DropdownSelector(
     Box(modifier = modifier) {
         OutlinedButton(
             onClick = { expanded = true },
-            modifier = Modifier
-                .fillMaxWidth()
-                .onSizeChanged { buttonWidth = it.width },
+            modifier =
+                Modifier.fillMaxWidth().onSizeChanged { buttonWidth = it.width },
             contentPadding = PaddingValues(horizontal = 16.dp, vertical = 16.dp),
             enabled = enabled,
-            shape = shape
+            shape = shape,
         ) {
             Box(Modifier.weight(1f)) {
                 itemContent(selected)
             }
             Icon(
                 painter = painterResource(R.drawable.outline_keyboard_arrow_down_24),
-                contentDescription = "Select"
+                contentDescription = "Select",
             )
         }
         DropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
-            modifier = Modifier.width(with(density) { buttonWidth.toDp() })
+            modifier = Modifier.width(with(density) { buttonWidth.toDp() }),
         ) {
             options.forEach { option ->
                 DropdownMenuItem(
@@ -70,7 +69,7 @@ fun <T> DropdownSelector(
                     onClick = {
                         onSelectedChange(option)
                         expanded = false
-                    }
+                    },
                 )
             }
         }

@@ -3,9 +3,9 @@ package uk.nktnet.webviewkiosk.utils.webview.handlers
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
+import android.webkit.PermissionRequest
 import android.widget.CheckBox
 import android.widget.LinearLayout
-import android.webkit.PermissionRequest
 import androidx.appcompat.app.AlertDialog
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Constants
@@ -19,7 +19,7 @@ import uk.nktnet.webviewkiosk.utils.webview.WebViewDialogController
 data class WebPermission(
     val resource: String,
     val name: String,
-    val allowed: Boolean
+    val allowed: Boolean,
 )
 
 @SuppressLint("SetTextI18n")
@@ -45,7 +45,11 @@ fun handlePermissionRequest(
             }
             granted
         } catch (e: Exception) {
-            Log.w(Constants.APP_SCHEME, "Unable to complete WebView permission request", e)
+            Log.w(
+                Constants.APP_SCHEME,
+                "Unable to complete WebView permission request",
+                e,
+            )
             false
         }
     }
@@ -55,28 +59,35 @@ fun handlePermissionRequest(
     }
     val host = request.origin.toString().trimEnd('/')
 
-    val permissions = request.resources.mapNotNull { res ->
-        when (res) {
-            PermissionRequest.RESOURCE_VIDEO_CAPTURE ->
-                WebPermission(
-                    res, "Camera",
-                    userSettings.allowCamera && hasPermissionForResource(context, res)
-                )
-            PermissionRequest.RESOURCE_AUDIO_CAPTURE ->
-                WebPermission(res,
-                    "Microphone",
-                    userSettings.allowMicrophone && hasPermissionForResource(context, res))
+    val permissions =
+        request.resources.mapNotNull { res ->
+            when (res) {
+                PermissionRequest.RESOURCE_VIDEO_CAPTURE ->
+                    WebPermission(
+                        res,
+                        "Camera",
+                        userSettings.allowCamera &&
+                            hasPermissionForResource(context, res),
+                    )
+                PermissionRequest.RESOURCE_AUDIO_CAPTURE ->
+                    WebPermission(
+                        res,
+                        "Microphone",
+                        userSettings.allowMicrophone &&
+                            hasPermissionForResource(context, res),
+                    )
 
-            else -> null
+                else -> null
+            }
         }
-    }
 
     val allowedPermissions = permissions.filter { it.allowed }
     val blockedPermissions = permissions.filter { !it.allowed }
-    val unhandledPermissions = request.resources.filter { res ->
-        res != PermissionRequest.RESOURCE_VIDEO_CAPTURE
-        && res != PermissionRequest.RESOURCE_AUDIO_CAPTURE
-    }
+    val unhandledPermissions =
+        request.resources.filter { res ->
+            res != PermissionRequest.RESOURCE_VIDEO_CAPTURE &&
+                res != PermissionRequest.RESOURCE_AUDIO_CAPTURE
+        }
 
     if (allowedPermissions.isEmpty() && blockedPermissions.isEmpty()) {
         respond()
@@ -129,12 +140,13 @@ fun handlePermissionRequest(
         }
     }
 
-    val builder = AlertDialog.Builder(context)
-        .setTitle(title)
-        .setMessage(message.trimMargin())
-        .setOnCancelListener {
-            respond()
-        }
+    val builder =
+        AlertDialog.Builder(context)
+            .setTitle(title)
+            .setMessage(message.trimMargin())
+            .setOnCancelListener {
+                respond()
+            }
 
     if (isBlockedDialog) {
         builder.setPositiveButton("Close") { _, _ ->
@@ -146,14 +158,17 @@ fun handlePermissionRequest(
             UserInteractionStateSingleton.onUserInteraction()
         }
 
-        val layout = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(80, 20, 40, 0)
-            addView(checkBox)
-        }
-        builder.setView(layout)
+        val layout =
+            LinearLayout(context).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(80, 20, 40, 0)
+                addView(checkBox)
+            }
+        builder
+            .setView(layout)
             .setPositiveButton("Allow") { _, _ ->
-                val granted = respond(allowedPermissions.map { it.resource }.toTypedArray())
+                val granted =
+                    respond(allowedPermissions.map { it.resource }.toTypedArray())
                 if (granted && checkBox.isChecked) {
                     allowedPermissions.forEach {
                         systemSettings.saveSitePermissions(host, it.resource)
@@ -165,14 +180,15 @@ fun handlePermissionRequest(
             }
     }
 
-    val dialog = dialogs.show(builder.create(), key = request) { resolveRequest ->
-        if (resolveRequest) {
-            respond()
-        } else {
-            resolved = true
-        }
-        UserInteractionStateSingleton.onUserInteraction()
-    } ?: return
+    val dialog =
+        dialogs.show(builder.create(), key = request) { resolveRequest ->
+            if (resolveRequest) {
+                respond()
+            } else {
+                resolved = true
+            }
+            UserInteractionStateSingleton.onUserInteraction()
+        } ?: return
 
     dialog.setOnKeyListener { _, _, event ->
         handleKeyEvent(context, event)

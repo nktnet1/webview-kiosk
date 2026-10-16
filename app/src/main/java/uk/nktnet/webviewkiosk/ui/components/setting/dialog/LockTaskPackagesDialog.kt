@@ -54,7 +54,7 @@ import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 @Composable
 fun LockTaskPackagesDialog(
     showDialog: Boolean,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     if (!showDialog) {
         return
@@ -75,9 +75,10 @@ fun LockTaskPackagesDialog(
         }
     }
 
-    val existingPackages by remember(apps) {
-        derivedStateOf { apps.map { it.packageName }.toSet() }
-    }
+    val existingPackages by
+        remember(apps) {
+            derivedStateOf { apps.map { it.packageName }.toSet() }
+        }
 
     BaseAppListDialog(
         onDismiss = onDismiss,
@@ -89,26 +90,24 @@ fun LockTaskPackagesDialog(
             showConfirmDialog = true
         },
         appFilter = { app, query ->
-            app.name.contains(query, ignoreCase = true)
-            || app.packageName.contains(query, ignoreCase = true)
+            app.name.contains(query, ignoreCase = true) ||
+                app.packageName.contains(query, ignoreCase = true)
         },
         extraContent = {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
+                horizontalArrangement = Arrangement.End,
             ) {
-                TextButton(
-                    onClick = { showAddLockTaskPackagesDialog = true }
-                ) {
+                TextButton(onClick = { showAddLockTaskPackagesDialog = true }) {
                     Icon(
                         painter = painterResource(R.drawable.baseline_add_24),
                         contentDescription = "Add",
-                        modifier = Modifier.padding(end = 4.dp)
+                        modifier = Modifier.padding(end = 4.dp),
                     )
                     Text("Add")
                 }
             }
-        }
+        },
     )
 
     RemoveLockTaskAppDialog(
@@ -128,7 +127,7 @@ fun LockTaskPackagesDialog(
         showDialog = showAddLockTaskPackagesDialog,
         existingPackages = existingPackages,
         onDismiss = { showAddLockTaskPackagesDialog = false },
-        onConfirm = { app -> apps += app }
+        onConfirm = { app -> apps += app },
     )
 }
 
@@ -158,9 +157,8 @@ fun RemoveLockTaskAppDialog(
         },
         text = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
+                modifier =
+                    Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
             ) {
                 Text(
                     normaliseInfoText(
@@ -170,7 +168,8 @@ fun RemoveLockTaskAppDialog(
 
                         This means lock task mode will no longer be available for this
                         application, and kiosk mode will fall back to screen pinning.
-                        """.trimIndent()
+                        """
+                            .trimIndent()
                     ),
                     Modifier.padding(vertical = 8.dp),
                 )
@@ -180,11 +179,11 @@ fun RemoveLockTaskAppDialog(
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     AppLabelRow(
                         "App",
-                        removeApp.name
+                        removeApp.name,
                     )
                     AppLabelRow(
                         "Package",
-                        removeApp.packageName
+                        removeApp.packageName,
                     )
                 }
             }
@@ -193,7 +192,10 @@ fun RemoveLockTaskAppDialog(
             TextButton(
                 onClick = {
                     if (!DeviceOwnerManager.hasOwnerPermission(context)) {
-                        ToastManager.show(context, "Error: owner permission is not granted.")
+                        ToastManager.show(
+                            context,
+                            "Error: owner permission is not granted.",
+                        )
                         return@TextButton
                     }
 
@@ -201,12 +203,15 @@ fun RemoveLockTaskAppDialog(
                         DeviceOwnerManager.DPM.setLockTaskPackages(
                             DeviceOwnerManager.DAR,
                             apps
-                                .filter { app -> app.packageName != removeApp.packageName }
-                                .map { it.packageName }.toTypedArray()
+                                .filter { app ->
+                                    app.packageName != removeApp.packageName
+                                }
+                                .map { it.packageName }
+                                .toTypedArray(),
                         )
                         ToastManager.show(
                             context,
-                            "${removeApp.name} has been removed from lock task packages."
+                            "${removeApp.name} has been removed from lock task packages.",
                         )
                         onConfirm(removeApp)
                     } catch (e: Exception) {
@@ -223,7 +228,7 @@ fun RemoveLockTaskAppDialog(
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
     )
 }
 
@@ -250,12 +255,13 @@ fun AddLockTaskPackagesDialog(
         apps = emptyList()
         progress = 0f
         AppFlowManager.getInstalledAppsFlow(
-            context,
-            appType,
-        ).collect { state ->
-            apps = apps + state.apps
-            progress = state.progress
-        }
+                context,
+                appType,
+            )
+            .collect { state ->
+                apps = apps + state.apps
+                progress = state.progress
+            }
     }
 
     BaseAppListDialog(
@@ -263,12 +269,9 @@ fun AddLockTaskPackagesDialog(
         title = "Add Lock Task Package",
         apps = apps,
         appFilter = { app, query ->
-            (
-                app.name.contains(query, ignoreCase = true)
-                || app.packageName.contains(query, ignoreCase = true)
-            ) && (
-                app.packageName !in existingPackages
-            )
+            (app.name.contains(query, ignoreCase = true) ||
+                app.packageName.contains(query, ignoreCase = true)) &&
+                (app.packageName !in existingPackages)
         },
         progress = progress,
         onSelectApp = { newApp ->
@@ -280,11 +283,11 @@ fun AddLockTaskPackagesDialog(
             try {
                 DeviceOwnerManager.DPM.setLockTaskPackages(
                     DeviceOwnerManager.DAR,
-                    (existingPackages + newApp.packageName).toTypedArray()
+                    (existingPackages + newApp.packageName).toTypedArray(),
                 )
                 ToastManager.show(
                     context,
-                    "${newApp.name} has been added to lock task packages."
+                    "${newApp.name} has been added to lock task packages.",
                 )
                 onConfirm(newApp)
             } catch (e: Exception) {
@@ -295,62 +298,73 @@ fun AddLockTaskPackagesDialog(
         },
         extraFilters = {
             Row(
-               modifier = Modifier
-                   .padding(top = 6.dp, bottom = 4.dp)
-                   .onSizeChanged { dropdownWidth = it.width },
-
-                ) {
+                modifier =
+                    Modifier.padding(top = 6.dp, bottom = 4.dp).onSizeChanged {
+                        dropdownWidth = it.width
+                    }
+            ) {
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(43.dp)
-                        .border(
-                            1.dp,
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
-                            MaterialTheme.shapes.small
-                        )
-                        .clickable { expandedDropdown = true },
-                    contentAlignment = Alignment.CenterStart
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .height(43.dp)
+                            .border(
+                                1.dp,
+                                MaterialTheme.colorScheme.onSurface.copy(
+                                    alpha = 0.5f
+                                ),
+                                MaterialTheme.shapes.small,
+                            )
+                            .clickable { expandedDropdown = true },
+                    contentAlignment = Alignment.CenterStart,
                 ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 14.dp, end = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .padding(start = 14.dp, end = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             text = appType.label,
                             style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
                         )
                         Icon(
-                            painter = painterResource(R.drawable.outline_keyboard_arrow_down_24),
-                            contentDescription = "Select"
+                            painter =
+                                painterResource(
+                                    R.drawable.outline_keyboard_arrow_down_24
+                                ),
+                            contentDescription = "Select",
                         )
                     }
 
                     DropdownMenu(
                         expanded = expandedDropdown,
                         onDismissRequest = { expandedDropdown = false },
-                        modifier = Modifier.width(with(LocalDensity.current) {
-                            dropdownWidth.toDp()
-                        })
+                        modifier =
+                            Modifier.width(
+                                with(LocalDensity.current) {
+                                    dropdownWidth.toDp()
+                                }
+                            ),
                     ) {
                         AppType.entries.forEach { type ->
                             DropdownMenuItem(
                                 text = {
-                                    Text(type.label, style = MaterialTheme.typography.bodyMedium)
+                                    Text(
+                                        type.label,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                    )
                                 },
                                 onClick = {
                                     appType = type
                                     expandedDropdown = false
-                                }
+                                },
                             )
                         }
                     }
                 }
             }
-        }
+        },
     )
 }
 
@@ -362,13 +376,13 @@ private fun AppLabelRow(label: String, value: String) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         )
         Text(
             value,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(3f)
+            modifier = Modifier.weight(3f),
         )
     }
 }

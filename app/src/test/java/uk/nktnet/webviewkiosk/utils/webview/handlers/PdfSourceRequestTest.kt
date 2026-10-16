@@ -7,6 +7,13 @@ import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
+import java.net.HttpURLConnection
+import java.net.InetSocketAddress
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -18,28 +25,25 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
-import java.net.InetSocketAddress
-import java.net.HttpURLConnection
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicReference
 
-/** Checks actual PDF source routing and HTTP behaviour, not just URL helper functions. */
+/**
+ * Checks actual PDF source routing and HTTP behaviour, not just URL helper
+ * functions.
+ */
 @RunWith(RobolectricTestRunner::class)
 class PdfSourceRequestTest {
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+    @get:Rule val temporaryFolder = TemporaryFolder()
 
-    private val context: Context get() = RuntimeEnvironment.getApplication()
+    private val context: Context
+        get() = RuntimeEnvironment.getApplication()
+
     private val base = Constants.PDF_JS_ASSETS_DUMMY_URL
     private lateinit var settings: UserSettings
     private var originalAllowLocalFiles = false
@@ -90,15 +94,19 @@ class PdfSourceRequestTest {
         assertEquals(400, load(null, requestUrl = "$base/pdf_source")?.statusCode)
         assertEquals(404, load("not-registered")?.statusCode)
 
-        val invalid = listOf(
-            "http://pdf-dummy.webviewkiosk.nktnet.uk/pdf_source",
-            "https://pdf-dummy.webviewkiosk.nktnet.uk:8443/pdf_source",
-            "https://pdf-dummy.webviewkiosk.nktnet.uk.evil.example/pdf_source",
-            "https://user@pdf-dummy.webviewkiosk.nktnet.uk/pdf_source",
-            "$base/other",
-        )
+        val invalid =
+            listOf(
+                "http://pdf-dummy.webviewkiosk.nktnet.uk/pdf_source",
+                "https://pdf-dummy.webviewkiosk.nktnet.uk:8443/pdf_source",
+                "https://pdf-dummy.webviewkiosk.nktnet.uk.evil.example/pdf_source",
+                "https://user@pdf-dummy.webviewkiosk.nktnet.uk/pdf_source",
+                "$base/other",
+            )
         for (origin in invalid) {
-            assertNull(origin, load(valid, requestUrl = "$origin?wk_pdf_token=$valid"))
+            assertNull(
+                origin,
+                load(valid, requestUrl = "$origin?wk_pdf_token=$valid"),
+            )
         }
     }
 
@@ -107,14 +115,21 @@ class PdfSourceRequestTest {
         val sourceUrl = "$remote/report.pdf?name=one%20two"
         val token = register(sourceUrl)
         val otherToken = register(sourceUrl)
-        val viewerUrl = "$base/?wk_pdf_token=$token&wk_pdf_url=${Uri.encode(sourceUrl)}"
+        val viewerUrl =
+            "$base/?wk_pdf_token=$token&wk_pdf_url=${Uri.encode(sourceUrl)}"
 
         assertTrue(isPdfSourceNavigation(token, sourceUrl))
         assertTrue(isPdfSourceNavigation(token, viewerUrl))
         assertFalse(isPdfSourceNavigation(otherToken, viewerUrl))
-        val otherSource = "$base/?wk_pdf_token=$token&wk_pdf_url=${Uri.encode("$remote/other.pdf")}"
+        val otherSource =
+            "$base/?wk_pdf_token=$token&wk_pdf_url=${Uri.encode("$remote/other.pdf")}"
         assertFalse(isPdfSourceNavigation(token, otherSource))
-        assertFalse(isPdfSourceNavigation(token, "$base/other?wk_pdf_token=$token&wk_pdf_url=${Uri.encode(sourceUrl)}"))
+        assertFalse(
+            isPdfSourceNavigation(
+                token,
+                "$base/other?wk_pdf_token=$token&wk_pdf_url=${Uri.encode(sourceUrl)}",
+            )
+        )
         assertFalse(isPdfSourceNavigation("missing", sourceUrl))
     }
 
@@ -124,19 +139,28 @@ class PdfSourceRequestTest {
         val token = register(sourceUrl)
         val events = mutableListOf<String>()
         for (event in listOf("loaded", "error", "authentication", "retry")) {
-            val result = load(
-                token,
-                requestUrl = "$base/pdf_status?wk_pdf_token=$token&event=$event",
-                onViewerEvent = { receivedToken, receivedUrl, receivedEvent ->
-                    assertEquals(token, receivedToken)
-                    assertEquals(sourceUrl, receivedUrl)
-                    events.add(receivedEvent)
-                },
-            )
+            val result =
+                load(
+                    token,
+                    requestUrl = "$base/pdf_status?wk_pdf_token=$token&event=$event",
+                    onViewerEvent = { receivedToken, receivedUrl, receivedEvent ->
+                        assertEquals(token, receivedToken)
+                        assertEquals(sourceUrl, receivedUrl)
+                        events.add(receivedEvent)
+                    },
+                )
             assertEquals(200, result?.statusCode)
         }
         assertEquals(listOf("loaded", "error", "authentication", "retry"), events)
-        assertEquals(400, load(token, requestUrl = "$base/pdf_status?wk_pdf_token=$token&event=unknown")?.statusCode)
+        assertEquals(
+            400,
+            load(
+                    token,
+                    requestUrl =
+                        "$base/pdf_status?wk_pdf_token=$token&event=unknown",
+                )
+                ?.statusCode,
+        )
     }
 
     @Test
@@ -160,19 +184,28 @@ class PdfSourceRequestTest {
             incoming.add(
                 listOf("Range", "If-Range", "Accept", "User-Agent").associateWith {
                     exchange.requestHeaders.getFirst(it)
-                },
+                }
             )
             respond(exchange, 206, "PDF bytes", "Content-Range" to "bytes 2-10/20")
         }
         val token = register("$remote/partial.pdf")
 
-        val result = load(
-            token,
-            headers = mapOf("Range" to "bytes=2-10", "If-Range" to "etag-v1", "Accept" to "application/pdf"),
-            userAgent = "Kiosk-Pdf-Test/1.0",
-        )
+        val result =
+            load(
+                token,
+                headers =
+                    mapOf(
+                        "Range" to "bytes=2-10",
+                        "If-Range" to "etag-v1",
+                        "Accept" to "application/pdf",
+                    ),
+                userAgent = "Kiosk-Pdf-Test/1.0",
+            )
         assertEquals(206, result?.statusCode)
-        assertEquals("PDF bytes", result!!.data.use { it.bufferedReader().readText() })
+        assertEquals(
+            "PDF bytes",
+            result!!.data.use { it.bufferedReader().readText() },
+        )
         assertEquals(
             mapOf(
                 "Range" to "bytes=2-10",
@@ -197,11 +230,18 @@ class PdfSourceRequestTest {
             respond(exchange, 200, "session PDF")
         }
 
-        val response = load(register(url), headers = mapOf("Cookie" to "forged=request-cookie"))
+        val response =
+            load(register(url), headers = mapOf("Cookie" to "forged=request-cookie"))
 
         assertEquals(200, response?.statusCode)
-        assertEquals("session PDF", response!!.data.use { it.bufferedReader().readText() })
-        assertEquals(setOf("session=source-secret", "language=en"), cookiePairs(incoming.single()))
+        assertEquals(
+            "session PDF",
+            response!!.data.use { it.bufferedReader().readText() },
+        )
+        assertEquals(
+            setOf("session=source-secret", "language=en"),
+            cookiePairs(incoming.single()),
+        )
         assertEquals("viewer=internal-secret", cookies.getCookie(base))
     }
 
@@ -209,7 +249,10 @@ class PdfSourceRequestTest {
     fun storesEveryResponseCookieWithoutExposingSetCookieOnTheInternalOrigin() {
         val url = "$remote/cookies.pdf"
         server.createContext("/cookies.pdf") { exchange ->
-            exchange.responseHeaders.add("sEt-CoOkIe", "session=server-secret; Path=/; HttpOnly")
+            exchange.responseHeaders.add(
+                "sEt-CoOkIe",
+                "session=server-secret; Path=/; HttpOnly",
+            )
             exchange.responseHeaders.add("sEt-CoOkIe", "language=fr; Path=/")
             respond(exchange, 200, "cookie PDF", "X-Pdf-Test" to "preserved")
         }
@@ -217,13 +260,28 @@ class PdfSourceRequestTest {
         val response = load(register(url))
 
         assertEquals(200, response?.statusCode)
-        assertEquals("cookie PDF", response!!.data.use { it.bufferedReader().readText() })
-        assertEquals(setOf("session=server-secret", "language=fr"), cookiePairs(cookies.getCookie(url)))
+        assertEquals(
+            "cookie PDF",
+            response!!.data.use { it.bufferedReader().readText() },
+        )
+        assertEquals(
+            setOf("session=server-secret", "language=fr"),
+            cookiePairs(cookies.getCookie(url)),
+        )
         assertNull(cookies.getCookie(base))
-        assertTrue(response.responseHeaders.keys.none { it.equals("Set-Cookie", ignoreCase = true) })
-        assertEquals("preserved", response.responseHeaders.entries.single {
-            it.key.equals("X-Pdf-Test", ignoreCase = true)
-        }.value)
+        assertTrue(
+            response.responseHeaders.keys.none {
+                it.equals("Set-Cookie", ignoreCase = true)
+            }
+        )
+        assertEquals(
+            "preserved",
+            response.responseHeaders.entries
+                .single {
+                    it.key.equals("X-Pdf-Test", ignoreCase = true)
+                }
+                .value,
+        )
         assertEquals("no-store", response.responseHeaders["Cache-Control"])
     }
 
@@ -234,7 +292,9 @@ class PdfSourceRequestTest {
         server.createContext("/cookie-entry") { exchange ->
             incoming.add(exchange.requestHeaders.getFirst("Cookie"))
             respond(
-                exchange, 302, "redirect",
+                exchange,
+                302,
+                "redirect",
                 "Location" to "/cookie-final.pdf",
                 "Set-Cookie" to "session=new; Path=/; HttpOnly",
             )
@@ -243,7 +303,12 @@ class PdfSourceRequestTest {
             val cookie = exchange.requestHeaders.getFirst("Cookie")
             incoming.add(cookie)
             if (cookiePairs(cookie) == setOf("session=new")) {
-                respond(exchange, 200, "redirected session PDF", "Set-Cookie" to "download=ready; Path=/")
+                respond(
+                    exchange,
+                    200,
+                    "redirected session PDF",
+                    "Set-Cookie" to "download=ready; Path=/",
+                )
             } else {
                 respond(exchange, 403, "missing redirected session")
             }
@@ -252,14 +317,24 @@ class PdfSourceRequestTest {
         val response = load(register("$remote/cookie-entry"))
 
         assertEquals(200, response?.statusCode)
-        assertEquals("redirected session PDF", response!!.data.use { it.bufferedReader().readText() })
-        assertEquals(listOf(setOf("session=old"), setOf("session=new")), incoming.map(::cookiePairs))
-        assertEquals(setOf("session=new", "download=ready"), cookiePairs(cookies.getCookie(remote)))
+        assertEquals(
+            "redirected session PDF",
+            response!!.data.use { it.bufferedReader().readText() },
+        )
+        assertEquals(
+            listOf(setOf("session=old"), setOf("session=new")),
+            incoming.map(::cookiePairs),
+        )
+        assertEquals(
+            setOf("session=new", "download=ready"),
+            cookiePairs(cookies.getCookie(remote)),
+        )
     }
 
     @Test
     fun redirectsUseTheDestinationHostsCookiesWithoutLeakingTheSourcesSession() {
-        val destinationServer = HttpServer.create(InetSocketAddress("localhost", 0), 0)
+        val destinationServer =
+            HttpServer.create(InetSocketAddress("localhost", 0), 0)
         destinationServer.start()
         try {
             val destination = "http://localhost:${destinationServer.address.port}"
@@ -268,23 +343,42 @@ class PdfSourceRequestTest {
             cookies.setCookie(destination, "destination=allowed; Path=/")
             server.createContext("/host-entry") { exchange ->
                 incoming.add(exchange.requestHeaders.getFirst("Cookie"))
-                respond(exchange, 302, "redirect", "Location" to "$destination/host-final.pdf")
+                respond(
+                    exchange,
+                    302,
+                    "redirect",
+                    "Location" to "$destination/host-final.pdf",
+                )
             }
             destinationServer.createContext("/host-final.pdf") { exchange ->
                 incoming.add(exchange.requestHeaders.getFirst("Cookie"))
-                respond(exchange, 200, "other host PDF", "Set-Cookie" to "received=target; Path=/")
+                respond(
+                    exchange,
+                    200,
+                    "other host PDF",
+                    "Set-Cookie" to "received=target; Path=/",
+                )
             }
 
             val response = load(register("$remote/host-entry"))
 
             assertEquals(200, response?.statusCode)
-            assertEquals("other host PDF", response!!.data.use { it.bufferedReader().readText() })
+            assertEquals(
+                "other host PDF",
+                response!!.data.use { it.bufferedReader().readText() },
+            )
             assertEquals(
                 listOf(setOf("source=private"), setOf("destination=allowed")),
                 incoming.map(::cookiePairs),
             )
-            assertEquals(setOf("source=private"), cookiePairs(cookies.getCookie(remote)))
-            assertEquals(setOf("destination=allowed", "received=target"), cookiePairs(cookies.getCookie(destination)))
+            assertEquals(
+                setOf("source=private"),
+                cookiePairs(cookies.getCookie(remote)),
+            )
+            assertEquals(
+                setOf("destination=allowed", "received=target"),
+                cookiePairs(cookies.getCookie(destination)),
+            )
         } finally {
             destinationServer.stop(0)
         }
@@ -298,22 +392,36 @@ class PdfSourceRequestTest {
         server.createContext("/disabled-entry") { exchange ->
             incoming.add(exchange.requestHeaders.getFirst("Cookie"))
             respond(
-                exchange, 302, "redirect",
+                exchange,
+                302,
+                "redirect",
                 "Location" to "/disabled-final.pdf",
                 "Set-Cookie" to "session=overwritten; Path=/",
             )
         }
         server.createContext("/disabled-final.pdf") { exchange ->
             incoming.add(exchange.requestHeaders.getFirst("Cookie"))
-            respond(exchange, 200, "cookies disabled PDF", "Set-Cookie" to "unexpected=stored; Path=/")
+            respond(
+                exchange,
+                200,
+                "cookies disabled PDF",
+                "Set-Cookie" to "unexpected=stored; Path=/",
+            )
         }
 
         val response = load(register("$remote/disabled-entry"))
 
         assertEquals(200, response?.statusCode)
-        assertEquals("cookies disabled PDF", response!!.data.use { it.bufferedReader().readText() })
+        assertEquals(
+            "cookies disabled PDF",
+            response!!.data.use { it.bufferedReader().readText() },
+        )
         assertEquals(listOf(null, null), incoming.toList())
-        assertTrue(response.responseHeaders.keys.none { it.equals("Set-Cookie", ignoreCase = true) })
+        assertTrue(
+            response.responseHeaders.keys.none {
+                it.equals("Set-Cookie", ignoreCase = true)
+            }
+        )
         cookies.setAcceptCookie(true)
         assertEquals("session=kept", cookies.getCookie(remote))
     }
@@ -324,13 +432,17 @@ class PdfSourceRequestTest {
         server.createContext("/cookie-auth.pdf") { exchange ->
             val cookie = exchange.requestHeaders.getFirst("Cookie")
             incoming.add(cookie)
-            if (exchange.requestHeaders.getFirst("Authorization") == "Basic YWxpY2U6c2VjcmV0"
-                && cookiePairs(cookie) == setOf("challenge=present")
+            if (
+                exchange.requestHeaders.getFirst("Authorization") ==
+                    "Basic YWxpY2U6c2VjcmV0" &&
+                    cookiePairs(cookie) == setOf("challenge=present")
             ) {
                 respond(exchange, 200, "authenticated cookie PDF")
             } else {
                 respond(
-                    exchange, 401, "authenticate",
+                    exchange,
+                    401,
+                    "authenticate",
                     "WWW-Authenticate" to "Basic realm=\"cookie session\"",
                     "Set-Cookie" to "challenge=present; Path=/; HttpOnly",
                 )
@@ -338,7 +450,9 @@ class PdfSourceRequestTest {
         }
         val token = register("$remote/cookie-auth.pdf")
         val prompts = mutableListOf<HttpAuthRequest>()
-        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request -> prompts.add(request) }
+        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request ->
+            prompts.add(request)
+        }
 
         assertStatus(401, load(token, onAuthenticationRequired = prompt))
         assertEquals("challenge=present", cookies.getCookie(remote))
@@ -346,8 +460,14 @@ class PdfSourceRequestTest {
         val response = load(token, onAuthenticationRequired = prompt)
 
         assertEquals(200, response?.statusCode)
-        assertEquals("authenticated cookie PDF", response!!.data.use { it.bufferedReader().readText() })
-        assertEquals(listOf(null, "challenge=present", "challenge=present"), incoming.toList())
+        assertEquals(
+            "authenticated cookie PDF",
+            response!!.data.use { it.bufferedReader().readText() },
+        )
+        assertEquals(
+            listOf(null, "challenge=present", "challenge=present"),
+            incoming.toList(),
+        )
         assertEquals(1, prompts.size)
     }
 
@@ -363,7 +483,10 @@ class PdfSourceRequestTest {
         }
         val token = register("$remote/entry")
 
-        assertEquals(403, load(token, blacklist = listOf(Regex("/forbidden\\.pdf$")))?.statusCode)
+        assertEquals(
+            403,
+            load(token, blacklist = listOf(Regex("/forbidden\\.pdf$")))?.statusCode,
+        )
         assertEquals(0, forbiddenRequests.get())
     }
 
@@ -390,8 +513,11 @@ class PdfSourceRequestTest {
                 respond(exchange, 200, "private PDF")
             } else {
                 respond(
-                    exchange, 401, "authenticate",
-                    "WWW-Authenticate" to "Basic realm=\"private, reports\", charset=\"UTF-8\"",
+                    exchange,
+                    401,
+                    "authenticate",
+                    "WWW-Authenticate" to
+                        "Basic realm=\"private, reports\", charset=\"UTF-8\"",
                 )
             }
         }
@@ -399,21 +525,23 @@ class PdfSourceRequestTest {
         val token = register(url)
         val prompts = mutableListOf<HttpAuthRequest>()
         val authenticated = mutableListOf<String>()
-        val onPrompt: (String, String, HttpAuthRequest) -> Unit = { callbackToken, callbackUrl, request ->
-            assertEquals(token, callbackToken)
-            assertEquals(url, callbackUrl)
-            prompts.add(request)
-        }
+        val onPrompt: (String, String, HttpAuthRequest) -> Unit =
+            { callbackToken, callbackUrl, request ->
+                assertEquals(token, callbackToken)
+                assertEquals(url, callbackUrl)
+                prompts.add(request)
+            }
 
         assertEquals(
             401,
             load(
-                token,
-                onAuthenticationRequired = onPrompt,
-                onAuthenticated = { completedToken, completedUrl ->
-                    authenticated.add("$completedToken:$completedUrl")
-                },
-            )?.statusCode,
+                    token,
+                    onAuthenticationRequired = onPrompt,
+                    onAuthenticated = { completedToken, completedUrl ->
+                        authenticated.add("$completedToken:$completedUrl")
+                    },
+                )
+                ?.statusCode,
         )
         assertEquals(1, prompts.size)
         assertEquals("private, reports", prompts.single().realm)
@@ -422,7 +550,10 @@ class PdfSourceRequestTest {
 
         val success = load(token, onAuthenticationRequired = onPrompt)
         assertEquals(200, success?.statusCode)
-        assertEquals("private PDF", success!!.data.use { it.bufferedReader().readText() })
+        assertEquals(
+            "private PDF",
+            success!!.data.use { it.bufferedReader().readText() },
+        )
         assertEquals(1, prompts.size)
         assertTrue(authorization.contains("Basic YWxpY2U6c2VjcmV0"))
     }
@@ -434,28 +565,50 @@ class PdfSourceRequestTest {
         try {
             val forwardedAuthorization = CopyOnWriteArrayList<String?>()
             secondServer.createContext("/final.pdf") { exchange ->
-                forwardedAuthorization.add(exchange.requestHeaders.getFirst("Authorization"))
+                forwardedAuthorization.add(
+                    exchange.requestHeaders.getFirst("Authorization")
+                )
                 respond(exchange, 200, "redirected PDF")
             }
             server.createContext("/start.pdf") { exchange ->
-                if (exchange.requestHeaders.getFirst("Authorization") == "Basic YWxpY2U6c2VjcmV0") {
+                if (
+                    exchange.requestHeaders.getFirst("Authorization") ==
+                        "Basic YWxpY2U6c2VjcmV0"
+                ) {
                     respond(
-                        exchange, 302, "redirect",
-                        "Location" to "http://127.0.0.1:${secondServer.address.port}/final.pdf",
+                        exchange,
+                        302,
+                        "redirect",
+                        "Location" to
+                            "http://127.0.0.1:${secondServer.address.port}/final.pdf",
                     )
                 } else {
-                    respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"private\"")
+                    respond(
+                        exchange,
+                        401,
+                        "authenticate",
+                        "WWW-Authenticate" to "Basic realm=\"private\"",
+                    )
                 }
             }
             val token = register("$remote/start.pdf")
             val prompts = mutableListOf<HttpAuthRequest>()
-            val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request -> prompts.add(request) }
+            val prompt: (String, String, HttpAuthRequest) -> Unit =
+                { _, _, request ->
+                    prompts.add(request)
+                }
 
-            assertEquals(401, load(token, onAuthenticationRequired = prompt)?.statusCode)
+            assertEquals(
+                401,
+                load(token, onAuthenticationRequired = prompt)?.statusCode,
+            )
             prompts.single().proceed("alice", "secret")
             val response = load(token, onAuthenticationRequired = prompt)
             assertEquals(200, response?.statusCode)
-            assertEquals("redirected PDF", response!!.data.use { it.bufferedReader().readText() })
+            assertEquals(
+                "redirected PDF",
+                response!!.data.use { it.bufferedReader().readText() },
+            )
             assertEquals(listOf(null), forwardedAuthorization.toList())
             assertEquals(1, prompts.size)
         } finally {
@@ -466,15 +619,25 @@ class PdfSourceRequestTest {
     @Test
     fun rejectedSavedCredentialsAreClearedBeforePromptingAgain() {
         server.createContext("/private.pdf") { exchange ->
-            if (exchange.requestHeaders.getFirst("Authorization") == "Basic YWxpY2U6c2VjcmV0") {
+            if (
+                exchange.requestHeaders.getFirst("Authorization") ==
+                    "Basic YWxpY2U6c2VjcmV0"
+            ) {
                 respond(exchange, 200, "ok")
             } else {
-                respond(exchange, 401, "no", "WWW-Authenticate" to "Basic realm=\"private\"")
+                respond(
+                    exchange,
+                    401,
+                    "no",
+                    "WWW-Authenticate" to "Basic realm=\"private\"",
+                )
             }
         }
         val token = register("$remote/private.pdf")
         val prompts = mutableListOf<HttpAuthRequest>()
-        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request -> prompts.add(request) }
+        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request ->
+            prompts.add(request)
+        }
 
         assertEquals(401, load(token, onAuthenticationRequired = prompt)?.statusCode)
         prompts.single().proceed("wrong", "password")
@@ -492,16 +655,28 @@ class PdfSourceRequestTest {
         server.createContext("/realms.pdf") { exchange ->
             val header = exchange.requestHeaders.getFirst("Authorization")
             authorization.add(header)
-            val expected = if (realm.get() == "first") "Basic YWxpY2U6c2VjcmV0" else "Basic Ym9iOnBhc3N3b3Jk"
+            val expected =
+                if (realm.get() == "first") {
+                    "Basic YWxpY2U6c2VjcmV0"
+                } else {
+                    "Basic Ym9iOnBhc3N3b3Jk"
+                }
             if (header == expected) {
                 respond(exchange, 200, "private PDF")
             } else {
-                respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"${realm.get()}\"")
+                respond(
+                    exchange,
+                    401,
+                    "authenticate",
+                    "WWW-Authenticate" to "Basic realm=\"${realm.get()}\"",
+                )
             }
         }
         val token = register("$remote/realms.pdf")
         val prompts = mutableListOf<HttpAuthRequest>()
-        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request -> prompts.add(request) }
+        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request ->
+            prompts.add(request)
+        }
 
         assertStatus(401, load(token, onAuthenticationRequired = prompt))
         prompts.single().proceed("alice", "secret")
@@ -515,9 +690,15 @@ class PdfSourceRequestTest {
         assertEquals(listOf(null), authorization.drop(previousRequests))
         prompts.last().proceed("bob", "password")
         assertStatus(200, load(token, onAuthenticationRequired = prompt))
-        assertEquals(listOf(null, null, "Basic Ym9iOnBhc3N3b3Jk"), authorization.drop(previousRequests))
+        assertEquals(
+            listOf(null, null, "Basic Ym9iOnBhc3N3b3Jk"),
+            authorization.drop(previousRequests),
+        )
         assertEquals(2, prompts.size)
-        assertEquals(setOf("Basic YWxpY2U6c2VjcmV0", "Basic Ym9iOnBhc3N3b3Jk"), credentials(source(token)).values.toSet())
+        assertEquals(
+            setOf("Basic YWxpY2U6c2VjcmV0", "Basic Ym9iOnBhc3N3b3Jk"),
+            credentials(source(token)).values.toSet(),
+        )
     }
 
     @Test
@@ -532,19 +713,41 @@ class PdfSourceRequestTest {
                 if (header == "Basic Ym9iOnBhc3N3b3Jk") {
                     respond(exchange, 200, "destination PDF")
                 } else {
-                    respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"shared\"")
+                    respond(
+                        exchange,
+                        401,
+                        "authenticate",
+                        "WWW-Authenticate" to "Basic realm=\"shared\"",
+                    )
                 }
             }
             server.createContext("/ports.pdf") { exchange ->
-                if (exchange.requestHeaders.getFirst("Authorization") == "Basic YWxpY2U6c2VjcmV0") {
-                    respond(exchange, 302, "redirect", "Location" to "http://127.0.0.1:${destination.address.port}/final.pdf")
+                if (
+                    exchange.requestHeaders.getFirst("Authorization") ==
+                        "Basic YWxpY2U6c2VjcmV0"
+                ) {
+                    respond(
+                        exchange,
+                        302,
+                        "redirect",
+                        "Location" to
+                            "http://127.0.0.1:${destination.address.port}/final.pdf",
+                    )
                 } else {
-                    respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"shared\"")
+                    respond(
+                        exchange,
+                        401,
+                        "authenticate",
+                        "WWW-Authenticate" to "Basic realm=\"shared\"",
+                    )
                 }
             }
             val token = register("$remote/ports.pdf")
             val prompts = mutableListOf<HttpAuthRequest>()
-            val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request -> prompts.add(request) }
+            val prompt: (String, String, HttpAuthRequest) -> Unit =
+                { _, _, request ->
+                    prompts.add(request)
+                }
 
             assertStatus(401, load(token, onAuthenticationRequired = prompt))
             prompts.single().proceed("alice", "secret")
@@ -554,7 +757,10 @@ class PdfSourceRequestTest {
             assertEquals(listOf(null), destinationAuthorization.toList())
             prompts.last().proceed("bob", "password")
             assertStatus(200, load(token, onAuthenticationRequired = prompt))
-            assertEquals(listOf(null, null, "Basic Ym9iOnBhc3N3b3Jk"), destinationAuthorization.toList())
+            assertEquals(
+                listOf(null, null, "Basic Ym9iOnBhc3N3b3Jk"),
+                destinationAuthorization.toList(),
+            )
             assertEquals(2, prompts.size)
             assertEquals(2, credentials(source(token)).size)
         } finally {
@@ -566,10 +772,18 @@ class PdfSourceRequestTest {
     fun aSameOriginRedirectReusesCredentialsOnlyAfterTheDestinationChallenges() {
         val destinationAuthorization = CopyOnWriteArrayList<String?>()
         server.createContext("/same-origin.pdf") { exchange ->
-            if (exchange.requestHeaders.getFirst("Authorization") == "Basic YWxpY2U6c2VjcmV0") {
+            if (
+                exchange.requestHeaders.getFirst("Authorization") ==
+                    "Basic YWxpY2U6c2VjcmV0"
+            ) {
                 respond(exchange, 302, "redirect", "Location" to "/final.pdf")
             } else {
-                respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"shared\"")
+                respond(
+                    exchange,
+                    401,
+                    "authenticate",
+                    "WWW-Authenticate" to "Basic realm=\"shared\"",
+                )
             }
         }
         server.createContext("/final.pdf") { exchange ->
@@ -578,18 +792,28 @@ class PdfSourceRequestTest {
             if (header == "Basic YWxpY2U6c2VjcmV0") {
                 respond(exchange, 200, "private PDF")
             } else {
-                respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"shared\"")
+                respond(
+                    exchange,
+                    401,
+                    "authenticate",
+                    "WWW-Authenticate" to "Basic realm=\"shared\"",
+                )
             }
         }
         val token = register("$remote/same-origin.pdf")
         val prompts = mutableListOf<HttpAuthRequest>()
-        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request -> prompts.add(request) }
+        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request ->
+            prompts.add(request)
+        }
 
         assertStatus(401, load(token, onAuthenticationRequired = prompt))
         prompts.single().proceed("alice", "secret")
         assertStatus(200, load(token, onAuthenticationRequired = prompt))
 
-        assertEquals(listOf(null, "Basic YWxpY2U6c2VjcmV0"), destinationAuthorization.toList())
+        assertEquals(
+            listOf(null, "Basic YWxpY2U6c2VjcmV0"),
+            destinationAuthorization.toList(),
+        )
         assertEquals(1, prompts.size)
         assertEquals(1, credentials(source(token)).size)
     }
@@ -604,17 +828,20 @@ class PdfSourceRequestTest {
                 respond(exchange, 200, "private PDF")
             } else {
                 respond(
-                    exchange, 401, "authenticate",
-                    "WWW-Authenticate" to (
-                        "Digest realm=\"decoy\", nonce=\"opaque\", bAsIc realm=\"reports, \\\"private\\\"\", " +
-                            "charset=\"utf-8\", Bearer realm=\"ignored\""
-                    ),
+                    exchange,
+                    401,
+                    "authenticate",
+                    "WWW-Authenticate" to
+                        ("Digest realm=\"decoy\", nonce=\"opaque\", bAsIc realm=\"reports, \\\"private\\\"\", " +
+                            "charset=\"utf-8\", Bearer realm=\"ignored\""),
                 )
             }
         }
         val token = register("$remote/utf8.pdf")
         val prompts = mutableListOf<HttpAuthRequest>()
-        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request -> prompts.add(request) }
+        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request ->
+            prompts.add(request)
+        }
 
         assertStatus(401, load(token, onAuthenticationRequired = prompt))
         assertEquals("reports, \"private\"", prompts.single().realm)
@@ -622,7 +849,10 @@ class PdfSourceRequestTest {
         prompts.single().proceed("josé", "päss")
         assertStatus(200, load(token, onAuthenticationRequired = prompt))
 
-        assertEquals(listOf(null, null, "Basic am9zw6k6cMOkc3M="), authorization.toList())
+        assertEquals(
+            listOf(null, null, "Basic am9zw6k6cMOkc3M="),
+            authorization.toList(),
+        )
         assertEquals(1, prompts.size)
     }
 
@@ -636,40 +866,56 @@ class PdfSourceRequestTest {
                 respond(exchange, 200, "private PDF")
             } else {
                 respond(
-                    exchange, 401, "authenticate",
-                    "WWW-Authenticate" to "Basic realm=\"legacy\", Digest realm=\"decoy\", charset=\"UTF-8\"",
+                    exchange,
+                    401,
+                    "authenticate",
+                    "WWW-Authenticate" to
+                        "Basic realm=\"legacy\", Digest realm=\"decoy\", charset=\"UTF-8\"",
                 )
             }
         }
         val token = register("$remote/legacy.pdf")
         val prompts = mutableListOf<HttpAuthRequest>()
-        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request -> prompts.add(request) }
+        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request ->
+            prompts.add(request)
+        }
 
         assertStatus(401, load(token, onAuthenticationRequired = prompt))
         assertEquals("legacy", prompts.single().realm)
         prompts.single().proceed("josé", "päss")
         assertStatus(200, load(token, onAuthenticationRequired = prompt))
 
-        assertEquals(listOf(null, null, "Basic am9z6Tpw5HNz"), authorization.toList())
+        assertEquals(
+            listOf(null, null, "Basic am9z6Tpw5HNz"),
+            authorization.toList(),
+        )
         assertEquals(1, prompts.size)
     }
 
     @Test
     fun unsupportedOrIncompleteChallengesDoNotCreateAuthenticationPrompts() {
-        val challenges = listOf(
-            "Bearer realm=\"private\"",
-            "Digest realm=\"Basic decoy\", nonce=\"opaque\"",
-            "Basic",
-            "Basic charset=\"UTF-8\"",
-            "Basic realm=",
-            "NotBasic realm=\"private\"",
-        )
+        val challenges =
+            listOf(
+                "Bearer realm=\"private\"",
+                "Digest realm=\"Basic decoy\", nonce=\"opaque\"",
+                "Basic",
+                "Basic charset=\"UTF-8\"",
+                "Basic realm=",
+                "NotBasic realm=\"private\"",
+            )
         val prompts = mutableListOf<HttpAuthRequest>()
-        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request -> prompts.add(request) }
+        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request ->
+            prompts.add(request)
+        }
         challenges.forEachIndexed { index, challenge ->
             val path = "/unsupported-$index.pdf"
             server.createContext(path) { exchange ->
-                respond(exchange, 401, "authenticate", "WWW-Authenticate" to challenge)
+                respond(
+                    exchange,
+                    401,
+                    "authenticate",
+                    "WWW-Authenticate" to challenge,
+                )
             }
             val token = register("$remote$path")
 
@@ -684,23 +930,40 @@ class PdfSourceRequestTest {
     @Test
     fun repeatedUnauthorizedLoadsShareOnePromptAndCancellationAllowsANewPrompt() {
         server.createContext("/pending.pdf") { exchange ->
-            if (exchange.requestHeaders.getFirst("Authorization") == "Basic YWxpY2U6c2VjcmV0") {
+            if (
+                exchange.requestHeaders.getFirst("Authorization") ==
+                    "Basic YWxpY2U6c2VjcmV0"
+            ) {
                 respond(exchange, 200, "private PDF")
             } else {
-                respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"private\"")
+                respond(
+                    exchange,
+                    401,
+                    "authenticate",
+                    "WWW-Authenticate" to "Basic realm=\"private\"",
+                )
             }
         }
         val url = "$remote/pending.pdf"
         val token = register(url)
         val prompts = mutableListOf<HttpAuthRequest>()
         val authenticated = mutableListOf<String>()
-        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request -> prompts.add(request) }
+        val prompt: (String, String, HttpAuthRequest) -> Unit = { _, _, request ->
+            prompts.add(request)
+        }
         val completed: (String, String) -> Unit = { callbackToken, callbackUrl ->
             authenticated.add("$callbackToken:$callbackUrl")
         }
 
         repeat(2) {
-            assertStatus(401, load(token, onAuthenticationRequired = prompt, onAuthenticated = completed))
+            assertStatus(
+                401,
+                load(
+                    token,
+                    onAuthenticationRequired = prompt,
+                    onAuthenticated = completed,
+                ),
+            )
         }
         assertEquals(1, prompts.size)
         assertEquals(1, pendingAuthentication(source(token)).size)
@@ -711,14 +974,24 @@ class PdfSourceRequestTest {
         assertTrue(credentials(source(token)).isEmpty())
         assertTrue(authenticated.isEmpty())
 
-        assertStatus(401, load(token, onAuthenticationRequired = prompt, onAuthenticated = completed))
+        assertStatus(
+            401,
+            load(
+                token,
+                onAuthenticationRequired = prompt,
+                onAuthenticated = completed,
+            ),
+        )
         assertEquals(2, prompts.size)
         assertNotSame(cancelled, prompts.last())
         prompts.last().proceed("alice", "secret")
         prompts.last().proceed("wrong", "password")
         assertEquals(listOf("$token:$url"), authenticated)
         assertTrue(pendingAuthentication(source(token)).isEmpty())
-        assertEquals(listOf("Basic YWxpY2U6c2VjcmV0"), credentials(source(token)).values.toList())
+        assertEquals(
+            listOf("Basic YWxpY2U6c2VjcmV0"),
+            credentials(source(token)).values.toList(),
+        )
         assertStatus(200, load(token, onAuthenticationRequired = prompt))
         assertEquals(2, prompts.size)
     }
@@ -726,16 +999,24 @@ class PdfSourceRequestTest {
     @Test
     fun closingAViewerCancelsItsAuthenticationPromptAndRejectsLaterRequests() {
         server.createContext("/closing-auth.pdf") { exchange ->
-            respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"private\"")
+            respond(
+                exchange,
+                401,
+                "authenticate",
+                "WWW-Authenticate" to "Basic realm=\"private\"",
+            )
         }
         val token = register("$remote/closing-auth.pdf")
         val pending = mutableListOf<HttpAuthRequest>()
         val callbacks = AtomicInteger()
-        assertStatus(401, load(
-            token,
-            onAuthenticationRequired = { _, _, request -> pending.add(request) },
-            onAuthenticated = { _, _ -> callbacks.incrementAndGet() },
-        ))
+        assertStatus(
+            401,
+            load(
+                token,
+                onAuthenticationRequired = { _, _, request -> pending.add(request) },
+                onAuthenticated = { _, _ -> callbacks.incrementAndGet() },
+            ),
+        )
         assertEquals(1, pendingAuthentication(source(token)).size)
 
         cancelPdfSourceRequests(token)
@@ -751,17 +1032,27 @@ class PdfSourceRequestTest {
     @Test
     fun replacingAPdfViewerCancelsTheOldAuthenticationWithoutAffectingItsReplacement() {
         server.createContext("/replaced-auth.pdf") { exchange ->
-            respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"private\"")
+            respond(
+                exchange,
+                401,
+                "authenticate",
+                "WWW-Authenticate" to "Basic realm=\"private\"",
+            )
         }
         val url = "$remote/replaced-auth.pdf"
         val oldToken = register(url)
         val oldPrompt = mutableListOf<HttpAuthRequest>()
         val oldCallbacks = AtomicInteger()
-        assertStatus(401, load(
-            oldToken,
-            onAuthenticationRequired = { _, _, request -> oldPrompt.add(request) },
-            onAuthenticated = { _, _ -> oldCallbacks.incrementAndGet() },
-        ))
+        assertStatus(
+            401,
+            load(
+                oldToken,
+                onAuthenticationRequired = { _, _, request ->
+                    oldPrompt.add(request)
+                },
+                onAuthenticated = { _, _ -> oldCallbacks.incrementAndGet() },
+            ),
+        )
 
         val nextToken = registerPdfSource(url, oldToken).also(createdTokens::add)
         val nextPrompt = mutableListOf<HttpAuthRequest>()
@@ -771,10 +1062,15 @@ class PdfSourceRequestTest {
         assertEquals(0, oldCallbacks.get())
         assertStatus(404, load(oldToken))
 
-        assertStatus(401, load(
-            nextToken,
-            onAuthenticationRequired = { _, _, request -> nextPrompt.add(request) },
-        ))
+        assertStatus(
+            401,
+            load(
+                nextToken,
+                onAuthenticationRequired = { _, _, request ->
+                    nextPrompt.add(request)
+                },
+            ),
+        )
         assertEquals(1, nextPrompt.size)
         assertEquals(1, pendingAuthentication(source(nextToken)).size)
     }
@@ -782,16 +1078,30 @@ class PdfSourceRequestTest {
     @Test
     fun replacingAViewerRetainsCopiedCredentialsButErasesTheClosedViewersCopy() {
         server.createContext("/retained-auth.pdf") { exchange ->
-            if (exchange.requestHeaders.getFirst("Authorization") == "Basic YWxpY2U6c2VjcmV0") {
+            if (
+                exchange.requestHeaders.getFirst("Authorization") ==
+                    "Basic YWxpY2U6c2VjcmV0"
+            ) {
                 respond(exchange, 200, "private PDF")
             } else {
-                respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"private\"")
+                respond(
+                    exchange,
+                    401,
+                    "authenticate",
+                    "WWW-Authenticate" to "Basic realm=\"private\"",
+                )
             }
         }
         val url = "$remote/retained-auth.pdf"
         val oldToken = register(url)
         val prompts = mutableListOf<HttpAuthRequest>()
-        assertStatus(401, load(oldToken, onAuthenticationRequired = { _, _, it -> prompts.add(it) }))
+        assertStatus(
+            401,
+            load(
+                oldToken,
+                onAuthenticationRequired = { _, _, it -> prompts.add(it) },
+            ),
+        )
         prompts.single().proceed("alice", "secret")
         assertEquals(1, credentials(source(oldToken)).size)
 
@@ -801,12 +1111,17 @@ class PdfSourceRequestTest {
         assertEquals(1, credentials(source(nextToken)).size)
         val response = requireNotNull(load(nextToken))
         assertEquals(200, response.statusCode)
-        assertEquals("private PDF", response.data.use { it.bufferedReader().readText() })
+        assertEquals(
+            "private PDF",
+            response.data.use { it.bufferedReader().readText() },
+        )
     }
 
     @Test
     fun closingAViewerReleasesAnOpenResponseWithoutClosingAnotherViewersConnection() {
-        server.createContext("/stream.pdf") { exchange -> respond(exchange, 200, "PDF contents") }
+        server.createContext("/stream.pdf") { exchange ->
+            respond(exchange, 200, "PDF contents")
+        }
         val oldToken = register("$remote/stream.pdf")
         val otherToken = register("$remote/stream.pdf")
         val oldResponse = requireNotNull(load(oldToken))
@@ -820,7 +1135,10 @@ class PdfSourceRequestTest {
             cancelPdfSourceRequests(oldToken)
             assertTrue(activeConnections(source(oldToken)).isEmpty())
             assertEquals(1, activeConnections(source(otherToken)).size)
-            assertEquals("PDF contents", otherResponse.data.bufferedReader().readText())
+            assertEquals(
+                "PDF contents",
+                otherResponse.data.bufferedReader().readText(),
+            )
         } finally {
             oldResponse.data.close()
             otherResponse.data.close()
@@ -836,7 +1154,14 @@ class PdfSourceRequestTest {
         server.createContext("/slow-redirect") { exchange ->
             entered.countDown()
             if (release.await(10, TimeUnit.SECONDS)) {
-                runCatching { respond(exchange, 302, "redirect", "Location" to "/forbidden-after-cancel") }
+                runCatching {
+                    respond(
+                        exchange,
+                        302,
+                        "redirect",
+                        "Location" to "/forbidden-after-cancel",
+                    )
+                }
             } else {
                 exchange.close()
             }
@@ -861,10 +1186,16 @@ class PdfSourceRequestTest {
         worker.isDaemon = true
         worker.start()
         try {
-            assertTrue("Request did not reach the server", entered.await(5, TimeUnit.SECONDS))
+            assertTrue(
+                "Request did not reach the server",
+                entered.await(5, TimeUnit.SECONDS),
+            )
             cancelPdfSourceRequests(token)
             release.countDown()
-            assertTrue("Cancelled request did not finish", completed.await(7, TimeUnit.SECONDS))
+            assertTrue(
+                "Cancelled request did not finish",
+                completed.await(7, TimeUnit.SECONDS),
+            )
             assertNull(failure.get())
             assertStatus(410, result.get())
             assertEquals(0, redirected.get())
@@ -880,17 +1211,25 @@ class PdfSourceRequestTest {
         val requests = AtomicInteger()
         server.createContext("/expired.pdf") { exchange ->
             requests.incrementAndGet()
-            respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"expired\"")
+            respond(
+                exchange,
+                401,
+                "authenticate",
+                "WWW-Authenticate" to "Basic realm=\"expired\"",
+            )
         }
         val token = register("$remote/expired.pdf")
         val registered = source(token)
         val prompts = mutableListOf<HttpAuthRequest>()
         val authenticated = AtomicInteger()
-        assertStatus(401, load(
-            token,
-            onAuthenticationRequired = { _, _, request -> prompts.add(request) },
-            onAuthenticated = { _, _ -> authenticated.incrementAndGet() },
-        ))
+        assertStatus(
+            401,
+            load(
+                token,
+                onAuthenticationRequired = { _, _, request -> prompts.add(request) },
+                onAuthenticated = { _, _ -> authenticated.incrementAndGet() },
+            ),
+        )
         assertEquals(1, pendingAuthentication(registered).size)
         setExpiresAt(registered, 0)
 
@@ -909,17 +1248,25 @@ class PdfSourceRequestTest {
         val requests = AtomicInteger()
         server.createContext("/late-auth.pdf") { exchange ->
             requests.incrementAndGet()
-            respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"late\"")
+            respond(
+                exchange,
+                401,
+                "authenticate",
+                "WWW-Authenticate" to "Basic realm=\"late\"",
+            )
         }
         val token = register("$remote/late-auth.pdf")
         val registered = source(token)
         val prompts = mutableListOf<HttpAuthRequest>()
         val authenticated = AtomicInteger()
-        assertStatus(401, load(
-            token,
-            onAuthenticationRequired = { _, _, request -> prompts.add(request) },
-            onAuthenticated = { _, _ -> authenticated.incrementAndGet() },
-        ))
+        assertStatus(
+            401,
+            load(
+                token,
+                onAuthenticationRequired = { _, _, request -> prompts.add(request) },
+                onAuthenticated = { _, _ -> authenticated.incrementAndGet() },
+            ),
+        )
         setExpiresAt(registered, 0)
 
         prompts.single().proceed("alice", "secret")
@@ -934,16 +1281,24 @@ class PdfSourceRequestTest {
 
     @Test
     fun readingAnActiveSourceRenewsItsRegistrationForTwentyFourHours() {
-        server.createContext("/active.pdf") { exchange -> respond(exchange, 200, "active PDF") }
+        server.createContext("/active.pdf") { exchange ->
+            respond(exchange, 200, "active PDF")
+        }
         val token = register("$remote/active.pdf")
         val registered = source(token)
-        setExpiresAt(registered, System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1))
+        setExpiresAt(
+            registered,
+            System.currentTimeMillis() + TimeUnit.HOURS.toMillis(1),
+        )
         val before = System.currentTimeMillis()
 
         val response = load(token)
 
         assertEquals(200, response?.statusCode)
-        assertEquals("active PDF", response!!.data.use { it.bufferedReader().readText() })
+        assertEquals(
+            "active PDF",
+            response!!.data.use { it.bufferedReader().readText() },
+        )
         val after = System.currentTimeMillis()
         val renewed = expiresAt(registered)
         val lifetime = TimeUnit.HOURS.toMillis(24)
@@ -963,11 +1318,16 @@ class PdfSourceRequestTest {
         setExpiresAt(source(token), 0)
         val events = mutableListOf<Triple<String, String, String>>()
 
-        assertStatus(200, load(
-            token,
-            requestUrl = "$base/pdf_status?wk_pdf_token=$token&event=retry",
-            onViewerEvent = { receivedToken, url, event -> events.add(Triple(receivedToken, url, event)) },
-        ))
+        assertStatus(
+            200,
+            load(
+                token,
+                requestUrl = "$base/pdf_status?wk_pdf_token=$token&event=retry",
+                onViewerEvent = { receivedToken, url, event ->
+                    events.add(Triple(receivedToken, url, event))
+                },
+            ),
+        )
 
         assertEquals(listOf(Triple(token, "", "retry")), events)
         assertFalse(sources().containsKey(token))
@@ -978,7 +1338,12 @@ class PdfSourceRequestTest {
     @Test
     fun registrationPrunesExpiredAuthenticationButKeepsAnActiveViewersPrompt() {
         server.createContext("/cleanup.pdf") { exchange ->
-            respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"cleanup\"")
+            respond(
+                exchange,
+                401,
+                "authenticate",
+                "WWW-Authenticate" to "Basic realm=\"cleanup\"",
+            )
         }
         val url = "$remote/cleanup.pdf"
         val expiredToken = register(url)
@@ -988,11 +1353,18 @@ class PdfSourceRequestTest {
         val prompts = mutableMapOf<String, HttpAuthRequest>()
         val authenticated = mutableListOf<String>()
         for (token in listOf(expiredToken, activeToken)) {
-            assertStatus(401, load(
-                token,
-                onAuthenticationRequired = { receivedToken, _, request -> prompts[receivedToken] = request },
-                onAuthenticated = { receivedToken, _ -> authenticated.add(receivedToken) },
-            ))
+            assertStatus(
+                401,
+                load(
+                    token,
+                    onAuthenticationRequired = { receivedToken, _, request ->
+                        prompts[receivedToken] = request
+                    },
+                    onAuthenticated = { receivedToken, _ ->
+                        authenticated.add(receivedToken)
+                    },
+                ),
+            )
         }
         setExpiresAt(expiredSource, 0)
 
@@ -1015,10 +1387,18 @@ class PdfSourceRequestTest {
         val requests = AtomicInteger()
         server.createContext("/capacity.pdf") { exchange ->
             requests.incrementAndGet()
-            if (exchange.requestHeaders.getFirst("Authorization") == "Basic YWxpY2U6c2VjcmV0") {
+            if (
+                exchange.requestHeaders.getFirst("Authorization") ==
+                    "Basic YWxpY2U6c2VjcmV0"
+            ) {
                 respond(exchange, 200, "surviving PDF")
             } else {
-                respond(exchange, 401, "authenticate", "WWW-Authenticate" to "Basic realm=\"capacity\"")
+                respond(
+                    exchange,
+                    401,
+                    "authenticate",
+                    "WWW-Authenticate" to "Basic realm=\"capacity\"",
+                )
             }
         }
         val recentToken = register("$remote/capacity.pdf")
@@ -1028,22 +1408,34 @@ class PdfSourceRequestTest {
         val prompts = mutableMapOf<String, HttpAuthRequest>()
         val authenticated = mutableListOf<String>()
         for (token in listOf(recentToken, evictedToken)) {
-            assertStatus(401, load(
-                token,
-                onAuthenticationRequired = { receivedToken, _, request -> prompts[receivedToken] = request },
-                onAuthenticated = { receivedToken, _ -> authenticated.add(receivedToken) },
-            ))
+            assertStatus(
+                401,
+                load(
+                    token,
+                    onAuthenticationRequired = { receivedToken, _, request ->
+                        prompts[receivedToken] = request
+                    },
+                    onAuthenticated = { receivedToken, _ ->
+                        authenticated.add(receivedToken)
+                    },
+                ),
+            )
         }
         repeat(62) { register("$remote/unused-$it.pdf") }
         assertEquals(64, sources().size)
         val now = System.currentTimeMillis()
         setExpiresAt(recentSource, now + TimeUnit.HOURS.toMillis(1))
         setExpiresAt(evictedSource, now + TimeUnit.HOURS.toMillis(2))
-        // A viewer status request refreshes the older registration before capacity eviction.
-        assertStatus(200, load(
-            recentToken,
-            requestUrl = "$base/pdf_status?wk_pdf_token=$recentToken&event=loaded",
-        ))
+        // A viewer status request refreshes the older registration before capacity
+        // eviction.
+        assertStatus(
+            200,
+            load(
+                recentToken,
+                requestUrl =
+                    "$base/pdf_status?wk_pdf_token=$recentToken&event=loaded",
+            ),
+        )
         val previousTokens = sources().keys.toSet()
 
         val replacement = register("$remote/replacement.pdf")
@@ -1061,7 +1453,10 @@ class PdfSourceRequestTest {
         assertEquals(listOf(recentToken), authenticated)
         val response = load(recentToken)
         assertEquals(200, response?.statusCode)
-        assertEquals("surviving PDF", response!!.data.use { it.bufferedReader().readText() })
+        assertEquals(
+            "surviving PDF",
+            response!!.data.use { it.bufferedReader().readText() },
+        )
         assertEquals(4, requests.get())
         assertTrue(pendingAuthentication(recentSource).isEmpty())
     }
@@ -1079,36 +1474,54 @@ class PdfSourceRequestTest {
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun sources(): MutableMap<String, Any> = Class.forName(
-        "uk.nktnet.webviewkiosk.utils.webview.handlers.HandlePdfSourceRequestKt",
-    ).getDeclaredField("registeredPdfSources").apply { isAccessible = true }
-        .get(null) as MutableMap<String, Any>
+    private fun sources(): MutableMap<String, Any> =
+        Class.forName(
+                "uk.nktnet.webviewkiosk.utils.webview.handlers.HandlePdfSourceRequestKt"
+            )
+            .getDeclaredField("registeredPdfSources")
+            .apply { isAccessible = true }
+            .get(null) as MutableMap<String, Any>
 
     private fun source(token: String): Any = requireNotNull(sources()[token])
 
-    private fun expiresAt(source: Any): Long = source.javaClass.getDeclaredField("expiresAt")
-        .apply { isAccessible = true }.getLong(source)
+    private fun expiresAt(source: Any): Long =
+        source.javaClass
+            .getDeclaredField("expiresAt")
+            .apply { isAccessible = true }
+            .getLong(source)
 
     private fun setExpiresAt(source: Any, value: Long) {
-        source.javaClass.getDeclaredField("expiresAt").apply { isAccessible = true }.setLong(source, value)
+        source.javaClass
+            .getDeclaredField("expiresAt")
+            .apply { isAccessible = true }
+            .setLong(source, value)
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun pendingAuthentication(source: Any): MutableMap<Any, HttpAuthRequest> =
-        source.javaClass.getDeclaredField("pendingAuthentication").apply { isAccessible = true }
+    private fun pendingAuthentication(
+        source: Any
+    ): MutableMap<Any, HttpAuthRequest> =
+        source.javaClass
+            .getDeclaredField("pendingAuthentication")
+            .apply { isAccessible = true }
             .get(source) as MutableMap<Any, HttpAuthRequest>
 
     @Suppress("UNCHECKED_CAST")
     private fun activeConnections(source: Any): Set<HttpURLConnection> =
-        source.javaClass.getDeclaredField("activeConnections").apply { isAccessible = true }
+        source.javaClass
+            .getDeclaredField("activeConnections")
+            .apply { isAccessible = true }
             .get(source) as Set<HttpURLConnection>
 
     @Suppress("UNCHECKED_CAST")
     private fun credentials(source: Any): Map<Any, String> =
-        source.javaClass.getDeclaredField("credentials").apply { isAccessible = true }
+        source.javaClass
+            .getDeclaredField("credentials")
+            .apply { isAccessible = true }
             .get(source) as Map<Any, String>
 
-    private fun register(sourceUrl: String): String = registerPdfSource(sourceUrl).also(createdTokens::add)
+    private fun register(sourceUrl: String): String =
+        registerPdfSource(sourceUrl).also(createdTokens::add)
 
     private fun load(
         token: String?,
@@ -1116,29 +1529,44 @@ class PdfSourceRequestTest {
         headers: Map<String, String> = emptyMap(),
         userAgent: String? = null,
         blacklist: List<Regex> = emptyList(),
-        onAuthenticationRequired: (String, String, HttpAuthRequest) -> Unit = { _, _, request -> request.cancel() },
+        onAuthenticationRequired: (String, String, HttpAuthRequest) -> Unit =
+            { _, _, request ->
+                request.cancel()
+            },
         onAuthenticated: (String, String) -> Unit = { _, _ -> },
         onViewerEvent: (String, String, String) -> Unit = { _, _, _ -> },
-    ) = handlePdfSourceRequest(
-        context = context,
-        request = object : WebResourceRequest {
-            override fun getUrl() = Uri.parse(requestUrl)
-            override fun isForMainFrame() = false
-            override fun hasGesture() = false
-            override fun getMethod() = "GET"
-            override fun getRequestHeaders() = headers
-            override fun isRedirect() = false
-        },
-        userAgent = userAgent,
-        userSettings = settings,
-        blacklistRegexes = blacklist,
-        whitelistRegexes = emptyList(),
-        onAuthenticationRequired = onAuthenticationRequired,
-        onAuthenticated = onAuthenticated,
-        onViewerEvent = onViewerEvent,
-    )
+    ) =
+        handlePdfSourceRequest(
+            context = context,
+            request =
+                object : WebResourceRequest {
+                    override fun getUrl() = Uri.parse(requestUrl)
 
-    private fun respond(exchange: HttpExchange, code: Int, body: String, vararg headers: Pair<String, String>) {
+                    override fun isForMainFrame() = false
+
+                    override fun hasGesture() = false
+
+                    override fun getMethod() = "GET"
+
+                    override fun getRequestHeaders() = headers
+
+                    override fun isRedirect() = false
+                },
+            userAgent = userAgent,
+            userSettings = settings,
+            blacklistRegexes = blacklist,
+            whitelistRegexes = emptyList(),
+            onAuthenticationRequired = onAuthenticationRequired,
+            onAuthenticated = onAuthenticated,
+            onViewerEvent = onViewerEvent,
+        )
+
+    private fun respond(
+        exchange: HttpExchange,
+        code: Int,
+        body: String,
+        vararg headers: Pair<String, String>,
+    ) {
         exchange.responseHeaders.set("Content-Type", "application/pdf")
         for ((name, value) in headers) exchange.responseHeaders.set(name, value)
         val bytes = body.toByteArray()

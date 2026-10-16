@@ -10,12 +10,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import kotlin.math.roundToInt
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.NumberSettingFieldItem
 import uk.nktnet.webviewkiosk.utils.setWindowBrightness
-import kotlin.math.roundToInt
 
 @Composable
 fun BrightnessSetting() {
@@ -26,11 +26,13 @@ fun BrightnessSetting() {
 
     NumberSettingFieldItem(
         label = stringResource(R.string.device_brightness_title),
-        infoText = """
+        infoText =
+            """
             Set the app window brightness from 0 (very dim) to 100 (very bright).
 
             Use -1 to disable (i.e. the system default brightness will be used).
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.brightness,
         settingKey = settingKey,
         restricted = restricted,
@@ -60,17 +62,17 @@ fun BrightnessSetting() {
                     },
                     valueRange = -1f..100f,
                     steps = 101,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
 
                 Button(
                     enabled = draftValue.isNotEmpty() && draftValue != "-1",
                     onClick = { setValue("-1") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text("Use System Default (-1)")
                 }
             }
-        }
+        },
     )
 }

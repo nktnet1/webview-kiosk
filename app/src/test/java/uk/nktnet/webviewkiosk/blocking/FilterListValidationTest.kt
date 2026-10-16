@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.blocking
 
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertThrows
@@ -11,9 +12,11 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import uk.nktnet.webviewkiosk.adblock.FilterListValidator
 import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
-import java.io.File
 
-/** Storage/validator boundary tests. Real filter syntax is exercised in KotlinFilterEngineTest. */
+/**
+ * Storage/validator boundary tests. Real filter syntax is exercised in
+ * KotlinFilterEngineTest.
+ */
 @RunWith(RobolectricTestRunner::class)
 class FilterListValidationTest {
     private lateinit var store: FilterListStore
@@ -25,7 +28,11 @@ class FilterListValidationTest {
     @Before
     fun setup() {
         val context = RuntimeEnvironment.getApplication()
-        context.getSharedPreferences("content_blocking_lists", 0).edit().clear().commit()
+        context
+            .getSharedPreferences("content_blocking_lists", 0)
+            .edit()
+            .clear()
+            .commit()
         directory = File(context.filesDir, "content-blocking-lists")
         directory.deleteRecursively()
         validated.clear()
@@ -34,10 +41,10 @@ class FilterListValidationTest {
             FilterListStore(
                 context,
                 validator =
-                FilterListValidator { text ->
-                    validated += text
-                    failure?.let { throw it }
-                },
+                    FilterListValidator { text ->
+                        validated += text
+                        failure?.let { throw it }
+                    },
                 now = { currentTime },
             )
     }
@@ -51,22 +58,38 @@ class FilterListValidationTest {
                 "||ads.example^\n||cdn.example^\$future-option".byteInputStream(),
             )
         assertThrows(IllegalArgumentException::class.java) {
-            realStore.updateFile(item.id, "Changed", "||ads.example^\$domain=".byteInputStream())
+            realStore.updateFile(
+                item.id,
+                "Changed",
+                "||ads.example^\$domain=".byteInputStream(),
+            )
         }
         assertEquals(listOf(item), realStore.list())
-        val engine = KotlinFilterEngine().also { it.replace(realStore.enabledTexts()) }
+        val engine =
+            KotlinFilterEngine().also { it.replace(realStore.enabledTexts()) }
         assertTrue(
-            engine.shouldBlock("https://ads.example/a", "https://site.example/", "other", "GET"),
+            engine.shouldBlock(
+                "https://ads.example/a",
+                "https://site.example/",
+                "other",
+                "GET",
+            )
         )
         assertFalse(
-            engine.shouldBlock("https://cdn.example/a", "https://site.example/", "other", "GET"),
+            engine.shouldBlock(
+                "https://cdn.example/a",
+                "https://site.example/",
+                "other",
+                "GET",
+            )
         )
         assertEquals(1, engine.unsupportedRuleCount())
     }
 
     @Test
     fun validationReceivesTheEntireMixedFormatUtf8FileUnchanged() {
-        val text = "\uFEFF[Adblock Plus 2.0]\r\n! comment\r\n0.0.0.0 ads.example\r\n||例子.测试^\r\n"
+        val text =
+            "\uFEFF[Adblock Plus 2.0]\r\n! comment\r\n0.0.0.0 ads.example\r\n||例子.测试^\r\n"
         store.importFrom("mixed.txt", text.byteInputStream())
         assertEquals(listOf(text), validated)
         assertEquals(listOf(text), store.enabledTexts())
@@ -74,7 +97,10 @@ class FilterListValidationTest {
 
     @Test
     fun malformedImportReportsParserLinesAndLeavesNoFilesOrMetadata() {
-        failure = IllegalArgumentException("Invalid filter syntax:\nLine 3: empty redirection")
+        failure =
+            IllegalArgumentException(
+                "Invalid filter syntax:\nLine 3: empty redirection"
+            )
         val error =
             assertThrows(IllegalArgumentException::class.java) {
                 store.importFrom(
@@ -90,7 +116,12 @@ class FilterListValidationTest {
 
     @Test
     fun zeroLengthBinaryAndInvalidUtf8FilesNeverReachTheSyntaxParser() {
-        for (bytes in listOf(byteArrayOf(), byteArrayOf(0), byteArrayOf(0xc3.toByte(), 0x28))) {
+        for (bytes in
+            listOf(
+                byteArrayOf(),
+                byteArrayOf(0),
+                byteArrayOf(0xc3.toByte(), 0x28),
+            )) {
             assertThrows(IllegalArgumentException::class.java) {
                 store.importFrom("invalid.txt", bytes.inputStream())
             }
@@ -103,7 +134,9 @@ class FilterListValidationTest {
     @Test
     fun whitespaceAndCommentOnlyErrorsArePreserved() {
         failure =
-            IllegalArgumentException("Filter list has no rules (only comments or blank lines)")
+            IllegalArgumentException(
+                "Filter list has no rules (only comments or blank lines)"
+            )
         for (text in listOf(" \n\t", "! comment\n# comment\n")) {
             val error =
                 assertThrows(IllegalArgumentException::class.java) {
@@ -122,14 +155,27 @@ class FilterListValidationTest {
         val item = store.importFrom("Working.txt", text.byteInputStream())
         store.setEnabled(item.id, false)
         val original = store.list().single()
-        failure = IllegalArgumentException("Invalid filter syntax:\nLine 1: empty redirection")
+        failure =
+            IllegalArgumentException(
+                "Invalid filter syntax:\nLine 1: empty redirection"
+            )
         assertThrows(IllegalArgumentException::class.java) {
-            store.updateFile(item.id, "Changed name", "||bad.example^\$redirect=".byteInputStream())
+            store.updateFile(
+                item.id,
+                "Changed name",
+                "||bad.example^\$redirect=".byteInputStream(),
+            )
         }
         assertEquals(original, store.list().single())
-        assertEquals(original, FilterListStore(RuntimeEnvironment.getApplication()).list().single())
+        assertEquals(
+            original,
+            FilterListStore(RuntimeEnvironment.getApplication()).list().single(),
+        )
         assertEquals(text, store.editableFileText(item.id))
-        assertEquals(listOf("${item.id}.txt"), directory.listFiles().orEmpty().map { it.name })
+        assertEquals(
+            listOf("${item.id}.txt"),
+            directory.listFiles().orEmpty().map { it.name },
+        )
         assertFalse(store.list().single().enabled)
     }
 
@@ -141,15 +187,22 @@ class FilterListValidationTest {
             FilterListStore(
                 RuntimeEnvironment.getApplication(),
                 validator =
-                FilterListValidator { text ->
-                    // Inspect the saved state while validation is actually running, before
-                    // the replacement (including its new name) has been committed.
-                    assertEquals(listOf(item), store.list())
-                    assertEquals(listOf("||old.example^"), store.enabledTexts())
-                    validated += text
-                },
+                    FilterListValidator { text ->
+                        // Inspect the saved state while validation is actually
+                        // running, before
+                        // the replacement (including its new name) has been
+                        // committed.
+                        assertEquals(listOf(item), store.list())
+                        assertEquals(listOf("||old.example^"), store.enabledTexts())
+                        validated += text
+                    },
             )
-        val updated = updatingStore.updateFile(item.id, "Updated", replacement.byteInputStream())
+        val updated =
+            updatingStore.updateFile(
+                item.id,
+                "Updated",
+                replacement.byteInputStream(),
+            )
         assertEquals(listOf("||old.example^", replacement), validated)
         assertEquals(item.copy(name = "Updated"), updated)
         assertEquals(listOf(replacement), store.enabledTexts())
@@ -158,13 +211,21 @@ class FilterListValidationTest {
 
     @Test
     fun fileCloneValidationAndFailedInlineEditKeepOriginalAndDisabledCopyIntact() {
-        val item = store.importFrom("Original", "||original.example^".byteInputStream())
+        val item =
+            store.importFrom("Original", "||original.example^".byteInputStream())
         val copy = store.cloneList(item.id)
         assertEquals(listOf("||original.example^", "||original.example^"), validated)
         assertFalse(copy.enabled)
-        failure = IllegalArgumentException("Invalid filter syntax:\nLine 1: empty redirection")
+        failure =
+            IllegalArgumentException(
+                "Invalid filter syntax:\nLine 1: empty redirection"
+            )
         assertThrows(IllegalArgumentException::class.java) {
-            store.updateFile(copy.id, "Changed", "||bad.example^\$redirect=".byteInputStream())
+            store.updateFile(
+                copy.id,
+                "Changed",
+                "||bad.example^\$redirect=".byteInputStream(),
+            )
         }
         assertEquals(listOf(item, copy), store.list())
         assertEquals("||original.example^", store.editableFileText(copy.id))
@@ -180,7 +241,10 @@ class FilterListValidationTest {
                 "||working.example^".byteInputStream(),
                 "https://example.org/rules.txt",
             )
-        val error = assertThrows(IllegalArgumentException::class.java) { store.cloneList(item.id) }
+        val error =
+            assertThrows(IllegalArgumentException::class.java) {
+                store.cloneList(item.id)
+            }
         assertEquals("URL lists cannot be cloned", error.message)
         assertEquals(listOf("||working.example^"), validated)
         assertEquals(listOf(item), store.list())
@@ -196,9 +260,13 @@ class FilterListValidationTest {
                 SuggestedFilterLists.all.first().url,
                 FilterListType.PRESET,
             )
-        // A missing cached file must not obscure the clone restriction or invoke validation.
+        // A missing cached file must not obscure the clone restriction or invoke
+        // validation.
         File(directory, "${item.id}.txt").delete()
-        val error = assertThrows(IllegalArgumentException::class.java) { store.cloneList(item.id) }
+        val error =
+            assertThrows(IllegalArgumentException::class.java) {
+                store.cloneList(item.id)
+            }
         assertEquals("Preset lists cannot be cloned", error.message)
         assertEquals(listOf("||working.example^"), validated)
         assertEquals(listOf(item), store.list())
@@ -210,8 +278,13 @@ class FilterListValidationTest {
         val item = store.importFrom("Legacy", "||old.example^".byteInputStream())
         val invalid = "||bad.example^\$redirect="
         File(directory, "${item.id}.txt").writeText(invalid)
-        failure = IllegalArgumentException("Invalid filter syntax:\nLine 1: empty redirection")
-        assertThrows(IllegalArgumentException::class.java) { store.cloneList(item.id) }
+        failure =
+            IllegalArgumentException(
+                "Invalid filter syntax:\nLine 1: empty redirection"
+            )
+        assertThrows(IllegalArgumentException::class.java) {
+            store.cloneList(item.id)
+        }
         assertEquals(invalid, validated.last())
         assertEquals(listOf(item), store.list())
         assertEquals(invalid, store.editableFileText(item.id))
@@ -220,9 +293,12 @@ class FilterListValidationTest {
 
     @Test
     fun validatorFailureCannotOverwriteAWorkingList() {
-        val item = store.importFrom("Working", "||working.example^".byteInputStream())
+        val item =
+            store.importFrom("Working", "||working.example^".byteInputStream())
         failure =
-            IllegalStateException("Filter syntax validation is unavailable; no changes were saved")
+            IllegalStateException(
+                "Filter syntax validation is unavailable; no changes were saved"
+            )
         assertThrows(IllegalStateException::class.java) {
             store.updateFile(item.id, "Changed", "||new.example^".byteInputStream())
         }
@@ -239,7 +315,10 @@ class FilterListValidationTest {
                 "||old.example^".byteInputStream(),
                 "https://example.org/old.txt",
             )
-        failure = IllegalArgumentException("Invalid filter syntax:\nLine 1: empty redirection")
+        failure =
+            IllegalArgumentException(
+                "Invalid filter syntax:\nLine 1: empty redirection"
+            )
         assertThrows(IllegalArgumentException::class.java) {
             store.updateUrl(
                 item.id,
@@ -307,7 +386,8 @@ class FilterListValidationTest {
 
     @Test
     fun validatorErrorsArePreservedRegardlessOfFilenameOrDocumentShape() {
-        failure = IllegalArgumentException("Invalid filter syntax:\nLine 1: parser error")
+        failure =
+            IllegalArgumentException("Invalid filter syntax:\nLine 1: parser error")
         val candidates =
             listOf(
                 "filters.txt" to "||bad.example^\$redirect=",
@@ -330,10 +410,12 @@ class FilterListValidationTest {
 
     @Test
     fun replacementValidatesCompleteContentsWithoutDocumentFormatDetection() {
-        val item = store.importFrom("Working", "||working.example^".byteInputStream())
+        val item =
+            store.importFrom("Working", "||working.example^".byteInputStream())
         store.setEnabled(item.id, false)
         val replacement = """["||new.example^"]"""
-        val updated = store.updateFile(item.id, "Changed", replacement.byteInputStream())
+        val updated =
+            store.updateFile(item.id, "Changed", replacement.byteInputStream())
         assertEquals(item.copy(name = "Changed", enabled = false), updated)
         assertEquals(listOf(updated), store.list())
         assertEquals(replacement, store.editableFileText(item.id))
@@ -343,14 +425,18 @@ class FilterListValidationTest {
 
     @Test
     fun editedCloneUsesTheSameValidatorAndRemainsDisabled() {
-        val item = store.importFrom("Original", "||working.example^".byteInputStream())
+        val item =
+            store.importFrom("Original", "||working.example^".byteInputStream())
         val copy = store.cloneList(item.id)
         val updated = store.updateFile(copy.id, "Changed", "{}".byteInputStream())
         assertEquals(copy.copy(name = "Changed"), updated)
         assertEquals(listOf(item, updated), store.list())
         assertFalse(store.list().last().enabled)
         assertEquals("{}", store.editableFileText(copy.id))
-        assertEquals(listOf("||working.example^", "||working.example^", "{}"), validated)
+        assertEquals(
+            listOf("||working.example^", "||working.example^", "{}"),
+            validated,
+        )
         assertEquals(listOf("||working.example^"), store.enabledTexts())
         assertEquals(2, directory.listFiles().orEmpty().size)
     }
@@ -417,7 +503,8 @@ class FilterListValidationTest {
 
     @Test
     fun mixedValidAndInvalidContentCannotPartiallyReplaceAWorkingList() {
-        val item = store.importFrom("Working", "||working.example^".byteInputStream())
+        val item =
+            store.importFrom("Working", "||working.example^".byteInputStream())
         assertThrows(IllegalArgumentException::class.java) {
             store.updateFile(
                 item.id,
@@ -436,11 +523,14 @@ class FilterListValidationTest {
         failure =
             IllegalArgumentException(
                 "Filter list has no supported network rules. " +
-                    "Unsupported rules: 1. No changes were saved.",
+                    "Unsupported rules: 1. No changes were saved."
             )
         val error =
             assertThrows(IllegalArgumentException::class.java) {
-                store.importFrom("cosmetics.txt", "example.com##.ad".byteInputStream())
+                store.importFrom(
+                    "cosmetics.txt",
+                    "example.com##.ad".byteInputStream(),
+                )
             }
         assertTrue(error.message!!.contains("no supported network rules"))
         assertTrue(store.list().isEmpty())
@@ -449,14 +539,19 @@ class FilterListValidationTest {
 
     @Test
     fun unsupportedOnlyReplacementKeepsTheWorkingList() {
-        val item = store.importFrom("Working", "||working.example^".byteInputStream())
+        val item =
+            store.importFrom("Working", "||working.example^".byteInputStream())
         failure =
             IllegalArgumentException(
                 "Filter list has no supported network rules. " +
-                    "Unsupported rules: 1. No changes were saved.",
+                    "Unsupported rules: 1. No changes were saved."
             )
         assertThrows(IllegalArgumentException::class.java) {
-            store.updateFile(item.id, "Changed", "example.com##.ad".byteInputStream())
+            store.updateFile(
+                item.id,
+                "Changed",
+                "example.com##.ad".byteInputStream(),
+            )
         }
         assertEquals(listOf(item), store.list())
         assertEquals(listOf("||working.example^"), store.enabledTexts())
