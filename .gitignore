@@ -34,3 +34,6 @@ local.properties
 
 __pycache__/
 *.py[cod]
+
+*.log
+
