@@ -23,8 +23,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Check Android test-asset exporter dispatch and archive limits
-        run: bash scripts/tests/export-android-test-assets.test.sh
+      - name: Set up Node.js for cosmetic script tests
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Verify CI scripts, test assets, and cosmetic filtering
+        run: sh scripts/ci/test-local.sh checks
 
       - name: Setup JetBrains JDK 21
         uses: actions/setup-java@v5
@@ -41,13 +46,12 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
         with:
           cache-provider: enhanced
-          cache-read-only: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
-
-      - name: Verify Android test report diagnostics
-        run: python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+          cache-read-only: >-
+            ${{ github.event_name == 'pull_request'
+            && github.event.pull_request.head.repo.full_name != github.repository }}
 
       - name: Run unit tests
-        run: sh gradlew :app:testDebugUnitTest --build-cache --profile --stacktrace
+        run: sh gradlew :adblock:test :app:testDebugUnitTest --build-cache --profile --stacktrace
 
       - name: Upload JVM test reports
         if: always()
@@ -55,6 +59,8 @@ jobs:
         with:
           name: android-unit-results
           path: |
+            adblock/build/test-results/test/
+            adblock/build/reports/tests/test/
             app/build/test-results/testDebugUnitTest/
             app/build/reports/tests/testDebugUnitTest/
             build/reports/profile/

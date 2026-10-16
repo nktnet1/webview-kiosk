@@ -19,7 +19,8 @@ class CiCachingTest(unittest.TestCase):
         self.assertIn("cache-read-only:", TESTS)
         self.assertIn("head.repo.full_name != github.repository", TESTS)
         self.assertIn(
-            "run: sh gradlew :app:testDebugUnitTest --build-cache --profile --stacktrace",
+            "run: sh gradlew :adblock:test :app:testDebugUnitTest "
+            "--build-cache --profile --stacktrace",
             TESTS,
         )
         self.assertEqual(1, TESTS.count("build/reports/profile/"))
@@ -72,7 +73,9 @@ class CiCachingTest(unittest.TestCase):
         self.assertIn("  workflow_dispatch:\n", DOCS)
         self.assertEqual(2, DOCS.count("      - 'docs/**'"))
         self.assertIn("if: github.event_name != 'pull_request'", DOCS)
-        self.assertIn("PUBLIC_DOCS_BASE_PATH: ${{ steps.setup_pages.outputs.base_path || '/' }}", DOCS)
+        self.assertIn(
+            "PUBLIC_DOCS_BASE_PATH: ${{ steps.setup_pages.outputs.base_path || '/' }}", DOCS
+        )
         self.assertIn("    needs: build", DOCS)
 
     def test_browser_checks_only_when_relevant_or_manual(self):

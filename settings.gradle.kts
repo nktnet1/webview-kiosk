@@ -27,3 +27,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Webview Kiosk"
 include(":app")
+include(":adblock")

@@ -11,8 +11,8 @@ usage() {
 Usage: sh scripts/ci/test-local.sh <suite>
 
 Suites:
-  checks          Offline CI regression tests (Python and shell)
-  jvm             Android JVM/Robolectric unit tests
+  checks          Offline CI, asset-exporter and cosmetic script tests (Python/Node)
+  jvm             Filter-engine JVM and Android JVM/Robolectric unit tests
   docs            Documentation format/lint and Vitest tests
   docs-browser    Build docs and run Playwright Chromium tests
   all             Run all four suites in the order above
@@ -22,7 +22,8 @@ Examples:
   sh scripts/ci/test-local.sh jvm
   sh scripts/ci/test-local.sh docs-browser
 
-Requirements: JDK 21 and an Android SDK for JVM/Robolectric tests; Node 24,
+Requirements: Python 3.10+ and Node 24 for checks; JDK 21 and an Android SDK
+for JVM/Robolectric tests; Node 24,
 pnpm and installed docs/node_modules for docs tests, and Playwright Chromium
 for docs-browser. The runner does not install tools or dependencies.
 Android device/AVD scenarios are manual and are not run by this script.
@@ -61,22 +62,23 @@ fi
 
 checks() {
     require_tool python3
-    require_tool bash
-    printf 'Local tests: checking CI scripts and test assets\n'
-    bash scripts/tests/export-android-test-assets.test.sh
+    require_tool node
+    printf 'Local tests: checking CI scripts, test assets and cosmetic filtering\n'
     python3 -m unittest discover -s scripts/tests -p 'test_*.py'
+    node --test scripts/tests/cosmetic.test.mjs
 }
 
 jvm() {
     require_tool java
-    printf 'Local tests: running Android JVM/Robolectric tests\n'
-    sh gradlew :app:testDebugUnitTest --build-cache --profile --stacktrace
+    printf 'Local tests: running adblock JVM and Android JVM/Robolectric tests\n'
+    sh gradlew :adblock:test :app:testDebugUnitTest --build-cache --profile --stacktrace
 }
 
 prepare_docs() {
     require_tool node
     require_tool pnpm
-    [ -d docs/node_modules ] || die 'docs/node_modules is missing. Install the locked dependencies separately before running docs tests.'
+    [ -d docs/node_modules ] || die \
+        'docs/node_modules is missing. Install the locked dependencies before running docs tests.'
 }
 
 docs() {

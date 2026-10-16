@@ -30,7 +30,10 @@ class LocalTestRunnerTest(unittest.TestCase):
         bin_dir.mkdir()
         for name in ("node", "java"):
             command = bin_dir / name
-            command.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+            command.write_text(
+                '#!/bin/sh\nprintf "%s\\n" "$*" >> ' + name + '-args.txt\nexit 0\n',
+                encoding="utf-8",
+            )
             command.chmod(0o755)
         pnpm = bin_dir / "pnpm"
         pnpm.write_text(
@@ -66,7 +69,7 @@ class LocalTestRunnerTest(unittest.TestCase):
         result = self.run_suite("jvm")
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(
-            ":app:testDebugUnitTest\n--build-cache\n--profile\n--stacktrace\n",
+            ":adblock:test\n:app:testDebugUnitTest\n--build-cache\n--profile\n--stacktrace\n",
             self.read_gradle_args(),
         )
 
@@ -76,6 +79,17 @@ class LocalTestRunnerTest(unittest.TestCase):
         self.assertIn("Unknown suite 'android'", result.stderr)
         self.assertIsNone(self.read_gradle_args())
 
+    def test_checks_runs_cosmetic_script_without_npm_dependencies(self):
+        stub = self.root / "bin/python3"
+        stub.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+        stub.chmod(0o755)
+        result = self.run_suite("checks")
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual(
+            "--test scripts/tests/cosmetic.test.mjs\n",
+            (self.root / "node-args.txt").read_text(encoding="utf-8"),
+        )
+
     def test_docs_browser_requires_preinstalled_dependencies(self):
         missing = self.run_suite("docs-browser")
         self.assertEqual(2, missing.returncode)
@@ -83,7 +97,9 @@ class LocalTestRunnerTest(unittest.TestCase):
         (self.root / "docs/node_modules").mkdir()
         result = self.run_suite("docs-browser")
         self.assertEqual(0, result.returncode, result.stderr)
-        self.assertEqual("-C docs build\n-C docs test:e2e\n", (self.root / "pnpm-args.txt").read_text())
+        self.assertEqual(
+            "-C docs build\n-C docs test:e2e\n", (self.root / "pnpm-args.txt").read_text()
+        )
 
     def test_docs_runs_checks_and_vitest(self):
         (self.root / "docs/node_modules").mkdir()
@@ -100,10 +116,6 @@ class LocalTestRunnerTest(unittest.TestCase):
     def test_all_dispatches_only_non_avd_suites(self):
         # Avoid installing packages: record a real script dispatch with stubs.
         (self.root / "docs/node_modules").mkdir()
-        (self.root / "scripts/tests").mkdir()
-        (self.root / "scripts/tests/export-android-test-assets.test.sh").write_text(
-            "#!/bin/sh\nexit 0\n", encoding="utf-8"
-        )
         # Stub python3 so the offline Python suite does not require copied tests.
         stub = self.root / "bin/python3"
         stub.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
@@ -111,7 +123,7 @@ class LocalTestRunnerTest(unittest.TestCase):
         result = self.run_suite("all")
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertEqual(
-            ":app:testDebugUnitTest\n--build-cache\n--profile\n--stacktrace\n",
+            ":adblock:test\n:app:testDebugUnitTest\n--build-cache\n--profile\n--stacktrace\n",
             self.read_gradle_args(),
         )
         self.assertEqual(

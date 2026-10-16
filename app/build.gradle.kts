@@ -66,9 +66,6 @@ android {
     }
 
     packaging {
-        // https://izzyondroid.org/docs/reproducibleBuilds/DebugFailedRBs/#native-library-stripping
-        jniLibs.keepDebugSymbols.add("**/*.so")
-
         resources {
             excludes += listOf(
                 "META-INF/INDEX.LIST",
@@ -111,6 +108,7 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":adblock"))
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.core.ktx)
