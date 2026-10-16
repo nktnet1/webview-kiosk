@@ -352,6 +352,21 @@ class ContentBlockingServiceTest {
     }
 
     @Test
+    fun enabledSettingIsDistinctFromWhetherListsAreActive() {
+        service.start()
+        executor.runAll()
+        assertEquals(BlockingStatus.DISABLED, service.status.value)
+        assertTrue(service.enabled.value)
+
+        service.setEnabled(false)
+        assertFalse(service.enabled.value)
+        service.setEnabled(true)
+        executor.runAll()
+        assertEquals(BlockingStatus.DISABLED, service.status.value)
+        assertTrue(service.enabled.value)
+    }
+
+    @Test
     fun disabledStartupAndListChangesDoNotCompileOrWait() = runBlocking {
         val item = store.importFrom("test.txt", "||ads.example^".byteInputStream())
         service.setEnabled(false)

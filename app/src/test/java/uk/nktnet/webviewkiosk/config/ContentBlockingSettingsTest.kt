@@ -115,12 +115,14 @@ class ContentBlockingSettingsTest {
             )
         service.bindSettings(context).use {
             service.start()
+            assertFalse(service.enabled.value)
             assertEquals(BlockingStatus.DISABLED, service.status.value)
             assertTrue(service.initialLoadComplete.value)
             service.awaitReload(service.reload())
 
             settings.enableContentBlocking = true
             shadowOf(Looper.getMainLooper()).idle()
+            assertTrue(service.enabled.value)
             assertEquals(BlockingStatus.ACTIVE, service.status.value)
             assertTrue(service.hasActiveCosmeticRules)
             assertTrue(
@@ -134,6 +136,7 @@ class ContentBlockingSettingsTest {
 
             settings.enableContentBlocking = false
             shadowOf(Looper.getMainLooper()).idle()
+            assertFalse(service.enabled.value)
             assertEquals(BlockingStatus.DISABLED, service.status.value)
             assertFalse(service.hasActiveRules)
             assertFalse(service.hasActiveCosmeticRules)
@@ -158,6 +161,7 @@ class ContentBlockingSettingsTest {
 
             assertTrue(settings.importJson(JSONObject().put(key, true).toString()))
             shadowOf(Looper.getMainLooper()).idle()
+            assertTrue(service.enabled.value)
             assertEquals(BlockingStatus.ACTIVE, service.status.value)
 
             shadowOf(restrictions)
@@ -168,6 +172,7 @@ class ContentBlockingSettingsTest {
                 Intent(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED)
             )
             shadowOf(Looper.getMainLooper()).idle()
+            assertFalse(service.enabled.value)
             assertEquals(BlockingStatus.DISABLED, service.status.value)
             assertFalse(service.hasActiveRules)
 
@@ -176,6 +181,7 @@ class ContentBlockingSettingsTest {
                 Intent(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED)
             )
             shadowOf(Looper.getMainLooper()).idle()
+            assertTrue(service.enabled.value)
             assertEquals(BlockingStatus.ACTIVE, service.status.value)
             assertTrue(service.hasActiveRules)
         }

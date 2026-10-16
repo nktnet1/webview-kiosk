@@ -67,30 +67,53 @@ class SuggestedFilterListDownloaderTest {
     @Test
     fun suggestionsAreLinksNotBundledLists() {
         assertEquals(
-            listOf("EasyList", "EasyPrivacy", "HaGeZi Multi NORMAL"),
+            listOf(
+                "EasyList",
+                "AdGuard Base",
+                "EasyPrivacy",
+                "HaGeZi Multi LIGHT",
+                "HaGeZi Multi NORMAL",
+                "HaGeZi Multi PRO",
+                "HaGeZi Multi PRO++",
+                "HaGeZi Multi ULTIMATE",
+            ),
             SuggestedFilterLists.all.map { it.name },
         )
         assertEquals(
-            "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/multi.txt",
-            SuggestedFilterLists.all.last().url,
+            listOf(
+                "light.txt",
+                "multi.txt",
+                "pro.txt",
+                "pro.plus.txt",
+                "ultimate.txt",
+            ),
+            SuggestedFilterLists.all.takeLast(5).map {
+                it.url.substringAfterLast('/')
+            },
         )
-        assertFalse(SuggestedFilterLists.all.any { it.name == "AdGuard Base" })
+        assertEquals(
+            "https://filters.adtidy.org/extension/ublock/filters/2.txt",
+            SuggestedFilterLists.all[1].url,
+        )
         assertTrue(SuggestedFilterLists.all.all { it.url.startsWith("https://") })
         assertTrue(store.list().isEmpty())
     }
 
     @Test
-    fun hageziCanBeDownloadedOnDemand() {
-        val hagezi = SuggestedFilterLists.all.last()
-        val imported = downloader(suggestion = hagezi).download(hagezi, store)
-        assertEquals("HaGeZi Multi NORMAL.txt", imported.name)
-        assertEquals(hagezi.url, imported.sourceUrl)
-        assertTrue(imported.enabled)
-        assertTrue(store.containsSource(hagezi.url))
+    fun everyPresetCanBeDownloadedOnDemand() {
+        SuggestedFilterLists.all.forEach { suggestion ->
+            val imported =
+                downloader(suggestion = suggestion).download(suggestion, store)
+            assertEquals("${suggestion.name}.txt", imported.name)
+            assertEquals(suggestion.url, imported.sourceUrl)
+            assertEquals(FilterListType.PRESET, imported.type)
+            assertTrue(imported.enabled)
+            assertTrue(store.containsPreset(suggestion.url))
+        }
     }
 
     @Test
-    fun previouslyImportedAdGuardListIsNotRemovedByChangingSuggestions() {
+    fun previouslyImportedAdGuardUrlListIsPreservedWhenItBecomesAPreset() {
         val old =
             store.importFrom(
                 "AdGuard Base.txt",
@@ -98,7 +121,8 @@ class SuggestedFilterListDownloaderTest {
                 sourceUrl =
                     "https://filters.adtidy.org/extension/ublock/filters/2.txt",
             )
-        assertFalse(SuggestedFilterLists.all.any { it.url == old.sourceUrl })
+        assertEquals(FilterListType.URL, old.type)
+        assertTrue(SuggestedFilterLists.all.any { it.url == old.sourceUrl })
         assertEquals(
             old,
             FilterListStore(RuntimeEnvironment.getApplication()).list().single(),
@@ -330,29 +354,57 @@ class SuggestedFilterListDownloaderTest {
     }
 
     @Test
-    fun refreshRejectsInsecureSourceUrlsWithoutNetworkAccess() {
+    fun refreshAcceptsHttpSourceUrlsAndPreservesTheSavedList() {
         val old =
             store.importFrom(
-                "Unsafe.txt",
+                "HTTP list",
                 "||old.example^".byteInputStream(),
                 sourceUrl = "http://example.org/list.txt",
             )
         val calls = AtomicInteger()
-        val client = downloader(requests = calls)
-        assertThrows(IllegalArgumentException::class.java) {
-            client.refresh(old, store)
-        }
-        assertEquals(0, calls.get())
-        assertEquals(listOf("||old.example^"), store.enabledTexts())
+        val client =
+            downloader(
+                content = "||new.example^",
+                requests = calls,
+                suggestion = preset.copy(url = old.sourceUrl!!),
+            )
+        currentTime = 2_000L
+        val updated = client.refresh(old, store)
+        assertEquals(1, calls.get())
+        assertEquals(old.copy(lastRefreshedAt = 2_000L), updated)
+        assertEquals(listOf(updated), store.list())
+        assertEquals(listOf("||new.example^"), store.enabledTexts())
     }
 
     @Test
-    fun manuallyEnteredHttpsUrlCreatesEditableUrlList() {
-        val imported = downloader().downloadUrl(preset.url, "My manual list", store)
-        assertEquals(FilterListType.URL, imported.type)
-        assertEquals("My manual list", imported.name)
-        assertEquals(preset.url, imported.sourceUrl)
-        assertEquals(listOf(imported), store.list())
+    fun manuallyEnteredHttpAndHttpsUrlsCreateEditableUrlLists() {
+        listOf("http", "https").forEach { scheme ->
+            val source = preset.copy(url = "$scheme://example.org/list.txt")
+            val imported =
+                downloader(suggestion = source)
+                    .downloadUrl(
+                        "  ${source.url}  ",
+                        "My manual list",
+                        store,
+                    )
+            assertEquals(FilterListType.URL, imported.type)
+            assertEquals("My manual list", imported.name)
+            assertEquals(source.url, imported.sourceUrl)
+            assertTrue(store.list().contains(imported))
+        }
+    }
+
+    @Test
+    fun duplicateHttpUrlsAreNormalizedAndRejectedBeforeFetching() {
+        val calls = AtomicInteger()
+        val source = preset.copy(url = "http://example.org/list.txt")
+        val client = downloader(suggestion = source, requests = calls)
+        client.downloadUrl(" HTTP://EXAMPLE.ORG:80/list.txt ", "First", store)
+        assertThrows(IllegalArgumentException::class.java) {
+            client.downloadUrl(source.url, "Duplicate", store)
+        }
+        assertEquals(1, calls.get())
+        assertEquals(1, store.list().size)
     }
 
     @Test
@@ -360,8 +412,11 @@ class SuggestedFilterListDownloaderTest {
         val calls = AtomicInteger()
         val client = downloader(requests = calls)
         listOf(
-                "http://example.org/list.txt",
+                "ftp://example.org/list.txt",
+                "file:///list.txt",
+                "javascript:alert(1)",
                 "not a URL",
+                "http://user:pass@example.org/list",
                 "https://user:pass@example.org/list",
             )
             .forEach { unsafe ->
@@ -388,7 +443,7 @@ class SuggestedFilterListDownloaderTest {
                     .addInterceptor { chain ->
                         calls.incrementAndGet()
                         assertEquals(
-                            "https://example.org/new.txt",
+                            "http://example.org/new.txt",
                             chain.request().url.toString(),
                         )
                         Response.Builder()
@@ -410,13 +465,13 @@ class SuggestedFilterListDownloaderTest {
             client.editUrl(
                 original,
                 "New source",
-                "https://example.org/new.txt",
+                "http://example.org/new.txt",
                 store,
             )
         assertEquals(1, calls.get())
         assertEquals(original.id, changed.id)
         assertEquals("New source", changed.name)
-        assertEquals("https://example.org/new.txt", changed.sourceUrl)
+        assertEquals("http://example.org/new.txt", changed.sourceUrl)
         assertEquals(listOf("||new.example^"), store.enabledTexts())
     }
 

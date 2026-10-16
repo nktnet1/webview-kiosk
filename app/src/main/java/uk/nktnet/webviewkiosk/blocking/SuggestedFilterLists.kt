@@ -2,6 +2,7 @@ package uk.nktnet.webviewkiosk.blocking
 
 import java.io.IOException
 import java.util.concurrent.TimeUnit
+import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -18,6 +19,9 @@ internal data class SuggestedFilterList(
 )
 
 internal object SuggestedFilterLists {
+    private const val HAGEZI_BASE_URL =
+        "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock"
+
     val all =
         listOf(
             SuggestedFilterList(
@@ -26,18 +30,47 @@ internal object SuggestedFilterLists {
                 url = "https://easylist.to/easylist/easylist.txt",
             ),
             SuggestedFilterList(
+                name = "AdGuard Base",
+                description = "Ads",
+                url = "https://filters.adtidy.org/extension/ublock/filters/2.txt",
+            ),
+            SuggestedFilterList(
                 name = "EasyPrivacy",
                 description = "Trackers",
                 url = "https://easylist.to/easylist/easyprivacy.txt",
             ),
             SuggestedFilterList(
+                name = "HaGeZi Multi LIGHT",
+                description = "Ads & trackers · basic protection",
+                url = "$HAGEZI_BASE_URL/light.txt",
+            ),
+            SuggestedFilterList(
                 name = "HaGeZi Multi NORMAL",
                 description = "Ads, trackers & threats",
-                url =
-                    "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock/multi.txt",
+                url = "$HAGEZI_BASE_URL/multi.txt",
+            ),
+            SuggestedFilterList(
+                name = "HaGeZi Multi PRO",
+                description = "Ads, trackers & threats · extended protection",
+                url = "$HAGEZI_BASE_URL/pro.txt",
+            ),
+            SuggestedFilterList(
+                name = "HaGeZi Multi PRO++",
+                description = "Ads, trackers & threats · aggressive protection",
+                url = "$HAGEZI_BASE_URL/pro.plus.txt",
+            ),
+            SuggestedFilterList(
+                name = "HaGeZi Multi ULTIMATE",
+                description = "Ads, trackers & threats · maximum protection",
+                url = "$HAGEZI_BASE_URL/ultimate.txt",
             ),
         )
 }
+
+internal fun String.toFilterListUrlOrNull(): HttpUrl? =
+    trim().toHttpUrlOrNull()?.takeIf {
+        it.username.isEmpty() && it.password.isEmpty()
+    }
 
 internal data class FilterRefreshFailure(val name: String, val message: String)
 
@@ -47,22 +80,13 @@ internal data class FilterRefreshResult(
     val failures: List<FilterRefreshFailure>,
 )
 
-/**
- * Performs user-initiated HTTPS downloads and refreshes, never background
- * subscriptions.
- */
+/** Performs user-initiated downloads and refreshes. */
 internal class SuggestedFilterListDownloader(
     private val client: OkHttpClient = sharedClient
 ) {
     companion object {
-        // Reuse one small connection pool across settings visits instead of creating
-        // one per
-        // screen.
         private val sharedClient by lazy {
             OkHttpClient.Builder()
-                // Follow ordinary HTTPS redirects, but never downgrade to cleartext
-                // HTTP.
-                .followSslRedirects(false)
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .readTimeout(25, TimeUnit.SECONDS)
                 .callTimeout(45, TimeUnit.SECONDS)
@@ -97,7 +121,7 @@ internal class SuggestedFilterListDownloader(
         name: String,
         store: FilterListStore,
     ): ImportedFilterList {
-        val validated = requireHttpsUrl(url)
+        val validated = requireListUrl(url)
         require(!store.containsUrl(validated)) {
             "A URL list with this address already exists"
         }
@@ -139,7 +163,7 @@ internal class SuggestedFilterListDownloader(
         require(current.type == FilterListType.URL) {
             "Only URL lists have editable download addresses"
         }
-        val validated = requireHttpsUrl(url)
+        val validated = requireListUrl(url)
         val original =
             current.sourceUrl ?: throw IllegalArgumentException("Missing list URL")
         if (validated == original) {
@@ -174,23 +198,16 @@ internal class SuggestedFilterListDownloader(
         return FilterRefreshResult(updated, candidates.size, failures)
     }
 
-    private fun requireHttpsUrl(url: String): String {
-        val address = url.trim().toHttpUrlOrNull()
-        require(
-            address != null &&
-                address.scheme == "https" &&
-                address.username.isEmpty() &&
-                address.password.isEmpty()
-        ) {
-            "Enter a valid HTTPS filter-list URL"
-        }
-        return address.toString()
-    }
+    private fun requireListUrl(url: String): String =
+        requireNotNull(url.toFilterListUrlOrNull()) {
+                "Enter a valid HTTP or HTTPS filter-list URL"
+            }
+            .toString()
 
     private inline fun <T> fetch(url: String, save: (java.io.InputStream) -> T): T {
         val request =
             Request.Builder()
-                .url(requireHttpsUrl(url))
+                .url(requireListUrl(url))
                 .header("Accept", "text/plain")
                 .build()
         client.newCall(request).execute().use { response ->
@@ -198,9 +215,6 @@ internal class SuggestedFilterListDownloader(
                 throw IOException(
                     "Filter-list download failed (HTTP ${response.code})"
                 )
-            }
-            if (response.request.url.scheme != "https") {
-                throw IOException("Filter lists must be downloaded over HTTPS")
             }
             val body = response.body
             if (body.contentLength() > FilterListStore.MAX_LIST_BYTES) {

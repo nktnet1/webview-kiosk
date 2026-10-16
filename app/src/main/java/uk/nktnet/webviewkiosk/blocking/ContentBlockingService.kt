@@ -46,7 +46,8 @@ internal class ContentBlockingService(
     private var started = false
     private var settingsBinding: AutoCloseable? = null
 
-    @Volatile private var enabled = true
+    private val _enabled = MutableStateFlow(true)
+    val enabled = _enabled.asStateFlow()
 
     @Volatile private var ready = false
 
@@ -110,10 +111,10 @@ internal class ContentBlockingService(
 
     @Synchronized
     fun setEnabled(value: Boolean) {
-        if (enabled == value) {
+        if (_enabled.value == value) {
             return
         }
-        enabled = value
+        _enabled.value = value
         if (started || !value) {
             reload()
         } else {
@@ -139,7 +140,7 @@ internal class ContentBlockingService(
     @Synchronized
     fun reload(): Long {
         val revision = generation.incrementAndGet()
-        if (!enabled) {
+        if (!_enabled.value) {
             ready = false
             _status.value = BlockingStatus.DISABLED
             _loadStage.value = null

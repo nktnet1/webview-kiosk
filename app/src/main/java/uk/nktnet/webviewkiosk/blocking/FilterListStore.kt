@@ -28,7 +28,7 @@ internal data class ImportedFilterList(
     val id: String,
     val name: String,
     val enabled: Boolean,
-    /** The original HTTPS download URL, if this list was imported from a link. */
+    /** The original download URL, if this list was imported from a link. */
     val sourceUrl: String? = null,
     val type: FilterListType =
         if (sourceUrl == null) {

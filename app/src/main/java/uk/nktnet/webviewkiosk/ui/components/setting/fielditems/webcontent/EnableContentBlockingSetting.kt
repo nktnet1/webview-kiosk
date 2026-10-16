@@ -22,7 +22,9 @@ fun EnableContentBlockingSetting() {
             Block ads and trackers using the enabled lists in Content Blocking.
 
             Disabling keeps your lists and their individual enabled states.
-            Reload the page after changing this setting.
+
+            To add lists, open Content Blocking and select Add list. Choose a
+            preset, enter a URL, or use Custom to paste rules or import a file.
             """
                 .trimIndent(),
         initialValue = userSettings.enableContentBlocking,

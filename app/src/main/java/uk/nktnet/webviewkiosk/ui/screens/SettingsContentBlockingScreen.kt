@@ -6,7 +6,6 @@ import android.text.format.Formatter
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -59,7 +58,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -76,7 +74,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.blocking.BlockingStatus
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
@@ -88,6 +85,7 @@ import uk.nktnet.webviewkiosk.blocking.ImportedFilterList
 import uk.nktnet.webviewkiosk.blocking.SuggestedFilterList
 import uk.nktnet.webviewkiosk.blocking.SuggestedFilterListDownloader
 import uk.nktnet.webviewkiosk.blocking.SuggestedFilterLists
+import uk.nktnet.webviewkiosk.blocking.toFilterListUrlOrNull
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.common.MinimumLoadingState
@@ -108,7 +106,7 @@ private fun List<ImportedFilterList>.hasUrlList(
     url: String,
     exceptId: String? = null,
 ): Boolean {
-    val normalized = url.trim().toHttpUrlOrNull()?.toString() ?: return false
+    val normalized = url.toFilterListUrlOrNull()?.toString() ?: return false
     return any {
         it.id != exceptId &&
             it.type == FilterListType.URL &&
@@ -123,6 +121,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     val blocker = remember(context) { ContentBlockingService.get(context) }
     val downloader = remember { SuggestedFilterListDownloader() }
     val scope = rememberCoroutineScope()
+    val blockingEnabled by blocker.enabled.collectAsState()
     val blockingStatus by blocker.status.collectAsState()
     val loadStage by blocker.loadStage.collectAsState()
     val blockingError by blocker.lastError.collectAsState()
@@ -260,6 +259,9 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         }
 
     fun openEditor(item: ImportedFilterList) {
+        if (item.type == FilterListType.PRESET) {
+            return
+        }
         pendingEdit = item
         editName = item.displayName()
         editUrl = item.sourceUrl.orEmpty()
@@ -311,6 +313,21 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 contentPadding = PaddingValues(top = 8.dp, bottom = 24.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                if (!blockingEnabled) {
+                    item(key = "blocking-disabled") {
+                        Text(
+                            "Content blocking is disabled in " +
+                                "Web Content settings. " +
+                                "These lists will not take effect.",
+                            modifier =
+                                Modifier.fillMaxWidth().semantics {
+                                    liveRegion = LiveRegionMode.Polite
+                                },
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.titleSmall,
+                        )
+                    }
+                }
                 item(key = "actions") {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -590,7 +607,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 !duplicateUrl &&
                 item.type != FilterListType.PRESET &&
                 (item.type == FilterListType.FILE ||
-                    editUrl.trim().startsWith("https://", ignoreCase = true)) &&
+                    editUrl.toFilterListUrlOrNull() != null) &&
                 (editName.trim() != item.displayName() || changedUrl || changedFile)
         EditFilterListDialog(
             item = item,
@@ -945,17 +962,7 @@ private fun FilterListRow(
                 modifier =
                     Modifier.semantics { contentDescription = "Filter $name" },
             )
-            Column(
-                modifier =
-                    Modifier.weight(1f)
-                        .padding(vertical = 12.dp)
-                        .clickable(
-                            enabled = !busy,
-                            role = Role.Button,
-                            onClick = onEdit,
-                        )
-                        .semantics { contentDescription = "Edit $name" }
-            ) {
+            Column(modifier = Modifier.weight(1f).padding(vertical = 12.dp)) {
                 Text(
                     name,
                     style = MaterialTheme.typography.bodyLarge,
@@ -1004,20 +1011,22 @@ private fun FilterListRow(
                     expanded = menuExpanded,
                     onDismissRequest = { menuExpanded = false },
                 ) {
-                    DropdownMenuItem(
-                        text = { Text("Edit") },
-                        leadingIcon = {
-                            Icon(
-                                painterResource(R.drawable.baseline_edit_24),
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = {
-                            menuExpanded = false
-                            onEdit()
-                        },
-                        enabled = !busy,
-                    )
+                    if (item.type != FilterListType.PRESET) {
+                        DropdownMenuItem(
+                            text = { Text("Edit") },
+                            leadingIcon = {
+                                Icon(
+                                    painterResource(R.drawable.baseline_edit_24),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                menuExpanded = false
+                                onEdit()
+                            },
+                            enabled = !busy,
+                        )
+                    }
                     if (item.sourceUrl != null) {
                         DropdownMenuItem(
                             text = { Text("Refresh") },
@@ -1219,313 +1228,313 @@ private fun AddFilterListDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add filter list") },
         text = {
-            Column(
-                modifier =
-                    Modifier.heightIn(max = 460.dp)
-                        .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                FilterListField("List type") {
-                    ListTypeDropdown(
-                        value = type,
-                        onChange = {
-                            type = it
-                            onClearError()
-                        },
-                        enabled = !busy,
-                    )
-                }
-                if (type != FilterListType.PRESET) {
-                    FilterListField("Name") {
-                        OutlinedTextField(
-                            value = name,
-                            onValueChange = {
-                                name = it
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(
+                    modifier =
+                        Modifier.weight(1f, fill = false)
+                            .heightIn(max = 460.dp)
+                            .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    FilterListField("List type") {
+                        ListTypeDropdown(
+                            value = type,
+                            onChange = {
+                                type = it
                                 onClearError()
                             },
-                            modifier =
-                                Modifier.fillMaxWidth().semantics {
-                                    contentDescription = "Name"
-                                },
-                            placeholder = { Text("e.g. My filters") },
-                            singleLine = true,
                             enabled = !busy,
-                            isError = name.isNotEmpty() && !validListName(name),
                         )
                     }
-                }
-                when (type) {
-                    FilterListType.FILE -> {
-                        if (selectedFile == null) {
-                            FilterListField("Filter rules") {
-                                OutlinedTextField(
-                                    value = text,
-                                    onValueChange = { value ->
-                                        if (
-                                            value.length <=
-                                                FilterListStore
-                                                    .MAX_INLINE_EDIT_BYTES &&
-                                                value
-                                                    .toByteArray(Charsets.UTF_8)
-                                                    .size <=
-                                                    FilterListStore
-                                                        .MAX_INLINE_EDIT_BYTES
-                                        ) {
-                                            text = value
-                                            textError = null
-                                            onClearError()
-                                        } else {
-                                            textError =
-                                                "Text is too long to edit here (128 KiB max). " +
-                                                    "Import a file instead."
-                                        }
-                                    },
-                                    modifier = Modifier.fillMaxWidth(),
-                                    placeholder = {
-                                        Text("Type or paste filter rules")
-                                    },
-                                    minLines = 5,
-                                    maxLines = 8,
-                                    enabled = !busy,
-                                    isError = textError != null,
-                                    supportingText =
-                                        textError?.let { message ->
-                                            ({ Text(message) })
-                                        },
-                                )
-                            }
-                        } else {
-                            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-                                Column(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp),
-                                ) {
-                                    Text(
-                                        "Selected file",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color =
-                                            MaterialTheme.colorScheme
-                                                .onSurfaceVariant,
-                                    )
-                                    Text(
-                                        selectedFileName,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                }
-                            }
-                        }
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            OutlinedButton(
-                                onClick = {
-                                    AuthenticationManager.bypassAuthForWindow(60_000)
-                                    picker.launch(arrayOf("*/*"))
-                                },
-                                enabled = !busy,
-                                modifier = Modifier.weight(1f),
-                            ) {
-                                Icon(
-                                    painterResource(
-                                        R.drawable.outline_upload_file_24
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp),
-                                )
-                                Spacer(Modifier.width(6.dp))
-                                Text(
-                                    if (selectedFile == null) {
-                                        "Import file"
-                                    } else {
-                                        "Change file"
-                                    },
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                )
-                            }
-                            if (selectedFile != null) {
-                                TextButton(
-                                    onClick = {
-                                        selectedFile = null
-                                        onClearError()
-                                    },
-                                    enabled = !busy,
-                                    modifier = Modifier.weight(1f),
-                                ) {
-                                    Text(
-                                        "Use text",
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    FilterListType.URL -> {
-                        FilterListField("HTTPS list URL") {
+                    if (type != FilterListType.PRESET) {
+                        FilterListField("Name") {
                             OutlinedTextField(
-                                value = url,
+                                value = name,
                                 onValueChange = {
-                                    url = it
+                                    name = it
                                     onClearError()
                                 },
                                 modifier =
                                     Modifier.fillMaxWidth().semantics {
-                                        contentDescription = "HTTPS list URL"
+                                        contentDescription = "Name"
                                     },
+                                placeholder = { Text("e.g. My filters") },
                                 singleLine = true,
                                 enabled = !busy,
-                                isError = duplicateUrl,
-                                supportingText =
-                                    if (duplicateUrl) {
-                                        ({
-                                            Text(
-                                                "This address is already in a URL list"
-                                            )
-                                        })
-                                    } else {
-                                        null
-                                    },
+                                isError = name.isNotEmpty() && !validListName(name),
                             )
                         }
                     }
-
-                    FilterListType.PRESET -> {
-                        FilterListField("Preset") {
-                            Box(modifier = Modifier.fillMaxWidth()) {
-                                OutlinedButton(
-                                    onClick = { presetsExpanded = true },
-                                    enabled = !busy,
-                                    modifier =
-                                        Modifier.fillMaxWidth().semantics {
-                                            contentDescription = "Preset"
+                    when (type) {
+                        FilterListType.FILE -> {
+                            if (selectedFile == null) {
+                                FilterListField("Filter rules") {
+                                    OutlinedTextField(
+                                        value = text,
+                                        onValueChange = { value ->
+                                            if (
+                                                value.length <=
+                                                    FilterListStore
+                                                        .MAX_INLINE_EDIT_BYTES &&
+                                                    value
+                                                        .toByteArray(Charsets.UTF_8)
+                                                        .size <=
+                                                        FilterListStore
+                                                            .MAX_INLINE_EDIT_BYTES
+                                            ) {
+                                                text = value
+                                                textError = null
+                                                onClearError()
+                                            } else {
+                                                textError =
+                                                    "Text is too long to edit " +
+                                                        "here (128 KiB max). " +
+                                                        "Import a file instead."
+                                            }
                                         },
+                                        modifier = Modifier.fillMaxWidth(),
+                                        placeholder = {
+                                            Text("Type or paste filter rules")
+                                        },
+                                        minLines = 5,
+                                        maxLines = 8,
+                                        enabled = !busy,
+                                        isError = textError != null,
+                                        supportingText =
+                                            textError?.let { message ->
+                                                ({ Text(message) })
+                                            },
+                                    )
+                                }
+                            } else {
+                                OutlinedCard(modifier = Modifier.fillMaxWidth()) {
+                                    Column(
+                                        modifier = Modifier.padding(12.dp),
+                                        verticalArrangement =
+                                            Arrangement.spacedBy(4.dp),
+                                    ) {
+                                        Text(
+                                            "Selected file",
+                                            style =
+                                                MaterialTheme.typography.labelMedium,
+                                            color =
+                                                MaterialTheme.colorScheme
+                                                    .onSurfaceVariant,
+                                        )
+                                        Text(
+                                            selectedFileName,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
+                                }
+                            }
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                OutlinedButton(
+                                    onClick = {
+                                        AuthenticationManager.bypassAuthForWindow(
+                                            60_000
+                                        )
+                                        picker.launch(arrayOf("*/*"))
+                                    },
+                                    enabled = !busy,
+                                    modifier = Modifier.weight(1f),
                                 ) {
+                                    Icon(
+                                        painterResource(
+                                            R.drawable.outline_upload_file_24
+                                        ),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp),
+                                    )
+                                    Spacer(Modifier.width(6.dp))
                                     Text(
-                                        suggestion.name,
-                                        modifier = Modifier.weight(1f),
+                                        if (selectedFile == null) {
+                                            "Import file"
+                                        } else {
+                                            "Change file"
+                                        },
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                     )
-                                    Icon(
-                                        painterResource(
-                                            R.drawable.outline_keyboard_arrow_down_24
-                                        ),
-                                        contentDescription = null,
-                                    )
                                 }
-                                DropdownMenu(
-                                    expanded = presetsExpanded,
-                                    onDismissRequest = { presetsExpanded = false },
-                                ) {
-                                    SuggestedFilterLists.all.forEach { preset ->
-                                        DropdownMenuItem(
-                                            text = {
-                                                Column {
+                                if (selectedFile != null) {
+                                    TextButton(
+                                        onClick = {
+                                            selectedFile = null
+                                            onClearError()
+                                        },
+                                        enabled = !busy,
+                                        modifier = Modifier.weight(1f),
+                                    ) {
+                                        Text(
+                                            "Use text",
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        FilterListType.URL -> {
+                            FilterListField("URL") {
+                                OutlinedTextField(
+                                    value = url,
+                                    onValueChange = {
+                                        url = it
+                                        onClearError()
+                                    },
+                                    modifier =
+                                        Modifier.fillMaxWidth().semantics {
+                                            contentDescription = "URL"
+                                        },
+                                    singleLine = true,
+                                    enabled = !busy,
+                                    isError = duplicateUrl,
+                                    supportingText =
+                                        if (duplicateUrl) {
+                                            ({
+                                                Text(
+                                                    "This address is already " +
+                                                        "in a URL list"
+                                                )
+                                            })
+                                        } else {
+                                            null
+                                        },
+                                )
+                            }
+                        }
+
+                        FilterListType.PRESET -> {
+                            FilterListField("Preset") {
+                                Box(modifier = Modifier.fillMaxWidth()) {
+                                    OutlinedButton(
+                                        onClick = { presetsExpanded = true },
+                                        enabled = !busy,
+                                        modifier =
+                                            Modifier.fillMaxWidth().semantics {
+                                                contentDescription = "Preset"
+                                            },
+                                    ) {
+                                        Text(
+                                            suggestion.name,
+                                            modifier = Modifier.weight(1f),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                        Icon(
+                                            painterResource(
+                                                R.drawable
+                                                    .outline_keyboard_arrow_down_24
+                                            ),
+                                            contentDescription = null,
+                                        )
+                                    }
+                                    DropdownMenu(
+                                        expanded = presetsExpanded,
+                                        onDismissRequest = {
+                                            presetsExpanded = false
+                                        },
+                                    ) {
+                                        SuggestedFilterLists.all.forEach { preset ->
+                                            DropdownMenuItem(
+                                                text = {
                                                     Text(
                                                         preset.name,
                                                         maxLines = 1,
                                                         overflow =
                                                             TextOverflow.Ellipsis,
                                                     )
-                                                    if (
-                                                        lists.any {
-                                                            it.type ==
-                                                                FilterListType
-                                                                    .PRESET &&
-                                                                it.sourceUrl ==
-                                                                    preset.url
-                                                        }
-                                                    ) {
-                                                        Text(
-                                                            "Already added",
-                                                            style =
-                                                                MaterialTheme
-                                                                    .typography
-                                                                    .labelMedium,
-                                                            color =
-                                                                MaterialTheme
-                                                                    .colorScheme
-                                                                    .error,
-                                                        )
-                                                    }
-                                                }
-                                            },
-                                            onClick = {
-                                                suggestion = preset
-                                                presetsExpanded = false
-                                                onClearError()
-                                            },
-                                        )
+                                                },
+                                                onClick = {
+                                                    suggestion = preset
+                                                    presetsExpanded = false
+                                                    onClearError()
+                                                },
+                                            )
+                                        }
                                     }
                                 }
                             }
-                        }
-                        if (installed) {
-                            Text(
-                                "Already added",
-                                color = MaterialTheme.colorScheme.error,
-                                style = MaterialTheme.typography.bodyMedium,
-                            )
-                        }
-                        Surface(
-                            color = MaterialTheme.colorScheme.surfaceContainerLow,
-                            shape = MaterialTheme.shapes.medium,
-                        ) {
-                            Column(
-                                modifier = Modifier.fillMaxWidth().padding(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                            Surface(
+                                color =
+                                    MaterialTheme.colorScheme.surfaceContainerLow,
+                                shape = MaterialTheme.shapes.medium,
                             ) {
                                 Column(
-                                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                                    modifier =
+                                        Modifier.fillMaxWidth().padding(12.dp),
+                                    verticalArrangement =
+                                        Arrangement.spacedBy(12.dp),
                                 ) {
-                                    Text(
-                                        "Category",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color =
-                                            MaterialTheme.colorScheme
-                                                .onSurfaceVariant,
-                                    )
-                                    Text(
-                                        suggestion.description,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                    )
-                                }
-                                Column(
-                                    verticalArrangement = Arrangement.spacedBy(2.dp)
-                                ) {
-                                    Text(
-                                        "Source URL",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color =
-                                            MaterialTheme.colorScheme
-                                                .onSurfaceVariant,
-                                    )
-                                    SelectionContainer {
+                                    Column(
+                                        verticalArrangement =
+                                            Arrangement.spacedBy(2.dp)
+                                    ) {
                                         Text(
-                                            suggestion.url,
+                                            "Category",
                                             style =
-                                                MaterialTheme.typography.bodySmall,
-                                            modifier = Modifier.fillMaxWidth(),
+                                                MaterialTheme.typography.labelSmall,
+                                            color =
+                                                MaterialTheme.colorScheme
+                                                    .onSurfaceVariant,
                                         )
+                                        Text(
+                                            suggestion.description,
+                                            style =
+                                                MaterialTheme.typography.bodyMedium,
+                                        )
+                                    }
+                                    Column(
+                                        verticalArrangement =
+                                            Arrangement.spacedBy(2.dp)
+                                    ) {
+                                        Text(
+                                            "Source URL",
+                                            style =
+                                                MaterialTheme.typography.labelSmall,
+                                            color =
+                                                MaterialTheme.colorScheme
+                                                    .onSurfaceVariant,
+                                        )
+                                        SelectionContainer {
+                                            Text(
+                                                suggestion.url,
+                                                style =
+                                                    MaterialTheme.typography
+                                                        .bodySmall,
+                                                modifier = Modifier.fillMaxWidth(),
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
+                    if (busy) {
+                        Text(
+                            progressMessage,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontStyle = FontStyle.Italic,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 }
-                if (busy) {
+                if (type == FilterListType.PRESET && installed) {
                     Text(
-                        progressMessage,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontStyle = FontStyle.Italic,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        "Already added",
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.End,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
                     )
                 }
-                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
         },
         confirmButton = {
@@ -1553,8 +1562,7 @@ private fun AddFilterListDialog(
                                         (text.isNotBlank() && textError == null))
 
                             FilterListType.URL ->
-                                url.trim()
-                                    .startsWith("https://", ignoreCase = true) &&
+                                url.toFilterListUrlOrNull() != null &&
                                     validListName(name) &&
                                     !duplicateUrl
 
@@ -1602,7 +1610,6 @@ private fun EditFilterListDialog(
     onDismiss: () -> Unit,
     onSave: () -> Unit,
 ) {
-    val editable = item.type != FilterListType.PRESET
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Edit filter list") },
@@ -1613,12 +1620,6 @@ private fun EditFilterListDialog(
                         .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                if (!editable) {
-                    Text(
-                        "Preset lists are read-only.",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
                 OutlinedTextField(
                     value = name,
                     onValueChange = onNameChange,
@@ -1626,17 +1627,15 @@ private fun EditFilterListDialog(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     enabled = !busy,
-                    readOnly = !editable,
                     isError = !validListName(name),
                 )
                 if (item.type != FilterListType.FILE) {
                     OutlinedTextField(
                         value = url,
                         onValueChange = onUrlChange,
-                        label = { Text("HTTPS list URL") },
+                        label = { Text("URL") },
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !busy,
-                        readOnly = !editable,
                         maxLines = 3,
                     )
                 } else if (!fileLoaded) {
