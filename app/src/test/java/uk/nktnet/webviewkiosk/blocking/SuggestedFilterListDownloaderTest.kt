@@ -206,6 +206,41 @@ class SuggestedFilterListDownloaderTest {
     }
 
     @Test
+    fun defaultSubscriptionsSkipExtendedScopesButStillRejectMalformedRefreshes() {
+        val validatedStore = FilterListStore(RuntimeEnvironment.getApplication())
+        val inputs =
+            listOf(
+                "uBlock Quick fixes" to
+                    "||ads.example^\nf51rm.com>>##+js(nowoif, /^ [-\\d]/)\n" +
+                        "igorslab.de/community/#@#img:remove-attr(/data-.+/)",
+                "uBlock Unbreak" to
+                    "@@||needed.example^\nnijie.info/ad_log.php#@#._banner_view",
+                "Online Malicious URL Blocklist" to
+                    "||shared.example/uploads/malware.exe^\$document",
+            )
+        inputs.forEach { (name, text) ->
+            val suggestion = SuggestedFilterLists.defaults.first { it.name == name }
+            val imported =
+                downloader(content = text, suggestion = suggestion)
+                    .download(suggestion, validatedStore)
+            assertEquals(suggestion.url, imported.sourceUrl)
+        }
+        assertEquals(3, validatedStore.list().size)
+        assertEquals(inputs.map { it.second }, validatedStore.enabledTexts())
+
+        val original = validatedStore.list().first()
+        val suggestion =
+            SuggestedFilterLists.defaults.first { it.url == original.sourceUrl }
+        val malformed =
+            downloader(content = "site example##.advert", suggestion = suggestion)
+        assertThrows(IllegalArgumentException::class.java) {
+            malformed.refresh(original, validatedStore)
+        }
+        assertEquals(original, validatedStore.list().first())
+        assertEquals(inputs.map { it.second }, validatedStore.enabledTexts())
+    }
+
+    @Test
     fun defaultsMatchUpstreamAndPreserveExistingStateAndOrder() {
         assertEquals(SuggestedFilterLists.all.take(9), SuggestedFilterLists.defaults)
         val existing =

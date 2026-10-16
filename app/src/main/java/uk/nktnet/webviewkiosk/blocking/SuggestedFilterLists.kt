@@ -58,10 +58,11 @@ internal object SuggestedFilterLists {
             ),
             SuggestedFilterList(
                 name = "Online Malicious URL Blocklist",
-                description = "Malicious URLs",
+                // Maintainer's network-filter format avoids unsupported $all/CSP.
+                description = "Malicious site navigation",
                 url =
                     "https://malware-filter.gitlab.io/urlhaus-filter/" +
-                        "urlhaus-filter-ag-online.txt",
+                        "urlhaus-filter-vivaldi-online.txt",
             ),
             SuggestedFilterList(
                 name = "Peter Lowe’s Ad and tracking server list",

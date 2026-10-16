@@ -13,6 +13,39 @@ API availability, matching documents, and documented resource limits also apply.
 
 ✅ Executable documented subset. ⚠️ Conditional feature. ❌ Skipped with reason.
 
+## What the skipped entries mean
+
+Most skipped entries are **not implemented yet**. Their absence does not establish a
+WebView limitation. The reasons below distinguish missing work from platform constraints.
+Supported entries also reject unimplemented argument forms rather than approximating them.
+
+| Reason | Examples | What would be needed |
+| --- | --- | --- |
+| Implementation | XHR prevention; Fetch/XHR pruning | Lifecycle, events, streams and tests |
+| Implementation | JSON/object editing; XML, media playlists | Argument DSLs and parser contracts |
+| Implementation | Eval-data pruning | Eval contracts and tests |
+| Implementation gap | Media SDK and iframe shims | Audited adapters and browser behavior tests |
+| Trust model | `trusted-*`, clipboard suppression | Source provenance and restricted capabilities |
+| Missing native integration | `close-window` | An app-controlled window-closing adapter |
+| Scope/performance | Overlay, debug/break helpers | Avoid polling and debugger behavior |
+| Resource role | Redirect-only files, `nobab2` | Redirect or original script-element context |
+| No blocking effect | `noop` | Not counted as executable blocking support |
+| Provider capability | `prevent-navigation` | Native Navigation API |
+
+The missing trust model is a security decision in this engine, not a general inability
+of WebView to execute these operations. Ordinary downloaded lists must not gain the
+arbitrary values, HTML, replacements or native privileges reserved for trusted filters.
+Several redirect-only files in the archive are resources, not upstream `+js` entry points.
+
+The concrete WebView constraint for all property/function hooks is reliable page-world
+document-start injection. Providers without `DOCUMENT_START_SCRIPT` skip scriptlets.
+Late evaluation cannot reliably intercept earlier page scripts. Native browser APIs,
+HttpOnly cookies and cross-origin access retain their normal browser restrictions.
+Fetch/XHR interception of page calls remains feasible in JavaScript; a complete extension
+network/CSP/response-rewrite pipeline is not supplied by the current WebView integration.
+
+## Canonical entries
+
 | Canonical name | Status / contract or reason |
 | --- | --- |
 | `abort-current-script.js` | ✅ current-script |

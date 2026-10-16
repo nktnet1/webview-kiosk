@@ -504,6 +504,21 @@ internal object FilterParser {
         if (selector.isEmpty()) {
             throw Invalid("missing CSS selector")
         }
+        // uBO can scope extended filters to descendant frames (>>) or URL paths.
+        // Neither is an ordinary hostname. Skip the whole constrained rule rather
+        // than rejecting the subscription or broadening it to every matching host.
+        val scopeText = line.substring(0, separator)
+        if (
+            scopeText.split(',').any { entry ->
+                val raw = entry.removePrefix("~")
+                raw.endsWith(">>") && normalizedHost(raw.dropLast(2)) != null ||
+                    '/' in raw &&
+                        !raw.startsWith('/') &&
+                        normalizedHost(raw.substringBefore('/')) != null
+            }
+        ) {
+            throw Unsupported()
+        }
         if (selector.startsWith("+js(")) {
             if (
                 (!exception && delimiterLength != 2) ||

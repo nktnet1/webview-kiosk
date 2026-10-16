@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.ui.screens
 import android.net.Uri
 import android.provider.OpenableColumns
 import android.text.format.Formatter
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,6 +42,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -85,6 +90,7 @@ import sh.calvin.reorderable.ReorderableColumn
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.blocking.BlockingStatus
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
+import uk.nktnet.webviewkiosk.blocking.FilterListBatchAction
 import uk.nktnet.webviewkiosk.blocking.FilterListInfo
 import uk.nktnet.webviewkiosk.blocking.FilterListStore
 import uk.nktnet.webviewkiosk.blocking.FilterListType
@@ -93,9 +99,10 @@ import uk.nktnet.webviewkiosk.blocking.ImportedFilterList
 import uk.nktnet.webviewkiosk.blocking.SuggestedFilterList
 import uk.nktnet.webviewkiosk.blocking.SuggestedFilterListDownloader
 import uk.nktnet.webviewkiosk.blocking.SuggestedFilterLists
+import uk.nktnet.webviewkiosk.blocking.feedback
+import uk.nktnet.webviewkiosk.blocking.filterListFailureMessage
 import uk.nktnet.webviewkiosk.blocking.toFilterListUrlOrNull
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
-import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
@@ -131,7 +138,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     val scope = rememberCoroutineScope()
     val blockingEnabled by blocker.enabled.collectAsState()
     val blockingStatus by blocker.status.collectAsState()
-    val blockingError by blocker.lastError.collectAsState()
+    val snackbar = remember { SnackbarHostState() }
     var lists by remember { mutableStateOf(store.list()) }
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var working by remember { mutableStateOf(false) }
@@ -148,8 +155,38 @@ fun SettingsContentBlockingScreen(navController: NavController) {
     var originalText by remember { mutableStateOf<String?>(null) }
     var editFileLoaded by remember { mutableStateOf(false) }
     var replacementUri by remember { mutableStateOf<Uri?>(null) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var editError by remember { mutableStateOf<String?>(null) }
     var addError by remember { mutableStateOf<String?>(null) }
+
+    fun notify(message: String, retry: (() -> Unit)? = null) {
+        scope.launch {
+            snackbar.currentSnackbarData?.dismiss()
+            val result =
+                snackbar.showSnackbar(
+                    message = message,
+                    actionLabel = retry?.let { "Retry" },
+                    withDismissAction = true,
+                    duration = SnackbarDuration.Long,
+                )
+            if (result == SnackbarResult.ActionPerformed) {
+                retry?.invoke()
+            }
+        }
+    }
+
+    fun reportBatch(
+        summary: FilterRefreshResult,
+        action: FilterListBatchAction,
+        retry: () -> Unit,
+    ) {
+        summary.failures.forEach { failure ->
+            Log.w("ContentBlocking", "${failure.name}: ${failure.message}")
+        }
+        notify(
+            summary.feedback(action),
+            retry.takeIf { summary.failures.isNotEmpty() },
+        )
+    }
 
     fun update(
         affectsRules: Boolean = true,
@@ -165,7 +202,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         }
         working = true
         workingMessage = progressMessage
-        error = null
+        editError = null
         scope.launch {
             try {
                 val savedLists =
@@ -181,20 +218,47 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 working = false
                 workingMessage = null
                 onSuccess?.invoke()
-                successMessage?.let { ToastManager.show(context, it) }
+                successMessage?.let { notify(it) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                val message = e.message ?: "Unable to change filter lists"
+                Log.w("ContentBlocking", "Filter list update failed", e)
+                val message = filterListFailureMessage(e)
                 if (onFailure != null) {
                     onFailure(message)
                 } else {
-                    error = message
+                    notify(message)
                 }
             } finally {
                 working = false
                 workingMessage = null
             }
+        }
+    }
+
+    fun downloadDefaults() {
+        var summary = FilterRefreshResult(0, 0, emptyList())
+        update(
+            progressMessage = "Downloading and validating uBlock Origin defaults…",
+            onSuccess = {
+                reportBatch(summary, FilterListBatchAction.ADD_DEFAULTS) {
+                    downloadDefaults()
+                }
+            },
+        ) {
+            summary = downloader.downloadDefaults(store)
+        }
+    }
+
+    fun refreshAll() {
+        var summary = FilterRefreshResult(0, 0, emptyList())
+        update(
+            progressMessage = "Downloading and validating filter lists…",
+            onSuccess = {
+                reportBatch(summary, FilterListBatchAction.REFRESH) { refreshAll() }
+            },
+        ) {
+            summary = downloader.refreshAll(store)
         }
     }
 
@@ -257,7 +321,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
         editText = null
         originalText = null
         editFileLoaded = item.type != FilterListType.FILE
-        error = null
+        editError = null
         if (item.type == FilterListType.FILE) {
             scope.launch {
                 try {
@@ -273,7 +337,8 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     throw e
                 } catch (e: Exception) {
                     if (pendingEdit?.id == item.id) {
-                        error = e.message ?: "Cannot open filter list"
+                        Log.w("ContentBlocking", "Cannot open filter list", e)
+                        editError = "Couldn't open this list. Please try again."
                     }
                 } finally {
                     if (pendingEdit?.id == item.id) {
@@ -351,7 +416,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                             Box(modifier = Modifier.weight(1f, fill = false)) {
                                 OutlinedButton(
                                     onClick = { bulkActionsExpanded = true },
-                                    enabled = !busy && lists.isNotEmpty(),
+                                    enabled = !busy,
                                 ) {
                                     Text(
                                         "Actions",
@@ -371,6 +436,23 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                         bulkActionsExpanded = false
                                     },
                                 ) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text("Add uBlock Origin defaults")
+                                        },
+                                        enabled =
+                                            !busy &&
+                                                SuggestedFilterLists.defaults.any {
+                                                    preset ->
+                                                    lists.none {
+                                                        it.sourceUrl == preset.url
+                                                    }
+                                                },
+                                        onClick = {
+                                            bulkActionsExpanded = false
+                                            downloadDefaults()
+                                        },
+                                    )
                                     DropdownMenuItem(
                                         text = { Text("Enable all") },
                                         enabled = !busy && lists.any { !it.enabled },
@@ -402,35 +484,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                                 lists.any { it.sourceUrl != null },
                                         onClick = {
                                             bulkActionsExpanded = false
-                                            var summary =
-                                                FilterRefreshResult(
-                                                    0,
-                                                    0,
-                                                    emptyList(),
-                                                )
-                                            update(
-                                                progressMessage =
-                                                    "Downloading and validating filter lists…",
-                                                onSuccess = {
-                                                    ToastManager.show(
-                                                        context,
-                                                        "Refreshed ${summary.updated} " +
-                                                            "of ${summary.total} lists",
-                                                    )
-                                                    if (
-                                                        summary.failures.isNotEmpty()
-                                                    ) {
-                                                        error =
-                                                            summary.failures
-                                                                .joinToString("\n") {
-                                                                    "${it.name}: ${it.message}"
-                                                                }
-                                                    }
-                                                },
-                                            ) {
-                                                summary =
-                                                    downloader.refreshAll(store)
-                                            }
+                                            refreshAll()
                                         },
                                     )
                                     DropdownMenuItem(
@@ -445,7 +499,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                             }
                             Button(
                                 onClick = {
-                                    error = null
+                                    editError = null
                                     addError = null
                                     showAddDialog = true
                                 },
@@ -460,27 +514,24 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                         }
                     }
                 }
-                if (!showAddDialog && pendingEdit == null) {
-                    error?.let { message ->
-                        item(key = "list-error") {
-                            Text(
-                                message,
-                                modifier = Modifier.fillMaxWidth(),
-                                color = MaterialTheme.colorScheme.error,
-                            )
-                        }
-                    }
-                }
                 if (blockingStatus == BlockingStatus.ERROR) {
-                    item(key = "engine-error") {
-                        Text(
-                            blockingError
-                                ?.takeIf { it.isNotBlank() }
-                                ?.let { "Rule load failed: $it" }
-                                ?: "Blocking unavailable",
+                    item(key = "blocking-status") {
+                        Row(
                             modifier = Modifier.fillMaxWidth(),
-                            color = MaterialTheme.colorScheme.error,
-                        )
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                "Blocking couldn't be updated.",
+                                modifier = Modifier.weight(1f),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                            TextButton(
+                                onClick = { blocker.reload() },
+                                enabled = !busy,
+                            ) {
+                                Text("Retry")
+                            }
+                        }
                     }
                 }
 
@@ -531,7 +582,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                         affectsRules = affectsRules,
                                         onFailure = { message ->
                                             lists = store.list()
-                                            error = message
+                                            notify(message)
                                         },
                                     ) {
                                         store.reorder(reordered.map { it.id })
@@ -650,6 +701,11 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     }
                 }
             }
+            SnackbarHost(
+                hostState = snackbar,
+                modifier =
+                    Modifier.align(Alignment.BottomCenter).padding(bottom = 8.dp),
+            )
         }
     }
 
@@ -727,7 +783,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 if (duplicateUrl) {
                     "A URL list with this address already exists"
                 } else {
-                    error
+                    editError
                 },
             busy = busy,
             canSave = canSave,
@@ -756,6 +812,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 update(
                     affectsRules = affectsRules,
                     successMessage = "List saved",
+                    onFailure = { editError = it },
                     progressMessage = "Validating and saving the filter list…",
                     onStored = { pendingEdit = null },
                 ) {
@@ -832,27 +889,6 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     downloader.downloadUrl(url, name, store)
                 }
             },
-            onDownloadDefaults = {
-                var summary = FilterRefreshResult(0, 0, emptyList())
-                update(
-                    progressMessage =
-                        "Downloading and validating uBlock Origin defaults…",
-                    onStored = { showAddDialog = false },
-                    onSuccess = {
-                        ToastManager.show(
-                            context,
-                            "Added ${summary.updated} default lists",
-                        )
-                        error =
-                            summary.failures
-                                .takeIf { it.isNotEmpty() }
-                                ?.joinToString("\n") { "${it.name}: ${it.message}" }
-                    },
-                    onFailure = { addError = it },
-                ) {
-                    summary = downloader.downloadDefaults(store)
-                }
-            },
             onDownloadPreset = { suggestion ->
                 update(
                     successMessage = "List added",
@@ -905,7 +941,8 @@ private fun FilterListInfoDialog(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            failure = e.message ?: "Unable to read filter list info"
+            Log.w("ContentBlocking", "Cannot read filter list info", e)
+            failure = "List information is unavailable. Please try again."
         }
     }
     AlertDialog(
@@ -1365,7 +1402,6 @@ private fun AddFilterListDialog(
     onAddCustom: (String, String, Uri?) -> Unit,
     onDownloadUrl: (String, String) -> Unit,
     onDownloadPreset: (SuggestedFilterList) -> Unit,
-    onDownloadDefaults: () -> Unit,
 ) {
     val context = LocalContext.current
     var type by rememberSaveable { mutableStateOf(FilterListType.PRESET) }
@@ -1609,23 +1645,6 @@ private fun AddFilterListDialog(
                         }
 
                         FilterListType.PRESET -> {
-                            OutlinedButton(
-                                onClick = onDownloadDefaults,
-                                enabled =
-                                    !busy &&
-                                        SuggestedFilterLists.defaults.any { preset ->
-                                            lists.none { it.sourceUrl == preset.url }
-                                        },
-                                modifier = Modifier.fillMaxWidth(),
-                            ) {
-                                Text("Add uBlock Origin defaults")
-                            }
-                            Text(
-                                "Five uBlock lists, EasyList, EasyPrivacy, " +
-                                    "Online Malicious URL Blocklist and Peter Lowe’s list. " +
-                                    "Already added lists are kept as they are.",
-                                style = MaterialTheme.typography.bodySmall,
-                            )
                             FilterListField("Preset") {
                                 Box(
                                     modifier =

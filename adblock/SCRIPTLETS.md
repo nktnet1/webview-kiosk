@@ -1,4 +1,4 @@
-# Scriptlet compatibility — v1.0.14
+# Scriptlet compatibility — v1.0.15
 
 The standalone Kotlin engine compiles validated `##+js(...)` data into a fixed,
 locally bundled JavaScript library. Downloaded filters never supply executable
@@ -83,6 +83,10 @@ includes retain list ordering. Aliases/default arguments normalize before dedupl
 Conflicting terminal property hooks use the first instruction; compatible checks share
 accessors. Non-configurable/read-only properties fail open. Missing ancestors are hooked
 without manufacturing objects; replacement owners are handled within a 512-slot budget.
+Path-scoped cosmetic rules and descendant-frame scopes (`>>`) are also unimplemented.
+Recognized extended scopes skip the whole rule, including exceptions, without rejecting
+the subscription or broadening its hostname. Genuinely malformed hostnames still fail
+import validation. These scopes are implementation gaps, not WebView API restrictions.
 
 Compiled snapshots use schema 7, so schema 6 is recompiled. Cached instructions undergo
 validation again, including fixed resource keys. Filters cannot choose a resource path.
@@ -143,16 +147,53 @@ API references:
 ## Default subscription action
 
 The preset picker starts with uBlock Ads, Privacy, Badware, Quick fixes and Unbreak.
-“Add uBlock Origin defaults” adds those five plus EasyList, EasyPrivacy, Online Malicious
-URL Blocklist and Peter Lowe’s Ad and tracking server list. This matches the nine global
-defaults in the supplied upstream assets.json and the official source checked 2026-10-16:
+**Actions → Add uBlock Origin defaults** adds those five plus EasyList, EasyPrivacy,
+Online Malicious URL Blocklist and Peter Lowe’s Ad and tracking server list. This matches
+the nine global defaults in the supplied upstream assets.json and the official source
+checked 2026-10-16:
 https://github.com/gorhill/uBlock/blob/master/assets/assets.json
 
-This is user-initiated. Existing subscriptions with the same source URL retain their
-content, enabled state and order. Missing lists append in preset order. Individual
-failures are reported and only missing entries are retried; one deferred rule-change
-notification follows the batch. Locale-specific, optional annoyance and experimental
-lists are not silently selected. No subscriptions are fetched at startup.
+The action is available even with an empty subscription list and is absent from the
+Add list dialog. This is user-initiated. Existing subscriptions with the same source URL
+retain their content, enabled state and order. Missing lists append in preset order.
+Individual failures produce a short snackbar with Retry, and only missing entries are
+retried; one deferred rule-change notification follows the batch. Locale-specific,
+optional annoyance and experimental lists are not silently selected. No subscriptions
+are fetched at startup.
+
+The URLHaus shortcut uses the maintainer's Vivaldi/Brave online variant, whose `$document`
+rules preserve malicious paths and IP addresses. This supplies navigation protection;
+it does not claim uBO's broader `$all` behavior. The former AdGuard-format shortcut
+contained only `$all` rules and could not import. Silently dropping `$all` would change
+its semantics: upstream also covers popups and inline font/script restrictions via CSP.
+The engine still skips `$all`. Existing manually imported sources are not rewritten.
+Format reference: https://gitlab.com/malware-filter/urlhaus-filter#lite-version-online-links-only
+
+Raw parser diagnostics, exception messages and failed-list names are logged, never bound
+to screen text. Add/edit failures use fixed input messages. Refresh/default batches use
+counts and a retry action; a compile failure shows a short neutral status with Retry.
+Previously active rules and subscription data remain intact when an update fails.
+
+### Reported subscription failures, rechecked 2026-10-16
+
+The same Quick fixes and Unbreak bytes were measured against the v1.0.14 and v1.0.15
+source trees. The former rejected these complete lists because valid advanced scopes
+were classified as invalid. They now import their supported rules and skip those scopes.
+
+| Input | v1.0.14 import | v1.0.15 import | v1.0.15 supported / skipped |
+| --- | --- | --- | ---: |
+| Quick fixes | Rejected: 3 invalid scopes | Accepted; 0 invalid | 250 / 176 |
+| Unbreak | Rejected: 1 invalid scope | Accepted; 0 invalid | 2200 / 339 |
+| URLHaus AdGuard format | Rejected: `$all` unsupported | Still unsupported | 0 / 23980 |
+| URLHaus Vivaldi/Brave format | Accepted by engine | Used by new preset downloads | 23980 / 0 |
+
+The two URLHaus formats are different published inputs; this is a subscription-format
+correction, not an increase in scriptlet support. SHA-256 values identify the tested files:
+
+- Quick fixes: `65cdd45ec71e63c5fc5c5988e0faaaba760a5c7557e8e64837ffad5209f2a966`
+- Unbreak: `e9d95cbb61cc83990e75104a4103585af146c6c6e8dfda07cad6c9713ddbb632`
+- URLHaus AdGuard: `77038af09b0c3a0b74c803f1e19313cc47d9880b7970f85f2cfb0127cc3bfc8b`
+- URLHaus Vivaldi/Brave: `676bba3c308420a93a4b7ee4d178c129286fafd05ca01f2da9b55fdbee9a532f`
 
 ## Exact-input measurements
 
@@ -162,16 +203,19 @@ Its header contains a timestamp placeholder, so the hash identifies the tested v
 Counts exclude comments and inactive conditional branches and precede page deduplication.
 Original bundle and v1.0.13 counts were remeasured with the same bytes.
 
-| Metric | Bundle v1.0.12 | Saved v1.0.13 | v1.0.14 |
-| --- | ---: | ---: | ---: |
-| Total active rules | 6064 | 6064 | 6064 |
-| Network rules | 1432 | 1432 | 1432 |
-| Cosmetic rules | 1771 | 1771 | 1771 |
-| Executable scriptlet rules | 0 | 1525 | 1759 |
-| Total supported | 3203 | 4728 | 4962 |
-| Total skipped | 2861 | 1336 | 1102 |
-| Skipped scriptlets | 2444 | 919 | 685 |
-| Invalid rules | 0 | 0 | 0 |
+| Metric | Bundle v1.0.12 | Saved v1.0.13 | v1.0.14 | v1.0.15 |
+| --- | ---: | ---: | ---: | ---: |
+| Total active rules | 6064 | 6064 | 6064 | 6064 |
+| Network rules | 1432 | 1432 | 1432 | 1432 |
+| Cosmetic rules | 1771 | 1771 | 1771 | 1771 |
+| Executable scriptlet rules | 0 | 1525 | 1759 | 1759 |
+| Total supported | 3203 | 4728 | 4962 | 4962 |
+| Total skipped | 2861 | 1336 | 1102 | 1102 |
+| Skipped scriptlets | 2444 | 919 | 685 | 685 |
+| Invalid rules | 0 | 0 | 0 | 0 |
+
+The v1.0.15 follow-up changes subscription handling and feedback; it adds no scriptlet
+implementations and does not alter this corpus's executable-rule count.
 
 | Active scriptlet name | Total | v1.0.13 executable | v1.0.14 executable |
 | --- | ---: | ---: | ---: |
@@ -217,7 +261,7 @@ Original bundle and v1.0.13 counts were remeasured with the same bytes.
 
 ## Validation and performance
 
-The final implementation passed 57 standalone engine tests, 705 app/Robolectric
+The final v1.0.15 implementation passed 61 standalone engine tests, 709 app/Robolectric
 unit tests, 90 Node JavaScript/cosmetic tests, 50 Python tooling tests, Spotless and
 Kotlin-brace checks, and debug APK assembly. The APK was inspected: both runtimes,
 all 14 shims, the central attribution notice and full GPL text match their sources.
@@ -230,6 +274,9 @@ DOM milestones/BFCache observer cleanup, safe callback queues, storage denial,
 conditional WebRTC/Navigation APIs, and unrelated login/session behavior.
 The default-list batch tests cover existing disabled URL subscriptions, ordering,
 deduplication, partial failures and retrying only missing subscriptions.
+New regressions exercise real Quick fixes/Unbreak scopes through parser validation
+and download/save, preserve saved rules after malformed refreshes, verify URLHaus
+navigation/path boundaries, and prevent raw diagnostics from entering UI messages.
 
 Robolectric tests registration ownership, provider failures and service publication;
 it does not execute a real Chromium renderer. Node 24.19.0 V8 executes the bundled
@@ -239,7 +286,8 @@ is still required for document-start timing, parser-blocking script interception
 cross-origin frame timing, browser history/BFCache, cookie policies, layout APIs,
 WebRTC providers and representative authentication/media websites.
 
-Measurements below are actual host-runtime medians, not phone page-load estimates.
+Measurements below were collected for v1.0.14 and are actual host-runtime medians,
+not phone page-load estimates. This follow-up changes no JavaScript or page hooks.
 Both JS revisions used the same current harness and exact Kotlin-produced payloads.
 There are five payload checks: YouTube property rules, publisher constants, unrelated
 hosts and the newly supported imgdrive.net timer booster. Construction uses 31
