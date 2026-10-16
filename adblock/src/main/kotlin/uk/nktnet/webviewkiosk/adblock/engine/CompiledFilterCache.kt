@@ -8,6 +8,8 @@ import java.security.MessageDigest
 import java.util.zip.CRC32
 import java.util.zip.CheckedInputStream
 import java.util.zip.CheckedOutputStream
+import uk.nktnet.webviewkiosk.adblock.BlockingResponse
+import uk.nktnet.webviewkiosk.adblock.CosmeticProcedure
 
 /**
  * One disposable, versioned binary snapshot of normalized rules, never Java object
@@ -78,6 +80,7 @@ internal class CompiledFilterCache(
                                     host,
                                 )
                             val domains = strings.scope()
+                            val targets = strings.scope()
                             val types = input.readInt()
                             val excludedTypes = input.readInt()
                             require(types in 0..0xfff && excludedTypes in 0..0xfff)
@@ -94,6 +97,7 @@ internal class CompiledFilterCache(
                             val conditions =
                                 Conditions(
                                         domains,
+                                        targets,
                                         types,
                                         excludedTypes,
                                         party,
@@ -110,12 +114,23 @@ internal class CompiledFilterCache(
                             val exception = input.readBoolean()
                             val important = input.readBoolean()
                             val hide = input.count(2)
+                            val response =
+                                input.count(BlockingResponse.entries.size).let {
+                                    if (it == 0) {
+                                        null
+                                    } else {
+                                        BlockingResponse.entries[it - 1]
+                                    }
+                                }
+                            require(response != BlockingResponse.ALLOW)
                             NetworkIdentity(
                                 pattern,
                                 conditions,
                                 exception,
                                 important,
                                 hide,
+                                response,
+                                input.readBoolean(),
                             )
                         }
                     val cosmetics =
@@ -124,11 +139,25 @@ internal class CompiledFilterCache(
                                 FilterCompiler.MAX_RULES - skipped - networks.size
                             )
                         ) {
-                            CosmeticRule(
-                                strings.read(),
-                                strings.scope(),
-                                input.readBoolean(),
-                            )
+                            val selector = strings.read()
+                            val domains = strings.scope()
+                            val exception = input.readBoolean()
+                            val procedure =
+                                if (input.readBoolean()) {
+                                    CosmeticProcedure(
+                                        strings.read(),
+                                        strings.read().ifEmpty { null },
+                                        input.count(4),
+                                        input.readBoolean(),
+                                        strings.read().ifEmpty { null },
+                                        strings.read().ifEmpty { null },
+                                        strings.read().ifEmpty { null },
+                                        strings.read().ifEmpty { null },
+                                    )
+                                } else {
+                                    null
+                                }
+                            CosmeticRule(selector, domains, exception, procedure)
                         }
                     val actual = checksum.value
                     if (input.readLong() != actual || input.read() != -1) {
@@ -170,8 +199,14 @@ internal class CompiledFilterCache(
                     val strings = StringWriter(output)
                     output.writeInt(rules.skippedRules)
                     output.writeInt(rules.networks.size)
-                    for ((pattern, conditions, exception, important, hide) in
-                        rules.networks) {
+                    for ((
+                        pattern,
+                        conditions,
+                        exception,
+                        important,
+                        hide,
+                        redirect,
+                        redirectOnly) in rules.networks) {
                         strings.write(pattern.text)
                         output.writeByte(
                             (if (pattern.domainAnchor) {
@@ -197,6 +232,7 @@ internal class CompiledFilterCache(
                         )
                         strings.write(pattern.hostIndex.orEmpty())
                         strings.scope(conditions.domains)
+                        strings.scope(conditions.targets)
                         output.writeInt(conditions.types)
                         output.writeInt(conditions.excludedTypes)
                         output.writeByte(
@@ -211,12 +247,32 @@ internal class CompiledFilterCache(
                         output.writeBoolean(exception)
                         output.writeBoolean(important)
                         output.writeInt(hide)
+                        output.writeInt(
+                            if (redirect == null) {
+                                0
+                            } else {
+                                redirect.ordinal + 1
+                            }
+                        )
+                        output.writeBoolean(redirectOnly)
                     }
                     output.writeInt(rules.cosmetics.size)
-                    for ((selector, domains, exception) in rules.cosmetics) {
+                    for ((selector, domains, exception, procedure) in
+                        rules.cosmetics) {
                         strings.write(selector)
                         strings.scope(domains)
                         output.writeBoolean(exception)
+                        output.writeBoolean(procedure != null)
+                        if (procedure != null) {
+                            strings.write(procedure.selector)
+                            strings.write(procedure.text.orEmpty())
+                            output.writeInt(procedure.upward)
+                            output.writeBoolean(procedure.remove)
+                            strings.write(procedure.style.orEmpty())
+                            strings.write(procedure.removeAttribute.orEmpty())
+                            strings.write(procedure.removeClass.orEmpty())
+                            strings.write(procedure.upwardSelector.orEmpty())
+                        }
                     }
                     output.writeLong(checksum.value)
                 }
@@ -251,6 +307,8 @@ internal class CompiledFilterCache(
         fun scope(value: DomainScope) {
             set(value.included)
             set(value.excluded)
+            set(value.includedEntities)
+            set(value.excludedEntities)
         }
     }
 
@@ -281,11 +339,21 @@ internal class CompiledFilterCache(
         fun scope(): DomainScope {
             val included = set()
             val excluded = set()
-            return if (included.isEmpty() && excluded.isEmpty()) {
-                DomainScope.ANY
-            } else {
-                DomainScope(included, excluded)
-            }
+            val includedEntities = set()
+            val excludedEntities = set()
+            return DomainScope(
+                    included,
+                    excluded,
+                    includedEntities,
+                    excludedEntities,
+                )
+                .let {
+                    if (it == DomainScope.ANY) {
+                        DomainScope.ANY
+                    } else {
+                        it
+                    }
+                }
         }
     }
 
@@ -293,7 +361,7 @@ internal class CompiledFilterCache(
         private const val MAGIC = 0x574b4346 // WKCF
 
         // Bump when parsing/matching semantics or the binary schema change.
-        private const val VERSION = 1
+        private const val VERSION = 5
         private const val MAX_BYTES = 64L * 1024 * 1024
         private const val BUFFER_SIZE = 64 * 1024
 

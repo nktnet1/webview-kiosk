@@ -26,10 +26,16 @@ fun SettingLabel(
     navController: NavController,
     label: String,
     showBackIcon: Boolean = true,
+    onBackClick: (() -> Unit)? = null,
+    onExitClick: (() -> Unit)? = null,
     endIcon: @Composable (() -> Unit)? = {
         IconButton(
             onClick = {
-                navigateToWebViewScreen(navController)
+                if (onExitClick != null) {
+                    onExitClick()
+                } else {
+                    navigateToWebViewScreen(navController)
+                }
             }
         ) {
             Icon(
@@ -50,8 +56,12 @@ fun SettingLabel(
             if (showBackIcon) {
                 IconButton(
                     onClick = {
-                        if (!navController.popBackStack()) {
-                            navigateToWebViewScreen(navController)
+                        if (onBackClick != null) {
+                            onBackClick()
+                        } else {
+                            if (!navController.popBackStack()) {
+                                navigateToWebViewScreen(navController)
+                            }
                         }
                     },
                     modifier = Modifier.padding(end = 1.dp).offset(-ICON_OFFSET.dp),

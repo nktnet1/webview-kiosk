@@ -2,6 +2,8 @@ package uk.nktnet.webviewkiosk.adblock.engine
 
 import java.util.Locale
 import okhttp3.HttpUrl
+import uk.nktnet.webviewkiosk.adblock.BlockingResponse
+import uk.nktnet.webviewkiosk.adblock.CosmeticProcedure
 
 /** Validates rule text and builds the immutable indexes used by request threads. */
 internal object FilterCompiler {
@@ -91,7 +93,13 @@ internal data class CompiledRuleSet(
     val skippedRules: Int,
 ) {
     fun build(): CompiledFilters {
-        if (networks.any { it.conditions.thirdParty != null }) {
+        if (
+            networks.any {
+                it.conditions.thirdParty != null ||
+                    it.conditions.domains.usesEntities ||
+                    it.conditions.targets.usesEntities
+            } || cosmetics.any { it.domains.usesEntities }
+        ) {
             // Load OkHttp's existing public-suffix data on the compilation worker.
             httpAddress("https://example.com/")!!.topPrivateDomain()
         }
@@ -110,16 +118,40 @@ private class RequestFacts(
     val sourceHost = source.host.removeSuffix(".")
     val budget = MatchBudget()
     private var thirdParty: Boolean? = null
+    private val targetDomain by lazy { target.topPrivateDomain() }
+    private val sourceDomain by lazy { source.topPrivateDomain() }
+    val sourceEntity: String? by lazy { sourceDomain?.substringBefore('.') }
 
     fun matches(conditions: Conditions): Boolean {
         if (conditions.types != 0 && conditions.types and type == 0) {
             return false
         }
-        if (
-            conditions.excludedTypes and type != 0 ||
-                !conditions.domains.matches(sourceHost)
-        ) {
+        if (conditions.excludedTypes and type != 0) {
             return false
+        }
+        // Only entity restrictions need the public suffix lookup; ordinary
+        // host/domain rules stay on the cheap matching path.
+        if (conditions.domains != DomainScope.ANY) {
+            val domain =
+                if (conditions.domains.usesEntities) {
+                    sourceDomain
+                } else {
+                    null
+                }
+            if (!conditions.domains.matches(sourceHost, domain)) {
+                return false
+            }
+        }
+        if (conditions.targets != DomainScope.ANY) {
+            val domain =
+                if (conditions.targets.usesEntities) {
+                    targetDomain
+                } else {
+                    null
+                }
+            if (!conditions.targets.matches(targetHost, domain)) {
+                return false
+            }
         }
         if (
             method in conditions.excludedMethods ||
@@ -130,10 +162,7 @@ private class RequestFacts(
         if (conditions.thirdParty != null) {
             val party =
                 thirdParty
-                    ?: ((target.topPrivateDomain()?.removeSuffix(".")
-                            ?: targetHost) !=
-                            (source.topPrivateDomain()?.removeSuffix(".")
-                                ?: sourceHost))
+                    ?: ((targetDomain ?: targetHost) != (sourceDomain ?: sourceHost))
                         .also { thirdParty = it }
             if (party != conditions.thirdParty) {
                 return false
@@ -150,6 +179,7 @@ private class RequestFacts(
 private class NetworkIndex(rules: Collection<NetworkIdentity>) {
     private val hosts = HashMap<String, MutableList<NetworkIdentity>>()
     private val pages = HashMap<String, MutableList<NetworkIdentity>>()
+    private val pageEntities = HashMap<String, MutableList<NetworkIdentity>>()
     private val tokens = HashMap<Int, MutableList<NetworkIdentity>>()
     private val fallback = mutableListOf<NetworkIdentity>()
 
@@ -160,10 +190,15 @@ private class NetworkIndex(rules: Collection<NetworkIdentity>) {
                 pattern.hostIndex != null ->
                     hosts.getOrPut(pattern.hostIndex) { mutableListOf() }.add(rule)
 
-                rule.conditions.domains.included.isNotEmpty() ->
+                rule.conditions.domains.included.isNotEmpty() ||
+                    rule.conditions.domains.includedEntities.isNotEmpty() -> {
                     rule.conditions.domains.included.forEach { domain ->
                         pages.getOrPut(domain) { mutableListOf() }.add(rule)
                     }
+                    rule.conditions.domains.includedEntities.forEach { entity ->
+                        pageEntities.getOrPut(entity) { mutableListOf() }.add(rule)
+                    }
+                }
 
                 pattern.indexToken != null ->
                     tokens.getOrPut(pattern.indexToken) { mutableListOf() }.add(rule)
@@ -194,6 +229,13 @@ private class NetworkIndex(rules: Collection<NetworkIdentity>) {
         if (pages.isNotEmpty()) {
             hostSuffixes(facts.sourceHost) { host ->
                 if (pages[host]?.any(::check) == true) {
+                    return true
+                }
+            }
+        }
+        if (pageEntities.isNotEmpty()) {
+            facts.sourceEntity?.let { entity ->
+                if (pageEntities[entity]?.any(::check) == true) {
                     return true
                 }
             }
@@ -236,8 +278,16 @@ internal class CompiledFilters(
     private val classes = HashMap<String, MutableList<CosmeticRule>>()
     private val ids = HashMap<String, MutableList<CosmeticRule>>()
     private val specificExceptions = HashMap<String, MutableList<CosmeticRule>>()
+    private val entitySpecific = HashMap<String, MutableList<CosmeticRule>>()
+    private val entityExceptions = HashMap<String, MutableList<CosmeticRule>>()
+    private val procedures = HashMap<String, MutableList<CosmeticRule>>()
+    private val entityProcedures = HashMap<String, MutableList<CosmeticRule>>()
+    private val procedureExceptions = HashMap<String, MutableList<CosmeticRule>>()
+    private val entityProcedureExceptions =
+        HashMap<String, MutableList<CosmeticRule>>()
     private val genericExceptions = mutableListOf<CosmeticRule>()
     val hasCosmetics = cosmetics.any { !it.exception }
+    private val cosmeticsNeedEntities = cosmetics.any { it.domains.usesEntities }
 
     init {
         val ordinary = mutableListOf<NetworkIdentity>()
@@ -247,7 +297,10 @@ internal class CompiledFilters(
             when {
                 rule.hide != 0 -> hiding += rule
 
-                host != null && rule.conditions == Conditions.ANY ->
+                host != null &&
+                    rule.conditions == Conditions.ANY &&
+                    rule.redirect == null &&
+                    !rule.redirectOnly ->
                     when {
                         rule.important -> importantHosts += host
                         rule.exception -> allowedHosts += host
@@ -260,9 +313,33 @@ internal class CompiledFilters(
         requests = NetworkIndex(ordinary)
         hideExceptions = NetworkIndex(hiding)
         for (rule in cosmetics) {
+            if (rule.procedure != null) {
+                val domainIndex =
+                    if (rule.exception) {
+                        procedureExceptions
+                    } else {
+                        procedures
+                    }
+                val entityIndex =
+                    if (rule.exception) {
+                        entityProcedureExceptions
+                    } else {
+                        entityProcedures
+                    }
+                rule.domains.included.forEach { domain ->
+                    domainIndex.getOrPut(domain) { mutableListOf() }.add(rule)
+                }
+                rule.domains.includedEntities.forEach { entity ->
+                    entityIndex.getOrPut(entity) { mutableListOf() }.add(rule)
+                }
+                continue
+            }
             when {
                 rule.exception -> {
-                    if (rule.domains.included.isEmpty()) {
+                    if (
+                        rule.domains.included.isEmpty() &&
+                            rule.domains.includedEntities.isEmpty()
+                    ) {
                         genericExceptions += rule
                     } else {
                         rule.domains.included.forEach { domain ->
@@ -270,13 +347,23 @@ internal class CompiledFilters(
                                 .getOrPut(domain) { mutableListOf() }
                                 .add(rule)
                         }
+                        rule.domains.includedEntities.forEach { entity ->
+                            entityExceptions
+                                .getOrPut(entity) { mutableListOf() }
+                                .add(rule)
+                        }
                     }
                 }
 
-                rule.domains.included.isNotEmpty() ->
+                rule.domains.included.isNotEmpty() ||
+                    rule.domains.includedEntities.isNotEmpty() -> {
                     rule.domains.included.forEach { domain ->
                         specific.getOrPut(domain) { mutableListOf() }.add(rule)
                     }
+                    rule.domains.includedEntities.forEach { entity ->
+                        entitySpecific.getOrPut(entity) { mutableListOf() }.add(rule)
+                    }
+                }
 
                 else -> {
                     val token = genericToken(rule.selector)
@@ -296,19 +383,22 @@ internal class CompiledFilters(
         }
     }
 
-    fun shouldBlock(
+    fun responseFor(
         url: String,
         sourceUrl: String,
         type: String,
         method: String,
-    ): Boolean {
-        val target = httpAddress(url) ?: return false
-        val source = httpAddress(sourceUrl) ?: return false
+    ): BlockingResponse {
+        val target = httpAddress(url) ?: return BlockingResponse.ALLOW
+        val source = httpAddress(sourceUrl) ?: return BlockingResponse.ALLOW
         var blocked = false
         var allowed = false
+        var redirect: BlockingResponse? = null
+        var redirectRule: BlockingResponse? = null
+        var importantRedirect: BlockingResponse? = null
         hostSuffixes(target.host.removeSuffix(".")) { host ->
             if (host in importantHosts) {
-                return true
+                return BlockingResponse.BLOCK
             }
             if (host in blockedHosts) {
                 blocked = true
@@ -327,23 +417,44 @@ internal class CompiledFilters(
         val important =
             requests.any(facts) { rule ->
                 (rule.important ||
+                    rule.redirectOnly ||
                     (rule.exception && !allowed) ||
-                    (!rule.exception && !blocked)) &&
+                    (!rule.exception && (!blocked || rule.redirect != null))) &&
                     facts.matches(rule.conditions) &&
                     rule.pattern.matches(target, facts.url, facts.budget) &&
                     if (rule.important) {
+                        importantRedirect = rule.redirect
                         true
                     } else {
                         if (rule.exception) {
                             allowed = true
+                        } else if (rule.redirectOnly) {
+                            redirectRule = rule.redirect
                         } else {
                             blocked = true
+                            if (rule.redirect != null) {
+                                redirect = rule.redirect
+                            }
                         }
                         false
                     }
             }
-        return !facts.budget.exhausted && (important || (blocked && !allowed))
+        if (facts.budget.exhausted) {
+            return BlockingResponse.ALLOW
+        }
+        return when {
+            important -> importantRedirect ?: BlockingResponse.BLOCK
+            blocked && !allowed -> redirect ?: redirectRule ?: BlockingResponse.BLOCK
+            else -> BlockingResponse.ALLOW
+        }
     }
+
+    fun shouldBlock(
+        url: String,
+        sourceUrl: String,
+        type: String,
+        method: String,
+    ): Boolean = responseFor(url, sourceUrl, type, method) != BlockingResponse.ALLOW
 
     fun cosmeticSelectors(
         url: String,
@@ -355,6 +466,17 @@ internal class CompiledFilters(
         }
         val address = httpAddress(url) ?: return emptyList()
         val host = address.host.removeSuffix(".")
+        val registeredDomain =
+            if (
+                entitySpecific.isNotEmpty() ||
+                    entityExceptions.isNotEmpty() ||
+                    cosmeticsNeedEntities
+            ) {
+                address.topPrivateDomain()
+            } else {
+                null
+            }
+        val entity = registeredDomain?.substringBefore('.')
         val facts =
             RequestFacts(address, address, ResourceTypes.request("document"), "GET")
         var hide = 0
@@ -372,7 +494,7 @@ internal class CompiledFilters(
         }
         val exceptions = HashSet<String>()
         fun except(rule: CosmeticRule) {
-            if (rule.domains.matches(host)) {
+            if (rule.domains.matches(host, registeredDomain)) {
                 exceptions += rule.selector
             }
         }
@@ -380,13 +502,14 @@ internal class CompiledFilters(
         hostSuffixes(host) { domain ->
             specificExceptions[domain]?.forEach(::except)
         }
+        entity?.let { entityExceptions[it]?.forEach(::except) }
         val result = LinkedHashSet<String>()
         var bytes = 0
         fun add(rule: CosmeticRule) {
             if (
                 rule.selector in exceptions ||
                     rule.selector in result ||
-                    !rule.domains.matches(host) ||
+                    !rule.domains.matches(host, registeredDomain) ||
                     result.size >= 2048
             ) {
                 return
@@ -399,12 +522,85 @@ internal class CompiledFilters(
             result += rule.selector
         }
         hostSuffixes(host) { domain -> specific[domain]?.forEach(::add) }
+        entity?.let { entitySpecific[it]?.forEach(::add) }
         if (hide == 0) {
             generic.forEach(::add)
             pageClasses.take(256).forEach { token -> classes[token]?.forEach(::add) }
             pageIds.take(256).forEach { token -> ids[token]?.forEach(::add) }
         }
         return result.toList()
+    }
+
+    /**
+     * Domain-matched procedural actions, with normal exceptions and hiding switches.
+     */
+    fun cosmeticProcedures(url: String): List<CosmeticProcedure> {
+        if (!hasCosmetics) {
+            return emptyList()
+        }
+        val address = httpAddress(url) ?: return emptyList()
+        val host = address.host.removeSuffix(".")
+        val domain =
+            if (
+                entityProcedures.isNotEmpty() ||
+                    entityProcedureExceptions.isNotEmpty() ||
+                    cosmeticsNeedEntities
+            ) {
+                address.topPrivateDomain()
+            } else {
+                null
+            }
+        val entity = domain?.substringBefore('.')
+        val facts =
+            RequestFacts(address, address, ResourceTypes.request("document"), "GET")
+        var hide = false
+        hideExceptions.any(facts) { rule ->
+            if (
+                rule.hide == 2 &&
+                    facts.matches(rule.conditions) &&
+                    rule.pattern.matches(address, facts.url, facts.budget)
+            ) {
+                hide = true
+            }
+            hide
+        }
+        if (hide || facts.budget.exhausted) {
+            return emptyList()
+        }
+        val exceptions = HashSet<String>()
+        val candidates = LinkedHashSet<CosmeticRule>()
+        fun gather(
+            source: Map<String, MutableList<CosmeticRule>>,
+            key: String,
+            visitor: (CosmeticRule) -> Unit,
+        ) {
+            source[key]?.forEach(visitor)
+        }
+        hostSuffixes(host) { key ->
+            gather(procedureExceptions, key) {
+                if (it.domains.matches(host, domain)) {
+                    exceptions += it.selector
+                }
+            }
+            gather(procedures, key, candidates::add)
+        }
+        entity?.let { key ->
+            gather(entityProcedureExceptions, key) {
+                if (it.domains.matches(host, domain)) {
+                    exceptions += it.selector
+                }
+            }
+            gather(entityProcedures, key, candidates::add)
+        }
+        return candidates
+            .asSequence()
+            .filter {
+                it.selector !in exceptions && it.domains.matches(host, domain)
+            }
+            .mapNotNull(CosmeticRule::procedure)
+            .distinct()
+            .take(128)
+            .toList()
     }
 
     companion object {

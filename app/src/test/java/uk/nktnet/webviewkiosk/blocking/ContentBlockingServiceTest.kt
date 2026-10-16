@@ -59,6 +59,71 @@ class ContentBlockingServiceTest {
     }
 
     @Test
+    fun settingsEditsWaitForTheNextWebViewBeforeCompilingOnce() {
+        service.start()
+        executor.runAll()
+
+        val first = store.importFrom("first.txt", "||ads.example^".byteInputStream())
+        service.markRulesChanged()
+        store.importFrom("second.txt", "||trackers.example^".byteInputStream())
+        service.markRulesChanged()
+        store.setEnabled(first.id, false)
+        service.markRulesChanged()
+
+        // Returning to the parent settings screen does not trigger a reload.
+        assertTrue(service.rulesPending.value)
+        assertEquals(0, engine.replacements)
+        assertEquals(1, engine.clears)
+        assertEquals(BlockingStatus.DISABLED, service.status.value)
+        assertTrue(executor.queue.isEmpty())
+
+        service.prepareForWebView()
+        assertFalse(service.rulesPending.value)
+        assertEquals(BlockingStatus.LOADING, service.status.value)
+        executor.runAll()
+
+        assertEquals(1, engine.replacements)
+        assertEquals(BlockingStatus.ACTIVE, service.status.value)
+        service.prepareForWebView()
+        assertTrue(executor.queue.isEmpty())
+    }
+
+    @Test
+    fun pendingEditsAreConsumedOnlyWhenReenteringTheWebView() {
+        val item = store.importFrom("test.txt", "||ads.example^".byteInputStream())
+        service.start()
+        executor.runAll()
+
+        store.setEnabled(item.id, false)
+        service.markRulesChanged()
+        assertEquals(1, engine.replacements)
+        assertTrue(executor.queue.isEmpty())
+
+        service.prepareForWebView()
+        executor.runAll()
+        assertEquals(1, engine.clears)
+
+        store.setEnabled(item.id, true)
+        service.markRulesChanged()
+        assertEquals(1, engine.replacements)
+        service.prepareForWebView()
+        executor.runAll()
+        assertEquals(2, engine.replacements)
+    }
+
+    @Test
+    fun editsBeforeFirstStartAreIncludedInAOneTimeInitialLoad() {
+        store.importFrom("test.txt", "||ads.example^".byteInputStream())
+        service.markRulesChanged()
+        assertTrue(service.rulesPending.value)
+        service.prepareForWebView()
+        assertFalse(service.rulesPending.value)
+        executor.runAll()
+        assertEquals(1, engine.replacements)
+        assertTrue(executor.queue.isEmpty())
+    }
+
+    @Test
     fun reportsTheActualLoadPhaseAndClearsItOnCompletionOrFailure() {
         val item = store.importFrom("test.txt", "||ads.example^".byteInputStream())
         service.start()
@@ -349,6 +414,51 @@ class ContentBlockingServiceTest {
         waiting.join()
         assertEquals(BlockingStatus.ACTIVE, service.status.value)
         assertTrue(service.hasActiveRules)
+    }
+
+    @Test
+    fun enabledSettingIsDistinctFromWhetherListsAreActive() {
+        service.start()
+        executor.runAll()
+        assertEquals(BlockingStatus.DISABLED, service.status.value)
+        assertTrue(service.enabled.value)
+
+        service.setEnabled(false)
+        assertFalse(service.enabled.value)
+        service.setEnabled(true)
+        executor.runAll()
+        assertEquals(BlockingStatus.DISABLED, service.status.value)
+        assertTrue(service.enabled.value)
+    }
+
+    @Test
+    fun disabledStartupAndListChangesDoNotCompileOrWait() = runBlocking {
+        val item = store.importFrom("test.txt", "||ads.example^".byteInputStream())
+        service.setEnabled(false)
+        service.start()
+        service.awaitInitialLoad()
+        service.awaitReload(service.reload())
+        executor.runAll()
+        assertEquals(0, engine.replacements)
+        assertEquals(BlockingStatus.DISABLED, service.status.value)
+        assertTrue(store.list().single { it.id == item.id }.enabled)
+
+        service.setEnabled(true)
+        executor.runAll()
+        assertEquals(1, engine.replacements)
+        assertTrue(service.hasActiveRules)
+    }
+
+    @Test
+    fun disablingDuringCompilationPreventsItsResultFromReactivatingBlocking() {
+        store.importFrom("test.txt", "||ads.example^".byteInputStream())
+        engine.duringReplace = { service.setEnabled(false) }
+        service.start()
+        executor.runAll()
+        assertEquals(BlockingStatus.DISABLED, service.status.value)
+        assertFalse(service.hasActiveRules)
+        assertTrue(service.initialLoadComplete.value)
+        assertNull(service.lastError.value)
     }
 
     private class FakeEngine : NetworkFilterEngine {

@@ -32,3 +32,9 @@ fun inspectFilterList(text: String): FilterRuleCounts {
         invalid,
     )
 }
+
+/**
+ * Include expansion runs on the download worker, never on a WebView request thread.
+ */
+fun expandFilterListIncludes(text: String, loader: (String) -> String): String =
+    FilterParser.expandIncludes(text, loader)

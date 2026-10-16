@@ -1,14 +1,28 @@
 package uk.nktnet.webviewkiosk.adblock.engine
 
 import java.util.Locale
+import uk.nktnet.webviewkiosk.adblock.BlockingResponse
+import uk.nktnet.webviewkiosk.adblock.CosmeticProcedure
 
 internal data class DomainScope(
     val included: Set<String> = emptySet(),
     val excluded: Set<String> = emptySet(),
+    val includedEntities: Set<String> = emptySet(),
+    val excludedEntities: Set<String> = emptySet(),
 ) {
-    fun matches(host: String): Boolean =
-        excluded.none { domainMatches(host, it) } &&
-            (included.isEmpty() || included.any { domainMatches(host, it) })
+    val usesEntities: Boolean
+        get() = includedEntities.isNotEmpty() || excludedEntities.isNotEmpty()
+
+    fun matches(host: String, registeredDomain: String? = null): Boolean {
+        fun entityMatches(name: String): Boolean =
+            registeredDomain?.startsWith("$name.") == true
+
+        return excluded.none { domainMatches(host, it) } &&
+            excludedEntities.none(::entityMatches) &&
+            (included.isEmpty() && includedEntities.isEmpty() ||
+                included.any { domainMatches(host, it) } ||
+                includedEntities.any(::entityMatches))
+    }
 
     companion object {
         val ANY = DomainScope()
@@ -50,6 +64,7 @@ internal object ResourceTypes {
 
 internal data class Conditions(
     val domains: DomainScope = DomainScope.ANY,
+    val targets: DomainScope = DomainScope.ANY,
     val types: Int = 0,
     val excludedTypes: Int = 0,
     val thirdParty: Boolean? = null,
@@ -68,6 +83,8 @@ internal data class NetworkIdentity(
     val important: Boolean,
     /** 0: request filter; 1: generic hiding exception; 2: all hiding exception. */
     val hide: Int,
+    val redirect: BlockingResponse? = null,
+    val redirectOnly: Boolean = false,
 )
 
 internal data class NetworkRule(
@@ -79,6 +96,7 @@ internal data class CosmeticRule(
     val selector: String,
     val domains: DomainScope,
     val exception: Boolean,
+    val procedure: CosmeticProcedure? = null,
 )
 
 internal sealed interface ParsedFilter {
@@ -129,14 +147,103 @@ internal object FilterParser {
             ":remove-class(",
         )
 
+    /**
+     * Expand only includes in active branches; the downloader controls URL and size
+     * limits.
+     */
+    fun expandIncludes(text: String, loader: (String) -> String): String {
+        if ("!#include " !in text) {
+            return text
+        }
+        val branches = ArrayDeque<Branch>()
+        val result = StringBuilder(text.length)
+        text.lineSequence().forEach { original ->
+            val line = original.trim()
+            when {
+                line.startsWith("!#if ") -> {
+                    branches.addLast(
+                        Branch(
+                            branches.lastOrNull()?.enabled != false,
+                            condition(line.removePrefix("!#if ")),
+                        )
+                    )
+                }
+
+                line == "!#else" -> {
+                    val branch =
+                        branches.lastOrNull()
+                            ?: throw IllegalArgumentException("Unexpected !#else")
+                    require(!branch.elseSeen) { "Duplicate !#else" }
+                    branch.elseSeen = true
+                }
+
+                line == "!#endif" -> {
+                    require(branches.isNotEmpty()) { "Unexpected !#endif" }
+                    branches.removeLast()
+                }
+            }
+            if (
+                line.startsWith("!#include ") &&
+                    branches.lastOrNull()?.enabled != false
+            ) {
+                val path = line.removePrefix("!#include ").trim()
+                val content = loader(path)
+                result.append("! Begin included list: ").append(path).append('\n')
+                result.append(content).append('\n')
+                result.append("! End included list: ").append(path)
+            } else {
+                result.append(original)
+            }
+            result.append('\n')
+        }
+        require(branches.isEmpty()) { "Unclosed !#if" }
+        return result.toString()
+    }
+
+    /**
+     * Pre-process conditional branches before parsing, never as ordinary comments.
+     */
     fun visit(text: String, visitor: (line: Int, ParsedFilter) -> Unit) {
         var first = true
         var hosts = false
+        val branches = ArrayDeque<Branch>()
         text.removePrefix("\uFEFF").lineSequence().forEachIndexed { index, original
             ->
             val line = original.trim()
+            when {
+                line.startsWith("!#if ") -> {
+                    val active = condition(line.removePrefix("!#if "))
+                    branches.addLast(
+                        Branch(branches.lastOrNull()?.enabled != false, active)
+                    )
+                    return@forEachIndexed
+                }
+
+                line == "!#else" -> {
+                    val branch = branches.lastOrNull()
+                    if (branch == null || branch.elseSeen) {
+                        visitor(index + 1, ParsedFilter.Invalid("unexpected !#else"))
+                    } else {
+                        branch.elseSeen = true
+                    }
+                    return@forEachIndexed
+                }
+
+                line == "!#endif" -> {
+                    if (branches.isEmpty()) {
+                        visitor(
+                            index + 1,
+                            ParsedFilter.Invalid("unexpected !#endif"),
+                        )
+                    } else {
+                        branches.removeLast()
+                    }
+                    return@forEachIndexed
+                }
+            }
             if (
-                line.isEmpty() ||
+                branches.lastOrNull()?.enabled == false ||
+                    line.isEmpty() ||
                     line.startsWith('!') ||
                     line.startsWith("[Adblock") ||
                     (line.startsWith('#') &&
@@ -152,9 +259,6 @@ internal object FilterParser {
                 hosts = hasFields && ip
                 first = false
             }
-            // CSS attribute values and procedural selectors can contain several
-            // colons before their first space. Only an address-shaped token is
-            // a malformed hosts candidate; never route those selectors here.
             val resemblesIp =
                 (firstField.count { it == ':' } >= 2 &&
                     firstField.all { it.isLetterOrDigit() || it in ":.[]" }) ||
@@ -186,6 +290,127 @@ internal object FilterParser {
                 visitor(index + 1, parse(line))
             }
         }
+        if (branches.isNotEmpty()) {
+            visitor(
+                text.lineSequence().count(),
+                ParsedFilter.Invalid("unclosed !#if"),
+            )
+        }
+    }
+
+    private class Branch(val parentEnabled: Boolean, val match: Boolean?) {
+        var elseSeen = false
+        val enabled: Boolean
+            get() =
+                parentEnabled &&
+                    (if (elseSeen) {
+                        match == false
+                    } else {
+                        match == true
+                    })
+    }
+
+    /** Unknown tokens are indeterminate, including under negation: fail closed. */
+    private fun condition(expression: String): Boolean? {
+        // Both input and recursion are bounded for untrusted subscription files.
+        if (expression.length > 512) {
+            return null
+        }
+        val tokens =
+            Regex("\\(|\\)|&&|\\|\\||!|[a-z_0-9]+")
+                .findAll(expression)
+                .map { it.value }
+                .toList()
+        if (
+            tokens.size > 128 ||
+                tokens.joinToString("") != expression.filterNot(Char::isWhitespace)
+        ) {
+            return null
+        }
+        var position = 0
+        fun primary(): Boolean? {
+            val token = tokens.getOrNull(position++) ?: return null
+            return when (token) {
+                "true",
+                "env_mobile",
+                "env_chromium" -> true
+                "false",
+                "cap_html_filtering",
+                "cap_user_stylesheet",
+                "ext_ublock",
+                "ext_ubol",
+                "ext_abp",
+                "ext_devbuild",
+                "env_firefox",
+                "env_safari",
+                "env_edge",
+                "env_mv3",
+                "adguard",
+                "adguard_app_android",
+                "adguard_ext_chromium" -> false
+                "(" -> null // Parentheses are parsed by the recursive reader below.
+                else -> null
+            }
+        }
+        // The real expression parser is below; it keeps unknown values distinct
+        // from false, so !ext_ublock never silently enables extension-only rules.
+        fun combineAnd(left: Boolean?, right: Boolean?): Boolean? =
+            if (left == false || right == false) {
+                false
+            } else if (left == true && right == true) {
+                true
+            } else {
+                null
+            }
+        fun combineOr(left: Boolean?, right: Boolean?): Boolean? =
+            if (left == true || right == true) {
+                true
+            } else if (left == false && right == false) {
+                false
+            } else {
+                null
+            }
+        // Local recursion is implemented by a class to keep Kotlin/JVM 11
+        // compatible.
+        class Reader {
+            fun atom(): Boolean? {
+                val token = tokens.getOrNull(position) ?: return null
+                position++
+                return when (token) {
+                    "!" -> atom()?.not()
+                    "(" ->
+                        expression().also {
+                            if (tokens.getOrNull(position++) != ")") {
+                                position = tokens.size + 1
+                            }
+                        }
+                    else -> {
+                        position--
+                        primary()
+                    }
+                }
+            }
+
+            fun and(): Boolean? {
+                var value = atom()
+                while (tokens.getOrNull(position) == "&&") {
+                    position++
+                    value = combineAnd(value, atom())
+                }
+                return value
+            }
+
+            fun expression(): Boolean? {
+                var value = and()
+                while (tokens.getOrNull(position) == "||") {
+                    position++
+                    value = combineOr(value, and())
+                }
+                return value
+            }
+        }
+        val result = Reader().expression()
+        return result.takeIf { position == tokens.size }
     }
 
     private fun isIp(value: String): Boolean =
@@ -240,16 +465,24 @@ internal object FilterParser {
             if (line.length > 8192) {
                 throw Unsupported()
             }
-            val cosmetic = line.indexOf("##")
+            val proceduralException = line.indexOf("#@?#")
+            val proceduralCosmetic = line.indexOf("#?#")
             val exception = line.indexOf("#@#")
+            val cosmetic = line.indexOf("##")
             when {
+                proceduralException >= 0 ->
+                    parseCosmetic(line, proceduralException, true, 4)
+
+                proceduralCosmetic >= 0 ->
+                    parseCosmetic(line, proceduralCosmetic, false, 3)
+
                 exception >= 0 && cosmetic !in 0..exception ->
-                    parseCosmetic(line, exception, true)
+                    parseCosmetic(line, exception, true, 3)
 
-                cosmetic >= 0 -> parseCosmetic(line, cosmetic, false)
+                cosmetic >= 0 -> parseCosmetic(line, cosmetic, false, 2)
 
-                listOf("#?#", "#@?#", "#$#", "#@$#", "#%#", "#@%#")
-                    .any(line::contains) -> throw Unsupported()
+                listOf("#$#", "#@$#", "#%#", "#@%#").any(line::contains) ->
+                    throw Unsupported()
 
                 else -> parseNetwork(line)
             }
@@ -263,31 +496,207 @@ internal object FilterParser {
         line: String,
         separator: Int,
         exception: Boolean,
+        delimiterLength: Int,
     ): ParsedFilter {
-        val selector =
-            line
-                .substring(
-                    separator +
-                        if (exception) {
-                            3
-                        } else {
-                            2
-                        }
-                )
-                .trim()
+        val selector = line.substring(separator + delimiterLength).trim()
         if (selector.isEmpty()) {
             throw Invalid("missing CSS selector")
         }
         if (
             selector.length > 4096 ||
                 selector.startsWith("+js(") ||
-                selector.startsWith("^") ||
-                procedural.any(selector::contains)
+                selector.startsWith("^")
         ) {
             throw Unsupported()
         }
         val scope = domains(line.substring(0, separator), ',')
-        return ParsedFilter.Cosmetic(CosmeticRule(selector, scope, exception))
+        val action =
+            if (procedural.any(selector::contains)) {
+                parseProcedure(selector, scope)
+            } else {
+                null
+            }
+        return ParsedFilter.Cosmetic(
+            CosmeticRule(selector, scope, exception, action)
+        )
+    }
+
+    /** Do not turn uBO procedural syntax into invalid CSS or executable JS. */
+    private fun parseProcedure(
+        expression: String,
+        scope: DomainScope,
+    ): CosmeticProcedure {
+        // A global DOM scan is too costly; only target specific host families.
+        if (scope.included.isEmpty() && scope.includedEntities.isEmpty()) {
+            throw Unsupported()
+        }
+        var selector = expression
+        var style: String? = null
+        val styleStart = selector.lastIndexOf(":style(")
+        if (styleStart >= 0 && selector.endsWith(')')) {
+            style =
+                safeStyle(selector.substring(styleStart + 7, selector.length - 1))
+            selector = selector.substring(0, styleStart)
+        }
+        val remove = selector.endsWith(":remove()")
+        if (remove) {
+            selector = selector.removeSuffix(":remove()")
+        }
+        var removeAttribute: String? = null
+        var removeClass: String? = null
+        for ((suffix, attribute) in
+            listOf(
+                ":remove-attr(" to true,
+                ":remove-class(" to false,
+            )) {
+            val start = selector.lastIndexOf(suffix)
+            if (start >= 0 && selector.endsWith(')')) {
+                val name =
+                    selector.substring(start + suffix.length, selector.length - 1)
+                if (!IDENTIFIER.matches(name)) {
+                    throw Unsupported()
+                }
+                if (attribute) {
+                    removeAttribute = name
+                } else {
+                    removeClass = name
+                }
+                selector = selector.substring(0, start)
+            }
+        }
+        val upward = Regex(":upward\\(([^()]*)\\)$").find(selector)
+        var upwardCount = 0
+        var upwardSelector: String? = null
+        if (upward != null) {
+            val argument = upward.groupValues[1]
+            upwardCount = argument.toIntOrNull() ?: 0
+            if (upwardCount !in 1..4) {
+                if (!safeSelector(argument, 128)) {
+                    throw Unsupported()
+                }
+                upwardSelector = argument
+                upwardCount = 0
+            }
+            selector = selector.substring(0, upward.range.first)
+        }
+        val textMatch = Regex(":has-text\\(([^()]*)\\)$").find(selector)
+        val text = textMatch?.groupValues?.get(1)
+        if (textMatch != null) {
+            selector = selector.substring(0, textMatch.range.first)
+        }
+        val actions =
+            listOfNotNull(
+                    style,
+                    removeAttribute,
+                    removeClass,
+                    upwardSelector,
+                    text,
+                    upward.takeIf { it != null },
+                )
+                .size +
+                if (remove) {
+                    1
+                } else {
+                    0
+                }
+        if (
+            actions == 0 ||
+                (style != null && actions != 1) ||
+                (removeAttribute != null && actions != 1) ||
+                (removeClass != null && actions != 1) ||
+                text != null &&
+                    (text.isEmpty() ||
+                        text.length > 128 ||
+                        text.startsWith('/') ||
+                        text.startsWith('"')) ||
+                !safeSelector(selector, 256) ||
+                procedural.any(selector::contains) ||
+                (remove && (upwardCount != 0 || upwardSelector != null))
+        ) {
+            throw Unsupported()
+        }
+        return CosmeticProcedure(
+            selector = selector,
+            text = text,
+            upward = upwardCount,
+            remove = remove,
+            style = style,
+            removeAttribute = removeAttribute,
+            removeClass = removeClass,
+            upwardSelector = upwardSelector,
+        )
+    }
+
+    private val IDENTIFIER = Regex("[a-zA-Z_][a-zA-Z0-9_-]{0,63}")
+    private val STYLE_PROPERTY = Regex("[a-z-]{2,32}")
+    private val STYLE_VALUE = Regex("[a-zA-Z0-9 #!.,%()+_:/\\-]{1,128}")
+    private val SAFE_PROPERTIES =
+        setOf(
+            "display",
+            "height",
+            "min-height",
+            "max-height",
+            "width",
+            "min-width",
+            "max-width",
+            "margin",
+            "margin-top",
+            "margin-left",
+            "margin-right",
+            "margin-bottom",
+            "padding",
+            "padding-top",
+            "padding-bottom",
+            "position",
+            "top",
+            "bottom",
+            "left",
+            "right",
+            "overflow",
+            "overflow-x",
+            "overflow-y",
+            "pointer-events",
+            "z-index",
+            "opacity",
+            "background",
+            "background-image",
+            "color",
+            "visibility",
+        )
+
+    private fun safeSelector(value: String, maxLength: Int): Boolean =
+        value.isNotBlank() &&
+            value != "*" &&
+            value.length <= maxLength &&
+            value.none { it.isISOControl() || it in "{};<" }
+
+    private fun safeStyle(value: String): String {
+        if (
+            value.length !in 1..256 ||
+                value.any { it.isISOControl() || it in "{}<>@\\" }
+        ) {
+            throw Unsupported()
+        }
+        val declarations =
+            value.split(';').map(String::trim).filter(String::isNotEmpty)
+        if (declarations.isEmpty() || declarations.size > 8) {
+            throw Unsupported()
+        }
+        for (declaration in declarations) {
+            val property = declaration.substringBefore(':').trim()
+            val expression = declaration.substringAfter(':', "").trim()
+            if (
+                !STYLE_PROPERTY.matches(property) ||
+                    property !in SAFE_PROPERTIES ||
+                    !STYLE_VALUE.matches(expression) ||
+                    listOf("url(", "expression(", "javascript:", "@import").any {
+                        expression.contains(it, ignoreCase = true)
+                    }
+            ) {
+                throw Unsupported()
+            }
+        }
+        return value
     }
 
     private fun domains(value: String, separator: Char): DomainScope {
@@ -296,25 +705,36 @@ internal object FilterParser {
         }
         val included = mutableSetOf<String>()
         val excluded = mutableSetOf<String>()
+        val includedEntities = mutableSetOf<String>()
+        val excludedEntities = mutableSetOf<String>()
         for (entry in value.split(separator)) {
             if (entry.isEmpty()) {
                 throw Invalid("empty domain restriction")
             }
             val raw = entry.removePrefix("~")
-            // Entity and regex scopes need distinct semantics; do not approximate
-            // them.
-            if (raw.contains('*') || raw.startsWith('/')) {
+            val entity = raw.endsWith(".*")
+            if (raw.contains('*') && !entity || raw.startsWith('/')) {
                 throw Unsupported()
             }
+            val name =
+                if (entity) {
+                    raw.removeSuffix(".*")
+                } else {
+                    raw
+                }
             val domain =
-                normalizedHost(raw) ?: throw Invalid("invalid domain restriction")
-            if (entry.startsWith('~')) {
-                excluded += domain
-            } else {
-                included += domain
+                normalizedHost(name) ?: throw Invalid("invalid domain restriction")
+            if (entity && ('.' in domain || ':' in domain)) {
+                throw Unsupported()
+            }
+            when {
+                entity && entry.startsWith('~') -> excludedEntities += domain
+                entity -> includedEntities += domain
+                entry.startsWith('~') -> excluded += domain
+                else -> included += domain
             }
         }
-        return DomainScope(included, excluded)
+        return DomainScope(included, excluded, includedEntities, excludedEntities)
     }
 
     private fun parseNetwork(line: String): ParsedFilter {
@@ -353,6 +773,7 @@ internal object FilterParser {
                 emptyList()
             }
         var scope = DomainScope.ANY
+        var targets = DomainScope.ANY
         var types = 0
         var excludedTypes = 0
         var thirdParty: Boolean? = null
@@ -362,6 +783,8 @@ internal object FilterParser {
         var important = false
         var badfilter = false
         var hide = 0
+        var redirect: BlockingResponse? = null
+        var redirectOnly = false
         // Check unknown options before interpreting any remaining restriction.
         for (option in options) {
             val name =
@@ -372,6 +795,11 @@ internal object FilterParser {
                         setOf(
                             "domain",
                             "from",
+                            "to",
+                            "denyallow",
+                            "redirect",
+                            "redirect-rule",
+                            "empty",
                             "third-party",
                             "3p",
                             "first-party",
@@ -416,6 +844,65 @@ internal object FilterParser {
                         throw Unsupported()
                     }
                     scope = domains(value, '|')
+                }
+
+                "redirect",
+                "redirect-rule",
+                "empty" -> {
+                    if (
+                        exception ||
+                            negated ||
+                            redirect != null ||
+                            name == "empty" && option.contains('=')
+                    ) {
+                        throw Unsupported()
+                    }
+                    val resource = value.substringBeforeLast(':', value)
+                    if (
+                        resource != value &&
+                            value.substringAfterLast(':').toIntOrNull() == null
+                    ) {
+                        throw Unsupported()
+                    }
+                    redirectOnly = name == "redirect-rule"
+                    redirect =
+                        when {
+                            name == "empty" || resource == "empty" ->
+                                BlockingResponse.EMPTY_TEXT
+                            resource in setOf("noopjs", "noop.js") ->
+                                BlockingResponse.EMPTY_SCRIPT
+                            resource in setOf("noopcss", "noop.css") ->
+                                BlockingResponse.EMPTY_STYLESHEET
+                            resource in setOf("noophtml", "noop.html") ->
+                                BlockingResponse.EMPTY_HTML
+                            resource in setOf("nooptext", "noop.txt") ->
+                                BlockingResponse.EMPTY_TEXT
+                            resource == "noopframe" -> BlockingResponse.EMPTY_HTML
+                            resource == "1x1.gif" -> BlockingResponse.TRANSPARENT_GIF
+                            resource == "2x2.png" ->
+                                BlockingResponse.TRANSPARENT_2X2_PNG
+                            resource == "1x1.png" -> BlockingResponse.TRANSPARENT_PNG
+                            else -> throw Unsupported()
+                        }
+                }
+
+                "to",
+                "denyallow" -> {
+                    if (negated || value.isEmpty() || targets != DomainScope.ANY) {
+                        throw Unsupported()
+                    }
+                    targets =
+                        if (name == "denyallow") {
+                            if (value.split('|').any { it.startsWith('~') }) {
+                                throw Unsupported()
+                            }
+                            domains(
+                                value.split('|').joinToString("|") { "~$it" },
+                                '|',
+                            )
+                        } else {
+                            domains(value, '|')
+                        }
                 }
 
                 "method" -> {
@@ -503,6 +990,7 @@ internal object FilterParser {
         val conditions =
             Conditions(
                 scope,
+                targets,
                 types,
                 excludedTypes,
                 thirdParty,
@@ -517,6 +1005,8 @@ internal object FilterParser {
                     exception,
                     important,
                     hide,
+                    redirect,
+                    redirectOnly,
                 ),
                 badfilter,
             )

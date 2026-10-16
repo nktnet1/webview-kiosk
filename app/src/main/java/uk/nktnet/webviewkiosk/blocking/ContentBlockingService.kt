@@ -1,7 +1,12 @@
 package uk.nktnet.webviewkiosk.blocking
 
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.SharedPreferences
 import android.util.Log
+import androidx.core.content.ContextCompat
 import java.io.File
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
@@ -10,9 +15,13 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import uk.nktnet.webviewkiosk.BuildConfig
+import uk.nktnet.webviewkiosk.adblock.BlockingResponse
+import uk.nktnet.webviewkiosk.adblock.CosmeticProcedure
 import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
 import uk.nktnet.webviewkiosk.adblock.NetworkFilterEngine
 import uk.nktnet.webviewkiosk.adblock.RuleLoadStage
+import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 
 internal enum class BlockingStatus {
     DISABLED,
@@ -37,11 +46,20 @@ internal class ContentBlockingService(
 ) {
     private val generation = AtomicLong(0)
     private var started = false
+    private var settingsBinding: AutoCloseable? = null
+
+    private val _enabled = MutableStateFlow(true)
+    val enabled = _enabled.asStateFlow()
 
     @Volatile private var ready = false
 
     private val _initialLoadComplete = MutableStateFlow(false)
     val initialLoadComplete = _initialLoadComplete.asStateFlow()
+
+    // Saved list changes do not need recompiling while Settings is open.
+    // The WebView gate consumes this flag before creating the next page.
+    private val _rulesPending = MutableStateFlow(false)
+    val rulesPending = _rulesPending.asStateFlow()
     val hasActiveRules: Boolean
         get() = ready
 
@@ -58,6 +76,59 @@ internal class ContentBlockingService(
     val skippedRules = _skippedRules.asStateFlow()
     private val completedLoad = MutableStateFlow(RuleLoadCompletion(0))
 
+    fun bindSettings(context: Context): AutoCloseable {
+        check(settingsBinding == null) { "Settings are already bound" }
+        val application = context.applicationContext
+        val settings = UserSettings(application)
+        val preferences =
+            application.getSharedPreferences(
+                UserSettingsKeys.PREFS_NAME,
+                Context.MODE_PRIVATE,
+            )
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (
+                key == null ||
+                    key == UserSettingsKeys.WebContent.ENABLE_CONTENT_BLOCKING
+            ) {
+                setEnabled(settings.enableContentBlocking)
+            }
+        }
+        val receiver =
+            object : BroadcastReceiver() {
+                override fun onReceive(context: Context, intent: Intent) {
+                    setEnabled(settings.enableContentBlocking)
+                }
+            }
+        preferences.registerOnSharedPreferenceChangeListener(listener)
+        ContextCompat.registerReceiver(
+            application,
+            receiver,
+            IntentFilter(Intent.ACTION_APPLICATION_RESTRICTIONS_CHANGED),
+            ContextCompat.RECEIVER_EXPORTED,
+        )
+        setEnabled(settings.enableContentBlocking)
+        val binding = AutoCloseable {
+            preferences.unregisterOnSharedPreferenceChangeListener(listener)
+            application.unregisterReceiver(receiver)
+            settingsBinding = null
+        }
+        settingsBinding = binding
+        return binding
+    }
+
+    @Synchronized
+    fun setEnabled(value: Boolean) {
+        if (_enabled.value == value) {
+            return
+        }
+        _enabled.value = value
+        if (started || !value) {
+            reload()
+        } else {
+            _initialLoadComplete.value = false
+        }
+    }
+
     @Synchronized
     fun start() {
         if (started) {
@@ -65,6 +136,27 @@ internal class ContentBlockingService(
         }
         started = true
         reload()
+    }
+
+    /**
+     * Save the need to reload; do not compile merely because Settings was edited.
+     */
+    @Synchronized
+    fun markRulesChanged() {
+        _rulesPending.value = true
+    }
+
+    /** Called when the WebView destination is entered, before page creation. */
+    @Synchronized
+    fun prepareForWebView() {
+        if (!started) {
+            // The initial load reads the latest saved lists already.
+            _rulesPending.value = false
+            start()
+        } else if (_rulesPending.value) {
+            reload()
+            _rulesPending.value = false
+        }
     }
 
     /** Suspend the first navigation, never the UI or request-interception thread. */
@@ -76,6 +168,16 @@ internal class ContentBlockingService(
     @Synchronized
     fun reload(): Long {
         val revision = generation.incrementAndGet()
+        if (!_enabled.value) {
+            ready = false
+            _status.value = BlockingStatus.DISABLED
+            _loadStage.value = null
+            _lastError.value = null
+            _skippedRules.value = 0
+            _initialLoadComplete.value = true
+            completedLoad.value = RuleLoadCompletion(revision)
+            return revision
+        }
         _loadStage.value = RuleLoadStage.READING_LISTS
         _status.value = BlockingStatus.LOADING
         try {
@@ -184,6 +286,24 @@ internal class ContentBlockingService(
             }
     }
 
+    fun responseFor(
+        url: String,
+        sourceUrl: String,
+        type: String,
+        method: String,
+    ): BlockingResponse {
+        if (!ready) {
+            return BlockingResponse.ALLOW
+        }
+        return try {
+            engine.responseFor(url, sourceUrl, type, method)
+        } catch (error: LinkageError) {
+            ready = false
+            reportError(generation.get(), error)
+            BlockingResponse.ALLOW
+        }
+    }
+
     fun cosmeticSelectors(
         url: String,
         classes: List<String>,
@@ -197,6 +317,19 @@ internal class ContentBlockingService(
         } catch (e: LinkageError) {
             ready = false
             reportError(generation.get(), e)
+            emptyList()
+        }
+    }
+
+    fun cosmeticProcedures(url: String): List<CosmeticProcedure> {
+        if (!ready) {
+            return emptyList()
+        }
+        return try {
+            engine.cosmeticProcedures(url)
+        } catch (error: LinkageError) {
+            ready = false
+            reportError(generation.get(), error)
             emptyList()
         }
     }
@@ -234,6 +367,7 @@ internal class ContentBlockingService(
                                 // existing suffix
                                 // asset.
                                 okhttp3.OkHttp.initialize(context.applicationContext)
+                                it.bindSettings(context)
                                 instance = it
                             }
                 }

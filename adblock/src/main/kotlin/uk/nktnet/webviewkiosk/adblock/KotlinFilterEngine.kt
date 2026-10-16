@@ -58,6 +58,13 @@ class KotlinFilterEngine(cacheFile: File? = null, cacheVersion: Int = 0) :
         method: String,
     ): Boolean = compiled.shouldBlock(url, sourceUrl, type, method)
 
+    override fun responseFor(
+        url: String,
+        sourceUrl: String,
+        type: String,
+        method: String,
+    ): BlockingResponse = compiled.responseFor(url, sourceUrl, type, method)
+
     override fun hasCosmeticRules(): Boolean = compiled.hasCosmetics
 
     override fun cosmeticSelectors(
@@ -65,6 +72,9 @@ class KotlinFilterEngine(cacheFile: File? = null, cacheVersion: Int = 0) :
         classes: List<String>,
         ids: List<String>,
     ): List<String> = compiled.cosmeticSelectors(url, classes, ids)
+
+    override fun cosmeticProcedures(url: String): List<CosmeticProcedure> =
+        compiled.cosmeticProcedures(url)
 
     override fun unsupportedRuleCount(): Int = compiled.skippedRules
 }

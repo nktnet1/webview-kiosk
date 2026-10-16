@@ -28,7 +28,7 @@ internal data class ImportedFilterList(
     val id: String,
     val name: String,
     val enabled: Boolean,
-    /** The original HTTPS download URL, if this list was imported from a link. */
+    /** The original download URL, if this list was imported from a link. */
     val sourceUrl: String? = null,
     val type: FilterListType =
         if (sourceUrl == null) {
@@ -536,6 +536,23 @@ internal class FilterListStore(
         val existing = list()
         if (existing.any { it.enabled != enabled }) {
             save(existing.map { it.copy(enabled = enabled) })
+        }
+    }
+
+    /** Persist display order and engine input order without touching rule files. */
+    @Synchronized
+    fun reorder(ids: List<String>) {
+        val existing = list()
+        require(
+            ids.size == existing.size &&
+                ids.toSet().size == ids.size &&
+                ids.toSet() == existing.map { it.id }.toSet()
+        ) {
+            "Reordered lists must contain every saved list exactly once"
+        }
+        if (ids != existing.map { it.id }) {
+            val byId = existing.associateBy { it.id }
+            save(ids.map { byId.getValue(it) })
         }
     }
 

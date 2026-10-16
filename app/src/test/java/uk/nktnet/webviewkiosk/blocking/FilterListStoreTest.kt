@@ -191,10 +191,10 @@ class FilterListStoreTest {
         assertEquals(text.toByteArray(Charsets.UTF_8).size.toLong(), info.sizeBytes)
         assertEquals(info.sizeBytes, store.fileSizeBytes(item.id))
         assertEquals(4, info.networkRules)
-        assertEquals(2, info.cosmeticRules)
-        assertEquals(2, info.unsupportedRules)
+        assertEquals(3, info.cosmeticRules)
+        assertEquals(1, info.unsupportedRules)
         assertEquals(1, info.invalidRules)
-        assertEquals(3, info.skippedRules)
+        assertEquals(2, info.skippedRules)
         assertEquals(9, info.totalRules)
         assertEquals(saved, store.list())
         assertEquals(enabled, store.enabledTexts())
@@ -243,6 +243,53 @@ class FilterListStoreTest {
         assertThrows(java.io.IOException::class.java) {
             store.fileSizeBytes(item.id)
         }
+    }
+
+    @Test
+    fun reorderingPersistsAndChangesTheEngineInputOrder() {
+        val first = store.importFrom("First", "||first.example^".byteInputStream())
+        val second =
+            store.importFrom("Second", "||second.example^".byteInputStream())
+        val third = store.importFrom("Third", "||third.example^".byteInputStream())
+        store.setEnabled(second.id, false)
+        val saved = store.list().associateBy { it.id }
+
+        val order = listOf(third.id, second.id, first.id)
+        store.reorder(order)
+        assertEquals(order.map { saved.getValue(it) }, store.list())
+        assertEquals(
+            listOf("||third.example^", "||first.example^"),
+            store.enabledTexts(),
+        )
+        assertEquals(
+            order,
+            FilterListStore(RuntimeEnvironment.getApplication()).list().map {
+                it.id
+            },
+        )
+        store.reorder(order)
+        assertEquals(order, store.list().map { it.id })
+    }
+
+    @Test
+    fun reorderingRejectsMissingUnknownOrDuplicateIdsWithoutChangingLists() {
+        val first = store.importFrom("First", "||first.example^".byteInputStream())
+        val second =
+            store.importFrom("Second", "||second.example^".byteInputStream())
+        val saved = store.list()
+
+        listOf(
+                listOf(first.id),
+                listOf(first.id, first.id),
+                listOf(first.id, "unknown"),
+            )
+            .forEach { invalid ->
+                assertThrows(IllegalArgumentException::class.java) {
+                    store.reorder(invalid)
+                }
+                assertEquals(saved, store.list())
+            }
+        assertEquals(listOf(first.id, second.id), saved.map { it.id })
     }
 
     @Test

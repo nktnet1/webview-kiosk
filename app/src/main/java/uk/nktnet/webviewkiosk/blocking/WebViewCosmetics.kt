@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import uk.nktnet.webviewkiosk.adblock.CosmeticProcedure
 
 /**
  * A data-only bridge: pages can request CSS hide selectors, never call privileged
@@ -77,11 +78,16 @@ private constructor(
                             query.classes,
                             query.ids,
                         )
+                    val procedures = service.cosmeticProcedures(query.url)
                     val response =
                         JSONObject()
                             .put("id", query.id)
                             .put("active", service.hasActiveCosmeticRules)
                             .put("selectors", JSONArray(selectors))
+                            .put(
+                                "procedures",
+                                proceduresJson(procedures),
+                            )
                             .toString()
                     withContext(Dispatchers.Main) {
                         if (!disposed) {
@@ -190,6 +196,27 @@ private constructor(
                 null
             }
         }
+
+        internal fun proceduresJson(values: List<CosmeticProcedure>): JSONArray =
+            JSONArray(
+                values.map { procedure ->
+                    JSONObject()
+                        .put("selector", procedure.selector)
+                        .put("text", procedure.text ?: JSONObject.NULL)
+                        .put("upward", procedure.upward)
+                        .put("remove", procedure.remove)
+                        .put("style", procedure.style ?: JSONObject.NULL)
+                        .put(
+                            "removeAttribute",
+                            procedure.removeAttribute ?: JSONObject.NULL,
+                        )
+                        .put("removeClass", procedure.removeClass ?: JSONObject.NULL)
+                        .put(
+                            "upwardSelector",
+                            procedure.upwardSelector ?: JSONObject.NULL,
+                        )
+                }
+            )
 
         internal fun parseQuery(data: String?, origin: Uri): Query? {
             // Allow JSON escaping of two batches of 256 x 128-character tokens.

@@ -5,12 +5,45 @@ import org.json.JSONArray
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import uk.nktnet.webviewkiosk.adblock.CosmeticProcedure
 
 @RunWith(RobolectricTestRunner::class)
 class WebViewCosmeticsTest {
+    @Test
+    fun sendsNullableProcedureTextAsExplicitJsonNull() {
+        val serialized =
+            WebViewCosmetics.proceduresJson(
+                listOf(
+                    CosmeticProcedure(".advert", remove = true),
+                    CosmeticProcedure(".banner", text = "Sponsored", upward = 2),
+                )
+            )
+        val removal = serialized.getJSONObject(0)
+        assertEquals(".advert", removal.getString("selector"))
+        assertEquals(true, removal.isNull("text"))
+        assertEquals(true, removal.getBoolean("remove"))
+        val textMatch = serialized.getJSONObject(1)
+        assertEquals("Sponsored", textMatch.getString("text"))
+        assertEquals(2, textMatch.getInt("upward"))
+        val style =
+            WebViewCosmetics.proceduresJson(
+                    listOf(
+                        CosmeticProcedure(
+                            "#ad",
+                            style = "height: 1px !important",
+                            upwardSelector = null,
+                        )
+                    )
+                )
+                .getJSONObject(0)
+        assertEquals("height: 1px !important", style.getString("style"))
+        assertTrue(style.isNull("removeAttribute"))
+    }
+
     @Test
     fun acceptsBoundedTokensFromTheActualFrameOrigin() {
         val parsed =

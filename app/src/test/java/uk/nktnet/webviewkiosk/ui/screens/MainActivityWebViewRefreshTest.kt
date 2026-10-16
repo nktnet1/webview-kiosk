@@ -12,6 +12,7 @@ import androidx.compose.runtime.Recomposer
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.ComposeView
 import androidx.navigation.NavHostController
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -98,7 +99,9 @@ class MainActivityWebViewRefreshTest {
         // A cold WebView is now mounted only after the async provider-startup
         // callback.
         // Never assert immediate native construction on the activity's first frame.
-        awaitCondition { WebViewStartup.ready.value }
+        awaitCondition {
+            WebViewStartup.ready.value && mountedWebViews().size == 1
+        }
         frames()
     }
 
@@ -275,6 +278,12 @@ class MainActivityWebViewRefreshTest {
     }
 
     private fun webView(): WebView {
+        val found = mountedWebViews()
+        assertEquals("expected exactly one mounted WebView", 1, found.size)
+        return found.single()
+    }
+
+    private fun mountedWebViews(): List<WebView> {
         val found = mutableListOf<WebView>()
         fun collect(view: View) {
             if (view is WebView) {
@@ -285,8 +294,7 @@ class MainActivityWebViewRefreshTest {
             }
         }
         collect(view)
-        assertEquals("expected exactly one mounted WebView", 1, found.size)
-        return found.single()
+        return found
     }
 
     private fun awaitCondition(condition: () -> Boolean) {
@@ -309,7 +317,7 @@ class MainActivityWebViewRefreshTest {
             shadowOf(Looper.getMainLooper()).idle()
             frameNanos += 16_000_000L
             clock.sendFrame(frameNanos)
-            shadowOf(Looper.getMainLooper()).idle()
+            shadowOf(Looper.getMainLooper()).idleFor(16, TimeUnit.MILLISECONDS)
         }
     }
 }
