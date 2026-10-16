@@ -84,6 +84,7 @@ internal data class NetworkIdentity(
     /** 0: request filter; 1: generic hiding exception; 2: all hiding exception. */
     val hide: Int,
     val redirect: BlockingResponse? = null,
+    val redirectOnly: Boolean = false,
 )
 
 internal data class NetworkRule(
@@ -145,6 +146,59 @@ internal object FilterParser {
             ":remove-attr(",
             ":remove-class(",
         )
+
+    /**
+     * Expand only includes in active branches; the downloader controls URL and size
+     * limits.
+     */
+    fun expandIncludes(text: String, loader: (String) -> String): String {
+        if ("!#include " !in text) {
+            return text
+        }
+        val branches = ArrayDeque<Branch>()
+        val result = StringBuilder(text.length)
+        text.lineSequence().forEach { original ->
+            val line = original.trim()
+            when {
+                line.startsWith("!#if ") -> {
+                    branches.addLast(
+                        Branch(
+                            branches.lastOrNull()?.enabled != false,
+                            condition(line.removePrefix("!#if ")),
+                        )
+                    )
+                }
+
+                line == "!#else" -> {
+                    val branch =
+                        branches.lastOrNull()
+                            ?: throw IllegalArgumentException("Unexpected !#else")
+                    require(!branch.elseSeen) { "Duplicate !#else" }
+                    branch.elseSeen = true
+                }
+
+                line == "!#endif" -> {
+                    require(branches.isNotEmpty()) { "Unexpected !#endif" }
+                    branches.removeLast()
+                }
+            }
+            if (
+                line.startsWith("!#include ") &&
+                    branches.lastOrNull()?.enabled != false
+            ) {
+                val path = line.removePrefix("!#include ").trim()
+                val content = loader(path)
+                result.append("! Begin included list: ").append(path).append('\n')
+                result.append(content).append('\n')
+                result.append("! End included list: ").append(path)
+            } else {
+                result.append(original)
+            }
+            result.append('\n')
+        }
+        require(branches.isEmpty()) { "Unclosed !#if" }
+        return result.toString()
+    }
 
     /**
      * Pre-process conditional branches before parsing, never as ordinary comments.
@@ -411,16 +465,24 @@ internal object FilterParser {
             if (line.length > 8192) {
                 throw Unsupported()
             }
-            val cosmetic = line.indexOf("##")
+            val proceduralException = line.indexOf("#@?#")
+            val proceduralCosmetic = line.indexOf("#?#")
             val exception = line.indexOf("#@#")
+            val cosmetic = line.indexOf("##")
             when {
+                proceduralException >= 0 ->
+                    parseCosmetic(line, proceduralException, true, 4)
+
+                proceduralCosmetic >= 0 ->
+                    parseCosmetic(line, proceduralCosmetic, false, 3)
+
                 exception >= 0 && cosmetic !in 0..exception ->
-                    parseCosmetic(line, exception, true)
+                    parseCosmetic(line, exception, true, 3)
 
-                cosmetic >= 0 -> parseCosmetic(line, cosmetic, false)
+                cosmetic >= 0 -> parseCosmetic(line, cosmetic, false, 2)
 
-                listOf("#?#", "#@?#", "#$#", "#@$#", "#%#", "#@%#")
-                    .any(line::contains) -> throw Unsupported()
+                listOf("#$#", "#@$#", "#%#", "#@%#").any(line::contains) ->
+                    throw Unsupported()
 
                 else -> parseNetwork(line)
             }
@@ -434,18 +496,9 @@ internal object FilterParser {
         line: String,
         separator: Int,
         exception: Boolean,
+        delimiterLength: Int,
     ): ParsedFilter {
-        val selector =
-            line
-                .substring(
-                    separator +
-                        if (exception) {
-                            3
-                        } else {
-                            2
-                        }
-                )
-                .trim()
+        val selector = line.substring(separator + delimiterLength).trim()
         if (selector.isEmpty()) {
             throw Invalid("missing CSS selector")
         }
@@ -473,17 +526,57 @@ internal object FilterParser {
         expression: String,
         scope: DomainScope,
     ): CosmeticProcedure {
-        // Generic text scanning is too costly. Restrict it to named sites.
+        // A global DOM scan is too costly; only target specific host families.
         if (scope.included.isEmpty() && scope.includedEntities.isEmpty()) {
             throw Unsupported()
         }
         var selector = expression
+        var style: String? = null
+        val styleStart = selector.lastIndexOf(":style(")
+        if (styleStart >= 0 && selector.endsWith(')')) {
+            style =
+                safeStyle(selector.substring(styleStart + 7, selector.length - 1))
+            selector = selector.substring(0, styleStart)
+        }
         val remove = selector.endsWith(":remove()")
         if (remove) {
             selector = selector.removeSuffix(":remove()")
         }
-        val upward = Regex(":upward\\(([1-4])\\)$").find(selector)
+        var removeAttribute: String? = null
+        var removeClass: String? = null
+        for ((suffix, attribute) in
+            listOf(
+                ":remove-attr(" to true,
+                ":remove-class(" to false,
+            )) {
+            val start = selector.lastIndexOf(suffix)
+            if (start >= 0 && selector.endsWith(')')) {
+                val name =
+                    selector.substring(start + suffix.length, selector.length - 1)
+                if (!IDENTIFIER.matches(name)) {
+                    throw Unsupported()
+                }
+                if (attribute) {
+                    removeAttribute = name
+                } else {
+                    removeClass = name
+                }
+                selector = selector.substring(0, start)
+            }
+        }
+        val upward = Regex(":upward\\(([^()]*)\\)$").find(selector)
+        var upwardCount = 0
+        var upwardSelector: String? = null
         if (upward != null) {
+            val argument = upward.groupValues[1]
+            upwardCount = argument.toIntOrNull() ?: 0
+            if (upwardCount !in 1..4) {
+                if (!safeSelector(argument, 128)) {
+                    throw Unsupported()
+                }
+                upwardSelector = argument
+                upwardCount = 0
+            }
             selector = selector.substring(0, upward.range.first)
         }
         val textMatch = Regex(":has-text\\(([^()]*)\\)$").find(selector)
@@ -491,27 +584,119 @@ internal object FilterParser {
         if (textMatch != null) {
             selector = selector.substring(0, textMatch.range.first)
         }
+        val actions =
+            listOfNotNull(
+                    style,
+                    removeAttribute,
+                    removeClass,
+                    upwardSelector,
+                    text,
+                    upward.takeIf { it != null },
+                )
+                .size +
+                if (remove) {
+                    1
+                } else {
+                    0
+                }
         if (
-            text == null && upward == null && !remove ||
+            actions == 0 ||
+                (style != null && actions != 1) ||
+                (removeAttribute != null && actions != 1) ||
+                (removeClass != null && actions != 1) ||
                 text != null &&
                     (text.isEmpty() ||
                         text.length > 128 ||
                         text.startsWith('/') ||
                         text.startsWith('"')) ||
-                selector.isBlank() ||
-                selector == "*" ||
-                selector.length > 256 ||
+                !safeSelector(selector, 256) ||
                 procedural.any(selector::contains) ||
-                upward != null && remove
+                (remove && (upwardCount != 0 || upwardSelector != null))
         ) {
             throw Unsupported()
         }
         return CosmeticProcedure(
-            selector,
-            text,
-            upward?.groupValues?.get(1)?.toInt() ?: 0,
-            remove,
+            selector = selector,
+            text = text,
+            upward = upwardCount,
+            remove = remove,
+            style = style,
+            removeAttribute = removeAttribute,
+            removeClass = removeClass,
+            upwardSelector = upwardSelector,
         )
+    }
+
+    private val IDENTIFIER = Regex("[a-zA-Z_][a-zA-Z0-9_-]{0,63}")
+    private val STYLE_PROPERTY = Regex("[a-z-]{2,32}")
+    private val STYLE_VALUE = Regex("[a-zA-Z0-9 #!.,%()+_:/\\-]{1,128}")
+    private val SAFE_PROPERTIES =
+        setOf(
+            "display",
+            "height",
+            "min-height",
+            "max-height",
+            "width",
+            "min-width",
+            "max-width",
+            "margin",
+            "margin-top",
+            "margin-left",
+            "margin-right",
+            "margin-bottom",
+            "padding",
+            "padding-top",
+            "padding-bottom",
+            "position",
+            "top",
+            "bottom",
+            "left",
+            "right",
+            "overflow",
+            "overflow-x",
+            "overflow-y",
+            "pointer-events",
+            "z-index",
+            "opacity",
+            "background",
+            "background-image",
+            "color",
+            "visibility",
+        )
+
+    private fun safeSelector(value: String, maxLength: Int): Boolean =
+        value.isNotBlank() &&
+            value != "*" &&
+            value.length <= maxLength &&
+            value.none { it.isISOControl() || it in "{};<" }
+
+    private fun safeStyle(value: String): String {
+        if (
+            value.length !in 1..256 ||
+                value.any { it.isISOControl() || it in "{}<>@\\" }
+        ) {
+            throw Unsupported()
+        }
+        val declarations =
+            value.split(';').map(String::trim).filter(String::isNotEmpty)
+        if (declarations.isEmpty() || declarations.size > 8) {
+            throw Unsupported()
+        }
+        for (declaration in declarations) {
+            val property = declaration.substringBefore(':').trim()
+            val expression = declaration.substringAfter(':', "").trim()
+            if (
+                !STYLE_PROPERTY.matches(property) ||
+                    property !in SAFE_PROPERTIES ||
+                    !STYLE_VALUE.matches(expression) ||
+                    listOf("url(", "expression(", "javascript:", "@import").any {
+                        expression.contains(it, ignoreCase = true)
+                    }
+            ) {
+                throw Unsupported()
+            }
+        }
+        return value
     }
 
     private fun domains(value: String, separator: Char): DomainScope {
@@ -599,6 +784,7 @@ internal object FilterParser {
         var badfilter = false
         var hide = 0
         var redirect: BlockingResponse? = null
+        var redirectOnly = false
         // Check unknown options before interpreting any remaining restriction.
         for (option in options) {
             val name =
@@ -612,6 +798,7 @@ internal object FilterParser {
                             "to",
                             "denyallow",
                             "redirect",
+                            "redirect-rule",
                             "empty",
                             "third-party",
                             "3p",
@@ -660,6 +847,7 @@ internal object FilterParser {
                 }
 
                 "redirect",
+                "redirect-rule",
                 "empty" -> {
                     if (
                         exception ||
@@ -676,6 +864,7 @@ internal object FilterParser {
                     ) {
                         throw Unsupported()
                     }
+                    redirectOnly = name == "redirect-rule"
                     redirect =
                         when {
                             name == "empty" || resource == "empty" ->
@@ -688,6 +877,11 @@ internal object FilterParser {
                                 BlockingResponse.EMPTY_HTML
                             resource in setOf("nooptext", "noop.txt") ->
                                 BlockingResponse.EMPTY_TEXT
+                            resource == "noopframe" -> BlockingResponse.EMPTY_HTML
+                            resource == "1x1.gif" -> BlockingResponse.TRANSPARENT_GIF
+                            resource == "2x2.png" ->
+                                BlockingResponse.TRANSPARENT_2X2_PNG
+                            resource == "1x1.png" -> BlockingResponse.TRANSPARENT_PNG
                             else -> throw Unsupported()
                         }
                 }
@@ -812,6 +1006,7 @@ internal object FilterParser {
                     important,
                     hide,
                     redirect,
+                    redirectOnly,
                 ),
                 badfilter,
             )

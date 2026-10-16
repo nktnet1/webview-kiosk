@@ -184,6 +184,41 @@ class WebViewBlockerTest {
         )
     }
 
+    @Test
+    fun redirectsImagesWithCorrectMimeTypesAndRealImageBytes() {
+        val context = RuntimeEnvironment.getApplication()
+        val store = FilterListStore(context)
+        store.importFrom(
+            "images.txt",
+            ("||pixel.example^\$image,redirect=1x1.gif\n" +
+                    "||square.example^\$image,redirect=2x2.png")
+                .byteInputStream(),
+        )
+        val blocker =
+            ContentBlockingService(
+                    store,
+                    KotlinFilterEngine(),
+                    Executor { it.run() },
+                )
+                .also { it.start() }
+        val gif =
+            WebViewBlocker.intercept(
+                request("https://pixel.example/ad.gif", "image"),
+                "https://site.example/",
+                blocker,
+            )!!
+        assertEquals("image/gif", gif.mimeType)
+        assertEquals('G'.code, gif.data.read())
+        val png =
+            WebViewBlocker.intercept(
+                request("https://square.example/ad.png", "image"),
+                "https://site.example/",
+                blocker,
+            )!!
+        assertEquals("image/png", png.mimeType)
+        assertEquals(0x89, png.data.read())
+    }
+
     private fun request(url: String, type: String, mainFrame: Boolean = false) =
         object : WebResourceRequest {
             override fun getUrl(): Uri = Uri.parse(url)

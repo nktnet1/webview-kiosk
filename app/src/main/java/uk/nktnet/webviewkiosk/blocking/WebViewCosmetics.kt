@@ -205,6 +205,16 @@ private constructor(
                         .put("text", procedure.text ?: JSONObject.NULL)
                         .put("upward", procedure.upward)
                         .put("remove", procedure.remove)
+                        .put("style", procedure.style ?: JSONObject.NULL)
+                        .put(
+                            "removeAttribute",
+                            procedure.removeAttribute ?: JSONObject.NULL,
+                        )
+                        .put("removeClass", procedure.removeClass ?: JSONObject.NULL)
+                        .put(
+                            "upwardSelector",
+                            procedure.upwardSelector ?: JSONObject.NULL,
+                        )
                 }
             )
 

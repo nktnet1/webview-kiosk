@@ -130,6 +130,7 @@ internal class CompiledFilterCache(
                                 important,
                                 hide,
                                 response,
+                                input.readBoolean(),
                             )
                         }
                     val cosmetics =
@@ -148,6 +149,10 @@ internal class CompiledFilterCache(
                                         strings.read().ifEmpty { null },
                                         input.count(4),
                                         input.readBoolean(),
+                                        strings.read().ifEmpty { null },
+                                        strings.read().ifEmpty { null },
+                                        strings.read().ifEmpty { null },
+                                        strings.read().ifEmpty { null },
                                     )
                                 } else {
                                     null
@@ -195,8 +200,13 @@ internal class CompiledFilterCache(
                     output.writeInt(rules.skippedRules)
                     output.writeInt(rules.networks.size)
                     for ((
-                        pattern, conditions, exception, important, hide, redirect) in
-                        rules.networks) {
+                        pattern,
+                        conditions,
+                        exception,
+                        important,
+                        hide,
+                        redirect,
+                        redirectOnly) in rules.networks) {
                         strings.write(pattern.text)
                         output.writeByte(
                             (if (pattern.domainAnchor) {
@@ -244,6 +254,7 @@ internal class CompiledFilterCache(
                                 redirect.ordinal + 1
                             }
                         )
+                        output.writeBoolean(redirectOnly)
                     }
                     output.writeInt(rules.cosmetics.size)
                     for ((selector, domains, exception, procedure) in
@@ -257,6 +268,10 @@ internal class CompiledFilterCache(
                             strings.write(procedure.text.orEmpty())
                             output.writeInt(procedure.upward)
                             output.writeBoolean(procedure.remove)
+                            strings.write(procedure.style.orEmpty())
+                            strings.write(procedure.removeAttribute.orEmpty())
+                            strings.write(procedure.removeClass.orEmpty())
+                            strings.write(procedure.upwardSelector.orEmpty())
                         }
                     }
                     output.writeLong(checksum.value)
@@ -346,7 +361,7 @@ internal class CompiledFilterCache(
         private const val MAGIC = 0x574b4346 // WKCF
 
         // Bump when parsing/matching semantics or the binary schema change.
-        private const val VERSION = 4
+        private const val VERSION = 5
         private const val MAX_BYTES = 64L * 1024 * 1024
         private const val BUFFER_SIZE = 64 * 1024
 

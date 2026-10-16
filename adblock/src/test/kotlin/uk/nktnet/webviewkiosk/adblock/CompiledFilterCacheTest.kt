@@ -170,6 +170,47 @@ class CompiledFilterCacheTest {
     }
 
     @Test
+    fun cacheRestoresStyleAttributeRemovalAndRedirectOnlyRules() {
+        val lists =
+            listOf(
+                "||ads.example^\$script\n" +
+                    "*\$script,redirect-rule=noopjs,domain=site.example\n" +
+                    "site.example##.ad:style(height: 1px !important)\n" +
+                    "site.example##a:remove-attr(href)\n" +
+                    "site.example##.sponsor:upward(.container > div)"
+            )
+        val file = File(folder.root, "rules.bin")
+        val original = KotlinFilterEngine(file).also { it.replace(lists) }
+        val restored = KotlinFilterEngine(file)
+        val stages = mutableListOf<RuleLoadStage>()
+        restored.replace(lists, stages::add)
+        assertTrue(RuleLoadStage.RESTORING in stages)
+        assertFalse(RuleLoadStage.COMPILING in stages)
+        assertEquals(
+            original.cosmeticProcedures("https://site.example/"),
+            restored.cosmeticProcedures("https://site.example/"),
+        )
+        assertEquals(
+            BlockingResponse.EMPTY_SCRIPT,
+            restored.responseFor(
+                "https://ads.example/a.js",
+                "https://site.example/",
+                "script",
+                "GET",
+            ),
+        )
+        assertEquals(
+            BlockingResponse.ALLOW,
+            restored.responseFor(
+                "https://other.example/a.js",
+                "https://site.example/",
+                "script",
+                "GET",
+            ),
+        )
+    }
+
+    @Test
     fun exactContentAndListBoundariesInvalidateTheCache() {
         val file = File(folder.root, "compiled.bin")
         val cache = CompiledFilterCache(file)

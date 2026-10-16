@@ -299,7 +299,8 @@ internal class CompiledFilters(
 
                 host != null &&
                     rule.conditions == Conditions.ANY &&
-                    rule.redirect == null ->
+                    rule.redirect == null &&
+                    !rule.redirectOnly ->
                     when {
                         rule.important -> importantHosts += host
                         rule.exception -> allowedHosts += host
@@ -393,6 +394,7 @@ internal class CompiledFilters(
         var blocked = false
         var allowed = false
         var redirect: BlockingResponse? = null
+        var redirectRule: BlockingResponse? = null
         var importantRedirect: BlockingResponse? = null
         hostSuffixes(target.host.removeSuffix(".")) { host ->
             if (host in importantHosts) {
@@ -415,6 +417,7 @@ internal class CompiledFilters(
         val important =
             requests.any(facts) { rule ->
                 (rule.important ||
+                    rule.redirectOnly ||
                     (rule.exception && !allowed) ||
                     (!rule.exception && (!blocked || rule.redirect != null))) &&
                     facts.matches(rule.conditions) &&
@@ -425,6 +428,8 @@ internal class CompiledFilters(
                     } else {
                         if (rule.exception) {
                             allowed = true
+                        } else if (rule.redirectOnly) {
+                            redirectRule = rule.redirect
                         } else {
                             blocked = true
                             if (rule.redirect != null) {
@@ -439,7 +444,7 @@ internal class CompiledFilters(
         }
         return when {
             important -> importantRedirect ?: BlockingResponse.BLOCK
-            blocked && !allowed -> redirect ?: BlockingResponse.BLOCK
+            blocked && !allowed -> redirect ?: redirectRule ?: BlockingResponse.BLOCK
             else -> BlockingResponse.ALLOW
         }
     }

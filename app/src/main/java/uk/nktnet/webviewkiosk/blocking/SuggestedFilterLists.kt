@@ -1,11 +1,17 @@
 package uk.nktnet.webviewkiosk.blocking
 
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.nio.ByteBuffer
+import java.nio.charset.CodingErrorAction
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.TimeUnit
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import uk.nktnet.webviewkiosk.adblock.expandFilterListIncludes
 
 /**
  * Opt-in download shortcuts only. No rule lists or subscriptions are bundled or
@@ -90,6 +96,10 @@ internal class SuggestedFilterListDownloader(
     private val client: OkHttpClient = sharedClient
 ) {
     companion object {
+        private const val MAX_INCLUDE_REQUESTS = 32
+        private const val MAX_INCLUDE_DEPTH = 3
+        private val INCLUDE_PATH = Regex("[A-Za-z0-9_-]+(?:/[A-Za-z0-9_-]+)*\\.txt")
+
         private val sharedClient by lazy {
             OkHttpClient.Builder()
                 .connectTimeout(10, TimeUnit.SECONDS)
@@ -209,24 +219,86 @@ internal class SuggestedFilterListDownloader(
             }
             .toString()
 
-    private inline fun <T> fetch(url: String, save: (java.io.InputStream) -> T): T {
+    /** Resolve only same-origin relative text files, with a shared 8 MiB budget. */
+    private fun <T> fetch(url: String, save: (java.io.InputStream) -> T): T {
+        val source = requireNotNull(requireListUrl(url).toHttpUrlOrNull())
+        val budget = IncludeBudget()
+        val seen = mutableSetOf(source.toString())
+
+        fun expand(address: HttpUrl, depth: Int): String {
+            val text = fetchText(address, budget)
+            return expandFilterListIncludes(text) { path ->
+                require(depth < MAX_INCLUDE_DEPTH) {
+                    "Filter-list includes exceed the nesting limit"
+                }
+                val child = includedUrl(address, path)
+                require(seen.add(child.toString())) {
+                    "A filter-list include is repeated or circular: $path"
+                }
+                expand(child, depth + 1)
+            }
+        }
+
+        val expanded = expand(source, 0).toByteArray(StandardCharsets.UTF_8)
+        require(expanded.size <= FilterListStore.MAX_LIST_BYTES) {
+            "Expanded filter list exceeds 8 MiB"
+        }
+        return save(ByteArrayInputStream(expanded))
+    }
+
+    private class IncludeBudget {
+        var requests = 0
+        var bytes = 0L
+    }
+
+    private fun includedUrl(source: HttpUrl, path: String): HttpUrl {
+        // Do not let an untrusted subscription fetch absolute URLs, parent paths,
+        // internal services, or even a different directory on the same server.
+        require(path.length in 1..160 && INCLUDE_PATH.matches(path)) {
+            "Unsafe filter-list include path"
+        }
+        val resolved = requireNotNull(source.resolve(path))
+        require(
+            resolved.scheme == source.scheme &&
+                resolved.host == source.host &&
+                resolved.port == source.port &&
+                resolved.encodedPath.startsWith(
+                    source.encodedPath.substringBeforeLast('/') + "/"
+                )
+        ) {
+            "Filter-list includes must remain in the source directory"
+        }
+        return resolved
+    }
+
+    private fun fetchText(url: HttpUrl, budget: IncludeBudget): String {
+        require(++budget.requests <= MAX_INCLUDE_REQUESTS) {
+            "Too many filter-list includes"
+        }
         val request =
-            Request.Builder()
-                .url(requireListUrl(url))
-                .header("Accept", "text/plain")
-                .build()
+            Request.Builder().url(url).header("Accept", "text/plain").build()
         client.newCall(request).execute().use { response ->
             if (!response.isSuccessful) {
                 throw IOException(
                     "Filter-list download failed (HTTP ${response.code})"
                 )
             }
-            val body = response.body
-            if (body.contentLength() > FilterListStore.MAX_LIST_BYTES) {
-                throw IOException("Filter list exceeds 8 MiB")
+            val actual = response.request.url
+            require(
+                actual.scheme == url.scheme &&
+                    actual.host == url.host &&
+                    actual.port == url.port
+            ) {
+                "Filter-list redirect crosses the source origin"
             }
             if (
-                body.contentType()?.let {
+                response.body.contentLength() >
+                    FilterListStore.MAX_LIST_BYTES - budget.bytes
+            ) {
+                throw IOException("Expanded filter list exceeds 8 MiB")
+            }
+            if (
+                response.body.contentType()?.let {
                     it.type == "text" && it.subtype == "html"
                 } == true
             ) {
@@ -234,7 +306,26 @@ internal class SuggestedFilterListDownloader(
                     "The server returned an HTML page instead of a filter list"
                 )
             }
-            return save(body.byteStream())
+            val output = ByteArrayOutputStream()
+            response.body.byteStream().use { stream ->
+                val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+                while (true) {
+                    val read = stream.read(buffer)
+                    if (read < 0) {
+                        break
+                    }
+                    budget.bytes += read
+                    if (budget.bytes > FilterListStore.MAX_LIST_BYTES) {
+                        throw IOException("Expanded filter list exceeds 8 MiB")
+                    }
+                    output.write(buffer, 0, read)
+                }
+            }
+            return StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                .decode(ByteBuffer.wrap(output.toByteArray()))
+                .toString()
         }
     }
 }

@@ -16,6 +16,7 @@
   var procedures = new Map();
   var procedureCursor = 0;
   var procedurePending = false;
+  var domProcedureCount = 0;
   var selectorProbe = document.createElement("div");
   var work = [];
   var style = null;
@@ -74,7 +75,7 @@
 
   function applySelectors() {
     var parent = document.head || document.documentElement;
-    if (!parent || !selectors.size) return;
+    if (!parent || (!selectors.size && !procedures.size)) return;
     if (!style || !style.isConnected) {
       style = document.createElement("style");
       parent.appendChild(style);
@@ -82,17 +83,23 @@
     }
     var sheet = style.sheet;
     if (!sheet) return;
-    selectors.forEach(function (selector) {
-      if (installedSelectors.has(selector)) return;
+    function insert(selector, declarations) {
+      var key = selector + "{" + declarations + "}";
+      if (installedSelectors.has(key)) return;
       try {
-        // Validate as a selector first: reject @import, injected declarations,
-        // malformed CSS, and syntax this WebView does not support.
+        // The Kotlin parser validates declarations; WebView validates selectors.
         selectorProbe.matches(selector);
-        sheet.insertRule(selector + "{display:none!important}", sheet.cssRules.length);
+        sheet.insertRule(key, sheet.cssRules.length);
       } catch (_) {
-        // One bad/unsupported selector must not invalidate the other rules.
+        // One unsupported selector must not invalidate other rules.
       }
-      installedSelectors.add(selector);
+      installedSelectors.add(key);
+    }
+    selectors.forEach(function (selector) {
+      insert(selector, "display:none!important");
+    });
+    procedures.forEach(function (rule) {
+      if (rule.style !== null) insert(rule.selector, rule.style);
     });
   }
 
@@ -100,7 +107,7 @@
   // Bound selector evaluation even on pages with very large/dynamic DOMs.
   function applyProcedures() {
     procedurePending = false;
-    if (!procedures.size || !document.documentElement) return;
+    if (!domProcedureCount || !document.documentElement) return;
     var rules = Array.from(procedures.values());
     var budget = 2000;
     var deadline = Date.now() + 8;
@@ -108,6 +115,7 @@
     for (; processed < rules.length && budget > 0; processed++) {
       if (Date.now() >= deadline) break;
       var rule = rules[(procedureCursor + processed) % rules.length];
+      if (rule.style !== null) continue; // CSSOM applies these without DOM scans.
       try {
         selectorProbe.matches(rule.selector);
         var matches = document.querySelectorAll(rule.selector);
@@ -119,8 +127,13 @@
           for (var depth = 0; depth < rule.upward && element; depth++) {
             element = element.parentElement;
           }
+          if (rule.upwardSelector && element) {
+            element = element.parentElement && element.parentElement.closest(rule.upwardSelector);
+          }
           if (!element || element === document.documentElement) continue;
-          if (rule.remove) element.remove();
+          if (rule.removeAttribute) element.removeAttribute(rule.removeAttribute);
+          else if (rule.removeClass) element.classList.remove(rule.removeClass);
+          else if (rule.remove) element.remove();
           else element.style.setProperty("display", "none", "important");
         }
       } catch (_) {
@@ -150,6 +163,7 @@
     ids.clear();
     if (style) style.remove();
     procedures.clear();
+    domProcedureCount = 0;
     procedurePending = false;
   }
 
@@ -198,9 +212,19 @@
           !(entry.text === null || typeof entry.text === "string") ||
           (entry.text !== null && entry.text.length > 128) ||
           !Number.isInteger(entry.upward) || entry.upward < 0 || entry.upward > 4 ||
-          typeof entry.remove !== "boolean" || procedures.size >= 128) return;
+          typeof entry.remove !== "boolean" ||
+          !(entry.style === null ||
+            (typeof entry.style === "string" && entry.style.length <= 256)) ||
+          !(entry.removeAttribute === null || typeof entry.removeAttribute === "string") ||
+          !(entry.removeClass === null || typeof entry.removeClass === "string") ||
+          !(entry.upwardSelector === null ||
+            (typeof entry.upwardSelector === "string" && entry.upwardSelector.length <= 128)) ||
+          procedures.size >= 128) return;
       var key = JSON.stringify(entry);
-      procedures.set(key, entry);
+      if (!procedures.has(key)) {
+        procedures.set(key, entry);
+        if (entry.style === null) domProcedureCount++;
+      }
     });
     applySelectors();
     applyProcedures();
@@ -215,7 +239,7 @@
       else record.addedNodes.forEach(queue);
     });
     if (style && !style.isConnected) schedule();
-    if (procedures.size) schedule(120);
+    if (domProcedureCount) schedule(120);
   });
   observer.observe(document, { childList: true, characterData: true, subtree: true,
     attributes: true, attributeFilter: ["class", "id"] });

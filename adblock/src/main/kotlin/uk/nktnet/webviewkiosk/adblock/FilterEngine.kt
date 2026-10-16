@@ -8,6 +8,9 @@ enum class BlockingResponse {
     EMPTY_STYLESHEET,
     EMPTY_HTML,
     EMPTY_TEXT,
+    TRANSPARENT_GIF,
+    TRANSPARENT_PNG,
+    TRANSPARENT_2X2_PNG,
 }
 
 enum class RuleLoadStage(val description: String) {
@@ -26,6 +29,10 @@ data class CosmeticProcedure(
     val text: String? = null,
     val upward: Int = 0,
     val remove: Boolean = false,
+    val style: String? = null,
+    val removeAttribute: String? = null,
+    val removeClass: String? = null,
+    val upwardSelector: String? = null,
 )
 
 /** Injectable request/selector boundary shared by production and host tests. */

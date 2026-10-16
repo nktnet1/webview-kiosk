@@ -491,8 +491,8 @@ class KotlinFilterEngineTest {
                 )
                 .isEmpty()
         )
-        assertEquals(2, engine.unsupportedRuleCount())
-        assertEquals(2, engine.cosmeticProcedures("https://site.example/").size)
+        assertEquals(1, engine.unsupportedRuleCount())
+        assertEquals(3, engine.cosmeticProcedures("https://site.example/").size)
     }
 
     @Test
@@ -708,7 +708,7 @@ class KotlinFilterEngineTest {
                     "site.example##.ad:style(color:red)"
             )
         val actions = engine.cosmeticProcedures("https://site.example/")
-        assertEquals(3, actions.size)
+        assertEquals(4, actions.size)
         assertTrue(
             actions.any {
                 it.selector == ".sponsor" && it.text == "Advertisement" && !it.remove
@@ -716,9 +716,89 @@ class KotlinFilterEngineTest {
         )
         assertTrue(actions.any { it.selector == ".ad-banner" && it.remove })
         assertTrue(actions.any { it.selector == ".ad-label" && it.upward == 2 })
-        assertEquals(2, engine.cosmeticProcedures("https://sub.site.example/").size)
+        assertEquals(3, engine.cosmeticProcedures("https://sub.site.example/").size)
         assertTrue(engine.cosmeticProcedures("https://other.example/").isEmpty())
-        assertEquals(3, engine.unsupportedRuleCount())
+        assertEquals(2, engine.unsupportedRuleCount())
+    }
+
+    @Test
+    fun safeUBlockStyleRemovalAndAncestorActionsStaySiteScoped() {
+        val engine =
+            engine(
+                """
+                businesstoday.in###zedotopnavads:style(height: 1px !important)
+                web.de##.ad:style(position:absolute !important; left:-10000px !important;)
+                web.de#@#.ad:style(position:absolute !important; left:-10000px !important;)
+                dvdgayonline.com###clickfakeplayer:remove-attr(href)
+                site.example##.advert:remove-class(sponsored)
+                site.example##a.promo:upward(.container > div)
+                site.example#?#.sponsor:has-text(Sponsored)
+                site.example##.unsafe:style(background:url(https://tracker.example/pixel))
+                """
+                    .trimIndent()
+            )
+        assertEquals(1, engine.unsupportedRuleCount())
+        val business = engine.cosmeticProcedures("https://businesstoday.in/")
+        assertEquals("height: 1px !important", business.single().style)
+        assertEquals("#zedotopnavads", business.single().selector)
+        assertTrue(engine.cosmeticProcedures("https://web.de/").isEmpty())
+        val attribute =
+            engine.cosmeticProcedures("https://dvdgayonline.com/").single()
+        assertEquals("href", attribute.removeAttribute)
+        val actions = engine.cosmeticProcedures("https://site.example/")
+        assertEquals(3, actions.size)
+        assertTrue(actions.any { it.removeClass == "sponsored" })
+        assertTrue(actions.any { it.upwardSelector == ".container > div" })
+        assertTrue(actions.any { it.text == "Sponsored" })
+        assertTrue(engine.cosmeticProcedures("https://other.example/").isEmpty())
+    }
+
+    @Test
+    fun redirectRuleRequiresAnIndependentBlockAndRespectsExceptions() {
+        val only = engine("*\$script,redirect-rule=noopjs,domain=site.example")
+        assertEquals(
+            BlockingResponse.ALLOW,
+            only.responseFor(
+                "https://ads.example/ad.js",
+                "https://site.example/",
+                "script",
+                "GET",
+            ),
+        )
+        val withBlock =
+            engine(
+                "||ads.example^\$script\n" +
+                    "*\$script,redirect-rule=noopjs,domain=site.example\n" +
+                    "@@||ads.example/allowed.js\$script"
+            )
+        assertEquals(
+            BlockingResponse.EMPTY_SCRIPT,
+            withBlock.responseFor(
+                "https://ads.example/ad.js",
+                "https://site.example/",
+                "script",
+                "GET",
+            ),
+        )
+        assertEquals(
+            BlockingResponse.ALLOW,
+            withBlock.responseFor(
+                "https://ads.example/allowed.js",
+                "https://site.example/",
+                "script",
+                "GET",
+            ),
+        )
+        val image = engine("||ads.example^\$image,redirect=1x1.gif")
+        assertEquals(
+            BlockingResponse.TRANSPARENT_GIF,
+            image.responseFor(
+                "https://ads.example/pixel",
+                "https://site.example/",
+                "image",
+                "GET",
+            ),
+        )
     }
 
     @Test

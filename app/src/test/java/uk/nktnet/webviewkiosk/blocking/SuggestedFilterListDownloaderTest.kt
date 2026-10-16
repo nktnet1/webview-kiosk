@@ -65,6 +65,101 @@ class SuggestedFilterListDownloaderTest {
         )
 
     @Test
+    fun officialUBlockIncludesResolveSameOriginAndSkipInactiveBranches() {
+        val ublock = SuggestedFilterLists.all[3]
+        val requested = mutableListOf<String>()
+        val contents =
+            mapOf(
+                "/uAssets/filters/filters.txt" to
+                    "||root.example^\n!#include filters-2026.txt\n" +
+                        "!#if env_mobile\n!#include filters-mobile.txt\n!#endif\n" +
+                        "!#if env_safari\n!#include safari.txt\n!#endif\n",
+                "/uAssets/filters/filters-2026.txt" to
+                    "||year.example^\n!#include nested/ads.txt\n",
+                "/uAssets/filters/nested/ads.txt" to "nested.example##.advert\n",
+                "/uAssets/filters/filters-mobile.txt" to "||mobile.example^\n",
+            )
+        val client =
+            SuggestedFilterListDownloader(
+                OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        val address = chain.request().url
+                        requested += address.toString()
+                        val body =
+                            contents[address.encodedPath]
+                                ?: error("Unexpected request")
+                        Response.Builder()
+                            .request(chain.request())
+                            .protocol(Protocol.HTTP_1_1)
+                            .code(200)
+                            .message("OK")
+                            .body(body.toResponseBody("text/plain".toMediaType()))
+                            .build()
+                    }
+                    .build()
+            )
+        client.download(ublock, store)
+        assertEquals(4, requested.size)
+        assertTrue(
+            requested.all { it.startsWith("https://ublockorigin.github.io/") }
+        )
+        assertFalse(requested.any { it.endsWith("safari.txt") })
+        val saved = store.enabledTexts().single()
+        assertTrue("||root.example^" in saved)
+        assertTrue("||year.example^" in saved)
+        assertTrue("nested.example##.advert" in saved)
+        assertTrue("||mobile.example^" in saved)
+    }
+
+    @Test
+    fun unsafeRepeatedAndMissingIncludesNeverReplaceSavedRules() {
+        val source = "https://example.org/filters/list.txt"
+        val saved =
+            store.importFrom("List", "||old.example^".byteInputStream(), source)
+        val originals = store.enabledTexts()
+        val malformed =
+            listOf(
+                "!#include ../private.txt",
+                "!#include https://other.example/filters.txt",
+                "!#include repeated.txt\n!#include repeated.txt",
+                "!#include missing.txt",
+            )
+        malformed.forEach { text ->
+            val client =
+                SuggestedFilterListDownloader(
+                    OkHttpClient.Builder()
+                        .addInterceptor { chain ->
+                            val path = chain.request().url.encodedPath
+                            val status =
+                                if (path.endsWith("missing.txt")) {
+                                    404
+                                } else {
+                                    200
+                                }
+                            val body =
+                                if (path.endsWith("list.txt")) {
+                                    text
+                                } else {
+                                    "||new.example^"
+                                }
+                            Response.Builder()
+                                .request(chain.request())
+                                .protocol(Protocol.HTTP_1_1)
+                                .code(status)
+                                .message("test")
+                                .body(
+                                    body.toResponseBody("text/plain".toMediaType())
+                                )
+                                .build()
+                        }
+                        .build()
+                )
+            assertThrows(Exception::class.java) { client.refresh(saved, store) }
+            assertEquals(originals, store.enabledTexts())
+        }
+    }
+
+    @Test
     fun suggestionsAreLinksNotBundledLists() {
         assertEquals(
             listOf(
