@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.common
 
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -8,7 +9,7 @@ import kotlinx.coroutines.flow.first
 /** UI-thread presentation state; rule loading itself never waits on this timer. */
 internal class MinimumLoadingState(
     private val now: () -> Long = { System.nanoTime() / 1_000_000 },
-    private val pause: suspend (Long) -> Unit = { delay(it) },
+    private val pause: suspend (Long) -> Unit = { delay(it.milliseconds) },
 ) {
     private val _message = MutableStateFlow<String?>(null)
     val message = _message.asStateFlow()

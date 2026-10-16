@@ -90,6 +90,8 @@ fun booleanPref(
                 }
             }
 
+        // Required delegate parameters; the preference key is captured above.
+        @Suppress("UNUSED_PARAMETER")
         override fun setValue(
             thisRef: Any?,
             property: KProperty<*>,
@@ -129,6 +131,8 @@ fun intPref(
             return raw.coerceIn(min, max)
         }
 
+        // Required delegate parameters; the preference key is captured above.
+        @Suppress("UNUSED_PARAMETER")
         override fun setValue(thisRef: Any?, property: KProperty<*>, value: Int) {
             if (getRestrictions()?.containsKey(key) != true) {
                 val coerced = value.coerceIn(min, max)
@@ -160,6 +164,8 @@ fun floatPref(
                 }
             }
 
+        // Required delegate parameters; the preference key is captured above.
+        @Suppress("UNUSED_PARAMETER")
         override fun setValue(thisRef: Any?, property: KProperty<*>, value: Float) {
             if (getRestrictions()?.containsKey(key) != true) {
                 prefs.edit {

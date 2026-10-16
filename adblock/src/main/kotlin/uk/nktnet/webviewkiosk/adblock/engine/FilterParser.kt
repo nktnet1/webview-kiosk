@@ -219,17 +219,17 @@ internal object FilterParser {
             NetworkRule(
                 NetworkIdentity(
                     UrlPattern(
-                        "$literal^",
-                        true,
-                        false,
-                        false,
-                        false,
-                        normalized,
+                        text = "$literal^",
+                        domainAnchor = true,
+                        startAnchor = false,
+                        endAnchor = false,
+                        matchCase = false,
+                        hostIndex = normalized,
                     ),
-                    Conditions.ANY,
-                    false,
-                    false,
-                    0,
+                    conditions = Conditions.ANY,
+                    exception = false,
+                    important = false,
+                    hide = 0,
                 )
             )
         )
@@ -243,7 +243,7 @@ internal object FilterParser {
             val cosmetic = line.indexOf("##")
             val exception = line.indexOf("#@#")
             when {
-                exception >= 0 && (cosmetic < 0 || exception < cosmetic) ->
+                exception >= 0 && cosmetic !in 0..exception ->
                     parseCosmetic(line, exception, true)
 
                 cosmetic >= 0 -> parseCosmetic(line, cosmetic, false)

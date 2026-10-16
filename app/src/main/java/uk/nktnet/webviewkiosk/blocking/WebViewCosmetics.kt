@@ -196,7 +196,7 @@ private constructor(
             if (
                 data == null ||
                     data.length > 256 * 1024 ||
-                    !WebViewBlocker.isFilterableUrl(origin.toString() + "/")
+                    !WebViewBlocker.isFilterableUrl("$origin/")
             ) {
                 return null
             }

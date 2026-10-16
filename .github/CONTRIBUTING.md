@@ -21,6 +21,10 @@ formatting and require braces on every `if`/`else` branch, including short guard
 and expressions. These checks also run in CI and through the Kotlin pre-commit
 hook. The root `check` task includes them as well.
 
+Lefthook also runs `./gradlew lint --warning-mode=all` before commits that change
+Kotlin, Java, XML, Gradle Kotlin scripts, TOML, or properties files. This runs
+Android lint and shows Gradle deprecation warnings.
+
 Spotless uses pinned ktfmt with the Kotlin language style, four-space indentation,
 and an 85-character line-width target. `.editorconfig` records the same editor
 preferences. Wrapping is best effort: imports, package names, long URLs, string
