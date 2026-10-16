@@ -22,17 +22,19 @@ fun generateBlockedPageHtml(
     val homeUrl = Html.escapeHtml(userSettings.homeUrl)
     val urlDisplay = Html.escapeHtml(url)
 
-    val backButtonHtml = if (userSettings.allowBackwardsNavigation) {
-        """<button style="width:100px;" onclick="history.back()">Back</button>"""
-    } else {
-        ""
-    }
+    val backButtonHtml =
+        if (userSettings.allowBackwardsNavigation) {
+            """<button style="width:100px;" onclick="history.back()">Back</button>"""
+        } else {
+            ""
+        }
 
-    val homeButtonHtml = if (userSettings.allowGoHome) {
-        """<button style="width:100px;" onclick="location.href='${homeUrl}'">Home</button>"""
-    } else {
-        ""
-    }
+    val homeButtonHtml =
+        if (userSettings.allowGoHome) {
+            """<button style="width:100px;" onclick="location.href='${homeUrl}'">Home</button>"""
+        } else {
+            ""
+        }
 
     return """
         <html>
@@ -90,5 +92,6 @@ fun generateBlockedPageHtml(
             <p>${blockCause}</p>
           </body>
         </html>
-    """.trimIndent()
+    """
+        .trimIndent()
 }

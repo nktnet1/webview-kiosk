@@ -21,22 +21,23 @@ enum class WebViewInsetOption(val label: String) {
     SAFE_CONTENT("Safe Content");
 
     @Composable
-    fun toWindowInsets(): WindowInsets = when (this) {
-        NONE -> WindowInsets()
-        STATUS_BARS -> WindowInsets.statusBars
-        NAVIGATION_BARS -> WindowInsets.navigationBars
-        SYSTEM_BARS -> WindowInsets.systemBars
-        DISPLAY_CUTOUT -> WindowInsets.displayCutout
-        SAFE_DRAWING -> WindowInsets.safeDrawing
-        SAFE_GESTURES -> WindowInsets.safeGestures
-        SAFE_CONTENT -> WindowInsets.safeContent
-    }
+    fun toWindowInsets(): WindowInsets =
+        when (this) {
+            NONE -> WindowInsets()
+            STATUS_BARS -> WindowInsets.statusBars
+            NAVIGATION_BARS -> WindowInsets.navigationBars
+            SYSTEM_BARS -> WindowInsets.systemBars
+            DISPLAY_CUTOUT -> WindowInsets.displayCutout
+            SAFE_DRAWING -> WindowInsets.safeDrawing
+            SAFE_GESTURES -> WindowInsets.safeGestures
+            SAFE_CONTENT -> WindowInsets.safeContent
+        }
 
     companion object {
         fun fromString(value: String?): WebViewInsetOption =
             entries.find {
-                it.name.equals(value, ignoreCase = true)
-                || it.label.equals(value, ignoreCase = true)
+                it.name.equals(value, ignoreCase = true) ||
+                    it.label.equals(value, ignoreCase = true)
             } ?: SYSTEM_BARS
     }
 }

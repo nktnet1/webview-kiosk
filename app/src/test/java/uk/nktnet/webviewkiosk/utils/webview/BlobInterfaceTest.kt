@@ -4,6 +4,8 @@ import android.content.Context
 import android.os.Build
 import android.os.Environment
 import android.util.Base64
+import java.io.File
+import java.util.UUID
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertFalse
@@ -16,8 +18,6 @@ import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.utils.webview.interfaces.BlobInterface
-import java.io.File
-import java.util.UUID
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.P])
@@ -34,7 +34,10 @@ class BlobInterfaceTest {
         val settings = UserSettings(context)
         previousAllowNotifications = settings.allowNotifications
         settings.allowNotifications = false
-        downloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        downloads =
+            Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_DOWNLOADS
+            )
         blob = BlobInterface(context)
         filename = "regression-${UUID.randomUUID()}.bin"
     }
@@ -43,7 +46,9 @@ class BlobInterfaceTest {
     fun tearDown() {
         blob.dispose()
         UserSettings(context).allowNotifications = previousAllowNotifications
-        downloads.listFiles().orEmpty()
+        downloads
+            .listFiles()
+            .orEmpty()
             .filter { it.name.startsWith(filename.removeSuffix(".bin")) }
             .forEach { it.delete() }
     }
@@ -56,7 +61,9 @@ class BlobInterfaceTest {
         val original = File(downloads, filename)
 
         assertTrue(blob.startDownload("first", "application/octet-stream", filename))
-        assertTrue(blob.startDownload("second", "application/octet-stream", filename))
+        assertTrue(
+            blob.startDownload("second", "application/octet-stream", filename)
+        )
         assertTrue(blob.appendChunk("first", encode(firstBytes)))
         assertTrue(blob.appendChunk("second", encode(secondBytes)))
         assertTrue(blob.finishDownload("second"))
@@ -117,12 +124,14 @@ class BlobInterfaceTest {
 
     @Test
     fun invalidFilenameDoesNotStartTransfer() {
-        for (invalid in listOf("", "../outside.bin", "folder/file.bin", "folder\\file.bin")) {
+        for (invalid in
+            listOf("", "../outside.bin", "folder/file.bin", "folder\\file.bin")) {
             assertFalse(blob.startDownload("invalid", null, invalid))
         }
         assertFalse(blob.appendChunk("missing", encode(byteArrayOf(1))))
         assertFalse(blob.finishDownload("missing"))
     }
 
-    private fun encode(bytes: ByteArray) = Base64.encodeToString(bytes, Base64.NO_WRAP)
+    private fun encode(bytes: ByteArray) =
+        Base64.encodeToString(bytes, Base64.NO_WRAP)
 }

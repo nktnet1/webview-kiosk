@@ -13,17 +13,23 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldIt
 fun MqttSubscribeCommandRetainAsPublishedSetting() {
     val context = LocalContext.current
     val userSettings = remember { UserSettings(context) }
-    val settingKey = UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_AS_PUBLISHED
+    val settingKey =
+        UserSettingsKeys.Mqtt.Topics.Subscribe.Command.RETAIN_AS_PUBLISHED
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.mqtt_subscribe_command_retain_as_published_title),
-        infoText = """
+        label =
+            stringResource(
+                R.string.mqtt_subscribe_command_retain_as_published_title
+            ),
+        infoText =
+            """
             Controls whether retained messages from the broker keep their original
             retained flag when delivered to the subscriber.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.mqttSubscribeCommandRetainAsPublished,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.mqttSubscribeCommandRetainAsPublished = it }
+        onSave = { userSettings.mqttSubscribeCommandRetainAsPublished = it },
     )
 }

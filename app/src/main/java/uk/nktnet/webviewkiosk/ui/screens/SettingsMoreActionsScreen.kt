@@ -60,19 +60,21 @@ import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 fun SettingsMoreActionsScreen(navController: NavController) {
     val context = LocalContext.current
 
-    val (webView, webViewError) = remember {
-        val creation = try {
-            WebViewCreation.Success(WebView(context))
-        } catch (e: Exception) {
-            Log.e(Constants.APP_SCHEME, "WebView creation failed", e)
-            WebViewCreation.Failure(e)
-        }
+    val (webView, webViewError) =
+        remember {
+            val creation =
+                try {
+                    WebViewCreation.Success(WebView(context))
+                } catch (e: Exception) {
+                    Log.e(Constants.APP_SCHEME, "WebView creation failed", e)
+                    WebViewCreation.Failure(e)
+                }
 
-        when (creation) {
-            is WebViewCreation.Success -> creation.webView to null
-            is WebViewCreation.Failure -> null to creation.error
+            when (creation) {
+                is WebViewCreation.Success -> creation.webView to null
+                is WebViewCreation.Failure -> null to creation.error
+            }
         }
-    }
 
     if (webView == null) {
         WebViewUnavailable(navController, webViewError)
@@ -92,21 +94,19 @@ fun SettingsMoreActionsScreen(navController: NavController) {
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(top = 4.dp)
-            .padding(horizontal = 16.dp),
+        modifier =
+            Modifier.fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(top = 4.dp)
+                .padding(horizontal = 16.dp)
     ) {
         SettingLabel(
             navController = navController,
-            label = stringResource(R.string.settings_more_actions_title)
+            label = stringResource(R.string.settings_more_actions_title),
         )
         SettingDivider()
         Column(
-            modifier = Modifier
-                .verticalScroll(rememberScrollState())
-                .fillMaxSize()
+            modifier = Modifier.verticalScroll(rememberScrollState()).fillMaxSize()
         ) {
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -115,17 +115,17 @@ fun SettingsMoreActionsScreen(navController: NavController) {
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
                     stringResource(R.string.settings_more_action_app_info),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     openAppDetailsSettings(context)
                 }
                 ActionButton(
                     stringResource(R.string.settings_more_action_device_settings),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     openSettings(context)
                 }
@@ -133,17 +133,17 @@ fun SettingsMoreActionsScreen(navController: NavController) {
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
                     stringResource(R.string.settings_more_action_default_launcher),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     openDefaultLauncherSettings(context)
                 }
                 ActionButton(
                     stringResource(R.string.settings_more_action_default_apps),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                         openDefaultAppsSettings(context)
@@ -151,10 +151,11 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                         ToastManager.show(
                             context,
                             context.getString(
-                                R.string.settings_more_action_toast_sdk_version_error,
+                                R.string
+                                    .settings_more_action_toast_sdk_version_error,
                                 Build.VERSION_CODES.N,
                                 Build.VERSION.SDK_INT,
-                            )
+                            ),
                         )
                     }
                 }
@@ -162,15 +163,17 @@ fun SettingsMoreActionsScreen(navController: NavController) {
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
                     stringResource(R.string.settings_more_action_wifi_settings),
-                    modifier = Modifier.weight(1f)
-                ) { openWifiSettings(context) }
+                    modifier = Modifier.weight(1f),
+                ) {
+                    openWifiSettings(context)
+                }
                 ActionButton(
                     stringResource(R.string.settings_more_action_data_usage),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                         openDataUsageSettings(context)
@@ -178,10 +181,11 @@ fun SettingsMoreActionsScreen(navController: NavController) {
                         ToastManager.show(
                             context,
                             context.getString(
-                                R.string.settings_more_action_toast_sdk_version_error,
+                                R.string
+                                    .settings_more_action_toast_sdk_version_error,
                                 Build.VERSION_CODES.P,
-                                Build.VERSION.SDK_INT
-                            )
+                                Build.VERSION.SDK_INT,
+                            ),
                         )
                     }
                 }
@@ -194,17 +198,17 @@ fun SettingsMoreActionsScreen(navController: NavController) {
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
                     stringResource(R.string.settings_more_action_create_shortcut),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     showCreateShortcutDialog = true
                 }
                 ActionButton(
                     stringResource(R.string.settings_more_action_app_launcher),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     showAppLauncherDialog = true
                 }
@@ -216,28 +220,30 @@ fun SettingsMoreActionsScreen(navController: NavController) {
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
                     stringResource(R.string.settings_more_action_local_files),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     navController.navigate(Screen.SettingsWebContentFiles.route)
                 }
                 ActionButton(
                     stringResource(R.string.settings_more_action_site_permissions),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
-                    navController.navigate(Screen.SettingsWebBrowsingSitePermissions.route)
+                    navController.navigate(
+                        Screen.SettingsWebBrowsingSitePermissions.route
+                    )
                 }
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
                     stringResource(R.string.settings_more_action_device_owner),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     navController.navigate(Screen.SettingsDeviceOwner.route)
                 }
@@ -250,84 +256,95 @@ fun SettingsMoreActionsScreen(navController: NavController) {
             )
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
                     stringResource(R.string.settings_more_action_clear_cookies),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     CookieManager.getInstance().removeAllCookies(null)
                     CookieManager.getInstance().flush()
                     ToastManager.show(
                         context,
-                        context.getString(R.string.settings_more_action_toast_cookies_cleared)
+                        context.getString(
+                            R.string.settings_more_action_toast_cookies_cleared
+                        ),
                     )
                 }
                 ActionButton(
                     stringResource(R.string.settings_more_action_clear_cache),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     webView.clearCache(true)
                     ToastManager.show(
                         context,
-                        context.getString(R.string.settings_more_action_toast_cache_cleared)
+                        context.getString(
+                            R.string.settings_more_action_toast_cache_cleared
+                        ),
                     )
                 }
             }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
                     stringResource(R.string.settings_more_action_clear_form_data),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     webView.clearFormData()
                     ToastManager.show(
                         context,
-                        context.getString(R.string.settings_more_action_toast_form_data_cleared)
+                        context.getString(
+                            R.string.settings_more_action_toast_form_data_cleared
+                        ),
                     )
                 }
                 ActionButton(
                     stringResource(R.string.settings_more_action_clear_history),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     webView.clearHistory()
                     WebViewNavigation.clearHistory(systemSettings)
                     ToastManager.show(
                         context,
-                        context.getString(R.string.settings_more_action_toast_history_cleared)
+                        context.getString(
+                            R.string.settings_more_action_toast_history_cleared
+                        ),
                     )
                 }
             }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 ActionButton(
-                    stringResource(R.string.settings_more_action_clear_ssl_preferences),
-                    modifier = Modifier.weight(1f)
+                    stringResource(
+                        R.string.settings_more_action_clear_ssl_preferences
+                    ),
+                    modifier = Modifier.weight(1f),
                 ) {
                     webView.clearSslPreferences()
                     ToastManager.show(
                         context,
                         context.getString(
-                            R.string.settings_more_action_toast_ssl_preferences_cleared
-                        )
+                            R.string
+                                .settings_more_action_toast_ssl_preferences_cleared
+                        ),
                     )
                 }
                 ActionButton(
                     stringResource(R.string.settings_more_action_clear_web_storage),
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
                 ) {
                     WebStorage.getInstance().deleteAllData()
                     ToastManager.show(
                         context,
                         context.getString(
                             R.string.settings_more_action_toast_web_storage_cleared
-                        )
+                        ),
                     )
                 }
             }
@@ -340,14 +357,14 @@ fun SettingsMoreActionsScreen(navController: NavController) {
         showDialog = showAppLauncherDialog,
         onDismiss = {
             showAppLauncherDialog = false
-        }
+        },
     )
 
     CreateShortcutDialog(
         showDialog = showCreateShortcutDialog,
         onDismiss = {
             showCreateShortcutDialog = false
-        }
+        },
     )
 }
 
@@ -364,7 +381,7 @@ private fun ActionButton(
         onClick = onClick,
         colors = ButtonDefaults.buttonColors(containerColor = color),
         modifier = modifier.padding(vertical = 2.dp),
-        contentPadding = PaddingValues(vertical = 4.dp, horizontal = 8.dp)
+        contentPadding = PaddingValues(vertical = 4.dp, horizontal = 8.dp),
     ) {
         Text(label, style = MaterialTheme.typography.bodySmall)
     }
@@ -376,11 +393,11 @@ private fun SectionHeader(title: String) {
         text = title,
         style = MaterialTheme.typography.titleLarge,
         color = MaterialTheme.colorScheme.onSurface,
-        modifier = Modifier.padding(bottom = 4.dp)
+        modifier = Modifier.padding(bottom = 4.dp),
     )
     HorizontalDivider(
         Modifier.padding(bottom = 4.dp),
         DividerDefaults.Thickness,
-        DividerDefaults.color
+        DividerDefaults.color,
     )
 }

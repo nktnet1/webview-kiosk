@@ -1,23 +1,24 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import uk.nktnet.webviewkiosk.testing.runConcurrently
-import java.util.concurrent.atomic.AtomicInteger
 
 class HttpAuthRequestTest {
     @Test
     fun submitsCredentialsOnlyOnceAndIgnoresLaterCancellation() {
         val submitted = mutableListOf<Pair<String, String>>()
         var cancelled = 0
-        val request = HttpAuthRequest(
-            "example.com",
-            "private",
-            { user, password -> submitted.add(user to password) },
-            { cancelled++ },
-        )
+        val request =
+            HttpAuthRequest(
+                "example.com",
+                "private",
+                { user, password -> submitted.add(user to password) },
+                { cancelled++ },
+            )
 
         request.proceed("alice", "secret")
         request.proceed("bob", "other")
@@ -31,7 +32,8 @@ class HttpAuthRequestTest {
     fun cancellationPreventsLaterCredentialSubmission() {
         var submitted = 0
         var cancelled = 0
-        val request = HttpAuthRequest(null, null, { _, _ -> submitted++ }, { cancelled++ })
+        val request =
+            HttpAuthRequest(null, null, { _, _ -> submitted++ }, { cancelled++ })
 
         request.cancel()
         request.cancel()
@@ -45,12 +47,13 @@ class HttpAuthRequestTest {
     fun concurrentSubmissionAndCancellationCompleteExactlyOnce() {
         val submitted = AtomicInteger()
         val cancelled = AtomicInteger()
-        val request = HttpAuthRequest(
-            null,
-            null,
-            { _, _ -> submitted.incrementAndGet() },
-            { cancelled.incrementAndGet() },
-        )
+        val request =
+            HttpAuthRequest(
+                null,
+                null,
+                { _, _ -> submitted.incrementAndGet() },
+                { cancelled.incrementAndGet() },
+            )
 
         runConcurrently({ request.proceed("alice", "secret") }, { request.cancel() })
         request.proceed("bob", "other")
@@ -63,9 +66,15 @@ class HttpAuthRequestTest {
     fun aThrowingSubmissionCallbackStillConsumesTheRequest() {
         val failure = IllegalStateException("callback failed")
         var cancelled = 0
-        val request = HttpAuthRequest(null, null, { _, _ -> throw failure }, { cancelled++ })
+        val request =
+            HttpAuthRequest(null, null, { _, _ -> throw failure }, { cancelled++ })
 
-        assertSame(failure, assertThrows(IllegalStateException::class.java) { request.proceed("alice", "secret") })
+        assertSame(
+            failure,
+            assertThrows(IllegalStateException::class.java) {
+                request.proceed("alice", "secret")
+            },
+        )
         request.proceed("alice", "secret")
         request.cancel()
 

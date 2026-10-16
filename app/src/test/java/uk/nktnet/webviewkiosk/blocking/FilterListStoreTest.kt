@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.blocking
 
+import java.io.ByteArrayInputStream
 import org.json.JSONArray
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -13,7 +14,6 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import uk.nktnet.webviewkiosk.adblock.FilterListValidator
-import java.io.ByteArrayInputStream
 
 @RunWith(RobolectricTestRunner::class)
 class FilterListStoreTest {
@@ -22,7 +22,11 @@ class FilterListStoreTest {
     @Before
     fun setup() {
         val context = RuntimeEnvironment.getApplication()
-        context.getSharedPreferences("content_blocking_lists", 0).edit().clear().commit()
+        context
+            .getSharedPreferences("content_blocking_lists", 0)
+            .edit()
+            .clear()
+            .commit()
         java.io.File(context.filesDir, "content-blocking-lists").deleteRecursively()
         store = FilterListStore(context, validator = FilterListValidator {})
     }
@@ -50,14 +54,16 @@ class FilterListStoreTest {
         timed.rename(remote.id, "Renamed")
         timed.setEnabled(remote.id, false)
         timed.setAllEnabled(true)
-        assertThrows(IllegalArgumentException::class.java) { timed.cloneList(remote.id) }
+        assertThrows(IllegalArgumentException::class.java) {
+            timed.cloneList(remote.id)
+        }
         assertEquals(1_000L, timed.info(remote.id).item.lastRefreshedAt)
         val file = timed.importFrom("Local", "||local.example^".byteInputStream())
         assertNull(file.lastRefreshedAt)
         assertNull(
             timed
                 .updateFile(file.id, "Edited", "||edited.example^".byteInputStream())
-                .lastRefreshedAt,
+                .lastRefreshedAt
         )
         assertNull(timed.cloneList(file.id).lastRefreshedAt)
     }
@@ -101,7 +107,10 @@ class FilterListStoreTest {
                 "||new.example^".byteInputStream(),
             )
         assertEquals(3_000L, changed.lastRefreshedAt)
-        assertEquals(3_000L, FilterListStore(context).info(remote.id).item.lastRefreshedAt)
+        assertEquals(
+            3_000L,
+            FilterListStore(context).info(remote.id).item.lastRefreshedAt,
+        )
         assertEquals(2_000L, timed.info(preset.id).item.lastRefreshedAt)
     }
 
@@ -118,7 +127,11 @@ class FilterListStoreTest {
             )
         time = 2_000L
         assertThrows(IllegalArgumentException::class.java) {
-            timed.replaceFromSource(item.id, item.sourceUrl!!, byteArrayOf().inputStream())
+            timed.replaceFromSource(
+                item.id,
+                item.sourceUrl!!,
+                byteArrayOf().inputStream(),
+            )
         }
         assertThrows(IllegalArgumentException::class.java) {
             timed.updateUrl(
@@ -154,7 +167,11 @@ class FilterListStoreTest {
         timed.setEnabled(item.id, false)
         assertNull(timed.info(item.id).item.lastRefreshedAt)
         val refreshed =
-            timed.replaceFromSource(item.id, item.sourceUrl!!, "||new.example^".byteInputStream())
+            timed.replaceFromSource(
+                item.id,
+                item.sourceUrl!!,
+                "||new.example^".byteInputStream(),
+            )
         assertEquals(2_000L, refreshed.lastRefreshedAt)
     }
 
@@ -204,24 +221,39 @@ class FilterListStoreTest {
 
     @Test
     fun infoRejectsUnknownMissingAndOversizedFiles() {
-        assertThrows(IllegalArgumentException::class.java) { store.info("../outside") }
+        assertThrows(IllegalArgumentException::class.java) {
+            store.info("../outside")
+        }
         val item = store.importFrom("Original", "||ads.example^".byteInputStream())
         val directory =
-            java.io.File(RuntimeEnvironment.getApplication().filesDir, "content-blocking-lists")
+            java.io.File(
+                RuntimeEnvironment.getApplication().filesDir,
+                "content-blocking-lists",
+            )
         val file = java.io.File(directory, "${item.id}.txt")
         assertTrue(file.delete())
         assertThrows(java.io.IOException::class.java) { store.info(item.id) }
-        assertThrows(java.io.IOException::class.java) { store.fileSizeBytes(item.id) }
-        java.io.RandomAccessFile(file, "rw").use { it.setLength(8L * 1024 * 1024 + 1) }
+        assertThrows(java.io.IOException::class.java) {
+            store.fileSizeBytes(item.id)
+        }
+        java.io.RandomAccessFile(file, "rw").use {
+            it.setLength(8L * 1024 * 1024 + 1)
+        }
         assertThrows(java.io.IOException::class.java) { store.info(item.id) }
-        assertThrows(java.io.IOException::class.java) { store.fileSizeBytes(item.id) }
+        assertThrows(java.io.IOException::class.java) {
+            store.fileSizeBytes(item.id)
+        }
     }
 
     @Test
     fun bulkTogglesPreserveListMetadataAndAllSavedRuleFiles() {
         val text = "||ads.example^"
         val first = store.importFrom("File", text.byteInputStream())
-        store.importFrom("Remote", "##.ad".byteInputStream(), "https://lists.example/ads.txt")
+        store.importFrom(
+            "Remote",
+            "##.ad".byteInputStream(),
+            "https://lists.example/ads.txt",
+        )
         store.cloneList(first.id)
         val saved = store.list()
         store.setAllEnabled(true)
@@ -242,7 +274,7 @@ class FilterListStoreTest {
         assertFalse(
             RuntimeEnvironment.getApplication()
                 .getSharedPreferences("content_blocking_lists", 0)
-                .contains("imports"),
+                .contains("imports")
         )
     }
 
@@ -251,7 +283,10 @@ class FilterListStoreTest {
         val entry = store.importFrom("ads.txt", "||ads.example^\n".byteInputStream())
         assertEquals("ads.txt", entry.name)
         assertEquals(listOf("||ads.example^\n"), store.enabledTexts())
-        assertEquals(entry, FilterListStore(RuntimeEnvironment.getApplication()).list().single())
+        assertEquals(
+            entry,
+            FilterListStore(RuntimeEnvironment.getApplication()).list().single(),
+        )
 
         store.setEnabled(entry.id, false)
         assertTrue(store.enabledTexts().isEmpty())
@@ -267,11 +302,17 @@ class FilterListStoreTest {
     @Test
     fun invalidUtf8AndOversizeListAreRejectedWithoutPersisting() {
         val malformed = runCatching {
-            store.importFrom("bad", ByteArrayInputStream(byteArrayOf(0xc3.toByte(), 0x28)))
+            store.importFrom(
+                "bad",
+                ByteArrayInputStream(byteArrayOf(0xc3.toByte(), 0x28)),
+            )
         }
         assertTrue(malformed.isFailure)
         val oversized = runCatching {
-            store.importFrom("oversized", ByteArrayInputStream(ByteArray(8 * 1024 * 1024 + 1)))
+            store.importFrom(
+                "oversized",
+                ByteArrayInputStream(ByteArray(8 * 1024 * 1024 + 1)),
+            )
         }
         assertTrue(oversized.isFailure)
         assertTrue(store.list().isEmpty())
@@ -279,12 +320,22 @@ class FilterListStoreTest {
 
     @Test
     fun listNamesCannotEscapePrivateDirectory() {
-        val item = store.importFrom("../../untrusted.txt", "||ads.example^".byteInputStream())
+        val item =
+            store.importFrom(
+                "../../untrusted.txt",
+                "||ads.example^".byteInputStream(),
+            )
         // User-entered names are display text; storage paths only use generated IDs.
         assertEquals("../../untrusted.txt", item.name)
         val directory =
-            java.io.File(RuntimeEnvironment.getApplication().filesDir, "content-blocking-lists")
-        assertEquals(listOf("${item.id}.txt"), directory.listFiles().orEmpty().map { it.name })
+            java.io.File(
+                RuntimeEnvironment.getApplication().filesDir,
+                "content-blocking-lists",
+            )
+        assertEquals(
+            listOf("${item.id}.txt"),
+            directory.listFiles().orEmpty().map { it.name },
+        )
         assertEquals(1, store.enabledTexts().size)
     }
 
@@ -299,7 +350,8 @@ class FilterListStoreTest {
         store.setEnabled(item.id, false)
         store.rename(item.id, "  Custom display name  ")
 
-        val renamed = FilterListStore(RuntimeEnvironment.getApplication()).list().single()
+        val renamed =
+            FilterListStore(RuntimeEnvironment.getApplication()).list().single()
         assertEquals(item.id, renamed.id)
         assertEquals("Custom display name", renamed.name)
         assertEquals(item.sourceUrl, renamed.sourceUrl)
@@ -310,11 +362,16 @@ class FilterListStoreTest {
 
     @Test
     fun invalidRenamesLeaveExistingNameUntouched() {
-        val item = store.importFrom("Original.txt", "||old.example^".byteInputStream())
+        val item =
+            store.importFrom("Original.txt", "||old.example^".byteInputStream())
         listOf(" ", "x".repeat(101), "Bad\nName", "Bad\u0000Name").forEach { name ->
-            assertThrows(IllegalArgumentException::class.java) { store.rename(item.id, name) }
+            assertThrows(IllegalArgumentException::class.java) {
+                store.rename(item.id, name)
+            }
         }
-        assertThrows(IllegalArgumentException::class.java) { store.rename("unknown", "Valid") }
+        assertThrows(IllegalArgumentException::class.java) {
+            store.rename("unknown", "Valid")
+        }
         assertEquals("Original.txt", store.list().single().name)
     }
 
@@ -341,7 +398,11 @@ class FilterListStoreTest {
         assertEquals(1, store.list().size)
 
         store.setEnabled(item.id, false)
-        store.replaceFromSource(item.id, item.sourceUrl, "||second.example^".byteInputStream())
+        store.replaceFromSource(
+            item.id,
+            item.sourceUrl,
+            "||second.example^".byteInputStream(),
+        )
         assertFalse(store.list().single().enabled)
         store.setEnabled(item.id, true)
         assertEquals(listOf("||second.example^"), store.enabledTexts())
@@ -365,18 +426,29 @@ class FilterListStoreTest {
         invalidBodies.forEach { body ->
             assertTrue(
                 runCatching {
-                    store.replaceFromSource(item.id, item.sourceUrl!!, ByteArrayInputStream(body))
+                    store.replaceFromSource(
+                        item.id,
+                        item.sourceUrl!!,
+                        ByteArrayInputStream(body),
+                    )
                 }
-                    .isFailure,
+                    .isFailure
             )
             assertEquals(listOf("||old.example^"), store.enabledTexts())
         }
         assertThrows(IllegalArgumentException::class.java) {
-            store.replaceFromSource(item.id, "https://wrong.example/list", "new".byteInputStream())
+            store.replaceFromSource(
+                item.id,
+                "https://wrong.example/list",
+                "new".byteInputStream(),
+            )
         }
         assertEquals(item, store.list().single())
         val directory =
-            java.io.File(RuntimeEnvironment.getApplication().filesDir, "content-blocking-lists")
+            java.io.File(
+                RuntimeEnvironment.getApplication().filesDir,
+                "content-blocking-lists",
+            )
         assertEquals(1, directory.listFiles()?.size)
     }
 
@@ -407,11 +479,15 @@ class FilterListStoreTest {
                 "||custom.example^".byteInputStream(),
                 sourceUrl = "https://example.org/custom.txt",
             )
-        val local = store.importFrom("my-file.txt", "||local.example^".byteInputStream())
+        val local =
+            store.importFrom("my-file.txt", "||local.example^".byteInputStream())
         val preferences =
-            RuntimeEnvironment.getApplication().getSharedPreferences("content_blocking_lists", 0)
+            RuntimeEnvironment.getApplication()
+                .getSharedPreferences("content_blocking_lists", 0)
         val oldIndex = JSONArray(preferences.getString("imports", "[]"))
-        for (index in 0 until oldIndex.length()) oldIndex.getJSONObject(index).remove("type")
+        for (index in 0 until oldIndex.length()) oldIndex
+            .getJSONObject(index)
+            .remove("type")
         preferences.edit().putString("imports", oldIndex.toString()).commit()
 
         val restored = FilterListStore(RuntimeEnvironment.getApplication()).list()
@@ -421,7 +497,9 @@ class FilterListStoreTest {
             restored.map { it.type },
         )
         assertEquals(3, store.enabledTexts().size)
-        assertThrows(IllegalArgumentException::class.java) { store.rename(preset.id, "Nope") }
+        assertThrows(IllegalArgumentException::class.java) {
+            store.rename(preset.id, "Nope")
+        }
     }
 
     @Test
@@ -434,7 +512,9 @@ class FilterListStoreTest {
                 type = FilterListType.PRESET,
             )
         val failure =
-            assertThrows(IllegalArgumentException::class.java) { store.cloneList(preset.id) }
+            assertThrows(IllegalArgumentException::class.java) {
+                store.cloneList(preset.id)
+            }
         assertEquals("Preset lists cannot be cloned", failure.message)
         assertEquals(listOf(preset), store.list())
         assertEquals(listOf("||ads.example^"), store.enabledTexts())
@@ -442,13 +522,19 @@ class FilterListStoreTest {
 
     @Test
     fun localFileClonesAreIndependentAndInlineEditsKeepOtherRules() {
-        val original = store.importFrom("local.txt", "||original.example^".byteInputStream())
+        val original =
+            store.importFrom("local.txt", "||original.example^".byteInputStream())
         assertEquals("||original.example^", store.editableFileText(original.id))
         val copy = store.cloneList(original.id, "Local copy")
         assertEquals(FilterListType.FILE, copy.type)
         assertNull(copy.sourceUrl)
         assertFalse(copy.enabled)
-        val updated = store.updateFile(copy.id, "Edited", "||edited.example^".byteInputStream())
+        val updated =
+            store.updateFile(
+                copy.id,
+                "Edited",
+                "||edited.example^".byteInputStream(),
+            )
         assertEquals("Edited", updated.name)
         assertEquals("||edited.example^", store.editableFileText(copy.id))
         assertEquals("||original.example^", store.editableFileText(original.id))
@@ -459,7 +545,8 @@ class FilterListStoreTest {
 
     @Test
     fun failedFileOrUrlEditsLeaveContentAndMetadataUntouched() {
-        val file = store.importFrom("local.txt", "||original.example^".byteInputStream())
+        val file =
+            store.importFrom("local.txt", "||original.example^".byteInputStream())
         val url =
             store.importFrom(
                 "URL",
@@ -479,18 +566,32 @@ class FilterListStoreTest {
             )
         }
         assertEquals(listOf(file, url), store.list())
-        assertEquals(listOf("||original.example^", "||remote.example^"), store.enabledTexts())
+        assertEquals(
+            listOf("||original.example^", "||remote.example^"),
+            store.enabledTexts(),
+        )
         val directory =
-            java.io.File(RuntimeEnvironment.getApplication().filesDir, "content-blocking-lists")
+            java.io.File(
+                RuntimeEnvironment.getApplication().filesDir,
+                "content-blocking-lists",
+            )
         assertEquals(2, directory.listFiles()?.size)
     }
 
     @Test
     fun urlEditsRejectOtherUrlSourcesAndCanKeepTheirOwnSource() {
         val first =
-            store.importFrom("First", "first".byteInputStream(), "https://example.org/one.txt")
+            store.importFrom(
+                "First",
+                "first".byteInputStream(),
+                "https://example.org/one.txt",
+            )
         val second =
-            store.importFrom("Second", "second".byteInputStream(), "https://example.org/two.txt")
+            store.importFrom(
+                "Second",
+                "second".byteInputStream(),
+                "https://example.org/two.txt",
+            )
         assertThrows(IllegalArgumentException::class.java) {
             store.updateUrl(
                 first.id,
@@ -501,7 +602,9 @@ class FilterListStoreTest {
             )
         }
         assertEquals(listOf(first, second), store.list())
-        assertThrows(IllegalArgumentException::class.java) { store.cloneList(first.id) }
+        assertThrows(IllegalArgumentException::class.java) {
+            store.cloneList(first.id)
+        }
         store.updateUrl(
             first.id,
             first.sourceUrl!!,
@@ -516,15 +619,18 @@ class FilterListStoreTest {
     @Test
     fun presetAndUrlSourcesMayOverlapButEachTypeRemainsUniqueInEitherOrder() {
         val source = SuggestedFilterLists.all.first().url
-        for (
-        types in
-        listOf(
-            listOf(FilterListType.URL, FilterListType.PRESET),
-            listOf(FilterListType.PRESET, FilterListType.URL),
-        )
-        ) {
+        for (types in
+            listOf(
+                listOf(FilterListType.URL, FilterListType.PRESET),
+                listOf(FilterListType.PRESET, FilterListType.URL),
+            )) {
             val added = types.map { type ->
-                store.importFrom(type.name, "||ads.example^".byteInputStream(), source, type)
+                store.importFrom(
+                    type.name,
+                    "||ads.example^".byteInputStream(),
+                    source,
+                    type,
+                )
             }
             assertTrue(store.containsUrl(source))
             assertTrue(store.containsPreset(source))
@@ -539,7 +645,9 @@ class FilterListStoreTest {
                 }
             }
             val preset = added.first { it.type == FilterListType.PRESET }
-            assertThrows(IllegalArgumentException::class.java) { store.cloneList(preset.id) }
+            assertThrows(IllegalArgumentException::class.java) {
+                store.cloneList(preset.id)
+            }
             assertEquals(added, store.list())
             added.forEach { store.remove(it.id) }
         }
@@ -572,13 +680,17 @@ class FilterListStoreTest {
         assertEquals(source, edited.sourceUrl)
         assertEquals(FilterListType.URL, edited.type)
         assertEquals(preset, store.list().first())
-        assertEquals(listOf("||preset.example^", "||new.example^"), store.enabledTexts())
+        assertEquals(
+            listOf("||preset.example^", "||new.example^"),
+            store.enabledTexts(),
+        )
     }
 
     @Test
     fun identicalLocalFilesCanBeAddedWithIndependentIds() {
         val first = store.importFrom("Same name", "||ads.example^".byteInputStream())
-        val second = store.importFrom("Same name", "||ads.example^".byteInputStream())
+        val second =
+            store.importFrom("Same name", "||ads.example^".byteInputStream())
         assertNotEquals(first.id, second.id)
         assertEquals(2, store.list().size)
         store.setEnabled(first.id, false)
@@ -590,7 +702,11 @@ class FilterListStoreTest {
         val originalText = "||ads.example^\n".repeat(12_000)
         val file = store.importFrom("large.txt", originalText.byteInputStream())
         assertNull(store.editableFileText(file.id))
-        store.updateFile(file.id, "Still large", "||replacement.example^".byteInputStream())
+        store.updateFile(
+            file.id,
+            "Still large",
+            "||replacement.example^".byteInputStream(),
+        )
         assertEquals("||replacement.example^", store.editableFileText(file.id))
         assertEquals(listOf("||replacement.example^"), store.enabledTexts())
         assertEquals("Still large", store.list().single().name)

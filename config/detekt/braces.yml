@@ -1,0 +1,10 @@
+config:
+  validation: true
+  warningsAsErrors: true
+
+style:
+  active: true
+  BracesOnIfStatements:
+    active: true
+    singleLine: always
+    multiLine: always

@@ -21,6 +21,6 @@ fun AcceptCookiesSetting() {
         initialValue = userSettings.acceptCookies,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.acceptCookies = it }
+        onSave = { userSettings.acceptCookies = it },
     )
 }

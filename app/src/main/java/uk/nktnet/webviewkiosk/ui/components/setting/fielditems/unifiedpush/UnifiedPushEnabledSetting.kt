@@ -17,15 +17,17 @@ fun UnifiedPushEnabledSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.unifiedpush_enabled_title),
-        infoText = """
+        infoText =
+            """
             Allow ${stringResource(R.string.app_name)} to process
             new push messages or register new endpoints.
-        """.trimIndent(),
+        """
+                .trimIndent(),
         initialValue = userSettings.unifiedPushEnabled,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = {
             userSettings.unifiedPushEnabled = it
-        }
+        },
     )
 }

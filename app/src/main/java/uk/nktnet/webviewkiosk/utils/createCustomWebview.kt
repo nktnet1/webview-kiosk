@@ -45,6 +45,8 @@ import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewClientCompat
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
+import java.io.File
+import java.util.concurrent.atomic.AtomicReference
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import uk.nktnet.webviewkiosk.blocking.ServiceWorkerBlocker
@@ -67,8 +69,8 @@ import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigationSession
 import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
 import uk.nktnet.webviewkiosk.utils.webview.handleMutualTlsRequest
-import uk.nktnet.webviewkiosk.utils.webview.handlers.handleDownloadPrompt
 import uk.nktnet.webviewkiosk.utils.webview.handlers.cancelPdfSourceRequests
+import uk.nktnet.webviewkiosk.utils.webview.handlers.handleDownloadPrompt
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handleGeolocationRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePdfSourceRequest
 import uk.nktnet.webviewkiosk.utils.webview.handlers.handlePermissionRequest
@@ -91,10 +93,9 @@ import uk.nktnet.webviewkiosk.utils.webview.scripts.generateDisableVibrationApiS
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generateErudaConsoleScript
 import uk.nktnet.webviewkiosk.utils.webview.scripts.generatePrefersColorSchemeOverrideScript
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
-import java.io.File
-import java.util.concurrent.atomic.AtomicReference
 
-private const val LOCAL_NETWORK_PERMISSION_ERROR = "ERR_LOCAL_NETWORK_PERMISSION_MISSING"
+private const val LOCAL_NETWORK_PERMISSION_ERROR =
+    "ERR_LOCAL_NETWORK_PERMISSION_MISSING"
 
 /** Only read a compat error description after both the OS and WebView allow it. */
 internal fun matchesLocalNetworkPermissionError(
@@ -102,21 +103,27 @@ internal fun matchesLocalNetworkPermissionError(
     supportsDescription: () -> Boolean,
     getDescription: () -> CharSequence?,
 ): Boolean {
-    return sdkInt >= Build.VERSION_CODES.CINNAMON_BUN
-        && supportsDescription()
-        && getDescription()?.contains(LOCAL_NETWORK_PERMISSION_ERROR) == true
+    return sdkInt >= Build.VERSION_CODES.CINNAMON_BUN &&
+        supportsDescription() &&
+        getDescription()?.contains(LOCAL_NETWORK_PERMISSION_ERROR) == true
 }
 
 private fun isLocalNetworkPermissionError(error: WebResourceErrorCompat?): Boolean =
     matchesLocalNetworkPermissionError(
         sdkInt = Build.VERSION.SDK_INT,
         supportsDescription = {
-            WebViewFeature.isFeatureSupported(WebViewFeature.WEB_RESOURCE_ERROR_GET_DESCRIPTION)
+            WebViewFeature.isFeatureSupported(
+                WebViewFeature.WEB_RESOURCE_ERROR_GET_DESCRIPTION
+            )
         },
         // Keep the capability check at the getter itself too: compat access
         // must remain safe even if the outer predicate is refactored.
         getDescription = {
-            if (WebViewFeature.isFeatureSupported(WebViewFeature.WEB_RESOURCE_ERROR_GET_DESCRIPTION)) {
+            if (
+                WebViewFeature.isFeatureSupported(
+                    WebViewFeature.WEB_RESOURCE_ERROR_GET_DESCRIPTION
+                )
+            ) {
                 error?.description
             } else {
                 null
@@ -127,22 +134,22 @@ private fun isLocalNetworkPermissionError(error: WebResourceErrorCompat?): Boole
 private fun isWebPdf(
     url: String,
     contentDisposition: String?,
-    mimeType: String?
+    mimeType: String?,
 ): Boolean {
     val uri = runCatching { url.toUri() }.getOrNull() ?: return false
     if (uri.scheme != "http" && uri.scheme != "https") {
         return false
     }
 
-    val normalizedMimeType = mimeType
-        ?.substringBefore(';')
-        ?.trim()
+    val normalizedMimeType = mimeType?.substringBefore(';')?.trim()
 
-    return normalizedMimeType.equals("application/pdf", ignoreCase = true) || URLUtil.guessFileName(
-        url,
-        contentDisposition,
-        mimeType
-    ).endsWith(".pdf", ignoreCase = true)
+    return normalizedMimeType.equals("application/pdf", ignoreCase = true) ||
+        URLUtil.guessFileName(
+                url,
+                contentDisposition,
+                mimeType,
+            )
+            .endsWith(".pdf", ignoreCase = true)
 }
 
 data class WebViewConfig(
@@ -168,14 +175,15 @@ data class WebViewConfig(
 fun createCustomWebview(
     context: Context,
     config: WebViewConfig,
-    recreationKey: Int = 0
+    recreationKey: Int = 0,
 ): WebViewCreation {
     val systemSettings = config.systemSettings
     val userSettings = config.userSettings
     val scope = rememberCoroutineScope()
-    val contentBlocker = remember(context.applicationContext) {
-        ContentBlockingService.get(context.applicationContext)
-    }
+    val contentBlocker =
+        remember(context.applicationContext) {
+            ContentBlockingService.get(context.applicationContext)
+        }
     LaunchedEffect(contentBlocker) { contentBlocker.start() }
 
     var pendingFileChooserCallback by remember {
@@ -189,117 +197,159 @@ fun createCustomWebview(
         try {
             callback?.onReceiveValue(uris)
         } catch (e: Exception) {
-            Log.w(Constants.APP_SCHEME, "Unable to complete WebView file chooser request", e)
+            Log.w(
+                Constants.APP_SCHEME,
+                "Unable to complete WebView file chooser request",
+                e,
+            )
         }
     }
 
     fun completeFileChooser(uris: Array<Uri>?, owner: WebView? = null) {
-        if (owner != null && pendingFileChooserOwner !== owner) return
+        if (owner != null && pendingFileChooserOwner !== owner) {
+            return
+        }
         val callback = pendingFileChooserCallback
         pendingFileChooserCallback = null
         pendingCaptureUri = null
         pendingFileChooserOwner = null
-        // An abandoned launch stays busy until its result arrives, so it cannot reach a new page.
+        // An abandoned launch stays busy until its result arrives, so it cannot
+        // reach a new page.
         respondFileChooser(callback, uris)
     }
 
-    val filePickerLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        pendingFileChooserInFlight = false
-        completeFileChooser(
-            if (pendingFileChooserCallback != null) {
-                parseFileChooserResult(context, result.resultCode, result.data)
-            } else null
-        )
-    }
+    val filePickerLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            pendingFileChooserInFlight = false
+            completeFileChooser(
+                if (pendingFileChooserCallback != null) {
+                    parseFileChooserResult(context, result.resultCode, result.data)
+                } else {
+                    null
+                }
+            )
+        }
 
-    val captureLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        pendingFileChooserInFlight = false
-        completeFileChooser(
-            if (pendingFileChooserCallback != null) {
-                parseFileChooserResult(context, result.resultCode, result.data, pendingCaptureUri)
-            } else null
-        )
-    }
+    val captureLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            pendingFileChooserInFlight = false
+            completeFileChooser(
+                if (pendingFileChooserCallback != null) {
+                    parseFileChooserResult(
+                        context,
+                        result.resultCode,
+                        result.data,
+                        pendingCaptureUri,
+                    )
+                } else {
+                    null
+                }
+            )
+        }
 
     fun launchFilePicker(fileChooserParams: WebChromeClient.FileChooserParams) {
         runCatching {
             val intent = fileChooserParams.createIntent()
-            if (fileChooserParams.mode == WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE) {
+            if (
+                fileChooserParams.mode ==
+                    WebChromeClient.FileChooserParams.MODE_OPEN_MULTIPLE
+            ) {
                 intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
             }
             pendingFileChooserInFlight = true
             filePickerLauncher.launch(intent)
-        }.onFailure {
-            pendingFileChooserInFlight = false
-            Log.e(Constants.APP_SCHEME, "Failed to launch file picker", it)
-            completeFileChooser(null)
-            ToastManager.show(context, "Unable to open file picker.")
         }
+            .onFailure {
+                pendingFileChooserInFlight = false
+                Log.e(Constants.APP_SCHEME, "Failed to launch file picker", it)
+                completeFileChooser(null)
+                ToastManager.show(context, "Unable to open file picker.")
+            }
     }
 
     fun customLaunchCapture(action: String, fileSuffix: String): Boolean {
         runCatching {
-            val captureDir = File(
-                context.cacheDir,
-                Constants.FILE_CAPTURE_CACHE_PATH_NAME
-            ).apply {
-                mkdirs()
-            }
-            val outputFile = File.createTempFile(
-                "${Constants.FILE_CAPTURE_CACHE_PATH_NAME}_",
-                fileSuffix,
-                captureDir
-            )
-            val outputUri = FileProvider.getUriForFile(
-                context,
-                "${context.packageName}.provider",
-                outputFile
-            )
+            val captureDir =
+                File(
+                        context.cacheDir,
+                        Constants.FILE_CAPTURE_CACHE_PATH_NAME,
+                    )
+                    .apply {
+                        mkdirs()
+                    }
+            val outputFile =
+                File.createTempFile(
+                    "${Constants.FILE_CAPTURE_CACHE_PATH_NAME}_",
+                    fileSuffix,
+                    captureDir,
+                )
+            val outputUri =
+                FileProvider.getUriForFile(
+                    context,
+                    "${context.packageName}.provider",
+                    outputFile,
+                )
             pendingCaptureUri = outputUri
-            val captureIntent = Intent(action).apply {
-                putExtra(MediaStore.EXTRA_OUTPUT, outputUri)
-                addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
-            }
+            val captureIntent =
+                Intent(action).apply {
+                    putExtra(MediaStore.EXTRA_OUTPUT, outputUri)
+                    addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+                }
             if (captureIntent.resolveActivity(context.packageManager) != null) {
                 pendingFileChooserInFlight = true
                 captureLauncher.launch(captureIntent)
                 return true
             } else {
-                Log.w(Constants.APP_SCHEME, "No activity available for capture action: $action")
+                Log.w(
+                    Constants.APP_SCHEME,
+                    "No activity available for capture action: $action",
+                )
             }
-        }.onFailure {
-            pendingFileChooserInFlight = false
-            Log.e(Constants.APP_SCHEME, "Failed to launch capture action: $action", it)
         }
-        // Keep the callback pending so the file picker fallback can complete the upload.
+            .onFailure {
+                pendingFileChooserInFlight = false
+                Log.e(
+                    Constants.APP_SCHEME,
+                    "Failed to launch capture action: $action",
+                    it,
+                )
+            }
+        // Keep the callback pending so the file picker fallback can complete the
+        // upload.
         pendingCaptureUri = null
         return false
     }
 
     fun buildWebView(dialogs: WebViewDialogController): WebViewCreation.Success {
-        val blobInterface = if (userSettings.allowFileDownload) {
-            BlobInterface(context)
-        } else {
-            null
-        }
+        val blobInterface =
+            if (userSettings.allowFileDownload) {
+                BlobInterface(context)
+            } else {
+                null
+            }
         var hideFullscreen: () -> Unit = {}
         val navigation = WebViewNavigationSession(config.isActive)
-        // shouldInterceptRequest runs off the UI thread. Never read WebView.url there.
+        // shouldInterceptRequest runs off the UI thread. Never read WebView.url
+        // there.
         val currentPageUrl = AtomicReference("")
         var cosmetics: WebViewCosmetics? = null
 
         fun beginLoad(url: String) {
-            val currentEntry = systemSettings.historyStack.getOrNull(systemSettings.historyIndex)
+            val currentEntry =
+                systemSettings.historyStack.getOrNull(systemSettings.historyIndex)
             navigation.beginLoad(
                 url,
                 currentEntry?.id,
                 currentEntry?.url,
                 resolveBlockPageUrl(
-                    url, config.blacklistRegexes, config.whitelistRegexes, userSettings
+                    url,
+                    config.blacklistRegexes,
+                    config.whitelistRegexes,
+                    userSettings,
                 ) ?: url,
             )
         }
@@ -309,924 +359,1284 @@ fun createCustomWebview(
                 systemSettings,
                 url,
                 originalUrl,
-                userSettings.replaceHistoryUrlOnRedirect && !navigation.isSameDocumentNavigation(),
+                userSettings.replaceHistoryUrlOnRedirect &&
+                    !navigation.isSameDocumentNavigation(),
                 navigation.traversalEntryId(),
             )
-            if (navigation.isSameDocumentNavigation()) systemSettings.urlBeforeNavigation = ""
+            if (navigation.isSameDocumentNavigation()) {
+                systemSettings.urlBeforeNavigation = ""
+            }
             config.updateAddressBarAndHistory(url, originalUrl)
         }
 
         ServiceWorkerBlocker.install(contentBlocker)
-        val webView = object : WebView(context) {
-            var awaitingPdfPageStart = false
+        val webView =
+            object : WebView(context) {
+                    var awaitingPdfPageStart = false
 
-            fun clearPdfNavigation() {
-                awaitingPdfPageStart = false
-                cancelPdfSourceRequests(getTag(R.id.pdf_source_token) as? String)
-                setTag(R.id.pdf_source_token, null)
-            }
-
-            override fun loadUrl(url: String) {
-                if (!navigation.isActive()) return
-                beginLoad(url)
-                clearPdfNavigation()
-                super.loadUrl(url)
-            }
-
-            override fun loadUrl(url: String, additionalHttpHeaders: Map<String, String>) {
-                if (!navigation.isActive()) return
-                beginLoad(url)
-                clearPdfNavigation()
-                super.loadUrl(url, additionalHttpHeaders)
-            }
-
-            override fun reload() {
-                if (!navigation.isActive()) return
-                url?.let { beginLoad(it) }
-                super.reload()
-            }
-
-            override fun loadDataWithBaseURL(
-                baseUrl: String?,
-                data: String,
-                mimeType: String?,
-                encoding: String?,
-                historyUrl: String?,
-            ) {
-                if (!navigation.isActive()) return
-                beginLoad(baseUrl ?: "about:blank")
-                awaitingPdfPageStart = baseUrl != null
-                    && isPdfViewerUrl(baseUrl.toUri())
-                    && isPdfSourceNavigation(getTag(R.id.pdf_source_token) as? String, baseUrl)
-                if (!awaitingPdfPageStart) clearPdfNavigation()
-                super.loadDataWithBaseURL(baseUrl, data, mimeType, encoding, historyUrl)
-            }
-        }.apply {
-            layoutParams = ViewGroup.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-
-            val localFileAssetLoader = if (userSettings.allowLocalFiles) {
-                WebViewAssetLoader.Builder()
-                    .addPathHandler(
-                        "/${Constants.WEB_CONTENT_FILES_DIR}/",
-                        WebViewAssetLoader.InternalStoragePathHandler(
-                            context,
-                            getWebContentFilesDir(context)
+                    fun clearPdfNavigation() {
+                        awaitingPdfPageStart = false
+                        cancelPdfSourceRequests(
+                            getTag(R.id.pdf_source_token) as? String
                         )
-                    )
-                    .build()
-            } else {
-                null
-            }
-
-            val pdfAssetLoader = if (userSettings.supportPdfRendering) {
-                WebViewAssetLoader.Builder()
-                    .setDomain(Constants.PDF_JS_ASSETS_DUMMY_URL.toUri().host ?: "")
-                    .addPathHandler(
-                        "/pdfjs_local/",
-                        WebViewAssetLoader.InternalStoragePathHandler(
-                            context,
-                            File(
-                                context.filesDir,
-                                Constants.PDF_JS_ASSETS_DIR
-                            )
-                        )
-                    )
-                    .build()
-            } else {
-                null
-            }
-
-            settings.apply {
-                javaScriptEnabled = userSettings.enableJavaScript
-                domStorageEnabled = userSettings.enableDomStorage
-                cacheMode = userSettings.cacheMode.mode
-                userAgentString = userSettings.userAgent.takeIf { it.isNotBlank() }
-                    ?: settings.userAgentString
-                layoutAlgorithm = userSettings.layoutAlgorithm.algorithm
-                useWideViewPort = userSettings.useWideViewport
-                loadWithOverviewMode = userSettings.loadWithOverviewMode
-
-                setGeolocationEnabled(userSettings.allowLocation)
-                setInitialScale(userSettings.initialScale)
-                setSupportZoom(userSettings.supportZoom)
-
-                builtInZoomControls = userSettings.builtInZoomControls
-                displayZoomControls = userSettings.displayZoomControls
-
-                allowFileAccess = userSettings.allowLocalFiles
-                @Suppress("DEPRECATION")
-                allowFileAccessFromFileURLs = userSettings.allowFileAccessFromFileURLs
-                @Suppress("DEPRECATION")
-                allowUniversalAccessFromFileURLs =
-                    userSettings.allowUniversalAccessFromFileURLs
-                mediaPlaybackRequiresUserGesture =
-                    userSettings.mediaPlaybackRequiresUserGesture
-
-                mixedContentMode = userSettings.mixedContentMode.mode
-                overScrollMode = userSettings.overScrollMode.mode
-            }
-
-            cosmetics = WebViewCosmetics.attach(this, contentBlocker, scope)
-
-            if (userSettings.enableBatteryApi) {
-                addJavascriptInterface(BatteryInterface(context), BatteryInterface.NAME)
-            }
-            if (userSettings.enableBrightnessApi) {
-                addJavascriptInterface(BrightnessInterface(context), BrightnessInterface.NAME)
-            }
-            if (userSettings.allowNfc) {
-                addJavascriptInterface(NfcInterface(context), NfcInterface.NAME)
-                NfcBridgeManager.attachWebView(this)
-                if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
-                    runCatching {
-                        WebViewCompat.addDocumentStartJavaScript(
-                            this,
-                            NfcInterface.JS_WEB_NFC_HOOK,
-                            setOf("*")
-                        )
-                    }
-                }
-            }
-            if (
-                !userSettings.enableVibrationApi
-                && WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)
-            ) {
-                runCatching {
-                    WebViewCompat.addDocumentStartJavaScript(
-                        this,
-                        generateDisableVibrationApiScript(),
-                        setOf("*")
-                    )
-                }
-            }
-            blobInterface?.let {
-                addJavascriptInterface(it, BlobInterface.NAME)
-            }
-
-            val requestUserAgent = settings.userAgentString
-            fun isCurrentPdfSource(token: String): Boolean =
-                navigation.isActive() && getTag(R.id.pdf_source_token) == token
-
-            webViewClient = object : WebViewClientCompat() {
-                override fun onReceivedClientCertRequest(
-                    view: WebView?,
-                    request: ClientCertRequest?
-                ) {
-                    if (request == null) return
-                    if (!navigation.isActive()) {
-                        request.ignore()
-                        return
-                    }
-                    handleMutualTlsRequest(
-                        activity = context as? Activity,
-                        context = context,
-                        request = request,
-                        siteRules = parseMutualTlsRules(
-                            userSettings.mutualTls
-                        ).orEmpty(),
-                        systemSettings = systemSettings,
-                        scope = scope,
-                    )
-                }
-
-                override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
-                    if (!navigation.acceptsPageStart(url)) return
-                    val pdfToken = getTag(R.id.pdf_source_token) as? String
-                    val isCurrentPdfNavigation = isPdfSourceNavigation(pdfToken, url)
-                    if (
-                        (awaitingPdfPageStart || (url != null && isPdfViewerUrl(url.toUri())))
-                        && !isCurrentPdfNavigation
-                    ) {
-                        // An older ordinary page or viewer may start after the new PDF
-                        // load was requested. It must not clear the new viewer's state.
-                        return
-                    }
-                    url?.let {
-                        navigation.pageStarted(it)
-                        currentPageUrl.set(it)
-                    }
-                    awaitingPdfPageStart = false
-                    config.setLastErrorUrl("")
-                    config.onHttpAuthRequest(null)
-                    view?.let { completeFileChooser(null, it) }
-                    if (!isCurrentPdfNavigation) {
-                        cancelPdfSourceRequests(pdfToken)
                         setTag(R.id.pdf_source_token, null)
                     }
-                    blobInterface?.abortAllDownloads()
-                    NfcBridgeManager.resetSession()
-                    if (userSettings.requestFocusOnPageStart) {
-                        runCatching {
-                            view?.requestFocus()
+
+                    override fun loadUrl(url: String) {
+                        if (!navigation.isActive()) {
+                            return
                         }
+                        beginLoad(url)
+                        clearPdfNavigation()
+                        super.loadUrl(url)
                     }
-                    if (userSettings.applyAppTheme && userSettings.theme != ThemeOption.SYSTEM) {
-                        evaluateJavascript(
-                            generatePrefersColorSchemeOverrideScript(userSettings.theme),
-                            null
+
+                    override fun loadUrl(
+                        url: String,
+                        additionalHttpHeaders: Map<String, String>,
+                    ) {
+                        if (!navigation.isActive()) {
+                            return
+                        }
+                        beginLoad(url)
+                        clearPdfNavigation()
+                        super.loadUrl(url, additionalHttpHeaders)
+                    }
+
+                    override fun reload() {
+                        if (!navigation.isActive()) {
+                            return
+                        }
+                        url?.let { beginLoad(it) }
+                        super.reload()
+                    }
+
+                    override fun loadDataWithBaseURL(
+                        baseUrl: String?,
+                        data: String,
+                        mimeType: String?,
+                        encoding: String?,
+                        historyUrl: String?,
+                    ) {
+                        if (!navigation.isActive()) {
+                            return
+                        }
+                        beginLoad(baseUrl ?: "about:blank")
+                        awaitingPdfPageStart =
+                            baseUrl != null &&
+                                isPdfViewerUrl(baseUrl.toUri()) &&
+                                isPdfSourceNavigation(
+                                    getTag(R.id.pdf_source_token) as? String,
+                                    baseUrl,
+                                )
+                        if (!awaitingPdfPageStart) {
+                            clearPdfNavigation()
+                        }
+                        super.loadDataWithBaseURL(
+                            baseUrl,
+                            data,
+                            mimeType,
+                            encoding,
+                            historyUrl,
                         )
                     }
-                    if (userSettings.allowFileDownload) {
-                        view?.evaluateJavascript(BlobInterface.JS_BLOB_HOOK, null)
-                    }
-                    if (userSettings.customScriptOnPageStart.isNotBlank()) {
-                        view?.evaluateJavascript(
-                            wrapJsInIIFE(userSettings.customScriptOnPageStart),
+                }
+                .apply {
+                    layoutParams =
+                        ViewGroup.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                        )
+
+                    val localFileAssetLoader =
+                        if (userSettings.allowLocalFiles) {
+                            WebViewAssetLoader.Builder()
+                                .addPathHandler(
+                                    "/${Constants.WEB_CONTENT_FILES_DIR}/",
+                                    WebViewAssetLoader.InternalStoragePathHandler(
+                                        context,
+                                        getWebContentFilesDir(context),
+                                    ),
+                                )
+                                .build()
+                        } else {
                             null
+                        }
+
+                    val pdfAssetLoader =
+                        if (userSettings.supportPdfRendering) {
+                            WebViewAssetLoader.Builder()
+                                .setDomain(
+                                    Constants.PDF_JS_ASSETS_DUMMY_URL.toUri().host
+                                        ?: ""
+                                )
+                                .addPathHandler(
+                                    "/pdfjs_local/",
+                                    WebViewAssetLoader.InternalStoragePathHandler(
+                                        context,
+                                        File(
+                                            context.filesDir,
+                                            Constants.PDF_JS_ASSETS_DIR,
+                                        ),
+                                    ),
+                                )
+                                .build()
+                        } else {
+                            null
+                        }
+
+                    settings.apply {
+                        javaScriptEnabled = userSettings.enableJavaScript
+                        domStorageEnabled = userSettings.enableDomStorage
+                        cacheMode = userSettings.cacheMode.mode
+                        userAgentString =
+                            userSettings.userAgent.takeIf { it.isNotBlank() }
+                                ?: settings.userAgentString
+                        layoutAlgorithm = userSettings.layoutAlgorithm.algorithm
+                        useWideViewPort = userSettings.useWideViewport
+                        loadWithOverviewMode = userSettings.loadWithOverviewMode
+
+                        setGeolocationEnabled(userSettings.allowLocation)
+                        setInitialScale(userSettings.initialScale)
+                        setSupportZoom(userSettings.supportZoom)
+
+                        builtInZoomControls = userSettings.builtInZoomControls
+                        displayZoomControls = userSettings.displayZoomControls
+
+                        allowFileAccess = userSettings.allowLocalFiles
+                        @Suppress("DEPRECATION")
+                        allowFileAccessFromFileURLs =
+                            userSettings.allowFileAccessFromFileURLs
+                        @Suppress("DEPRECATION")
+                        allowUniversalAccessFromFileURLs =
+                            userSettings.allowUniversalAccessFromFileURLs
+                        mediaPlaybackRequiresUserGesture =
+                            userSettings.mediaPlaybackRequiresUserGesture
+
+                        mixedContentMode = userSettings.mixedContentMode.mode
+                        overScrollMode = userSettings.overScrollMode.mode
+                    }
+
+                    cosmetics = WebViewCosmetics.attach(this, contentBlocker, scope)
+
+                    if (userSettings.enableBatteryApi) {
+                        addJavascriptInterface(
+                            BatteryInterface(context),
+                            BatteryInterface.NAME,
+                        )
+                    }
+                    if (userSettings.enableBrightnessApi) {
+                        addJavascriptInterface(
+                            BrightnessInterface(context),
+                            BrightnessInterface.NAME,
                         )
                     }
                     if (userSettings.allowNfc) {
-                        view?.evaluateJavascript(NfcInterface.JS_WEB_NFC_HOOK, null)
-                    }
-                    if (!userSettings.enableVibrationApi) {
-                        view?.evaluateJavascript(generateDisableVibrationApiScript(), null)
-                    }
-                    super.onPageStarted(view, url, favicon)
-                }
-
-                override fun onPageFinished(view: WebView?, url: String?) {
-                    val completedLoad = navigation.acceptedCompletionToken(url, this@apply.url)
-                        ?: return
-                    config.finishSwipeRefresh()
-                    if (cosmetics == null) {
-                        cosmetics = WebViewCosmetics.attach(this@apply, contentBlocker, scope)
-                    }
-                    cosmetics?.onPageFinished()
-
-                    url?.let {
-                        /*
-                         * [URL_BEFORE_NAVIGATION] reset when loaded - must check
-                         * progress = 100 due to webview bug where onPageFinished
-                         * gets called multiple times.
-                         * https://issuetracker.google.com/issues/36983315
-                         */
-                        if (progress == 100 && navigation.finishLoad(completedLoad)) {
-                            if (
-                                userSettings.applyDesktopViewportWidth >= Constants.MIN_DESKTOP_WIDTH
-                            ) {
-                                view?.evaluateJavascript(
-                                    generateDesktopViewportScript(
-                                        userSettings.applyDesktopViewportWidth
-                                    ),
-                                    null,
+                        addJavascriptInterface(
+                            NfcInterface(context),
+                            NfcInterface.NAME,
+                        )
+                        NfcBridgeManager.attachWebView(this)
+                        if (
+                            WebViewFeature.isFeatureSupported(
+                                WebViewFeature.DOCUMENT_START_SCRIPT
+                            )
+                        ) {
+                            runCatching {
+                                WebViewCompat.addDocumentStartJavaScript(
+                                    this,
+                                    NfcInterface.JS_WEB_NFC_HOOK,
+                                    setOf("*"),
                                 )
                             }
-                            if (userSettings.enableDarkReader) {
-                                view?.evaluateJavascript(
-                                    generateDarkReaderScript(
-                                        context.getString(R.string.app_name)
-                                    ),
-                                    null,
-                                )
-                            }
-                            if (userSettings.enableErudaConsole) {
-                                view?.evaluateJavascript(
-                                    generateErudaConsoleScript(
-                                        context.getString(R.string.app_name)
-                                    ),
-                                    null,
-                                )
-                            }
-                            if (userSettings.customScriptOnPageFinish.isNotBlank()) {
-                                view?.evaluateJavascript(
-                                    wrapJsInIIFE(userSettings.customScriptOnPageFinish),
-                                    null,
-                                )
-                            }
-                            systemSettings.urlBeforeNavigation = ""
                         }
                     }
-                }
+                    if (
+                        !userSettings.enableVibrationApi &&
+                            WebViewFeature.isFeatureSupported(
+                                WebViewFeature.DOCUMENT_START_SCRIPT
+                            )
+                    ) {
+                        runCatching {
+                            WebViewCompat.addDocumentStartJavaScript(
+                                this,
+                                generateDisableVibrationApiScript(),
+                                setOf("*"),
+                            )
+                        }
+                    }
+                    blobInterface?.let {
+                        addJavascriptInterface(it, BlobInterface.NAME)
+                    }
 
-                override fun shouldInterceptRequest(
-                    view: WebView?,
-                    request: WebResourceRequest?
-                ): WebResourceResponse? {
-                    if (request != null) {
-                        handlePdfSourceRequest(
-                            context,
-                            request,
-                            requestUserAgent,
-                            userSettings,
-                            config.blacklistRegexes,
-                            config.whitelistRegexes,
-                            onAuthenticationRequired = { token, _, authRequest ->
-                                if (!post {
-                                    if (isCurrentPdfSource(token)) {
-                                        config.onHttpAuthRequest(authRequest)
-                                    } else {
-                                        authRequest.cancel()
-                                    }
-                                }) authRequest.cancel()
-                            },
-                            onAuthenticated = { token, sourceUrl ->
-                                post {
-                                    if (isCurrentPdfSource(token)) {
-                                        config.onPdfUrlRequested(this@apply, sourceUrl)
+                    val requestUserAgent = settings.userAgentString
+                    fun isCurrentPdfSource(token: String): Boolean =
+                        navigation.isActive() &&
+                            getTag(R.id.pdf_source_token) == token
+
+                    webViewClient =
+                        object : WebViewClientCompat() {
+                            override fun onReceivedClientCertRequest(
+                                view: WebView?,
+                                request: ClientCertRequest?,
+                            ) {
+                                if (request == null) {
+                                    return
+                                }
+                                if (!navigation.isActive()) {
+                                    request.ignore()
+                                    return
+                                }
+                                handleMutualTlsRequest(
+                                    activity = context as? Activity,
+                                    context = context,
+                                    request = request,
+                                    siteRules =
+                                        parseMutualTlsRules(userSettings.mutualTls)
+                                            .orEmpty(),
+                                    systemSettings = systemSettings,
+                                    scope = scope,
+                                )
+                            }
+
+                            override fun onPageStarted(
+                                view: WebView?,
+                                url: String?,
+                                favicon: Bitmap?,
+                            ) {
+                                if (!navigation.acceptsPageStart(url)) {
+                                    return
+                                }
+                                val pdfToken =
+                                    getTag(R.id.pdf_source_token) as? String
+                                val isCurrentPdfNavigation =
+                                    isPdfSourceNavigation(pdfToken, url)
+                                if (
+                                    (awaitingPdfPageStart ||
+                                        (url != null &&
+                                            isPdfViewerUrl(url.toUri()))) &&
+                                        !isCurrentPdfNavigation
+                                ) {
+                                    // An older ordinary page or viewer may start
+                                    // after the new PDF
+                                    // load was requested. It must not clear the new
+                                    // viewer's state.
+                                    return
+                                }
+                                url?.let {
+                                    navigation.pageStarted(it)
+                                    currentPageUrl.set(it)
+                                }
+                                awaitingPdfPageStart = false
+                                config.setLastErrorUrl("")
+                                config.onHttpAuthRequest(null)
+                                view?.let { completeFileChooser(null, it) }
+                                if (!isCurrentPdfNavigation) {
+                                    cancelPdfSourceRequests(pdfToken)
+                                    setTag(R.id.pdf_source_token, null)
+                                }
+                                blobInterface?.abortAllDownloads()
+                                NfcBridgeManager.resetSession()
+                                if (userSettings.requestFocusOnPageStart) {
+                                    runCatching {
+                                        view?.requestFocus()
                                     }
                                 }
-                            },
-                            onViewerEvent = { token, sourceUrl, event ->
-                                post {
-                                    if (isCurrentPdfSource(token)) {
-                                        val targetUrl = sourceUrl.ifEmpty { systemSettings.currentUrl }
-                                        when (event) {
-                                            "error" -> config.setLastErrorUrl(targetUrl)
-                                            "loaded", "authentication" -> config.setLastErrorUrl("")
-                                            "retry" -> config.onPdfUrlRequested(this@apply, targetUrl)
+                                if (
+                                    userSettings.applyAppTheme &&
+                                        userSettings.theme != ThemeOption.SYSTEM
+                                ) {
+                                    evaluateJavascript(
+                                        generatePrefersColorSchemeOverrideScript(
+                                            userSettings.theme
+                                        ),
+                                        null,
+                                    )
+                                }
+                                if (userSettings.allowFileDownload) {
+                                    view?.evaluateJavascript(
+                                        BlobInterface.JS_BLOB_HOOK,
+                                        null,
+                                    )
+                                }
+                                if (
+                                    userSettings.customScriptOnPageStart.isNotBlank()
+                                ) {
+                                    view?.evaluateJavascript(
+                                        wrapJsInIIFE(
+                                            userSettings.customScriptOnPageStart
+                                        ),
+                                        null,
+                                    )
+                                }
+                                if (userSettings.allowNfc) {
+                                    view?.evaluateJavascript(
+                                        NfcInterface.JS_WEB_NFC_HOOK,
+                                        null,
+                                    )
+                                }
+                                if (!userSettings.enableVibrationApi) {
+                                    view?.evaluateJavascript(
+                                        generateDisableVibrationApiScript(),
+                                        null,
+                                    )
+                                }
+                                super.onPageStarted(view, url, favicon)
+                            }
+
+                            override fun onPageFinished(
+                                view: WebView?,
+                                url: String?,
+                            ) {
+                                val completedLoad =
+                                    navigation.acceptedCompletionToken(
+                                        url,
+                                        this@apply.url,
+                                    ) ?: return
+                                config.finishSwipeRefresh()
+                                if (cosmetics == null) {
+                                    cosmetics =
+                                        WebViewCosmetics.attach(
+                                            this@apply,
+                                            contentBlocker,
+                                            scope,
+                                        )
+                                }
+                                cosmetics?.onPageFinished()
+
+                                url?.let {
+                                    /*
+                                     * [URL_BEFORE_NAVIGATION] reset when loaded - must check
+                                     * progress = 100 due to webview bug where onPageFinished
+                                     * gets called multiple times.
+                                     * https://issuetracker.google.com/issues/36983315
+                                     */
+                                    if (
+                                        progress == 100 &&
+                                            navigation.finishLoad(completedLoad)
+                                    ) {
+                                        if (
+                                            userSettings.applyDesktopViewportWidth >=
+                                                Constants.MIN_DESKTOP_WIDTH
+                                        ) {
+                                            view?.evaluateJavascript(
+                                                generateDesktopViewportScript(
+                                                    userSettings
+                                                        .applyDesktopViewportWidth
+                                                ),
+                                                null,
+                                            )
+                                        }
+                                        if (userSettings.enableDarkReader) {
+                                            view?.evaluateJavascript(
+                                                generateDarkReaderScript(
+                                                    context.getString(
+                                                        R.string.app_name
+                                                    )
+                                                ),
+                                                null,
+                                            )
+                                        }
+                                        if (userSettings.enableErudaConsole) {
+                                            view?.evaluateJavascript(
+                                                generateErudaConsoleScript(
+                                                    context.getString(
+                                                        R.string.app_name
+                                                    )
+                                                ),
+                                                null,
+                                            )
+                                        }
+                                        if (
+                                            userSettings.customScriptOnPageFinish
+                                                .isNotBlank()
+                                        ) {
+                                            view?.evaluateJavascript(
+                                                wrapJsInIIFE(
+                                                    userSettings
+                                                        .customScriptOnPageFinish
+                                                ),
+                                                null,
+                                            )
+                                        }
+                                        systemSettings.urlBeforeNavigation = ""
+                                    }
+                                }
+                            }
+
+                            override fun shouldInterceptRequest(
+                                view: WebView?,
+                                request: WebResourceRequest?,
+                            ): WebResourceResponse? {
+                                if (request != null) {
+                                    handlePdfSourceRequest(
+                                            context,
+                                            request,
+                                            requestUserAgent,
+                                            userSettings,
+                                            config.blacklistRegexes,
+                                            config.whitelistRegexes,
+                                            onAuthenticationRequired = {
+                                                token,
+                                                _,
+                                                authRequest ->
+                                                if (
+                                                    !post {
+                                                        if (
+                                                            isCurrentPdfSource(token)
+                                                        ) {
+                                                            config.onHttpAuthRequest(
+                                                                authRequest
+                                                            )
+                                                        } else {
+                                                            authRequest.cancel()
+                                                        }
+                                                    }
+                                                ) {
+                                                    authRequest.cancel()
+                                                }
+                                            },
+                                            onAuthenticated = { token, sourceUrl ->
+                                                post {
+                                                    if (isCurrentPdfSource(token)) {
+                                                        config.onPdfUrlRequested(
+                                                            this@apply,
+                                                            sourceUrl,
+                                                        )
+                                                    }
+                                                }
+                                            },
+                                            onViewerEvent = { token, sourceUrl, event
+                                                ->
+                                                post {
+                                                    if (isCurrentPdfSource(token)) {
+                                                        val targetUrl =
+                                                            sourceUrl.ifEmpty {
+                                                                systemSettings
+                                                                    .currentUrl
+                                                            }
+                                                        when (event) {
+                                                            "error" ->
+                                                                config
+                                                                    .setLastErrorUrl(
+                                                                        targetUrl
+                                                                    )
+                                                            "loaded",
+                                                            "authentication" ->
+                                                                config
+                                                                    .setLastErrorUrl(
+                                                                        ""
+                                                                    )
+                                                            "retry" ->
+                                                                config
+                                                                    .onPdfUrlRequested(
+                                                                        this@apply,
+                                                                        targetUrl,
+                                                                    )
+                                                        }
+                                                    }
+                                                }
+                                            },
+                                            onClientCertificateRequired = {
+                                                token,
+                                                _,
+                                                certRequest ->
+                                                if (
+                                                    !post {
+                                                        if (
+                                                            isCurrentPdfSource(
+                                                                token
+                                                            ) && dialogs.isActive()
+                                                        ) {
+                                                            handleMutualTlsRequest(
+                                                                context as? Activity,
+                                                                context,
+                                                                certRequest,
+                                                                parseMutualTlsRules(
+                                                                        userSettings
+                                                                            .mutualTls
+                                                                    )
+                                                                    .orEmpty(),
+                                                                systemSettings,
+                                                                scope,
+                                                            )
+                                                        } else {
+                                                            certRequest.ignore()
+                                                        }
+                                                    }
+                                                ) {
+                                                    certRequest.ignore()
+                                                }
+                                            },
+                                            onSslError = { token, _, sslRequest ->
+                                                if (
+                                                    !post {
+                                                        if (
+                                                            isCurrentPdfSource(token)
+                                                        ) {
+                                                            handleSslErrorPromptRequest(
+                                                                context,
+                                                                sslRequest,
+                                                                dialogs,
+                                                            )
+                                                        } else {
+                                                            sslRequest.cancel()
+                                                        }
+                                                    }
+                                                ) {
+                                                    sslRequest.cancel()
+                                                }
+                                            },
+                                        )
+                                        ?.let {
+                                            return it
+                                        }
+
+                                    if (localFileAssetLoader != null) {
+                                        val response =
+                                            localFileAssetLoader
+                                                .shouldInterceptRequest(request.url)
+                                        if (response != null) {
+                                            return response
                                         }
                                     }
-                                }
-                            },
-                            onClientCertificateRequired = { token, _, certRequest ->
-                                if (!post {
-                                    if (isCurrentPdfSource(token) && dialogs.isActive()) {
-                                        handleMutualTlsRequest(
-                                            context as? Activity, context, certRequest,
-                                            parseMutualTlsRules(userSettings.mutualTls).orEmpty(),
-                                            systemSettings, scope,
+
+                                    if (pdfAssetLoader != null) {
+                                        val response =
+                                            pdfAssetLoader.shouldInterceptRequest(
+                                                request.url
+                                            )
+                                        if (response != null) {
+                                            return response
+                                        }
+                                    }
+
+                                    // Preserve the app's PDF and local-file
+                                    // handlers; only inspect
+                                    // normal web subresources after those have
+                                    // declined the request.
+                                    WebViewBlocker.intercept(
+                                            request,
+                                            currentPageUrl.get(),
+                                            contentBlocker,
                                         )
-                                    } else {
-                                        certRequest.ignore()
-                                    }
-                                }) certRequest.ignore()
-                            },
-                            onSslError = { token, _, sslRequest ->
-                                if (!post {
-                                    if (isCurrentPdfSource(token)) {
-                                        handleSslErrorPromptRequest(context, sslRequest, dialogs)
-                                    } else {
-                                        sslRequest.cancel()
-                                    }
-                                }) sslRequest.cancel()
-                            },
-                        )?.let {
-                            return it
-                        }
-
-                        if (localFileAssetLoader != null) {
-                            val response = localFileAssetLoader.shouldInterceptRequest(request.url)
-                            if (response != null) {
-                                return response
+                                        ?.let {
+                                            return it
+                                        }
+                                }
+                                return super.shouldInterceptRequest(view, request)
                             }
-                        }
 
-                        if (pdfAssetLoader != null) {
-                            val response = pdfAssetLoader.shouldInterceptRequest(request.url)
-                            if (response != null) {
-                                return response
+                            override fun shouldOverrideUrlLoading(
+                                view: WebView,
+                                request: WebResourceRequest,
+                            ): Boolean {
+                                return handleUrlLoading(
+                                    view,
+                                    request.url.toString(),
+                                    request.isForMainFrame,
+                                    if (
+                                        Build.VERSION.SDK_INT >=
+                                            Build.VERSION_CODES.N
+                                    ) {
+                                        request.isRedirect
+                                    } else {
+                                        null
+                                    },
+                                )
                             }
-                        }
 
-                        // Preserve the app's PDF and local-file handlers; only inspect
-                        // normal web subresources after those have declined the request.
-                        WebViewBlocker.intercept(
-                            request, currentPageUrl.get(), contentBlocker,
-                        )?.let { return it }
-                    }
-                    return super.shouldInterceptRequest(view, request)
-                }
+                            @Deprecated("For API < 24")
+                            override fun shouldOverrideUrlLoading(
+                                view: WebView?,
+                                url: String?,
+                            ): Boolean {
+                                // Older WebViews without the compatibility callback
+                                // omit frame metadata.
+                                // Only HTTP(S) overrides are guaranteed to target
+                                // the main frame.
+                                val isMainFrame =
+                                    url?.toUri()?.scheme?.lowercase() in
+                                        setOf("http", "https")
+                                return handleUrlLoading(view, url, isMainFrame)
+                            }
 
-                override fun shouldOverrideUrlLoading(
-                    view: WebView,
-                    request: WebResourceRequest
-                ): Boolean {
-                    return handleUrlLoading(
-                        view, request.url.toString(), request.isForMainFrame,
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) request.isRedirect else null,
-                    )
-                }
-
-                @Deprecated("For API < 24")
-                override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
-                    // Older WebViews without the compatibility callback omit frame metadata.
-                    // Only HTTP(S) overrides are guaranteed to target the main frame.
-                    val isMainFrame = url?.toUri()?.scheme?.lowercase() in setOf("http", "https")
-                    return handleUrlLoading(view, url, isMainFrame)
-                }
-
-                private fun handleUrlLoading(
-                    view: WebView?,
-                    requestUrl: String?,
-                    isMainFrame: Boolean,
-                    isRedirect: Boolean? = null,
-                ): Boolean {
-                    if (!navigation.isActive()) return true
-                    if (requestUrl.isNullOrEmpty()) {
-                        return false
-                    }
-                    val navigationUrl = resolveBlockPageUrl(
-                        requestUrl, config.blacklistRegexes, config.whitelistRegexes, userSettings
-                    ) ?: return true
-                    if (isMainFrame) {
-                        systemSettings.urlBeingHandled = navigationUrl
-                        if (systemSettings.urlBeforeNavigation.isEmpty()) {
-                            // [URL_BEFORE_NAVIGATION] first to run for native navigation (non-SPA)
-                            systemSettings.urlBeforeNavigation = systemSettings.currentUrl
-                        }
-                    }
-
-                    val (schemeType, blockCause) = getBlockInfo(
-                        url = navigationUrl,
-                        blacklistRegexes = config.blacklistRegexes,
-                        whitelistRegexes = config.whitelistRegexes,
-                        userSettings = userSettings
-                    )
-                    if (blockCause != null) {
-                        when (userSettings.overrideUrlLoadingBlockAction) {
-                            OverrideUrlLoadingBlockActionOption.SHOW_BLOCK_PAGE -> {
+                            private fun handleUrlLoading(
+                                view: WebView?,
+                                requestUrl: String?,
+                                isMainFrame: Boolean,
+                                isRedirect: Boolean? = null,
+                            ): Boolean {
+                                if (!navigation.isActive()) {
+                                    return true
+                                }
+                                if (requestUrl.isNullOrEmpty()) {
+                                    return false
+                                }
+                                val navigationUrl =
+                                    resolveBlockPageUrl(
+                                        requestUrl,
+                                        config.blacklistRegexes,
+                                        config.whitelistRegexes,
+                                        userSettings,
+                                    ) ?: return true
                                 if (isMainFrame) {
+                                    systemSettings.urlBeingHandled = navigationUrl
+                                    if (
+                                        systemSettings.urlBeforeNavigation.isEmpty()
+                                    ) {
+                                        // [URL_BEFORE_NAVIGATION] first to run for
+                                        // native navigation (non-SPA)
+                                        systemSettings.urlBeforeNavigation =
+                                            systemSettings.currentUrl
+                                    }
+                                }
+
+                                val (schemeType, blockCause) =
+                                    getBlockInfo(
+                                        url = navigationUrl,
+                                        blacklistRegexes = config.blacklistRegexes,
+                                        whitelistRegexes = config.whitelistRegexes,
+                                        userSettings = userSettings,
+                                    )
+                                if (blockCause != null) {
+                                    when (
+                                        userSettings.overrideUrlLoadingBlockAction
+                                    ) {
+                                        OverrideUrlLoadingBlockActionOption
+                                            .SHOW_BLOCK_PAGE -> {
+                                            if (isMainFrame) {
+                                                loadBlockedPage(
+                                                    view,
+                                                    userSettings,
+                                                    navigationUrl,
+                                                    blockCause,
+                                                )
+                                            }
+                                        }
+
+                                        OverrideUrlLoadingBlockActionOption
+                                            .SHOW_TOAST -> {
+                                            ToastManager.show(
+                                                context,
+                                                userSettings.blockedMessage,
+                                            )
+                                        }
+
+                                        else -> Unit
+                                    }
+                                    return true
+                                }
+
+                                if (schemeType == SchemeType.OTHER) {
+                                    if (userSettings.allowOtherUrlSchemes) {
+                                        handleExternalSchemeUrl(
+                                            context,
+                                            navigationUrl,
+                                        )
+                                    }
+                                    return true
+                                }
+
+                                if (
+                                    isMainFrame &&
+                                        view != null &&
+                                        userSettings.supportPdfRendering &&
+                                        PdfJsManager.areAssetsReady(context) &&
+                                        isWebPdf(navigationUrl, null, null)
+                                ) {
+                                    config.onPdfUrlRequested(view, navigationUrl)
+                                    return true
+                                }
+                                if (navigationUrl != requestUrl) {
+                                    if (isMainFrame) {
+                                        loadUrl(navigationUrl)
+                                    }
+                                    return true
+                                }
+                                if (isMainFrame) {
+                                    navigation.mainFrameNavigation(
+                                        requestUrl,
+                                        isRedirect,
+                                    )
+                                    clearPdfNavigation()
+                                }
+                                return false
+                            }
+
+                            override fun doUpdateVisitedHistory(
+                                view: WebView?,
+                                url: String?,
+                                isReload: Boolean,
+                            ) {
+                                if (
+                                    !navigation.acceptsHistory(
+                                        url,
+                                        originalUrl,
+                                        this@apply.url,
+                                    ) || url == null
+                                ) {
+                                    return
+                                }
+                                val nativeHistory = copyBackForwardList()
+                                val nativeIndex =
+                                    nativeHistory.currentItem
+                                        ?.url
+                                        ?.takeIf { sameNavigationUrl(it, url) }
+                                        ?.let { nativeHistory.currentIndex }
+                                navigation.historyCommitted(
+                                    url,
+                                    originalUrl,
+                                    nativeIndex,
+                                )
+                                val isPdfViewer = isPdfViewerUrl(url.toUri())
+                                val navigationUrl =
+                                    if (isPdfViewer) {
+                                        resolveBlockPageUrl(
+                                            url,
+                                            config.blacklistRegexes,
+                                            config.whitelistRegexes,
+                                            userSettings,
+                                        ) ?: return
+                                    } else {
+                                        url
+                                    }
+                                val historyOriginalUrl =
+                                    if (isPdfViewer) {
+                                        navigationUrl
+                                    } else {
+                                        originalUrl
+                                    }
+                                if (
+                                    !isPdfViewer &&
+                                        sameNavigationUrl(
+                                            systemSettings.urlBeingHandled,
+                                            navigationUrl,
+                                        )
+                                ) {
+                                    updateAddressBarAndHistory(
+                                        navigationUrl,
+                                        historyOriginalUrl,
+                                    )
+                                    return
+                                }
+
+                                /**
+                                 * This section of the code is only ever reached if
+                                 * either customLoadUrl or shouldOverrideUrlLoading
+                                 * was not triggered, e.g. during JS navigation in
+                                 * Single Page Applications (e.g. a React SPA).
+                                 */
+                                if (systemSettings.urlBeforeNavigation.isEmpty()) {
+                                    systemSettings.urlBeforeNavigation =
+                                        systemSettings.currentUrl
+                                }
+
+                                systemSettings.urlBeingHandled = navigationUrl
+
+                                val (schemeType, blockCause) =
+                                    getBlockInfo(
+                                        url = navigationUrl,
+                                        blacklistRegexes = config.blacklistRegexes,
+                                        whitelistRegexes = config.whitelistRegexes,
+                                        userSettings = userSettings,
+                                    )
+
+                                val uri = navigationUrl.toUri()
+                                if (isCustomBlockPageUrl(schemeType, uri)) {
+                                    // Already on custom block page.
+                                    val blockUrl = uri.getQueryParameter("url")
+                                    blockUrl?.let {
+                                        updateAddressBarAndHistory(
+                                            blockUrl,
+                                            historyOriginalUrl,
+                                        )
+                                    }
+                                    return
+                                }
+
+                                if (blockCause != null) {
                                     loadBlockedPage(
                                         view,
                                         userSettings,
                                         navigationUrl,
                                         blockCause,
                                     )
+                                    updateAddressBarAndHistory(
+                                        navigationUrl,
+                                        historyOriginalUrl,
+                                    )
+                                    return
+                                }
+                                if (schemeType == SchemeType.OTHER) {
+                                    return
+                                }
+                                updateAddressBarAndHistory(
+                                    navigationUrl,
+                                    historyOriginalUrl,
+                                )
+                            }
+
+                            override fun onReceivedHttpAuthRequest(
+                                view: WebView?,
+                                handler: HttpAuthHandler?,
+                                host: String?,
+                                realm: String?,
+                            ) {
+                                if (handler == null) {
+                                    return
+                                }
+                                if (!navigation.isActive()) {
+                                    handler.cancel()
+                                    return
+                                }
+                                config.onHttpAuthRequest(
+                                    HttpAuthRequest(
+                                        host,
+                                        realm,
+                                        onSubmit = { username, password ->
+                                            handler.proceed(username, password)
+                                        },
+                                        onCancel = { handler.cancel() },
+                                    )
+                                )
+                            }
+
+                            override fun onReceivedError(
+                                view: WebView,
+                                request: WebResourceRequest,
+                                error: WebResourceErrorCompat,
+                            ) {
+                                val failingUrl = request.url.toString()
+                                if (
+                                    !navigation.acceptsError(
+                                        failingUrl,
+                                        this@apply.url,
+                                        request.isForMainFrame,
+                                    )
+                                ) {
+                                    return
+                                }
+                                if (isLocalNetworkPermissionError(error)) {
+                                    config.onLocalNetworkPermissionMissing()
+                                }
+                                config.setLastErrorUrl(failingUrl)
+                            }
+
+                            @Suppress("DeprecatedCallableAddReplaceWith")
+                            @Deprecated("For API < 23")
+                            override fun onReceivedError(
+                                view: WebView?,
+                                errorCode: Int,
+                                description: String?,
+                                failingUrl: String?,
+                            ) {
+                                if (
+                                    Build.VERSION.SDK_INT < Build.VERSION_CODES.M &&
+                                        navigation.acceptsError(
+                                            failingUrl,
+                                            this@apply.url,
+                                            isMainFrame = true,
+                                        ) &&
+                                        !failingUrl.isNullOrEmpty()
+                                ) {
+                                    config.setLastErrorUrl(failingUrl)
                                 }
                             }
 
-                            OverrideUrlLoadingBlockActionOption.SHOW_TOAST -> {
-                                ToastManager.show(context, userSettings.blockedMessage)
+                            @SuppressLint("WebViewClientOnReceivedSslError")
+                            override fun onReceivedSslError(
+                                view: WebView?,
+                                handler: SslErrorHandler?,
+                                error: SslError?,
+                            ) {
+                                if (!navigation.isActive()) {
+                                    handler?.cancel()
+                                    return
+                                }
+                                when (userSettings.sslErrorMode) {
+                                    SslErrorModeOption.BLOCK -> handler?.cancel()
+                                    SslErrorModeOption.PROMPT ->
+                                        handleSslErrorPromptRequest(
+                                            context,
+                                            handler,
+                                            error,
+                                            dialogs,
+                                        )
+
+                                    SslErrorModeOption.PROCEED -> handler?.proceed()
+                                }
                             }
 
-                            else -> Unit
-                        }
-                        return true
-                    }
-
-                    if (schemeType == SchemeType.OTHER) {
-                        if (userSettings.allowOtherUrlSchemes) {
-                            handleExternalSchemeUrl(context, navigationUrl)
-                        }
-                        return true
-                    }
-
-                    if (
-                        isMainFrame
-                        && view != null
-                        && userSettings.supportPdfRendering
-                        && PdfJsManager.areAssetsReady(context)
-                        && isWebPdf(navigationUrl, null, null)
-                    ) {
-                        config.onPdfUrlRequested(view, navigationUrl)
-                        return true
-                    }
-                    if (navigationUrl != requestUrl) {
-                        if (isMainFrame) loadUrl(navigationUrl)
-                        return true
-                    }
-                    if (isMainFrame) {
-                        navigation.mainFrameNavigation(requestUrl, isRedirect)
-                        clearPdfNavigation()
-                    }
-                    return false
-                }
-
-                override fun doUpdateVisitedHistory(
-                    view: WebView?,
-                    url: String?,
-                    isReload: Boolean
-                ) {
-                    if (!navigation.acceptsHistory(url, originalUrl, this@apply.url) || url == null) {
-                        return
-                    }
-                    val nativeHistory = copyBackForwardList()
-                    val nativeIndex = nativeHistory.currentItem?.url
-                        ?.takeIf { sameNavigationUrl(it, url) }
-                        ?.let { nativeHistory.currentIndex }
-                    navigation.historyCommitted(url, originalUrl, nativeIndex)
-                    val isPdfViewer = isPdfViewerUrl(url.toUri())
-                    val navigationUrl = if (isPdfViewer) {
-                        resolveBlockPageUrl(
-                            url, config.blacklistRegexes, config.whitelistRegexes, userSettings
-                        ) ?: return
-                    } else {
-                        url
-                    }
-                    val historyOriginalUrl = if (isPdfViewer) navigationUrl else originalUrl
-                    if (
-                        !isPdfViewer
-                        && sameNavigationUrl(systemSettings.urlBeingHandled, navigationUrl)
-                    ) {
-                        updateAddressBarAndHistory(navigationUrl, historyOriginalUrl)
-                        return
-                    }
-
-                    /**
-                     * This section of the code is only ever reached if either customLoadUrl or
-                     * shouldOverrideUrlLoading was not triggered, e.g. during JS navigation in
-                     * Single Page Applications (e.g. a React SPA).
-                     */
-                    if (systemSettings.urlBeforeNavigation.isEmpty()) {
-                        systemSettings.urlBeforeNavigation = systemSettings.currentUrl
-                    }
-
-                    systemSettings.urlBeingHandled = navigationUrl
-
-                    val (schemeType, blockCause) = getBlockInfo(
-                        url = navigationUrl,
-                        blacklistRegexes = config.blacklistRegexes,
-                        whitelistRegexes = config.whitelistRegexes,
-                        userSettings = userSettings
-                    )
-
-                    val uri = navigationUrl.toUri()
-                    if (isCustomBlockPageUrl(schemeType, uri)) {
-                        // Already on custom block page.
-                        val blockUrl = uri.getQueryParameter("url")
-                        blockUrl?.let {
-                            updateAddressBarAndHistory(blockUrl, historyOriginalUrl)
-                        }
-                        return
-                    }
-
-                    if (blockCause != null) {
-                        loadBlockedPage(
-                            view,
-                            userSettings,
-                            navigationUrl,
-                            blockCause,
-                        )
-                        updateAddressBarAndHistory(navigationUrl, historyOriginalUrl)
-                        return
-                    }
-                    if (schemeType == SchemeType.OTHER) {
-                        return
-                    }
-                    updateAddressBarAndHistory(navigationUrl, historyOriginalUrl)
-                }
-
-                override fun onReceivedHttpAuthRequest(
-                    view: WebView?,
-                    handler: HttpAuthHandler?,
-                    host: String?,
-                    realm: String?
-                ) {
-                    if (handler == null) return
-                    if (!navigation.isActive()) {
-                        handler.cancel()
-                        return
-                    }
-                    config.onHttpAuthRequest(HttpAuthRequest(
-                        host, realm,
-                        onSubmit = { username, password -> handler.proceed(username, password) },
-                        onCancel = { handler.cancel() }
-                    ))
-                }
-
-                override fun onReceivedError(
-                    view: WebView,
-                    request: WebResourceRequest,
-                    error: WebResourceErrorCompat
-                ) {
-                    val failingUrl = request.url.toString()
-                    if (!navigation.acceptsError(failingUrl, this@apply.url, request.isForMainFrame)) return
-                    if (isLocalNetworkPermissionError(error)) config.onLocalNetworkPermissionMissing()
-                    config.setLastErrorUrl(failingUrl)
-                }
-
-                @Suppress("DeprecatedCallableAddReplaceWith")
-                @Deprecated("For API < 23")
-                override fun onReceivedError(
-                    view: WebView?,
-                    errorCode: Int,
-                    description: String?,
-                    failingUrl: String?
-                ) {
-                    if (
-                        Build.VERSION.SDK_INT < Build.VERSION_CODES.M
-                        && navigation.acceptsError(failingUrl, this@apply.url, isMainFrame = true)
-                        && !failingUrl.isNullOrEmpty()
-                    ) {
-                        config.setLastErrorUrl(failingUrl)
-                    }
-                }
-
-                @SuppressLint("WebViewClientOnReceivedSslError")
-                override fun onReceivedSslError(
-                    view: WebView?,
-                    handler: SslErrorHandler?,
-                    error: SslError?
-                ) {
-                    if (!navigation.isActive()) {
-                        handler?.cancel()
-                        return
-                    }
-                    when (userSettings.sslErrorMode) {
-                        SslErrorModeOption.BLOCK -> handler?.cancel()
-                        SslErrorModeOption.PROMPT -> handleSslErrorPromptRequest(
-                            context, handler, error, dialogs
-                        )
-
-                        SslErrorModeOption.PROCEED -> handler?.proceed()
-                    }
-                }
-
-                override fun onRenderProcessGone(
-                    view: WebView,
-                    detail: RenderProcessGoneDetail
-                ): Boolean {
-                    val wasActive = navigation.isActive()
-                    if (!navigation.dispose()) return true
-                    Log.e(
-                        Constants.APP_SCHEME,
-                        "WebView renderer gone. crashed=${detail}"
-                    )
-                    hideFullscreen()
-                    cancelPdfSourceRequests(view.getTag(R.id.pdf_source_token) as? String)
-                    completeFileChooser(null, view)
-                    if (wasActive) config.onHttpAuthRequest(null)
-                    dialogs.dispose()
-                    (view.parent as? ViewGroup)?.removeView(view)
-                    NfcBridgeManager.detachWebView(view)
-                    blobInterface?.dispose()
-                    view.destroy()
-                    if (wasActive) config.onRenderProcessGone()
-                    return true
-                }
-            }
-
-            webChromeClient = object : WebChromeClient() {
-                private var customView: View? = null
-                private var customViewCallback: CustomViewCallback? = null
-                private var fullScreenContainer: FrameLayout? = null
-
-                init {
-                    hideFullscreen = ::onHideCustomView
-                }
-
-                override fun onProgressChanged(view: WebView?, newProgress: Int) {
-                    if (navigation.isActive()) config.onProgressChanged(newProgress)
-                }
-
-                override fun onPermissionRequest(request: PermissionRequest) {
-                    if (!navigation.isActive()) {
-                        request.deny()
-                        return
-                    }
-                    handlePermissionRequest(context, request, systemSettings, userSettings, dialogs)
-                }
-
-                override fun onPermissionRequestCanceled(request: PermissionRequest) {
-                    dialogs.dismiss(request, resolveRequest = false)
-                }
-
-                override fun onGeolocationPermissionsShowPrompt(
-                    origin: String?,
-                    callback: GeolocationPermissions.Callback?
-                ) {
-                    if (!navigation.isActive()) {
-                        callback?.invoke(origin, false, false)
-                        return
-                    }
-                    origin?.let {
-                        handleGeolocationRequest(
-                            context,
-                            it.trimEnd('/'),
-                            callback,
-                            systemSettings,
-                            userSettings,
-                            dialogs,
-                        )
-                    }
-                }
-
-                override fun onGeolocationPermissionsHidePrompt() {
-                    dialogs.dismiss(WebViewDialogController.GEOLOCATION_PROMPT, resolveRequest = false)
-                }
-
-                override fun onShowCustomView(view: View, callback: CustomViewCallback) {
-                    if (!navigation.isActive() || customView != null) {
-                        callback.onCustomViewHidden()
-                        return
-                    }
-
-                    val activity = context as? Activity
-                    if (activity == null) {
-                        callback.onCustomViewHidden()
-                        return
-                    }
-                    fullScreenContainer = FrameLayout(activity).apply {
-                        addView(
-                            view,
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                        )
-                    }
-
-                    customView = view
-                    customViewCallback = callback
-
-                    activity.addContentView(
-                        fullScreenContainer,
-                        ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
-                        )
-                    )
-
-                    enterImmersiveMode(activity)
-
-                    visibility = View.GONE
-                    fullScreenContainer?.visibility = View.VISIBLE
-                }
-
-                override fun onHideCustomView() {
-                    val activity = context as? Activity
-                    val container = fullScreenContainer
-                    val callback = customViewCallback
-                    val view = customView
-                    if (container == null && callback == null && view == null) {
-                        return
-                    }
-                    fullScreenContainer = null
-                    customView = null
-                    customViewCallback = null
-
-                    container?.removeView(view)
-                    (container?.parent as? ViewGroup)?.removeView(container)
-                    visibility = View.VISIBLE
-
-                    activity?.let {
-                        val shouldExit = config.isActive() && !shouldBeImmersed(activity, userSettings)
-                        if (shouldExit) {
-                            exitImmersiveMode(it)
-                        }
-                    }
-                    try {
-                        callback?.onCustomViewHidden()
-                    } catch (e: Exception) {
-                        Log.w(Constants.APP_SCHEME, "Unable to complete fullscreen cleanup", e)
-                    }
-                }
-
-                override fun onShowFileChooser(
-                    webView: WebView,
-                    filePathCallback: ValueCallback<Array<Uri>>,
-                    fileChooserParams: FileChooserParams
-                ): Boolean {
-                    if (!navigation.isActive() || pendingFileChooserInFlight || pendingFileChooserCallback != null) {
-                        respondFileChooser(filePathCallback, null)
-                        return true
-                    }
-                    if (!config.userSettings.allowFilePicker) {
-                        ToastManager.show(
-                            context,
-                            "File picker is disabled in ${context.getString(R.string.app_name)}'s Web Engine settings."
-                        )
-                        respondFileChooser(filePathCallback, null)
-                        return true
-                    }
-
-                    pendingFileChooserCallback = filePathCallback
-                    pendingFileChooserOwner = webView
-
-                    val acceptTypes = fileChooserParams.acceptTypes.filter { it.isNotBlank() }
-                    val wantsImage = acceptTypes.any { it.startsWith("image/") }
-                    val wantsVideo = acceptTypes.any { it.startsWith("video/") }
-                    val wantsAudio = acceptTypes.any { it.startsWith("audio/") }
-
-                    val hasCameraPermission =
-                        ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.CAMERA,
-                        ) == PackageManager.PERMISSION_GRANTED
-
-                    val hasAudioPermission =
-                        ContextCompat.checkSelfPermission(
-                            context,
-                            Manifest.permission.RECORD_AUDIO,
-                        ) == PackageManager.PERMISSION_GRANTED
-
-                    Log.d(
-                        Constants.APP_SCHEME,
-                        "File chooser request: mode=${fileChooserParams.mode}, "
-                            + "capture=${fileChooserParams.isCaptureEnabled}, acceptTypes=$acceptTypes, "
-                            + "allowCamera=${config.userSettings.allowCamera}, cameraPermission=$hasCameraPermission, "
-                            + "allowMicrophone=${config.userSettings.allowMicrophone}, audioPermission=$hasAudioPermission"
-                    )
-
-                    val captureRequest = when {
-                        !fileChooserParams.isCaptureEnabled -> null
-                        (
-                            wantsImage
-                            && config.userSettings.allowCamera
-                            && hasCameraPermission
-                        ) -> {
-                            MediaStore.ACTION_IMAGE_CAPTURE to ".jpg"
-                        }
-                        (
-                            wantsVideo
-                            && config.userSettings.allowCamera
-                            && hasCameraPermission
-                        ) -> {
-                            MediaStore.ACTION_VIDEO_CAPTURE to ".mp4"
-                        }
-                        (
-                            wantsAudio
-                            && config.userSettings.allowMicrophone
-                            && hasAudioPermission
-                        ) -> {
-                            MediaStore.Audio.Media.RECORD_SOUND_ACTION to ".m4a"
-                        }
-                        else -> {
-                            null
-                        }
-                    }
-
-                    val captureHandled = (
-                        captureRequest != null
-                        && customLaunchCapture(
-                            captureRequest.first,
-                            captureRequest.second,
-                        )
-                    )
-
-                    if (!captureHandled) {
-                        launchFilePicker(fileChooserParams)
-                    }
-                    return true
-                }
-            }
-
-            setOnLongClickListener {
-                if (!navigation.isActive()) return@setOnLongClickListener true
-                val result = hitTestResult
-                if (
-                    userSettings.allowLinkLongPressContextMenu
-                    && (
-                        result.type == WebView.HitTestResult.IMAGE_TYPE
-                        || result.type == WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE
-                        || result.type == WebView.HitTestResult.SRC_ANCHOR_TYPE
-                    )
-                ) {
-                    when (result.type) {
-                        WebView.HitTestResult.IMAGE_TYPE,
-                        WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE -> {
-                            result.extra?.let { imageUrl ->
-                                config.onImageLongClick(imageUrl)
+                            override fun onRenderProcessGone(
+                                view: WebView,
+                                detail: RenderProcessGoneDetail,
+                            ): Boolean {
+                                val wasActive = navigation.isActive()
+                                if (!navigation.dispose()) {
+                                    return true
+                                }
+                                Log.e(
+                                    Constants.APP_SCHEME,
+                                    "WebView renderer gone. crashed=${detail}",
+                                )
+                                hideFullscreen()
+                                cancelPdfSourceRequests(
+                                    view.getTag(R.id.pdf_source_token) as? String
+                                )
+                                completeFileChooser(null, view)
+                                if (wasActive) {
+                                    config.onHttpAuthRequest(null)
+                                }
+                                dialogs.dispose()
+                                (view.parent as? ViewGroup)?.removeView(view)
+                                NfcBridgeManager.detachWebView(view)
+                                blobInterface?.dispose()
+                                view.destroy()
+                                if (wasActive) {
+                                    config.onRenderProcessGone()
+                                }
+                                return true
                             }
+                        }
+
+                    webChromeClient =
+                        object : WebChromeClient() {
+                            private var customView: View? = null
+                            private var customViewCallback: CustomViewCallback? =
+                                null
+                            private var fullScreenContainer: FrameLayout? = null
+
+                            init {
+                                hideFullscreen = ::onHideCustomView
+                            }
+
+                            override fun onProgressChanged(
+                                view: WebView?,
+                                newProgress: Int,
+                            ) {
+                                if (navigation.isActive()) {
+                                    config.onProgressChanged(newProgress)
+                                }
+                            }
+
+                            override fun onPermissionRequest(
+                                request: PermissionRequest
+                            ) {
+                                if (!navigation.isActive()) {
+                                    request.deny()
+                                    return
+                                }
+                                handlePermissionRequest(
+                                    context,
+                                    request,
+                                    systemSettings,
+                                    userSettings,
+                                    dialogs,
+                                )
+                            }
+
+                            override fun onPermissionRequestCanceled(
+                                request: PermissionRequest
+                            ) {
+                                dialogs.dismiss(request, resolveRequest = false)
+                            }
+
+                            override fun onGeolocationPermissionsShowPrompt(
+                                origin: String?,
+                                callback: GeolocationPermissions.Callback?,
+                            ) {
+                                if (!navigation.isActive()) {
+                                    callback?.invoke(origin, false, false)
+                                    return
+                                }
+                                origin?.let {
+                                    handleGeolocationRequest(
+                                        context,
+                                        it.trimEnd('/'),
+                                        callback,
+                                        systemSettings,
+                                        userSettings,
+                                        dialogs,
+                                    )
+                                }
+                            }
+
+                            override fun onGeolocationPermissionsHidePrompt() {
+                                dialogs.dismiss(
+                                    WebViewDialogController.GEOLOCATION_PROMPT,
+                                    resolveRequest = false,
+                                )
+                            }
+
+                            override fun onShowCustomView(
+                                view: View,
+                                callback: CustomViewCallback,
+                            ) {
+                                if (!navigation.isActive() || customView != null) {
+                                    callback.onCustomViewHidden()
+                                    return
+                                }
+
+                                val activity = context as? Activity
+                                if (activity == null) {
+                                    callback.onCustomViewHidden()
+                                    return
+                                }
+                                fullScreenContainer =
+                                    FrameLayout(activity).apply {
+                                        addView(
+                                            view,
+                                            ViewGroup.LayoutParams.MATCH_PARENT,
+                                            ViewGroup.LayoutParams.MATCH_PARENT,
+                                        )
+                                    }
+
+                                customView = view
+                                customViewCallback = callback
+
+                                activity.addContentView(
+                                    fullScreenContainer,
+                                    ViewGroup.LayoutParams(
+                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                        ViewGroup.LayoutParams.MATCH_PARENT,
+                                    ),
+                                )
+
+                                enterImmersiveMode(activity)
+
+                                visibility = View.GONE
+                                fullScreenContainer?.visibility = View.VISIBLE
+                            }
+
+                            override fun onHideCustomView() {
+                                val activity = context as? Activity
+                                val container = fullScreenContainer
+                                val callback = customViewCallback
+                                val view = customView
+                                if (
+                                    container == null &&
+                                        callback == null &&
+                                        view == null
+                                ) {
+                                    return
+                                }
+                                fullScreenContainer = null
+                                customView = null
+                                customViewCallback = null
+
+                                container?.removeView(view)
+                                (container?.parent as? ViewGroup)?.removeView(
+                                    container
+                                )
+                                visibility = View.VISIBLE
+
+                                activity?.let {
+                                    val shouldExit =
+                                        config.isActive() &&
+                                            !shouldBeImmersed(activity, userSettings)
+                                    if (shouldExit) {
+                                        exitImmersiveMode(it)
+                                    }
+                                }
+                                try {
+                                    callback?.onCustomViewHidden()
+                                } catch (e: Exception) {
+                                    Log.w(
+                                        Constants.APP_SCHEME,
+                                        "Unable to complete fullscreen cleanup",
+                                        e,
+                                    )
+                                }
+                            }
+
+                            override fun onShowFileChooser(
+                                webView: WebView,
+                                filePathCallback: ValueCallback<Array<Uri>>,
+                                fileChooserParams: FileChooserParams,
+                            ): Boolean {
+                                if (
+                                    !navigation.isActive() ||
+                                        pendingFileChooserInFlight ||
+                                        pendingFileChooserCallback != null
+                                ) {
+                                    respondFileChooser(filePathCallback, null)
+                                    return true
+                                }
+                                if (!config.userSettings.allowFilePicker) {
+                                    ToastManager.show(
+                                        context,
+                                        "File picker is disabled in ${context.getString(R.string.app_name)}'s Web Engine settings.",
+                                    )
+                                    respondFileChooser(filePathCallback, null)
+                                    return true
+                                }
+
+                                pendingFileChooserCallback = filePathCallback
+                                pendingFileChooserOwner = webView
+
+                                val acceptTypes =
+                                    fileChooserParams.acceptTypes.filter {
+                                        it.isNotBlank()
+                                    }
+                                val wantsImage = acceptTypes.any {
+                                    it.startsWith("image/")
+                                }
+                                val wantsVideo = acceptTypes.any {
+                                    it.startsWith("video/")
+                                }
+                                val wantsAudio = acceptTypes.any {
+                                    it.startsWith("audio/")
+                                }
+
+                                val hasCameraPermission =
+                                    ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.CAMERA,
+                                    ) == PackageManager.PERMISSION_GRANTED
+
+                                val hasAudioPermission =
+                                    ContextCompat.checkSelfPermission(
+                                        context,
+                                        Manifest.permission.RECORD_AUDIO,
+                                    ) == PackageManager.PERMISSION_GRANTED
+
+                                Log.d(
+                                    Constants.APP_SCHEME,
+                                    "File chooser request: mode=${fileChooserParams.mode}, " +
+                                        "capture=${fileChooserParams.isCaptureEnabled}, acceptTypes=$acceptTypes, " +
+                                        "allowCamera=${config.userSettings.allowCamera}, cameraPermission=$hasCameraPermission, " +
+                                        "allowMicrophone=${config.userSettings.allowMicrophone}, audioPermission=$hasAudioPermission",
+                                )
+
+                                val captureRequest =
+                                    when {
+                                        !fileChooserParams.isCaptureEnabled -> null
+                                        (wantsImage &&
+                                            config.userSettings.allowCamera &&
+                                            hasCameraPermission) -> {
+                                            MediaStore.ACTION_IMAGE_CAPTURE to ".jpg"
+                                        }
+                                        (wantsVideo &&
+                                            config.userSettings.allowCamera &&
+                                            hasCameraPermission) -> {
+                                            MediaStore.ACTION_VIDEO_CAPTURE to ".mp4"
+                                        }
+                                        (wantsAudio &&
+                                            config.userSettings.allowMicrophone &&
+                                            hasAudioPermission) -> {
+                                            MediaStore.Audio.Media
+                                                .RECORD_SOUND_ACTION to ".m4a"
+                                        }
+                                        else -> {
+                                            null
+                                        }
+                                    }
+
+                                val captureHandled =
+                                    (captureRequest != null &&
+                                        customLaunchCapture(
+                                            captureRequest.first,
+                                            captureRequest.second,
+                                        ))
+
+                                if (!captureHandled) {
+                                    launchFilePicker(fileChooserParams)
+                                }
+                                return true
+                            }
+                        }
+
+                    setOnLongClickListener {
+                        if (!navigation.isActive()) {
                             return@setOnLongClickListener true
                         }
-                        WebView.HitTestResult.SRC_ANCHOR_TYPE -> {
-                            result.extra?.let { link ->
-                                config.onLinkLongClick(link)
+                        val result = hitTestResult
+                        if (
+                            userSettings.allowLinkLongPressContextMenu &&
+                                (result.type == WebView.HitTestResult.IMAGE_TYPE ||
+                                    result.type ==
+                                        WebView.HitTestResult
+                                            .SRC_IMAGE_ANCHOR_TYPE ||
+                                    result.type ==
+                                        WebView.HitTestResult.SRC_ANCHOR_TYPE)
+                        ) {
+                            when (result.type) {
+                                WebView.HitTestResult.IMAGE_TYPE,
+                                WebView.HitTestResult.SRC_IMAGE_ANCHOR_TYPE -> {
+                                    result.extra?.let { imageUrl ->
+                                        config.onImageLongClick(imageUrl)
+                                    }
+                                    return@setOnLongClickListener true
+                                }
+                                WebView.HitTestResult.SRC_ANCHOR_TYPE -> {
+                                    result.extra?.let { link ->
+                                        config.onLinkLongClick(link)
+                                    }
+                                    return@setOnLongClickListener true
+                                }
                             }
-                            return@setOnLongClickListener true
+                        }
+                        !userSettings.allowDefaultLongPress
+                    }
+
+                    setDownloadListener {
+                        url,
+                        userAgent,
+                        contentDisposition,
+                        mimeType,
+                        _ ->
+                        if (!navigation.isActive()) {
+                            return@setDownloadListener
+                        }
+                        if (
+                            userSettings.supportPdfRendering &&
+                                PdfJsManager.areAssetsReady(context) &&
+                                isWebPdf(url, contentDisposition, mimeType)
+                        ) {
+                            config.onPdfUrlRequested(this, url)
+                        } else {
+                            handleDownloadPrompt(
+                                context = context,
+                                webView = this,
+                                url = url,
+                                userAgent = userAgent,
+                                contentDisposition = contentDisposition,
+                                mimeType = mimeType,
+                                dialogs = dialogs,
+                            )
                         }
                     }
                 }
-                !userSettings.allowDefaultLongPress
-            }
-
-            setDownloadListener { url, userAgent, contentDisposition, mimeType, _ ->
-                if (!navigation.isActive()) return@setDownloadListener
-                if (
-                    userSettings.supportPdfRendering
-                    && PdfJsManager.areAssetsReady(context)
-                    && isWebPdf(url, contentDisposition, mimeType)
-                ) {
-                    config.onPdfUrlRequested(this, url)
-                } else {
-                    handleDownloadPrompt(
-                        context = context,
-                        webView = this,
-                        url = url,
-                        userAgent = userAgent,
-                        contentDisposition = contentDisposition,
-                        mimeType = mimeType,
-                        dialogs = dialogs,
-                    )
-                }
-            }
-        }
 
         return WebViewCreation.Success(webView) {
             val wasActive = navigation.isActive()
-            if (!navigation.dispose()) return@Success
+            if (!navigation.dispose()) {
+                return@Success
+            }
             hideFullscreen()
             cancelPdfSourceRequests(webView.getTag(R.id.pdf_source_token) as? String)
             completeFileChooser(null, webView)
-            if (wasActive) config.onHttpAuthRequest(null)
+            if (wasActive) {
+                config.onHttpAuthRequest(null)
+            }
             dialogs.dispose()
             cosmetics?.dispose()
             blobInterface?.dispose()
         }
     }
 
-    val webViewCreationResult = remember(recreationKey) {
-        val dialogs = WebViewDialogController(context)
-        try {
-            buildWebView(dialogs)
-        } catch (e: Exception) {
-            dialogs.dispose()
-            Log.e(Constants.APP_SCHEME, "Failed to create WebView", e)
-            WebViewCreation.Failure(e)
+    val webViewCreationResult =
+        remember(recreationKey) {
+            val dialogs = WebViewDialogController(context)
+            try {
+                buildWebView(dialogs)
+            } catch (e: Exception) {
+                dialogs.dispose()
+                Log.e(Constants.APP_SCHEME, "Failed to create WebView", e)
+                WebViewCreation.Failure(e)
+            }
         }
-    }
 
     return webViewCreationResult
 }

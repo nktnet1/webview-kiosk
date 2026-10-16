@@ -16,18 +16,27 @@ internal class MinimumLoadingState(
     private var generation = 0L
 
     fun show(message: String, restartMinimum: Boolean = false) {
-        if (_message.value == null || restartMinimum) shownAt = now()
+        if (_message.value == null || restartMinimum) {
+            shownAt = now()
+        }
         generation++
         _message.value = message
     }
 
     suspend fun hide() {
-        if (_message.value == null) return
+        if (_message.value == null) {
+            return
+        }
         val revision = generation
         val remaining = 1_000L - (now() - shownAt)
-        if (remaining > 0) pause(remaining)
-        // A new phase or operation may have taken over while this hide was suspended.
-        if (revision == generation) _message.value = null
+        if (remaining > 0) {
+            pause(remaining)
+        }
+        // A new phase or operation may have taken over while this hide was
+        // suspended.
+        if (revision == generation) {
+            _message.value = null
+        }
     }
 
     suspend fun awaitHidden() {

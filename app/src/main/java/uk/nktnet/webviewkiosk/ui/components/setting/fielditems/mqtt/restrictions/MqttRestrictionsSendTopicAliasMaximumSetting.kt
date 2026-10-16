@@ -16,16 +16,21 @@ fun MqttRestrictionsSendTopicAliasMaximumSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Restrictions.SEND_TOPIC_ALIAS_MAXIMUM
 
     NumberSettingFieldItem(
-        label = stringResource(R.string.mqtt_restrictions_send_topic_alias_maximum_title),
-        infoText = """
+        label =
+            stringResource(
+                R.string.mqtt_restrictions_send_topic_alias_maximum_title
+            ),
+        infoText =
+            """
             Maximum number of topic aliases the client can send.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         placeholder = "e.g. 16",
         initialValue = userSettings.mqttRestrictionsSendTopicAliasMaximum,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         min = 0,
         max = 65_535,
-        onSave = { userSettings.mqttRestrictionsSendTopicAliasMaximum = it }
+        onSave = { userSettings.mqttRestrictionsSendTopicAliasMaximum = it },
     )
 }

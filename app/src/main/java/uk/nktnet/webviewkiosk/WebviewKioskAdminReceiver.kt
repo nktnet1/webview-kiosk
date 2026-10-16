@@ -22,7 +22,7 @@ class WebviewKioskAdminReceiver : DeviceAdminReceiver() {
         intent: Intent,
         uid: Int,
         uri: Uri?,
-        alias: String?
+        alias: String?,
     ): String? {
         if (uid != context.applicationInfo.uid || alias.isNullOrBlank()) {
             return null
@@ -30,11 +30,10 @@ class WebviewKioskAdminReceiver : DeviceAdminReceiver() {
         val host = uri?.host ?: return null
         val port = uri.port.takeIf { it != -1 } ?: 443
         val siteKey = mutualTlsSiteKey(host, port)
-        val configuredAlias = parseMutualTlsRules(
-            UserSettings(context).mutualTls
-        )
-            ?.firstOrNull { it.siteKey == siteKey }
-            ?.alias
+        val configuredAlias =
+            parseMutualTlsRules(UserSettings(context).mutualTls)
+                ?.firstOrNull { it.siteKey == siteKey }
+                ?.alias
 
         return alias.takeIf { it == configuredAlias }
     }

@@ -20,17 +20,19 @@ fun AllowFileDownloadSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_engine_allow_file_download_title),
-        infoText = """
+        infoText =
+            """
             Allow files to be downloaded from websites to:
 
             - $downloadLocation
 
             For Android 9.0 (SDK 28) and below, the WRITE_EXTERNAL_STORAGE
             permission is required.
-        """.trimIndent(),
+        """
+                .trimIndent(),
         initialValue = userSettings.allowFileDownload,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.allowFileDownload = it }
+        onSave = { userSettings.allowFileDownload = it },
     )
 }

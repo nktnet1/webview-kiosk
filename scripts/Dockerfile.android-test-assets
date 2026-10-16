@@ -1,6 +1,7 @@
 # The export is deliberately linux/amd64 even when Docker runs on Apple Silicon.
 # Gradle comes preinstalled: the exporter never invokes the wrapper download.
-FROM gradle:9.8.0-jdk21-jammy
+ARG GRADLE_VERSION
+FROM gradle:${GRADLE_VERSION}-jdk21-jammy
 
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \

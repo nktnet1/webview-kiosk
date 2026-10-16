@@ -26,7 +26,7 @@ fun <T> DropdownSettingFieldItem(
     validator: (value: T) -> Boolean = { true },
     validationMessage: String? = null,
     onSave: (T) -> Unit,
-    itemText: (T) -> String
+    itemText: (T) -> String,
 ) {
     var showDialog by remember { mutableStateOf(false) }
     var value by remember { mutableStateOf(initialValue) }
@@ -47,7 +47,7 @@ fun <T> DropdownSettingFieldItem(
             text = itemText(value),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 
@@ -64,7 +64,7 @@ fun <T> DropdownSettingFieldItem(
                     onSave(draftValue)
                     showDialog = false
                 }
-            }
+            },
         ) {
             DropdownSelector(
                 options = options,
@@ -73,19 +73,20 @@ fun <T> DropdownSettingFieldItem(
                 onSelectedChange = {
                     draftValue = it
                     draftError = !validator(it)
-                }
+                },
             ) { option ->
                 val isSelected = option == draftValue
                 Text(
                     text = itemText(option),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = if (restricted) {
-                        MaterialTheme.colorScheme.error
-                    } else if (isSelected) {
+                    color =
+                        if (restricted) {
+                            MaterialTheme.colorScheme.error
+                        } else if (isSelected) {
                             MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
                 )
             }
             if (draftError) {
@@ -93,7 +94,7 @@ fun <T> DropdownSettingFieldItem(
                     text = validationMessage ?: "Invalid input",
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 )
             }
             extraContent?.invoke { draftValue = it }

@@ -18,16 +18,18 @@ fun MqttWillMessageExpiryIntervalSetting() {
 
     NumberSettingFieldItem(
         label = stringResource(R.string.mqtt_will_message_expiry_interval_title),
-        infoText = """
+        infoText =
+            """
             The lifetime in seconds of the last will message on the broker
             after it is sent. A value of 0 means the message does not expire.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         placeholder = "e.g. 0",
         initialValue = userSettings.mqttWillMessageExpiryInterval,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         min = 0,
         max = Constants.MAX_INT_SETTING,
-        onSave = { userSettings.mqttWillMessageExpiryInterval = it }
+        onSave = { userSettings.mqttWillMessageExpiryInterval = it },
     )
 }

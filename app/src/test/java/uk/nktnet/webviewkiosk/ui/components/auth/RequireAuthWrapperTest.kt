@@ -65,7 +65,8 @@ class RequireAuthWrapperTest {
     private lateinit var view: ComposeView
     private lateinit var navController: NavHostController
     private val frameClock = BroadcastFrameClock()
-    private val compositionScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate + frameClock)
+    private val compositionScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate + frameClock)
     private lateinit var recomposer: Recomposer
     private var frameNanos = 0L
     private val owner = WrapperLifecycleOwner()
@@ -79,11 +80,18 @@ class RequireAuthWrapperTest {
 
     @Before
     fun setUp() {
-        controller = Robolectric.buildActivity(AuthWrapperTestActivity::class.java).setup().visible()
+        controller =
+            Robolectric.buildActivity(AuthWrapperTestActivity::class.java)
+                .setup()
+                .visible()
         activity = controller.get()
-        activity.getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().clear().commit()
-        val keyguard = activity.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        activity
+            .getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .commit()
+        val keyguard =
+            activity.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         shadowOf(keyguard).setIsDeviceSecure(true)
         manager.resetAuthentication()
         manager.session = AuthenticationSession { time }
@@ -92,7 +100,8 @@ class RequireAuthWrapperTest {
         }
         manager.init(activity)
         // A previous terminal error is intentionally sticky in the manager.
-        // Cancel a fresh prompt to establish its real Loading state for each UI test.
+        // Cancel a fresh prompt to establish its real Loading state for each UI
+        // test.
         manager.showAuthenticationPrompt("Fixture reset", "Fixture reset")
         manager.resetAuthentication()
         prompts.clear()
@@ -102,14 +111,16 @@ class RequireAuthWrapperTest {
         view = ComposeView(activity)
         view.setParentCompositionContext(recomposer)
         activity.setContentView(view)
-        navController = NavHostController(activity).apply {
-            setLifecycleOwner(activity)
-            navigatorProvider.addNavigator(ComposeNavigator())
-            graph = createGraph(startDestination = "settings") {
-                composable("settings") {}
-                composable(Screen.WebView.route) {}
+        navController =
+            NavHostController(activity).apply {
+                setLifecycleOwner(activity)
+                navigatorProvider.addNavigator(ComposeNavigator())
+                graph =
+                    createGraph(startDestination = "settings") {
+                        composable("settings") {}
+                        composable(Screen.WebView.route) {}
+                    }
             }
-        }
     }
 
     @After
@@ -135,7 +146,10 @@ class RequireAuthWrapperTest {
         assertEquals(1, prompts.size)
         assertEquals(1, prompts.single().authenticateCalls)
         assertEquals("Authentication Required", prompts.single().info.title)
-        assertEquals("Please authenticate to access settings", prompts.single().info.description)
+        assertEquals(
+            "Please authenticate to access settings",
+            prompts.single().info.description,
+        )
         assertFalse(manager.hasValidSession())
         assertEquals(0, protectedMounts)
         assertLoading()
@@ -287,7 +301,10 @@ class RequireAuthWrapperTest {
         owner.registry.currentState = Lifecycle.State.RESUMED
         composeWrapper()
 
-        assertEquals(AuthenticationManager.AuthenticationResult.AuthenticationNotSet, manager.promptResults.value)
+        assertEquals(
+            AuthenticationManager.AuthenticationResult.AuthenticationNotSet,
+            manager.promptResults.value,
+        )
         assertProtectedContent()
         assertTrue(prompts.isEmpty())
     }
@@ -311,7 +328,13 @@ class RequireAuthWrapperTest {
     fun anErrorRendersRetryAndCancelAndRecompositionDoesNotRetryIt() {
         owner.registry.currentState = Lifecycle.State.RESUMED
         composeWrapper()
-        prompts.single().callback.onAuthenticationError(BiometricPrompt.ERROR_USER_CANCELED, "cancelled by user")
+        prompts
+            .single()
+            .callback
+            .onAuthenticationError(
+                BiometricPrompt.ERROR_USER_CANCELED,
+                "cancelled by user",
+            )
         pumpFrames()
 
         repeat(4) {
@@ -335,7 +358,10 @@ class RequireAuthWrapperTest {
     fun cancellingAnErrorNavigatesToTheWebviewWithoutGrantingAccess() {
         owner.registry.currentState = Lifecycle.State.RESUMED
         composeWrapper()
-        prompts.single().callback.onAuthenticationError(BiometricPrompt.ERROR_USER_CANCELED, "cancelled")
+        prompts
+            .single()
+            .callback
+            .onAuthenticationError(BiometricPrompt.ERROR_USER_CANCELED, "cancelled")
         pumpFrames()
 
         click("Cancel")
@@ -351,7 +377,13 @@ class RequireAuthWrapperTest {
         owner.registry.currentState = Lifecycle.State.RESUMED
         composeWrapper()
         owner.registry.currentState = Lifecycle.State.STARTED
-        prompts.single().callback.onAuthenticationError(BiometricPrompt.ERROR_USER_CANCELED, "cancelled by user")
+        prompts
+            .single()
+            .callback
+            .onAuthenticationError(
+                BiometricPrompt.ERROR_USER_CANCELED,
+                "cancelled by user",
+            )
         pumpFrames()
 
         owner.registry.currentState = Lifecycle.State.RESUMED
@@ -383,9 +415,10 @@ class RequireAuthWrapperTest {
     @Test
     fun replacingTheLifecycleOwnerRemovesTheOldObserverAndStartsOnlyOnePrompt() {
         composeWrapper()
-        val replacement = WrapperLifecycleOwner().apply {
-            registry.currentState = Lifecycle.State.CREATED
-        }
+        val replacement =
+            WrapperLifecycleOwner().apply {
+                registry.currentState = Lifecycle.State.CREATED
+            }
         currentOwner.value = replacement
         pumpFrames()
 
@@ -425,7 +458,9 @@ class RequireAuthWrapperTest {
     private fun composeWrapper() {
         view.setContent {
             val value = revision.value
-            CompositionLocalProvider(LocalLifecycleOwner provides currentOwner.value) {
+            CompositionLocalProvider(
+                LocalLifecycleOwner provides currentOwner.value
+            ) {
                 if (showWrapper.value) {
                     RequireAuthWrapper(navController) {
                         DisposableEffect(Unit) {
@@ -447,7 +482,8 @@ class RequireAuthWrapperTest {
     }
 
     private fun setDeviceSecure(secure: Boolean) {
-        val keyguard = activity.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        val keyguard =
+            activity.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         shadowOf(keyguard).setIsDeviceSecure(secure)
     }
 
@@ -468,16 +504,25 @@ class RequireAuthWrapperTest {
         assertTrue(texts().contains("Waiting for authentication..."))
     }
 
-    private fun texts(): List<String> = nodes().mapNotNull { node ->
-        node.config.getOrNull(SemanticsProperties.Text)?.joinToString("") { it.text }
-    }
+    private fun texts(): List<String> =
+        nodes().mapNotNull { node ->
+            node.config.getOrNull(SemanticsProperties.Text)?.joinToString("") {
+                it.text
+            }
+        }
 
     private fun click(text: String) {
-        val node = nodes().single { node ->
-            node.config.getOrNull(SemanticsProperties.Text)?.any { it.text == text } == true
-        }
+        val node =
+            nodes().single { node ->
+                node.config.getOrNull(SemanticsProperties.Text)?.any {
+                    it.text == text
+                } == true
+            }
         val action = node.config.getOrNull(SemanticsActions.OnClick)?.action
-        assertTrue("Missing or rejected click action for $text", action?.invoke() == true)
+        assertTrue(
+            "Missing or rejected click action for $text",
+            action?.invoke() == true,
+        )
         pumpFrames()
     }
 
@@ -485,7 +530,8 @@ class RequireAuthWrapperTest {
     private fun nodes(): List<SemanticsNode> {
         val root = view.getChildAt(0) as ViewRootForTest
         root.measureAndLayoutForTest()
-        fun walk(node: SemanticsNode): List<SemanticsNode> = listOf(node) + node.children.flatMap(::walk)
+        fun walk(node: SemanticsNode): List<SemanticsNode> =
+            listOf(node) + node.children.flatMap(::walk)
         return walk(root.semanticsOwner.rootSemanticsNode)
     }
 
@@ -501,13 +547,17 @@ class RequireAuthWrapperTest {
         }
     }
 
-    private class RecordingPrompt(val callback: BiometricPrompt.AuthenticationCallback) :
-        AuthenticationManager.AuthenticationPrompt {
+    private class RecordingPrompt(
+        val callback: BiometricPrompt.AuthenticationCallback
+    ) : AuthenticationManager.AuthenticationPrompt {
         var authenticateCalls = 0
         var cancelCalls = 0
         lateinit var info: BiometricPrompt.PromptInfo
 
-        override fun authenticate(info: BiometricPrompt.PromptInfo, cryptoObject: BiometricPrompt.CryptoObject?) {
+        override fun authenticate(
+            info: BiometricPrompt.PromptInfo,
+            cryptoObject: BiometricPrompt.CryptoObject?,
+        ) {
             this.info = info
             authenticateCalls++
         }
@@ -520,11 +570,14 @@ class RequireAuthWrapperTest {
             callback.onAuthenticationSucceeded(
                 ReflectionHelpers.callConstructor(
                     BiometricPrompt.AuthenticationResult::class.java,
-                    ReflectionHelpers.ClassParameter.from(BiometricPrompt.CryptoObject::class.java, null),
+                    ReflectionHelpers.ClassParameter.from(
+                        BiometricPrompt.CryptoObject::class.java,
+                        null,
+                    ),
                     ReflectionHelpers.ClassParameter.from(
                         Int::class.javaPrimitiveType!!,
-                        BiometricPrompt.AUTHENTICATION_RESULT_TYPE_BIOMETRIC
-                    )
+                        BiometricPrompt.AUTHENTICATION_RESULT_TYPE_BIOMETRIC,
+                    ),
                 )
             )
         }

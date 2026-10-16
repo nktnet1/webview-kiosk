@@ -5,19 +5,21 @@ import org.json.JSONObject
 import uk.nktnet.webviewkiosk.config.Constants
 
 fun generatePdfRendererHtml(pdfSourceToken: String): String {
-    val pdfSourceUrl = Constants.PDF_JS_ASSETS_DUMMY_URL.toUri()
-        .buildUpon()
-        .appendPath("pdf_source")
-        .appendQueryParameter("wk_pdf_token", pdfSourceToken)
-        .build()
-        .toString()
+    val pdfSourceUrl =
+        Constants.PDF_JS_ASSETS_DUMMY_URL.toUri()
+            .buildUpon()
+            .appendPath("pdf_source")
+            .appendQueryParameter("wk_pdf_token", pdfSourceToken)
+            .build()
+            .toString()
     val quotedPdfSourceUrl = JSONObject.quote(pdfSourceUrl)
-    val pdfStatusUrl = Constants.PDF_JS_ASSETS_DUMMY_URL.toUri()
-        .buildUpon()
-        .appendPath("pdf_status")
-        .appendQueryParameter("wk_pdf_token", pdfSourceToken)
-        .build()
-        .toString()
+    val pdfStatusUrl =
+        Constants.PDF_JS_ASSETS_DUMMY_URL.toUri()
+            .buildUpon()
+            .appendPath("pdf_status")
+            .appendQueryParameter("wk_pdf_token", pdfSourceToken)
+            .build()
+            .toString()
     val quotedPdfStatusUrl = JSONObject.quote(pdfStatusUrl)
 
     return """
@@ -271,5 +273,6 @@ fun generatePdfRendererHtml(pdfSourceToken: String): String {
             </script>
         </body>
         </html>
-    """.trimIndent()
+    """
+        .trimIndent()
 }

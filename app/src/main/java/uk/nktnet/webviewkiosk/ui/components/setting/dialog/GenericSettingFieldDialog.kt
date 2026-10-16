@@ -40,7 +40,7 @@ fun GenericSettingFieldDialog(
     settingKey: String,
     restricted: Boolean,
     saveText: String = "Save",
-    content: @Composable ColumnScope.() -> Unit
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     var showInfoDialog by remember { mutableStateOf(false) }
 
@@ -58,7 +58,10 @@ fun GenericSettingFieldDialog(
                         Text(
                             settingKey,
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            color =
+                                MaterialTheme.colorScheme.onSurface.copy(
+                                    alpha = 0.6f
+                                ),
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                         HorizontalDivider()
@@ -66,20 +69,14 @@ fun GenericSettingFieldDialog(
                 }
             },
             text = {
-                Column(
-                    modifier = Modifier.verticalScroll(rememberScrollState()),
-                ) {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
                     SelectionContainer {
-                        Text(
-                            normaliseInfoText(infoText)
-                        )
+                        Text(normaliseInfoText(infoText))
                     }
                 }
             },
             confirmButton = {
-                TextButton(
-                    onClick = { showInfoDialog = false }
-                ) {
+                TextButton(onClick = { showInfoDialog = false }) {
                     Text("Close")
                 }
             },
@@ -89,9 +86,7 @@ fun GenericSettingFieldDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     title,
                     modifier = Modifier.weight(1f),
@@ -99,10 +94,7 @@ fun GenericSettingFieldDialog(
                 )
                 IconButton(
                     onClick = { showInfoDialog = true },
-                    modifier = Modifier
-                        .offset(x = 2.dp)
-                        .size(24.dp)
-                        .padding(3.dp),
+                    modifier = Modifier.offset(x = 2.dp).size(24.dp).padding(3.dp),
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.baseline_info_24),
@@ -142,8 +134,6 @@ fun GenericSettingFieldDialog(
                 )
             }
         },
-        properties = DialogProperties(
-            dismissOnClickOutside = false,
-        )
+        properties = DialogProperties(dismissOnClickOutside = false),
     )
 }

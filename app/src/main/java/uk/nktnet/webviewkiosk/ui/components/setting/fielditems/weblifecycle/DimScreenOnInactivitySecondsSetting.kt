@@ -17,8 +17,12 @@ fun DimScreenOnInactivitySecondsSetting() {
     val settingKey = UserSettingsKeys.WebLifecycle.DIM_SCREEN_ON_INACTIVITY_SECONDS
 
     NumberSettingFieldItem(
-        label = stringResource(R.string.web_lifecycle_dim_screen_on_inactivity_seconds_title),
-        infoText = """
+        label =
+            stringResource(
+                R.string.web_lifecycle_dim_screen_on_inactivity_seconds_title
+            ),
+        infoText =
+            """
             Number of seconds of inactivity before the screen is dimmed.
 
             This will set the brightness to 0, and will restore the brightness to
@@ -27,13 +31,14 @@ fun DimScreenOnInactivitySecondsSetting() {
             Minimum: ${Constants.MIN_INACTIVITY_TIMEOUT_SECONDS}
 
             To disable, use the value 0.
-        """.trimIndent(),
+        """
+                .trimIndent(),
         placeholder = "e.g. 120",
         initialValue = userSettings.dimScreenOnInactivitySeconds,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         min = Constants.MIN_INACTIVITY_TIMEOUT_SECONDS,
         max = Constants.MAX_INT_SETTING,
-        onSave = { userSettings.dimScreenOnInactivitySeconds = it }
+        onSave = { userSettings.dimScreenOnInactivitySeconds = it },
     )
 }

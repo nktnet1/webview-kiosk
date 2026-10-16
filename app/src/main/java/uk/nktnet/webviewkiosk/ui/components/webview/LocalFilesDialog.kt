@@ -33,10 +33,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog as Dialog
+import uk.nktnet.webviewkiosk.utils.boundedBreakableTextPreview
 import uk.nktnet.webviewkiosk.utils.getDisplayName
 import uk.nktnet.webviewkiosk.utils.getLocalFileLink
 import uk.nktnet.webviewkiosk.utils.getWebContentFilesDir
-import uk.nktnet.webviewkiosk.utils.boundedBreakableTextPreview
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
 import uk.nktnet.webviewkiosk.utils.listLocalFiles
@@ -58,69 +58,70 @@ fun LocalFilesDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            modifier = Modifier
-                .handleUserTouchEvent()
-                .handleUserKeyEvent(context, showLocalFileDialog)
-                .fillMaxSize()
-                .padding(vertical = 16.dp),
-            color = MaterialTheme.colorScheme.background,
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Column(
-                modifier = Modifier
+            modifier =
+                Modifier.handleUserTouchEvent()
+                    .handleUserKeyEvent(context, showLocalFileDialog)
                     .fillMaxSize()
-                    .padding(16.dp)
-            ) {
+                    .padding(vertical = 16.dp),
+            color = MaterialTheme.colorScheme.background,
+            shape = MaterialTheme.shapes.medium,
+        ) {
+            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                 Text("Files", style = MaterialTheme.typography.headlineMedium)
                 Spacer(Modifier.height(16.dp))
 
                 if (filesList.isEmpty()) {
                     Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = "No local files available.",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 } else {
                     LazyColumn(
                         modifier = Modifier.weight(1f),
-                        state = listState
+                        state = listState,
                     ) {
                         itemsIndexed(filesList) { index, file ->
                             val displayName = file.getDisplayName()
 
                             Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp)
-                                    .clickable {
-                                        customLoadUrl(file.getLocalFileLink())
-                                        onDismiss()
-                                    }
+                                modifier =
+                                    Modifier.fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clickable {
+                                            customLoadUrl(file.getLocalFileLink())
+                                            onDismiss()
+                                        }
                             ) {
                                 Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp)
+                                    modifier = Modifier.fillMaxWidth().padding(16.dp)
                                 ) {
                                     Text(
-                                        text = buildAnnotatedString {
-                                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
-                                                append("[$index] ")
-                                            }
-                                            append(
-                                                boundedBreakableTextPreview(displayName)
-                                            )
-                                        },
+                                        text =
+                                            buildAnnotatedString {
+                                                withStyle(
+                                                    style =
+                                                        SpanStyle(
+                                                            fontWeight =
+                                                                FontWeight.Bold
+                                                        )
+                                                ) {
+                                                    append("[$index] ")
+                                                }
+                                                append(
+                                                    boundedBreakableTextPreview(
+                                                        displayName
+                                                    )
+                                                )
+                                            },
                                         maxLines = 2,
                                         overflow = TextOverflow.Ellipsis,
-                                        style = MaterialTheme.typography.bodyMedium
+                                        style = MaterialTheme.typography.bodyMedium,
                                     )
                                 }
                             }
@@ -132,7 +133,7 @@ fun LocalFilesDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.End,
                 ) {
                     TextButton(onClick = onDismiss) {
                         Text("Close")

@@ -18,7 +18,8 @@ fun MqttUseForegroundServiceSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.mqtt_use_foreground_service_title),
-        infoText = """
+        infoText =
+            """
             Start a Foreground Service to keep the MQTT connection alive.
 
             This will maintain the connection even when ${stringResource(R.string.app_name)}
@@ -34,7 +35,8 @@ fun MqttUseForegroundServiceSetting() {
 
             For more information, visit:
             - https://dontkillmyapp.com
-        """.trimIndent(),
+        """
+                .trimIndent(),
         initialValue = userSettings.mqttUseForegroundService,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
@@ -47,6 +49,6 @@ fun MqttUseForegroundServiceSetting() {
                     userSettings.mqttEnabled && isEnabled,
                 )
             }
-        }
+        },
     )
 }

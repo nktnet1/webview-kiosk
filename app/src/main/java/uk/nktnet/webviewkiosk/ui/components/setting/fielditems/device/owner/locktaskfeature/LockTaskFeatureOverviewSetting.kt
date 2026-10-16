@@ -15,12 +15,15 @@ fun LockTaskFeatureOverviewSetting() {
     val settingKey = UserSettingsKeys.Device.Owner.LockTaskFeature.OVERVIEW
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.device_owner_lock_task_feature_overview_title),
-        infoText = """
+        label =
+            stringResource(R.string.device_owner_lock_task_feature_overview_title),
+        infoText =
+            """
             Shows the Overview button (tapping this button opens the Recents screen).
 
             If you enable this button, you must also enable the Home button.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.lockTaskFeatureOverview,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

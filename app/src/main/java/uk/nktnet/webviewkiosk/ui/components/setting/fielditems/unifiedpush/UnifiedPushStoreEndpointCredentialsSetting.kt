@@ -16,8 +16,10 @@ fun UnifiedPushStoreEndpointCredentialsSetting() {
     val settingKey = UserSettingsKeys.UnifiedPush.STORE_ENDPOINT_CREDENTIALS
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.unifiedpush_store_endpoint_credentials_title),
-        infoText = """
+        label =
+            stringResource(R.string.unifiedpush_store_endpoint_credentials_title),
+        infoText =
+            """
             When enabled, ${stringResource(R.string.app_name)} will persist
             the following values after registration:
 
@@ -32,12 +34,13 @@ fun UnifiedPushStoreEndpointCredentialsSetting() {
             application server. These values are thus stored locally in the
             application so they can be copied. They can be optionally redacted
             afterwards through the settings UI.
-            """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.unifiedPushStoreEndpointCredentials,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = {
             userSettings.unifiedPushStoreEndpointCredentials = it
-        }
+        },
     )
 }

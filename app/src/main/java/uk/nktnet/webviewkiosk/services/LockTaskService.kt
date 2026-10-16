@@ -14,6 +14,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,27 +27,31 @@ import uk.nktnet.webviewkiosk.BuildConfig
 import uk.nktnet.webviewkiosk.MainActivity
 import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
 import uk.nktnet.webviewkiosk.managers.CustomNotificationType
-import kotlin.time.Duration.Companion.milliseconds
 
 @RequiresApi(28)
-class LockTaskService: Service() {
+class LockTaskService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var updateJob: Job? = null
     private var receiverRegistered = false
 
     override fun onBind(intent: Intent?): IBinder? = null
 
-    private val returnReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) {
-            stopLockTaskService()
+    private val returnReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context?, intent: Intent?) {
+                stopLockTaskService()
+            }
         }
-    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         try {
             startForegroundNotification()
         } catch (e: Exception) {
-            Log.e(javaClass.simpleName, "Unable to start lock task foreground service", e)
+            Log.e(
+                javaClass.simpleName,
+                "Unable to start lock task foreground service",
+                e,
+            )
             stopLockTaskService(startId)
             return START_NOT_STICKY
         }
@@ -56,14 +61,20 @@ class LockTaskService: Service() {
                 try {
                     val am = getSystemService(ActivityManager::class.java)
                     delay(3000.milliseconds)
-                    while (am.lockTaskModeState == ActivityManager.LOCK_TASK_MODE_LOCKED) {
+                    while (
+                        am.lockTaskModeState == ActivityManager.LOCK_TASK_MODE_LOCKED
+                    ) {
                         delay(1000.milliseconds)
                     }
                     stopLockTaskService()
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
-                    Log.e(javaClass.simpleName, "Unable to monitor lock task mode", e)
+                    Log.e(
+                        javaClass.simpleName,
+                        "Unable to monitor lock task mode",
+                        e,
+                    )
                     stopLockTaskService()
                 }
             }
@@ -76,27 +87,29 @@ class LockTaskService: Service() {
         // Sticky restarts can run before any activity has created the channels.
         CustomNotificationManager.init(applicationContext)
 
-        val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-            ?: Intent(this, MainActivity::class.java)
-        val contentIntent = PendingIntent.getActivity(
-            this,
-            0,
-            launchIntent,
-            PendingIntent.FLAG_IMMUTABLE
-        )
+        val launchIntent =
+            packageManager.getLaunchIntentForPackage(packageName)
+                ?: Intent(this, MainActivity::class.java)
+        val contentIntent =
+            PendingIntent.getActivity(
+                this,
+                0,
+                launchIntent,
+                PendingIntent.FLAG_IMMUTABLE,
+            )
 
         ServiceCompat.startForeground(
             this,
             CustomNotificationType.LOCK_TASK_MODE,
             CustomNotificationManager.buildLockTaskNotification(
                 this,
-                contentIntent
+                contentIntent,
             ),
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_MANIFEST
             } else {
                 0
-            }
+            },
         )
         if (!receiverRegistered) {
             ContextCompat.registerReceiver(
@@ -111,7 +124,11 @@ class LockTaskService: Service() {
 
     private fun stopLockTaskService(startId: Int? = null) {
         releaseResources()
-        if (startId == null) stopSelf() else stopSelf(startId)
+        if (startId == null) {
+            stopSelf()
+        } else {
+            stopSelf(startId)
+        }
     }
 
     override fun onDestroy() {
@@ -128,13 +145,18 @@ class LockTaskService: Service() {
             try {
                 unregisterReceiver(returnReceiver)
             } catch (e: IllegalArgumentException) {
-                Log.w(javaClass.simpleName, "Lock task receiver was already unregistered", e)
+                Log.w(
+                    javaClass.simpleName,
+                    "Lock task receiver was already unregistered",
+                    e,
+                )
             }
         }
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
     }
 
     companion object {
-        const val RETURN_ACTION = "${BuildConfig.APPLICATION_ID}.action.RETURN_ACTION"
+        const val RETURN_ACTION =
+            "${BuildConfig.APPLICATION_ID}.action.RETURN_ACTION"
     }
 }

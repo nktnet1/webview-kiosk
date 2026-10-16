@@ -5,5 +5,6 @@ fun wrapJsInIIFE(js: String): String {
         (function() {
             $js
         })();
-    """.trimIndent()
+    """
+        .trimIndent()
 }

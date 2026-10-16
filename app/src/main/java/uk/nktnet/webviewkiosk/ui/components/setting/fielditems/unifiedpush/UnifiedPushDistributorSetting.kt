@@ -34,7 +34,8 @@ fun UnifiedPushDistributorSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.unifiedpush_distributor_title),
-        infoText = """
+        infoText =
+            """
             The package name of the distributor, e.g.
 
             - org.unifiedpush.distributor.sunup
@@ -42,7 +43,8 @@ fun UnifiedPushDistributorSetting() {
 
             The distributor app serves as the middle-man that receives the app notification
             from the push server and forwarding it to ${stringResource(R.string.app_name)}.
-        """.trimIndent(),
+        """
+                .trimIndent(),
         placeholder = "e.g. io.heckel.ntfy",
         initialValue = userSettings.unifiedPushDistributor,
         settingKey = settingKey,
@@ -63,12 +65,12 @@ fun UnifiedPushDistributorSetting() {
                 onClick = { showSelectDialog = true },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 shape = RoundedCornerShape(4.dp),
-                colors = ButtonDefaults.buttonColors()
+                colors = ButtonDefaults.buttonColors(),
             ) {
                 Text(
                     text = "Select a Distributor",
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
 
@@ -78,8 +80,8 @@ fun UnifiedPushDistributorSetting() {
                 onSelectedApp = { app ->
                     setValue(app.packageName)
                     showSelectDialog = false
-                }
+                },
             )
-        }
+        },
     )
 }

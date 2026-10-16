@@ -19,20 +19,18 @@ import uk.nktnet.webviewkiosk.ui.components.setting.permissions.SitePermissionsL
 @Composable
 fun SettingsWebBrowsingSitePermissionsScreen(navController: NavController) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(top = 4.dp)
-            .padding(horizontal = 16.dp),
+        modifier =
+            Modifier.fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(top = 4.dp)
+                .padding(horizontal = 16.dp)
     ) {
         SettingLabel(
             navController = navController,
-            label = stringResource(R.string.settings_site_permissions_title)
+            label = stringResource(R.string.settings_site_permissions_title),
         )
         SettingDivider()
 
-        SitePermissionsList(
-            modifier = Modifier.fillMaxSize()
-        )
+        SitePermissionsList(modifier = Modifier.fillMaxSize())
     }
 }

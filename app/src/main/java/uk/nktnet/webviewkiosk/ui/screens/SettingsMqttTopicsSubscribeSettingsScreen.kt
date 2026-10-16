@@ -17,34 +17,35 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.settings.MqttSubscribeSettingsQosSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.settings.MqttSubscribeSettingsRetainAsPublishedSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.settings.MqttSubscribeSettingsRetainHandlingSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.settings.MqttSubscribeSettingsTopicSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogsButton
 
 @Composable
 fun SettingsMqttTopicsSubscribeSettingsScreen(navController: NavController) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(top = 4.dp)
-            .padding(horizontal = 16.dp),
+        modifier =
+            Modifier.fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(top = 4.dp)
+                .padding(horizontal = 16.dp)
     ) {
         SettingLabel(
             navController = navController,
-            label = stringResource(R.string.settings_mqtt_topics_subscribe_settings_title)
+            label =
+                stringResource(
+                    R.string.settings_mqtt_topics_subscribe_settings_title
+                ),
         )
         SettingDivider()
 
         Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
+            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
         ) {
             MqttControlButtons()
             HorizontalDivider(modifier = Modifier.padding(top = 8.dp))

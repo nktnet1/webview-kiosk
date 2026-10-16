@@ -44,7 +44,7 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
     initialValue: List<T>,
     settingKey: String,
     restricted: Boolean,
-    onSave: (List<T>) -> Unit
+    onSave: (List<T>) -> Unit,
 ) {
     var items by remember { mutableStateOf(initialValue) }
     var savedItems by remember { mutableStateOf(initialValue) }
@@ -64,43 +64,53 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
         },
         bodyContent = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
+                modifier =
+                    Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
             ) {
                 ReorderableColumn(
                     list = items,
                     onSettle = { from, to ->
-                        items = items.toMutableList().apply { add(to, removeAt(from)) }
+                        items =
+                            items.toMutableList().apply { add(to, removeAt(from)) }
                     },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) { index, item, _ ->
                     key(item.name) {
                         ReorderableItem {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .heightIn(min = 32.dp)
+                                modifier =
+                                    Modifier.fillMaxWidth().heightIn(min = 32.dp),
                             ) {
                                 if (!restricted) {
                                     IconButton(
-                                        onClick = { items = items.toMutableList().apply { remove(item) } },
-                                        modifier = Modifier.offset((-10).dp)
+                                        onClick = {
+                                            items =
+                                                items.toMutableList().apply {
+                                                    remove(item)
+                                                }
+                                        },
+                                        modifier = Modifier.offset((-10).dp),
                                     ) {
                                         Icon(
-                                            painter = painterResource(R.drawable.baseline_clear_24),
+                                            painter =
+                                                painterResource(
+                                                    R.drawable.baseline_clear_24
+                                                ),
                                             contentDescription = "Remove",
-                                            tint = MaterialTheme.colorScheme.error
+                                            tint = MaterialTheme.colorScheme.error,
                                         )
                                     }
                                 }
                                 Text(getLabel(item), modifier = Modifier.weight(1f))
                                 if (!restricted) {
                                     Icon(
-                                        painter = painterResource(R.drawable.drag_indicator_24),
+                                        painter =
+                                            painterResource(
+                                                R.drawable.drag_indicator_24
+                                            ),
                                         contentDescription = "Drag Handle",
-                                        modifier = Modifier.draggableHandle()
+                                        modifier = Modifier.draggableHandle(),
                                     )
                                 }
                             }
@@ -110,14 +120,16 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
 
                 if (!restricted) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                        horizontalArrangement =
+                            Arrangement.spacedBy(8.dp, Alignment.End),
                     ) {
                         Button(
                             onClick = { items = getDefault() },
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                            colors =
+                                ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.error
+                                ),
                         ) {
                             Text("Reset")
                         }
@@ -125,26 +137,30 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
                         Box {
                             Button(
                                 onClick = { addExpanded = true },
-                                enabled = availableToAdd.isNotEmpty()
+                                enabled = availableToAdd.isNotEmpty(),
                             ) {
                                 Icon(
-                                    painter = painterResource(R.drawable.baseline_add_24),
-                                    contentDescription = "Add"
+                                    painter =
+                                        painterResource(R.drawable.baseline_add_24),
+                                    contentDescription = "Add",
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text("Add")
                             }
                             DropdownMenu(
                                 expanded = addExpanded,
-                                onDismissRequest = { addExpanded = false }
+                                onDismissRequest = { addExpanded = false },
                             ) {
                                 availableToAdd.forEach { entry ->
                                     DropdownMenuItem(
                                         text = { Text(getLabel(entry)) },
                                         onClick = {
-                                            items = items.toMutableList().apply { add(entry) }
+                                            items =
+                                                items.toMutableList().apply {
+                                                    add(entry)
+                                                }
                                             addExpanded = false
-                                        }
+                                        },
                                     )
                                 }
                             }
@@ -152,6 +168,6 @@ fun <T : Enum<T>> EnumListSettingFieldItem(
                     }
                 }
             }
-        }
+        },
     )
 }

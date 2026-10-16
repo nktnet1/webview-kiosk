@@ -37,7 +37,10 @@ import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.utils.WEBVIEW_RECREATION_REQUEST_KEY
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 
-/** Drive the production SetupNavHost graph and keyed root content with a deterministic probe. */
+/**
+ * Drive the production SetupNavHost graph and keyed root content with a
+ * deterministic probe.
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
 @LooperMode(LooperMode.Mode.PAUSED)
@@ -47,7 +50,8 @@ class WebViewRootComposeRegressionTest {
     private lateinit var view: ComposeView
     private lateinit var navController: NavHostController
     private val clock = BroadcastFrameClock()
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate + clock)
+    private val scope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate + clock)
     private lateinit var recomposer: Recomposer
     private var frameTime = 0L
     private val showHost = mutableStateOf(true)
@@ -58,7 +62,10 @@ class WebViewRootComposeRegressionTest {
 
     @Before
     fun setUp() {
-        activityController = Robolectric.buildActivity(AppCompatActivity::class.java).setup().visible()
+        activityController =
+            Robolectric.buildActivity(AppCompatActivity::class.java)
+                .setup()
+                .visible()
         activity = activityController.get()
         navController = newController()
         recomposer = Recomposer(scope.coroutineContext)
@@ -93,7 +100,12 @@ class WebViewRootComposeRegressionTest {
         frames()
         assertEquals(5, mounted.size)
         assertEquals(4, disposed.size)
-        assertEquals(1, navController.currentBackStack.value.count { it.destination.route == Screen.WebView.route })
+        assertEquals(
+            1,
+            navController.currentBackStack.value.count {
+                it.destination.route == Screen.WebView.route
+            },
+        )
     }
 
     @Test
@@ -128,10 +140,22 @@ class WebViewRootComposeRegressionTest {
             navigateToWebViewScreen(navController)
             frames()
             assertSame(root, navController.currentBackStackEntry)
-            assertEquals(1, navController.currentBackStack.value.count { entry -> entry.destination.route == Screen.WebView.route })
-            assertFalse(navController.currentBackStack.value.any { entry -> entry.destination.route == Screen.Settings.route })
+            assertEquals(
+                1,
+                navController.currentBackStack.value.count { entry ->
+                    entry.destination.route == Screen.WebView.route
+                },
+            )
+            assertFalse(
+                navController.currentBackStack.value.any { entry ->
+                    entry.destination.route == Screen.Settings.route
+                }
+            )
         }
-        assertEquals(24, root.savedStateHandle.get<Int>(WEBVIEW_RECREATION_REQUEST_KEY))
+        assertEquals(
+            24,
+            root.savedStateHandle.get<Int>(WEBVIEW_RECREATION_REQUEST_KEY),
+        )
     }
 
     @Test
@@ -139,18 +163,27 @@ class WebViewRootComposeRegressionTest {
         val root = navController.getBackStackEntry(Screen.WebView.route)
         repeat(5) {
             navController.navigate(Screen.AdminRestrictionsChanged.route)
-            frames() // Allow the outgoing and incoming destinations to overlap in NavHost.
+            frames() // Allow the outgoing and incoming destinations to overlap in
+            // NavHost.
             navigateToWebViewScreen(navController)
             frames()
             assertSame(root, navController.currentBackStackEntry)
-            assertEquals(1, navController.currentBackStack.value.count { entry ->
-                entry.destination.route == Screen.WebView.route
-            })
-            assertFalse(navController.currentBackStack.value.any { entry ->
-                entry.destination.route == Screen.AdminRestrictionsChanged.route
-            })
+            assertEquals(
+                1,
+                navController.currentBackStack.value.count { entry ->
+                    entry.destination.route == Screen.WebView.route
+                },
+            )
+            assertFalse(
+                navController.currentBackStack.value.any { entry ->
+                    entry.destination.route == Screen.AdminRestrictionsChanged.route
+                }
+            )
         }
-        assertEquals(5, root.savedStateHandle.get<Int>(WEBVIEW_RECREATION_REQUEST_KEY))
+        assertEquals(
+            5,
+            root.savedStateHandle.get<Int>(WEBVIEW_RECREATION_REQUEST_KEY),
+        )
     }
 
     @Test
@@ -158,7 +191,8 @@ class WebViewRootComposeRegressionTest {
         navigateToWebViewScreen(navController)
         frames()
         val prior = navController.getBackStackEntry(Screen.WebView.route)
-        val snapshot: Bundle = navController.saveState() ?: error("no navigation state")
+        val snapshot: Bundle =
+            navController.saveState() ?: error("no navigation state")
         showHost.value = false
         frames()
 
@@ -167,20 +201,32 @@ class WebViewRootComposeRegressionTest {
         mount()
         val root = navController.getBackStackEntry(Screen.WebView.route)
         assertTrue(root !== prior)
-        assertEquals(1, root.savedStateHandle.get<Int>(WEBVIEW_RECREATION_REQUEST_KEY))
-        assertEquals(1, navController.currentBackStack.value.count { it.destination.route == Screen.WebView.route })
+        assertEquals(
+            1,
+            root.savedStateHandle.get<Int>(WEBVIEW_RECREATION_REQUEST_KEY),
+        )
+        assertEquals(
+            1,
+            navController.currentBackStack.value.count {
+                it.destination.route == Screen.WebView.route
+            },
+        )
         navigateToWebViewScreen(navController)
         frames()
         assertSame(root, navController.currentBackStackEntry)
-        assertEquals(2, root.savedStateHandle.get<Int>(WEBVIEW_RECREATION_REQUEST_KEY))
+        assertEquals(
+            2,
+            root.savedStateHandle.get<Int>(WEBVIEW_RECREATION_REQUEST_KEY),
+        )
     }
 
-    private fun newController() = NavHostController(activity).apply {
-        setLifecycleOwner(activity)
-        setViewModelStore(ViewModelStore())
-        navigatorProvider.addNavigator(ComposeNavigator())
-        navigatorProvider.addNavigator(DialogNavigator())
-    }
+    private fun newController() =
+        NavHostController(activity).apply {
+            setLifecycleOwner(activity)
+            setViewModelStore(ViewModelStore())
+            navigatorProvider.addNavigator(ComposeNavigator())
+            navigatorProvider.addNavigator(DialogNavigator())
+        }
 
     private fun mount() {
         view.setContent {

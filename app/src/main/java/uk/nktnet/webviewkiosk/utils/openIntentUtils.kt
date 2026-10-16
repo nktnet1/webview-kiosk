@@ -30,30 +30,32 @@ fun safeStartActivity(context: Context, intent: Intent, bundle: Bundle? = null) 
             val shortName = intent.action?.substringAfterLast('.') ?: "Unknown"
             ToastManager.show(
                 context,
-                "No activity for intent: $shortName"
+                "No activity for intent: $shortName",
             )
         }
     } catch (e: Exception) {
         Log.e(Constants.APP_SCHEME, "Failed to start activity", e)
         ToastManager.show(
             context,
-            "Error: ${e.message}"
+            "Error: ${e.message}",
         )
     }
 }
 
 fun openAppDetailsSettings(context: Context) {
-    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-        data = Uri.fromParts("package", context.packageName, null)
-    }
+    val intent =
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.fromParts("package", context.packageName, null)
+        }
     safeStartActivity(context, intent)
 }
 
 fun openAppNotificationsSettings(context: Context) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-        }
+        val intent =
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+            }
         safeStartActivity(context, intent)
     } else {
         openAppDetailsSettings(context)
@@ -93,7 +95,8 @@ fun openPackage(
     activityName: String? = null,
     intent: Intent? = null,
 ) {
-    val activityManager = context.getSystemService(ACTIVITY_SERVICE) as ActivityManager
+    val activityManager =
+        context.getSystemService(ACTIVITY_SERVICE) as ActivityManager
     val userSettings = UserSettings(context)
     var options: ActivityOptions? = null
     var intentFlags = Intent.FLAG_ACTIVITY_NEW_TASK
@@ -103,31 +106,31 @@ fun openPackage(
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
             ToastManager.show(
                 context,
-                "Error: kiosk launch requires Android API ${Build.VERSION_CODES.P}+ (current: ${Build.VERSION.SDK_INT})."
+                "Error: kiosk launch requires Android API ${Build.VERSION_CODES.P}+ (current: ${Build.VERSION.SDK_INT}).",
             )
             return
         }
-        val dpm = context.getSystemService(
-            Context.DEVICE_POLICY_SERVICE
-        ) as DevicePolicyManager
+        val dpm =
+            context.getSystemService(Context.DEVICE_POLICY_SERVICE)
+                as DevicePolicyManager
         if (!dpm.isLockTaskPermitted(context.packageName)) {
             ToastManager.show(
                 context,
-                "Error: ${context.packageName} must be lock task permitted to launch apps."
+                "Error: ${context.packageName} must be lock task permitted to launch apps.",
             )
             return
         }
         if (!dpm.isLockTaskPermitted(packageName)) {
             ToastManager.show(
                 context,
-                "Error: $packageName is not lock task permitted in settings."
+                "Error: $packageName is not lock task permitted in settings.",
             )
             return
         }
         if (!userSettings.lockTaskFeatureHome) {
             ToastManager.show(
                 context,
-                "Error: lock task feature HOME (under device owner) is required."
+                "Error: lock task feature HOME (under device owner) is required.",
             )
             return
         }
@@ -137,20 +140,22 @@ fun openPackage(
     }
 
     try {
-        val launchIntent = intent ?: if (activityName != null) {
-            Intent().apply {
-                component = ComponentName(packageName, activityName)
-            }
-        } else {
-            context.packageManager.getLaunchIntentForPackage(packageName)
-        }
+        val launchIntent =
+            intent
+                ?: if (activityName != null) {
+                    Intent().apply {
+                        component = ComponentName(packageName, activityName)
+                    }
+                } else {
+                    context.packageManager.getLaunchIntentForPackage(packageName)
+                }
 
         if (launchIntent != null) {
             if (isLocked) {
                 context.startForegroundService(
                     Intent(
                         context,
-                        LockTaskService::class.java
+                        LockTaskService::class.java,
                     )
                 )
             }
@@ -158,7 +163,7 @@ fun openPackage(
             safeStartActivity(
                 context,
                 launchIntent,
-                options?.toBundle()
+                options?.toBundle(),
             )
         } else {
             ToastManager.show(context, "Error: $packageName cannot be opened.")
@@ -171,22 +176,24 @@ fun openPackage(
 fun handleExternalSchemeUrl(context: Context, url: String) {
     try {
         val uri = url.toUri()
-        val intent = if (uri.scheme == "intent") {
-            Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
-        } else {
-            Intent(Intent.ACTION_VIEW, url.toUri())
-        }
+        val intent =
+            if (uri.scheme == "intent") {
+                Intent.parseUri(url, Intent.URI_INTENT_SCHEME)
+            } else {
+                Intent(Intent.ACTION_VIEW, url.toUri())
+            }
 
-        val resolveInfo = context.packageManager.resolveActivity(
-            intent,
-            PackageManager.MATCH_DEFAULT_ONLY
-        )
+        val resolveInfo =
+            context.packageManager.resolveActivity(
+                intent,
+                PackageManager.MATCH_DEFAULT_ONLY,
+            )
         val packageName = resolveInfo?.activityInfo?.packageName
 
         if (packageName == null) {
             ToastManager.show(
                 context,
-                "Error handling intent: no package available for $url"
+                "Error handling intent: no package available for $url",
             )
             return
         }

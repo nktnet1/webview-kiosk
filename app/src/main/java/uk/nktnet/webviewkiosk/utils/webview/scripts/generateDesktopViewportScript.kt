@@ -3,7 +3,8 @@ package uk.nktnet.webviewkiosk.utils.webview.scripts
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 
 fun generateDesktopViewportScript(widthPx: Int = 1024): String {
-    val rawScript = """
+    val rawScript =
+        """
         function applyViewportFix() {
             var meta = document.querySelector('meta[name=viewport]');
             if (!meta) {
@@ -27,7 +28,8 @@ fun generateDesktopViewportScript(widthPx: Int = 1024): String {
             setTimeout(applyViewportFix, 0);
         };
         window.addEventListener('hashchange', applyViewportFix);
-    """.trimIndent()
+    """
+            .trimIndent()
 
     return wrapJsInIIFE(rawScript)
 }

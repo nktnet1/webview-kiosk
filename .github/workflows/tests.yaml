@@ -50,6 +50,9 @@ jobs:
             ${{ github.event_name == 'pull_request'
             && github.event.pull_request.head.repo.full_name != github.repository }}
 
+      - name: Check Kotlin formatting and if/else braces
+        run: sh gradlew checkFormatting --build-cache --stacktrace
+
       - name: Run unit tests
         run: sh gradlew :adblock:test :app:testDebugUnitTest --build-cache --profile --stacktrace
 

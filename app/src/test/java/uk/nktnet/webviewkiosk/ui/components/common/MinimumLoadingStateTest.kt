@@ -26,7 +26,8 @@ class MinimumLoadingStateTest {
         loading.show("Loading rules…")
         time = 100L
         val hide = async(start = CoroutineStart.UNDISPATCHED) { loading.hide() }
-        val completion = async(start = CoroutineStart.UNDISPATCHED) { loading.awaitHidden() }
+        val completion =
+            async(start = CoroutineStart.UNDISPATCHED) { loading.awaitHidden() }
         assertEquals(900L, waited)
         assertEquals("Loading rules…", loading.message.value)
         assertFalse(hide.isCompleted)
@@ -42,7 +43,10 @@ class MinimumLoadingStateTest {
     fun slowWorkDoesNotAddAnotherSecond() = runBlocking {
         var time = 0L
         val loading =
-            MinimumLoadingState(now = { time }, pause = { error("No extra wait expected") })
+            MinimumLoadingState(
+                now = { time },
+                pause = { error("No extra wait expected") },
+            )
         loading.show("Downloading…")
         time = 1_500L
         loading.hide()
@@ -66,10 +70,12 @@ class MinimumLoadingStateTest {
     fun staleHideCannotClearNewWorkOrReleaseItsCompletionFeedback() = runBlocking {
         var time = 0L
         val release = CompletableDeferred<Unit>()
-        val loading = MinimumLoadingState(now = { time }, pause = { release.await() })
+        val loading =
+            MinimumLoadingState(now = { time }, pause = { release.await() })
         loading.show("Reading…")
         val oldHide = async(start = CoroutineStart.UNDISPATCHED) { loading.hide() }
-        val completion = async(start = CoroutineStart.UNDISPATCHED) { loading.awaitHidden() }
+        val completion =
+            async(start = CoroutineStart.UNDISPATCHED) { loading.awaitHidden() }
         time = 500L
         loading.show("Compiling…")
         time = 1_000L
@@ -99,7 +105,10 @@ class MinimumLoadingStateTest {
     fun cancellingAPendingHideKeepsTheMessageUntilTheNextCompletion() = runBlocking {
         var time = 0L
         val loading =
-            MinimumLoadingState(now = { time }, pause = { CompletableDeferred<Unit>().await() })
+            MinimumLoadingState(
+                now = { time },
+                pause = { CompletableDeferred<Unit>().await() },
+            )
         loading.show("Loading…")
         val pending = async(start = CoroutineStart.UNDISPATCHED) { loading.hide() }
         pending.cancel()

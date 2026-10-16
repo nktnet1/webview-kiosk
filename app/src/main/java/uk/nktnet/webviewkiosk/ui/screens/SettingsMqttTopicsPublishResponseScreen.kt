@@ -17,33 +17,32 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import uk.nktnet.webviewkiosk.R
-import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.response.MqttPublishResponseQosSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.response.MqttPublishResponseRetainSetting
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.mqtt.topics.response.MqttPublishResponseTopicSetting
+import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttControlButtons
 import uk.nktnet.webviewkiosk.ui.components.setting.mqtt.MqttDebugLogsButton
 
 @Composable
 fun SettingsMqttTopicsPublishResponseScreen(navController: NavController) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(top = 4.dp)
-            .padding(horizontal = 16.dp),
+        modifier =
+            Modifier.fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(top = 4.dp)
+                .padding(horizontal = 16.dp)
     ) {
         SettingLabel(
             navController = navController,
-            label = stringResource(R.string.settings_mqtt_topics_publish_response_title),
+            label =
+                stringResource(R.string.settings_mqtt_topics_publish_response_title),
         )
         SettingDivider()
 
         Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
+            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
         ) {
             MqttControlButtons()
             HorizontalDivider(modifier = Modifier.padding(top = 8.dp))

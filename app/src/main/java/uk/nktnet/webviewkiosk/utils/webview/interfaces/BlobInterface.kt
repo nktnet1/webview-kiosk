@@ -10,23 +10,22 @@ import android.util.Base64
 import android.util.Log
 import android.webkit.JavascriptInterface
 import androidx.core.content.FileProvider
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
-import uk.nktnet.webviewkiosk.managers.ToastManager
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
 import java.util.concurrent.ConcurrentHashMap
+import uk.nktnet.webviewkiosk.config.Constants
+import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.managers.CustomNotificationManager
+import uk.nktnet.webviewkiosk.managers.ToastManager
 
-class BlobInterface(
-    private val context: Context
-) {
+class BlobInterface(private val context: Context) {
     companion object {
         const val NAME = "WebviewKioskBlobInterface"
 
-        const val JS_BLOB_HOOK = """
+        const val JS_BLOB_HOOK =
+            """
             (function() {
                 if (window.__${Constants.APP_SCHEME}_blobHookInstalled) {
                     return;
@@ -89,14 +88,12 @@ class BlobInterface(
         val file: File?,
         val filename: String,
         val output: OutputStream,
-        val mimeType: String?
+        val mimeType: String?,
     )
 
-    @Volatile
-    private var isActive = true
+    @Volatile private var isActive = true
 
-    private val activeDownloads =
-        ConcurrentHashMap<String, ActiveDownload>()
+    private val activeDownloads = ConcurrentHashMap<String, ActiveDownload>()
 
     @Synchronized
     fun dispose() {
@@ -114,7 +111,7 @@ class BlobInterface(
     fun error(message: String?) {
         ToastManager.show(
             context,
-            message ?: "Unknown error"
+            message ?: "Unknown error",
         )
     }
 
@@ -123,7 +120,7 @@ class BlobInterface(
     fun startDownload(
         transferId: String,
         mimeType: String?,
-        filename: String
+        filename: String,
     ): Boolean {
         if (!isActive) {
             return false
@@ -132,7 +129,7 @@ class BlobInterface(
         if (!isValidFilename(filename)) {
             ToastManager.show(
                 context,
-                "Invalid filename: '$filename'"
+                "Invalid filename: '$filename'",
             )
             return false
         }
@@ -147,7 +144,7 @@ class BlobInterface(
         } catch (e: Exception) {
             ToastManager.show(
                 context,
-                "Unable to start download: ${e.message}"
+                "Unable to start download: ${e.message}",
             )
             false
         }
@@ -156,21 +153,20 @@ class BlobInterface(
     @JavascriptInterface
     fun appendChunk(
         transferId: String,
-        base64Chunk: String?
+        base64Chunk: String?,
     ): Boolean {
         if (!isActive || base64Chunk == null) {
             return false
         }
 
-        val download =
-            activeDownloads[transferId]
-                ?: return false
+        val download = activeDownloads[transferId] ?: return false
 
         return try {
-            val bytes = Base64.decode(
-                base64Chunk,
-                Base64.NO_WRAP
-            )
+            val bytes =
+                Base64.decode(
+                    base64Chunk,
+                    Base64.NO_WRAP,
+                )
 
             synchronized(download) {
                 if (!isActive || activeDownloads[transferId] !== download) {
@@ -185,7 +181,7 @@ class BlobInterface(
             if (abortInternal(transferId, download)) {
                 ToastManager.show(
                     context,
-                    "Download failed: ${e.message}"
+                    "Download failed: ${e.message}",
                 )
             }
 
@@ -194,39 +190,43 @@ class BlobInterface(
     }
 
     @JavascriptInterface
-    fun finishDownload(
-        transferId: String
-    ): Boolean {
-        val download =
-            activeDownloads[transferId]
-                ?: return false
+    fun finishDownload(transferId: String): Boolean {
+        val download = activeDownloads[transferId] ?: return false
 
         return try {
-            val completed = synchronized(download) {
-                if (!isActive || activeDownloads[transferId] !== download) {
-                    false
-                } else {
-                    download.output.flush()
-                    download.output.close()
+            val completed =
+                synchronized(download) {
                     if (!isActive || activeDownloads[transferId] !== download) {
-                        // A reentrant close/flush may have invalidated this transfer.
                         false
                     } else {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && download.uri != null) {
-                            val published = context.contentResolver.update(
-                                download.uri,
-                                ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) },
-                                null,
-                                null
-                            )
-                            if (published != 1) {
-                                throw IOException("Unable to publish download")
+                        download.output.flush()
+                        download.output.close()
+                        if (!isActive || activeDownloads[transferId] !== download) {
+                            // A reentrant close/flush may have invalidated this
+                            // transfer.
+                            false
+                        } else {
+                            if (
+                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                                    download.uri != null
+                            ) {
+                                val published =
+                                    context.contentResolver.update(
+                                        download.uri,
+                                        ContentValues().apply {
+                                            put(MediaStore.Downloads.IS_PENDING, 0)
+                                        },
+                                        null,
+                                        null,
+                                    )
+                                if (published != 1) {
+                                    throw IOException("Unable to publish download")
+                                }
                             }
+                            activeDownloads.remove(transferId, download)
                         }
-                        activeDownloads.remove(transferId, download)
                     }
                 }
-            }
 
             if (!completed) {
                 return false
@@ -234,23 +234,23 @@ class BlobInterface(
 
             ToastManager.show(
                 context,
-                "${download.filename} downloaded"
+                "${download.filename} downloaded",
             )
 
             val userSettings = UserSettings(context)
 
             if (userSettings.allowNotifications) {
-                CustomNotificationManager
-                    .sendBlobDownloadNotification(
-                        context,
-                        download.uri ?: FileProvider.getUriForFile(
+                CustomNotificationManager.sendBlobDownloadNotification(
+                    context,
+                    download.uri
+                        ?: FileProvider.getUriForFile(
                             context,
                             "${context.packageName}.provider",
-                            requireNotNull(download.file)
+                            requireNotNull(download.file),
                         ),
-                        download.filename,
-                        download.mimeType,
-                    )
+                    download.filename,
+                    download.mimeType,
+                )
             }
 
             true
@@ -258,7 +258,7 @@ class BlobInterface(
             if (abortInternal(transferId, download)) {
                 ToastManager.show(
                     context,
-                    "Failed to finish download: ${e.message}"
+                    "Failed to finish download: ${e.message}",
                 )
             }
 
@@ -267,9 +267,7 @@ class BlobInterface(
     }
 
     @JavascriptInterface
-    fun abortDownload(
-        transferId: String
-    ) {
+    fun abortDownload(transferId: String) {
         abortInternal(transferId)
     }
 
@@ -278,8 +276,7 @@ class BlobInterface(
         expectedDownload: ActiveDownload? = null,
     ): Boolean {
         val download =
-            expectedDownload ?: activeDownloads[transferId]
-                ?: return false
+            expectedDownload ?: activeDownloads[transferId] ?: return false
 
         synchronized(download) {
             if (!activeDownloads.remove(transferId, download)) {
@@ -292,7 +289,7 @@ class BlobInterface(
                 Log.e(
                     javaClass.simpleName,
                     "Failed to close download output during abort",
-                    e
+                    e,
                 )
             }
 
@@ -310,26 +307,43 @@ class BlobInterface(
     }
 
     private fun createDownload(filename: String, mimeType: String?): ActiveDownload {
-        val resolvedMimeType = mimeType?.takeIf { it.isNotBlank() } ?: "application/octet-stream"
+        val resolvedMimeType =
+            mimeType?.takeIf { it.isNotBlank() } ?: "application/octet-stream"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val resolver = context.contentResolver
-            val uri = resolver.insert(
-                MediaStore.Downloads.EXTERNAL_CONTENT_URI,
-                ContentValues().apply {
-                    put(MediaStore.Downloads.DISPLAY_NAME, filename)
-                    put(MediaStore.Downloads.MIME_TYPE, resolvedMimeType)
-                    put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
-                    put(MediaStore.Downloads.IS_PENDING, 1)
-                }
-            ) ?: throw IOException("Unable to create download")
+            val uri =
+                resolver.insert(
+                    MediaStore.Downloads.EXTERNAL_CONTENT_URI,
+                    ContentValues().apply {
+                        put(MediaStore.Downloads.DISPLAY_NAME, filename)
+                        put(MediaStore.Downloads.MIME_TYPE, resolvedMimeType)
+                        put(
+                            MediaStore.Downloads.RELATIVE_PATH,
+                            Environment.DIRECTORY_DOWNLOADS,
+                        )
+                        put(MediaStore.Downloads.IS_PENDING, 1)
+                    },
+                ) ?: throw IOException("Unable to create download")
             try {
-                val savedName = resolver.query(
-                    uri, arrayOf(MediaStore.Downloads.DISPLAY_NAME), null, null, null
-                )?.use { cursor ->
-                    if (cursor.moveToFirst()) cursor.getString(0) else null
-                } ?: filename
-                val output = resolver.openOutputStream(uri)
-                    ?: throw IOException("Unable to open download")
+                val savedName =
+                    resolver
+                        .query(
+                            uri,
+                            arrayOf(MediaStore.Downloads.DISPLAY_NAME),
+                            null,
+                            null,
+                            null,
+                        )
+                        ?.use { cursor ->
+                            if (cursor.moveToFirst()) {
+                                cursor.getString(0)
+                            } else {
+                                null
+                            }
+                        } ?: filename
+                val output =
+                    resolver.openOutputStream(uri)
+                        ?: throw IOException("Unable to open download")
                 return ActiveDownload(uri, null, savedName, output, resolvedMimeType)
             } catch (e: Exception) {
                 resolver.delete(uri, null, null)
@@ -337,13 +351,22 @@ class BlobInterface(
             }
         }
 
-        val downloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+        val downloads =
+            Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_DOWNLOADS
+            )
         if (!downloads.exists() && !downloads.mkdirs()) {
             throw IOException("Unable to create Downloads directory")
         }
         val file = createDownloadFile(downloads, filename)
         try {
-            return ActiveDownload(null, file, file.name, FileOutputStream(file), resolvedMimeType)
+            return ActiveDownload(
+                null,
+                file,
+                file.name,
+                FileOutputStream(file),
+                resolvedMimeType,
+            )
         } catch (e: Exception) {
             file.delete()
             throw e
@@ -356,7 +379,12 @@ class BlobInterface(
         val extension = extensionIndex?.let { filename.substring(it) }.orEmpty()
         var suffix = 0
         while (true) {
-            val name = if (suffix == 0) filename else "$stem ($suffix)$extension"
+            val name =
+                if (suffix == 0) {
+                    filename
+                } else {
+                    "$stem ($suffix)$extension"
+                }
             val file = File(directory, name)
             // Reserve the name atomically so neither existing files nor another
             // active transfer can be overwritten or deleted by this download.
@@ -367,15 +395,11 @@ class BlobInterface(
         }
     }
 
-    private fun isValidFilename(
-        filename: String
-    ): Boolean {
-        return (
-            filename.isNotBlank()
-                && !filename.contains("..")
-                && !filename.contains("/")
-                && !filename.contains("\\")
-                && !filename.contains('\u0000')
-        )
+    private fun isValidFilename(filename: String): Boolean {
+        return (filename.isNotBlank() &&
+            !filename.contains("..") &&
+            !filename.contains("/") &&
+            !filename.contains("\\") &&
+            !filename.contains('\u0000'))
     }
 }

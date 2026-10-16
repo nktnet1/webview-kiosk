@@ -36,55 +36,71 @@ fun AllowLocationSetting() {
 
     var requestFine by remember { mutableStateOf(false) }
 
-    val (fineState, requestFinePermission) = rememberPermissionState(
-        Manifest.permission.ACCESS_FINE_LOCATION
-    )
-    val (coarseState, requestCoarsePermission) = rememberPermissionState(
-        Manifest.permission.ACCESS_COARSE_LOCATION
-    )
+    val (fineState, requestFinePermission) =
+        rememberPermissionState(Manifest.permission.ACCESS_FINE_LOCATION)
+    val (coarseState, requestCoarsePermission) =
+        rememberPermissionState(Manifest.permission.ACCESS_COARSE_LOCATION)
 
-    val permissionState = if (requestFine) fineState else coarseState
-    val requestPermission = if (requestFine) requestFinePermission else requestCoarsePermission
+    val permissionState =
+        if (requestFine) {
+            fineState
+        } else {
+            coarseState
+        }
+    val requestPermission =
+        if (requestFine) {
+            requestFinePermission
+        } else {
+            requestCoarsePermission
+        }
 
-    val statusText = when {
-        fineState.granted -> "(precise)"
-        coarseState.granted -> "(approximate)"
-        else -> "(no permission)"
-    }
+    val statusText =
+        when {
+            fineState.granted -> "(precise)"
+            coarseState.granted -> "(approximate)"
+            else -> "(no permission)"
+        }
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.device_allow_location_title),
-        infoText = """
+        infoText =
+            """
             When enabled, websites can request the device's location.
 
             You can choose to request precise location (FINE) or approximate location (COARSE).
 
             You will need to grant either ACCESS_FINE_LOCATION or ACCESS_COARSE_LOCATION,
             required for the WebView's GeolocationPermissions.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.allowLocation,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.allowLocation = it },
         itemText = { v ->
-            if (v) "True $statusText" else "False $statusText"
+            if (v) {
+                "True $statusText"
+            } else {
+                "False $statusText"
+            }
         },
         extraContent = {
             Column(modifier = Modifier.fillMaxWidth().padding(top = 8.dp)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
                         text = "Request precise location",
                         style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier
-                            .weight(1f)
-                            .combinedClickable(
-                                onClick = { requestFine = !requestFine },
-                                indication = null,
-                                interactionSource = remember { MutableInteractionSource() }
-                            )
+                        modifier =
+                            Modifier.weight(1f)
+                                .combinedClickable(
+                                    onClick = { requestFine = !requestFine },
+                                    indication = null,
+                                    interactionSource =
+                                        remember { MutableInteractionSource() },
+                                ),
                     )
                     Switch(
                         checked = requestFine,
@@ -93,30 +109,29 @@ fun AllowLocationSetting() {
                 }
 
                 Button(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
-                    onClick = requestPermission
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                    onClick = requestPermission,
                 ) {
-                    val buttonText = if (permissionState.granted) {
-                        "Disable in App Info"
-                    } else if (!permissionState.shouldShowRationale) {
-                        if (requestFine) {
-                            "Request Fine Location Permission"
+                    val buttonText =
+                        if (permissionState.granted) {
+                            "Disable in App Info"
+                        } else if (!permissionState.shouldShowRationale) {
+                            if (requestFine) {
+                                "Request Fine Location Permission"
+                            } else {
+                                "Request Coarse Location Permission"
+                            }
                         } else {
-                            "Request Coarse Location Permission"
+                            "Enable in App Info"
                         }
-                    } else {
-                        "Enable in App Info"
-                    }
 
                     Text(
                         text = buttonText,
                         textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.labelMedium,
                     )
                 }
             }
-        }
+        },
     )
 }

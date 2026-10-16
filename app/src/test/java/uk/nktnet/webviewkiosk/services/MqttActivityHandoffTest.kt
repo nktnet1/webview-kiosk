@@ -13,6 +13,8 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.Lifecycle
 import com.hivemq.client.mqtt.MqttClientState
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -63,10 +65,10 @@ import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager.RemoteMessage
 import uk.nktnet.webviewkiosk.managers.ToastManager
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicBoolean
 
-/** Actual activity/Compose and service collectors, with real HiveMQ TCP deliveries. */
+/**
+ * Actual activity/Compose and service collectors, with real HiveMQ TCP deliveries.
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
 @LooperMode(LooperMode.Mode.PAUSED)
@@ -83,57 +85,78 @@ class MqttActivityHandoffTest {
     private var savedMonitoringJob: Job? = null
     private var savedMonitoringStarted = false
     private val publications = mutableListOf<LoopbackMqttBroker.Publication>()
-    private val appliedSettings = CopyOnWriteArrayList<RemoteMessage<InboundSettingsMessage>>()
-    private val observationScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+    private val appliedSettings =
+        CopyOnWriteArrayList<RemoteMessage<InboundSettingsMessage>>()
+    private val observationScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
 
     @Before
     fun setUp() {
         context = RuntimeEnvironment.getApplication()
-        context.getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().clear().commit()
-        context.getSharedPreferences("system_settings", Context.MODE_PRIVATE)
-            .edit().clear().commit()
-        savedFields = listOf("client", "config", "configurationError", "pendingDisconnect",
-            "disconnectRequestId", "reconnectCancellation")
-            .associateWith { mqttField(it).get(MqttManager) }
-        savedCancellation = (mqttField("pendingCancelConnect").get(MqttManager) as AtomicBoolean)
-            .getAndSet(false)
+        context
+            .getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .commit()
+        context
+            .getSharedPreferences("system_settings", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .commit()
+        savedFields =
+            listOf(
+                    "client",
+                    "config",
+                    "configurationError",
+                    "pendingDisconnect",
+                    "disconnectRequestId",
+                    "reconnectCancellation",
+                )
+                .associateWith { mqttField(it).get(MqttManager) }
+        savedCancellation =
+            (mqttField("pendingCancelConnect").get(MqttManager) as AtomicBoolean)
+                .getAndSet(false)
         listOf("client", "config", "configurationError", "pendingDisconnect")
             .forEach { mqttField(it).set(MqttManager, null) }
         mqttField("disconnectRequestId").set(MqttManager, 0L)
         mqttField("reconnectCancellation").let {
             it.set(MqttManager, it.type.getConstructor().newInstance())
         }
-        savedMonitoringJob = lockField("monitoringJob").get(LockStateSingleton) as Job?
-        savedMonitoringStarted = lockField("isStarted").getBoolean(LockStateSingleton)
+        savedMonitoringJob =
+            lockField("monitoringJob").get(LockStateSingleton) as Job?
+        savedMonitoringStarted =
+            lockField("isStarted").getBoolean(LockStateSingleton)
         MqttManager.clearLogs()
         broker = LoopbackMqttBroker()
-        settings = UserSettings(context).apply {
-            mqttEnabled = true
-            mqttUseForegroundService = false
-            mqttServerHost = "127.0.0.1"
-            mqttServerPort = broker.port
-            mqttClientId = "activity-handoff-test"
-            mqttUseTls = false
-            mqttUseWebSocket = false
-            mqttAutomaticReconnect = false
-            mqttConnectTimeout = 5
-            mqttSocketConnectTimeout = 5
-            mqttPublishEventTopic = "handoff/events"
-            mqttPublishEventQos = MqttQosOption.AT_LEAST_ONCE
-            mqttPublishResponseTopic = "handoff/responses"
-            mqttPublishResponseQos = MqttQosOption.AT_LEAST_ONCE
-            mqttSubscribeCommandTopic = "handoff/commands"
-            mqttSubscribeSettingsTopic = "handoff/settings"
-            mqttSubscribeRequestTopic = "handoff/requests"
-            homeUrl = "about:blank"
-            supportPdfRendering = false
-            lockOnLaunch = false
-            resetOnLaunch = false
-            resetOnInactivitySeconds = 0
-        }
+        settings =
+            UserSettings(context).apply {
+                mqttEnabled = true
+                mqttUseForegroundService = false
+                mqttServerHost = "127.0.0.1"
+                mqttServerPort = broker.port
+                mqttClientId = "activity-handoff-test"
+                mqttUseTls = false
+                mqttUseWebSocket = false
+                mqttAutomaticReconnect = false
+                mqttConnectTimeout = 5
+                mqttSocketConnectTimeout = 5
+                mqttPublishEventTopic = "handoff/events"
+                mqttPublishEventQos = MqttQosOption.AT_LEAST_ONCE
+                mqttPublishResponseTopic = "handoff/responses"
+                mqttPublishResponseQos = MqttQosOption.AT_LEAST_ONCE
+                mqttSubscribeCommandTopic = "handoff/commands"
+                mqttSubscribeSettingsTopic = "handoff/settings"
+                mqttSubscribeRequestTopic = "handoff/requests"
+                homeUrl = "about:blank"
+                supportPdfRendering = false
+                lockOnLaunch = false
+                resetOnLaunch = false
+                resetOnInactivitySeconds = 0
+            }
         observationScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            RemoteMessageManager.settingsAppliedFlow.collect { appliedSettings.add(it) }
+            RemoteMessageManager.settingsAppliedFlow.collect {
+                appliedSettings.add(it)
+            }
         }
     }
 
@@ -145,20 +168,28 @@ class MqttActivityHandoffTest {
             MqttManager.disconnect(DisconnectCause.USER_INITIATED_DISCONNECT)
             if (::broker.isInitialized) {
                 broker.close()
-                awaitCondition { MqttManager.getState() == MqttClientState.DISCONNECTED }
+                awaitCondition {
+                    MqttManager.getState() == MqttClientState.DISCONNECTED
+                }
                 awaitSubscriptions(0)
             }
         } finally {
             observationScope.cancel()
             if (::savedFields.isInitialized) {
-                savedFields.forEach { (name, value) -> mqttField(name).set(MqttManager, value) }
+                savedFields.forEach { (name, value) ->
+                    mqttField(name).set(MqttManager, value)
+                }
                 (mqttField("pendingCancelConnect").get(MqttManager) as AtomicBoolean)
                     .set(savedCancellation)
             }
-            val monitoringJob = lockField("monitoringJob").get(LockStateSingleton) as Job?
-            if (monitoringJob !== savedMonitoringJob) monitoringJob?.cancel()
+            val monitoringJob =
+                lockField("monitoringJob").get(LockStateSingleton) as Job?
+            if (monitoringJob !== savedMonitoringJob) {
+                monitoringJob?.cancel()
+            }
             lockField("monitoringJob").set(LockStateSingleton, savedMonitoringJob)
-            lockField("isStarted").setBoolean(LockStateSingleton, savedMonitoringStarted)
+            lockField("isStarted")
+                .setBoolean(LockStateSingleton, savedMonitoringStarted)
             ToastManager.cancel()
         }
     }
@@ -187,7 +218,10 @@ class MqttActivityHandoffTest {
         publishToastAndAwait("before-ui-toast")
         awaitSettings("before-ui")
         awaitResponse("before-ui")
-        assertEquals(1, appliedSettings.count { it.message.messageId == "before-ui" })
+        assertEquals(
+            1,
+            appliedSettings.count { it.message.messageId == "before-ui" },
+        )
         assertEquals(1, responses("before-ui").size)
         assertTrue(ShadowToast.showedToast("before-ui-toast"))
 
@@ -207,7 +241,10 @@ class MqttActivityHandoffTest {
         startService()
         awaitSubscriptions(2)
         repeat(3) {
-            assertEquals(Service.START_STICKY, serviceController!!.get().onStartCommand(null, 0, it + 2))
+            assertEquals(
+                Service.START_STICKY,
+                serviceController!!.get().onStartCommand(null, 0, it + 2),
+            )
         }
         assertBatchHandledOnce("service")
 
@@ -233,8 +270,12 @@ class MqttActivityHandoffTest {
     @Config(sdk = [28, 29])
     fun aDeniedPlatformStartRequestKeepsActualActivityHandlersAvailable() {
         settings.mqttUseForegroundService = true
-        val host = createActivity(activityClass = DeniedMqttServiceActivity::class.java)
-        assertTrue((host.controller.get() as DeniedMqttServiceActivity).deniedServiceStarts > 0)
+        val host =
+            createActivity(activityClass = DeniedMqttServiceActivity::class.java)
+        assertTrue(
+            (host.controller.get() as DeniedMqttServiceActivity)
+                .deniedServiceStarts > 0
+        )
         connect()
 
         assertBatchHandledOnce("denied-request")
@@ -251,7 +292,8 @@ class MqttActivityHandoffTest {
         createActivity()
         connect()
         val service = createService().get()
-        shadowOf(service).setThrowInStartForeground(SecurityException("foreground denied"))
+        shadowOf(service)
+            .setThrowInStartForeground(SecurityException("foreground denied"))
 
         assertEquals(Service.START_NOT_STICKY, service.onStartCommand(null, 0, 7))
         awaitSubscriptions(1)
@@ -266,8 +308,10 @@ class MqttActivityHandoffTest {
     @Test
     fun aRejectedRepeatedStartReleasesOwnershipAndTheSameServiceCanRecover() {
         settings.mqttUseForegroundService = true
-        // Do not leave CONNACK gated while a cold Compose view attaches. UI setup can take
-        // longer than the loopback peer's bounded handshake on an overloaded test worker.
+        // Do not leave CONNACK gated while a cold Compose view attaches. UI setup
+        // can take
+        // longer than the loopback peer's bounded handshake on an overloaded test
+        // worker.
         val host = createActivity(visible = false)
         connect()
         host.controller.visible()
@@ -276,7 +320,8 @@ class MqttActivityHandoffTest {
         awaitSubscriptions(2)
         val service = serviceController!!.get()
         val wakeLock = ShadowPowerManager.getLatestWakeLock()
-        shadowOf(service).setThrowInStartForeground(SecurityException("foreground revoked"))
+        shadowOf(service)
+            .setThrowInStartForeground(SecurityException("foreground revoked"))
 
         assertEquals(Service.START_NOT_STICKY, service.onStartCommand(null, 0, 2))
         awaitSubscriptions(1)
@@ -324,7 +369,10 @@ class MqttActivityHandoffTest {
         startService()
         val oldService = serviceController!!
         val replacement = createService()
-        assertEquals(Service.START_STICKY, replacement.get().onStartCommand(null, 0, 2))
+        assertEquals(
+            Service.START_STICKY,
+            replacement.get().onStartCommand(null, 0, 2),
+        )
 
         destroyService(oldService)
         awaitSubscriptions(2)
@@ -346,7 +394,10 @@ class MqttActivityHandoffTest {
 
         host.stop()
         awaitCondition { MqttManager.getState() == MqttClientState.DISCONNECTED }
-        assertInactiveDeliveriesAreUnclaimed("fallback-stopped", RemoteMessage.Source.MQTT)
+        assertInactiveDeliveriesAreUnclaimed(
+            "fallback-stopped",
+            RemoteMessage.Source.MQTT,
+        )
         host.controller.start().resume()
         connect()
         assertBatchHandledOnce("fallback-restarted")
@@ -380,7 +431,11 @@ class MqttActivityHandoffTest {
         settings.mqttUseForegroundService = true
         val oldHost = createActivity()
         connect()
-        ReflectionHelpers.setField(oldHost.controller.get(), "mChangingConfigurations", true)
+        ReflectionHelpers.setField(
+            oldHost.controller.get(),
+            "mChangingConfigurations",
+            true,
+        )
         oldHost.destroy()
         awaitSubscriptions(0)
         assertTrue(MqttManager.isConnected())
@@ -399,12 +454,16 @@ class MqttActivityHandoffTest {
         val host = createActivity()
         connect()
         val service = createService().get()
-        shadowOf(service).setThrowInStartForeground(SecurityException("foreground denied"))
+        shadowOf(service)
+            .setThrowInStartForeground(SecurityException("foreground denied"))
         assertEquals(Service.START_NOT_STICKY, service.onStartCommand(null, 0, 1))
         awaitSubscriptions(1)
         settings.mqttEnabled = false
 
-        assertInactiveDeliveriesAreUnclaimed("fallback-disabled", RemoteMessage.Source.MQTT)
+        assertInactiveDeliveriesAreUnclaimed(
+            "fallback-disabled",
+            RemoteMessage.Source.MQTT,
+        )
         host.stop()
         awaitCondition { MqttManager.getState() == MqttClientState.DISCONNECTED }
     }
@@ -419,8 +478,10 @@ class MqttActivityHandoffTest {
         assertBatchHandledOnce("service")
 
         settings.mqttUseForegroundService = false
-        assertEquals(Service.START_NOT_STICKY,
-            serviceController!!.get().onStartCommand(null, 0, 2))
+        assertEquals(
+            Service.START_NOT_STICKY,
+            serviceController!!.get().onStartCommand(null, 0, 2),
+        )
         awaitSubscriptions(1)
         assertBatchHandledOnce("activity")
 
@@ -488,7 +549,11 @@ class MqttActivityHandoffTest {
     fun configurationRecreationSubscribesBeforeReusingTheExistingConnection() {
         val oldHost = createActivity()
         connect()
-        ReflectionHelpers.setField(oldHost.controller.get(), "mChangingConfigurations", true)
+        ReflectionHelpers.setField(
+            oldHost.controller.get(),
+            "mChangingConfigurations",
+            true,
+        )
         oldHost.destroy()
         awaitSubscriptions(0)
         assertTrue(MqttManager.isConnected())
@@ -529,7 +594,10 @@ class MqttActivityHandoffTest {
         createActivity()
         connect()
 
-        assertInactiveDeliveriesAreUnclaimed("unifiedpush", RemoteMessage.Source.UNIFIEDPUSH)
+        assertInactiveDeliveriesAreUnclaimed(
+            "unifiedpush",
+            RemoteMessage.Source.UNIFIEDPUSH,
+        )
     }
 
     @Test
@@ -537,11 +605,20 @@ class MqttActivityHandoffTest {
         val host = createActivity()
         connect()
         repeat(3) { i ->
-            // Preserve the connection across this stop so subscription ownership is isolated.
-            ReflectionHelpers.setField(host.controller.get(), "mChangingConfigurations", true)
+            // Preserve the connection across this stop so subscription ownership is
+            // isolated.
+            ReflectionHelpers.setField(
+                host.controller.get(),
+                "mChangingConfigurations",
+                true,
+            )
             host.stop()
             host.controller.start().resume()
-            ReflectionHelpers.setField(host.controller.get(), "mChangingConfigurations", false)
+            ReflectionHelpers.setField(
+                host.controller.get(),
+                "mChangingConfigurations",
+                false,
+            )
             pumpFrames()
             assertBatchHandledOnce("restart-$i")
             assertSubscriptions(1)
@@ -590,7 +667,8 @@ class MqttActivityHandoffTest {
         val content = controller.get().findViewById<ViewGroup>(android.R.id.content)
         val view = content.getChildAt(0) as ComposeView
         val frameClock = BroadcastFrameClock()
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate + frameClock)
+        val scope =
+            CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate + frameClock)
         val recomposer = Recomposer(scope.coroutineContext)
         scope.launch { recomposer.runRecomposeAndApplyChanges() }
         view.setParentCompositionContext(recomposer)
@@ -613,7 +691,10 @@ class MqttActivityHandoffTest {
 
     private fun startService() {
         check(serviceController == null)
-        assertEquals(Service.START_STICKY, createService().get().onStartCommand(null, 0, 1))
+        assertEquals(
+            Service.START_STICKY,
+            createService().get().onStartCommand(null, 0, 1),
+        )
     }
 
     private fun createService(): ServiceController<MqttForegroundService> =
@@ -623,11 +704,14 @@ class MqttActivityHandoffTest {
         }
 
     private fun destroyService(
-        controller: ServiceController<MqttForegroundService> = requireNotNull(serviceController),
+        controller: ServiceController<MqttForegroundService> =
+            requireNotNull(serviceController)
     ) {
         controller.destroy()
         services.remove(controller)
-        if (serviceController === controller) serviceController = null
+        if (serviceController === controller) {
+            serviceController = null
+        }
     }
 
     private fun assertConnectionReused() {
@@ -637,16 +721,36 @@ class MqttActivityHandoffTest {
     }
 
     private fun publishRequest(id: String) {
-        connection.publish("handoff/requests", JSONObject()
-            .put("requestType", "get_settings").put("messageId", id).toString())
+        connection.publish(
+            "handoff/requests",
+            JSONObject()
+                .put("requestType", "get_settings")
+                .put("messageId", id)
+                .toString(),
+        )
     }
 
     private fun publishSettings(id: String) {
-        connection.publish("handoff/settings", JSONObject()
-            .put("messageId", id).put("showToast", false).put("reloadActivity", false)
-            .put("data", JSONObject().put("settings",
-                JSONObject().put(UserSettingsKeys.WebContent.HOME_URL, "https://example.test/$id")))
-            .toString())
+        connection.publish(
+            "handoff/settings",
+            JSONObject()
+                .put("messageId", id)
+                .put("showToast", false)
+                .put("reloadActivity", false)
+                .put(
+                    "data",
+                    JSONObject()
+                        .put(
+                            "settings",
+                            JSONObject()
+                                .put(
+                                    UserSettingsKeys.WebContent.HOME_URL,
+                                    "https://example.test/$id",
+                                ),
+                        ),
+                )
+                .toString(),
+        )
     }
 
     private fun assertBatchHandledOnce(prefix: String) {
@@ -655,32 +759,56 @@ class MqttActivityHandoffTest {
             publishSettings(id)
             publishRequest(id)
         }
-        ids.forEach { awaitSettings(it); awaitResponse(it) }
+        ids.forEach {
+            awaitSettings(it)
+            awaitResponse(it)
+        }
         val toastCount = ShadowToast.shownToastCount()
         publishToastAndAwait("$prefix-toast")
-        // Drain the main-thread activity collectors after the eligible handlers finish.
+        // Drain the main-thread activity collectors after the eligible handlers
+        // finish.
         pumpFrames()
-        assertEquals(ids, appliedSettings.filter { it.message.messageId in ids }
-            .map { it.message.messageId })
+        assertEquals(
+            ids,
+            appliedSettings
+                .filter { it.message.messageId in ids }
+                .map { it.message.messageId },
+        )
         ids.forEach { id ->
-            assertEquals("settings $id", 1, appliedSettings.count { it.message.messageId == id })
+            assertEquals(
+                "settings $id",
+                1,
+                appliedSettings.count { it.message.messageId == id },
+            )
             assertEquals("response $id", 1, responses(id).size)
         }
-        assertTrue(appliedSettings.filter { it.message.messageId in ids }
-            .all { it.source == RemoteMessage.Source.MQTT })
+        assertTrue(
+            appliedSettings
+                .filter { it.message.messageId in ids }
+                .all { it.source == RemoteMessage.Source.MQTT }
+        )
         assertEquals("https://example.test/${ids.last()}", settings.homeUrl)
         assertEquals(toastCount + 1, ShadowToast.shownToastCount())
         assertTrue(ShadowToast.showedToast("$prefix-toast"))
     }
 
     private fun publishToastAndAwait(id: String) = runBlocking {
-        val dispatched = async(Dispatchers.Unconfined, start = CoroutineStart.UNDISPATCHED) {
-            RemoteMessageManager.commandsFlow.first { it.message.messageId == id }
-        }
+        val dispatched =
+            async(Dispatchers.Unconfined, start = CoroutineStart.UNDISPATCHED) {
+                RemoteMessageManager.commandsFlow.first {
+                    it.message.messageId == id
+                }
+            }
         try {
-            connection.publish("handoff/commands", JSONObject()
-                .put("command", "toast").put("messageId", id).put("interact", false)
-                .put("data", JSONObject().put("message", id)).toString())
+            connection.publish(
+                "handoff/commands",
+                JSONObject()
+                    .put("command", "toast")
+                    .put("messageId", id)
+                    .put("interact", false)
+                    .put("data", JSONObject().put("message", id))
+                    .toString(),
+            )
             awaitCondition { dispatched.isCompleted }
             assertEquals(RemoteMessage.Source.MQTT, dispatched.await().source)
             pumpFrames()
@@ -689,45 +817,80 @@ class MqttActivityHandoffTest {
         }
     }
 
-    private fun dispatchToastAndAwait(id: String, source: RemoteMessage.Source) = runBlocking {
-        val dispatched = async(Dispatchers.Unconfined, start = CoroutineStart.UNDISPATCHED) {
-            RemoteMessageManager.commandsFlow.first { it.message.messageId == id }
+    private fun dispatchToastAndAwait(id: String, source: RemoteMessage.Source) =
+        runBlocking {
+            val dispatched =
+                async(Dispatchers.Unconfined, start = CoroutineStart.UNDISPATCHED) {
+                    RemoteMessageManager.commandsFlow.first {
+                        it.message.messageId == id
+                    }
+                }
+            try {
+                RemoteMessageManager.emitCommand(
+                    InboundToastCommand(
+                        messageId = id,
+                        interact = false,
+                        data = InboundToastCommand.ToastData(id),
+                    ),
+                    source,
+                )
+                awaitCondition { dispatched.isCompleted }
+                assertEquals(source, dispatched.await().source)
+            } finally {
+                dispatched.cancel()
+            }
         }
-        try {
-            RemoteMessageManager.emitCommand(InboundToastCommand(
-                messageId = id, interact = false, data = InboundToastCommand.ToastData(id)
-            ), source)
-            awaitCondition { dispatched.isCompleted }
-            assertEquals(source, dispatched.await().source)
-        } finally {
-            dispatched.cancel()
-        }
-    }
 
-    private fun assertInactiveDeliveriesAreUnclaimed(id: String, source: RemoteMessage.Source) {
+    private fun assertInactiveDeliveriesAreUnclaimed(
+        id: String,
+        source: RemoteMessage.Source,
+    ) {
         val initialHome = settings.homeUrl
         val initialToasts = ShadowToast.shownToastCount()
-        val settingsEnvelope = RemoteMessage(InboundSettingsMessage(
-            messageId = id, showToast = false, reloadActivity = false,
-            data = InboundSettingsMessage.SettingsUpdateData(buildJsonObject {
-                put(UserSettingsKeys.WebContent.HOME_URL, "https://example.test/rejected")
-            })
-        ), source)
-        val requestEnvelope = RemoteMessage<InboundRequestMessage>(
-            InboundSettingsRequest(messageId = id), source
-        )
-        // Inject an already-decoded delivery to test a late queued event after stop/disable.
+        val settingsEnvelope =
+            RemoteMessage(
+                InboundSettingsMessage(
+                    messageId = id,
+                    showToast = false,
+                    reloadActivity = false,
+                    data =
+                        InboundSettingsMessage.SettingsUpdateData(
+                            buildJsonObject {
+                                put(
+                                    UserSettingsKeys.WebContent.HOME_URL,
+                                    "https://example.test/rejected",
+                                )
+                            }
+                        ),
+                ),
+                source,
+            )
+        val requestEnvelope =
+            RemoteMessage<InboundRequestMessage>(
+                InboundSettingsRequest(messageId = id),
+                source,
+            )
+        // Inject an already-decoded delivery to test a late queued event after
+        // stop/disable.
         runBlocking {
-            (RemoteMessageManager.settingsFlow as MutableSharedFlow<RemoteMessage<InboundSettingsMessage>>)
+            (RemoteMessageManager.settingsFlow
+                    as MutableSharedFlow<RemoteMessage<InboundSettingsMessage>>)
                 .emit(settingsEnvelope)
-            (RemoteMessageManager.requestsFlow as MutableSharedFlow<RemoteMessage<InboundRequestMessage>>)
+            (RemoteMessageManager.requestsFlow
+                    as MutableSharedFlow<RemoteMessage<InboundRequestMessage>>)
                 .emit(requestEnvelope)
         }
         pumpFrames()
         dispatchToastAndAwait("$id-toast", source)
 
-        assertTrue("inactive settings must stay unclaimed", settingsEnvelope.tryClaim())
-        assertTrue("inactive request must stay unclaimed", requestEnvelope.tryClaim())
+        assertTrue(
+            "inactive settings must stay unclaimed",
+            settingsEnvelope.tryClaim(),
+        )
+        assertTrue(
+            "inactive request must stay unclaimed",
+            requestEnvelope.tryClaim(),
+        )
         assertEquals(initialHome, settings.homeUrl)
         assertEquals(initialToasts, ShadowToast.shownToastCount())
         assertTrue(appliedSettings.none { it.message.messageId == id })
@@ -737,31 +900,49 @@ class MqttActivityHandoffTest {
     private fun responses(id: String): List<LoopbackMqttBroker.Publication> {
         connection.publications.drainTo(publications)
         return publications.filter {
-            it.topic == "handoff/responses"
-                && JSONObject(it.payload).optString("requestMessageId") == id
+            it.topic == "handoff/responses" &&
+                JSONObject(it.payload).optString("requestMessageId") == id
         }
     }
 
-    private fun awaitResponse(id: String) = awaitCondition { responses(id).isNotEmpty() }
+    private fun awaitResponse(id: String) = awaitCondition {
+        responses(id).isNotEmpty()
+    }
 
     private fun awaitSettings(id: String) = awaitCondition {
         appliedSettings.any { it.message.messageId == id }
     }
 
     private fun assertSubscriptions(count: Int) {
-        assertEquals("settings collectors", count,
-            (RemoteMessageManager.settingsFlow as MutableSharedFlow<*>).subscriptionCount.value)
-        assertEquals("request collectors", count,
-            (RemoteMessageManager.requestsFlow as MutableSharedFlow<*>).subscriptionCount.value)
+        assertEquals(
+            "settings collectors",
+            count,
+            (RemoteMessageManager.settingsFlow as MutableSharedFlow<*>)
+                .subscriptionCount
+                .value,
+        )
+        assertEquals(
+            "request collectors",
+            count,
+            (RemoteMessageManager.requestsFlow as MutableSharedFlow<*>)
+                .subscriptionCount
+                .value,
+        )
     }
 
     private fun awaitSubscriptions(count: Int) = awaitCondition {
-        (RemoteMessageManager.settingsFlow as MutableSharedFlow<*>).subscriptionCount.value == count
-            && (RemoteMessageManager.requestsFlow as MutableSharedFlow<*>).subscriptionCount.value == count
+        (RemoteMessageManager.settingsFlow as MutableSharedFlow<*>)
+            .subscriptionCount
+            .value == count &&
+            (RemoteMessageManager.requestsFlow as MutableSharedFlow<*>)
+                .subscriptionCount
+                .value == count
     }
 
     private fun clearStoppedServiceIntents() {
-        while (shadowOf(context).nextStoppedService != null) { /* drain prior onStart cleanup */ }
+        while (shadowOf(context).nextStoppedService != null) {
+            /* drain prior onStart cleanup */
+        }
     }
 
     private fun pumpFrames() {
@@ -785,19 +966,27 @@ class MqttActivityHandoffTest {
                 }
             }
         } catch (e: TimeoutCancellationException) {
-            throw AssertionError("MQTT handoff timed out; state=${MqttManager.getState()}; logs=${MqttManager.debugLogHistory}", e)
+            throw AssertionError(
+                "MQTT handoff timed out; state=${MqttManager.getState()}; logs=${MqttManager.debugLogHistory}",
+                e,
+            )
         }
     }
 
-    private fun mqttField(name: String) = MqttManager.javaClass.getDeclaredField(name)
-        .apply { isAccessible = true }
+    private fun mqttField(name: String) =
+        MqttManager.javaClass.getDeclaredField(name).apply { isAccessible = true }
 
     private fun commandHostCount() =
-        (RemoteMessageManager.javaClass.getDeclaredField("mqttCommandHosts")
-            .apply { isAccessible = true }.get(RemoteMessageManager) as Collection<*>).size
+        (RemoteMessageManager.javaClass
+                .getDeclaredField("mqttCommandHosts")
+                .apply { isAccessible = true }
+                .get(RemoteMessageManager) as Collection<*>)
+            .size
 
-    private fun lockField(name: String) = LockStateSingleton.javaClass.getDeclaredField(name)
-        .apply { isAccessible = true }
+    private fun lockField(name: String) =
+        LockStateSingleton.javaClass.getDeclaredField(name).apply {
+            isAccessible = true
+        }
 
     private class ActivityHost(
         val controller: ActivityController<out MainActivity>,
@@ -808,6 +997,7 @@ class MqttActivityHandoffTest {
     ) {
         var destroyed = false
             private set
+
         private var frameNanos = 0L
 
         fun nextFrame() {
@@ -816,12 +1006,18 @@ class MqttActivityHandoffTest {
         }
 
         fun stop() {
-            if (controller.get().lifecycle.currentState == Lifecycle.State.RESUMED) controller.pause()
-            if (controller.get().lifecycle.currentState == Lifecycle.State.STARTED) controller.stop()
+            if (controller.get().lifecycle.currentState == Lifecycle.State.RESUMED) {
+                controller.pause()
+            }
+            if (controller.get().lifecycle.currentState == Lifecycle.State.STARTED) {
+                controller.stop()
+            }
         }
 
         fun destroy() {
-            if (destroyed) return
+            if (destroyed) {
+                return
+            }
             stop()
             controller.destroy()
             view.disposeComposition()
@@ -832,7 +1028,10 @@ class MqttActivityHandoffTest {
     }
 }
 
-/** Exercises the production start helper's exception path from actual onStart callbacks. */
+/**
+ * Exercises the production start helper's exception path from actual onStart
+ * callbacks.
+ */
 class DeniedMqttServiceActivity : MainActivity() {
     var deniedServiceStarts = 0
         private set

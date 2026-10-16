@@ -28,15 +28,18 @@ import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager.DPM
 object AppFlowManager {
     private fun getLaunchablePackages(
         context: Context,
-        filterLockTaskPermitted: Boolean = false
+        filterLockTaskPermitted: Boolean = false,
     ): Map<String, Pair<List<ResolveInfo>, Boolean>> {
         val pm = context.packageManager
-        val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        val dpm =
+            context.getSystemService(Context.DEVICE_POLICY_SERVICE)
+                as DevicePolicyManager
 
         return pm.queryIntentActivities(
-            Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),
-            0
-        ).groupBy { it.activityInfo.packageName }
+                Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER),
+                0,
+            )
+            .groupBy { it.activityInfo.packageName }
             .mapValues { (pkg, list) ->
                 list to dpm.isLockTaskPermitted(pkg)
             }
@@ -46,7 +49,7 @@ object AppFlowManager {
     private fun getAppsFlowFromPackageList(
         context: Context,
         packagesList: List<String>,
-        chunkSize: Int = 5
+        chunkSize: Int = 5,
     ): Flow<AppLoadState<AppInfo>> = flow {
         val pm = context.packageManager
         val total = packagesList.size
@@ -68,7 +71,7 @@ object AppFlowManager {
                     AppInfo(
                         packageName = pkg,
                         name = label,
-                        icon = icon
+                        icon = icon,
                     )
                 )
             } catch (_: Exception) {
@@ -79,21 +82,20 @@ object AppFlowManager {
                 emit(
                     AppLoadState(
                         currentChunk.toList(),
-                        (index + 1).toFloat() / total
+                        (index + 1).toFloat() / total,
                     )
                 )
                 currentChunk.clear()
             }
         }
-    }.flowOn(Dispatchers.IO)
+    }
+        .flowOn(Dispatchers.IO)
 
     fun getLaunchablePackageNames(
         context: Context,
-        filterLockTaskPermitted: Boolean = false
+        filterLockTaskPermitted: Boolean = false,
     ): List<String> {
-        return getLaunchablePackages(context, filterLockTaskPermitted)
-            .keys
-            .toList()
+        return getLaunchablePackages(context, filterLockTaskPermitted).keys.toList()
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
@@ -136,18 +138,24 @@ object AppFlowManager {
                         packageName = pkg,
                         name = pm.getApplicationLabel(appInfo).toString(),
                         icon = pm.getApplicationIcon(appInfo),
-                        activities = list.map {
-                            LaunchableAppInfo.Activity(
-                                label = it.loadLabel(pm).toString(),
-                                name = it.activityInfo.name
-                            )
-                        },
-                        isLockTaskPermitted = lockTaskPermitted
+                        activities =
+                            list.map {
+                                LaunchableAppInfo.Activity(
+                                    label = it.loadLabel(pm).toString(),
+                                    name = it.activityInfo.name,
+                                )
+                            },
+                        isLockTaskPermitted = lockTaskPermitted,
                     )
                 )
             } catch (e: PackageManager.NameNotFoundException) {
-                // Packages can disappear between the initial query and loading each entry.
-                Log.w(javaClass.simpleName, "Launchable package disappeared: $pkg", e)
+                // Packages can disappear between the initial query and loading each
+                // entry.
+                Log.w(
+                    javaClass.simpleName,
+                    "Launchable package disappeared: $pkg",
+                    e,
+                )
             }
 
             processed++
@@ -156,36 +164,42 @@ object AppFlowManager {
                 emit(
                     AppLoadState(
                         apps = current.toList(),
-                        progress = processed.toFloat() / total
+                        progress = processed.toFloat() / total,
                     )
                 )
                 current.clear()
             }
         }
-    }.flowOn(Dispatchers.IO)
+    }
+        .flowOn(Dispatchers.IO)
 
     fun getDeviceAdminReceiversFlow(
         context: Context,
-        chunkSize: Int = 5
+        chunkSize: Int = 5,
     ): Flow<AppLoadState<AdminAppInfo>> = flow {
         val pm = context.packageManager
 
-        val filteredReceivers = pm.queryBroadcastReceivers(
-            Intent(DeviceAdminReceiver.ACTION_DEVICE_ADMIN_ENABLED),
-            PackageManager.GET_META_DATA
-        ).mapNotNull {
-            try {
-                DeviceAdminInfo(context, it)
-            } catch (_: Exception) {
-                null
-            }
-        }.filter {
-            it.isVisible
-            && it.packageName != context.packageName
-            && it.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM == 0
-        }.distinctBy {
-            it.receiverName
-        }
+        val filteredReceivers =
+            pm.queryBroadcastReceivers(
+                    Intent(DeviceAdminReceiver.ACTION_DEVICE_ADMIN_ENABLED),
+                    PackageManager.GET_META_DATA,
+                )
+                .mapNotNull {
+                    try {
+                        DeviceAdminInfo(context, it)
+                    } catch (_: Exception) {
+                        null
+                    }
+                }
+                .filter {
+                    it.isVisible &&
+                        it.packageName != context.packageName &&
+                        it.activityInfo.applicationInfo.flags and
+                            ApplicationInfo.FLAG_SYSTEM == 0
+                }
+                .distinctBy {
+                    it.receiverName
+                }
 
         val total = filteredReceivers.size
         if (total == 0) {
@@ -203,17 +217,18 @@ object AppFlowManager {
                         packageName = appInfo.packageName,
                         name = pm.getApplicationLabel(appInfo).toString(),
                         icon = pm.getApplicationIcon(appInfo),
-                        admin = ComponentName(
-                            deviceAdminInfo.packageName,
-                            deviceAdminInfo.receiverName
-                        )
+                        admin =
+                            ComponentName(
+                                deviceAdminInfo.packageName,
+                                deviceAdminInfo.receiverName,
+                            ),
                     )
                 )
             } catch (e: PackageManager.NameNotFoundException) {
                 Log.w(
                     javaClass.simpleName,
                     "Device admin package disappeared: ${deviceAdminInfo.packageName}",
-                    e
+                    e,
                 )
             }
 
@@ -221,60 +236,63 @@ object AppFlowManager {
                 emit(
                     AppLoadState(
                         currentChunk.toList(),
-                        (index + 1).toFloat() / total
+                        (index + 1).toFloat() / total,
                     )
                 )
                 currentChunk.clear()
             }
         }
-    }.flowOn(Dispatchers.IO)
+    }
+        .flowOn(Dispatchers.IO)
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun getLockTaskAppsFlow(
         context: Context,
-        chunkSize: Int = 5
+        chunkSize: Int = 5,
     ): Flow<AppLoadState<AppInfo>> {
         return getAppsFlowFromPackageList(
             context,
             getLockTaskPackageNames(context),
-            chunkSize
+            chunkSize,
         )
     }
 
     fun getInstalledAppsFlow(
         context: Context,
         appType: AppType,
-        chunkSize: Int = 10
+        chunkSize: Int = 10,
     ): Flow<AppLoadState<AppInfo>> {
         val pm = context.packageManager
-        val packageNames = pm.getInstalledApplications(0)
-            .filter { appInfo ->
-                val isSystem = appInfo.flags and ApplicationInfo.FLAG_SYSTEM != 0
-                when (appType) {
-                    AppType.USER_APPS -> !isSystem
-                    AppType.SYSTEM_APPS -> isSystem
-                    AppType.ALL_APPS -> true
+        val packageNames =
+            pm.getInstalledApplications(0)
+                .filter { appInfo ->
+                    val isSystem = appInfo.flags and ApplicationInfo.FLAG_SYSTEM != 0
+                    when (appType) {
+                        AppType.USER_APPS -> !isSystem
+                        AppType.SYSTEM_APPS -> isSystem
+                        AppType.ALL_APPS -> true
+                    }
                 }
-            }
-            .map { it.packageName }
+                .map { it.packageName }
 
         return getAppsFlowFromPackageList(context, packageNames, chunkSize)
     }
 
     fun getUnifiedPushAppsFlow(
         context: Context,
-        chunkSize: Int = 5
+        chunkSize: Int = 5,
     ): Flow<AppLoadState<AppInfo>> {
-        val packagesList = try {
-            UnifiedPush.getDistributors(context)
-        } catch (e: Exception) {
-            Log.w(
-                javaClass.simpleName,
-                "Failed to get UnifiedPush distributors",
-                e
-            )
-            emptyList()
-        }
+        val packagesList =
+            try {
+                UnifiedPush.getDistributors(context)
+            } catch (e: Exception) {
+                Log.w(
+                    javaClass.simpleName,
+                    "Failed to get UnifiedPush distributors",
+                    e,
+                )
+                emptyList()
+            }
         return getAppsFlowFromPackageList(context, packagesList, chunkSize)
     }
 }

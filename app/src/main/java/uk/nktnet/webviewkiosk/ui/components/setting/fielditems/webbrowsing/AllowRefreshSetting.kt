@@ -17,15 +17,17 @@ fun AllowRefreshSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_browsing_allow_refresh_title),
-        infoText = """
+        infoText =
+            """
             Set to true to allow the user to refresh the page, e.g. using the
             - address bar actions
             - kiosk control panel
             - pull to refresh (can be configured separately)
-        """.trimIndent(),
+            """
+                .trimIndent(),
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.allowRefresh,
-        onSave = { userSettings.allowRefresh = it }
+        onSave = { userSettings.allowRefresh = it },
     )
 }

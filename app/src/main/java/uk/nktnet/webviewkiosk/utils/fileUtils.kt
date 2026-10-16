@@ -11,12 +11,6 @@ import android.text.format.Formatter
 import android.util.Log
 import android.webkit.MimeTypeMap
 import androidx.webkit.WebViewAssetLoader
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.withContext
-import uk.nktnet.webviewkiosk.config.Constants
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
@@ -26,18 +20,25 @@ import java.net.URL
 import java.nio.ByteBuffer
 import java.nio.charset.CodingErrorAction
 import java.util.UUID
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
+import uk.nktnet.webviewkiosk.config.Constants
 
-val supportedMimeTypesArray = arrayOf(
-    "text/*",
-    "image/*",
-    "audio/*",
-    "video/*",
-    "application/javascript",
-    "application/json",
-    "application/pdf",
-    "application/txt",
-    "application/xml",
-)
+val supportedMimeTypesArray =
+    arrayOf(
+        "text/*",
+        "image/*",
+        "audio/*",
+        "video/*",
+        "application/javascript",
+        "application/json",
+        "application/pdf",
+        "application/txt",
+        "application/xml",
+    )
 
 private const val MAX_EDITABLE_TEXT_FILE_BYTES = 1024 * 1024
 
@@ -72,36 +73,43 @@ private fun readFileBytesUpTo(file: File): ByteArray? {
 /**
  * Returns UTF-8 text when a local file is safe to expose in the text editor.
  *
- * File names and MIME metadata are not trusted. The actual contents are bounded
- * and validated so a binary file cannot become editable just by being renamed.
+ * File names and MIME metadata are not trusted. The actual contents are bounded and
+ * validated so a binary file cannot become editable just by being renamed.
  */
 fun readEditableTextFile(file: File): String? {
-    val bytes = try {
-        readFileBytesUpTo(file)
-    } catch (e: Exception) {
-        Log.e(Constants.APP_SCHEME, "Failed to inspect local file for editing", e)
-        null
-    } ?: return null
+    val bytes =
+        try {
+            readFileBytesUpTo(file)
+        } catch (e: Exception) {
+            Log.e(
+                Constants.APP_SCHEME,
+                "Failed to inspect local file for editing",
+                e,
+            )
+            null
+        } ?: return null
 
     if (bytes.any { it == 0.toByte() }) {
         return null
     }
 
-    val text = try {
-        Charsets.UTF_8
-            .newDecoder()
-            .onMalformedInput(CodingErrorAction.REPORT)
-            .onUnmappableCharacter(CodingErrorAction.REPORT)
-            .decode(ByteBuffer.wrap(bytes))
-            .toString()
-    } catch (_: Exception) {
-        return null
-    }
+    val text =
+        try {
+            Charsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .onUnmappableCharacter(CodingErrorAction.REPORT)
+                .decode(ByteBuffer.wrap(bytes))
+                .toString()
+        } catch (_: Exception) {
+            return null
+        }
 
     val hasBinaryControlCharacters = text.any { character ->
         val code = character.code
-        (code in 0x00..0x1F && character != '\t' && character != '\n' && character != '\r')
-            || code == 0x7F
+        (code in 0x00..0x1F &&
+            character != '\t' &&
+            character != '\n' &&
+            character != '\r') || code == 0x7F
     }
     if (hasBinaryControlCharacters) {
         return null
@@ -135,22 +143,24 @@ fun writeEditableTextFile(file: File, content: String): Boolean {
 
 fun listLocalFiles(dir: File): List<File> {
     return dir.listFiles { file ->
-        file.isFile && !(
-            file.name.endsWith(".tmp")
-                && (file.name.startsWith(".wk-edit-") || file.name.startsWith(".wk-import-"))
-        )
-    }?.sortedByDescending { it.lastModified() } ?: emptyList()
+            file.isFile &&
+                !(file.name.endsWith(".tmp") &&
+                    (file.name.startsWith(".wk-edit-") ||
+                        file.name.startsWith(".wk-import-")))
+        }
+        ?.sortedByDescending { it.lastModified() } ?: emptyList()
 }
 
 fun getFileNameFromUri(context: Context, uri: Uri): String {
     var name: String? = null
-    val cursor: Cursor? = context.contentResolver.query(
-        uri,
-        null,
-        null,
-        null,
-        null,
-    )
+    val cursor: Cursor? =
+        context.contentResolver.query(
+            uri,
+            null,
+            null,
+            null,
+            null,
+        )
     cursor?.use {
         if (it.moveToFirst()) {
             val index = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
@@ -168,24 +178,31 @@ fun generateUuidFileName(originalName: String): String {
 
 private fun getFileSizeFromUri(context: Context, uri: Uri): Long? {
     val contentResolver = context.contentResolver
-    val sizeFromMetadata = try {
-        contentResolver.query(
-            uri,
-            arrayOf(OpenableColumns.SIZE),
-            null,
-            null,
-            null,
-        )?.use { cursor ->
-            val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
-            if (sizeIndex >= 0 && cursor.moveToFirst() && !cursor.isNull(sizeIndex)) {
-                cursor.getLong(sizeIndex).takeIf { it >= 0 }
-            } else {
-                null
-            }
+    val sizeFromMetadata =
+        try {
+            contentResolver
+                .query(
+                    uri,
+                    arrayOf(OpenableColumns.SIZE),
+                    null,
+                    null,
+                    null,
+                )
+                ?.use { cursor ->
+                    val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
+                    if (
+                        sizeIndex >= 0 &&
+                            cursor.moveToFirst() &&
+                            !cursor.isNull(sizeIndex)
+                    ) {
+                        cursor.getLong(sizeIndex).takeIf { it >= 0 }
+                    } else {
+                        null
+                    }
+                }
+        } catch (_: Exception) {
+            null
         }
-    } catch (_: Exception) {
-        null
-    }
 
     if (sizeFromMetadata != null) {
         return sizeFromMetadata
@@ -204,37 +221,40 @@ private suspend fun copyInputStreamToFile(
     input: java.io.InputStream,
     targetFile: File,
     totalBytes: Long? = null,
-    onProgress: ((Float) -> Unit)? = null
-): File = withContext(Dispatchers.IO) {
-    var copiedBytes = 0L
-    val tempFile = File.createTempFile(".wk-import-", ".tmp", targetFile.parentFile)
-    try {
-        tempFile.outputStream().use { output ->
-            val buffer = ByteArray(4 * 1024 * 1024)
-            while (true) {
-                currentCoroutineContext().ensureActive()
-                val bytesRead = input.read(buffer)
-                currentCoroutineContext().ensureActive()
-                if (bytesRead < 0) {
-                    break
-                }
-                output.write(buffer, 0, bytesRead)
-                copiedBytes += bytesRead
-                if (totalBytes != null && totalBytes > 0) {
-                    val progress = (copiedBytes.toDouble() / totalBytes)
-                        .coerceIn(0.0, 1.0)
-                        .toFloat()
-                    onProgress?.invoke(progress)
+    onProgress: ((Float) -> Unit)? = null,
+): File =
+    withContext(Dispatchers.IO) {
+        var copiedBytes = 0L
+        val tempFile =
+            File.createTempFile(".wk-import-", ".tmp", targetFile.parentFile)
+        try {
+            tempFile.outputStream().use { output ->
+                val buffer = ByteArray(4 * 1024 * 1024)
+                while (true) {
+                    currentCoroutineContext().ensureActive()
+                    val bytesRead = input.read(buffer)
+                    currentCoroutineContext().ensureActive()
+                    if (bytesRead < 0) {
+                        break
+                    }
+                    output.write(buffer, 0, bytesRead)
+                    copiedBytes += bytesRead
+                    if (totalBytes != null && totalBytes > 0) {
+                        val progress =
+                            (copiedBytes.toDouble() / totalBytes)
+                                .coerceIn(0.0, 1.0)
+                                .toFloat()
+                        onProgress?.invoke(progress)
+                    }
                 }
             }
+            currentCoroutineContext().ensureActive()
+            Os.rename(tempFile.absolutePath, targetFile.absolutePath)
+            targetFile
+        } finally {
+            tempFile.delete()
         }
-        currentCoroutineContext().ensureActive()
-        Os.rename(tempFile.absolutePath, targetFile.absolutePath)
-        targetFile
-    } finally {
-        tempFile.delete()
     }
-}
 
 private suspend fun importContentFile(
     context: Context,
@@ -247,8 +267,11 @@ private suspend fun importContentFile(
     try {
         return withContext(Dispatchers.IO) {
             val totalBytes = getFileSizeFromUri(context, uri)
-            val input = context.contentResolver.openInputStream(uri)
-                ?: throw IllegalArgumentException("Unable to open InputStream for URI: $uri")
+            val input =
+                context.contentResolver.openInputStream(uri)
+                    ?: throw IllegalArgumentException(
+                        "Unable to open InputStream for URI: $uri"
+                    )
             input.use {
                 val file = File(targetDir, generateUuidFileName(getOriginalName()))
                 copiedFile = file
@@ -269,27 +292,29 @@ suspend fun uploadFile(
     context: Context,
     uri: Uri,
     targetDir: File,
-    onProgress: (Float) -> Unit
-): File = importContentFile(context, uri, targetDir, onProgress) {
-    getFileNameFromUri(context, uri)
-}
+    onProgress: (Float) -> Unit,
+): File =
+    importContentFile(context, uri, targetDir, onProgress) {
+        getFileNameFromUri(context, uri)
+    }
 
 suspend fun saveContentIntentToFile(
     context: Context,
     contentUri: Uri,
     targetDir: File,
-    onProgress: ((Float) -> Unit)? = null
-): File = importContentFile(context, contentUri, targetDir, onProgress) {
-    var originalName = contentUri.lastPathSegment ?: "uploaded_file"
-    val mimeType = context.contentResolver.getType(contentUri)
-    if (!originalName.contains('.') && mimeType != null) {
-        MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)?.let {
-            originalName += ".$it"
+    onProgress: ((Float) -> Unit)? = null,
+): File =
+    importContentFile(context, contentUri, targetDir, onProgress) {
+        var originalName = contentUri.lastPathSegment ?: "uploaded_file"
+        val mimeType = context.contentResolver.getType(contentUri)
+        if (!originalName.contains('.') && mimeType != null) {
+            MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType)?.let {
+                originalName += ".$it"
+            }
         }
-    }
 
-    originalName
-}
+        originalName
+    }
 
 fun getWebContentFilesDir(context: Context): File {
     return File(context.filesDir, Constants.WEB_CONTENT_FILES_DIR).apply {
@@ -313,13 +338,12 @@ fun getMimeType(context: Context, uri: Uri): String? {
 }
 
 fun isSupportedFileURLMimeType(mimeType: String?): Boolean {
-    return mimeType != null && supportedMimeTypesArray.any { supported ->
-        supported == mimeType
-            || (
-            supported.endsWith("/*")
-                && mimeType.startsWith(supported.substringBefore("/*"))
-            )
-    }
+    return mimeType != null &&
+        supportedMimeTypesArray.any { supported ->
+            supported == mimeType ||
+                (supported.endsWith("/*") &&
+                    mimeType.startsWith(supported.substringBefore("/*")))
+        }
 }
 
 fun File.getUUID(): String {
@@ -345,10 +369,10 @@ fun File.getLocalFileLink(): String {
 }
 
 fun Uri.isLocalFileLink(): Boolean {
-    return scheme.equals("https", ignoreCase = true)
-        && host.equals(WebViewAssetLoader.DEFAULT_DOMAIN, ignoreCase = true)
-        && pathSegments.size == 2
-        && pathSegments[0] == Constants.WEB_CONTENT_FILES_DIR
+    return scheme.equals("https", ignoreCase = true) &&
+        host.equals(WebViewAssetLoader.DEFAULT_DOMAIN, ignoreCase = true) &&
+        pathSegments.size == 2 &&
+        pathSegments[0] == Constants.WEB_CONTENT_FILES_DIR
 }
 
 fun Uri.resolveLocalFileLink(context: Context): File? {
@@ -356,8 +380,8 @@ fun Uri.resolveLocalFileLink(context: Context): File? {
         return null
     }
 
-    val fileName = pathSegments.getOrNull(1)?.takeIf { it.isNotBlank() }
-        ?: return null
+    val fileName =
+        pathSegments.getOrNull(1)?.takeIf { it.isNotBlank() } ?: return null
     val filesDir = getWebContentFilesDir(context)
 
     return try {
@@ -371,11 +395,18 @@ fun Uri.resolveLocalFileLink(context: Context): File? {
 
 fun getDownloadLocation(): String {
     return Environment.getExternalStoragePublicDirectory(
-        Environment.DIRECTORY_DOWNLOADS
-    ).absolutePath.let {
-        if (it.endsWith("/")) it else "$it/"
-    }
+            Environment.DIRECTORY_DOWNLOADS
+        )
+        .absolutePath
+        .let {
+            if (it.endsWith("/")) {
+                it
+            } else {
+                "$it/"
+            }
+        }
 }
+
 data class RemoteFileInfo(
     val mimeType: String?,
     val contentDisposition: String?,
@@ -408,18 +439,16 @@ fun extractFileNameFromContentDisposition(contentDisposition: String?): String? 
     if (contentDisposition.isNullOrEmpty()) {
         return null
     }
-    Regex(
-        "filename\\*=[^']*'[^']*'([^;]+)"
-    ).find(contentDisposition)
+    Regex("filename\\*=[^']*'[^']*'([^;]+)")
+        .find(contentDisposition)
         ?.groups
         ?.get(1)
         ?.value
         ?.let {
             return Uri.decode(it)
         }
-    Regex(
-        "filename=\"?([^\";]+)\"?"
-    ).find(contentDisposition)
+    Regex("filename=\"?([^\";]+)\"?")
+        .find(contentDisposition)
         ?.groups
         ?.get(1)
         ?.value

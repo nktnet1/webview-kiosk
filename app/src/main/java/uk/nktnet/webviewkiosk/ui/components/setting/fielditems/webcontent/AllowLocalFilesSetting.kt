@@ -17,17 +17,19 @@ fun AllowLocalFilesSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_content_allow_local_files_title),
-        infoText = """
+        infoText =
+            """
             Allow the WebView to open uploaded local files such as HTML, PDF, images,
             audio, video and text.
 
             Upload and manage files using "Web Content -> Manage Local Files".
             Open them with the Files action in the address bar menu or kiosk
             control panel when that action is enabled.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.allowLocalFiles,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.allowLocalFiles = it }
+        onSave = { userSettings.allowLocalFiles = it },
     )
 }

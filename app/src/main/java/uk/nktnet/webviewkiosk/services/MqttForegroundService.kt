@@ -14,6 +14,8 @@ import android.os.PowerManager
 import android.util.Log
 import androidx.core.app.ServiceCompat
 import com.hivemq.client.mqtt.MqttClientState
+import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -31,20 +33,17 @@ import uk.nktnet.webviewkiosk.managers.CustomNotificationType
 import uk.nktnet.webviewkiosk.managers.DeviceOwnerManager
 import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
-import java.util.concurrent.atomic.AtomicReference
-import kotlin.time.Duration.Companion.milliseconds
 
 class MqttForegroundService : Service() {
     companion object {
         private val messageHost = AtomicReference<MqttForegroundService?>(null)
 
-        fun isHandlingMessages(): Boolean = messageHost.get()?.canHandleRemoteMessages() == true
+        fun isHandlingMessages(): Boolean =
+            messageHost.get()?.canHandleRemoteMessages() == true
     }
 
-    @Volatile
-    private var isServiceActive = false
-    @Volatile
-    private var notificationGeneration = 0L
+    @Volatile private var isServiceActive = false
+    @Volatile private var notificationGeneration = 0L
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var pollLockTaskModeJob: Job? = null
     private var unregisterCommandHost: (() -> Unit)? = null
@@ -54,96 +53,109 @@ class MqttForegroundService : Service() {
     private var receiverRegistered = false
     private lateinit var wakeLock: PowerManager.WakeLock
 
-    private val systemReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context, intent: Intent) {
-            // A broadcast already queued by Android can arrive after a stop or
-            // activity/service handoff even though the receiver was unregistered.
-            if (!canHandleRemoteMessages()) return
-            when (intent.action) {
-                Intent.ACTION_SCREEN_ON -> {
-                    MqttManager.publishScreenOnEvent()
+    private val systemReceiver =
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                // A broadcast already queued by Android can arrive after a stop or
+                // activity/service handoff even though the receiver was
+                // unregistered.
+                if (!canHandleRemoteMessages()) {
+                    return
                 }
-                Intent.ACTION_SCREEN_OFF -> {
-                    MqttManager.publishScreenOffEvent()
+                when (intent.action) {
+                    Intent.ACTION_SCREEN_ON -> {
+                        MqttManager.publishScreenOnEvent()
+                    }
+                    Intent.ACTION_SCREEN_OFF -> {
+                        MqttManager.publishScreenOffEvent()
+                    }
+                    Intent.ACTION_USER_PRESENT -> {
+                        MqttManager.publishUserPresentEvent()
+                    }
+                    else -> Unit
                 }
-                Intent.ACTION_USER_PRESENT -> {
-                    MqttManager.publishUserPresentEvent()
-                }
-                else -> Unit
             }
         }
-    }
 
     private fun startProcessing() {
         if (!receiverRegistered) {
-            val filter = IntentFilter().apply {
-                addAction(Intent.ACTION_SCREEN_ON)
-                addAction(Intent.ACTION_SCREEN_OFF)
-                addAction(Intent.ACTION_USER_PRESENT)
-            }
+            val filter =
+                IntentFilter().apply {
+                    addAction(Intent.ACTION_SCREEN_ON)
+                    addAction(Intent.ACTION_SCREEN_OFF)
+                    addAction(Intent.ACTION_USER_PRESENT)
+                }
             registerReceiver(systemReceiver, filter)
             receiverRegistered = true
         }
         if (!::wakeLock.isInitialized) {
             val pm = getSystemService(POWER_SERVICE) as PowerManager
-            wakeLock = pm.newWakeLock(
-                PowerManager.PARTIAL_WAKE_LOCK,
-                "${MqttForegroundService::class.java.name}:partial-wakelock"
-            )
+            wakeLock =
+                pm.newWakeLock(
+                    PowerManager.PARTIAL_WAKE_LOCK,
+                    "${MqttForegroundService::class.java.name}:partial-wakelock",
+                )
             wakeLock.setReferenceCounted(false)
         }
         if (!wakeLock.isHeld) {
-            @SuppressLint("WakelockTimeout")
-            wakeLock.acquire()
+            @SuppressLint("WakelockTimeout") wakeLock.acquire()
         }
 
         isServiceActive = true
         if (unregisterCommandHost == null) {
-            unregisterCommandHost = RemoteMessageManager.registerMqttCommandHost(applicationContext) {
-                canHandleRemoteMessages()
-            }
+            unregisterCommandHost =
+                RemoteMessageManager.registerMqttCommandHost(applicationContext) {
+                    canHandleRemoteMessages()
+                }
         }
         // Subscribe before restoring MQTT so its first delivery cannot race startup.
         if (mqttSettingsJob?.isActive != true) {
-            mqttSettingsJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
-                RemoteMessageManager.settingsFlow.collect { settings ->
-                    if (
-                        canHandleRemoteMessages()
-                        && settings.source == RemoteMessageManager.RemoteMessage.Source.MQTT
-                        && settings.tryClaim()
-                    ) {
-                        RemoteInboundHandler.handleInboundSettings(
-                            this@MqttForegroundService,
-                            settings.message,
-                            settings.source,
-                        )
+            mqttSettingsJob =
+                scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                    RemoteMessageManager.settingsFlow.collect { settings ->
+                        if (
+                            canHandleRemoteMessages() &&
+                                settings.source ==
+                                    RemoteMessageManager.RemoteMessage.Source.MQTT &&
+                                settings.tryClaim()
+                        ) {
+                            RemoteInboundHandler.handleInboundSettings(
+                                this@MqttForegroundService,
+                                settings.message,
+                                settings.source,
+                            )
+                        }
                     }
                 }
-            }
         }
         if (mqttRequestJob?.isActive != true) {
-            mqttRequestJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
-                RemoteMessageManager.requestsFlow.collect { request ->
-                    if (
-                        canHandleRemoteMessages()
-                        && request.source == RemoteMessageManager.RemoteMessage.Source.MQTT
-                        && request.tryClaim()
-                    ) {
-                        RemoteInboundHandler.handleInboundMqttRequest(
-                            this@MqttForegroundService,
-                            request.message
-                        )
+            mqttRequestJob =
+                scope.launch(start = CoroutineStart.UNDISPATCHED) {
+                    RemoteMessageManager.requestsFlow.collect { request ->
+                        if (
+                            canHandleRemoteMessages() &&
+                                request.source ==
+                                    RemoteMessageManager.RemoteMessage.Source.MQTT &&
+                                request.tryClaim()
+                        ) {
+                            RemoteInboundHandler.handleInboundMqttRequest(
+                                this@MqttForegroundService,
+                                request.message,
+                            )
+                        }
                     }
                 }
-            }
         }
-        // A start request alone is insufficient: keep the activity eligible until all
+        // A start request alone is insufficient: keep the activity eligible until
+        // all
         // service handlers are registered after a successful foreground promotion.
         messageHost.set(this)
     }
 
     private fun canHandleRemoteMessages(): Boolean {
-        if (!isServiceActive || messageHost.get() !== this) return false
+        if (!isServiceActive || messageHost.get() !== this) {
+            return false
+        }
         val userSettings = UserSettings(this)
         return userSettings.mqttEnabled && userSettings.mqttUseForegroundService
     }
@@ -156,12 +168,13 @@ class MqttForegroundService : Service() {
 
         notificationGeneration++
         try {
-            val contentIntent = PendingIntent.getActivity(
-                this,
-                0,
-                Intent(this, MainActivity::class.java),
-                PendingIntent.FLAG_IMMUTABLE
-            )
+            val contentIntent =
+                PendingIntent.getActivity(
+                    this,
+                    0,
+                    Intent(this, MainActivity::class.java),
+                    PendingIntent.FLAG_IMMUTABLE,
+                )
             // A sticky restart may be the first entry point in a fresh process.
             CustomNotificationManager.init(applicationContext)
             ServiceCompat.startForeground(
@@ -176,14 +189,14 @@ class MqttForegroundService : Service() {
                     ServiceInfo.FOREGROUND_SERVICE_TYPE_MANIFEST
                 } else {
                     0
-                }
+                },
             )
             startProcessing()
         } catch (e: Exception) {
             Log.e(
                 javaClass.simpleName,
                 "Unable to start MQTT foreground service",
-                e
+                e,
             )
             return stopAfterRejectedStart(startId)
         }
@@ -195,27 +208,39 @@ class MqttForegroundService : Service() {
                 DeviceOwnerManager.init(applicationContext)
                 MqttManager.connect(applicationContext)
             } catch (e: Exception) {
-                Log.e(javaClass.simpleName, "Unable to restore MQTT after service restart", e)
+                Log.e(
+                    javaClass.simpleName,
+                    "Unable to restore MQTT after service restart",
+                    e,
+                )
                 return stopAfterRejectedStart(startId)
             }
         }
 
-        if (!canHandleRemoteMessages()) return stopAfterRejectedStart(startId)
+        if (!canHandleRemoteMessages()) {
+            return stopAfterRejectedStart(startId)
+        }
         if (pollLockTaskModeJob?.isActive != true) {
             pollLockTaskModeJob = scope.launch {
                 while (isServiceActive) {
                     val generation = notificationGeneration
                     val status = MqttManager.getState()
-                    // Publish on the lifecycle thread so teardown cannot race notify().
+                    // Publish on the lifecycle thread so teardown cannot race
+                    // notify().
                     withContext(Dispatchers.Main) {
-                        if (!isServiceActive) return@withContext
+                        if (!isServiceActive) {
+                            return@withContext
+                        }
                         if (!canHandleRemoteMessages()) {
                             stopProcessing()
                             stopSelf()
                             return@withContext
                         }
-                        // A repeated start may have already shown a more recent status.
-                        if (generation != notificationGeneration) return@withContext
+                        // A repeated start may have already shown a more recent
+                        // status.
+                        if (generation != notificationGeneration) {
+                            return@withContext
+                        }
                         if (lastStatus == null || status != lastStatus) {
                             updateNotification(status)
                             lastStatus = status
@@ -262,7 +287,11 @@ class MqttForegroundService : Service() {
             try {
                 unregisterReceiver(systemReceiver)
             } catch (e: IllegalArgumentException) {
-                Log.w(javaClass.simpleName, "MQTT receiver was already unregistered", e)
+                Log.w(
+                    javaClass.simpleName,
+                    "MQTT receiver was already unregistered",
+                    e,
+                )
             }
         }
         if (::wakeLock.isInitialized && wakeLock.isHeld) {
@@ -272,22 +301,24 @@ class MqttForegroundService : Service() {
     }
 
     private fun updateNotification(newStatus: MqttClientState) {
-        val contentIntent = PendingIntent.getActivity(
-            this,
-            0,
-            Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE
-        )
+        val contentIntent =
+            PendingIntent.getActivity(
+                this,
+                0,
+                Intent(this, MainActivity::class.java),
+                PendingIntent.FLAG_IMMUTABLE,
+            )
 
-        val notification = CustomNotificationManager.buildMqttServiceNotification(
-            this,
-            contentIntent,
-            "Status: $newStatus",
-        )
+        val notification =
+            CustomNotificationManager.buildMqttServiceNotification(
+                this,
+                contentIntent,
+                "Status: $newStatus",
+            )
         CustomNotificationManager.updateServiceNotification(
             this,
             CustomNotificationType.MQTT_SERVICE,
-            notification
+            notification,
         )
     }
 }

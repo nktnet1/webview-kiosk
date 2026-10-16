@@ -44,73 +44,79 @@ fun handleDownloadPrompt(
     if (!userSettings.allowFileDownload) {
         ToastManager.show(
             context,
-            "Download is disabled in settings (${UserSettingsKeys.WebEngine.ALLOW_FILE_DOWNLOAD})"
+            "Download is disabled in settings (${UserSettingsKeys.WebEngine.ALLOW_FILE_DOWNLOAD})",
         )
         return
     }
 
-    val layout = LinearLayout(context).apply {
-        orientation = LinearLayout.VERTICAL
-        setPadding(60, 60, 60, 30)
-    }
+    val layout =
+        LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(60, 60, 60, 30)
+        }
 
-    val titleView = TextView(context).apply {
-        text = "Download File"
-        textSize = 25f
-        setPadding(0, 0, 0, 20)
-    }
+    val titleView =
+        TextView(context).apply {
+            text = "Download File"
+            textSize = 25f
+            setPadding(0, 0, 0, 20)
+        }
     layout.addView(titleView)
 
-    val infoText = TextView(context).apply {
-        text = getDownloadLocation()
-        textSize = 12f
-        setTypeface(typeface, Typeface.ITALIC)
-        setPadding(10, 10, 10, 0)
-    }
+    val infoText =
+        TextView(context).apply {
+            text = getDownloadLocation()
+            textSize = 12f
+            setTypeface(typeface, Typeface.ITALIC)
+            setPadding(10, 10, 10, 0)
+        }
     layout.addView(infoText)
 
     val uri = url.toUri()
 
-    val suggestedName = when {
-        !contentDisposition.isNullOrBlank() -> {
-            extractFileNameFromContentDisposition(contentDisposition)
+    val suggestedName =
+        when {
+            !contentDisposition.isNullOrBlank() -> {
+                extractFileNameFromContentDisposition(contentDisposition)
+            }
+            uri.scheme == "blob" -> {
+                generateBlobFilename(mimeType)
+            }
+            else -> {
+                URLUtil.guessFileName(url, contentDisposition, mimeType)
+            }
         }
-        uri.scheme == "blob" -> {
-            generateBlobFilename(mimeType)
-        }
-        else -> {
-            URLUtil.guessFileName(url, contentDisposition, mimeType)
-        }
-    }
 
-    val editText = EditText(context).apply {
-        setText(suggestedName)
-        isSingleLine = true
-        maxLines = 1
-        setPadding(10, 10, 10, 35)
-    }
+    val editText =
+        EditText(context).apply {
+            setText(suggestedName)
+            isSingleLine = true
+            maxLines = 1
+            setPadding(10, 10, 10, 35)
+        }
     layout.addView(editText)
 
-    val buttonsLayout = LinearLayout(context).apply {
-        orientation = LinearLayout.HORIZONTAL
-        gravity = Gravity.END
-        layoutParams = LinearLayout.LayoutParams(
-            LayoutParams.MATCH_PARENT,
-            LayoutParams.WRAP_CONTENT,
-        )
-        setPadding(0, 50, 0, 0)
-    }
+    val buttonsLayout =
+        LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.END
+            layoutParams =
+                LinearLayout.LayoutParams(
+                    LayoutParams.MATCH_PARENT,
+                    LayoutParams.WRAP_CONTENT,
+                )
+            setPadding(0, 50, 0, 0)
+        }
 
     var downloadStarted = false
-    val prompt = AlertDialog.Builder(context)
-        .setView(layout)
-        .create()
-    val dialog = dialogs.show(prompt) {
-        if (!downloadStarted && uri.scheme == "blob") {
-            releaseCapturedBlob(webView, url)
-        }
-        UserInteractionStateSingleton.onUserInteraction()
-    } ?: return
+    val prompt = AlertDialog.Builder(context).setView(layout).create()
+    val dialog =
+        dialogs.show(prompt) {
+            if (!downloadStarted && uri.scheme == "blob") {
+                releaseCapturedBlob(webView, url)
+            }
+            UserInteractionStateSingleton.onUserInteraction()
+        } ?: return
 
     val cancelButton = Button(context).apply { text = "Cancel" }
     cancelButton.setOnClickListener {
@@ -135,7 +141,7 @@ fun handleDownloadPrompt(
                     url = url,
                     userAgent = userAgent,
                     mimeType = mimeType,
-                    filename = filename
+                    filename = filename,
                 )
             }
 
@@ -162,23 +168,23 @@ fun downloadNormal(
     url: String,
     userAgent: String?,
     mimeType: String?,
-    filename: String
+    filename: String,
 ) {
-    val request = DownloadManager.Request(url.toUri()).apply {
-        setMimeType(mimeType)
-        userAgent?.let { addRequestHeader("User-Agent", it) }
-        getWebViewRequestCookie(url)
-            ?.let { addRequestHeader("Cookie", it) }
-        setDescription("Downloading file...")
-        setTitle(filename)
-        setNotificationVisibility(
-            DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
-        )
-        setDestinationInExternalPublicDir(
-            Environment.DIRECTORY_DOWNLOADS,
-            filename,
-        )
-    }
+    val request =
+        DownloadManager.Request(url.toUri()).apply {
+            setMimeType(mimeType)
+            userAgent?.let { addRequestHeader("User-Agent", it) }
+            getWebViewRequestCookie(url)?.let { addRequestHeader("Cookie", it) }
+            setDescription("Downloading file...")
+            setTitle(filename)
+            setNotificationVisibility(
+                DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED
+            )
+            setDestinationInExternalPublicDir(
+                Environment.DIRECTORY_DOWNLOADS,
+                filename,
+            )
+        }
 
     val dm = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
     dm.enqueue(request)
@@ -188,7 +194,7 @@ private fun fetchBlob(
     webView: WebView,
     blobUrl: String,
     mimeType: String?,
-    filename: String
+    filename: String,
 ) {
     val transferId = java.util.UUID.randomUUID().toString()
 
@@ -197,7 +203,8 @@ private fun fetchBlob(
     val quotedFilename = JSONObject.quote(filename)
     val quotedTransferId = JSONObject.quote(transferId)
 
-    val js = """
+    val js =
+        """
         (async function() {
             const bridge = ${BlobInterface.NAME};
             const blobUrl = $quotedBlobUrl;
@@ -329,14 +336,15 @@ private fun fetchBlob(
                 );
             }
         })();
-    """.trimIndent()
+    """
+            .trimIndent()
 
     webView.evaluateJavascript(js, null)
 }
 
 private fun releaseCapturedBlob(
     webView: WebView,
-    blobUrl: String
+    blobUrl: String,
 ) {
     val quotedBlobUrl = JSONObject.quote(blobUrl)
     webView.evaluateJavascript(
@@ -346,13 +354,12 @@ private fun releaseCapturedBlob(
             "else if(window.__${Constants.APP_SCHEME}_blobsByUrl){" +
             "window.__${Constants.APP_SCHEME}_blobsByUrl.delete($quotedBlobUrl);}" +
             "})();",
-        null
+        null,
     )
 }
 
 private fun generateBlobFilename(mimeType: String?): String {
-    val extension = MimeTypeMap.getSingleton()
-        .getExtensionFromMimeType(mimeType)
-        ?: "bin"
+    val extension =
+        MimeTypeMap.getSingleton().getExtensionFromMimeType(mimeType) ?: "bin"
     return "download_${System.currentTimeMillis()}.$extension"
 }

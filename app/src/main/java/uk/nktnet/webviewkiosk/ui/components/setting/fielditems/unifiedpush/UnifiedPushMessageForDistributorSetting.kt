@@ -18,10 +18,12 @@ fun UnifiedPushMessageForDistributorSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.unifiedpush_message_for_distributor_title),
-        infoText = """
+        infoText =
+            """
             A customised message that may be shown by the distributor UI to
             identify this registration.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         placeholder = "e.g. Registering ${stringResource(R.string.app_name)}",
         initialValue = userSettings.unifiedPushMessageForDistributor,
         settingKey = settingKey,

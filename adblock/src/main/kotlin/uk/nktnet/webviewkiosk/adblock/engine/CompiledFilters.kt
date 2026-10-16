@@ -1,7 +1,7 @@
 package uk.nktnet.webviewkiosk.adblock.engine
 
-import okhttp3.HttpUrl
 import java.util.Locale
+import okhttp3.HttpUrl
 
 /** Validates rule text and builds the immutable indexes used by request threads. */
 internal object FilterCompiler {
@@ -15,14 +15,15 @@ internal object FilterCompiler {
         FilterParser.visit(text) { line, result ->
             when (result) {
                 is ParsedFilter.Network,
-                is ParsedFilter.Cosmetic,
-                -> supported++
+                is ParsedFilter.Cosmetic -> supported++
 
                 ParsedFilter.Unsupported -> unsupported++
 
                 is ParsedFilter.Invalid -> {
                     invalid++
-                    if (errors.size < 5) errors += "Line $line: ${result.message}"
+                    if (errors.size < 5) {
+                        errors += "Line $line: ${result.message}"
+                    }
                 }
             }
         }
@@ -32,7 +33,11 @@ internal object FilterCompiler {
         require(invalid == 0) {
             "Invalid filter syntax:\n" +
                 errors.joinToString("\n") +
-                if (invalid > errors.size) "\n… and ${invalid - errors.size} more errors" else ""
+                if (invalid > errors.size) {
+                    "\n… and ${invalid - errors.size} more errors"
+                } else {
+                    ""
+                }
         }
         require(supported > 0) {
             if (unsupported == 0) {
@@ -54,7 +59,9 @@ internal object FilterCompiler {
         var total = 0
         for (text in lists) {
             FilterParser.visit(text) { _, result ->
-                require(++total <= MAX_RULES) { "At most $MAX_RULES rules can be enabled together" }
+                require(++total <= MAX_RULES) {
+                    "At most $MAX_RULES rules can be enabled together"
+                }
                 when (result) {
                     is ParsedFilter.Network -> {
                         if (result.rule.badfilter) {
@@ -66,8 +73,10 @@ internal object FilterCompiler {
 
                     is ParsedFilter.Cosmetic -> cosmetics += result.rule
 
-                    // Old saved lists can contain syntax this subset does not implement.
-                    // Keep their useful rules; staged imports still reject malformed syntax.
+                    // Old saved lists can contain syntax this subset does not
+                    // implement.
+                    // Keep their useful rules; staged imports still reject malformed
+                    // syntax.
                     else -> skipped++
                 }
             }
@@ -105,31 +114,41 @@ private class RequestFacts(
     private var thirdParty: Boolean? = null
 
     fun matches(conditions: Conditions): Boolean {
-        if (conditions.types != 0 && conditions.types and type == 0) return false
-        if (conditions.excludedTypes and type != 0 || !conditions.domains.matches(sourceHost)) {
+        if (conditions.types != 0 && conditions.types and type == 0) {
+            return false
+        }
+        if (
+            conditions.excludedTypes and type != 0 ||
+                !conditions.domains.matches(sourceHost)
+        ) {
             return false
         }
         if (
             method in conditions.excludedMethods ||
-            (conditions.methods.isNotEmpty() && method !in conditions.methods)
+                (conditions.methods.isNotEmpty() && method !in conditions.methods)
         ) {
             return false
         }
         if (conditions.thirdParty != null) {
             val party =
                 thirdParty
-                    ?: (
-                        (target.topPrivateDomain()?.removeSuffix(".") ?: targetHost) !=
-                            (source.topPrivateDomain()?.removeSuffix(".") ?: sourceHost)
-                        )
+                    ?: ((target.topPrivateDomain()?.removeSuffix(".")
+                            ?: targetHost) !=
+                            (source.topPrivateDomain()?.removeSuffix(".")
+                                ?: sourceHost))
                         .also { thirdParty = it }
-            if (party != conditions.thirdParty) return false
+            if (party != conditions.thirdParty) {
+                return false
+            }
         }
         return true
     }
 }
 
-/** Each rule lives in one index family. Only truly unindexable patterns use the small fallback. */
+/**
+ * Each rule lives in one index family. Only truly unindexable patterns use the small
+ * fallback.
+ */
 private class NetworkIndex(rules: Collection<NetworkIdentity>) {
     private val hosts = HashMap<String, MutableList<NetworkIdentity>>()
     private val pages = HashMap<String, MutableList<NetworkIdentity>>()
@@ -160,35 +179,50 @@ private class NetworkIndex(rules: Collection<NetworkIdentity>) {
         }
     }
 
-    /** Return early only when the caller has a conclusive answer, e.g. an important block. */
+    /**
+     * Return early only when the caller has a conclusive answer, e.g. an important
+     * block.
+     */
     fun any(facts: RequestFacts, visitor: (NetworkIdentity) -> Boolean): Boolean {
-        fun check(rule: NetworkIdentity): Boolean = !facts.budget.consume(16) || visitor(rule)
+        fun check(rule: NetworkIdentity): Boolean =
+            !facts.budget.consume(16) || visitor(rule)
         if (hosts.isNotEmpty()) {
             hostSuffixes(facts.targetHost) { host ->
-                if (hosts[host]?.any(::check) == true) return true
+                if (hosts[host]?.any(::check) == true) {
+                    return true
+                }
             }
         }
         if (pages.isNotEmpty()) {
             hostSuffixes(facts.sourceHost) { host ->
-                if (pages[host]?.any(::check) == true) return true
+                if (pages[host]?.any(::check) == true) {
+                    return true
+                }
             }
         }
         if (tokens.isNotEmpty() && facts.url.length >= 4) {
-            // Allocate a dedup set only for token buckets actually present in this URL.
+            // Allocate a dedup set only for token buckets actually present in this
+            // URL.
             var seen: MutableSet<Int>? = null
             for (start in 0..facts.url.length - 4) {
-                if (!facts.budget.consume()) return true
+                if (!facts.budget.consume()) {
+                    return true
+                }
                 val hash = tokenHash(facts.url, start)
                 val candidates = tokens[hash] ?: continue
                 val visited = seen ?: HashSet<Int>().also { seen = it }
-                if (visited.add(hash) && candidates.any(::check)) return true
+                if (visited.add(hash) && candidates.any(::check)) {
+                    return true
+                }
             }
         }
         return fallback.any(::check)
     }
 }
 
-/** Immutable after construction. Readers never parse lists or acquire an engine lock. */
+/**
+ * Immutable after construction. Readers never parse lists or acquire an engine lock.
+ */
 internal class CompiledFilters(
     networks: Collection<NetworkIdentity>,
     cosmetics: Collection<CosmeticRule>,
@@ -234,7 +268,9 @@ internal class CompiledFilters(
                         genericExceptions += rule
                     } else {
                         rule.domains.included.forEach { domain ->
-                            specificExceptions.getOrPut(domain) { mutableListOf() }.add(rule)
+                            specificExceptions
+                                .getOrPut(domain) { mutableListOf() }
+                                .add(rule)
                         }
                     }
                 }
@@ -249,7 +285,11 @@ internal class CompiledFilters(
                     if (token == null) {
                         generic += rule
                     } else {
-                        (if (token.first == '.') classes else ids)
+                        (if (token.first == '.') {
+                                classes
+                            } else {
+                                ids
+                            })
                             .getOrPut(token.second) { mutableListOf() }
                             .add(rule)
                     }
@@ -258,33 +298,51 @@ internal class CompiledFilters(
         }
     }
 
-    fun shouldBlock(url: String, sourceUrl: String, type: String, method: String): Boolean {
+    fun shouldBlock(
+        url: String,
+        sourceUrl: String,
+        type: String,
+        method: String,
+    ): Boolean {
         val target = httpAddress(url) ?: return false
         val source = httpAddress(sourceUrl) ?: return false
         var blocked = false
         var allowed = false
         hostSuffixes(target.host.removeSuffix(".")) { host ->
-            if (host in importantHosts) return true
-            if (host in blockedHosts) blocked = true
-            if (host in allowedHosts) allowed = true
+            if (host in importantHosts) {
+                return true
+            }
+            if (host in blockedHosts) {
+                blocked = true
+            }
+            if (host in allowedHosts) {
+                allowed = true
+            }
         }
         val facts =
-            RequestFacts(target, source, ResourceTypes.request(type), method.uppercase(Locale.ROOT))
+            RequestFacts(
+                target,
+                source,
+                ResourceTypes.request(type),
+                method.uppercase(Locale.ROOT),
+            )
         val important =
             requests.any(facts) { rule ->
                 if (
-                    (
-                        rule.important ||
-                            (rule.exception && !allowed) ||
-                            (!rule.exception && !blocked)
-                        ) &&
-                    facts.matches(rule.conditions) &&
-                    rule.pattern.matches(target, facts.url, facts.budget)
+                    (rule.important ||
+                        (rule.exception && !allowed) ||
+                        (!rule.exception && !blocked)) &&
+                        facts.matches(rule.conditions) &&
+                        rule.pattern.matches(target, facts.url, facts.budget)
                 ) {
                     if (rule.important) {
                         true
                     } else {
-                        if (rule.exception) allowed = true else blocked = true
+                        if (rule.exception) {
+                            allowed = true
+                        } else {
+                            blocked = true
+                        }
                         false
                     }
                 } else {
@@ -299,40 +357,51 @@ internal class CompiledFilters(
         pageClasses: List<String>,
         pageIds: List<String>,
     ): List<String> {
-        if (!hasCosmetics) return emptyList()
+        if (!hasCosmetics) {
+            return emptyList()
+        }
         val address = httpAddress(url) ?: return emptyList()
         val host = address.host.removeSuffix(".")
-        val facts = RequestFacts(address, address, ResourceTypes.request("document"), "GET")
+        val facts =
+            RequestFacts(address, address, ResourceTypes.request("document"), "GET")
         var hide = 0
         hideExceptions.any(facts) { rule ->
             if (
                 facts.matches(rule.conditions) &&
-                rule.pattern.matches(address, facts.url, facts.budget)
+                    rule.pattern.matches(address, facts.url, facts.budget)
             ) {
                 hide = maxOf(hide, rule.hide)
             }
             hide == 2
         }
-        if (hide == 2 || facts.budget.exhausted) return emptyList()
+        if (hide == 2 || facts.budget.exhausted) {
+            return emptyList()
+        }
         val exceptions = HashSet<String>()
         fun except(rule: CosmeticRule) {
-            if (rule.domains.matches(host)) exceptions += rule.selector
+            if (rule.domains.matches(host)) {
+                exceptions += rule.selector
+            }
         }
         genericExceptions.forEach(::except)
-        hostSuffixes(host) { domain -> specificExceptions[domain]?.forEach(::except) }
+        hostSuffixes(host) { domain ->
+            specificExceptions[domain]?.forEach(::except)
+        }
         val result = LinkedHashSet<String>()
         var bytes = 0
         fun add(rule: CosmeticRule) {
             if (
                 rule.selector in exceptions ||
-                rule.selector in result ||
-                !rule.domains.matches(host) ||
-                result.size >= 2048
+                    rule.selector in result ||
+                    !rule.domains.matches(host) ||
+                    result.size >= 2048
             ) {
                 return
             }
             val length = rule.selector.toByteArray(Charsets.UTF_8).size
-            if (bytes + length > 256 * 1024) return
+            if (bytes + length > 256 * 1024) {
+                return
+            }
             bytes += length
             result += rule.selector
         }
@@ -351,20 +420,35 @@ internal class CompiledFilters(
         private fun genericToken(selector: String): Pair<Char, String>? {
             // A leading class/ID is mandatory unless the selector contains an OR.
             // Complex/escaped selectors take the unconditional CSS path instead.
-            if (selector.firstOrNull() !in listOf(
-                    '.',
-                    '#',
-                ) || ',' in selector || '\\' in selector
+            if (
+                selector.firstOrNull() !in
+                    listOf(
+                        '.',
+                        '#',
+                    ) || ',' in selector || '\\' in selector
             ) {
                 return null
             }
             val end =
                 selector
-                    .indexOfFirst { it != '.' && it != '#' && !it.isLetterOrDigit() && it !in "_-" }
-                    .let { if (it < 0) selector.length else it }
+                    .indexOfFirst {
+                        it != '.' &&
+                            it != '#' &&
+                            !it.isLetterOrDigit() &&
+                            it !in "_-"
+                    }
+                    .let {
+                        if (it < 0) {
+                            selector.length
+                        } else {
+                            it
+                        }
+                    }
             // Chained selectors .a.b and #a.b must be indexed by their first token.
             val tokenEnd =
-                (1 until end).firstOrNull { selector[it] == '.' || selector[it] == '#' } ?: end
+                (1 until end).firstOrNull {
+                    selector[it] == '.' || selector[it] == '#'
+                } ?: end
             return if (tokenEnd > 1 && tokenEnd <= 129) {
                 selector[0] to selector.substring(1, tokenEnd)
             } else {

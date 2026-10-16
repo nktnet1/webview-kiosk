@@ -18,7 +18,8 @@ fun WebsiteWhitelistSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.web_content_website_whitelist_title),
-        infoText = """
+        infoText =
+            """
             Specify regular expressions (regex), one per line.
 
             Escaping with backslash (\) is required for special characters
@@ -28,18 +29,21 @@ fun WebsiteWhitelistSetting() {
             If you need strict control, anchor your regex with `^` and `$`.
 
             Whitelist patterns take precedence over blacklist patterns.
-        """.trimIndent(),
-        placeholder = """
+            """
+                .trimIndent(),
+        placeholder =
+            """
             e.g.
                 ^https://trusted\.org(/.*)?$
                 ^https://.*\.trusted\.org(/.*)?$
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.websiteWhitelist,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         isMultiline = true,
         validator = { validateMultilineRegex(it) },
         validationMessage = "Some lines contain invalid regular expressions.",
-        onSave = { userSettings.websiteWhitelist = it }
+        onSave = { userSettings.websiteWhitelist = it },
     )
 }

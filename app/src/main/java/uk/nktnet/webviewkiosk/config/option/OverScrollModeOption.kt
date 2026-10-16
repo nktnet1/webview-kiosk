@@ -10,9 +10,9 @@ enum class OverScrollModeOption(val mode: Int, val label: String) {
     companion object {
         fun fromString(value: String?): OverScrollModeOption {
             return entries.find {
-                it.name.equals(value, ignoreCase = true)
-                || it.label.equals(value, ignoreCase = true)
-                || it.mode.toString() == value
+                it.name.equals(value, ignoreCase = true) ||
+                    it.label.equals(value, ignoreCase = true) ||
+                    it.mode.toString() == value
             } ?: IF_CONTENT_SCROLLS
         }
     }

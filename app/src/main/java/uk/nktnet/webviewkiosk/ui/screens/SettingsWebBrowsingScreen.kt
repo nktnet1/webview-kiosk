@@ -41,26 +41,22 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.Searc
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webbrowsing.SearchSuggestionEngineSetting
 
 @Composable
-fun SettingsWebBrowsingScreen(
-    navController: NavController,
-) {
+fun SettingsWebBrowsingScreen(navController: NavController) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(top = 4.dp)
-            .padding(horizontal = 16.dp),
+        modifier =
+            Modifier.fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(top = 4.dp)
+                .padding(horizontal = 16.dp)
     ) {
         SettingLabel(
             navController = navController,
-            label = stringResource(R.string.settings_web_browsing_title)
+            label = stringResource(R.string.settings_web_browsing_title),
         )
         SettingDivider()
 
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
         ) {
             AllowRefreshSetting()
             AllowPullToRefreshSetting()
@@ -83,7 +79,11 @@ fun SettingsWebBrowsingScreen(
             Spacer(modifier = Modifier.height(12.dp))
 
             Button(
-                onClick = { navController.navigate(Screen.SettingsWebBrowsingSitePermissions.route) },
+                onClick = {
+                    navController.navigate(
+                        Screen.SettingsWebBrowsingSitePermissions.route
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("Manage Site Permissions")

@@ -13,6 +13,31 @@ Run the relevant suites before opening a pull request.
 
 ### Android
 
+#### Formatting
+
+Run `./gradlew spotlessApply` to format Kotlin sources, tests, and Gradle Kotlin
+scripts in the app and `adblock` module. Run `./gradlew checkFormatting` to check
+formatting and require braces on every `if`/`else` branch, including short guards
+and expressions. These checks also run in CI and through the Kotlin pre-commit
+hook. The root `check` task includes them as well.
+
+Spotless uses pinned ktfmt with the Kotlin language style, four-space indentation,
+and an 85-character line-width target. `.editorconfig` records the same editor
+preferences. Wrapping is best effort: imports, package names, long URLs, string
+literals, and embedded scripts may exceed 85 characters when splitting them
+would change their meaning. Detekt checks only the brace policy; add missing
+braces before running the formatter. Keep normal `else if` chains.
+
+```kotlin
+if (condition) {
+    return "yes"
+} else {
+    return "no"
+}
+```
+
+#### Tests
+
 Use JetBrains Java 21 (JBRSDK) and the Android SDK required by
 `app/build.gradle.kts`. Point `JAVA_HOME` at that JDK and run from the repository
 root:
@@ -100,6 +125,11 @@ resolve the project's dependencies on its first run. No host Android SDK,
 Java or Gradle setup is necessary in Docker mode. Docker on Apple Silicon runs
 an x86_64 container, which can be slower than native Linux due to emulation.
 
+The Docker base image and exporter image tag use the Gradle version from
+`gradle/wrapper/gradle-wrapper.properties`. Updating the wrapper also updates
+the container's Gradle version; no separate version pin is needed in the
+Dockerfile, exporter, or tests.
+
 The download flags and `--output` carry over to Docker mode. The
 native-only `--sdk-root`, `--gradle-user-home`, and `--gradle-bin` options are
 rejected on other hosts.
@@ -117,8 +147,11 @@ files, credentials, and keystores. Original tool distributions are optional
 downloads kept separately in `tools/`. The script runs
 `resolveAndroidTestAssets`, which resolves debug/JVM-test dependencies,
 `androidLintTool` (including `com.android.tools.lint:lint-gradle` and its
-transitive dependencies), the AGP-matched Linux AAPT2, and available Kotlin
-compiler configurations **without compiling, running tests, or executing lint**.
+transitive dependencies), the AGP-matched Linux AAPT2, available Kotlin compiler
+configurations, and ktfmt/Detekt dependencies **without compiling, running tests,
+executing lint, or formatting files**. Spotless's Gradle plugin is also cached
+during configuration, so `spotlessApply` and `checkFormatting` work offline with
+a fresh export.
 The AAPT2 version is matched to AGP 9.4.1 in `gradle/libs.versions.toml`.
 The SDK archive includes `platform-tools` (`adb`), installed via `sdkmanager`
 when missing.

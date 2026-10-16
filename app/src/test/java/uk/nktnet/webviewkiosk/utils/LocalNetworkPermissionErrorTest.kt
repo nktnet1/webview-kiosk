@@ -11,7 +11,9 @@ class LocalNetworkPermissionErrorTest {
         assertFalse(
             matchesLocalNetworkPermissionError(
                 Build.VERSION_CODES.VANILLA_ICE_CREAM,
-                supportsDescription = { error("feature support must not be queried") },
+                supportsDescription = {
+                    error("feature support must not be queried")
+                },
                 getDescription = { error("description must not be queried") },
             )
         )
@@ -23,7 +25,10 @@ class LocalNetworkPermissionErrorTest {
         assertFalse(
             matchesLocalNetworkPermissionError(
                 Build.VERSION_CODES.CINNAMON_BUN,
-                supportsDescription = { checks++; false },
+                supportsDescription = {
+                    checks++
+                    false
+                },
                 getDescription = { error("description must not be queried") },
             )
         )

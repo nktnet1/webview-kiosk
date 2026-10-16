@@ -54,7 +54,8 @@ fun BookmarksDialog(
     val userSettings = remember { UserSettings(context) }
 
     val bookmarks = remember {
-        userSettings.websiteBookmarks.lines()
+        userSettings.websiteBookmarks
+            .lines()
             .filter { it.isNotBlank() }
             .map { line ->
                 val parts = line.split("|", limit = 2)
@@ -70,80 +71,78 @@ fun BookmarksDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            modifier = Modifier
-                .handleUserTouchEvent()
-                .handleUserKeyEvent(context, showBookmarkDialog)
-                .fillMaxSize()
-                .padding(vertical = 16.dp),
+            modifier =
+                Modifier.handleUserTouchEvent()
+                    .handleUserKeyEvent(context, showBookmarkDialog)
+                    .fillMaxSize()
+                    .padding(vertical = 16.dp),
             color = MaterialTheme.colorScheme.background,
             shape = MaterialTheme.shapes.medium,
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(16.dp)
-            ) {
+            Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
                 Text(
                     text = "Bookmarks",
-                    style = MaterialTheme.typography.headlineMedium
+                    style = MaterialTheme.typography.headlineMedium,
                 )
 
                 Spacer(Modifier.height(16.dp))
 
                 if (bookmarks.isEmpty()) {
                     Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
+                        modifier = Modifier.weight(1f).fillMaxWidth(),
+                        contentAlignment = Alignment.Center,
                     ) {
                         Text(
                             text = "No bookmarks saved.",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 } else {
                     LazyColumn(
                         modifier = Modifier.weight(1f),
-                        state = listState
+                        state = listState,
                     ) {
                         itemsIndexed(bookmarks) { index, bookmark ->
                             Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp)
-                                    .clickable {
-                                        customLoadUrl(bookmark.url)
-                                        onDismiss()
-                                    }
+                                modifier =
+                                    Modifier.fillMaxWidth()
+                                        .padding(vertical = 4.dp)
+                                        .clickable {
+                                            customLoadUrl(bookmark.url)
+                                            onDismiss()
+                                        }
                             ) {
                                 Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp)
+                                    modifier = Modifier.fillMaxWidth().padding(16.dp)
                                 ) {
                                     Text(
-                                        text = buildAnnotatedString {
-                                            withStyle(
-                                                style = SpanStyle(
-                                                    fontWeight = FontWeight.Bold
+                                        text =
+                                            buildAnnotatedString {
+                                                withStyle(
+                                                    style =
+                                                        SpanStyle(
+                                                            fontWeight =
+                                                                FontWeight.Bold
+                                                        )
+                                                ) {
+                                                    append("[$index] ")
+                                                }
+
+                                                val displayText =
+                                                    bookmark.title.ifEmpty {
+                                                        bookmark.url
+                                                    }
+
+                                                append(
+                                                    boundedBreakableTextPreview(
+                                                        displayText
+                                                    )
                                                 )
-                                            ) {
-                                                append("[$index] ")
-                                            }
-
-                                            val displayText = bookmark.title.ifEmpty {
-                                                bookmark.url
-                                            }
-
-                                            append(
-                                                boundedBreakableTextPreview(displayText)
-                                            )
-                                        },
+                                            },
                                         maxLines = 2,
                                         overflow = TextOverflow.Ellipsis,
-                                        style = MaterialTheme.typography.bodyMedium
+                                        style = MaterialTheme.typography.bodyMedium,
                                     )
                                 }
                             }
@@ -155,7 +154,7 @@ fun BookmarksDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.End,
                 ) {
                     TextButton(onClick = onDismiss) {
                         Text("Close")

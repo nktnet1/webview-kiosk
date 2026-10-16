@@ -40,26 +40,38 @@ class UnlockFailureNotificationTest {
 
         override fun stopLockTask() {
             stopAttempts++
-            if (denyUnlock) throw SecurityException("lock task permission denied")
+            if (denyUnlock) {
+                throw SecurityException("lock task permission denied")
+            }
         }
     }
 
     private lateinit var controller: ActivityController<UnlockActivity>
     private lateinit var activity: UnlockActivity
-    private val observationScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+    private val observationScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
     private var unlockNotifications = 0
 
     @Before
     fun setUp() {
         val app = RuntimeEnvironment.getApplication()
         app.getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().clear().commit()
-        controller = Robolectric.buildActivity(UnlockActivity::class.java).create().start().resume()
+            .edit()
+            .clear()
+            .commit()
+        controller =
+            Robolectric.buildActivity(UnlockActivity::class.java)
+                .create()
+                .start()
+                .resume()
         activity = controller.get()
-        UserSettings(activity).unlockAuthRequirement = UnlockAuthRequirementOption.OFF
+        UserSettings(activity).unlockAuthRequirement =
+            UnlockAuthRequirementOption.OFF
         DeviceOwnerManager.init(activity)
         observationScope.launch(start = CoroutineStart.UNDISPATCHED) {
-            WaitingForUnlockStateSingleton.unlockSuccess.collect { unlockNotifications++ }
+            WaitingForUnlockStateSingleton.unlockSuccess.collect {
+                unlockNotifications++
+            }
         }
     }
 
@@ -83,7 +95,11 @@ class UnlockFailureNotificationTest {
     @Test
     fun android6RejectedUnlockDoesNotPublishSuccess() {
         val originalSdk = Build.VERSION.SDK_INT
-        ReflectionHelpers.setStaticField(Build.VERSION::class.java, "SDK_INT", Build.VERSION_CODES.M)
+        ReflectionHelpers.setStaticField(
+            Build.VERSION::class.java,
+            "SDK_INT",
+            Build.VERSION_CODES.M,
+        )
         try {
             activity.denyUnlock = true
             unlockWithAuthIfRequired(activity)
@@ -92,7 +108,11 @@ class UnlockFailureNotificationTest {
             assertEquals(1, activity.stopAttempts)
             assertEquals(0, unlockNotifications)
         } finally {
-            ReflectionHelpers.setStaticField(Build.VERSION::class.java, "SDK_INT", originalSdk)
+            ReflectionHelpers.setStaticField(
+                Build.VERSION::class.java,
+                "SDK_INT",
+                originalSdk,
+            )
         }
     }
 

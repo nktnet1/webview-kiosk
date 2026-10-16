@@ -18,13 +18,21 @@ fun KeepScreenOnOption() {
     val keepOn = KeepScreenOnStateSingleton.isKeepScreenOn.value
 
     DisposableEffect(keepOn, lifecycleOwner, activity) {
-        val controller = KeepScreenOnWindowController(activity?.window, lifecycleOwner.lifecycle, keepOn)
+        val controller =
+            KeepScreenOnWindowController(
+                activity?.window,
+                lifecycleOwner.lifecycle,
+                keepOn,
+            )
         controller.attach()
         onDispose { controller.detach() }
     }
 }
 
-/** Window flags must follow the visible activity, not just the current Compose setting. */
+/**
+ * Window flags must follow the visible activity, not just the current Compose
+ * setting.
+ */
 internal class KeepScreenOnWindowController(
     private val window: Window?,
     private val lifecycle: Lifecycle,

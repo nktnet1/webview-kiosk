@@ -31,15 +31,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
-fun AdminRestrictionsChangedScreen(
-    navController: NavController,
-) {
+fun AdminRestrictionsChangedScreen(navController: NavController) {
     val spacerHeight = LocalWindowInfo.current.containerSize.height * 0.05f
     var remaining by remember { mutableIntStateOf(10) }
 
@@ -53,42 +51,42 @@ fun AdminRestrictionsChangedScreen(
 
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
+        color = MaterialTheme.colorScheme.background,
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .windowInsetsPadding(WindowInsets.safeDrawing)
-                .padding(top = 4.dp)
-                .padding(horizontal = 4.dp),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.safeDrawing)
+                    .padding(top = 4.dp)
+                    .padding(horizontal = 4.dp),
             verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Spacer(modifier = Modifier.height(spacerHeight.dp))
             Text(
                 text = stringResource(R.string.admin_restrictions_changed_title),
                 style = MaterialTheme.typography.headlineMedium,
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onBackground,
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = """
+                text =
+                    """
                     Your IT Administrator has applied new configurations.
 
                     Some settings may have been restricted.
-                """.trimIndent(),
+                    """
+                        .trimIndent(),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onBackground
+                color = MaterialTheme.colorScheme.onBackground,
             )
             Spacer(modifier = Modifier.height(32.dp))
             Button(
                 onClick = { navigateToWebViewScreen(navController) },
-                modifier = Modifier
-                    .sizeIn(maxWidth = 200.dp)
-                    .fillMaxWidth()
-                    .height(60.dp),
+                modifier =
+                    Modifier.sizeIn(maxWidth = 200.dp).fillMaxWidth().height(60.dp),
             ) {
                 Text("I understand.")
             }
@@ -106,21 +104,28 @@ fun AdminRestrictionsChangedScreen(
                 )
                 Text(
                     text = "$remaining",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontStyle = FontStyle.Italic,
-                        color = if (remaining < 3) {
-                            MaterialTheme.colorScheme.error
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        }
-                    )
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontStyle = FontStyle.Italic,
+                            color =
+                                if (remaining < 3) {
+                                    MaterialTheme.colorScheme.error
+                                } else {
+                                    MaterialTheme.colorScheme.primary
+                                },
+                        ),
                 )
                 Text(
-                    text = " second${if (remaining == 1) "" else "s"}.",
+                    text =
+                        " second${if (remaining == 1) {
+""
+} else {
+"s"
+}}.",
                     fontStyle = FontStyle.Italic,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = MaterialTheme.colorScheme.onBackground,
                 )
             }
         }

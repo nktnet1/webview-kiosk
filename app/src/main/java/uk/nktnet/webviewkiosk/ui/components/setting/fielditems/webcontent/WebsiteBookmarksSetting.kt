@@ -40,8 +40,9 @@ fun WebsiteBookmarksSetting() {
     val restricted = userSettings.isRestricted(settingKey)
 
     TextSettingFieldItem(
-        label = stringResource(R.string.web_content_website_bookmarks_title ),
-        infoText = """
+        label = stringResource(R.string.web_content_website_bookmarks_title),
+        infoText =
+            """
             Specify bookmarked URLs one per line. Blank lines will be ignored.
 
             This is accessible in the address bar. See the relevant setting "Web Browsing -> Allow Bookmark Access".
@@ -59,8 +60,10 @@ fun WebsiteBookmarksSetting() {
             https://f-droid.org | F-Droid
 
             ```
-        """.trimIndent(),
-        placeholder = """
+        """
+                .trimIndent(),
+        placeholder =
+            """
             e.g.
 
             ${Constants.WEBSITE_URL} | Webview Kiosk
@@ -68,24 +71,24 @@ fun WebsiteBookmarksSetting() {
             https://duckduckgo.com | DuckDuckGo
 
             https://f-droid.org | F-Droid
-        """.trimIndent(),
+        """
+                .trimIndent(),
         initialValue = userSettings.websiteBookmarks,
         settingKey = settingKey,
         restricted = restricted,
         isMultiline = true,
         validator = { input ->
-            input.isEmpty() || input.lines().all { line ->
-                val trimmedLine = line.trim()
-                if (trimmedLine.count { it == '|' } > 1) {
-                    false
-                } else {
-                    val url = trimmedLine
-                        .substringBefore('|')
-                        .trim()
+            input.isEmpty() ||
+                input.lines().all { line ->
+                    val trimmedLine = line.trim()
+                    if (trimmedLine.count { it == '|' } > 1) {
+                        false
+                    } else {
+                        val url = trimmedLine.substringBefore('|').trim()
 
-                   line.isBlank() || (url.isNotBlank() && validateUrl(url))
+                        line.isBlank() || (url.isNotBlank() && validateUrl(url))
+                    }
                 }
-            }
         },
         validationMessage = "Some lines contain invalid URLs",
         onSave = { input ->
@@ -110,11 +113,9 @@ fun WebsiteBookmarksSetting() {
 
             Button(
                 onClick = { appendBookmark(currentUrl) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 shape = RoundedCornerShape(4.dp),
-                colors = ButtonDefaults.buttonColors()
+                colors = ButtonDefaults.buttonColors(),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
@@ -123,7 +124,7 @@ fun WebsiteBookmarksSetting() {
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     Text(
                         text = currentUrl,
@@ -131,25 +132,22 @@ fun WebsiteBookmarksSetting() {
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
             Button(
                 onClick = { isOpenHistoryDialog = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .padding(top = 6.dp),
+                modifier = Modifier.fillMaxWidth().height(50.dp).padding(top = 6.dp),
                 shape = RoundedCornerShape(4.dp),
-                colors = ButtonDefaults.buttonColors()
+                colors = ButtonDefaults.buttonColors(),
             ) {
                 Text(
                     text = "Select from History",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimary,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
 
@@ -162,6 +160,6 @@ fun WebsiteBookmarksSetting() {
                 disableCurrent = false,
                 highlightCurrent = false,
             )
-        }
+        },
     )
 }

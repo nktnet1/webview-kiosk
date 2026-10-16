@@ -35,8 +35,10 @@ class ClientCertificateInstallerTest {
     private val owner = TestOwner()
     private val registry = RecordingRegistry()
     private val messages = mutableListOf<String>()
-    // Models MainActivity.lifecycleScope: independent of any settings composition scope.
-    private val activityScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+    // Models MainActivity.lifecycleScope: independent of any settings composition
+    // scope.
+    private val activityScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
     private val uri = Uri.parse("content://test.invalid/client-identity.p12")
     private val bytes = byteArrayOf(1, 2, 3, 4)
 
@@ -56,11 +58,16 @@ class ClientCertificateInstallerTest {
         installer.openPicker()
         registry.fileResult(uri)
         assertEquals(1, registry.launches.size)
-        settingsScope.cancel() // Navigate away: the original rememberCoroutineScope would die here.
+        settingsScope
+            .cancel() // Navigate away: the original rememberCoroutineScope would die
+        // here.
         deferred.complete(bytes)
 
         assertEquals(2, registry.launches.size)
-        assertArrayEquals(bytes, registry.installerIntent().getByteArrayExtra(KeyChain.EXTRA_PKCS12))
+        assertArrayEquals(
+            bytes,
+            registry.installerIntent().getByteArrayExtra(KeyChain.EXTRA_PKCS12),
+        )
         assertTrue(messages.isEmpty())
     }
 
@@ -72,11 +79,18 @@ class ClientCertificateInstallerTest {
         owner.send(Lifecycle.Event.ON_STOP)
 
         registry.fileResult(uri)
-        assertEquals("Activity results wait for the activity lifecycle", 1, registry.launches.size)
+        assertEquals(
+            "Activity results wait for the activity lifecycle",
+            1,
+            registry.launches.size,
+        )
 
         owner.send(Lifecycle.Event.ON_START)
         assertEquals(2, registry.launches.size)
-        assertArrayEquals(bytes, registry.installerIntent().getByteArrayExtra(KeyChain.EXTRA_PKCS12))
+        assertArrayEquals(
+            bytes,
+            registry.installerIntent().getByteArrayExtra(KeyChain.EXTRA_PKCS12),
+        )
     }
 
     @Test
@@ -91,7 +105,8 @@ class ClientCertificateInstallerTest {
 
         owner.send(Lifecycle.Event.ON_START)
         assertEquals(listOf("Client certificate installed."), messages)
-        // A completed transaction is not left permanently locked against new requests.
+        // A completed transaction is not left permanently locked against new
+        // requests.
         installer.openPicker()
         assertEquals(3, registry.launches.size)
     }
@@ -99,7 +114,10 @@ class ClientCertificateInstallerTest {
     @Test
     fun cancelledPickerDoesNotReadOrReportFailure() {
         var readCount = 0
-        val installer = newInstaller { readCount++; bytes }
+        val installer = newInstaller {
+            readCount++
+            bytes
+        }
         startActivity()
         installer.openPicker()
         registry.fileResult(null)
@@ -113,7 +131,9 @@ class ClientCertificateInstallerTest {
 
     @Test
     fun cancellationOfReadDoesNotShowAnInstallFailureToast() {
-        val installer = newInstaller { throw CancellationException("composition cancelled") }
+        val installer = newInstaller {
+            throw CancellationException("composition cancelled")
+        }
         startActivity()
         installer.openPicker()
         registry.fileResult(uri)
@@ -128,19 +148,27 @@ class ClientCertificateInstallerTest {
     fun genuineReadFailureIsReportedAndAllowsRetry() {
         var failures = 1
         val installer = newInstaller {
-            if (failures-- > 0) error("provider unavailable")
+            if (failures-- > 0) {
+                error("provider unavailable")
+            }
             bytes
         }
         startActivity()
         installer.openPicker()
         registry.fileResult(uri)
-        assertEquals(listOf("Unable to install client certificate: provider unavailable"), messages)
+        assertEquals(
+            listOf("Unable to install client certificate: provider unavailable"),
+            messages,
+        )
         assertEquals(1, registry.launches.size)
 
         installer.openPicker()
         registry.fileResult(uri)
         assertEquals(3, registry.launches.size)
-        assertArrayEquals(bytes, registry.installerIntent().getByteArrayExtra(KeyChain.EXTRA_PKCS12))
+        assertArrayEquals(
+            bytes,
+            registry.installerIntent().getByteArrayExtra(KeyChain.EXTRA_PKCS12),
+        )
     }
 
     @Test
@@ -150,12 +178,18 @@ class ClientCertificateInstallerTest {
         startActivity()
         installer.openPicker()
         registry.fileResult(uri)
-        assertEquals(listOf("Unable to install client certificate: no KeyChain handler"), messages)
+        assertEquals(
+            listOf("Unable to install client certificate: no KeyChain handler"),
+            messages,
+        )
 
         registry.failInstallLaunch = false
         installer.openPicker()
         registry.fileResult(uri)
-        assertArrayEquals(bytes, registry.installerIntent().getByteArrayExtra(KeyChain.EXTRA_PKCS12))
+        assertArrayEquals(
+            bytes,
+            registry.installerIntent().getByteArrayExtra(KeyChain.EXTRA_PKCS12),
+        )
     }
 
     @Test
@@ -193,15 +227,18 @@ class ClientCertificateInstallerTest {
         assertTrue(messages.isEmpty())
     }
 
-    private fun newInstaller(reader: suspend (Uri) -> ByteArray) = ClientCertificateInstaller(
-        context = context,
-        lifecycleOwner = owner,
-        activityResultRegistry = registry,
-        activityScope = activityScope,
-        readFile = reader,
-        installIntent = { content -> Intent("test.install").putExtra(KeyChain.EXTRA_PKCS12, content) },
-        notify = messages::add,
-    )
+    private fun newInstaller(reader: suspend (Uri) -> ByteArray) =
+        ClientCertificateInstaller(
+            context = context,
+            lifecycleOwner = owner,
+            activityResultRegistry = registry,
+            activityScope = activityScope,
+            readFile = reader,
+            installIntent = { content ->
+                Intent("test.install").putExtra(KeyChain.EXTRA_PKCS12, content)
+            },
+            notify = messages::add,
+        )
 
     private fun startActivity() {
         owner.send(Lifecycle.Event.ON_CREATE)
@@ -211,11 +248,16 @@ class ClientCertificateInstallerTest {
     private class TestOwner : LifecycleOwner {
         val registry = LifecycleRegistry(this)
         override val lifecycle: Lifecycle = registry
+
         fun send(event: Lifecycle.Event) = registry.handleLifecycleEvent(event)
     }
 
     private class RecordingRegistry : ActivityResultRegistry() {
-        data class Launch(val code: Int, val contract: ActivityResultContract<*, *>, val input: Any?)
+        data class Launch(
+            val code: Int,
+            val contract: ActivityResultContract<*, *>,
+            val input: Any?,
+        )
 
         val launches = mutableListOf<Launch>()
         var failPickerLaunch = false
@@ -227,28 +269,45 @@ class ClientCertificateInstallerTest {
             input: I,
             options: ActivityOptionsCompat?,
         ) {
-            if (failPickerLaunch && contract is ActivityResultContracts.OpenDocument) {
+            if (
+                failPickerLaunch && contract is ActivityResultContracts.OpenDocument
+            ) {
                 error("no file picker")
             }
-            if (failInstallLaunch && contract is ActivityResultContracts.StartActivityForResult) {
+            if (
+                failInstallLaunch &&
+                    contract is ActivityResultContracts.StartActivityForResult
+            ) {
                 error("no KeyChain handler")
             }
             launches += Launch(requestCode, contract, input)
         }
 
         fun fileResult(uri: Uri?) {
-            val launch = launches.last { it.contract is ActivityResultContracts.OpenDocument }
-            val resultCode = if (uri == null) Activity.RESULT_CANCELED else Activity.RESULT_OK
+            val launch = launches.last {
+                it.contract is ActivityResultContracts.OpenDocument
+            }
+            val resultCode =
+                if (uri == null) {
+                    Activity.RESULT_CANCELED
+                } else {
+                    Activity.RESULT_OK
+                }
             dispatchResult(launch.code, resultCode, Intent().setData(uri))
         }
 
         fun installerResult(resultCode: Int) {
-            val launch = launches.last { it.contract is ActivityResultContracts.StartActivityForResult }
+            val launch = launches.last {
+                it.contract is ActivityResultContracts.StartActivityForResult
+            }
             dispatchResult(launch.code, resultCode, Intent())
         }
 
-        fun installerIntent(): Intent = launches.last {
-            it.contract is ActivityResultContracts.StartActivityForResult
-        }.input as Intent
+        fun installerIntent(): Intent =
+            launches
+                .last {
+                    it.contract is ActivityResultContracts.StartActivityForResult
+                }
+                .input as Intent
     }
 }

@@ -10,10 +10,11 @@ object BackButtonStateSingleton {
     private val _shortPress = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     val shortPressEvents = _shortPress.asSharedFlow()
 
-    suspend fun emitLongPress()  {
+    suspend fun emitLongPress() {
         _longPress.emit(Unit)
         UserInteractionStateSingleton.onUserInteraction()
     }
+
     suspend fun emitShortPress() {
         _shortPress.emit(Unit)
         UserInteractionStateSingleton.onUserInteraction()

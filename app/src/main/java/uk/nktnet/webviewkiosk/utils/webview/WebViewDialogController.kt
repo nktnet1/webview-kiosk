@@ -19,23 +19,23 @@ class WebViewDialogController(context: Context) {
 
     private class PendingDialog(val dialog: Dialog, val onDismiss: (Boolean) -> Unit)
 
-    private val observer = object : DefaultLifecycleObserver {
-        override fun onDestroy(owner: LifecycleOwner) {
-            dispose()
+    private val observer =
+        object : DefaultLifecycleObserver {
+            override fun onDestroy(owner: LifecycleOwner) {
+                dispose()
+            }
         }
-    }
 
     init {
         lifecycle?.addObserver(observer)
     }
 
-    fun isActive(): Boolean = (
-        !disposed
-        && activity != null
-        && !activity.isFinishing
-        && !activity.isDestroyed
-        && lifecycle?.currentState != Lifecycle.State.DESTROYED
-    )
+    fun isActive(): Boolean =
+        (!disposed &&
+            activity != null &&
+            !activity.isFinishing &&
+            !activity.isDestroyed &&
+            lifecycle?.currentState != Lifecycle.State.DESTROYED)
 
     fun <T : Dialog> show(
         dialog: T,
@@ -71,7 +71,8 @@ class WebViewDialogController(context: Context) {
     }
 
     fun dismiss(key: Any, resolveRequest: Boolean = true) {
-        // WebView cancellation hides the UI without calling the native request again.
+        // WebView cancellation hides the UI without calling the native request
+        // again.
         val pending = dialogs.remove(key) ?: return
         try {
             pending.dialog.dismiss()
@@ -95,7 +96,11 @@ class WebViewDialogController(context: Context) {
         try {
             callback()
         } catch (e: Exception) {
-            Log.w(Constants.APP_SCHEME, "Unable to complete WebView dialog request", e)
+            Log.w(
+                Constants.APP_SCHEME,
+                "Unable to complete WebView dialog request",
+                e,
+            )
         }
     }
 

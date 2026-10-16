@@ -15,6 +15,7 @@ sealed interface OutboundResponseMessage {
     val appInstanceId: String
     val requestMessageId: String?
     val correlationData: String?
+
     fun getType(): String
 }
 
@@ -42,10 +43,8 @@ data class OutboundSettingsResponse(
     val data: SettingsResponseData,
 ) : OutboundResponseMessage {
     override fun getType(): String = "settings"
-    @Serializable
-    data class SettingsResponseData(
-        val settings: JsonObject,
-    )
+
+    @Serializable data class SettingsResponseData(val settings: JsonObject)
 }
 
 @Serializable
@@ -72,10 +71,8 @@ data class OutboundLaunchablePackagesResponse(
     val data: Data,
 ) : OutboundResponseMessage {
     override fun getType(): String = "get_launchable_packages"
-    @Serializable
-    data class Data(
-        val packages: List<String>,
-    )
+
+    @Serializable data class Data(val packages: List<String>)
 }
 
 @Serializable
@@ -89,10 +86,8 @@ data class OutboundLockTaskPackagesResponse(
     val data: Data,
 ) : OutboundResponseMessage {
     override fun getType(): String = "get_lock_task_packages"
-    @Serializable
-    data class Data(
-        val packages: List<String>,
-    )
+
+    @Serializable data class Data(val packages: List<String>)
 }
 
 @Serializable
@@ -109,6 +104,7 @@ data class OutboundErrorResponse(
     override fun getType(): String = "error"
 }
 
-val OutboundResponseJsonParser = Json(BaseJson) {
-    classDiscriminator = "responseType"
-}
+val OutboundResponseJsonParser =
+    Json(BaseJson) {
+        classDiscriminator = "responseType"
+    }

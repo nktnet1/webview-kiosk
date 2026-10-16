@@ -7,18 +7,6 @@ import android.webkit.ClientCertRequest
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import androidx.core.net.toUri
-import uk.nktnet.webviewkiosk.config.Constants
-import uk.nktnet.webviewkiosk.config.UserSettings
-import uk.nktnet.webviewkiosk.utils.isLocalFileLink
-import uk.nktnet.webviewkiosk.utils.resolveLocalFileLink
-import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
-import uk.nktnet.webviewkiosk.utils.webview.PdfTlsState
-import uk.nktnet.webviewkiosk.utils.webview.SslErrorRequest
-import uk.nktnet.webviewkiosk.utils.webview.SchemeType
-import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
-import uk.nktnet.webviewkiosk.utils.webview.getWebViewRequestCookie
-import uk.nktnet.webviewkiosk.utils.webview.isPdfViewerUrl
-import uk.nktnet.webviewkiosk.utils.webview.storeWebViewResponseCookies
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileInputStream
@@ -30,6 +18,18 @@ import java.util.Collections
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 import javax.net.ssl.HttpsURLConnection
+import uk.nktnet.webviewkiosk.config.Constants
+import uk.nktnet.webviewkiosk.config.UserSettings
+import uk.nktnet.webviewkiosk.utils.isLocalFileLink
+import uk.nktnet.webviewkiosk.utils.resolveLocalFileLink
+import uk.nktnet.webviewkiosk.utils.webview.HttpAuthRequest
+import uk.nktnet.webviewkiosk.utils.webview.PdfTlsState
+import uk.nktnet.webviewkiosk.utils.webview.SchemeType
+import uk.nktnet.webviewkiosk.utils.webview.SslErrorRequest
+import uk.nktnet.webviewkiosk.utils.webview.getBlockInfo
+import uk.nktnet.webviewkiosk.utils.webview.getWebViewRequestCookie
+import uk.nktnet.webviewkiosk.utils.webview.isPdfViewerUrl
+import uk.nktnet.webviewkiosk.utils.webview.storeWebViewResponseCookies
 
 private const val PDF_SOURCE_TTL_MS = 24 * 60 * 60 * 1000L
 private const val MAX_REDIRECTS = 5
@@ -43,30 +43,41 @@ private class RegisteredPdfSource(
 ) {
     val pendingAuthentication = ConcurrentHashMap<PdfAuthScope, HttpAuthRequest>()
     // Collections.newSetFromMap also works on the app's minimum Android API (21).
-    private val activeConnections = Collections.newSetFromMap(
-        ConcurrentHashMap<HttpURLConnection, Boolean>()
-    )
+    private val activeConnections =
+        Collections.newSetFromMap(ConcurrentHashMap<HttpURLConnection, Boolean>())
     @Volatile private var cancelled = false
 
-    fun isActive(token: String): Boolean = !cancelled
-        && registeredPdfSources[token] === this
-        && expiresAt > System.currentTimeMillis()
+    fun isActive(token: String): Boolean =
+        !cancelled &&
+            registeredPdfSources[token] === this &&
+            expiresAt > System.currentTimeMillis()
 
     fun trackConnection(connection: HttpURLConnection): Boolean {
-        // Register before checking cancellation so a concurrent cancel cannot miss this connection.
+        // Register before checking cancellation so a concurrent cancel cannot miss
+        // this connection.
         activeConnections.add(connection)
-        if (!cancelled) return true
+        if (!cancelled) {
+            return true
+        }
         releaseConnection(connection)
         return false
     }
 
     fun releaseConnection(connection: HttpURLConnection) {
-        if (activeConnections.remove(connection)) connection.disconnect()
+        if (activeConnections.remove(connection)) {
+            connection.disconnect()
+        }
     }
 
-    fun saveAuthorization(token: String, scope: PdfAuthScope, authorization: String): Boolean =
+    fun saveAuthorization(
+        token: String,
+        scope: PdfAuthScope,
+        authorization: String,
+    ): Boolean =
         synchronized(credentials) {
-            if (!isActive(token)) return@synchronized false
+            if (!isActive(token)) {
+                return@synchronized false
+            }
             credentials[scope] = authorization
             true
         }
@@ -74,7 +85,8 @@ private class RegisteredPdfSource(
     fun cancelRequests() {
         synchronized(credentials) {
             cancelled = true
-            // A closed viewer must not retain Basic credentials until the registry TTL expires.
+            // A closed viewer must not retain Basic credentials until the registry
+            // TTL expires.
             credentials.clear()
         }
         pendingAuthentication.values.toList().forEach { it.cancel() }
@@ -87,25 +99,27 @@ private data class PdfAuthScope(val origin: String, val realm: String)
 
 private data class BasicChallenge(val realm: String, val utf8: Boolean)
 
-private val registeredPdfSources =
-    ConcurrentHashMap<String, RegisteredPdfSource>()
+private val registeredPdfSources = ConcurrentHashMap<String, RegisteredPdfSource>()
 
 fun registerPdfSource(sourceUrl: String, previousToken: String? = null): String {
     cleanupExpiredPdfSources()
-    val previousSource = previousToken?.let(::resolvePdfSource)?.takeIf { it.url == sourceUrl }
+    val previousSource =
+        previousToken?.let(::resolvePdfSource)?.takeIf { it.url == sourceUrl }
     if (registeredPdfSources.size >= MAX_REGISTERED_PDF_SOURCES) {
         registeredPdfSources.entries
             .minByOrNull { it.value.expiresAt }
             ?.let { removePdfSource(it.key, it.value) }
     }
     val token = UUID.randomUUID().toString()
-    registeredPdfSources[token] = RegisteredPdfSource(
-        url = sourceUrl,
-        expiresAt = System.currentTimeMillis() + PDF_SOURCE_TTL_MS,
-        // Refresh credentials within this viewer, while giving every document its own event token.
-        credentials = ConcurrentHashMap(previousSource?.credentials.orEmpty()),
-        tls = PdfTlsState(previousSource?.tls),
-    )
+    registeredPdfSources[token] =
+        RegisteredPdfSource(
+            url = sourceUrl,
+            expiresAt = System.currentTimeMillis() + PDF_SOURCE_TTL_MS,
+            // Refresh credentials within this viewer, while giving every document
+            // its own event token.
+            credentials = ConcurrentHashMap(previousSource?.credentials.orEmpty()),
+            tls = PdfTlsState(previousSource?.tls),
+        )
     previousSource?.cancelRequests()
     return token
 }
@@ -116,10 +130,13 @@ fun cancelPdfSourceRequests(token: String?) {
 
 fun isPdfSourceNavigation(token: String?, navigationUrl: String?): Boolean {
     val source = token?.let { registeredPdfSources[it] } ?: return false
-    if (navigationUrl == source.url) return true
+    if (navigationUrl == source.url) {
+        return true
+    }
     val uri = navigationUrl?.toUri() ?: return false
-    return isPdfViewerUrl(uri) && uri.getQueryParameter("wk_pdf_token") == token
-        && uri.getQueryParameter("wk_pdf_url") == source.url
+    return isPdfViewerUrl(uri) &&
+        uri.getQueryParameter("wk_pdf_token") == token &&
+        uri.getQueryParameter("wk_pdf_url") == source.url
 }
 
 fun handlePdfSourceRequest(
@@ -129,30 +146,40 @@ fun handlePdfSourceRequest(
     userSettings: UserSettings,
     blacklistRegexes: List<Regex>,
     whitelistRegexes: List<Regex>,
-    onAuthenticationRequired: (token: String, url: String, request: HttpAuthRequest) -> Unit =
-        { _, _, request -> request.cancel() },
+    onAuthenticationRequired:
+        (token: String, url: String, request: HttpAuthRequest) -> Unit =
+        { _, _, request ->
+            request.cancel()
+        },
     onAuthenticated: (token: String, url: String) -> Unit = { _, _ -> },
-    onViewerEvent: (token: String, url: String, event: String) -> Unit = { _, _, _ -> },
-    onClientCertificateRequired: (token: String, url: String, request: ClientCertRequest) -> Unit =
-        { _, _, request -> request.ignore() },
+    onViewerEvent: (token: String, url: String, event: String) -> Unit = { _, _, _ ->
+    },
+    onClientCertificateRequired:
+        (token: String, url: String, request: ClientCertRequest) -> Unit =
+        { _, _, request ->
+            request.ignore()
+        },
     onSslError: (token: String, url: String, request: SslErrorRequest) -> Unit =
-        { _, _, request -> request.cancel() },
+        { _, _, request ->
+            request.cancel()
+        },
 ): WebResourceResponse? {
     val requestUrl = request.url
     val expectedOrigin = Constants.PDF_JS_ASSETS_DUMMY_URL.toUri()
 
     if (
-        requestUrl.scheme != expectedOrigin.scheme
-        || requestUrl.host != expectedOrigin.host
-        || requestUrl.port !in listOf(-1, 443)
-        || requestUrl.userInfo != null
-        || requestUrl.path !in listOf("/pdf_source", "/pdf_status")
+        requestUrl.scheme != expectedOrigin.scheme ||
+            requestUrl.host != expectedOrigin.host ||
+            requestUrl.port !in listOf(-1, 443) ||
+            requestUrl.userInfo != null ||
+            requestUrl.path !in listOf("/pdf_source", "/pdf_status")
     ) {
         return null
     }
 
-    val sourceToken = requestUrl.getQueryParameter("wk_pdf_token")
-        ?: return errorResponse(400, "Missing PDF source token")
+    val sourceToken =
+        requestUrl.getQueryParameter("wk_pdf_token")
+            ?: return errorResponse(400, "Missing PDF source token")
     val source = resolvePdfSource(sourceToken)
 
     return try {
@@ -161,45 +188,49 @@ fun handlePdfSourceRequest(
             if (event !in listOf("loaded", "error", "authentication", "retry")) {
                 return errorResponse(400, "Invalid PDF viewer event")
             }
-            // The active viewer can still retry after its source registration expires.
+            // The active viewer can still retry after its source registration
+            // expires.
             onViewerEvent(sourceToken, source?.url.orEmpty(), event!!)
             return errorResponse(200, "OK")
         }
-        val sourceUrl = source?.url ?: return errorResponse(404, "PDF source expired")
-        if (!source.isActive(sourceToken)) return errorResponse(410, "PDF viewer closed")
-        val (schemeType, blockCause) = getBlockInfo(
-            url = sourceUrl,
-            blacklistRegexes = blacklistRegexes,
-            whitelistRegexes = whitelistRegexes,
-            userSettings = userSettings
-        )
+        val sourceUrl =
+            source?.url ?: return errorResponse(404, "PDF source expired")
+        if (!source.isActive(sourceToken)) {
+            return errorResponse(410, "PDF viewer closed")
+        }
+        val (schemeType, blockCause) =
+            getBlockInfo(
+                url = sourceUrl,
+                blacklistRegexes = blacklistRegexes,
+                whitelistRegexes = whitelistRegexes,
+                userSettings = userSettings,
+            )
         if (blockCause != null) {
             return errorResponse(403, "PDF source is blocked")
         }
 
         val sourceUri = sourceUrl.toUri()
         when {
-            sourceUri.isLocalFileLink() -> localPdfResponse(
-                sourceUri.resolveLocalFileLink(context)
-            )
-            schemeType == SchemeType.FILE -> localPdfResponse(
-                sourceUri.path?.let(::File)
-            )
-            schemeType == SchemeType.WEB -> remotePdfResponse(
-                context = context,
-                sourceUrl = sourceUrl,
-                request = request,
-                userAgent = userAgent,
-                userSettings = userSettings,
-                blacklistRegexes = blacklistRegexes,
-                whitelistRegexes = whitelistRegexes,
-                sourceToken = sourceToken,
-                source = source,
-                onAuthenticationRequired = onAuthenticationRequired,
-                onAuthenticated = onAuthenticated,
-                onClientCertificateRequired = onClientCertificateRequired,
-                onSslError = onSslError,
-            )
+            sourceUri.isLocalFileLink() ->
+                localPdfResponse(sourceUri.resolveLocalFileLink(context))
+            schemeType == SchemeType.FILE ->
+                localPdfResponse(sourceUri.path?.let(::File))
+            schemeType == SchemeType.WEB ->
+                remotePdfResponse(
+                    context = context,
+                    sourceUrl = sourceUrl,
+                    request = request,
+                    userAgent = userAgent,
+                    userSettings = userSettings,
+                    blacklistRegexes = blacklistRegexes,
+                    whitelistRegexes = whitelistRegexes,
+                    sourceToken = sourceToken,
+                    source = source,
+                    onAuthenticationRequired = onAuthenticationRequired,
+                    onAuthenticated = onAuthenticated,
+                    onClientCertificateRequired = onClientCertificateRequired,
+                    onSslError = onSslError,
+                )
             else -> errorResponse(400, "Unsupported PDF URL")
         }
     } catch (e: PdfSourceBlockedException) {
@@ -225,7 +256,7 @@ private fun localPdfResponse(file: File?): WebResourceResponse {
     return WebResourceResponse(
         "application/pdf",
         null,
-        FileInputStream(file)
+        FileInputStream(file),
     )
 }
 
@@ -250,27 +281,38 @@ private fun remotePdfResponse(
     var authorization: String? = null
 
     while (true) {
-        if (!source.isActive(sourceToken)) return errorResponse(410, "PDF viewer closed")
-        val (schemeType, blockCause) = getBlockInfo(
-            url = currentUrl,
-            blacklistRegexes = blacklistRegexes,
-            whitelistRegexes = whitelistRegexes,
-            userSettings = userSettings
-        )
+        if (!source.isActive(sourceToken)) {
+            return errorResponse(410, "PDF viewer closed")
+        }
+        val (schemeType, blockCause) =
+            getBlockInfo(
+                url = currentUrl,
+                blacklistRegexes = blacklistRegexes,
+                whitelistRegexes = whitelistRegexes,
+                userSettings = userSettings,
+            )
         if (schemeType != SchemeType.WEB || blockCause != null) {
             throw PdfSourceBlockedException("Blocked redirect target: $currentUrl")
         }
 
         val connection = URL(currentUrl).openConnection() as HttpURLConnection
-        if (!source.trackConnection(connection)) return errorResponse(410, "PDF viewer closed")
+        if (!source.trackConnection(connection)) {
+            return errorResponse(410, "PDF viewer closed")
+        }
         var responseOwnsConnection = false
         try {
-            if (!source.isActive(sourceToken)) return errorResponse(410, "PDF viewer closed")
+            if (!source.isActive(sourceToken)) {
+                return errorResponse(410, "PDF viewer closed")
+            }
             if (connection is HttpsURLConnection) {
                 source.tls.configureConnection(
-                    connection, context, userSettings,
+                    connection,
+                    context,
+                    userSettings,
                     isActive = { source.isActive(sourceToken) },
-                    onClientCertificateRequired = { onClientCertificateRequired(sourceToken, source.url, it) },
+                    onClientCertificateRequired = {
+                        onClientCertificateRequired(sourceToken, source.url, it)
+                    },
                     onSslError = { onSslError(sourceToken, source.url, it) },
                     onApproved = { onAuthenticated(sourceToken, source.url) },
                 )
@@ -280,11 +322,14 @@ private fun remotePdfResponse(
             connection.connectTimeout = 15_000
             connection.readTimeout = 30_000
 
-            userAgent?.takeIf { it.isNotBlank() }?.let {
-                connection.setRequestProperty("User-Agent", it)
+            userAgent
+                ?.takeIf { it.isNotBlank() }
+                ?.let {
+                    connection.setRequestProperty("User-Agent", it)
+                }
+            getWebViewRequestCookie(currentUrl)?.let {
+                connection.setRequestProperty("Cookie", it)
             }
-            getWebViewRequestCookie(currentUrl)
-                ?.let { connection.setRequestProperty("Cookie", it) }
             authorization?.let { connection.setRequestProperty("Authorization", it) }
 
             listOf("Range", "If-Range", "Accept").forEach { header ->
@@ -294,7 +339,9 @@ private fun remotePdfResponse(
             }
 
             val statusCode = connection.responseCode
-            if (!source.isActive(sourceToken)) return errorResponse(410, "PDF viewer closed")
+            if (!source.isActive(sourceToken)) {
+                return errorResponse(410, "PDF viewer closed")
+            }
             storeWebViewResponseCookies(currentUrl, connection.headerFields)
             if (statusCode in setOf(301, 302, 303, 307, 308)) {
                 val location = connection.getHeaderField("Location")
@@ -307,24 +354,29 @@ private fun remotePdfResponse(
                 }
 
                 currentUrl = URL(URL(currentUrl), location).toString()
-                // Challenge each redirect target independently, including changes of scheme or port.
+                // Challenge each redirect target independently, including changes of
+                // scheme or port.
                 authorization = null
                 attemptedScope = null
                 continue
             }
 
             if (statusCode == HttpURLConnection.HTTP_UNAUTHORIZED) {
-                val challenge = connection.headerFields.entries
-                    .filter { it.key.equals("WWW-Authenticate", ignoreCase = true) }
-                    .flatMap { it.value.orEmpty() }
-                    .firstNotNullOfOrNull(::parseBasicChallenge)
+                val challenge =
+                    connection.headerFields.entries
+                        .filter {
+                            it.key.equals("WWW-Authenticate", ignoreCase = true)
+                        }
+                        .flatMap { it.value.orEmpty() }
+                        .firstNotNullOfOrNull(::parseBasicChallenge)
                 if (challenge != null) {
                     val target = URL(currentUrl)
                     val port = target.port.takeIf { it >= 0 } ?: target.defaultPort
-                    val authScope = PdfAuthScope(
-                        "${target.protocol.lowercase()}://${target.host.lowercase()}:$port",
-                        challenge.realm
-                    )
+                    val authScope =
+                        PdfAuthScope(
+                            "${target.protocol.lowercase()}://${target.host.lowercase()}:$port",
+                            challenge.realm,
+                        )
                     val savedAuthorization = source.credentials[authScope]
                     if (authorization == null && savedAuthorization != null) {
                         attemptedScope = authScope
@@ -335,36 +387,54 @@ private fun remotePdfResponse(
                         source.credentials.remove(authScope, authorization)
                     }
                     requestPdfAuthentication(
-                        sourceToken, source, authScope, challenge, target.host,
-                        onAuthenticationRequired, onAuthenticated
+                        sourceToken,
+                        source,
+                        authScope,
+                        challenge,
+                        target.host,
+                        onAuthenticationRequired,
+                        onAuthenticated,
                     )
                 }
             }
 
-            val responseMessage = connection.responseMessage
-                ?.takeIf { it.isNotBlank() }
-                ?: if (statusCode in 200..299) "OK" else "Error"
-            val input = if (statusCode in 200..299) {
-                connection.inputStream
-            } else {
-                connection.errorStream ?: ByteArrayInputStream(ByteArray(0))
-            }
+            val responseMessage =
+                connection.responseMessage?.takeIf { it.isNotBlank() }
+                    ?: if (statusCode in 200..299) {
+                        "OK"
+                    } else {
+                        "Error"
+                    }
+            val input =
+                if (statusCode in 200..299) {
+                    connection.inputStream
+                } else {
+                    connection.errorStream ?: ByteArrayInputStream(ByteArray(0))
+                }
             val responseHeaders = mutableMapOf<String, String>()
             connection.headerFields.forEach { (name, values) ->
-                if (name != null && values != null && !name.equals("Set-Cookie", ignoreCase = true)) {
+                if (
+                    name != null &&
+                        values != null &&
+                        !name.equals("Set-Cookie", ignoreCase = true)
+                ) {
                     responseHeaders[name] = values.joinToString(", ")
                 }
             }
             responseHeaders["Cache-Control"] = "no-store"
 
-            val response = WebResourceResponse(
-                connection.contentType?.substringBefore(';') ?: "application/pdf",
-                null,
-                statusCode,
-                responseMessage,
-                responseHeaders,
-                DisconnectingInputStream(input) { source.releaseConnection(connection) }
-            )
+            val response =
+                WebResourceResponse(
+                    connection.contentType?.substringBefore(';')
+                        ?: "application/pdf",
+                    null,
+                    statusCode,
+                    responseMessage,
+                    responseHeaders,
+                    DisconnectingInputStream(input) {
+                        source.releaseConnection(connection)
+                    },
+                )
             if (!source.isActive(sourceToken)) {
                 response.data.close()
                 return errorResponse(410, "PDF viewer closed")
@@ -372,7 +442,9 @@ private fun remotePdfResponse(
             responseOwnsConnection = true
             return response
         } finally {
-            if (!responseOwnsConnection) source.releaseConnection(connection)
+            if (!responseOwnsConnection) {
+                source.releaseConnection(connection)
+            }
         }
     }
 }
@@ -384,33 +456,49 @@ private fun requestPdfAuthentication(
     challenge: BasicChallenge,
     host: String,
     onAuthenticationRequired: (String, String, HttpAuthRequest) -> Unit,
-    onAuthenticated: (String, String) -> Unit
+    onAuthenticated: (String, String) -> Unit,
 ) {
     lateinit var request: HttpAuthRequest
-    request = HttpAuthRequest(
-        host = host,
-        realm = challenge.realm,
-        onSubmit = { username, password ->
-            if (source.pendingAuthentication.remove(authScope, request)) {
-                val charset = if (challenge.utf8) Charsets.UTF_8 else Charsets.ISO_8859_1
-                val authorization = "Basic " + Base64.encodeToString(
-                    "$username:$password".toByteArray(charset), Base64.NO_WRAP
-                )
-                if (source.saveAuthorization(token, authScope, authorization) && source.isActive(token)) {
-                    onAuthenticated(token, source.url)
+    request =
+        HttpAuthRequest(
+            host = host,
+            realm = challenge.realm,
+            onSubmit = { username, password ->
+                if (source.pendingAuthentication.remove(authScope, request)) {
+                    val charset =
+                        if (challenge.utf8) {
+                            Charsets.UTF_8
+                        } else {
+                            Charsets.ISO_8859_1
+                        }
+                    val authorization =
+                        "Basic " +
+                            Base64.encodeToString(
+                                "$username:$password".toByteArray(charset),
+                                Base64.NO_WRAP,
+                            )
+                    if (
+                        source.saveAuthorization(token, authScope, authorization) &&
+                            source.isActive(token)
+                    ) {
+                        onAuthenticated(token, source.url)
+                    }
                 }
-            }
-        },
-        onCancel = { source.pendingAuthentication.remove(authScope, request) }
-    )
+            },
+            onCancel = { source.pendingAuthentication.remove(authScope, request) },
+        )
     if (source.pendingAuthentication.putIfAbsent(authScope, request) == null) {
-        if (source.isActive(token)) onAuthenticationRequired(token, source.url, request)
-        else request.cancel()
+        if (source.isActive(token)) {
+            onAuthenticationRequired(token, source.url, request)
+        } else {
+            request.cancel()
+        }
     }
 }
 
 private fun parseBasicChallenge(header: String): BasicChallenge? {
-    // Split only outside quoted strings; realms can contain commas or escaped quotes.
+    // Split only outside quoted strings; realms can contain commas or escaped
+    // quotes.
     val parts = mutableListOf<String>()
     var start = 0
     var quoted = false
@@ -431,20 +519,28 @@ private fun parseBasicChallenge(header: String): BasicChallenge? {
     val basicIndex = parts.indexOfFirst {
         scheme.find(it)?.groupValues?.get(1).equals("Basic", ignoreCase = true)
     }
-    if (basicIndex < 0) return null
-    val parameters = listOf(parts[basicIndex].substring(5)) + parts.drop(basicIndex + 1)
-        .takeWhile { scheme.find(it) == null }
+    if (basicIndex < 0) {
+        return null
+    }
+    val parameters =
+        listOf(parts[basicIndex].substring(5)) +
+            parts.drop(basicIndex + 1).takeWhile { scheme.find(it) == null }
     val challenge = parameters.joinToString(",")
-    val realmMatch = Regex(
-        """(?:^|,)\s*realm\s*=\s*(?:"((?:\\.|[^"\\])*)"|([^,\s]+))""",
-        RegexOption.IGNORE_CASE
-    ).find(challenge) ?: return null
-    val realm = realmMatch.groups[1]?.value?.replace(Regex("""\\(.)"""), "$1")
-        ?: realmMatch.groupValues[2]
-    val utf8 = Regex(
-        """(?:^|,)\s*charset\s*=\s*(?:"UTF-8"|UTF-8)(?:\s*,|\s*$)""",
-        RegexOption.IGNORE_CASE
-    ).containsMatchIn(challenge)
+    val realmMatch =
+        Regex(
+                """(?:^|,)\s*realm\s*=\s*(?:"((?:\\.|[^"\\])*)"|([^,\s]+))""",
+                RegexOption.IGNORE_CASE,
+            )
+            .find(challenge) ?: return null
+    val realm =
+        realmMatch.groups[1]?.value?.replace(Regex("""\\(.)"""), "$1")
+            ?: realmMatch.groupValues[2]
+    val utf8 =
+        Regex(
+                """(?:^|,)\s*charset\s*=\s*(?:"UTF-8"|UTF-8)(?:\s*,|\s*$)""",
+                RegexOption.IGNORE_CASE,
+            )
+            .containsMatchIn(challenge)
     return BasicChallenge(realm, utf8)
 }
 
@@ -457,7 +553,9 @@ private fun resolvePdfSource(token: String): RegisteredPdfSource? {
         return null
     }
 
-    if (!entry.isActive(token)) return null
+    if (!entry.isActive(token)) {
+        return null
+    }
     entry.expiresAt = now + PDF_SOURCE_TTL_MS
     return entry
 }
@@ -484,7 +582,7 @@ private fun errorResponse(statusCode: Int, message: String): WebResourceResponse
         statusCode,
         message,
         mapOf("Cache-Control" to "no-store"),
-        ByteArrayInputStream(message.toByteArray(Charsets.UTF_8))
+        ByteArrayInputStream(message.toByteArray(Charsets.UTF_8)),
     )
 }
 

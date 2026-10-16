@@ -16,15 +16,17 @@ fun BuiltInZoomControlsSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_engine_built_in_zoom_controls_title),
-        infoText = """
-           Sets whether the WebView should use its built-in zoom mechanisms.
+        infoText =
+            """
+            Sets whether the WebView should use its built-in zoom mechanisms.
 
-           The built-in zoom mechanisms comprise on-screen zoom controls, which are displayed
-           over the WebView's content, and the use of a pinch gesture to control zooming.
-        """.trimIndent(),
+            The built-in zoom mechanisms comprise on-screen zoom controls, which are displayed
+            over the WebView's content, and the use of a pinch gesture to control zooming.
+            """
+                .trimIndent(),
         initialValue = userSettings.builtInZoomControls,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.builtInZoomControls = it }
+        onSave = { userSettings.builtInZoomControls = it },
     )
 }

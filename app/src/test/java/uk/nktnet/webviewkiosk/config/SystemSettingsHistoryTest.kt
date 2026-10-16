@@ -98,8 +98,9 @@ class SystemSettingsHistoryTest {
         assertEquals(entries(), restored.historyStack)
     }
 
-    private fun entries() = listOf(
-        HistoryEntry("first-entry", "https://example.com/first", 100),
-        HistoryEntry("second-entry", "https://example.com/second", 200),
-    )
+    private fun entries() =
+        listOf(
+            HistoryEntry("first-entry", "https://example.com/first", 100),
+            HistoryEntry("second-entry", "https://example.com/second", 200),
+        )
 }

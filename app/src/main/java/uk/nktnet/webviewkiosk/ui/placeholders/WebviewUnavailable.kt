@@ -29,13 +29,13 @@ import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 @Composable
 fun WebViewUnavailable(
     navController: NavController,
-    exception: Exception? = null
+    exception: Exception? = null,
 ) {
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeContent)
-            .padding(8.dp),
+        modifier =
+            Modifier.fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeContent)
+                .padding(8.dp),
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(
@@ -50,10 +50,14 @@ fun WebViewUnavailable(
             Spacer(modifier = Modifier.height(32.dp))
             SelectionContainer {
                 Text(
-                    text = normaliseInfoText("""
+                    text =
+                        normaliseInfoText(
+                            """
                     ${stringResource(R.string.app_name)} requires Android System WebView
                     (com.google.android.webview) to be installed on your device.
-                    """.trimIndent()),
+                    """
+                                .trimIndent()
+                        ),
                     style = MaterialTheme.typography.bodyLarge,
                     textAlign = TextAlign.Center,
                 )
@@ -64,12 +68,12 @@ fun WebViewUnavailable(
                 modifier = Modifier.wrapContentWidth().padding(8.dp),
                 onClick = {
                     navigateToWebViewScreen(navController)
-                }
+                },
             ) {
                 Text(
                     text = "Refresh",
                     textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.bodyLarge
+                    style = MaterialTheme.typography.bodyLarge,
                 )
             }
 

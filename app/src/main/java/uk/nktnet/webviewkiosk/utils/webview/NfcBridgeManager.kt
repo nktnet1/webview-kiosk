@@ -6,32 +6,28 @@ import android.nfc.Tag
 import android.nfc.tech.Ndef
 import android.util.Base64
 import android.webkit.WebView
-import org.json.JSONArray
-import org.json.JSONException
-import org.json.JSONObject
 import java.lang.ref.WeakReference
 import java.nio.charset.StandardCharsets
 import java.util.concurrent.atomic.AtomicLong
+import org.json.JSONArray
+import org.json.JSONException
+import org.json.JSONObject
 
 object NfcBridgeManager {
-    @Volatile
-    private var isScanActive = false
+    @Volatile private var isScanActive = false
 
-    @Volatile
-    private var webViewRef: WeakReference<WebView>? = null
+    @Volatile private var webViewRef: WeakReference<WebView>? = null
     private val writeCounter = AtomicLong(0)
     private val sessionCounter = AtomicLong(0)
 
-    @Volatile
-    private var sessionId = 0L
+    @Volatile private var sessionId = 0L
 
-    @Volatile
-    private var pendingWrite: PendingWriteRequest? = null
+    @Volatile private var pendingWrite: PendingWriteRequest? = null
 
     private data class PendingWriteRequest(
         val requestId: String,
         val messageJson: String,
-        val sessionId: Long
+        val sessionId: Long,
     )
 
     fun attachWebView(webView: WebView) {
@@ -57,12 +53,14 @@ object NfcBridgeManager {
             return null
         }
 
-        val requestId = "nfc-write-${System.currentTimeMillis()}-${writeCounter.incrementAndGet()}"
-        pendingWrite = PendingWriteRequest(
-            requestId = requestId,
-            messageJson = messageJson,
-            sessionId = sessionId
-        )
+        val requestId =
+            "nfc-write-${System.currentTimeMillis()}-${writeCounter.incrementAndGet()}"
+        pendingWrite =
+            PendingWriteRequest(
+                requestId = requestId,
+                messageJson = messageJson,
+                sessionId = sessionId,
+            )
         return requestId
     }
 
@@ -83,7 +81,7 @@ object NfcBridgeManager {
                 if (isCurrentSession(webView, activeSessionId)) {
                     webView.evaluateJavascript(
                         "window.__WebviewKioskNfcBridge && window.__WebviewKioskNfcBridge.onWriteResult($writeResult);",
-                        null
+                        null,
                     )
                 }
             }
@@ -98,7 +96,7 @@ object NfcBridgeManager {
             if (isScanActive && isCurrentSession(webView, activeSessionId)) {
                 webView.evaluateJavascript(
                     "window.__WebviewKioskNfcBridge && window.__WebviewKioskNfcBridge.onTagScanned($payload);",
-                    null
+                    null,
                 )
             }
         }
@@ -106,17 +104,18 @@ object NfcBridgeManager {
 
     private fun consumePendingWriteAndWrite(
         tag: Tag,
-        activeSessionId: Long
+        activeSessionId: Long,
     ): JSONObject? {
-        val request = synchronized(this) {
-            val current = pendingWrite ?: return null
-            if (current.sessionId != activeSessionId) {
+        val request =
+            synchronized(this) {
+                val current = pendingWrite ?: return null
+                if (current.sessionId != activeSessionId) {
+                    pendingWrite = null
+                    return null
+                }
                 pendingWrite = null
-                return null
+                current
             }
-            pendingWrite = null
-            current
-        }
 
         return runCatching {
             writeNdefToTag(tag, request.messageJson)
@@ -124,23 +123,28 @@ object NfcBridgeManager {
                 put("requestId", request.requestId)
                 put("ok", true)
             }
-        }.getOrElse { error ->
-            JSONObject().apply {
-                put("requestId", request.requestId)
-                put("ok", false)
-                put("errorName", mapWriteErrorName(error))
-                put("errorMessage", error.message ?: "Failed to write NFC tag")
-            }
         }
+            .getOrElse { error ->
+                JSONObject().apply {
+                    put("requestId", request.requestId)
+                    put("ok", false)
+                    put("errorName", mapWriteErrorName(error))
+                    put("errorMessage", error.message ?: "Failed to write NFC tag")
+                }
+            }
     }
 
-    private fun isCurrentSession(webView: WebView, expectedSessionId: Long): Boolean {
+    private fun isCurrentSession(
+        webView: WebView,
+        expectedSessionId: Long,
+    ): Boolean {
         return sessionId == expectedSessionId && webViewRef?.get() === webView
     }
 
     private fun mapWriteErrorName(error: Throwable): String {
         return when (error) {
-            is IllegalArgumentException, is JSONException -> "TypeError"
+            is IllegalArgumentException,
+            is JSONException -> "TypeError"
             is UnsupportedOperationException -> "NotSupportedError"
             is IllegalStateException -> "NotAllowedError"
             else -> "OperationError"
@@ -149,8 +153,9 @@ object NfcBridgeManager {
 
     private fun writeNdefToTag(tag: Tag, messageJson: String) {
         val message = parseNdefMessageFromJson(messageJson)
-        val ndef = Ndef.get(tag)
-            ?: throw UnsupportedOperationException("Tag does not support NDEF")
+        val ndef =
+            Ndef.get(tag)
+                ?: throw UnsupportedOperationException("Tag does not support NDEF")
 
         ndef.connect()
         try {
@@ -169,45 +174,60 @@ object NfcBridgeManager {
 
     private fun parseNdefMessageFromJson(messageJson: String): NdefMessage {
         val root = JSONObject(messageJson)
-        val recordsJson = root.optJSONArray("records")
-            ?: throw IllegalArgumentException("NDEF message must include records")
+        val recordsJson =
+            root.optJSONArray("records")
+                ?: throw IllegalArgumentException(
+                    "NDEF message must include records"
+                )
         if (recordsJson.length() == 0) {
-            throw IllegalArgumentException("NDEF message must include at least one record")
+            throw IllegalArgumentException(
+                "NDEF message must include at least one record"
+            )
         }
 
-        val records = Array(recordsJson.length()) { index ->
-            val record = recordsJson.optJSONObject(index)
-                ?: throw IllegalArgumentException("Record at index $index must be an object")
-            parseNdefRecordFromJson(record)
-        }
+        val records =
+            Array(recordsJson.length()) { index ->
+                val record =
+                    recordsJson.optJSONObject(index)
+                        ?: throw IllegalArgumentException(
+                            "Record at index $index must be an object"
+                        )
+                parseNdefRecordFromJson(record)
+            }
 
         return NdefMessage(records)
     }
 
     private fun parseNdefRecordFromJson(record: JSONObject): NdefRecord {
         val recordType = record.optString("recordType", "text").lowercase()
-        val idBytes = record
-            .optString("id", "")
-            .toByteArray(StandardCharsets.UTF_8)
+        val idBytes = record.optString("id", "").toByteArray(StandardCharsets.UTF_8)
 
         return when (recordType) {
             "text" -> {
-                val text = if (record.has("text")) {
-                    record.optString("text", "")
-                } else {
-                    record.optString("data", "")
-                }
+                val text =
+                    if (record.has("text")) {
+                        record.optString("text", "")
+                    } else {
+                        record.optString("data", "")
+                    }
                 val language = record.optString("lang", "en")
                 val encoding = record.optString("encoding", "utf-8").lowercase()
                 val isUtf16 = encoding == "utf-16"
 
                 val languageBytes = language.toByteArray(StandardCharsets.US_ASCII)
-                val textBytes = if (isUtf16) {
-                    text.toByteArray(StandardCharsets.UTF_16)
-                } else {
-                    text.toByteArray(StandardCharsets.UTF_8)
-                }
-                val status = (languageBytes.size and 0x3F) or if (isUtf16) 0x80 else 0x00
+                val textBytes =
+                    if (isUtf16) {
+                        text.toByteArray(StandardCharsets.UTF_16)
+                    } else {
+                        text.toByteArray(StandardCharsets.UTF_8)
+                    }
+                val status =
+                    (languageBytes.size and 0x3F) or
+                        if (isUtf16) {
+                            0x80
+                        } else {
+                            0x00
+                        }
 
                 val payload = ByteArray(1 + languageBytes.size + textBytes.size)
                 payload[0] = status.toByte()
@@ -216,32 +236,36 @@ object NfcBridgeManager {
                     0,
                     payload,
                     1,
-                    languageBytes.size
+                    languageBytes.size,
                 )
                 System.arraycopy(
                     textBytes,
                     0,
                     payload,
                     1 + languageBytes.size,
-                    textBytes.size
+                    textBytes.size,
                 )
 
                 NdefRecord(
                     NdefRecord.TNF_WELL_KNOWN,
                     NdefRecord.RTD_TEXT,
                     idBytes,
-                    payload
+                    payload,
                 )
             }
 
-            "url", "uri" -> {
-                val uri = if (record.has("uri")) {
-                    record.optString("uri", "")
-                } else {
-                    record.optString("data", "")
-                }
+            "url",
+            "uri" -> {
+                val uri =
+                    if (record.has("uri")) {
+                        record.optString("uri", "")
+                    } else {
+                        record.optString("data", "")
+                    }
                 if (uri.isBlank()) {
-                    throw IllegalArgumentException("URI record must include a non-empty uri")
+                    throw IllegalArgumentException(
+                        "URI record must include a non-empty uri"
+                    )
                 }
                 NdefRecord.createUri(uri)
             }
@@ -253,9 +277,8 @@ object NfcBridgeManager {
             }
 
             else -> {
-                val tnf = record
-                    .optInt("tnf", NdefRecord.TNF_UNKNOWN.toInt())
-                    .toShort()
+                val tnf =
+                    record.optInt("tnf", NdefRecord.TNF_UNKNOWN.toInt()).toShort()
                 val rawType = record.optString("rawType", "")
                 val typeBytes = rawType.toByteArray(StandardCharsets.UTF_8)
                 val payload = decodeRecordPayload(record)
@@ -264,7 +287,7 @@ object NfcBridgeManager {
                     tnf,
                     typeBytes,
                     idBytes,
-                    payload
+                    payload,
                 )
             }
         }
@@ -311,9 +334,11 @@ object NfcBridgeManager {
         return runCatching {
             ndef.connect()
             ndef.cachedNdefMessage ?: ndef.ndefMessage
-        }.getOrNull().also {
-            runCatching { ndef.close() }
         }
+            .getOrNull()
+            .also {
+                runCatching { ndef.close() }
+            }
     }
 
     private fun parseNdefRecord(record: NdefRecord): JSONObject {
@@ -324,11 +349,11 @@ object NfcBridgeManager {
         json.put("tnf", record.tnf.toInt())
         json.put(
             "id",
-            String(record.id ?: byteArrayOf(), StandardCharsets.UTF_8)
+            String(record.id ?: byteArrayOf(), StandardCharsets.UTF_8),
         )
         json.put(
             "rawType",
-            String(record.type ?: byteArrayOf(), StandardCharsets.UTF_8)
+            String(record.type ?: byteArrayOf(), StandardCharsets.UTF_8),
         )
         json.put("payloadBase64", payloadBase64)
 
@@ -352,10 +377,11 @@ object NfcBridgeManager {
                     "mediaType",
                     String(
                         record.type ?: byteArrayOf(),
-                        StandardCharsets.US_ASCII
-                    )
+                        StandardCharsets.US_ASCII,
+                    ),
                 )
-            } else -> {
+            }
+            else -> {
                 json.put("recordType", "unknown")
             }
         }
@@ -364,23 +390,19 @@ object NfcBridgeManager {
     }
 
     private fun isTextRecord(record: NdefRecord): Boolean {
-        return (
-            record.tnf == NdefRecord.TNF_WELL_KNOWN
-            && record.type.contentEquals(NdefRecord.RTD_TEXT)
-        )
+        return (record.tnf == NdefRecord.TNF_WELL_KNOWN &&
+            record.type.contentEquals(NdefRecord.RTD_TEXT))
     }
 
     private fun isUriRecord(record: NdefRecord): Boolean {
-        return (
-            record.tnf == NdefRecord.TNF_WELL_KNOWN
-            && record.type.contentEquals(NdefRecord.RTD_URI)
-        )
+        return (record.tnf == NdefRecord.TNF_WELL_KNOWN &&
+            record.type.contentEquals(NdefRecord.RTD_URI))
     }
 
     private data class TextPayload(
         val text: String,
         val language: String,
-        val encoding: String
+        val encoding: String,
     )
 
     private fun parseTextPayload(payload: ByteArray): TextPayload {
@@ -393,63 +415,88 @@ object NfcBridgeManager {
         val languageLength = status and 0x3F
         val textStart = 1 + languageLength
         if (textStart > payload.size) {
-            return TextPayload("", "", if (isUtf16) "utf-16" else "utf-8")
+            return TextPayload(
+                "",
+                "",
+                if (isUtf16) {
+                    "utf-16"
+                } else {
+                    "utf-8"
+                },
+            )
         }
 
-        val language = if (languageLength > 0 && payload.size >= 1 + languageLength) {
-            String(payload, 1, languageLength, StandardCharsets.US_ASCII)
-        } else {
-            ""
-        }
+        val language =
+            if (languageLength > 0 && payload.size >= 1 + languageLength) {
+                String(payload, 1, languageLength, StandardCharsets.US_ASCII)
+            } else {
+                ""
+            }
 
-        val charset = if (isUtf16) StandardCharsets.UTF_16 else StandardCharsets.UTF_8
-        val text = String(
-            payload,
-            textStart,
-            payload.size - textStart, charset
+        val charset =
+            if (isUtf16) {
+                StandardCharsets.UTF_16
+            } else {
+                StandardCharsets.UTF_8
+            }
+        val text =
+            String(
+                payload,
+                textStart,
+                payload.size - textStart,
+                charset,
+            )
+
+        return TextPayload(
+            text,
+            language,
+            if (isUtf16) {
+                "utf-16"
+            } else {
+                "utf-8"
+            },
         )
-
-        return TextPayload(text, language, if (isUtf16) "utf-16" else "utf-8")
     }
 
-    private val uriPrefixes = arrayOf(
-        "",
-        "http://www.",
-        "https://www.",
-        "http://",
-        "https://",
-        "tel:",
-        "mailto:",
-        "ftp://anonymous:anonymous@",
-        "ftp://ftp.",
-        "ftps://",
-        "sftp://",
-        "smb://",
-        "nfs://",
-        "ftp://",
-        "dav://",
-        "news:",
-        "telnet://",
-        "imap:",
-        "rtsp://",
-        "urn:",
-        "pop:",
-        "sip:",
-        "sips:",
-        "tftp:",
-        "btspp://",
-        "btl2cap://",
-        "btgoep://",
-        "tcpobex://",
-        "irdaobex://",
-        "file://",
-        "urn:epc:id:",
-        "urn:epc:tag:",
-        "urn:epc:pat:",
-        "urn:epc:raw:",
-        "urn:epc:",
-        "urn:nfc:"
-    )
+    private val uriPrefixes =
+        arrayOf(
+            "",
+            "http://www.",
+            "https://www.",
+            "http://",
+            "https://",
+            "tel:",
+            "mailto:",
+            "ftp://anonymous:anonymous@",
+            "ftp://ftp.",
+            "ftps://",
+            "sftp://",
+            "smb://",
+            "nfs://",
+            "ftp://",
+            "dav://",
+            "news:",
+            "telnet://",
+            "imap:",
+            "rtsp://",
+            "urn:",
+            "pop:",
+            "sip:",
+            "sips:",
+            "tftp:",
+            "btspp://",
+            "btl2cap://",
+            "btgoep://",
+            "tcpobex://",
+            "irdaobex://",
+            "file://",
+            "urn:epc:id:",
+            "urn:epc:tag:",
+            "urn:epc:pat:",
+            "urn:epc:raw:",
+            "urn:epc:",
+            "urn:nfc:",
+        )
 
     private fun parseUriPayload(payload: ByteArray): String {
         if (payload.isEmpty()) {
@@ -458,12 +505,13 @@ object NfcBridgeManager {
 
         val prefixIndex = payload[0].toInt() and 0xFF
         val prefix = uriPrefixes.getOrElse(prefixIndex) { "" }
-        val uriRemainder = String(
-            payload,
-            1,
-            payload.size - 1,
-            StandardCharsets.UTF_8
-        )
+        val uriRemainder =
+            String(
+                payload,
+                1,
+                payload.size - 1,
+                StandardCharsets.UTF_8,
+            )
         return prefix + uriRemainder
     }
 

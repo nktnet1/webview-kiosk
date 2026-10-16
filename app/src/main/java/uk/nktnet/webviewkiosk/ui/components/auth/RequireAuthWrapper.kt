@@ -20,7 +20,7 @@ import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
 private fun showAuthPrompt() {
     AuthenticationManager.showAuthenticationPrompt(
         title = "Authentication Required",
-        description = "Please authenticate to access settings"
+        description = "Please authenticate to access settings",
     )
 }
 
@@ -30,7 +30,7 @@ private fun showAuthPrompt() {
 @NonSkippableComposable
 fun RequireAuthWrapper(
     navController: NavController,
-    content: @Composable () -> Unit
+    content: @Composable () -> Unit,
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         RequireAuthentication(
@@ -45,7 +45,7 @@ fun RequireAuthWrapper(
                         navigateToWebViewScreen(navController)
                     },
                 )
-            }
+            },
         )
     }
 }
@@ -54,7 +54,7 @@ fun RequireAuthWrapper(
 @NonSkippableComposable
 private fun RequireAuthentication(
     onAuthenticated: @Composable () -> Unit,
-    onFailed: @Composable (AuthenticationManager.AuthenticationResult?) -> Unit
+    onFailed: @Composable (AuthenticationManager.AuthenticationResult?) -> Unit,
 ) {
     val authenticationResult by AuthenticationManager.promptResults.collectAsState()
 
@@ -68,14 +68,21 @@ private fun RequireAuthentication(
         val observer = LifecycleEventObserver { _, event ->
             // A paused activity can resume without another ON_START event.
             val currentResult = AuthenticationManager.promptResults.value
-            val checkOnResume = event == Lifecycle.Event.ON_RESUME
-                && (currentResult == AuthenticationManager.AuthenticationResult.Loading
-                    || currentResult == AuthenticationManager.AuthenticationResult.AuthenticationSuccess
-                    || currentResult == AuthenticationManager.AuthenticationResult.AuthenticationNotSet)
+            val checkOnResume =
+                event == Lifecycle.Event.ON_RESUME &&
+                    (currentResult ==
+                        AuthenticationManager.AuthenticationResult.Loading ||
+                        currentResult ==
+                            AuthenticationManager.AuthenticationResult
+                                .AuthenticationSuccess ||
+                        currentResult ==
+                            AuthenticationManager.AuthenticationResult
+                                .AuthenticationNotSet)
             if (event == Lifecycle.Event.ON_START || checkOnResume) {
                 if (
-                    currentResult != AuthenticationManager.AuthenticationResult.Pending
-                    && !AuthenticationManager.checkAuthAndRefreshSession()
+                    currentResult !=
+                        AuthenticationManager.AuthenticationResult.Pending &&
+                        !AuthenticationManager.checkAuthAndRefreshSession()
                 ) {
                     showAuthPrompt()
                 }
@@ -88,14 +95,26 @@ private fun RequireAuthentication(
         }
     }
 
-    LaunchedEffect(lifecycleOwner, lifecycleState, authenticationResult, hasValidSession) {
+    LaunchedEffect(
+        lifecycleOwner,
+        lifecycleState,
+        authenticationResult,
+        hasValidSession,
+    ) {
         val currentResult = AuthenticationManager.promptResults.value
         if (
-            lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)
-            && !AuthenticationManager.hasValidSession()
-            && (currentResult == AuthenticationManager.AuthenticationResult.Loading
-                || currentResult == AuthenticationManager.AuthenticationResult.AuthenticationSuccess
-                || currentResult == AuthenticationManager.AuthenticationResult.AuthenticationNotSet)
+            lifecycleOwner.lifecycle.currentState.isAtLeast(
+                Lifecycle.State.STARTED
+            ) &&
+                !AuthenticationManager.hasValidSession() &&
+                (currentResult ==
+                    AuthenticationManager.AuthenticationResult.Loading ||
+                    currentResult ==
+                        AuthenticationManager.AuthenticationResult
+                            .AuthenticationSuccess ||
+                    currentResult ==
+                        AuthenticationManager.AuthenticationResult
+                            .AuthenticationNotSet)
         ) {
             showAuthPrompt()
         }

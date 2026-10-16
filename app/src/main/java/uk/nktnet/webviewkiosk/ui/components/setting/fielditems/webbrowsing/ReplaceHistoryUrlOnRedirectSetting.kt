@@ -16,15 +16,20 @@ fun ReplaceHistoryUrlOnRedirectSetting() {
     val settingKey = UserSettingsKeys.WebBrowsing.REPLACE_HISTORY_URL_ON_REDIRECT
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.web_browsing_replace_history_url_on_redirect_title),
-        infoText = """
+        label =
+            stringResource(
+                R.string.web_browsing_replace_history_url_on_redirect_title
+            ),
+        infoText =
+            """
             Set to true to replace the current history entry with the final URL if
             any page redirections occurs, rather than adding multiple entries to the
             history navigation stack.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.replaceHistoryUrlOnRedirect,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.replaceHistoryUrlOnRedirect = it }
+        onSave = { userSettings.replaceHistoryUrlOnRedirect = it },
     )
 }

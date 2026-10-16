@@ -18,7 +18,8 @@ fun SearchSuggestionEngineSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.web_browsing_search_suggestion_engine_title),
-        infoText = """
+        infoText =
+            """
             Configure the search engine for text suggestions (autocomplete/hints)
             when typing in the address bar.
 
@@ -26,12 +27,13 @@ fun SearchSuggestionEngineSetting() {
             - news
             - new recipes
             - new york times
-        """.trimIndent(),
+            """
+                .trimIndent(),
         options = SearchSuggestionEngineOption.entries,
         initialValue = userSettings.searchSuggestionEngine,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.searchSuggestionEngine = it },
-        itemText = { it.label }
+        itemText = { it.label },
     )
 }

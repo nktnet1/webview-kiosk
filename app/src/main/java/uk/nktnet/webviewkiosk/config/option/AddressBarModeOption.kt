@@ -8,8 +8,8 @@ enum class AddressBarModeOption(val label: String) {
     companion object {
         fun fromString(value: String?): AddressBarModeOption {
             return entries.find {
-                it.name.equals(value, ignoreCase = true)
-                || it.label.equals(value, ignoreCase = true)
+                it.name.equals(value, ignoreCase = true) ||
+                    it.label.equals(value, ignoreCase = true)
             } ?: HIDDEN_WHEN_LOCKED
         }
     }

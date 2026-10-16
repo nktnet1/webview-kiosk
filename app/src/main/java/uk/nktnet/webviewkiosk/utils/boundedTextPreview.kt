@@ -1,6 +1,9 @@
 package uk.nktnet.webviewkiosk.utils
 
-/** Bound text before shaping it; limiting visible lines alone still leaves a large input to layout. */
+/**
+ * Bound text before shaping it; limiting visible lines alone still leaves a large
+ * input to layout.
+ */
 fun boundedTextPreview(text: String, maxChars: Int = 512): String {
     require(maxChars > 0) { "Preview limit must be positive" }
     if (text.length <= maxChars) {
@@ -27,7 +30,9 @@ fun boundedBreakableTextPreview(text: String, maxChars: Int = 256): String {
             val point = Character.codePointAt(preview, offset)
             appendCodePoint(point)
             offset += Character.charCount(point)
-            if (offset < preview.length) append('\u200B')
+            if (offset < preview.length) {
+                append('\u200B')
+            }
         }
     }
 }

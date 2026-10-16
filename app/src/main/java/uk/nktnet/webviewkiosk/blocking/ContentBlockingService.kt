@@ -2,6 +2,10 @@ package uk.nktnet.webviewkiosk.blocking
 
 import android.content.Context
 import android.util.Log
+import java.io.File
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -9,10 +13,6 @@ import uk.nktnet.webviewkiosk.BuildConfig
 import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
 import uk.nktnet.webviewkiosk.adblock.NetworkFilterEngine
 import uk.nktnet.webviewkiosk.adblock.RuleLoadStage
-import java.io.File
-import java.util.concurrent.Executor
-import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicLong
 
 internal enum class BlockingStatus {
     DISABLED,
@@ -21,11 +21,14 @@ internal enum class BlockingStatus {
     ERROR,
 }
 
-private data class RuleLoadCompletion(val revision: Long, val error: Throwable? = null)
+private data class RuleLoadCompletion(
+    val revision: Long,
+    val error: Throwable? = null,
+)
 
 /**
- * Serialises list compilation away from the UI and the WebView request threads. A successful
- * compilation atomically replaces the immutable Kotlin engine snapshot.
+ * Serialises list compilation away from the UI and the WebView request threads. A
+ * successful compilation atomically replaces the immutable Kotlin engine snapshot.
  */
 internal class ContentBlockingService(
     private val store: FilterListStore,
@@ -57,7 +60,9 @@ internal class ContentBlockingService(
 
     @Synchronized
     fun start() {
-        if (started) return
+        if (started) {
+            return
+        }
         started = true
         reload()
     }
@@ -76,14 +81,20 @@ internal class ContentBlockingService(
         try {
             worker.execute {
                 try {
-                    if (revision != generation.get()) return@execute
+                    if (revision != generation.get()) {
+                        return@execute
+                    }
                     val texts = store.enabledTexts()
-                    if (revision != generation.get()) return@execute
+                    if (revision != generation.get()) {
+                        return@execute
+                    }
                     if (texts.isEmpty()) {
                         updateStage(revision, RuleLoadStage.CLEARING)
                         engine.clear()
                     } else {
-                        engine.replace(texts) { stage -> updateStage(revision, stage) }
+                        engine.replace(texts) { stage ->
+                            updateStage(revision, stage)
+                        }
                     }
                     finishReload(revision, texts.isNotEmpty())
                 } catch (e: Exception) {
@@ -100,10 +111,15 @@ internal class ContentBlockingService(
 
     @Synchronized
     private fun updateStage(revision: Long, stage: RuleLoadStage) {
-        if (revision == generation.get()) _loadStage.value = stage
+        if (revision == generation.get()) {
+            _loadStage.value = stage
+        }
     }
 
-    /** Wait for this load, or the newer load that superseded it, without blocking a thread. */
+    /**
+     * Wait for this load, or the newer load that superseded it, without blocking a
+     * thread.
+     */
     suspend fun awaitReload(revision: Long) {
         require(revision > 0) { "A rule-load revision is required" }
         val result = completedLoad.first {
@@ -120,11 +136,18 @@ internal class ContentBlockingService(
 
     @Synchronized
     private fun finishReload(revision: Long, hasRules: Boolean) {
-        if (revision != generation.get()) return
+        if (revision != generation.get()) {
+            return
+        }
         _lastError.value = null
         ready = hasRules
         _skippedRules.value = engine.unsupportedRuleCount()
-        _status.value = if (ready) BlockingStatus.ACTIVE else BlockingStatus.DISABLED
+        _status.value =
+            if (ready) {
+                BlockingStatus.ACTIVE
+            } else {
+                BlockingStatus.DISABLED
+            }
         _loadStage.value = null
         _initialLoadComplete.value = true
         completedLoad.value = RuleLoadCompletion(revision)
@@ -133,8 +156,10 @@ internal class ContentBlockingService(
     @Synchronized
     private fun reportError(revision: Long, error: Throwable) {
         if (revision == generation.get()) {
-            // Compilation is atomic. A failed update leaves the last working rules active.
-            _lastError.value = error.message ?: "Content-blocking rules could not be loaded"
+            // Compilation is atomic. A failed update leaves the last working rules
+            // active.
+            _lastError.value =
+                error.message ?: "Content-blocking rules could not be loaded"
             _status.value = BlockingStatus.ERROR
             _loadStage.value = null
             _initialLoadComplete.value = true
@@ -143,8 +168,15 @@ internal class ContentBlockingService(
         }
     }
 
-    fun shouldBlock(url: String, sourceUrl: String, type: String, method: String): Boolean {
-        if (!ready) return false
+    fun shouldBlock(
+        url: String,
+        sourceUrl: String,
+        type: String,
+        method: String,
+    ): Boolean {
+        if (!ready) {
+            return false
+        }
         return try {
             engine.shouldBlock(url, sourceUrl, type, method)
         } catch (e: LinkageError) {
@@ -154,8 +186,14 @@ internal class ContentBlockingService(
         }
     }
 
-    fun cosmeticSelectors(url: String, classes: List<String>, ids: List<String>): List<String> {
-        if (!ready) return emptyList()
+    fun cosmeticSelectors(
+        url: String,
+        classes: List<String>,
+        ids: List<String>,
+    ): List<String> {
+        if (!ready) {
+            return emptyList()
+        }
         return try {
             engine.cosmeticSelectors(url, classes, ids)
         } catch (e: LinkageError) {
@@ -170,33 +208,36 @@ internal class ContentBlockingService(
 
         @Volatile private var instance: ContentBlockingService? = null
 
-        fun get(context: Context): ContentBlockingService = instance
-            ?: synchronized(this) {
-                instance
-                    ?: ContentBlockingService(
-                        FilterListStore(context.applicationContext),
-                        KotlinFilterEngine(
-                            cacheFile =
-                            File(
-                                context.applicationContext.cacheDir,
-                                "content-blocking/compiled-rules.bin",
-                            ),
-                            cacheVersion = BuildConfig.VERSION_CODE,
-                        ),
-                        Executors.newSingleThreadExecutor { task ->
-                            Thread(task, "content-blocking-loader").apply {
-                                isDaemon = true
+        fun get(context: Context): ContentBlockingService =
+            instance
+                ?: synchronized(this) {
+                    instance
+                        ?: ContentBlockingService(
+                                FilterListStore(context.applicationContext),
+                                KotlinFilterEngine(
+                                    cacheFile =
+                                        File(
+                                            context.applicationContext.cacheDir,
+                                            "content-blocking/compiled-rules.bin",
+                                        ),
+                                    cacheVersion = BuildConfig.VERSION_CODE,
+                                ),
+                                Executors.newSingleThreadExecutor { task ->
+                                    Thread(task, "content-blocking-loader").apply {
+                                        isDaemon = true
+                                    }
+                                },
+                            )
+                            .also {
+                                // Explicit initialization also covers test/headless
+                                // entry points
+                                // where
+                                // AndroidX Startup has not initialized OkHttp's
+                                // existing suffix
+                                // asset.
+                                okhttp3.OkHttp.initialize(context.applicationContext)
+                                instance = it
                             }
-                        },
-                    )
-                        .also {
-                            // Explicit initialization also covers test/headless entry points
-                            // where
-                            // AndroidX Startup has not initialized OkHttp's existing suffix
-                            // asset.
-                            okhttp3.OkHttp.initialize(context.applicationContext)
-                            instance = it
-                        }
-            }
+                }
     }
 }

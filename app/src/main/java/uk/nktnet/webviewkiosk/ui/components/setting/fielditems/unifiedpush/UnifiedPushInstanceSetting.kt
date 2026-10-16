@@ -43,11 +43,13 @@ fun UnifiedPushInstanceSetting() {
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
 
-    val recommendedClientId = $$"wk-${$${UnifiedPushVariableName.APP_INSTANCE_ID.name}}"
+    val recommendedClientId =
+        $$"wk-${$${UnifiedPushVariableName.APP_INSTANCE_ID.name}}"
 
     TextSettingFieldItem(
         label = stringResource(R.string.unifiedpush_instance_title),
-        infoText = """
+        infoText =
+            """
             Registration instance. Can be used to create multiple registrations.
 
             Supported variables:
@@ -57,7 +59,8 @@ fun UnifiedPushInstanceSetting() {
             - $recommendedClientId
 
             If left blank, $INSTANCE_DEFAULT will be used.
-        """.trimIndent(),
+        """
+                .trimIndent(),
         placeholder = "e.g. $recommendedClientId",
         initialValue = userSettings.unifiedPushInstance,
         descriptionFormatter = {
@@ -67,8 +70,9 @@ fun UnifiedPushInstanceSetting() {
                 replaceVariables(
                     it,
                     mapOf(
-                        UnifiedPushVariableName.APP_INSTANCE_ID.name to systemSettings.appInstanceId
-                    )
+                        UnifiedPushVariableName.APP_INSTANCE_ID.name to
+                            systemSettings.appInstanceId
+                    ),
                 )
             }
         },
@@ -77,14 +81,17 @@ fun UnifiedPushInstanceSetting() {
         isMultiline = false,
         onLongClick = { v ->
             scope.launch {
-                val clipData = ClipData.newPlainText(
-                    "UnifiedPush Instance",
-                    replaceVariables(
-                        v,
-                        mapOf(
-                            UnifiedPushVariableName.APP_INSTANCE_ID.name to systemSettings.appInstanceId
-                        )
-                    )                )
+                val clipData =
+                    ClipData.newPlainText(
+                        "UnifiedPush Instance",
+                        replaceVariables(
+                            v,
+                            mapOf(
+                                UnifiedPushVariableName.APP_INSTANCE_ID.name to
+                                    systemSettings.appInstanceId
+                            ),
+                        ),
+                    )
                 clipboard.setClipEntry(clipData.toClipEntry())
             }
         },
@@ -95,11 +102,9 @@ fun UnifiedPushInstanceSetting() {
             }
             Button(
                 onClick = { setValue(recommendedClientId) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 shape = RoundedCornerShape(4.dp),
-                colors = ButtonDefaults.buttonColors()
+                colors = ButtonDefaults.buttonColors(),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
@@ -108,7 +113,7 @@ fun UnifiedPushInstanceSetting() {
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     Text(
                         text = recommendedClientId,
@@ -116,10 +121,10 @@ fun UnifiedPushInstanceSetting() {
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
-        }
+        },
     )
 }

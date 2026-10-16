@@ -23,6 +23,6 @@ fun AllowGoHomeSetting() {
         restricted = userSettings.isRestricted(settingKey),
         onSave = { value ->
             userSettings.allowGoHome = value
-        }
+        },
     )
 }

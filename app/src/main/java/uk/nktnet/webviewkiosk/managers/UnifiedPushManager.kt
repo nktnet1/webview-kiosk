@@ -2,6 +2,8 @@ package uk.nktnet.webviewkiosk.managers
 
 import android.content.Context
 import android.util.Log
+import java.util.ArrayDeque
+import java.util.Date
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -25,8 +27,6 @@ import uk.nktnet.webviewkiosk.utils.BaseJson
 import uk.nktnet.webviewkiosk.utils.isPackageInstalled
 import uk.nktnet.webviewkiosk.utils.isValidVapidPublicKey
 import uk.nktnet.webviewkiosk.utils.replaceVariables
-import java.util.ArrayDeque
-import java.util.Date
 
 data class UnifiedPushLogEntry(
     val timestamp: Date,
@@ -80,9 +80,7 @@ object UnifiedPushManager {
         }
     }
 
-    fun register(
-        context: Context
-    ) {
+    fun register(context: Context) {
         val userSettings = UserSettings(context)
         val instance = getInstance(context)
 
@@ -93,7 +91,8 @@ object UnifiedPushManager {
                 instance=$instance
                 messageForDistributor=${userSettings.unifiedPushMessageForDistributor}
                 error: distributor cannot be blank
-                """.trimIndent()
+                """
+                    .trimIndent(),
             )
             ToastManager.show(context, "Error: distributor cannot be blank")
             return
@@ -106,14 +105,15 @@ object UnifiedPushManager {
                 instance=$instance
                 messageForDistributor=${userSettings.unifiedPushMessageForDistributor}
                 error: distributor is not installed (${userSettings.unifiedPushDistributor})
-                """.trimIndent()
+                """
+                    .trimIndent(),
             )
             ToastManager.show(context, "Error: distributor is not installed")
             return
         }
         if (
-            userSettings.unifiedPushVapidPublicKey.isNotEmpty()
-            && !isValidVapidPublicKey(userSettings.unifiedPushVapidPublicKey)
+            userSettings.unifiedPushVapidPublicKey.isNotEmpty() &&
+                !isValidVapidPublicKey(userSettings.unifiedPushVapidPublicKey)
         ) {
             addDebugLog(
                 "register error",
@@ -121,7 +121,8 @@ object UnifiedPushManager {
                 instance=$instance
                 messageForDistributor=${userSettings.unifiedPushMessageForDistributor}
                 error: invalid VAPID public key
-                """.trimIndent()
+                """
+                    .trimIndent(),
             )
             ToastManager.show(context, "Error: invalid VAPID public key")
             return
@@ -137,15 +138,15 @@ object UnifiedPushManager {
                 },
                 userSettings.unifiedPushVapidPublicKey.takeIf {
                     it.isNotBlank()
-                }
+                },
             )
             addDebugLog(
                 "registered",
                 """
                 instance=$instance
                 messageForDistributor=${userSettings.unifiedPushMessageForDistributor}
-                """.trimIndent()
-
+                """
+                    .trimIndent(),
             )
         } catch (e: Exception) {
             Log.e(javaClass.simpleName, "Failed to register distributor", e)
@@ -155,7 +156,8 @@ object UnifiedPushManager {
                 instance=$instance
                 messageForDistributor=${userSettings.unifiedPushMessageForDistributor}
                 error: $e
-                """.trimIndent()
+                """
+                    .trimIndent(),
             )
         }
     }
@@ -170,7 +172,8 @@ object UnifiedPushManager {
                 "unregistered",
                 """
                 instance: $instance
-                """.trimIndent()
+                """
+                    .trimIndent(),
             )
         } catch (e: Exception) {
             addDebugLog(
@@ -178,7 +181,8 @@ object UnifiedPushManager {
                 """
                 instance: $instance
                 error: $e
-                """.trimIndent()
+                """
+                    .trimIndent(),
             )
         }
     }
@@ -186,22 +190,30 @@ object UnifiedPushManager {
     fun getInstance(context: Context): String {
         val userSettings = UserSettings(context)
         val systemSettings = SystemSettings(context)
-        val instance = if (userSettings.unifiedPushInstance.isNotEmpty()) {
-            replaceVariables(
-                userSettings.unifiedPushInstance,
-                mapOf(
-                    UnifiedPushVariableName.APP_INSTANCE_ID.name to systemSettings.appInstanceId
+        val instance =
+            if (userSettings.unifiedPushInstance.isNotEmpty()) {
+                replaceVariables(
+                    userSettings.unifiedPushInstance,
+                    mapOf(
+                        UnifiedPushVariableName.APP_INSTANCE_ID.name to
+                            systemSettings.appInstanceId
+                    ),
                 )
-            )
-        } else {
-            INSTANCE_DEFAULT
-        }
+            } else {
+                INSTANCE_DEFAULT
+            }
         return instance
     }
 
-    private fun acceptsInstance(context: Context, instance: String, event: String): Boolean {
+    private fun acceptsInstance(
+        context: Context,
+        instance: String,
+        event: String,
+    ): Boolean {
         val expectedInstance = getInstance(context)
-        if (instance == expectedInstance) return true
+        if (instance == expectedInstance) {
+            return true
+        }
         addDebugLog(
             "$event (ignored)",
             """
@@ -210,7 +222,8 @@ object UnifiedPushManager {
 
             Reason:
             - callback belongs to a different registration instance
-            """.trimIndent(),
+            """
+                .trimIndent(),
         )
         return false
     }
@@ -230,14 +243,20 @@ object UnifiedPushManager {
 
                 Reason:
                 - UnifiedPush is not enabled.
-                """.trimIndent()
+                """
+                    .trimIndent(),
             )
             return
         }
 
-        if (!acceptsInstance(context, instance, "message received")) return
+        if (!acceptsInstance(context, instance, "message received")) {
+            return
+        }
 
-        if (!(message.decrypted || userSettings.unifiedPushProcessUnencryptedMessages)) {
+        if (
+            !(message.decrypted ||
+                userSettings.unifiedPushProcessUnencryptedMessages)
+        ) {
             addDebugLog(
                 "message received (ignored)",
                 """
@@ -246,7 +265,8 @@ object UnifiedPushManager {
 
                 Reason:
                 - message failed to decrypt or was unencrypted
-                """.trimIndent()
+                """
+                    .trimIndent(),
             )
             return
         }
@@ -260,10 +280,11 @@ object UnifiedPushManager {
                     targetUsernames: Set<String>?,
                 ): Boolean {
                     val appInstanceId = SystemSettings(context).appInstanceId
-                    val matches = (
-                        (targetInstances.isNullOrEmpty() || appInstanceId in targetInstances)
-                        && (targetUsernames.isNullOrEmpty() || userSettings.mqttUsername in targetUsernames)
-                    )
+                    val matches =
+                        ((targetInstances.isNullOrEmpty() ||
+                            appInstanceId in targetInstances) &&
+                            (targetUsernames.isNullOrEmpty() ||
+                                userSettings.mqttUsername in targetUsernames))
                     if (!matches) {
                         addDebugLog(
                             "message received (ignored)",
@@ -274,7 +295,8 @@ object UnifiedPushManager {
 
                             Reason:
                             - target instance or username does not match this device
-                            """.trimIndent()
+                            """
+                                .trimIndent(),
                         )
                     }
                     return matches
@@ -282,23 +304,33 @@ object UnifiedPushManager {
 
                 when (messageType) {
                     "command" -> {
-                        val commandMessage = InboundCommandJsonParser
-                            .decodeFromString<InboundCommandMessage>(contentString)
-                        if (!matchesTargets(
-                            commandMessage.targetInstances,
-                            commandMessage.targetUsernames,
-                        )) {
+                        val commandMessage =
+                            InboundCommandJsonParser.decodeFromString<
+                                InboundCommandMessage
+                            >(
+                                contentString
+                            )
+                        if (
+                            !matchesTargets(
+                                commandMessage.targetInstances,
+                                commandMessage.targetUsernames,
+                            )
+                        ) {
                             return
                         }
                         handleCommand(context, commandMessage, instance)
                     }
                     "settings" -> {
-                        val settingsMessage = BaseJson
-                            .decodeFromString<InboundSettingsMessage>(contentString)
-                        if (!matchesTargets(
-                            settingsMessage.targetInstances,
-                            settingsMessage.targetUsernames,
-                        )) {
+                        val settingsMessage =
+                            BaseJson.decodeFromString<InboundSettingsMessage>(
+                                contentString
+                            )
+                        if (
+                            !matchesTargets(
+                                settingsMessage.targetInstances,
+                                settingsMessage.targetUsernames,
+                            )
+                        ) {
                             return
                         }
                         RemoteInboundHandler.handleInboundSettings(
@@ -326,21 +358,24 @@ object UnifiedPushManager {
                     instance: $instance
                     decrypted: ${message.decrypted}
                     type: $messageType
-                    """.trimIndent()
-                )
-            }.onFailure { throwable ->
-                addDebugLog(
-                    "message handler error",
                     """
-                    |instance: $instance
-                    |reason: ${throwable.message}
-                    """.trimMargin()
-                )
-                ToastManager.show(
-                    context,
-                    "UnifiedPush: failed to handle message. See debug logs for details."
+                        .trimIndent(),
                 )
             }
+                .onFailure { throwable ->
+                    addDebugLog(
+                        "message handler error",
+                        """
+                    |instance: $instance
+                    |reason: ${throwable.message}
+                    """
+                            .trimMargin(),
+                    )
+                    ToastManager.show(
+                        context,
+                        "UnifiedPush: failed to handle message. See debug logs for details.",
+                    )
+                }
         }
     }
 
@@ -366,61 +401,77 @@ object UnifiedPushManager {
         }
     }
 
-    fun handleNewEndpoint(context: Context, endpoint: PushEndpoint, instance: String) {
-        if (!acceptsInstance(context, instance, "new endpoint")) return
+    fun handleNewEndpoint(
+        context: Context,
+        endpoint: PushEndpoint,
+        instance: String,
+    ) {
+        if (!acceptsInstance(context, instance, "new endpoint")) {
+            return
+        }
         ToastManager.show(context, "UnifiedPush: new endpoint.")
         val systemSettings = SystemSettings(context)
         val userSettings = UserSettings(context)
-        systemSettings.unifiedpushEndpoint = if (
-            userSettings.unifiedPushStoreEndpointCredentials
-        ) {
-            UnifiedPushEndpoint.fromPushEndpoint(
-                endpoint,
-                redacted = false,
-            )
-        } else {
-            UnifiedPushEndpoint.createRedactEndpoint(
-                endpoint.temporary,
-            )
-        }
+        systemSettings.unifiedpushEndpoint =
+            if (userSettings.unifiedPushStoreEndpointCredentials) {
+                UnifiedPushEndpoint.fromPushEndpoint(
+                    endpoint,
+                    redacted = false,
+                )
+            } else {
+                UnifiedPushEndpoint.createRedactEndpoint(endpoint.temporary)
+            }
         addDebugLog(
             "new endpoint",
             """
             instance: $instance
             temporary: ${endpoint.temporary}
             url: ${endpoint.url}
-            """.trimIndent()
+            """
+                .trimIndent(),
         )
     }
+
     fun handleUnregistered(context: Context, instance: String) {
-        if (!acceptsInstance(context, instance, "unregistered")) return
+        if (!acceptsInstance(context, instance, "unregistered")) {
+            return
+        }
         val systemSettings = SystemSettings(context)
         systemSettings.unifiedpushEndpoint = null
         ToastManager.show(context, "UnifiedPush: unregistered called.")
         addDebugLog(
             "unregistered",
-            "instance: $instance"
+            "instance: $instance",
         )
     }
 
     fun handleTempUnavailable(context: Context, instance: String) {
-        if (!acceptsInstance(context, instance, "temp unavailable")) return
+        if (!acceptsInstance(context, instance, "temp unavailable")) {
+            return
+        }
         ToastManager.show(context, "UnifiedPush: temporarily unavailable.")
         addDebugLog(
             "temp unavailable",
-            "instance: $instance"
+            "instance: $instance",
         )
     }
 
-    fun handleRegistrationFailed(context: Context, reason: FailedReason, instance: String) {
-        if (!acceptsInstance(context, instance, "register failed")) return
+    fun handleRegistrationFailed(
+        context: Context,
+        reason: FailedReason,
+        instance: String,
+    ) {
+        if (!acceptsInstance(context, instance, "register failed")) {
+            return
+        }
         ToastManager.show(context, "UnifiedPush: registration failed.")
         addDebugLog(
             "register failed",
             """
             instance: $instance
             reason: $reason
-            """.trimIndent()
+            """
+                .trimIndent(),
         )
     }
 }

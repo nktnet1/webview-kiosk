@@ -21,7 +21,8 @@ fun SystemSafeDialog(
         onDismissRequest = onDismissRequest,
         properties = properties,
     ) {
-        // Dialog creates an owner with its own clipboard, replacing the parent provider.
+        // Dialog creates an owner with its own clipboard, replacing the parent
+        // provider.
         ProvideSystemSafeClipboard(content)
     }
 }
@@ -43,7 +44,8 @@ fun SystemSafeAlertDialog(
     tonalElevation: Dp = AlertDialogDefaults.TonalElevation,
     properties: DialogProperties = DialogProperties(),
 ) {
-    // Slot content runs inside Material's dialog root, after its owner locals are installed.
+    // Slot content runs inside Material's dialog root, after its owner locals are
+    // installed.
     AlertDialog(
         onDismissRequest = onDismissRequest,
         confirmButton = systemSafeSlot(confirmButton),
@@ -62,6 +64,7 @@ fun SystemSafeAlertDialog(
     )
 }
 
-private fun systemSafeSlot(content: @Composable () -> Unit): @Composable () -> Unit = {
-    ProvideSystemSafeClipboard(content)
-}
+private fun systemSafeSlot(content: @Composable () -> Unit): @Composable () -> Unit =
+    {
+        ProvideSystemSafeClipboard(content)
+    }

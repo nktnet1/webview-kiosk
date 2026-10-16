@@ -3,13 +3,22 @@ package uk.nktnet.webviewkiosk.services
 import android.app.Notification
 import android.app.NotificationManager
 import android.app.Service
-import android.content.Context
 import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
 import android.os.Looper
 import android.os.PowerManager
 import com.hivemq.client.mqtt.MqttClientState
 import com.hivemq.client.mqtt.mqtt5.Mqtt5AsyncClient
+import java.lang.reflect.Proxy
+import java.util.UUID
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -22,6 +31,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -32,7 +42,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.json.JSONObject
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
@@ -54,15 +63,6 @@ import uk.nktnet.webviewkiosk.managers.MqttManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager
 import uk.nktnet.webviewkiosk.managers.RemoteMessageManager.RemoteMessage.Source
 import uk.nktnet.webviewkiosk.managers.ToastManager
-import java.lang.reflect.Proxy
-import java.util.UUID
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicReference
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28])
@@ -86,59 +86,82 @@ class MqttForegroundServiceTest {
     fun setUp() {
         lifecycleThread = Thread.currentThread()
         context = RuntimeEnvironment.getApplication()
-        context.getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().clear().commit()
-        context.getSharedPreferences("system_settings", Context.MODE_PRIVATE)
-            .edit().clear().commit()
+        context
+            .getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .commit()
+        context
+            .getSharedPreferences("system_settings", Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .commit()
         userSettings = UserSettings(context)
         userSettings.mqttEnabled = true
         userSettings.mqttUseForegroundService = true
         settings = SystemSettings(context)
-        settings.historyStack = listOf(
-            HistoryEntry("first", "https://example.com/first", 100),
-            HistoryEntry("second", "https://example.com/second", 200),
-        )
+        settings.historyStack =
+            listOf(
+                HistoryEntry("first", "https://example.com/first", 100),
+                HistoryEntry("second", "https://example.com/second", 200),
+            )
         settings.historyIndex = 1
-        savedMqttFields = listOf("client", "config", "configurationError")
-            .associateWith { mqttField(it).get(MqttManager) }
-        MqttManager.updateConfig(context, rebuildClient = false)
-        val client = Proxy.newProxyInstance(
-            Mqtt5AsyncClient::class.java.classLoader,
-            arrayOf(Mqtt5AsyncClient::class.java),
-        ) { proxy, method, args ->
-            when (method.name) {
-                "getState" -> {
-                    // Startup reads must not consume a background-poll gate.
-                    val gate = if (Thread.currentThread() !== lifecycleThread) {
-                        pollReadGates[pollReadCount.incrementAndGet()]
-                    } else null
-                    val state = gate?.result ?: mqttState.get()
-                    if (gate != null) {
-                        gate.started.countDown()
-                        check(gate.release.await(5, TimeUnit.SECONDS)) { "Status read was not released" }
-                    }
-                    state
-                }
-                "publishWith" -> publicationBuilder(method.returnType)
-                "hashCode" -> System.identityHashCode(proxy)
-                "equals" -> proxy === args?.firstOrNull()
-                "toString" -> "ServiceTestMqttClient"
-                else -> throw AssertionError("Unexpected MQTT operation: ${method.name}")
+        savedMqttFields =
+            listOf("client", "config", "configurationError").associateWith {
+                mqttField(it).get(MqttManager)
             }
-        } as Mqtt5AsyncClient
+        MqttManager.updateConfig(context, rebuildClient = false)
+        val client =
+            Proxy.newProxyInstance(
+                Mqtt5AsyncClient::class.java.classLoader,
+                arrayOf(Mqtt5AsyncClient::class.java),
+            ) { proxy, method, args ->
+                when (method.name) {
+                    "getState" -> {
+                        // Startup reads must not consume a background-poll gate.
+                        val gate =
+                            if (Thread.currentThread() !== lifecycleThread) {
+                                pollReadGates[pollReadCount.incrementAndGet()]
+                            } else {
+                                null
+                            }
+                        val state = gate?.result ?: mqttState.get()
+                        if (gate != null) {
+                            gate.started.countDown()
+                            check(gate.release.await(5, TimeUnit.SECONDS)) {
+                                "Status read was not released"
+                            }
+                        }
+                        state
+                    }
+                    "publishWith" -> publicationBuilder(method.returnType)
+                    "hashCode" -> System.identityHashCode(proxy)
+                    "equals" -> proxy === args?.firstOrNull()
+                    "toString" -> "ServiceTestMqttClient"
+                    else ->
+                        throw AssertionError(
+                            "Unexpected MQTT operation: ${method.name}"
+                        )
+                }
+            } as Mqtt5AsyncClient
         mqttField("client").set(MqttManager, client)
-        controller = Robolectric.buildService(MqttForegroundService::class.java).create()
+        controller =
+            Robolectric.buildService(MqttForegroundService::class.java).create()
         service = controller.get()
     }
 
     @After
     fun tearDown() {
         currentPollJob()?.let { observedPollJobs.add(it) }
-        if (!destroyed) controller.destroy()
+        if (!destroyed) {
+            controller.destroy()
+        }
         pollReadGates.values.forEach { it.release.countDown() }
         observedPollJobs.forEach(::awaitPollCompletion)
         awaitSubscriptions(0)
-        savedMqttFields.forEach { (name, value) -> mqttField(name).set(MqttManager, value) }
+        savedMqttFields.forEach { (name, value) ->
+            mqttField(name).set(MqttManager, value)
+        }
         ToastManager.cancel()
     }
 
@@ -173,7 +196,8 @@ class MqttForegroundServiceTest {
 
     @Test
     fun foregroundDenialReleasesResourcesBeforeDestroy() {
-        shadowOf(service).setThrowInStartForeground(SecurityException("foreground denied"))
+        shadowOf(service)
+            .setThrowInStartForeground(SecurityException("foreground denied"))
 
         assertEquals(Service.START_NOT_STICKY, start(9))
         assertEquals(9, shadowOf(service).stopSelfId)
@@ -185,26 +209,42 @@ class MqttForegroundServiceTest {
     @Test
     fun queuedScreenBroadcastsCannotPublishAfterServiceOwnershipIsLost() {
         assertEquals(Service.START_STICKY, start())
-        val receiver = service.javaClass.getDeclaredField("systemReceiver").apply {
-            isAccessible = true
-        }.get(service) as BroadcastReceiver
+        val receiver =
+            service.javaClass
+                .getDeclaredField("systemReceiver")
+                .apply {
+                    isAccessible = true
+                }
+                .get(service) as BroadcastReceiver
         val screenOn = Intent(Intent.ACTION_SCREEN_ON)
         receiver.onReceive(context, screenOn)
-        assertNotNull("An active service should publish the screen event", publications.poll(2, TimeUnit.SECONDS))
+        assertNotNull(
+            "An active service should publish the screen event",
+            publications.poll(2, TimeUnit.SECONDS),
+        )
 
         // Preference changes take effect before the periodic status poll runs.
         userSettings.mqttUseForegroundService = false
         receiver.onReceive(context, screenOn)
-        assertTrue("A service that lost ownership must not publish", publications.isEmpty())
+        assertTrue(
+            "A service that lost ownership must not publish",
+            publications.isEmpty(),
+        )
 
         assertEquals(Service.START_NOT_STICKY, start(2))
-        receiver.onReceive(context, screenOn) // Already dequeued before unregisterReceiver().
+        receiver.onReceive(
+            context,
+            screenOn,
+        ) // Already dequeued before unregisterReceiver().
         assertTrue("A stopped service must not publish", publications.isEmpty())
 
         userSettings.mqttUseForegroundService = true
         assertEquals(Service.START_STICKY, start(3))
         receiver.onReceive(context, screenOn)
-        assertNotNull("A later accepted start should restore events", publications.poll(2, TimeUnit.SECONDS))
+        assertNotNull(
+            "A later accepted start should restore events",
+            publications.poll(2, TimeUnit.SECONDS),
+        )
     }
 
     @Test
@@ -212,12 +252,20 @@ class MqttForegroundServiceTest {
         assertEquals(Service.START_STICKY, start())
 
         val notification = shadowOf(service).lastForegroundNotification
-        assertEquals(CustomNotificationType.MQTT_SERVICE, shadowOf(service).lastForegroundNotificationId)
-        assertEquals(CustomNotificationChannel.MqttService.ID, notification.channelId)
+        assertEquals(
+            CustomNotificationType.MQTT_SERVICE,
+            shadowOf(service).lastForegroundNotificationId,
+        )
+        assertEquals(
+            CustomNotificationChannel.MqttService.ID,
+            notification.channelId,
+        )
         assertTrue(notification.flags and Notification.FLAG_ONGOING_EVENT != 0)
         assertNotNull(notification.contentIntent)
         val manager = context.getSystemService(NotificationManager::class.java)
-        assertNotNull(manager.getNotificationChannel(CustomNotificationChannel.MqttService.ID))
+        assertNotNull(
+            manager.getNotificationChannel(CustomNotificationChannel.MqttService.ID)
+        )
         assertTrue(ShadowPowerManager.getLatestWakeLock().isHeld)
         assertTrue(hasScreenReceiver())
         awaitSubscriptions(1)
@@ -227,7 +275,10 @@ class MqttForegroundServiceTest {
     @Config(sdk = [29])
     fun nullIntentRestartAlsoUsesTheApi29ForegroundPath() {
         assertEquals(Service.START_STICKY, start())
-        assertEquals(CustomNotificationChannel.MqttService.ID, shadowOf(service).lastForegroundNotification.channelId)
+        assertEquals(
+            CustomNotificationChannel.MqttService.ID,
+            shadowOf(service).lastForegroundNotification.channelId,
+        )
         assertTrue(ShadowPowerManager.getLatestWakeLock().isHeld)
     }
 
@@ -259,8 +310,18 @@ class MqttForegroundServiceTest {
     fun acceptedStartSubscribesBeforeReturningToTheCaller() {
         start()
 
-        assertEquals(1, (RemoteMessageManager.settingsFlow as MutableSharedFlow<*>).subscriptionCount.value)
-        assertEquals(1, (RemoteMessageManager.requestsFlow as MutableSharedFlow<*>).subscriptionCount.value)
+        assertEquals(
+            1,
+            (RemoteMessageManager.settingsFlow as MutableSharedFlow<*>)
+                .subscriptionCount
+                .value,
+        )
+        assertEquals(
+            1,
+            (RemoteMessageManager.requestsFlow as MutableSharedFlow<*>)
+                .subscriptionCount
+                .value,
+        )
     }
 
     @Test
@@ -310,7 +371,8 @@ class MqttForegroundServiceTest {
     @Test
     fun denialOfARepeatedStartReleasesThePreviousStartBeforeDestroy() {
         start()
-        shadowOf(service).setThrowInStartForeground(SecurityException("foreground revoked"))
+        shadowOf(service)
+            .setThrowInStartForeground(SecurityException("foreground revoked"))
 
         assertEquals(Service.START_NOT_STICKY, start(4))
         assertNoPowerOrReceiver()
@@ -335,17 +397,27 @@ class MqttForegroundServiceTest {
     fun acceptedServiceAppliesSettingsThroughItsActualCollector() = runBlocking {
         start()
         awaitSubscriptions(1)
-        val message = InboundSettingsMessage(
-            messageId = "service-settings",
-            reloadActivity = false,
-            showToast = false,
-            data = InboundSettingsMessage.SettingsUpdateData(buildJsonObject {
-                put(UserSettingsKeys.WebContent.HOME_URL, "https://example.com/remote")
-            }),
-        )
-        val received = async(start = CoroutineStart.UNDISPATCHED) {
-            RemoteMessageManager.settingsAppliedFlow.first { it.message.messageId == message.messageId }
-        }
+        val message =
+            InboundSettingsMessage(
+                messageId = "service-settings",
+                reloadActivity = false,
+                showToast = false,
+                data =
+                    InboundSettingsMessage.SettingsUpdateData(
+                        buildJsonObject {
+                            put(
+                                UserSettingsKeys.WebContent.HOME_URL,
+                                "https://example.com/remote",
+                            )
+                        }
+                    ),
+            )
+        val received =
+            async(start = CoroutineStart.UNDISPATCHED) {
+                RemoteMessageManager.settingsAppliedFlow.first {
+                    it.message.messageId == message.messageId
+                }
+            }
         try {
             RemoteMessageManager.emitSettings(message, Source.MQTT)
             val applied = withTimeout(5_000) { received.await() }
@@ -363,15 +435,24 @@ class MqttForegroundServiceTest {
         awaitSubscriptions(1)
 
         RemoteMessageManager.emitRequest(
-            InboundSettingsRequest(messageId = "service-request", responseTopic = "test/replies"),
+            InboundSettingsRequest(
+                messageId = "service-request",
+                responseTopic = "test/replies",
+            ),
             Source.MQTT,
         )
         val publication = publications.poll(5, TimeUnit.SECONDS)
 
-        assertNotNull("The service did not publish the requested settings", publication)
+        assertNotNull(
+            "The service did not publish the requested settings",
+            publication,
+        )
         assertEquals("test/replies", publication!!.first)
-        assertEquals("service-request", JSONObject(publication.second.toString(Charsets.UTF_8))
-            .getString("requestMessageId"))
+        assertEquals(
+            "service-request",
+            JSONObject(publication.second.toString(Charsets.UTF_8))
+                .getString("requestMessageId"),
+        )
     }
 
     @Test
@@ -380,15 +461,25 @@ class MqttForegroundServiceTest {
         awaitMainCondition { notificationText() == "Status: CONNECTED" }
         val contentIntent = serviceNotification()!!.contentIntent
 
-        for (state in listOf(MqttClientState.DISCONNECTED, MqttClientState.CONNECTING)) {
+        for (state in
+            listOf(MqttClientState.DISCONNECTED, MqttClientState.CONNECTING)) {
             mqttState.set(state)
             awaitMainCondition { notificationText() == "Status: ${state.name}" }
 
             val notification = serviceNotification()!!
-            assertEquals(CustomNotificationChannel.MqttService.ID, notification.channelId)
+            assertEquals(
+                CustomNotificationChannel.MqttService.ID,
+                notification.channelId,
+            )
             assertEquals(contentIntent, notification.contentIntent)
             assertTrue(notification.flags and Notification.FLAG_ONGOING_EVENT != 0)
-            assertEquals(1, context.getSystemService(NotificationManager::class.java).activeNotifications.size)
+            assertEquals(
+                1,
+                context
+                    .getSystemService(NotificationManager::class.java)
+                    .activeNotifications
+                    .size,
+            )
         }
     }
 
@@ -434,7 +525,8 @@ class MqttForegroundServiceTest {
         start()
         read.awaitStarted()
         val job = pollingJob()
-        shadowOf(service).setThrowInStartForeground(SecurityException("foreground revoked"))
+        shadowOf(service)
+            .setThrowInStartForeground(SecurityException("foreground revoked"))
 
         assertEquals(Service.START_NOT_STICKY, start(2))
         read.release.countDown()
@@ -495,15 +587,23 @@ class MqttForegroundServiceTest {
 
     private fun hasScreenReceiver() = screenReceiverCount() > 0
 
-    private fun screenReceiverCount() = shadowOf(RuntimeEnvironment.getApplication())
-        .registeredReceivers.count { it.intentFilter.hasAction(Intent.ACTION_SCREEN_ON) }
+    private fun screenReceiverCount() =
+        shadowOf(RuntimeEnvironment.getApplication()).registeredReceivers.count {
+            it.intentFilter.hasAction(Intent.ACTION_SCREEN_ON)
+        }
 
-    private fun currentPollJob() = service.javaClass.getDeclaredField("pollLockTaskModeJob")
-        .apply { isAccessible = true }.get(service) as Job?
+    private fun currentPollJob() =
+        service.javaClass
+            .getDeclaredField("pollLockTaskModeJob")
+            .apply { isAccessible = true }
+            .get(service) as Job?
 
-    private fun pollingJob() = requireNotNull(currentPollJob()).also { observedPollJobs.add(it) }
+    private fun pollingJob() =
+        requireNotNull(currentPollJob()).also { observedPollJobs.add(it) }
 
-    private fun awaitPollCompletion(job: Job) = awaitMainCondition { job.isCompleted }
+    private fun awaitPollCompletion(job: Job) = awaitMainCondition {
+        job.isCompleted
+    }
 
     private fun awaitMainCondition(condition: () -> Boolean) = runBlocking {
         withTimeout(5_000) {
@@ -514,41 +614,61 @@ class MqttForegroundServiceTest {
         }
     }
 
-    private fun serviceNotification() = shadowOf(context.getSystemService(NotificationManager::class.java))
-        .getNotification(CustomNotificationType.MQTT_SERVICE)
+    private fun serviceNotification() =
+        shadowOf(context.getSystemService(NotificationManager::class.java))
+            .getNotification(CustomNotificationType.MQTT_SERVICE)
 
-    private fun notificationText() = serviceNotification()?.extras?.getCharSequence(Notification.EXTRA_TEXT)
-        ?.toString()
+    private fun notificationText() =
+        serviceNotification()
+            ?.extras
+            ?.getCharSequence(Notification.EXTRA_TEXT)
+            ?.toString()
 
     private class StateReadGate(val result: MqttClientState? = null) {
         val started = CountDownLatch(1)
         val release = CountDownLatch(1)
 
         fun awaitStarted() {
-            assertTrue("The status poll did not start", started.await(5, TimeUnit.SECONDS))
+            assertTrue(
+                "The status poll did not start",
+                started.await(5, TimeUnit.SECONDS),
+            )
         }
     }
 
     private fun assertNoPowerOrReceiver() {
         val wakeLock: PowerManager.WakeLock? = ShadowPowerManager.getLatestWakeLock()
-        assertFalse("A stopped/unstarted service must not hold a wake lock", wakeLock?.isHeld == true)
-        assertFalse("A stopped/unstarted service must not keep its screen receiver", hasScreenReceiver())
+        assertFalse(
+            "A stopped/unstarted service must not hold a wake lock",
+            wakeLock?.isHeld == true,
+        )
+        assertFalse(
+            "A stopped/unstarted service must not keep its screen receiver",
+            hasScreenReceiver(),
+        )
     }
 
     private fun awaitSubscriptions(count: Int) = runBlocking {
         withTimeout(5_000) {
             while (
-                (RemoteMessageManager.settingsFlow as MutableSharedFlow<*>).subscriptionCount.value != count
-                || (RemoteMessageManager.requestsFlow as MutableSharedFlow<*>).subscriptionCount.value != count
+                (RemoteMessageManager.settingsFlow as MutableSharedFlow<*>)
+                    .subscriptionCount
+                    .value != count ||
+                    (RemoteMessageManager.requestsFlow as MutableSharedFlow<*>)
+                        .subscriptionCount
+                        .value != count
             ) delay(1)
         }
     }
 
     private fun dispatchClearHistory() = runBlocking {
         val id = UUID.randomUUID().toString()
-        val collector = launch(Dispatchers.Unconfined) {
-            RemoteMessageManager.commandsFlow.first { it.message.messageId == id }
-        }
+        val collector =
+            launch(Dispatchers.Unconfined) {
+                RemoteMessageManager.commandsFlow.first {
+                    it.message.messageId == id
+                }
+            }
         try {
             RemoteMessageManager.emitCommand(
                 InboundClearHistoryCommand(messageId = id, interact = false),
@@ -566,21 +686,36 @@ class MqttForegroundServiceTest {
         }
     }
 
-    private fun mqttField(name: String) = MqttManager.javaClass.getDeclaredField(name)
-        .apply { isAccessible = true }
+    private fun mqttField(name: String) =
+        MqttManager.javaClass.getDeclaredField(name).apply { isAccessible = true }
 
     private fun publicationBuilder(type: Class<*>): Any {
         var topic = ""
         var payload = byteArrayOf()
         fun builder(builderType: Class<*>, parent: Any? = null): Any {
-            val proxyType = builderType.declaredClasses.singleOrNull {
-                it.simpleName == "Complete" && builderType.isAssignableFrom(it)
-            } ?: builderType
-            return Proxy.newProxyInstance(proxyType.classLoader, arrayOf(proxyType)) { proxy, method, args ->
+            val proxyType =
+                builderType.declaredClasses.singleOrNull {
+                    it.simpleName == "Complete" && builderType.isAssignableFrom(it)
+                } ?: builderType
+            return Proxy.newProxyInstance(
+                proxyType.classLoader,
+                arrayOf(proxyType),
+            ) { proxy, method, args ->
                 when (method.name) {
-                    "topic" -> { topic = args!![0].toString(); proxy }
-                    "payload" -> { payload = args!![0] as ByteArray; proxy }
-                    "correlationData", "qos", "retain", "payloadFormatIndicator", "contentType", "add" -> proxy
+                    "topic" -> {
+                        topic = args!![0].toString()
+                        proxy
+                    }
+                    "payload" -> {
+                        payload = args!![0] as ByteArray
+                        proxy
+                    }
+                    "correlationData",
+                    "qos",
+                    "retain",
+                    "payloadFormatIndicator",
+                    "contentType",
+                    "add" -> proxy
                     "userProperties" -> builder(method.returnType, proxy)
                     "applyUserProperties" -> requireNotNull(parent)
                     "send" -> {
@@ -590,7 +725,10 @@ class MqttForegroundServiceTest {
                     "hashCode" -> System.identityHashCode(proxy)
                     "equals" -> proxy === args?.firstOrNull()
                     "toString" -> "ServiceTestPublishBuilder"
-                    else -> throw AssertionError("Unexpected MQTT builder operation: ${method.name}")
+                    else ->
+                        throw AssertionError(
+                            "Unexpected MQTT builder operation: ${method.name}"
+                        )
                 }
             }
         }

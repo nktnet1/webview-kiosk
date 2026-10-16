@@ -44,13 +44,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import androidx.compose.ui.zIndex
 import androidx.navigation.NavController
+import kotlin.math.roundToInt
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.Screen
 import uk.nktnet.webviewkiosk.config.SystemSettings
 import uk.nktnet.webviewkiosk.states.LockStateSingleton
 import uk.nktnet.webviewkiosk.utils.handleUserKeyEvent
 import uk.nktnet.webviewkiosk.utils.handleUserTouchEvent
-import kotlin.math.roundToInt
 
 data class Bounds(val minX: Float, val minY: Float, val maxX: Float, val maxY: Float)
 
@@ -66,7 +66,7 @@ fun calculateBounds(boxBounds: Rect?, buttonSizePx: Float): Bounds {
         minX,
         minY,
         maxX.coerceAtLeast(minX),
-        maxY.coerceAtLeast(minY)
+        maxY.coerceAtLeast(minY),
     )
 }
 
@@ -80,9 +80,9 @@ fun MenuItem(text: String, iconRes: Int, tint: Color, onClick: () -> Unit) {
                 painter = painterResource(iconRes),
                 contentDescription = null,
                 modifier = Modifier.size(24.dp),
-                tint = tint
+                tint = tint,
             )
-        }
+        },
     )
 }
 
@@ -114,117 +114,139 @@ fun FloatingToolbar(
     val isLocked by LockStateSingleton.isLocked
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Transparent)
-            .windowInsetsPadding(WindowInsets.safeContent)
-            .onGloballyPositioned { coordinates ->
-                val size = coordinates.size.toSize()
-                val rect = Rect(0f, 0f, size.width, size.height)
-                bounds = calculateBounds(rect, buttonSizePx)
-                if (offsetX < 0f || offsetY < 0f) {
-                    val marginPx = with(density) { 40.dp.toPx() }
-                    val savedX = systemSettings.menuOffsetX
-                    val savedY = systemSettings.menuOffsetY
-                    val (newX, newY) = clampOffset(
-                        savedX.takeIf {
-                            it in bounds.minX..bounds.maxX
-                        } ?: (bounds.maxX - marginPx).coerceAtLeast(bounds.minX),
-                        savedY.takeIf {
-                            it in bounds.minY..bounds.maxY
-                        } ?: (bounds.maxY - marginPx).coerceAtLeast(bounds.minY),
-                        bounds
-                    )
-                    offsetX = newX
-                    offsetY = newY
-                    visible = true
+        modifier =
+            Modifier.fillMaxSize()
+                .background(Color.Transparent)
+                .windowInsetsPadding(WindowInsets.safeContent)
+                .onGloballyPositioned { coordinates ->
+                    val size = coordinates.size.toSize()
+                    val rect = Rect(0f, 0f, size.width, size.height)
+                    bounds = calculateBounds(rect, buttonSizePx)
+                    if (offsetX < 0f || offsetY < 0f) {
+                        val marginPx = with(density) { 40.dp.toPx() }
+                        val savedX = systemSettings.menuOffsetX
+                        val savedY = systemSettings.menuOffsetY
+                        val (newX, newY) =
+                            clampOffset(
+                                savedX.takeIf {
+                                    it in bounds.minX..bounds.maxX
+                                }
+                                    ?: (bounds.maxX - marginPx).coerceAtLeast(
+                                        bounds.minX
+                                    ),
+                                savedY.takeIf {
+                                    it in bounds.minY..bounds.maxY
+                                }
+                                    ?: (bounds.maxY - marginPx).coerceAtLeast(
+                                        bounds.minY
+                                    ),
+                                bounds,
+                            )
+                        offsetX = newX
+                        offsetY = newY
+                        visible = true
+                    }
                 }
-            }
     ) {
         if (isDragging) {
             Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .blur(16.dp)
-                    .background(
-                        MaterialTheme.colorScheme.inverseSurface.copy(alpha = 0.1f)
-                    )
-                    .zIndex(0f)
-                    .border(2.dp, primaryColor)
+                modifier =
+                    Modifier.fillMaxSize()
+                        .blur(16.dp)
+                        .background(
+                            MaterialTheme.colorScheme.inverseSurface.copy(
+                                alpha = 0.1f
+                            )
+                        )
+                        .zIndex(0f)
+                        .border(2.dp, primaryColor)
             )
         }
 
         Box(
-            modifier = Modifier
-                .zIndex(1f)
-                .offset {
-                    val (clampedX, clampedY) = clampOffset(offsetX, offsetY, bounds)
-                    IntOffset(clampedX.roundToInt(), clampedY.roundToInt())
-                }
-                .alpha(if (visible) 1f else 0f)
-                .size(buttonSizeDp)
-                .drawBehind {
-                    val radiusPx = size.minDimension / 2
-                    drawContext.canvas.nativeCanvas.apply {
-                        drawCircle(
-                            radiusPx, radiusPx, radiusPx,
-                            Paint().apply {
-                                color = primaryColor.toArgb()
-                                isAntiAlias = true
-                                setShadowLayer(
-                                    20.dp.toPx(),
-                                    0f,
-                                    0f,
-                                    primaryColor.toArgb()
+            modifier =
+                Modifier.zIndex(1f)
+                    .offset {
+                        val (clampedX, clampedY) =
+                            clampOffset(offsetX, offsetY, bounds)
+                        IntOffset(clampedX.roundToInt(), clampedY.roundToInt())
+                    }
+                    .alpha(
+                        if (visible) {
+                            1f
+                        } else {
+                            0f
+                        }
+                    )
+                    .size(buttonSizeDp)
+                    .drawBehind {
+                        val radiusPx = size.minDimension / 2
+                        drawContext.canvas.nativeCanvas.apply {
+                            drawCircle(
+                                radiusPx,
+                                radiusPx,
+                                radiusPx,
+                                Paint().apply {
+                                    color = primaryColor.toArgb()
+                                    isAntiAlias = true
+                                    setShadowLayer(
+                                        20.dp.toPx(),
+                                        0f,
+                                        0f,
+                                        primaryColor.toArgb(),
+                                    )
+                                },
+                            )
+                        }
+                    }
+                    .clip(CircleShape)
+                    .background(primaryColor)
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { isDragging = true },
+                            onDragEnd = { isDragging = false },
+                            onDragCancel = { isDragging = false },
+                        ) { change, dragAmount ->
+                            change.consume()
+                            val (clampedX, clampedY) =
+                                clampOffset(
+                                    offsetX + dragAmount.x,
+                                    offsetY + dragAmount.y,
+                                    bounds,
                                 )
-                            }
-                        )
+                            offsetX = clampedX
+                            offsetY = clampedY
+                            systemSettings.menuOffsetX = offsetX
+                            systemSettings.menuOffsetY = offsetY
+                        }
                     }
-                }
-                .clip(CircleShape)
-                .background(primaryColor)
-                .pointerInput(Unit) {
-                    detectDragGestures(
-                        onDragStart = { isDragging = true },
-                        onDragEnd = { isDragging = false },
-                        onDragCancel = { isDragging = false }
-                    ) { change, dragAmount ->
-                        change.consume()
-                        val (clampedX, clampedY) = clampOffset(
-                            offsetX + dragAmount.x, offsetY + dragAmount.y, bounds
-                        )
-                        offsetX = clampedX
-                        offsetY = clampedY
-                        systemSettings.menuOffsetX = offsetX
-                        systemSettings.menuOffsetY = offsetY
-                    }
-                }
         ) {
             IconButton(
                 onClick = { menuExpanded = true },
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.baseline_build_24),
-                    contentDescription = stringResource(
-                        R.string.floating_toolbar_icon_content_description
-                    ),
+                    contentDescription =
+                        stringResource(
+                            R.string.floating_toolbar_icon_content_description
+                        ),
                     tint = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(36.dp),
                 )
             }
 
             DropdownMenu(
                 expanded = menuExpanded,
                 onDismissRequest = { menuExpanded = false },
-                modifier = Modifier
-                    .handleUserTouchEvent()
-                    .handleUserKeyEvent(context, menuExpanded)
+                modifier =
+                    Modifier.handleUserTouchEvent()
+                        .handleUserKeyEvent(context, menuExpanded),
             ) {
                 MenuItem(
                     stringResource(R.string.floating_toolbar_menu_home),
                     R.drawable.baseline_home_24,
-                    tintColor
+                    tintColor,
                 ) {
                     menuExpanded = false
                     onHomeClick()
@@ -233,7 +255,7 @@ fun FloatingToolbar(
                     MenuItem(
                         stringResource(R.string.floating_toolbar_menu_unlock),
                         R.drawable.baseline_lock_open_24,
-                        tintColor
+                        tintColor,
                     ) {
                         menuExpanded = false
                         onUnlockClick()
@@ -242,7 +264,7 @@ fun FloatingToolbar(
                     MenuItem(
                         stringResource(R.string.floating_toolbar_menu_lock),
                         R.drawable.baseline_lock_24,
-                        tintColor
+                        tintColor,
                     ) {
                         menuExpanded = false
                         onLockClick()
@@ -250,7 +272,7 @@ fun FloatingToolbar(
                     MenuItem(
                         stringResource(R.string.floating_toolbar_menu_settings),
                         R.drawable.baseline_settings_24,
-                        tintColor
+                        tintColor,
                     ) {
                         menuExpanded = false
                         navController.navigate(Screen.Settings.route)

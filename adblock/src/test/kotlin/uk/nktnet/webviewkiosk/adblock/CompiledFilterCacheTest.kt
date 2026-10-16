@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.adblock
 
+import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -9,7 +10,6 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import uk.nktnet.webviewkiosk.adblock.engine.CompiledFilterCache
 import uk.nktnet.webviewkiosk.adblock.engine.FilterCompiler
-import java.io.File
 
 class CompiledFilterCacheTest {
     @get:Rule val folder = TemporaryFolder()
@@ -17,23 +17,31 @@ class CompiledFilterCacheTest {
     @Test
     fun cachedEngineMatchesTheEntireNetworkFixtureCorpusWithoutReparsing() {
         val file = File(folder.root, "compiled.bin")
-        javaClass.getResourceAsStream("/adblock/network.tsv")!!.bufferedReader().useLines { lines ->
-            for (line in lines.drop(1)) {
-                val fields = line.split('\t')
-                val lists = listOf(fields[1].replace("\\n", "\n"))
-                KotlinFilterEngine(file).replace(lists)
-                val stages = mutableListOf<RuleLoadStage>()
-                val restored = KotlinFilterEngine(file)
-                restored.replace(lists, stages::add)
-                assertFalse(fields[0], RuleLoadStage.COMPILING in stages)
-                assertTrue(fields[0], RuleLoadStage.RESTORING in stages)
-                assertEquals(
-                    fields[0],
-                    fields[6] == "1",
-                    restored.shouldBlock(fields[2], fields[3], fields[4], fields[5]),
-                )
+        javaClass
+            .getResourceAsStream("/adblock/network.tsv")!!
+            .bufferedReader()
+            .useLines { lines ->
+                for (line in lines.drop(1)) {
+                    val fields = line.split('\t')
+                    val lists = listOf(fields[1].replace("\\n", "\n"))
+                    KotlinFilterEngine(file).replace(lists)
+                    val stages = mutableListOf<RuleLoadStage>()
+                    val restored = KotlinFilterEngine(file)
+                    restored.replace(lists, stages::add)
+                    assertFalse(fields[0], RuleLoadStage.COMPILING in stages)
+                    assertTrue(fields[0], RuleLoadStage.RESTORING in stages)
+                    assertEquals(
+                        fields[0],
+                        fields[6] == "1",
+                        restored.shouldBlock(
+                            fields[2],
+                            fields[3],
+                            fields[4],
+                            fields[5],
+                        ),
+                    )
+                }
             }
-        }
     }
 
     @Test
@@ -63,7 +71,7 @@ class CompiledFilterCacheTest {
                 "https://site.example/",
                 "other",
                 "GET",
-            ),
+            )
         )
         assertTrue(
             engine.shouldBlock(
@@ -71,7 +79,7 @@ class CompiledFilterCacheTest {
                 "https://site.example/",
                 "other",
                 "GET",
-            ),
+            )
         )
         assertTrue(
             engine.shouldBlock(
@@ -79,7 +87,7 @@ class CompiledFilterCacheTest {
                 "https://site.example/",
                 "script",
                 "GET",
-            ),
+            )
         )
         assertFalse(
             engine.shouldBlock(
@@ -87,7 +95,7 @@ class CompiledFilterCacheTest {
                 "https://safe.site.example/",
                 "script",
                 "GET",
-            ),
+            )
         )
         assertFalse(
             engine.shouldBlock(
@@ -95,15 +103,23 @@ class CompiledFilterCacheTest {
                 "https://site.example/",
                 "script",
                 "POST",
-            ),
+            )
         )
         assertEquals(
             listOf(".sponsor"),
-            engine.cosmeticSelectors("https://site.example/", listOf("ad"), emptyList()),
+            engine.cosmeticSelectors(
+                "https://site.example/",
+                listOf("ad"),
+                emptyList(),
+            ),
         )
         assertEquals(
             emptyList<String>(),
-            engine.cosmeticSelectors("https://page.example/", listOf("ad"), emptyList()),
+            engine.cosmeticSelectors(
+                "https://page.example/",
+                listOf("ad"),
+                emptyList(),
+            ),
         )
         assertEquals(1, engine.unsupportedRuleCount())
     }
@@ -112,22 +128,40 @@ class CompiledFilterCacheTest {
     fun exactContentAndListBoundariesInvalidateTheCache() {
         val file = File(folder.root, "compiled.bin")
         val cache = CompiledFilterCache(file)
-        assertFalse(cache.key(listOf("ab", "c")).contentEquals(cache.key(listOf("a", "bc"))))
+        assertFalse(
+            cache.key(listOf("ab", "c")).contentEquals(cache.key(listOf("a", "bc")))
+        )
         val engine = KotlinFilterEngine(file)
         engine.replace(listOf("||old.example^", "@@||old.example^"))
         val stages = mutableListOf<RuleLoadStage>()
         engine.replace(listOf("||new.example^"), stages::add)
         assertTrue(RuleLoadStage.COMPILING in stages)
         assertTrue(
-            engine.shouldBlock("https://new.example/a", "https://site.example/", "other", "GET"),
+            engine.shouldBlock(
+                "https://new.example/a",
+                "https://site.example/",
+                "other",
+                "GET",
+            )
         )
         assertFalse(
-            engine.shouldBlock("https://old.example/a", "https://site.example/", "other", "GET"),
+            engine.shouldBlock(
+                "https://old.example/a",
+                "https://site.example/",
+                "other",
+                "GET",
+            )
         )
-        // Dropping a disabled exception list must also invalidate the previous snapshot.
+        // Dropping a disabled exception list must also invalidate the previous
+        // snapshot.
         engine.replace(listOf("||old.example^"))
         assertTrue(
-            engine.shouldBlock("https://old.example/a", "https://site.example/", "other", "GET"),
+            engine.shouldBlock(
+                "https://old.example/a",
+                "https://site.example/",
+                "other",
+                "GET",
+            )
         )
     }
 
@@ -145,7 +179,8 @@ class CompiledFilterCacheTest {
                 valid.copyOf().apply { this[4] = 127 }, // Unknown cache format.
                 valid.copyOf().apply { this[8] = 127 }, // Different app build.
                 valid.copyOf().apply {
-                    this[lastIndex - 10] = (this[lastIndex - 10].toInt() xor 1).toByte()
+                    this[lastIndex - 10] =
+                        (this[lastIndex - 10].toInt() xor 1).toByte()
                 },
                 valid + byteArrayOf(1),
             )
@@ -161,7 +196,7 @@ class CompiledFilterCacheTest {
                     "https://site.example/",
                     "other",
                     "GET",
-                ),
+                )
             )
             assertNotNull(cache.read(cache.key(lists)))
         }
@@ -177,7 +212,12 @@ class CompiledFilterCacheTest {
         val engine = KotlinFilterEngine(File(parent, "compiled.bin"))
         engine.replace(listOf("||ads.example^"))
         assertTrue(
-            engine.shouldBlock("https://ads.example/a", "https://site.example/", "other", "GET"),
+            engine.shouldBlock(
+                "https://ads.example/a",
+                "https://site.example/",
+                "other",
+                "GET",
+            )
         )
     }
 }

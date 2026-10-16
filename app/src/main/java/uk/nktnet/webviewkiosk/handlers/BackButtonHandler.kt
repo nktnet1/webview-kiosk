@@ -9,6 +9,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.config.SystemSettings
@@ -16,7 +17,6 @@ import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.option.BackButtonHoldActionOption
 import uk.nktnet.webviewkiosk.states.BackButtonStateSingleton
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun BackPressHandler(
@@ -35,9 +35,9 @@ fun BackPressHandler(
     LaunchedEffect(userSettings.allowBackwardsNavigation) {
         BackButtonStateSingleton.shortPressEvents.collect {
             if (
-                currentCanHandleEvents()
-                && userSettings.allowBackwardsNavigation
-                && enableBack
+                currentCanHandleEvents() &&
+                    userSettings.allowBackwardsNavigation &&
+                    enableBack
             ) {
                 WebViewNavigation.goBack(currentLoadUrl, systemSettings)
             }
@@ -45,14 +45,23 @@ fun BackPressHandler(
     }
 
     LaunchedEffect(userSettings.backButtonHoldAction) {
-        if (userSettings.backButtonHoldAction != BackButtonHoldActionOption.DISABLED) {
+        if (
+            userSettings.backButtonHoldAction != BackButtonHoldActionOption.DISABLED
+        ) {
             BackButtonStateSingleton.longPressEvents.collect {
                 if (!currentCanHandleEvents()) {
                     return@collect
                 }
                 enableBack = false
-                if (userSettings.backButtonHoldAction == BackButtonHoldActionOption.GO_HOME) {
-                    WebViewNavigation.goHome(currentLoadUrl, systemSettings, userSettings)
+                if (
+                    userSettings.backButtonHoldAction ==
+                        BackButtonHoldActionOption.GO_HOME
+                ) {
+                    WebViewNavigation.goHome(
+                        currentLoadUrl,
+                        systemSettings,
+                        userSettings,
+                    )
                 }
                 scope.launch {
                     delay(1000.milliseconds)

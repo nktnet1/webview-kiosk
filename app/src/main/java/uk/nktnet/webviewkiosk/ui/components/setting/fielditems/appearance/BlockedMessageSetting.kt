@@ -23,6 +23,6 @@ fun BlockedMessageSetting() {
         restricted = userSettings.isRestricted(settingKey),
         initialValue = userSettings.blockedMessage,
         isMultiline = true,
-        onSave = { userSettings.blockedMessage = it }
+        onSave = { userSettings.blockedMessage = it },
     )
 }

@@ -9,6 +9,9 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG
 import androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
 import androidx.biometric.BiometricPrompt
+import javax.crypto.Cipher
+import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.spec.SecretKeySpec
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -32,9 +35,6 @@ import uk.nktnet.webviewkiosk.config.Constants
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager.AuthenticationResult
-import javax.crypto.Cipher
-import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.SecretKeySpec
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [28], shadows = [CredentialKeyguardShadow::class])
@@ -56,11 +56,16 @@ class AuthenticationManagerTest {
 
     @Before
     fun setUp() {
-        activityController = Robolectric.buildActivity(AuthTestActivity::class.java).setup()
+        activityController =
+            Robolectric.buildActivity(AuthTestActivity::class.java).setup()
         activity = activityController.get()
-        activity.getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
-            .edit().clear().commit()
-        keyguardManager = activity.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        activity
+            .getSharedPreferences(UserSettingsKeys.PREFS_NAME, Context.MODE_PRIVATE)
+            .edit()
+            .clear()
+            .commit()
+        keyguardManager =
+            activity.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         shadowOf(keyguardManager).setIsDeviceSecure(true)
         shadowOf(keyguardManager).setIsKeyguardSecure(true)
         manager.resetAuthentication()
@@ -91,9 +96,15 @@ class AuthenticationManagerTest {
         manager.authCipherFactory = originalCipherFactory
         setSdk(Build.VERSION_CODES.LOLLIPOP)
         try {
-            val failure = runCatching { manager.authCipherFactory(null) }.exceptionOrNull()
+            val failure = runCatching {
+                manager.authCipherFactory(null)
+            }
+                .exceptionOrNull()
             assertTrue(failure is UnsupportedOperationException)
-            assertEquals("Authentication cipher requires Android 6 or newer", failure?.message)
+            assertEquals(
+                "Authentication cipher requires Android 6 or newer",
+                failure?.message,
+            )
         } finally {
             setSdk(originalSdk)
         }
@@ -139,7 +150,10 @@ class AuthenticationManagerTest {
             assertEquals(0, newPrompt.cancelCalls)
 
             newPrompt.succeed()
-            assertEquals(AuthenticationResult.AuthenticationSuccess, manager.promptResults.value)
+            assertEquals(
+                AuthenticationResult.AuthenticationSuccess,
+                manager.promptResults.value,
+            )
             assertTrue(manager.hasValidSession())
         }
     }
@@ -153,7 +167,10 @@ class AuthenticationManagerTest {
 
         withReplacementActivity {
             assertEquals(0, prompt.cancelCalls)
-            assertEquals(AuthenticationResult.AuthenticationSuccess, manager.promptResults.value)
+            assertEquals(
+                AuthenticationResult.AuthenticationSuccess,
+                manager.promptResults.value,
+            )
             assertTrue(manager.hasValidSession())
             manager.clear(activity)
             assertTrue(manager.hasValidSession())
@@ -181,8 +198,10 @@ class AuthenticationManagerTest {
             assertFalse(manager.showCustomAuth.value)
             assertFalse(manager.hasValidSession())
             assertEquals(
-                AuthenticationResult.AuthenticationError("Authentication cancelled."),
-                manager.promptResults.value
+                AuthenticationResult.AuthenticationError(
+                    "Authentication cancelled."
+                ),
+                manager.promptResults.value,
             )
         }
     }
@@ -191,9 +210,11 @@ class AuthenticationManagerTest {
     fun credentialResultFromReplacedHostCannotAuthenticateItsSuccessor() {
         // Build both Robolectric activities on the configured API 28 framework;
         // only the production SDK gate is overridden to exercise API 21/22 logic.
-        val replacementController = Robolectric.buildActivity(AuthTestActivity::class.java).setup()
+        val replacementController =
+            Robolectric.buildActivity(AuthTestActivity::class.java).setup()
         val replacement = replacementController.get()
-        val replacementKeyguard = replacement.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        val replacementKeyguard =
+            replacement.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         shadowOf(replacementKeyguard).setIsKeyguardSecure(true)
         try {
             setSdk(22)
@@ -207,13 +228,16 @@ class AuthenticationManagerTest {
             showPrompt()
             val replacementRequestCode = replacement.credentialRequests.single()
             assertTrue(oldRequestCode != replacementRequestCode)
-            manager.handleLollipopDeviceCredentialResult(oldRequestCode, AppCompatActivity.RESULT_OK)
+            manager.handleLollipopDeviceCredentialResult(
+                oldRequestCode,
+                AppCompatActivity.RESULT_OK,
+            )
             assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
             assertFalse(manager.hasValidSession())
 
             manager.handleLollipopDeviceCredentialResult(
                 replacementRequestCode,
-                AppCompatActivity.RESULT_OK
+                AppCompatActivity.RESULT_OK,
             )
             assertTrue(manager.hasValidSession())
         } finally {
@@ -246,7 +270,10 @@ class AuthenticationManagerTest {
         assertFalse(manager.hasValidSession())
 
         prompt.succeed()
-        assertEquals(AuthenticationResult.AuthenticationSuccess, manager.promptResults.value)
+        assertEquals(
+            AuthenticationResult.AuthenticationSuccess,
+            manager.promptResults.value,
+        )
         assertTrue(manager.hasValidSession())
     }
 
@@ -303,7 +330,10 @@ class AuthenticationManagerTest {
         prompt.callback.onAuthenticationError(1, "cancelled")
         prompt.succeed()
 
-        assertEquals(AuthenticationResult.AuthenticationError("cancelled"), manager.promptResults.value)
+        assertEquals(
+            AuthenticationResult.AuthenticationError("cancelled"),
+            manager.promptResults.value,
+        )
         assertFalse(manager.hasValidSession())
         showPrompt()
         showPrompt()
@@ -327,7 +357,8 @@ class AuthenticationManagerTest {
 
     @Test
     fun secureDevicesWithoutEnrolledBiometricsKeepCredentialFallbackOnAndroid6To10() {
-        // Only exercise the SDK gates on the exported API 28 runtime. The fake prompt
+        // Only exercise the SDK gates on the exported API 28 runtime. The fake
+        // prompt
         // does not invoke hardware or APIs from a different Android runtime.
         for (sdk in listOf(23, 28, 29)) {
             setSdk(sdk)
@@ -348,7 +379,10 @@ class AuthenticationManagerTest {
         shadowOf(keyguardManager).setIsDeviceSecure(false)
         showPrompt()
 
-        assertEquals(AuthenticationResult.AuthenticationNotSet, manager.promptResults.value)
+        assertEquals(
+            AuthenticationResult.AuthenticationNotSet,
+            manager.promptResults.value,
+        )
         assertTrue(manager.hasValidSession())
         assertTrue(prompts.isEmpty())
         time += 300_000
@@ -401,7 +435,10 @@ class AuthenticationManagerTest {
         showPrompt()
         val original = prompts.single()
         original.succeed()
-        assertEquals(AuthenticationResult.AuthenticationSuccess, manager.promptResults.value)
+        assertEquals(
+            AuthenticationResult.AuthenticationSuccess,
+            manager.promptResults.value,
+        )
 
         time += 300_000
         assertFalse(manager.checkAuthAndRefreshSession())
@@ -415,7 +452,10 @@ class AuthenticationManagerTest {
         original.succeed()
         assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
         replacement.succeed()
-        assertEquals(AuthenticationResult.AuthenticationSuccess, manager.promptResults.value)
+        assertEquals(
+            AuthenticationResult.AuthenticationSuccess,
+            manager.promptResults.value,
+        )
         assertTrue(manager.hasValidSession())
     }
 
@@ -482,7 +522,7 @@ class AuthenticationManagerTest {
         assertFalse(manager.showCustomAuth.value)
         assertEquals(
             AuthenticationResult.AuthenticationError("Authentication cancelled."),
-            manager.promptResults.value
+            manager.promptResults.value,
         )
     }
 
@@ -528,7 +568,7 @@ class AuthenticationManagerTest {
         assertFalse(manager.hasValidSession())
         assertEquals(
             AuthenticationResult.AuthenticationError("Authentication cancelled."),
-            manager.promptResults.value
+            manager.promptResults.value,
         )
 
         showPrompt()
@@ -581,14 +621,14 @@ class AuthenticationManagerTest {
     fun aCredentialResultWithoutAPendingLegacyPromptCannotUnlock() {
         manager.handleLollipopDeviceCredentialResult(
             Constants.REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL,
-            AppCompatActivity.RESULT_OK
+            AppCompatActivity.RESULT_OK,
         )
         assertFalse(manager.hasValidSession())
 
         showPrompt()
         manager.handleLollipopDeviceCredentialResult(
             Constants.REQUEST_CODE_LOLLIPOP_DEVICE_CREDENTIAL,
-            AppCompatActivity.RESULT_OK
+            AppCompatActivity.RESULT_OK,
         )
         assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
         assertFalse(manager.hasValidSession())
@@ -603,18 +643,21 @@ class AuthenticationManagerTest {
         val requestCode = activity.credentialRequests.single()
         assertFalse(manager.hasValidSession())
         manager.resetAuthentication(preserveExternalActivitySession = true)
-        manager.handleLollipopDeviceCredentialResult(123, AppCompatActivity.RESULT_OK)
+        manager.handleLollipopDeviceCredentialResult(
+            123,
+            AppCompatActivity.RESULT_OK,
+        )
         assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
 
         manager.handleLollipopDeviceCredentialResult(
             requestCode,
-            AppCompatActivity.RESULT_OK
+            AppCompatActivity.RESULT_OK,
         )
         assertTrue(manager.hasValidSession())
         time += 300_000
         manager.handleLollipopDeviceCredentialResult(
             requestCode,
-            AppCompatActivity.RESULT_OK
+            AppCompatActivity.RESULT_OK,
         )
         assertFalse(manager.hasValidSession())
     }
@@ -625,16 +668,19 @@ class AuthenticationManagerTest {
         showPrompt()
         manager.handleLollipopDeviceCredentialResult(
             activity.credentialRequests.single(),
-            AppCompatActivity.RESULT_CANCELED
+            AppCompatActivity.RESULT_CANCELED,
         )
-        assertEquals(AuthenticationResult.AuthenticationFailed, manager.promptResults.value)
+        assertEquals(
+            AuthenticationResult.AuthenticationFailed,
+            manager.promptResults.value,
+        )
         assertFalse(manager.hasValidSession())
 
         showPrompt()
         manager.resetAuthentication()
         manager.handleLollipopDeviceCredentialResult(
             activity.credentialRequests.last(),
-            AppCompatActivity.RESULT_OK
+            AppCompatActivity.RESULT_OK,
         )
         assertEquals(AuthenticationResult.Loading, manager.promptResults.value)
         assertFalse(manager.hasValidSession())
@@ -650,11 +696,17 @@ class AuthenticationManagerTest {
         val currentRequestCode = activity.credentialRequests.last()
         assertTrue(oldRequestCode != currentRequestCode)
 
-        manager.handleLollipopDeviceCredentialResult(oldRequestCode, AppCompatActivity.RESULT_OK)
+        manager.handleLollipopDeviceCredentialResult(
+            oldRequestCode,
+            AppCompatActivity.RESULT_OK,
+        )
         assertEquals(AuthenticationResult.Pending, manager.promptResults.value)
         assertFalse(manager.hasValidSession())
 
-        manager.handleLollipopDeviceCredentialResult(currentRequestCode, AppCompatActivity.RESULT_OK)
+        manager.handleLollipopDeviceCredentialResult(
+            currentRequestCode,
+            AppCompatActivity.RESULT_OK,
+        )
         assertTrue(manager.hasValidSession())
     }
 
@@ -682,7 +734,10 @@ class AuthenticationManagerTest {
         assertEquals(1, prompt.cancelCalls)
         assertFalse(manager.hasValidSession())
         showPrompt()
-        assertEquals(AuthenticationResult.AuthenticationError("Activity is null"), manager.promptResults.value)
+        assertEquals(
+            AuthenticationResult.AuthenticationError("Activity is null"),
+            manager.promptResults.value,
+        )
     }
 
     @Test
@@ -690,14 +745,19 @@ class AuthenticationManagerTest {
         setSdk(30)
         showPrompt()
         val prompt = prompts.single()
-        assertEquals(BIOMETRIC_STRONG or DEVICE_CREDENTIAL, prompt.info.allowedAuthenticators)
+        assertEquals(
+            BIOMETRIC_STRONG or DEVICE_CREDENTIAL,
+            prompt.info.allowedAuthenticators,
+        )
         assertTrue(prompt.cryptoObject?.cipher != null)
         assertFalse(manager.hasValidSession())
 
         prompt.succeed(cryptoObject = null)
         assertEquals(
-            AuthenticationResult.AuthenticationError("Missing cryptographic context."),
-            manager.promptResults.value
+            AuthenticationResult.AuthenticationError(
+                "Missing cryptographic context."
+            ),
+            manager.promptResults.value,
         )
         assertFalse(manager.hasValidSession())
     }
@@ -732,7 +792,9 @@ class AuthenticationManagerTest {
         val requestedTokens = mutableListOf<Pair<ByteArray, ByteArray>?>()
         manager.authCipherFactory = { token ->
             requestedTokens.add(token)
-            if (token != null) throw KeyPermanentlyInvalidatedException()
+            if (token != null) {
+                throw KeyPermanentlyInvalidatedException()
+            }
             createCipher(null)
         }
 
@@ -761,7 +823,9 @@ class AuthenticationManagerTest {
         showPrompt()
         assertEquals(1, deletedKeys)
         assertEquals(0, prompts.single().authenticateCalls)
-        assertTrue(manager.promptResults.value is AuthenticationResult.AuthenticationError)
+        assertTrue(
+            manager.promptResults.value is AuthenticationResult.AuthenticationError
+        )
         prompts.single().succeed()
         assertFalse(manager.hasValidSession())
     }
@@ -771,7 +835,9 @@ class AuthenticationManagerTest {
         setSdk(30)
         var calls = 0
         manager.authCipherFactory = {
-            if (calls++ == 0) throw KeyPermanentlyInvalidatedException()
+            if (calls++ == 0) {
+                throw KeyPermanentlyInvalidatedException()
+            }
             error("replacement cipher failed")
         }
 
@@ -779,7 +845,9 @@ class AuthenticationManagerTest {
         assertEquals(2, calls)
         assertEquals(1, deletedKeys)
         assertEquals(0, prompts.single().authenticateCalls)
-        assertTrue(manager.promptResults.value is AuthenticationResult.AuthenticationError)
+        assertTrue(
+            manager.promptResults.value is AuthenticationResult.AuthenticationError
+        )
         assertFalse(manager.hasValidSession())
     }
 
@@ -796,8 +864,10 @@ class AuthenticationManagerTest {
         showPrompt()
         prompts.last().succeed()
         assertEquals(
-            AuthenticationResult.AuthenticationError("Secure authentication validation failed."),
-            manager.promptResults.value
+            AuthenticationResult.AuthenticationError(
+                "Secure authentication validation failed."
+            ),
+            manager.promptResults.value,
         )
         assertFalse(manager.hasValidSession())
     }
@@ -823,7 +893,9 @@ class AuthenticationManagerTest {
     fun promptStartupFailureAllowsRetryWithoutGrantingASession() {
         manager.biometricPromptFactory = { _, _ -> error("host unavailable") }
         showPrompt()
-        assertTrue(manager.promptResults.value is AuthenticationResult.AuthenticationError)
+        assertTrue(
+            manager.promptResults.value is AuthenticationResult.AuthenticationError
+        )
         assertFalse(manager.hasValidSession())
 
         manager.biometricPromptFactory = { _, callback ->
@@ -835,9 +907,11 @@ class AuthenticationManagerTest {
     }
 
     private fun withReplacementActivity(assertions: (AuthTestActivity) -> Unit) {
-        val replacementController = Robolectric.buildActivity(AuthTestActivity::class.java).setup()
+        val replacementController =
+            Robolectric.buildActivity(AuthTestActivity::class.java).setup()
         val replacement = replacementController.get()
-        val replacementKeyguard = replacement.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        val replacementKeyguard =
+            replacement.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         shadowOf(replacementKeyguard).setIsDeviceSecure(true)
         shadowOf(replacementKeyguard).setIsKeyguardSecure(true)
         try {
@@ -849,27 +923,43 @@ class AuthenticationManagerTest {
         }
     }
 
-    private fun showPrompt() = manager.showAuthenticationPrompt("Authentication Required", "Test authentication")
+    private fun showPrompt() =
+        manager.showAuthenticationPrompt(
+            "Authentication Required",
+            "Test authentication",
+        )
 
     private fun createCipher(token: Pair<ByteArray, ByteArray>?): Cipher =
         Cipher.getInstance("AES/GCM/NoPadding").apply {
             if (token == null) {
                 init(Cipher.ENCRYPT_MODE, secretKey)
             } else {
-                init(Cipher.DECRYPT_MODE, secretKey, GCMParameterSpec(128, token.second))
+                init(
+                    Cipher.DECRYPT_MODE,
+                    secretKey,
+                    GCMParameterSpec(128, token.second),
+                )
             }
         }
 
-    private fun setSdk(sdk: Int) = ReflectionHelpers.setStaticField(Build.VERSION::class.java, "SDK_INT", sdk)
+    private fun setSdk(sdk: Int) =
+        ReflectionHelpers.setStaticField(Build.VERSION::class.java, "SDK_INT", sdk)
 
     private fun setStoredToken(token: ByteArray?, iv: ByteArray?) {
-        for ((name, value) in listOf("encryptedAuthToken" to token, "encryptedAuthTokenIv" to iv)) {
-            manager.javaClass.getDeclaredField(name).apply { isAccessible = true }.set(null, value)
+        for ((name, value) in
+            listOf("encryptedAuthToken" to token, "encryptedAuthTokenIv" to iv)) {
+            manager.javaClass
+                .getDeclaredField(name)
+                .apply { isAccessible = true }
+                .set(null, value)
         }
     }
 
     private fun getStoredBytes(name: String): ByteArray? =
-        manager.javaClass.getDeclaredField(name).apply { isAccessible = true }.get(null) as ByteArray?
+        manager.javaClass
+            .getDeclaredField(name)
+            .apply { isAccessible = true }
+            .get(null) as ByteArray?
 
     private class FakePrompt(val callback: BiometricPrompt.AuthenticationCallback) :
         AuthenticationManager.AuthenticationPrompt {
@@ -878,7 +968,10 @@ class AuthenticationManagerTest {
         var authenticateCalls = 0
         var cancelCalls = 0
 
-        override fun authenticate(info: BiometricPrompt.PromptInfo, cryptoObject: BiometricPrompt.CryptoObject?) {
+        override fun authenticate(
+            info: BiometricPrompt.PromptInfo,
+            cryptoObject: BiometricPrompt.CryptoObject?,
+        ) {
             this.info = info
             this.cryptoObject = cryptoObject
             authenticateCalls++
@@ -886,18 +979,27 @@ class AuthenticationManagerTest {
 
         override fun cancelAuthentication() {
             cancelCalls++
-            callback.onAuthenticationError(BiometricPrompt.ERROR_CANCELED, "cancelled")
+            callback.onAuthenticationError(
+                BiometricPrompt.ERROR_CANCELED,
+                "cancelled",
+            )
         }
 
-        fun succeed(cryptoObject: BiometricPrompt.CryptoObject? = this.cryptoObject) {
-            val result = ReflectionHelpers.callConstructor(
-                BiometricPrompt.AuthenticationResult::class.java,
-                ReflectionHelpers.ClassParameter.from(BiometricPrompt.CryptoObject::class.java, cryptoObject),
-                ReflectionHelpers.ClassParameter.from(
-                    Int::class.javaPrimitiveType!!,
-                    BiometricPrompt.AUTHENTICATION_RESULT_TYPE_BIOMETRIC
+        fun succeed(
+            cryptoObject: BiometricPrompt.CryptoObject? = this.cryptoObject
+        ) {
+            val result =
+                ReflectionHelpers.callConstructor(
+                    BiometricPrompt.AuthenticationResult::class.java,
+                    ReflectionHelpers.ClassParameter.from(
+                        BiometricPrompt.CryptoObject::class.java,
+                        cryptoObject,
+                    ),
+                    ReflectionHelpers.ClassParameter.from(
+                        Int::class.javaPrimitiveType!!,
+                        BiometricPrompt.AUTHENTICATION_RESULT_TYPE_BIOMETRIC,
+                    ),
                 )
-            )
             assertSame(cryptoObject, result.cryptoObject)
             callback.onAuthenticationSucceeded(result)
         }
@@ -921,6 +1023,8 @@ class AuthTestActivity : AppCompatActivity() {
 @Implements(KeyguardManager::class)
 class CredentialKeyguardShadow : ShadowKeyguardManager() {
     @Implementation
-    protected fun createConfirmDeviceCredentialIntent(title: CharSequence, description: CharSequence): Intent =
-        Intent("test.confirm-credential")
+    protected fun createConfirmDeviceCredentialIntent(
+        title: CharSequence,
+        description: CharSequence,
+    ): Intent = Intent("test.confirm-credential")
 }

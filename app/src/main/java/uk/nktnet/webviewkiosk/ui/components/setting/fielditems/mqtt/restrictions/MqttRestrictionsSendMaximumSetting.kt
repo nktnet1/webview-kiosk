@@ -17,15 +17,17 @@ fun MqttRestrictionsSendMaximumSetting() {
 
     NumberSettingFieldItem(
         label = stringResource(R.string.mqtt_restrictions_send_maximum_title),
-        infoText = """
+        infoText =
+            """
             Maximum number of MQTT messages the client can send simultaneously.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         placeholder = "e.g. 32",
         initialValue = userSettings.mqttRestrictionsSendMaximum,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         min = 0,
         max = 65535,
-        onSave = { userSettings.mqttRestrictionsSendMaximum = it }
+        onSave = { userSettings.mqttRestrictionsSendMaximum = it },
     )
 }

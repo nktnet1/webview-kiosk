@@ -38,7 +38,8 @@ fun MutualTlsSetting() {
     val settingKey = UserSettingsKeys.WebEngine.MUTUAL_TLS
     TextSettingFieldItem(
         label = stringResource(R.string.web_engine_mutual_tls_title),
-        infoText = """
+        infoText =
+            """
             Configure exact sites that may use a client certificate for Mutual TLS (mTLS).
 
             The client certificate installer accepts PKCS#12 credentials with a private key.
@@ -61,18 +62,22 @@ fun MutualTlsSetting() {
             an explicitly configured alias is also returned from Android's private-key selection
             callback for ${stringResource(R.string.app_name)}'s own matching site, allowing
             Android to grant access without showing the certificate picker.
-        """.trimIndent(),
-        placeholder = """
+        """
+                .trimIndent(),
+        placeholder =
+            """
             secure.example.com
             api.example.com:8443
             managed.example.com=work-client-cert
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.mutualTls,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         isMultiline = true,
         validator = ::validateMutualTls,
-        validationMessage = "Use one unique host[:port][=KeyChain alias] entry per line.",
+        validationMessage =
+            "Use one unique host[:port][=KeyChain alias] entry per line.",
         descriptionFormatter = { value ->
             val count = parseMutualTlsRules(value)?.size ?: 0
             when (count) {
@@ -84,66 +89,74 @@ fun MutualTlsSetting() {
         onSave = { userSettings.mutualTls = it },
         extraContent = { _, _ ->
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Button(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error,
-                        contentColor = MaterialTheme.colorScheme.onError
-                    ),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error,
+                            contentColor = MaterialTheme.colorScheme.onError,
+                        ),
+                    contentPadding =
+                        PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                     onClick = {
                         systemSettings.clearMutualTlsAliases()
                         try {
                             WebView.clearClientCertPreferences {
                                 ToastManager.show(
                                     context,
-                                    "Client certificate preferences cleared."
+                                    "Client certificate preferences cleared.",
                                 )
                             }
                         } catch (_: Exception) {
                             ToastManager.show(
                                 context,
-                                "Unable to clear client certificate preferences."
+                                "Unable to clear client certificate preferences.",
                             )
                         }
-                    }
+                    },
                 ) {
                     Text(
                         text = "Clear certificate preferences",
                         textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.labelMedium,
                     )
                 }
 
                 Button(
                     modifier = Modifier.weight(1f),
                     shape = RoundedCornerShape(8.dp),
-                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 6.dp),
+                    contentPadding =
+                        PaddingValues(horizontal = 8.dp, vertical = 6.dp),
                     onClick = {
                         try {
                             if (certificateInstallerActivity != null) {
-                                certificateInstallerActivity.openClientCertificatePicker()
+                                certificateInstallerActivity
+                                    .openClientCertificatePicker()
                             } else {
-                                ToastManager.show(context, "Unable to open certificate file picker.")
+                                ToastManager.show(
+                                    context,
+                                    "Unable to open certificate file picker.",
+                                )
                             }
                         } catch (_: Exception) {
-                            ToastManager.show(context, "Unable to open certificate file picker.")
+                            ToastManager.show(
+                                context,
+                                "Unable to open certificate file picker.",
+                            )
                         }
-                    }
+                    },
                 ) {
                     Text(
                         text = "Install client certificate",
                         textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.labelMedium,
                     )
                 }
             }
-        }
+        },
     )
 }

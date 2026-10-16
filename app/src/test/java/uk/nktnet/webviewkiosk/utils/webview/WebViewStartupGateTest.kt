@@ -1,25 +1,28 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicInteger
 
 class WebViewStartupGateTest {
     @Test
     fun startupBeginsOnlyOnceAndWaitsForTheCompletionCallback() = runBlocking {
         var completions = 0
         var callback: (() -> Unit)? = null
-        val gate = WebViewStartupGate(beginStartup = {
-            completions++
-            callback = it
-        })
+        val gate =
+            WebViewStartupGate(
+                beginStartup = {
+                    completions++
+                    callback = it
+                }
+            )
 
         repeat(4) { gate.start() }
         assertEquals(1, completions)
@@ -39,10 +42,13 @@ class WebViewStartupGateTest {
     @Test
     fun startupFailureFallsBackRatherThanStrandingTheUi() = runBlocking {
         val failures = mutableListOf<Exception>()
-        val gate = WebViewStartupGate(
-            beginStartup = { throw IllegalStateException("No WebView provider") },
-            onFailure = failures::add,
-        )
+        val gate =
+            WebViewStartupGate(
+                beginStartup = {
+                    throw IllegalStateException("No WebView provider")
+                },
+                onFailure = failures::add,
+            )
 
         gate.start()
         gate.awaitReady()
@@ -56,12 +62,13 @@ class WebViewStartupGateTest {
         val gate = WebViewStartupGate(beginStartup = { starts.incrementAndGet() })
         val pool = Executors.newFixedThreadPool(6)
         val begin = CountDownLatch(1)
-        val futures = (1..24).map {
-            pool.submit {
-                begin.await()
-                gate.start()
+        val futures =
+            (1..24).map {
+                pool.submit {
+                    begin.await()
+                    gate.start()
+                }
             }
-        }
         try {
             begin.countDown()
             futures.forEach { it.get(5, TimeUnit.SECONDS) }

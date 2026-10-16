@@ -1,7 +1,6 @@
 package uk.nktnet.webviewkiosk.ui.components.setting.dialog
 
 import android.util.Log
-import java.io.ByteArrayOutputStream
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -37,6 +36,7 @@ import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -74,7 +74,7 @@ private fun readBoundedText(stream: java.io.InputStream): String {
 
 enum class ImportTab {
     Base64,
-    JSON
+    JSON,
 }
 
 @Composable
@@ -96,46 +96,57 @@ fun ImportSettingsDialog(
     var selectedTab by remember { mutableStateOf(ImportTab.Base64) }
     val tabs = ImportTab.entries.toTypedArray()
 
-    val fileLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        if (uri != null) {
-            scope.launch {
-                try {
-                    val loadedText = withContext(Dispatchers.IO) {
-                        context.contentResolver.openInputStream(uri)?.use(::readBoundedText)
-                            ?: error("Unable to open selected settings file.")
+    val fileLauncher =
+        rememberLauncherForActivityResult(
+            contract = ActivityResultContracts.OpenDocument()
+        ) { uri ->
+            if (uri != null) {
+                scope.launch {
+                    try {
+                        val loadedText =
+                            withContext(Dispatchers.IO) {
+                                context.contentResolver
+                                    .openInputStream(uri)
+                                    ?.use(::readBoundedText)
+                                    ?: error(
+                                        "Unable to open selected settings file."
+                                    )
+                            }
+                        importText = loadedText
+                        importError = false
+                        ToastManager.show(context, "Loaded file successfully.")
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        importError = true
+                        Log.e(
+                            Constants.APP_SCHEME,
+                            "Loading imported file failed",
+                            e,
+                        )
+                        ToastManager.show(
+                            context,
+                            "Failed to read file: ${e.message}",
+                        )
                     }
-                    importText = loadedText
-                    importError = false
-                    ToastManager.show(context, "Loaded file successfully.")
-                } catch (e: CancellationException) {
-                    throw e
-                } catch (e: Exception) {
-                    importError = true
-                    Log.e(Constants.APP_SCHEME, "Loading imported file failed", e)
-                    ToastManager.show(context, "Failed to read file: ${e.message}")
                 }
             }
         }
-    }
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             tonalElevation = 6.dp,
             shape = MaterialTheme.shapes.medium,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
         ) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .heightIn(max = 600.dp)
-                    .padding(16.dp)
+                modifier =
+                    Modifier.fillMaxWidth().heightIn(max = 600.dp).padding(16.dp)
             ) {
                 Text(
                     text = "Import Settings",
                     style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(bottom = 8.dp)
+                    modifier = Modifier.padding(bottom = 8.dp),
                 )
 
                 PrimaryTabRow(selectedTabIndex = selectedTab.ordinal) {
@@ -145,18 +156,15 @@ fun ImportSettingsDialog(
                             onClick = { selectedTab = tab },
                             text = { Text(tab.name) },
                             selectedContentColor = MaterialTheme.colorScheme.primary,
-                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedContentColor =
+                                MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
 
                 Spacer(Modifier.height(8.dp))
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f)
-                ) {
+                Column(modifier = Modifier.fillMaxWidth().weight(1f)) {
                     OutlinedTextField(
                         value = importText,
                         onValueChange = {
@@ -175,10 +183,10 @@ fun ImportSettingsDialog(
                         isError = importError,
                         minLines = 4,
                         maxLines = 14,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 8.dp)
-                            .verticalScroll(rememberScrollState())
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .padding(top = 8.dp)
+                                .verticalScroll(rememberScrollState()),
                     )
 
                     Spacer(Modifier.height(2.dp))
@@ -186,30 +194,36 @@ fun ImportSettingsDialog(
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         IconButton(onClick = { importText = "" }) {
                             Icon(
-                                painter = painterResource(R.drawable.baseline_clear_24),
+                                painter =
+                                    painterResource(R.drawable.baseline_clear_24),
                                 contentDescription = "Clear",
-                                tint = MaterialTheme.colorScheme.error
+                                tint = MaterialTheme.colorScheme.error,
                             )
                         }
-                        IconButton(onClick = {
-                            scope.launch {
-                                val clipEntry = clipboard.getClipEntry()
-                                importText = clipEntry
-                                    ?.clipData
-                                    ?.getItemAt(0)
-                                    ?.text
-                                    ?.toString()
-                                    ?: ""
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    val clipEntry = clipboard.getClipEntry()
+                                    importText =
+                                        clipEntry
+                                            ?.clipData
+                                            ?.getItemAt(0)
+                                            ?.text
+                                            ?.toString() ?: ""
+                                }
                             }
-                        }) {
+                        ) {
                             Icon(
-                                painter = painterResource(R.drawable.outline_content_paste_24),
+                                painter =
+                                    painterResource(
+                                        R.drawable.outline_content_paste_24
+                                    ),
                                 contentDescription = "Paste",
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = MaterialTheme.colorScheme.primary,
                             )
                         }
                     }
@@ -232,14 +246,15 @@ fun ImportSettingsDialog(
                                 Log.e(
                                     Constants.APP_SCHEME,
                                     "Failed to launch file picker for import",
-                                    e
+                                    e,
                                 )
                                 ToastManager.show(context, "Error: ${e.message}")
                             }
                         },
-                        colors = ButtonDefaults.textButtonColors(
-                            contentColor = MaterialTheme.colorScheme.tertiary
-                        ),
+                        colors =
+                            ButtonDefaults.textButtonColors(
+                                contentColor = MaterialTheme.colorScheme.tertiary
+                            ),
                     ) {
                         Text("From File")
                     }
@@ -247,38 +262,45 @@ fun ImportSettingsDialog(
                     Row {
                         TextButton(
                             onClick = onDismiss,
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            ),
+                            colors =
+                                ButtonDefaults.textButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                                ),
                         ) {
                             Text("Cancel")
                         }
 
                         Spacer(Modifier.width(8.dp))
 
-                        TextButton(onClick = {
-                            val success = if (selectedTab == ImportTab.Base64) {
-                                userSettings.importBase64(importText)
-                            } else {
-                                userSettings.importJson(importText)
-                            }
-
-                            if (success) {
-                                updateDeviceSettings(context)
-                                ToastManager.show(context, "Imported settings successfully")
-                                onDismiss()
-                            } else {
-                                importError = true
-                                ToastManager.show(
-                                    context,
+                        TextButton(
+                            onClick = {
+                                val success =
                                     if (selectedTab == ImportTab.Base64) {
-                                        "Failed to import Base64. You may need to switch tabs."
+                                        userSettings.importBase64(importText)
                                     } else {
-                                        "Failed to import JSON. You may need to switch tabs."
+                                        userSettings.importJson(importText)
                                     }
-                                )
+
+                                if (success) {
+                                    updateDeviceSettings(context)
+                                    ToastManager.show(
+                                        context,
+                                        "Imported settings successfully",
+                                    )
+                                    onDismiss()
+                                } else {
+                                    importError = true
+                                    ToastManager.show(
+                                        context,
+                                        if (selectedTab == ImportTab.Base64) {
+                                            "Failed to import Base64. You may need to switch tabs."
+                                        } else {
+                                            "Failed to import JSON. You may need to switch tabs."
+                                        },
+                                    )
+                                }
                             }
-                        }) {
+                        ) {
                             Text("Import")
                         }
                     }

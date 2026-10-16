@@ -38,8 +38,8 @@ import uk.nktnet.webviewkiosk.utils.getStatus
 import uk.nktnet.webviewkiosk.utils.getSystemInfo
 import uk.nktnet.webviewkiosk.utils.openPackage
 import uk.nktnet.webviewkiosk.utils.wakeScreen
-import uk.nktnet.webviewkiosk.utils.webview.WebViewStartup
 import uk.nktnet.webviewkiosk.utils.webview.WebViewNavigation
+import uk.nktnet.webviewkiosk.utils.webview.WebViewStartup
 
 object RemoteInboundHandler {
     suspend fun handleInboundCommand(
@@ -50,8 +50,8 @@ object RemoteInboundHandler {
         val systemSettings = SystemSettings(context)
 
         if (
-            command is InboundLockDeviceCommand
-            && !DeviceOwnerManager.hasOwnerPermission(context)
+            command is InboundLockDeviceCommand &&
+                !DeviceOwnerManager.hasOwnerPermission(context)
         ) {
             DeviceOwnerManager.initWithDhizukuRetry(context.applicationContext)
         }
@@ -66,7 +66,9 @@ object RemoteInboundHandler {
             is InboundReconnectCommand -> {
                 MqttManager.restart(
                     context = context.applicationContext,
-                    cause = OutboundDisconnectingEvent.DisconnectCause.MQTT_RECONNECT_COMMAND_RECEIVED,
+                    cause =
+                        OutboundDisconnectingEvent.DisconnectCause
+                            .MQTT_RECONNECT_COMMAND_RECEIVED,
                 )
             }
             is InboundClearHistoryCommand -> {
@@ -85,12 +87,15 @@ object RemoteInboundHandler {
                     } catch (e: Exception) {
                         ToastManager.show(
                             context,
-                            context.getString(R.string.settings_more_action_toast_cache_clear_failed)
+                            context.getString(
+                                R.string
+                                    .settings_more_action_toast_cache_clear_failed
+                            ),
                         )
                         Log.e(
                             javaClass.simpleName,
                             "Failed to clear webView cache",
-                            e
+                            e,
                         )
                     }
                 }
@@ -108,13 +113,13 @@ object RemoteInboundHandler {
                         Log.e(javaClass.simpleName, "Failed to lock device", e)
                         ToastManager.show(
                             context,
-                            "Failed to lock device: ${e.message}"
+                            "Failed to lock device: ${e.message}",
                         )
                     }
                 } else {
                     ToastManager.show(
                         context,
-                        "Cannot lock device without device owner privileges"
+                        "Cannot lock device without device owner privileges",
                     )
                 }
             }
@@ -127,7 +132,7 @@ object RemoteInboundHandler {
                 } else {
                     ToastManager.show(
                         context,
-                        "Cannot execute notify command - notifications disabled in settings"
+                        "Cannot execute notify command - notifications disabled in settings",
                     )
                 }
             }
@@ -158,14 +163,13 @@ object RemoteInboundHandler {
         RemoteMessageManager.emitSettingsApplied(settings, source)
 
         if (settings.showToast) {
-            /**
-             * NOTE: reload action will be handled in main activity
-             */
-            val action = if (settings.reloadActivity) {
-                "applied"
-            } else {
-                "received"
-            }
+            /** NOTE: reload action will be handled in main activity */
+            val action =
+                if (settings.reloadActivity) {
+                    "applied"
+                } else {
+                    "received"
+                }
             ToastManager.show(context, "Remote: settings $action.")
         }
     }
@@ -193,7 +197,11 @@ object RemoteInboundHandler {
             } catch (responseError: CancellationException) {
                 throw responseError
             } catch (responseError: Exception) {
-                Log.e(javaClass.simpleName, "Failed to publish MQTT request error", responseError)
+                Log.e(
+                    javaClass.simpleName,
+                    "Failed to publish MQTT request error",
+                    responseError,
+                )
             }
         }
     }
@@ -206,7 +214,8 @@ object RemoteInboundHandler {
         when (request) {
             is InboundStatusRequest -> {
                 MqttManager.publishStatusResponse(
-                    request, getStatus(context)
+                    request,
+                    getStatus(context),
                 )
             }
             is InboundSettingsRequest -> {
@@ -222,27 +231,25 @@ object RemoteInboundHandler {
             is InboundLaunchablePackagesRequest -> {
                 MqttManager.publishLaunchablePackagesResponse(
                     request,
-                    AppFlowManager
-                        .getLaunchablePackageNames(
+                    AppFlowManager.getLaunchablePackageNames(
                             context,
-                            request.data.filterLockTaskPermitted
-                        ).sorted(),
+                            request.data.filterLockTaskPermitted,
+                        )
+                        .sorted(),
                 )
             }
             is InboundLockTaskPackagesRequest -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     MqttManager.publishLockTaskPermittedPackagesResponse(
                         request,
-                        AppFlowManager.getLockTaskPackageNames(
-                            context,
-                        ).sorted(),
+                        AppFlowManager.getLockTaskPackageNames(context).sorted(),
                     )
                 }
             }
             is InboundErrorRequest -> {
                 ToastManager.show(
                     context,
-                    "MQTT: invalid request. See debug logs."
+                    "MQTT: invalid request. See debug logs.",
                 )
                 MqttManager.publishErrorResponse(request)
             }

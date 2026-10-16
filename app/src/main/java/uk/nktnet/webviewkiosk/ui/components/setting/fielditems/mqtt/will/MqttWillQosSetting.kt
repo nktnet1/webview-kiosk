@@ -18,10 +18,12 @@ fun MqttWillQosSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.mqtt_will_qos_title),
-        infoText = """
+        infoText =
+            """
             Quality of Service (QoS) for the MQTT last will message.
             Determines the guarantee of message delivery in case of client disconnect.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         options = MqttQosOption.entries,
         initialValue = userSettings.mqttWillQos,
         settingKey = settingKey,

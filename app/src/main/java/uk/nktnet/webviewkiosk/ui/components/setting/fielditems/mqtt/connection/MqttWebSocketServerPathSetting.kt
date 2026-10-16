@@ -17,11 +17,13 @@ fun MqttWebSocketServerPathSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_websocket_server_path_title),
-        infoText = """
+        infoText =
+            """
             The path the MQTT broker WebSocket server listens on.
 
             Must start with a '/', e.g. /mqtt
-        """.trimIndent(),
+            """
+                .trimIndent(),
         placeholder = "/mqtt",
         initialValue = userSettings.mqttWebSocketServerPath,
         settingKey = settingKey,

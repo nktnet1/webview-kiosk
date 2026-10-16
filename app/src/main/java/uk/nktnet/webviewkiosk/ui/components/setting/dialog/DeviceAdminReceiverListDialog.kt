@@ -41,7 +41,7 @@ import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as Aler
 @Composable
 fun DeviceAdminReceiverListDialog(
     showDialog: Boolean,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     if (!showDialog) {
         return
@@ -69,17 +69,14 @@ fun DeviceAdminReceiverListDialog(
         getDescription = { it.admin.className },
         getKey = { it.admin.className },
         appFilter = { app, query ->
-            (
-                app.name.contains(query, ignoreCase = true)
-                || app.admin.className.contains(query, ignoreCase = true)
-            ) && (
-                app.packageName != context.packageName
-            )
+            (app.name.contains(query, ignoreCase = true) ||
+                app.admin.className.contains(query, ignoreCase = true)) &&
+                (app.packageName != context.packageName)
         },
         onSelectApp = {
             selectedApp = it
             showConfirmDialog = true
-        }
+        },
     )
 
     ConfirmTransferDialog(
@@ -106,10 +103,14 @@ private fun ConfirmTransferDialog(
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
 ) {
-    if (!show || selectedAdminReceiver == null) return
+    if (!show || selectedAdminReceiver == null) {
+        return
+    }
 
     val context = LocalContext.current
-    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+    val dpm =
+        context.getSystemService(Context.DEVICE_POLICY_SERVICE)
+            as DevicePolicyManager
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -117,23 +118,25 @@ private fun ConfirmTransferDialog(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 AppIcon(selectedAdminReceiver.icon, modifier = Modifier.size(40.dp))
                 Spacer(Modifier.width(12.dp))
-                Text(selectedAdminReceiver.name, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    selectedAdminReceiver.name,
+                    style = MaterialTheme.typography.titleMedium,
+                )
             }
         },
         text = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
+                modifier =
+                    Modifier.fillMaxWidth().verticalScroll(rememberScrollState())
             ) {
                 Text(
                     "Are you sure you want to transfer ownership to ${selectedAdminReceiver.name}?",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(14.dp))
                 Text(
                     "This action cannot be undone.",
-                    style = MaterialTheme.typography.bodyMedium
+                    style = MaterialTheme.typography.bodyMedium,
                 )
                 Spacer(Modifier.height(14.dp))
                 HorizontalDivider()
@@ -141,32 +144,34 @@ private fun ConfirmTransferDialog(
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     AdminLabelValueRow(
                         "App",
-                        selectedAdminReceiver.name
+                        selectedAdminReceiver.name,
                     )
                     AdminLabelValueRow(
                         "Package",
-                        selectedAdminReceiver.packageName
+                        selectedAdminReceiver.packageName,
                     )
                     AdminLabelValueRow(
                         "Receiver",
-                        selectedAdminReceiver.admin.className
+                        selectedAdminReceiver.admin.className,
                     )
                 }
             }
         },
         confirmButton = {
-            TextButton(onClick = {
-                try {
-                    dpm.transferOwnership(
-                        DeviceOwnerManager.DAR,
-                        selectedAdminReceiver.admin,
-                        null
-                    )
-                    onConfirm()
-                } catch (e: Exception) {
-                    ToastManager.show(context, "Error: ${e.message}")
+            TextButton(
+                onClick = {
+                    try {
+                        dpm.transferOwnership(
+                            DeviceOwnerManager.DAR,
+                            selectedAdminReceiver.admin,
+                            null,
+                        )
+                        onConfirm()
+                    } catch (e: Exception) {
+                        ToastManager.show(context, "Error: ${e.message}")
+                    }
                 }
-            }) {
+            ) {
                 Text("Transfer", color = MaterialTheme.colorScheme.error)
             }
         },
@@ -174,7 +179,7 @@ private fun ConfirmTransferDialog(
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
-        }
+        },
     )
 }
 
@@ -186,13 +191,13 @@ private fun AdminLabelValueRow(label: String, value: String) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             fontWeight = FontWeight.Bold,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         )
         Text(
             value,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.weight(3f)
+            modifier = Modifier.weight(3f),
         )
     }
 }

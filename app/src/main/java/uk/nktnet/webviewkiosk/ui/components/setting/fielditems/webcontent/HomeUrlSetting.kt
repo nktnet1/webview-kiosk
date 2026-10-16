@@ -41,7 +41,8 @@ fun HomeUrlSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.web_content_home_url_title),
-        infoText = """
+        infoText =
+            """
             The URL that can be returned to by:
               1. tapping the configured Kiosk Control Panel region 10 times
                  to open the panel, then choosing Home
@@ -49,7 +50,8 @@ fun HomeUrlSetting() {
               3. using the address bar menu
 
             This is also controlled by the "Allow Go Home" setting under web browsing.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         placeholder = "e.g. ${Constants.WEBSITE_URL}",
         initialValue = userSettings.homeUrl,
         settingKey = settingKey,
@@ -67,11 +69,9 @@ fun HomeUrlSetting() {
             val currentUrl = systemSettings.currentUrl
             Button(
                 onClick = { setValue(currentUrl) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                 shape = RoundedCornerShape(4.dp),
-                colors = ButtonDefaults.buttonColors()
+                colors = ButtonDefaults.buttonColors(),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
@@ -80,7 +80,7 @@ fun HomeUrlSetting() {
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimary,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                     Text(
                         text = currentUrl,
@@ -88,25 +88,22 @@ fun HomeUrlSetting() {
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
             }
             Button(
                 onClick = { isOpenHistoryDialog = true },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp)
-                    .padding(top = 6.dp),
+                modifier = Modifier.fillMaxWidth().height(50.dp).padding(top = 6.dp),
                 shape = RoundedCornerShape(4.dp),
-                colors = ButtonDefaults.buttonColors()
+                colors = ButtonDefaults.buttonColors(),
             ) {
                 Text(
                     text = "Select from History",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimary,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
 
@@ -119,6 +116,6 @@ fun HomeUrlSetting() {
                 disableCurrent = false,
                 highlightCurrent = false,
             )
-        }
+        },
     )
 }

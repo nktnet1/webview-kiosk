@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.edit
+import java.util.UUID
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushEndpoint
@@ -14,20 +15,24 @@ import uk.nktnet.webviewkiosk.utils.booleanPref
 import uk.nktnet.webviewkiosk.utils.floatPref
 import uk.nktnet.webviewkiosk.utils.intPref
 import uk.nktnet.webviewkiosk.utils.stringPrefOptional
-import java.util.UUID
 
 @Serializable
 data class HistoryEntry(
     val id: String = UUID.randomUUID().toString(),
     val url: String,
-    val visitedAt: Long = System.currentTimeMillis()
+    val visitedAt: Long = System.currentTimeMillis(),
 )
 
 class SystemSettings(val context: Context) {
-    private val prefs: SharedPreferences = context.getSharedPreferences(
-        PREFS_NAME, Context.MODE_PRIVATE
-    )
-    private val json = Json { encodeDefaults = true; ignoreUnknownKeys = true }
+    private val prefs: SharedPreferences =
+        context.getSharedPreferences(
+            PREFS_NAME,
+            Context.MODE_PRIVATE,
+        )
+    private val json = Json {
+        encodeDefaults = true
+        ignoreUnknownKeys = true
+    }
 
     var menuOffsetX by floatPref(prefs = prefs, key = MENU_OFFSET_X, default = -1f)
     var menuOffsetY by floatPref(prefs = prefs, key = MENU_OFFSET_Y, default = -1f)
@@ -46,27 +51,30 @@ class SystemSettings(val context: Context) {
             prefs.edit { putString(HISTORY_STACK, serialized) }
         }
 
-    var historyIndex by intPref(
-        prefs = prefs,
-        key = HISTORY_INDEX,
-        default = -1,
-        min = -1,
-    )
+    var historyIndex by
+        intPref(
+            prefs = prefs,
+            key = HISTORY_INDEX,
+            default = -1,
+            min = -1,
+        )
 
     val currentUrl
         get() = historyStack.getOrNull(historyIndex)?.url ?: ""
 
-    var isKioskControlPanelSticky by booleanPref(
-        prefs = prefs,
-        key = IS_KIOSK_CONTROL_PANEL_STICKY,
-        default = false
-    )
+    var isKioskControlPanelSticky by
+        booleanPref(
+            prefs = prefs,
+            key = IS_KIOSK_CONTROL_PANEL_STICKY,
+            default = false,
+        )
 
-    var showLegacyLocalFileLinks by booleanPref(
-        prefs = prefs,
-        key = SHOW_LEGACY_LOCAL_FILE_LINKS,
-        default = false
-    )
+    var showLegacyLocalFileLinks by
+        booleanPref(
+            prefs = prefs,
+            key = SHOW_LEGACY_LOCAL_FILE_LINKS,
+            default = false,
+        )
 
     val appInstanceId: String
         get() {
@@ -84,7 +92,11 @@ class SystemSettings(val context: Context) {
             return try {
                 json.decodeFromString(raw)
             } catch (e: Exception) {
-                Log.e(javaClass.simpleName, "Failed to decode site permissions map", e)
+                Log.e(
+                    javaClass.simpleName,
+                    "Failed to decode site permissions map",
+                    e,
+                )
                 emptyMap()
             }
         }
@@ -120,7 +132,7 @@ class SystemSettings(val context: Context) {
                     Log.e(
                         javaClass.simpleName,
                         "Failed to decode unifiedpush endpoint",
-                        e
+                        e,
                     )
                     prefs.edit {
                         putString(UNIFIEDPUSH_ENDPOINT, null)
@@ -149,8 +161,10 @@ class SystemSettings(val context: Context) {
         private const val MENU_OFFSET_Y = "menu_offset_y"
         private const val HISTORY_STACK = "history_stack"
         private const val HISTORY_INDEX = "history_index"
-        private const val IS_KIOSK_CONTROL_PANEL_STICKY = "is_kiosk_control_panel_sticky"
-        private const val SHOW_LEGACY_LOCAL_FILE_LINKS = "show_legacy_local_file_links"
+        private const val IS_KIOSK_CONTROL_PANEL_STICKY =
+            "is_kiosk_control_panel_sticky"
+        private const val SHOW_LEGACY_LOCAL_FILE_LINKS =
+            "show_legacy_local_file_links"
         private const val APP_INSTANCE_ID = "app_instance_id"
         private const val SITE_PERMISSIONS = "site_permissions"
         private const val MUTUAL_TLS_ALIASES = "mutual_tls_aliases"
@@ -190,15 +204,17 @@ class SystemSettings(val context: Context) {
     }
 
     fun setMutualTlsAlias(siteKey: String, alias: String) {
-        mutualTlsAliasesMap = mutualTlsAliasesMap.toMutableMap().apply {
-            put(siteKey, alias)
-        }
+        mutualTlsAliasesMap =
+            mutualTlsAliasesMap.toMutableMap().apply {
+                put(siteKey, alias)
+            }
     }
 
     fun removeMutualTlsAlias(siteKey: String) {
-        mutualTlsAliasesMap = mutualTlsAliasesMap.toMutableMap().apply {
-            remove(siteKey)
-        }
+        mutualTlsAliasesMap =
+            mutualTlsAliasesMap.toMutableMap().apply {
+                remove(siteKey)
+            }
     }
 
     fun clearMutualTlsAliases() {

@@ -19,23 +19,29 @@ class KeepScreenOnWindowControllerTest {
     private class TestOwner : LifecycleOwner {
         val registry = LifecycleRegistry(this)
         override val lifecycle: Lifecycle = registry
+
         fun send(event: Lifecycle.Event) = registry.handleLifecycleEvent(event)
     }
 
     private fun Activity.isKeepScreenOn(): Boolean =
-        (window.attributes.flags and WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) != 0
+        (window.attributes.flags and
+            WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON) != 0
 
     @Test
     fun flagOnlyAppliesWhileResumedAndIsRestoredAfterReturningToForeground() {
         val activity = Robolectric.buildActivity(Activity::class.java).create().get()
         val owner = TestOwner()
-        val controller = KeepScreenOnWindowController(activity.window, owner.lifecycle, true)
+        val controller =
+            KeepScreenOnWindowController(activity.window, owner.lifecycle, true)
         controller.attach()
         assertFalse(activity.isKeepScreenOn())
 
         owner.send(Lifecycle.Event.ON_CREATE)
         owner.send(Lifecycle.Event.ON_START)
-        assertFalse("STARTED is not visible enough for this flag", activity.isKeepScreenOn())
+        assertFalse(
+            "STARTED is not visible enough for this flag",
+            activity.isKeepScreenOn(),
+        )
         owner.send(Lifecycle.Event.ON_RESUME)
         assertTrue(activity.isKeepScreenOn())
 
@@ -48,7 +54,10 @@ class KeepScreenOnWindowControllerTest {
         assertFalse(activity.isKeepScreenOn())
         owner.send(Lifecycle.Event.ON_PAUSE)
         owner.send(Lifecycle.Event.ON_RESUME)
-        assertFalse("the detached observer must not re-enable the flag", activity.isKeepScreenOn())
+        assertFalse(
+            "the detached observer must not re-enable the flag",
+            activity.isKeepScreenOn(),
+        )
     }
 
     @Test
@@ -60,7 +69,8 @@ class KeepScreenOnWindowControllerTest {
         owner.send(Lifecycle.Event.ON_RESUME)
         owner.send(Lifecycle.Event.ON_PAUSE)
 
-        val controller = KeepScreenOnWindowController(activity.window, owner.lifecycle, true)
+        val controller =
+            KeepScreenOnWindowController(activity.window, owner.lifecycle, true)
         controller.attach()
         assertFalse(activity.isKeepScreenOn())
         owner.send(Lifecycle.Event.ON_RESUME)
@@ -76,11 +86,13 @@ class KeepScreenOnWindowControllerTest {
         owner.send(Lifecycle.Event.ON_START)
         owner.send(Lifecycle.Event.ON_RESUME)
 
-        val enabled = KeepScreenOnWindowController(activity.window, owner.lifecycle, true)
+        val enabled =
+            KeepScreenOnWindowController(activity.window, owner.lifecycle, true)
         enabled.attach()
         assertTrue(activity.isKeepScreenOn())
         enabled.detach()
-        val disabled = KeepScreenOnWindowController(activity.window, owner.lifecycle, false)
+        val disabled =
+            KeepScreenOnWindowController(activity.window, owner.lifecycle, false)
         disabled.attach()
         assertFalse(activity.isKeepScreenOn())
         disabled.detach()

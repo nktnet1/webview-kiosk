@@ -16,10 +16,11 @@ fun EnableDomStorageSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.web_engine_enable_dom_storage_title),
-        infoText = "Allow web pages to use DOM storage APIs like local storage and session storage.",
+        infoText =
+            "Allow web pages to use DOM storage APIs like local storage and session storage.",
         initialValue = userSettings.enableDomStorage,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.enableDomStorage = it }
+        onSave = { userSettings.enableDomStorage = it },
     )
 }

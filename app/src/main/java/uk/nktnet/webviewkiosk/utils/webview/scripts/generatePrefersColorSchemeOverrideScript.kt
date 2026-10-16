@@ -8,12 +8,14 @@ fun generatePrefersColorSchemeOverrideScript(theme: ThemeOption): String {
         return ""
     }
 
-    val mediaValue = when (theme) {
-        ThemeOption.DARK -> "dark"
-        ThemeOption.LIGHT -> "light"
-    }
+    val mediaValue =
+        when (theme) {
+            ThemeOption.DARK -> "dark"
+            ThemeOption.LIGHT -> "light"
+        }
 
-    val innerScript = """
+    val innerScript =
+        """
         window.matchMedia = (function(origMatchMedia) {
             return function(query) {
                 if (query === '(prefers-color-scheme: dark)') {
@@ -43,7 +45,8 @@ fun generatePrefersColorSchemeOverrideScript(theme: ThemeOption): String {
                 return origMatchMedia.call(window, query);
             };
         })(window.matchMedia);
-    """.trimIndent()
+    """
+            .trimIndent()
 
     return wrapJsInIIFE(innerScript)
 }

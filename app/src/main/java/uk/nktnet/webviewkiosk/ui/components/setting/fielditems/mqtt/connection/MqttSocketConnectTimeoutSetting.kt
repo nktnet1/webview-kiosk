@@ -17,18 +17,21 @@ fun MqttSocketConnectTimeoutSetting() {
     val settingKey = UserSettingsKeys.Mqtt.Connection.SOCKET_CONNECT_TIMEOUT
 
     NumberSettingFieldItem(
-        label = stringResource(R.string.mqtt_connection_socket_connect_timeout_title),
-        infoText = """
+        label =
+            stringResource(R.string.mqtt_connection_socket_connect_timeout_title),
+        infoText =
+            """
             The timeout for connecting the socket to the server.
 
             Use 0 to disable the timeout.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         placeholder = "e.g. 5",
         initialValue = userSettings.mqttSocketConnectTimeout,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         min = 0,
         max = Constants.MAX_INT_SETTING,
-        onSave = { userSettings.mqttSocketConnectTimeout = it }
+        onSave = { userSettings.mqttSocketConnectTimeout = it },
     )
 }

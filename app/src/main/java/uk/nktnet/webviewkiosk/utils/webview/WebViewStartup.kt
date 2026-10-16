@@ -6,6 +6,8 @@ import android.os.Looper
 import android.util.Log
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewStartUpConfig
+import java.util.concurrent.Executor
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -14,10 +16,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
-import java.util.concurrent.Executor
-import java.util.concurrent.atomic.AtomicBoolean
 
-/** One-shot gate: never block the main thread while the WebView provider is warming up. */
+/**
+ * One-shot gate: never block the main thread while the WebView provider is warming
+ * up.
+ */
 internal class WebViewStartupGate(
     private val beginStartup: (onComplete: () -> Unit) -> Unit,
     private val onFailure: (Exception) -> Unit = {},
@@ -27,11 +30,14 @@ internal class WebViewStartupGate(
     val ready = readyState.asStateFlow()
 
     fun start() {
-        if (!started.compareAndSet(false, true)) return
+        if (!started.compareAndSet(false, true)) {
+            return
+        }
         try {
             beginStartup(::complete)
         } catch (error: Exception) {
-            // Preserve the existing WebViewUnavailable fallback if warmup is unsupported.
+            // Preserve the existing WebViewUnavailable fallback if warmup is
+            // unsupported.
             onFailure(error)
             complete()
         }
@@ -41,7 +47,7 @@ internal class WebViewStartupGate(
         readyState.value = true
     }
 
-    suspend fun awaitReady() = ready.first { it }.let { }
+    suspend fun awaitReady() = ready.first { it }.let {}
 }
 
 /**
@@ -50,7 +56,9 @@ internal class WebViewStartupGate(
  * synchronously while the Activity is being created. Actual WebView construction
  * remains on the UI thread after the callback, as required by WebKit.
  */
-@androidx.annotation.OptIn(markerClass = [WebViewCompat.ExperimentalAsyncStartUp::class])
+@androidx.annotation.OptIn(
+    markerClass = [WebViewCompat.ExperimentalAsyncStartUp::class]
+)
 internal object WebViewStartup {
     private const val TAG = "WebViewStartup"
     // WebKit 1.14's experimental callback has no failure callback. Never strand the
@@ -58,35 +66,51 @@ internal object WebViewStartup {
     private const val STARTUP_TIMEOUT_MILLIS = 12_000L
     private val timeoutScheduled = AtomicBoolean(false)
     private val readinessScheduled = AtomicBoolean(false)
-    private val readinessScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val readinessScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val readyState = MutableStateFlow(false)
     private val mainHandler = Handler(Looper.getMainLooper())
     @Volatile private var testGate: WebViewStartupGate? = null
 
-    private val gate = WebViewStartupGate(
-        beginStartup = { onComplete ->
-            val backgroundExecutor = Executor { runnable ->
-                Thread({
-                    try {
-                        runnable.run()
-                    } catch (error: Exception) {
-                        Log.w(TAG, "Background WebView warmup failed; using normal creation", error)
-                        onComplete()
-                    }
-                }, "webview-startup").apply { isDaemon = true }.start()
-            }
-            // An actual WebView may have been created by another entry point already.
-            // The API handles that case and invokes the callback promptly.
-            val config = WebViewStartUpConfig.Builder(backgroundExecutor)
-                .setShouldRunUiThreadStartUpTasks(false)
-                .build()
-            WebViewCompat.startUpWebView(applicationContext, config) { onComplete() }
-        },
-        onFailure = { error -> Log.w(TAG, "Unable to warm up WebView", error) },
-    )
+    private val gate =
+        WebViewStartupGate(
+            beginStartup = { onComplete ->
+                val backgroundExecutor = Executor { runnable ->
+                    Thread(
+                            {
+                                try {
+                                    runnable.run()
+                                } catch (error: Exception) {
+                                    Log.w(
+                                        TAG,
+                                        "Background WebView warmup failed; using normal creation",
+                                        error,
+                                    )
+                                    onComplete()
+                                }
+                            },
+                            "webview-startup",
+                        )
+                        .apply { isDaemon = true }
+                        .start()
+                }
+                // An actual WebView may have been created by another entry point
+                // already.
+                // The API handles that case and invokes the callback promptly.
+                val config =
+                    WebViewStartUpConfig.Builder(backgroundExecutor)
+                        .setShouldRunUiThreadStartUpTasks(false)
+                        .build()
+                WebViewCompat.startUpWebView(applicationContext, config) {
+                    onComplete()
+                }
+            },
+            onFailure = { error -> Log.w(TAG, "Unable to warm up WebView", error) },
+        )
 
     private lateinit var applicationContext: Context
-    val ready get() = testGate?.ready ?: readyState.asStateFlow()
+    val ready
+        get() = testGate?.ready ?: readyState.asStateFlow()
 
     fun start(context: Context) {
         applicationContext = context.applicationContext
@@ -101,13 +125,23 @@ internal object WebViewStartup {
             }
         }
         active.start()
-        if (active === gate && !gate.ready.value && timeoutScheduled.compareAndSet(false, true)) {
-            mainHandler.postDelayed({
-                if (!gate.ready.value) {
-                    Log.w(TAG, "WebView warmup timed out; falling back to normal creation")
-                    gate.complete()
-                }
-            }, STARTUP_TIMEOUT_MILLIS)
+        if (
+            active === gate &&
+                !gate.ready.value &&
+                timeoutScheduled.compareAndSet(false, true)
+        ) {
+            mainHandler.postDelayed(
+                {
+                    if (!gate.ready.value) {
+                        Log.w(
+                            TAG,
+                            "WebView warmup timed out; falling back to normal creation",
+                        )
+                        gate.complete()
+                    }
+                },
+                STARTUP_TIMEOUT_MILLIS,
+            )
         }
     }
 
@@ -116,7 +150,10 @@ internal object WebViewStartup {
         ready.first { it }
     }
 
-    /** Robolectric cannot reliably start Chromium; the activity tests supply a fake gate. */
+    /**
+     * Robolectric cannot reliably start Chromium; the activity tests supply a fake
+     * gate.
+     */
     internal fun setGateForTests(override: WebViewStartupGate?) {
         testGate = override
     }

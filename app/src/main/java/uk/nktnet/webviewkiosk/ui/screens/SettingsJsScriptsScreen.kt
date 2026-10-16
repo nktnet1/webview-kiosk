@@ -29,26 +29,22 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.EnableEr
 import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.jsscript.EnableVibrationApiSetting
 
 @Composable
-fun SettingsJsScriptsScreen(
-    navController: NavController,
-) {
+fun SettingsJsScriptsScreen(navController: NavController) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(top = 4.dp)
-            .padding(horizontal = 16.dp),
+        modifier =
+            Modifier.fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(top = 4.dp)
+                .padding(horizontal = 16.dp)
     ) {
         SettingLabel(
             navController = navController,
-            label = stringResource(R.string.settings_js_scripts_title)
+            label = stringResource(R.string.settings_js_scripts_title),
         )
         SettingDivider()
 
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
         ) {
             ApplyAppThemeSetting()
             ApplyDesktopViewportWidthSetting()

@@ -24,8 +24,17 @@ class BoundedBreakableTextPreviewTest {
 
     @Test
     fun surrogatePairsAreNotSeparatedByZeroWidthSpaces() {
-        assertEquals("A\u200B\uD83D\uDE00\u200BB", boundedBreakableTextPreview("A\uD83D\uDE00B"))
-        assertEquals("A\u200B\u2026", boundedBreakableTextPreview("A\uD83D\uDE00BC", 3))
-        assertEquals("\uD83D\uDE00\u200B\u2026", boundedBreakableTextPreview("\uD83D\uDE00abc", 3))
+        assertEquals(
+            "A\u200B\uD83D\uDE00\u200BB",
+            boundedBreakableTextPreview("A\uD83D\uDE00B"),
+        )
+        assertEquals(
+            "A\u200B\u2026",
+            boundedBreakableTextPreview("A\uD83D\uDE00BC", 3),
+        )
+        assertEquals(
+            "\uD83D\uDE00\u200B\u2026",
+            boundedBreakableTextPreview("\uD83D\uDE00abc", 3),
+        )
     }
 }

@@ -62,7 +62,8 @@ fun CustomAuthPasswordSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.device_custom_auth_password_title),
-        infoText = """
+        infoText =
+            """
             Specify a custom password to protect your settings or when unlocking from
             the kiosk state.
 
@@ -74,7 +75,8 @@ fun CustomAuthPasswordSetting() {
             see: ${Constants.DOCUMENTATION_URL}/security
 
             Leave this setting blank to use your device's biometrics or credentials.
-        """.trimIndent(),
+        """
+                .trimIndent(),
         placeholder = "(blank = device credentials)",
         initialValue = userSettings.customAuthPassword,
         settingKey = settingKey,
@@ -105,7 +107,7 @@ fun CustomAuthPasswordSetting() {
                 passwordMismatch = false
                 showConfirmationDialog = true
             }
-        }
+        },
     )
 
     if (showConfirmationDialog) {
@@ -118,7 +120,7 @@ fun CustomAuthPasswordSetting() {
             title = {
                 Text(
                     style = MaterialTheme.typography.titleMedium,
-                    text = "Re-enter password"
+                    text = "Re-enter password",
                 )
             },
             text = {
@@ -133,72 +135,69 @@ fun CustomAuthPasswordSetting() {
                             Text("Confirm password")
                         },
                         singleLine = true,
-                        visualTransformation = if (showPassword) {
-                            VisualTransformation.None
-                        } else {
-                            PasswordVisualTransformation()
-                        },
+                        visualTransformation =
+                            if (showPassword) {
+                                VisualTransformation.None
+                            } else {
+                                PasswordVisualTransformation()
+                            },
                         trailingIcon = {
                             IconButton(
                                 onClick = {
                                     confirmPassword = ""
                                 },
-                                enabled = confirmPassword.isNotEmpty()
+                                enabled = confirmPassword.isNotEmpty(),
                             ) {
                                 Icon(
-                                    painter = painterResource(
-                                        R.drawable.baseline_clear_24
-                                    ),
-                                    contentDescription = "Clear"
+                                    painter =
+                                        painterResource(
+                                            R.drawable.baseline_clear_24
+                                        ),
+                                    contentDescription = "Clear",
                                 )
                             }
                         },
-                        modifier = Modifier
-                            .requestFocusWhenPlaced(
+                        modifier =
+                            Modifier.requestFocusWhenPlaced(
                                 focusRequester = focusRequester,
                                 enabled = showConfirmationDialog,
                                 requestKey = showConfirmationDialog,
-                            )
+                            ),
                     )
 
-                    Spacer(
-                        modifier = Modifier.height(2.dp)
-                    )
+                    Spacer(modifier = Modifier.height(2.dp))
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Checkbox(
                             checked = showPassword,
                             onCheckedChange = {
                                 showPassword = it
-                            }
+                            },
                         )
 
                         Text(
                             text = "Show password",
                             style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier
-                                .combinedClickable(
-                                    interactionSource = remember {
-                                        MutableInteractionSource()
-                                    },
+                            modifier =
+                                Modifier.combinedClickable(
+                                    interactionSource =
+                                        remember {
+                                            MutableInteractionSource()
+                                        },
                                     indication = null,
                                     onClick = {
                                         showPassword = !showPassword
-                                    }
-                                )
+                                    },
+                                ),
                         )
                     }
 
                     if (passwordMismatch) {
-                        Spacer(
-                            modifier = Modifier.height(4.dp)
-                        )
+                        Spacer(modifier = Modifier.height(4.dp))
 
                         Text(
                             text = "Passwords do not match.",
-                            color = MaterialTheme.colorScheme.error
+                            color = MaterialTheme.colorScheme.error,
                         )
                     }
                 }
@@ -230,7 +229,7 @@ fun CustomAuthPasswordSetting() {
                 ) {
                     Text("Cancel")
                 }
-            }
+            },
         )
     }
 
@@ -243,7 +242,7 @@ fun CustomAuthPasswordSetting() {
             title = {
                 Text(
                     style = MaterialTheme.typography.titleMedium,
-                    text = "Remove Custom Password"
+                    text = "Remove Custom Password",
                 )
             },
             text = {
@@ -253,21 +252,23 @@ fun CustomAuthPasswordSetting() {
                         Are you sure you want to remove your custom password?
 
                         Your device credentials or biometrics will be used instead.
-                        """.trimIndent()
+                        """
+                            .trimIndent()
                     )
                 )
             },
             confirmButton = {
                 TextButton(
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error,
-                    ),
+                    colors =
+                        ButtonDefaults.textButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        ),
                     onClick = {
                         userSettings.customAuthPassword = ""
                         pendingRemoveCommit?.invoke()
                         pendingRemoveCommit = null
                         showRemovePasswordDialog = false
-                    }
+                    },
                 ) {
                     Text("Remove")
                 }
@@ -281,7 +282,7 @@ fun CustomAuthPasswordSetting() {
                 ) {
                     Text("Cancel")
                 }
-            }
+            },
         )
     }
 }

@@ -22,9 +22,10 @@ data class UnifiedPushEndpoint(
             redacted: Boolean,
         ): UnifiedPushEndpoint {
             return UnifiedPushEndpoint(
-                pubKeySet = endpoint.pubKeySet?.let {
-                    UnifiedPushPublicKeySet(it.auth, it.pubKey)
-                },
+                pubKeySet =
+                    endpoint.pubKeySet?.let {
+                        UnifiedPushPublicKeySet(it.auth, it.pubKey)
+                    },
                 url = endpoint.url,
                 temporary = endpoint.temporary,
                 redacted = redacted,

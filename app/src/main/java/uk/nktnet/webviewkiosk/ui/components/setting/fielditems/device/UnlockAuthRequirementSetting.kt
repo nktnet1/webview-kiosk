@@ -18,7 +18,8 @@ fun UnlockAuthRequirementSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.device_unlock_auth_requirement_title),
-        infoText = """
+        infoText =
+            """
             This setting only applies to in-app unlock methods, e.g. when unlocking
             using Kiosk Control Panel or Custom Unlock Shortcut.
 
@@ -33,7 +34,8 @@ fun UnlockAuthRequirementSetting() {
 
             For user-owned devices without lock task mode, the device will auto-lock when
             unpinning, which is outside the control of ${stringResource(R.string.app_name)}.
-        """.trimIndent(),
+        """
+                .trimIndent(),
         options = UnlockAuthRequirementOption.entries,
         initialValue = userSettings.unlockAuthRequirement,
         settingKey = settingKey,

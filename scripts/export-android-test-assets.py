@@ -541,7 +541,7 @@ def export_gradle(args, output, *, env=None):
             env.update(ANDROID_HOME=str(sdk), ANDROID_SDK_ROOT=str(sdk), GRADLE_USER_HOME=str(home))
             ensure_sdk(sdk, work, env, tools_archive=args.sdk_tools_archive,
                        accept_licenses=args.accept_sdk_licenses)
-            say("Resolving Android JVM test and lint dependencies (no tasks executed)")
+            say("Resolving Android test, lint, and formatting dependencies (no checks executed)")
             run([gradle, "--no-daemon", "--no-configuration-cache", "--console=plain",
                  "--init-script", PROJECT_ROOT / "scripts/resolve-android-test-assets.init.gradle",
                  ":app:resolveAndroidTestAssets"], env=env,
@@ -585,6 +585,7 @@ Android SDK destination: $ANDROID_SDK_ROOT/
 Robolectric Maven destination: ~/.m2/repository/ (default)
 Android lint: androidLintTool and its transitive dependencies included in gradle-deps
 Linux AAPT2: AGP-matched artifact included in gradle-deps
+Kotlin formatting: Spotless, ktfmt, and Detekt brace-check dependencies included
 """
             publish(
                 staging, output, ("android-sdk.tar.gz", "gradle-deps.tar.gz", "robolectric-maven.tar.gz"),
@@ -618,11 +619,13 @@ def export_docker(args):
                            message="The Docker daemon is unavailable; start Docker and try again")
     if operating_system != "linux":
         raise ExportError("Docker must be configured to run Linux containers")
-    image = "webview-kiosk-android-test-assets:gradle-9.8.0-jbr21"
+    version = required_gradle_version()
+    image = f"webview-kiosk-android-test-assets:gradle-{version}-jbr21"
     dockerfile = "Dockerfile.android-test-assets"
     cache = "webview-kiosk-android-test-assets-deps:/var/cache/android-test-assets"
     say("Preparing the Linux x86_64 Gradle exporter image (cached after first use)")
     run(["docker", "build", "--platform", "linux/amd64", "--tag", image,
+         "--build-arg", f"GRADLE_VERSION={version}",
          "--file", PROJECT_ROOT / "scripts" / dockerfile, PROJECT_ROOT / "scripts"])
     args.output.mkdir(parents=True, exist_ok=True)
     command = ["docker", "run", "--rm", "--platform", "linux/amd64"]

@@ -1,14 +1,50 @@
 import org.gradle.api.artifacts.ProjectDependency
+import org.gradle.api.artifacts.VersionCatalogsExtension
+import org.gradle.api.attributes.Bundling
+import org.gradle.api.attributes.Category
+import org.gradle.api.attributes.java.TargetJvmEnvironment
 
 // Resolve the artifacts needed for engine JVM, Android/Robolectric tests, and lint.
 // This init script deliberately registers no dependency on a build or test task.
 gradle.beforeProject { project ->
+    if (project.path == ':') {
+        project.tasks.register('resolveFormattingAssets') {
+            group = 'help'
+            description = 'Download formatter and brace-check dependencies only.'
+            doLast {
+                def libraries = project.extensions
+                    .getByType(VersionCatalogsExtension).named('libs')
+                def formatter = project.configurations.detachedConfiguration(
+                    libraries.findLibrary('ktfmt').get().get()
+                )
+                formatter.attributes {
+                    attribute(Category.CATEGORY_ATTRIBUTE,
+                        project.objects.named(Category, Category.LIBRARY))
+                    attribute(Bundling.BUNDLING_ATTRIBUTE,
+                        project.objects.named(Bundling, Bundling.EXTERNAL))
+                    attribute(TargetJvmEnvironment.TARGET_JVM_ENVIRONMENT_ATTRIBUTE,
+                        project.objects.named(TargetJvmEnvironment,
+                            TargetJvmEnvironment.STANDARD_JVM))
+                }
+                def braces = project.configurations.getByName('kotlinBraces')
+                [formatter, braces].each { configuration ->
+                    def files = configuration.incoming.artifacts.artifactFiles.files
+                    logger.lifecycle(
+                        "Resolved formatting tools: ${files.size()} files"
+                    )
+                }
+            }
+        }
+    }
     if (project.path in [':app', ':adblock']) {
         def engine = project.path == ':adblock'
         project.tasks.register('resolveAndroidTestAssets') {
             group = 'help'
             description = 'Download JVM test dependencies without compiling or running tests.'
-            if (!engine) dependsOn(':adblock:resolveAndroidTestAssets')
+            if (!engine) {
+                dependsOn(':adblock:resolveAndroidTestAssets')
+                dependsOn(':resolveFormattingAssets')
+            }
 
             doLast {
                 def required = engine ? [

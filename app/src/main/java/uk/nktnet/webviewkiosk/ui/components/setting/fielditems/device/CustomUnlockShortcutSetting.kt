@@ -46,7 +46,9 @@ fun handleUnlockShortcutKeyEvent(
     isListening: Boolean,
     draftValue: String,
 ): Pair<String, Boolean> {
-    if (!isListening) return draftValue to false
+    if (!isListening) {
+        return draftValue to false
+    }
     val shortcut = keyEventToShortcutString(event)
     if (shortcut == null) {
         if (event.keyCode !in modifierKeyCodes) {
@@ -64,7 +66,9 @@ fun CustomUnlockShortcutSetting() {
     val userSettings = remember { UserSettings(context) }
     val focusRequester = remember { FocusRequester() }
 
-    var currentValue by remember { mutableStateOf(userSettings.customUnlockShortcut) }
+    var currentValue by remember {
+        mutableStateOf(userSettings.customUnlockShortcut)
+    }
     var draftValue by remember { mutableStateOf(currentValue) }
     var isListening by remember { mutableStateOf(false) }
 
@@ -81,7 +85,8 @@ fun CustomUnlockShortcutSetting() {
 
     CustomSettingFieldItem(
         label = stringResource(R.string.device_custom_unlock_shortcut_title),
-        infoText = """
+        infoText =
+            """
             Provide a custom keyboard shortcut using a modifier key (CTRL/SHIFT/ALT/META)
             in combination with another standard key to unlock/unpin the application.
 
@@ -89,7 +94,8 @@ fun CustomUnlockShortcutSetting() {
 
             This is useful for devices with no navigation buttons on screen and instead
             has a physical keyboard connected.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         value = currentValue,
         settingKey = settingKey,
         restricted = restricted,
@@ -113,45 +119,50 @@ fun CustomUnlockShortcutSetting() {
                         if (restricted) {
                             return@OutlinedTextField
                         }
-                        IconButton(onClick = {
-                            draftValue = ""
-                            isListening = false
-                        }) {
+                        IconButton(
+                            onClick = {
+                                draftValue = ""
+                                isListening = false
+                            }
+                        ) {
                             Icon(
-                                painter = painterResource(R.drawable.baseline_clear_24),
-                                contentDescription = "Clear"
+                                painter =
+                                    painterResource(R.drawable.baseline_clear_24),
+                                contentDescription = "Clear",
                             )
                         }
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
-                        .requestFocusWhenPlaced(
-                            focusRequester = focusRequester,
-                            enabled = isListening,
-                            requestKey = isListening,
-                        )
-                        .focusable()
-                        .background(
-                            if (isListening) {
-                                MaterialTheme.colorScheme.surfaceVariant
-                            } else {
-                                Color.Transparent
-                            }
-                        )
-                        .onPreviewKeyEvent { event ->
-                            val (newDraft, newListening) =
-                                handleUnlockShortcutKeyEvent(
-                                    context,
-                                    event.nativeKeyEvent,
-                                    isListening,
-                                    draftValue,
-                                )
-                            val handled = newDraft != draftValue || newListening != isListening
-                            draftValue = newDraft
-                            isListening = newListening
-                            handled
-                        }
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
+                            .requestFocusWhenPlaced(
+                                focusRequester = focusRequester,
+                                enabled = isListening,
+                                requestKey = isListening,
+                            )
+                            .focusable()
+                            .background(
+                                if (isListening) {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                } else {
+                                    Color.Transparent
+                                }
+                            )
+                            .onPreviewKeyEvent { event ->
+                                val (newDraft, newListening) =
+                                    handleUnlockShortcutKeyEvent(
+                                        context,
+                                        event.nativeKeyEvent,
+                                        isListening,
+                                        draftValue,
+                                    )
+                                val handled =
+                                    newDraft != draftValue ||
+                                        newListening != isListening
+                                draftValue = newDraft
+                                isListening = newListening
+                                handled
+                            },
                 )
 
                 Button(
@@ -159,20 +170,26 @@ fun CustomUnlockShortcutSetting() {
                     onClick = {
                         isListening = !isListening
                     },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (isListening) {
-                            MaterialTheme.colorScheme.secondary
-                        } else {
-                            MaterialTheme.colorScheme.primary
-                        }
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp)
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor =
+                                if (isListening) {
+                                    MaterialTheme.colorScheme.secondary
+                                } else {
+                                    MaterialTheme.colorScheme.primary
+                                }
+                        ),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 ) {
-                    Text(if (isListening) "Listening..." else "Scan Keyboard Shortcut")
+                    Text(
+                        if (isListening) {
+                            "Listening..."
+                        } else {
+                            "Scan Keyboard Shortcut"
+                        }
+                    )
                 }
             }
-        }
+        },
     )
 }

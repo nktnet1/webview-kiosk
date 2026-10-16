@@ -1,32 +1,31 @@
 package uk.nktnet.webviewkiosk.utils
 
 import android.net.Uri
+import java.io.File
+import java.io.FileNotFoundException
+import java.nio.file.Files
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNotSame
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
-import org.junit.runner.RunWith
 import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
-import java.io.File
-import java.io.FileNotFoundException
-import java.nio.file.Files
 import uk.nktnet.webviewkiosk.testing.ShadowOsWithRename
 
 @RunWith(RobolectricTestRunner::class)
 class FileUtilsTest {
-    @get:Rule
-    val temporaryFolder = TemporaryFolder()
+    @get:Rule val temporaryFolder = TemporaryFolder()
 
     @Test
     fun readsUtf8TextIncludingWhitespaceAndEmptyFiles() {
@@ -42,12 +41,13 @@ class FileUtilsTest {
     @Test
     fun rejectsBinaryContentsEvenWithATextFileName() {
         val file = temporaryFolder.newFile("page.txt")
-        for (bytes in listOf(
-            byteArrayOf(0x41, 0, 0x42),
-            byteArrayOf(0xC3.toByte(), 0x28),
-            byteArrayOf(0x41, 0x01, 0x42),
-            byteArrayOf(0x41, 0x7F, 0x42),
-        )) {
+        for (bytes in
+            listOf(
+                byteArrayOf(0x41, 0, 0x42),
+                byteArrayOf(0xC3.toByte(), 0x28),
+                byteArrayOf(0x41, 0x01, 0x42),
+                byteArrayOf(0x41, 0x7F, 0x42),
+            )) {
             file.writeBytes(bytes)
             assertNull(bytes.contentToString(), readEditableTextFile(file))
         }
@@ -72,12 +72,16 @@ class FileUtilsTest {
 
     @Test
     fun oversizedWritesPreserveTheOriginalFileAndCreateNoTemporaryFiles() {
-        val file = temporaryFolder.newFile("original.txt").apply { writeText("original") }
+        val file =
+            temporaryFolder.newFile("original.txt").apply { writeText("original") }
 
         assertFalse(writeEditableTextFile(file, "é".repeat(512 * 1024 + 1)))
 
         assertEquals("original", file.readText())
-        assertEquals(listOf(file.name), temporaryFolder.root.listFiles().orEmpty().map { it.name })
+        assertEquals(
+            listOf(file.name),
+            temporaryFolder.root.listFiles().orEmpty().map { it.name },
+        )
     }
 
     @Test
@@ -92,53 +96,81 @@ class FileUtilsTest {
         assertTrue(ordinaryTemp.setLastModified(2_000))
         assertTrue(recent.setLastModified(3_000))
 
-        assertEquals(listOf(recent, ordinaryTemp, old), listLocalFiles(temporaryFolder.root))
-        assertEquals(emptyList<File>(), listLocalFiles(File(temporaryFolder.root, "missing")))
+        assertEquals(
+            listOf(recent, ordinaryTemp, old),
+            listLocalFiles(temporaryFolder.root),
+        )
+        assertEquals(
+            emptyList<File>(),
+            listLocalFiles(File(temporaryFolder.root, "missing")),
+        )
     }
 
     @Test
     @Config(shadows = [ShadowOsWithRename::class])
-    fun successfulContentImportPublishesCompleteFileAndCleansTemporaryFiles() = runBlocking {
-        val source = temporaryFolder.newFile("source.json").apply { writeText("{\"ready\":true}") }
-        val destination = temporaryFolder.newFolder("imported")
+    fun successfulContentImportPublishesCompleteFileAndCleansTemporaryFiles() =
+        runBlocking {
+            val source =
+                temporaryFolder.newFile("source.json").apply {
+                    writeText("{\"ready\":true}")
+                }
+            val destination = temporaryFolder.newFolder("imported")
 
-        val imported = saveContentIntentToFile(
-            RuntimeEnvironment.getApplication(), Uri.fromFile(source), destination,
-        )
+            val imported =
+                saveContentIntentToFile(
+                    RuntimeEnvironment.getApplication(),
+                    Uri.fromFile(source),
+                    destination,
+                )
 
-        assertTrue("Import did not publish ${imported.absolutePath}", imported.exists())
-        assertArrayEquals(source.readBytes(), imported.readBytes())
-        assertEquals(source.name, imported.getDisplayName())
-        assertEquals(listOf(imported), destination.listFiles().orEmpty().toList())
-    }
+            assertTrue(
+                "Import did not publish ${imported.absolutePath}",
+                imported.exists(),
+            )
+            assertArrayEquals(source.readBytes(), imported.readBytes())
+            assertEquals(source.name, imported.getDisplayName())
+            assertEquals(
+                listOf(imported),
+                destination.listFiles().orEmpty().toList(),
+            )
+        }
 
     @Test
     @Config(shadows = [ShadowOsWithRename::class])
     fun contentImportDoesNotBlockTheCallerThreadWhileCopying() = runBlocking {
-        val source = temporaryFolder.newFile("thread-check.bin").apply {
-            writeBytes(ByteArray(16 * 1024) { 42 })
-        }
+        val source =
+            temporaryFolder.newFile("thread-check.bin").apply {
+                writeBytes(ByteArray(16 * 1024) { 42 })
+            }
         val destination = temporaryFolder.newFolder("thread-check")
         val callerThread = Thread.currentThread()
         var copyThread: Thread? = null
 
-        val imported = saveContentIntentToFile(
-            RuntimeEnvironment.getApplication(), Uri.fromFile(source), destination,
-        ) {
-            copyThread = Thread.currentThread()
-        }
+        val imported =
+            saveContentIntentToFile(
+                RuntimeEnvironment.getApplication(),
+                Uri.fromFile(source),
+                destination,
+            ) {
+                copyThread = Thread.currentThread()
+            }
 
         assertNotNull("Import should report progress", copyThread)
-        assertNotSame("File copying must run on the IO dispatcher", callerThread, copyThread)
+        assertNotSame(
+            "File copying must run on the IO dispatcher",
+            callerThread,
+            copyThread,
+        )
         assertArrayEquals(source.readBytes(), imported.readBytes())
         assertEquals(listOf(imported), destination.listFiles().orEmpty().toList())
     }
 
     @Test
     fun cancellationDuringContentImportLeavesNoPartialOrTemporaryFiles() {
-        val source = temporaryFolder.newFile("large.bin").apply {
-            writeBytes(ByteArray(5 * 1024 * 1024) { 42 })
-        }
+        val source =
+            temporaryFolder.newFile("large.bin").apply {
+                writeBytes(ByteArray(5 * 1024 * 1024) { 42 })
+            }
         val destination = temporaryFolder.newFolder("cancelled")
         val existing = File(destination, "existing.txt").apply { writeText("keep") }
         var progressCallbacks = 0
@@ -146,7 +178,9 @@ class FileUtilsTest {
         assertThrows(CancellationException::class.java) {
             runBlocking {
                 saveContentIntentToFile(
-                    RuntimeEnvironment.getApplication(), Uri.fromFile(source), destination,
+                    RuntimeEnvironment.getApplication(),
+                    Uri.fromFile(source),
+                    destination,
                 ) {
                     progressCallbacks++
                     throw CancellationException("user cancelled the upload")
@@ -167,7 +201,9 @@ class FileUtilsTest {
         assertThrows(FileNotFoundException::class.java) {
             runBlocking {
                 saveContentIntentToFile(
-                    RuntimeEnvironment.getApplication(), Uri.fromFile(missing), destination,
+                    RuntimeEnvironment.getApplication(),
+                    Uri.fromFile(missing),
+                    destination,
                 )
             }
         }
@@ -190,11 +226,15 @@ class FileUtilsTest {
     fun rejectsLocalFileLinkTraversalAndForeignOrigins() {
         val context = RuntimeEnvironment.getApplication()
         val base = "https://appassets.androidplatform.net/web-content-files/"
-        for (url in listOf(
-            "${base}..", "${base}..%2Foutside.txt", "${base}sub%2Ffile.html",
-            "${base}%2Ftmp%2Foutside.txt", "https://example.com/web-content-files/page.html",
-            "http://appassets.androidplatform.net/web-content-files/page.html",
-        )) {
+        for (url in
+            listOf(
+                "${base}..",
+                "${base}..%2Foutside.txt",
+                "${base}sub%2Ffile.html",
+                "${base}%2Ftmp%2Foutside.txt",
+                "https://example.com/web-content-files/page.html",
+                "http://appassets.androidplatform.net/web-content-files/page.html",
+            )) {
             assertNull(url, Uri.parse(url).resolveLocalFileLink(context))
         }
     }
@@ -206,7 +246,9 @@ class FileUtilsTest {
         val link = File(getWebContentFilesDir(context), "link.txt")
         Files.createSymbolicLink(link.toPath(), target.toPath())
         try {
-            assertNull(Uri.parse(link.getLocalFileLink()).resolveLocalFileLink(context))
+            assertNull(
+                Uri.parse(link.getLocalFileLink()).resolveLocalFileLink(context)
+            )
         } finally {
             Files.deleteIfExists(link.toPath())
         }

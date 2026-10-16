@@ -13,7 +13,8 @@ class GeneratePdfRendererHtmlTest {
 
         assertTrue(
             "The PDF canvas needs a white background when PDF pages leave margins unpainted",
-            Regex("""canvas\s*\{[^}]*background-color:\s*#ffffff\s*;""").containsMatchIn(html),
+            Regex("""canvas\s*\{[^}]*background-color:\s*#ffffff\s*;""")
+                .containsMatchIn(html),
         )
     }
 
@@ -23,11 +24,13 @@ class GeneratePdfRendererHtmlTest {
 
         assertTrue(
             "The PDF page slot should stay white while its canvas is being rendered",
-            Regex("""\.page-slot\s*\{[^}]*background-color:\s*#ffffff\s*;""").containsMatchIn(html),
+            Regex("""\.page-slot\s*\{[^}]*background-color:\s*#ffffff\s*;""")
+                .containsMatchIn(html),
         )
         assertTrue(
             "PDF.js should explicitly render transparent PDF margins against white",
-            Regex("""page\.render\(\{[^}]*background:\s*'#ffffff'""").containsMatchIn(html),
+            Regex("""page\.render\(\{[^}]*background:\s*'#ffffff'""")
+                .containsMatchIn(html),
         )
     }
 }

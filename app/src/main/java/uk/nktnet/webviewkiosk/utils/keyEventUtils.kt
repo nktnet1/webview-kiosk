@@ -8,16 +8,17 @@ import android.view.KeyEvent
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.states.UserInteractionStateSingleton
 
-val modifierKeyCodes = setOf(
-    KeyEvent.KEYCODE_SHIFT_LEFT,
-    KeyEvent.KEYCODE_SHIFT_RIGHT,
-    KeyEvent.KEYCODE_CTRL_LEFT,
-    KeyEvent.KEYCODE_CTRL_RIGHT,
-    KeyEvent.KEYCODE_ALT_LEFT,
-    KeyEvent.KEYCODE_ALT_RIGHT,
-    KeyEvent.KEYCODE_META_LEFT,
-    KeyEvent.KEYCODE_META_RIGHT
-)
+val modifierKeyCodes =
+    setOf(
+        KeyEvent.KEYCODE_SHIFT_LEFT,
+        KeyEvent.KEYCODE_SHIFT_RIGHT,
+        KeyEvent.KEYCODE_CTRL_LEFT,
+        KeyEvent.KEYCODE_CTRL_RIGHT,
+        KeyEvent.KEYCODE_ALT_LEFT,
+        KeyEvent.KEYCODE_ALT_RIGHT,
+        KeyEvent.KEYCODE_META_LEFT,
+        KeyEvent.KEYCODE_META_RIGHT,
+    )
 
 fun keyEventToShortcutString(event: KeyEvent): String? {
     if (event.action != KeyEvent.ACTION_DOWN) {
@@ -57,12 +58,14 @@ private fun handleCustomUnlockShortcut(
     event: KeyEvent,
 ): Boolean {
     val activity = context as? Activity ?: return false
-    val activityManager = activity.getSystemService(ACTIVITY_SERVICE) as ActivityManager
+    val activityManager =
+        activity.getSystemService(ACTIVITY_SERVICE) as ActivityManager
     val userSettings = UserSettings(activity)
 
-    val shouldUnlock = getIsLocked(activityManager)
-        && userSettings.customUnlockShortcut.isNotEmpty()
-        && isShortcutPressed(event, userSettings.customUnlockShortcut)
+    val shouldUnlock =
+        getIsLocked(activityManager) &&
+            userSettings.customUnlockShortcut.isNotEmpty() &&
+            isShortcutPressed(event, userSettings.customUnlockShortcut)
 
     if (shouldUnlock) {
         unlockWithAuthIfRequired(activity)
@@ -82,8 +85,6 @@ private fun handleBlockVolumeKeys(event: KeyEvent): Boolean {
 fun handleKeyEvent(context: Context, event: KeyEvent): Boolean {
     UserInteractionStateSingleton.onUserInteraction()
     val userSettings = UserSettings(context)
-    return (
-        (userSettings.blockVolumeKeys && handleBlockVolumeKeys(event))
-        || handleCustomUnlockShortcut(context, event)
-    )
+    return ((userSettings.blockVolumeKeys && handleBlockVolumeKeys(event)) ||
+        handleCustomUnlockShortcut(context, event))
 }

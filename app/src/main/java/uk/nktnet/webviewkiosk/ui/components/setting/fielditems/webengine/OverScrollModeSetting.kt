@@ -18,14 +18,16 @@ fun OverScrollModeSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.web_engine_over_scroll_mode_title),
-        infoText = """
+        infoText =
+            """
             Configures the WebView's overscroll behavior.
 
             Options:
             - Always: Shows the overscroll effect whenever the content is scrolled.
             - If Content Scrolls: allow over-scrolling only if the view content is larger than the container
             - Never: Disables the overscroll effect entirely.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         options = OverScrollModeOption.entries,
         initialValue = userSettings.overScrollMode,
         settingKey = settingKey,

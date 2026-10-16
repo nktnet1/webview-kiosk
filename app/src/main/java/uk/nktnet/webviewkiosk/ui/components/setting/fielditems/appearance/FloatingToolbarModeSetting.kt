@@ -18,12 +18,14 @@ fun FloatingToolbarModeSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.appearance_floating_toolbar_mode_title),
-        infoText = """
+        infoText =
+            """
             Control the visibility and behaviour of the floating toolbar menu button.
 
             When set to "Hidden", the "Settings" button will be visible from the
             Kiosk Control Panel.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         options = FloatingToolbarModeOption.entries,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

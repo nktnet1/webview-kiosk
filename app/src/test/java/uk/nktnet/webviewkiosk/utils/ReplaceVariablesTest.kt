@@ -17,7 +17,10 @@ class ReplaceVariablesTest {
 
     @Test
     fun preservesUnknownAndMalformedPlaceholders() {
-        assertEquals("\${missing}/\${}/\${open", replaceVariables("\${missing}/\${}/\${open"))
+        assertEquals(
+            "\${missing}/\${}/\${open",
+            replaceVariables("\${missing}/\${}/\${open"),
+        )
     }
 
     @Test
@@ -26,13 +29,20 @@ class ReplaceVariablesTest {
             "\${second}/$1\\path",
             replaceVariables(
                 "\${first}/\${literal}",
-                mapOf("first" to "\${second}", "second" to "expanded", "literal" to "$1\\path"),
+                mapOf(
+                    "first" to "\${second}",
+                    "second" to "expanded",
+                    "literal" to "$1\\path",
+                ),
             ),
         )
     }
 
     @Test
     fun distinguishesAnEmptyReplacementFromAnUnknownVariable() {
-        assertEquals("/\${unknown}", replaceVariables("\${empty}/\${unknown}", mapOf("empty" to "")))
+        assertEquals(
+            "/\${unknown}",
+            replaceVariables("\${empty}/\${unknown}", mapOf("empty" to "")),
+        )
     }
 }

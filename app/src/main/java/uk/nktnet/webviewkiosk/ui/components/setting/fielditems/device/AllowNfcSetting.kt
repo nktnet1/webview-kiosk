@@ -26,9 +26,9 @@ import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 import uk.nktnet.webviewkiosk.ui.components.setting.fields.BooleanSettingFieldItem
+import uk.nktnet.webviewkiosk.utils.safeStartActivity
 import uk.nktnet.webviewkiosk.utils.webview.getNfcAdapterOrNull
 import uk.nktnet.webviewkiosk.utils.webview.isNfcEnabled
-import uk.nktnet.webviewkiosk.utils.safeStartActivity
 
 @Composable
 fun AllowNfcSetting() {
@@ -67,7 +67,8 @@ fun AllowNfcSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.device_allow_nfc_title),
-        infoText = """
+        infoText =
+            """
             Set to true to enable NFC support via a Web NFC compatibility bridge.
 
             This allows websites to read and write NFC tags using the device's NFC hardware.
@@ -80,21 +81,23 @@ fun AllowNfcSetting() {
             - https://developer.chrome.com/docs/capabilities/nfc#security-and-permissions
 
             and can also operate on insecure (non-HTTPS) websites.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.allowNfc,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         onSave = { userSettings.allowNfc = it },
         itemText = { value ->
-            val supportText = if (nfcSupported) {
-                if (nfcEnabled) {
-                    ""
+            val supportText =
+                if (nfcSupported) {
+                    if (nfcEnabled) {
+                        ""
+                    } else {
+                        "(NFC disabled)"
+                    }
                 } else {
-                    "(NFC disabled)"
+                    "(NFC not supported)"
                 }
-            } else {
-                "(NFC not supported)"
-            }
             if (value) {
                 "True $supportText"
             } else {
@@ -104,20 +107,18 @@ fun AllowNfcSetting() {
         extraContent = {
             if (nfcSupported) {
                 Button(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     onClick = {
                         safeStartActivity(
                             context,
-                            Intent(Settings.ACTION_NFC_SETTINGS)
+                            Intent(Settings.ACTION_NFC_SETTINGS),
                         )
-                    }
+                    },
                 ) {
                     Text(
                         text = "Open NFC Settings",
                         textAlign = TextAlign.Center,
-                        style = MaterialTheme.typography.labelMedium
+                        style = MaterialTheme.typography.labelMedium,
                     )
                 }
             } else {
@@ -126,9 +127,9 @@ fun AllowNfcSetting() {
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(top = 8.dp),
                 )
             }
-        }
+        },
     )
 }

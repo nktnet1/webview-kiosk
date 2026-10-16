@@ -1,14 +1,15 @@
 package uk.nktnet.webviewkiosk.adblock
 
+import java.io.File
 import uk.nktnet.webviewkiosk.adblock.engine.CompiledFilterCache
 import uk.nktnet.webviewkiosk.adblock.engine.CompiledFilters
 import uk.nktnet.webviewkiosk.adblock.engine.FilterCompiler
-import java.io.File
 
-/** Compile on the loader thread, then publish one immutable snapshot to all readers. */
+/**
+ * Compile on the loader thread, then publish one immutable snapshot to all readers.
+ */
 class KotlinFilterEngine(cacheFile: File? = null, cacheVersion: Int = 0) :
-    NetworkFilterEngine,
-    FilterListValidator {
+    NetworkFilterEngine, FilterListValidator {
     private val cache = cacheFile?.let {
         CompiledFilterCache(it, cacheVersion)
     }

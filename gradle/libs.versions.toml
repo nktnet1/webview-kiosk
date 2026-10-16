@@ -5,16 +5,19 @@ androidRetrostreams = "1.7.4"
 biometric = "1.1.0"
 connector = "3.3.5"
 dhizukuApi = "2.6.0"
-hiddenapibypass = "6.1"
-hivemqMqttClient = "1.4.0"
+detekt = "1.23.8"
+hiddenapibypass = "6.2"
+hivemqMqttClient = "1.4.1"
 junit = "4.13.2"
-kotlin = "2.4.20"
-kotlinSerializationPlugin = "2.4.20"
+kotlin = "2.4.21"
+ktfmt = "0.64"
+kotlinSerializationPlugin = "2.4.21"
 kotlinxSerializationJson = "1.11.0"
 okhttp = "5.5.0"
 reorderable = "3.1.0"
 robolectric = "4.17"
 swiperefreshlayout = "1.2.0"
+spotless = "8.10.4"
 
 #noinspection GradleDependency
 activityCompose = "1.11.0"
@@ -50,10 +53,12 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-webkit = { module = "androidx.webkit:webkit", version.ref = "webkit" }
 connector = { module = "org.unifiedpush.android:connector", version.ref = "connector" }
 dhizuku-api = { module = "io.github.iamr0s:Dhizuku-API", version.ref = "dhizukuApi" }
+detekt-cli = { module = "io.gitlab.arturbosch.detekt:detekt-cli", version.ref = "detekt" }
 hivemq-mqtt-client = { module = "com.hivemq:hivemq-mqtt-client", version.ref = "hivemqMqttClient" }
 hivemq-mqtt-client-websocket = { module = "com.hivemq:hivemq-mqtt-client-websocket", version.ref = "hivemqMqttClient" }
 hiddenapibypass = { module = "org.lsposed.hiddenapibypass:hiddenapibypass", version.ref = "hiddenapibypass" }
 junit = { module = "junit:junit", version.ref = "junit" }
+ktfmt = { module = "com.facebook:ktfmt", version.ref = "ktfmt" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
@@ -66,3 +71,4 @@ kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlinSerializationPlugin" }
+spotless = { id = "com.diffplug.spotless", version.ref = "spotless" }

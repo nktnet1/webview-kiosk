@@ -3,7 +3,8 @@ package uk.nktnet.webviewkiosk.utils.webview.scripts
 import uk.nktnet.webviewkiosk.utils.webview.wrapJsInIIFE
 
 fun generateDisableVibrationApiScript(): String {
-    val rawScript = """
+    val rawScript =
+        """
         const disabledVibrate = function() { return false; };
         const disableVibrateOn = function(target) {
             if (!target) return;
@@ -23,7 +24,8 @@ fun generateDisableVibrationApiScript(): String {
 
         disableVibrateOn(window.navigator);
         disableVibrateOn(Object.getPrototypeOf(window.navigator));
-    """.trimIndent()
+        """
+            .trimIndent()
 
     return wrapJsInIIFE(rawScript)
 }

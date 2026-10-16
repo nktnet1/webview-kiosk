@@ -10,11 +10,15 @@ import java.util.zip.CheckedInputStream
 import java.util.zip.CheckedOutputStream
 
 /**
- * One disposable, versioned binary snapshot of normalized rules, never Java object serialization.
- * The source digest prevents stale activation; a checksum rejects damaged cache data. Indexes are
- * rebuilt from these records without parsing or validating filter syntax again.
+ * One disposable, versioned binary snapshot of normalized rules, never Java object
+ * serialization. The source digest prevents stale activation; a checksum rejects
+ * damaged cache data. Indexes are rebuilt from these records without parsing or
+ * validating filter syntax again.
  */
-internal class CompiledFilterCache(private val file: File, private val buildVersion: Int = 0) {
+internal class CompiledFilterCache(
+    private val file: File,
+    private val buildVersion: Int = 0,
+) {
     fun key(lists: List<String>): ByteArray {
         val digest = MessageDigest.getInstance("SHA-256")
         fun length(value: Int) {
@@ -32,25 +36,29 @@ internal class CompiledFilterCache(private val file: File, private val buildVers
     }
 
     fun read(key: ByteArray, onRestore: () -> Unit = {}): CompiledRuleSet? {
-        if (!file.isFile || file.length() !in 1..MAX_BYTES) return null
+        if (!file.isFile || file.length() !in 1..MAX_BYTES) {
+            return null
+        }
         return try {
             val checksum = CRC32()
             DataInputStream(
-                CheckedInputStream(
-                    file.inputStream().buffered(BUFFER_SIZE),
-                    checksum
+                    CheckedInputStream(
+                        file.inputStream().buffered(BUFFER_SIZE),
+                        checksum,
+                    )
                 )
-            )
                 .use { input ->
                     if (
                         input.readInt() != MAGIC ||
-                        input.readInt() != VERSION ||
-                        input.readInt() != buildVersion
+                            input.readInt() != VERSION ||
+                            input.readInt() != buildVersion
                     ) {
                         return null
                     }
                     val savedKey = ByteArray(32).also(input::readFully)
-                    if (!savedKey.contentEquals(key)) return null
+                    if (!savedKey.contentEquals(key)) {
+                        return null
+                    }
                     onRestore()
                     val strings = StringReader(input)
                     val skipped = input.count(FilterCompiler.MAX_RULES)
@@ -78,35 +86,54 @@ internal class CompiledFilterCache(private val file: File, private val buildVers
                                     -1 -> null
                                     0 -> false
                                     1 -> true
-                                    else -> throw IOException("Invalid party restriction")
+                                    else ->
+                                        throw IOException(
+                                            "Invalid party restriction"
+                                        )
                                 }
                             val conditions =
                                 Conditions(
-                                    domains,
-                                    types,
-                                    excludedTypes,
-                                    party,
-                                    strings.set(),
-                                    strings.set(),
-                                )
-                                    .let { if (it == Conditions.ANY) Conditions.ANY else it }
+                                        domains,
+                                        types,
+                                        excludedTypes,
+                                        party,
+                                        strings.set(),
+                                        strings.set(),
+                                    )
+                                    .let {
+                                        if (it == Conditions.ANY) {
+                                            Conditions.ANY
+                                        } else {
+                                            it
+                                        }
+                                    }
                             val exception = input.readBoolean()
                             val important = input.readBoolean()
                             val hide = input.count(2)
-                            NetworkIdentity(pattern, conditions, exception, important, hide)
+                            NetworkIdentity(
+                                pattern,
+                                conditions,
+                                exception,
+                                important,
+                                hide,
+                            )
                         }
                     val cosmetics =
-                        List(input.count(
-                            FilterCompiler.MAX_RULES - skipped - networks.size)
+                        List(
+                            input.count(
+                                FilterCompiler.MAX_RULES - skipped - networks.size
+                            )
                         ) {
                             CosmeticRule(
                                 strings.read(),
                                 strings.scope(),
-                                input.readBoolean()
+                                input.readBoolean(),
                             )
                         }
                     val actual = checksum.value
-                    if (input.readLong() != actual || input.read() != -1) return null
+                    if (input.readLong() != actual || input.read() != -1) {
+                        return null
+                    }
                     CompiledRuleSet(networks, cosmetics, skipped)
                 }
         } catch (_: IOException) {
@@ -116,20 +143,25 @@ internal class CompiledFilterCache(private val file: File, private val buildVers
         }
     }
 
-    /** Cache failures never prevent the successfully compiled rules from becoming active. */
+    /**
+     * Cache failures never prevent the successfully compiled rules from becoming
+     * active.
+     */
     fun write(key: ByteArray, rules: CompiledRuleSet) {
         var temporary: File? = null
         try {
             val parent = file.parentFile ?: return
-            if (!parent.isDirectory && !parent.mkdirs()) return
+            if (!parent.isDirectory && !parent.mkdirs()) {
+                return
+            }
             temporary = File.createTempFile("compiled-", ".tmp", parent)
             val checksum = CRC32()
             DataOutputStream(
-                CheckedOutputStream(
-                    temporary.outputStream().buffered(BUFFER_SIZE),
-                    checksum
-                ),
-            )
+                    CheckedOutputStream(
+                        temporary.outputStream().buffered(BUFFER_SIZE),
+                        checksum,
+                    )
+                )
                 .use { output ->
                     output.writeInt(MAGIC)
                     output.writeInt(VERSION)
@@ -142,10 +174,26 @@ internal class CompiledFilterCache(private val file: File, private val buildVers
                         val pattern = rule.pattern
                         strings.write(pattern.text)
                         output.writeByte(
-                            (if (pattern.domainAnchor) 1 else 0) or
-                                (if (pattern.startAnchor) 2 else 0) or
-                                (if (pattern.endAnchor) 4 else 0) or
-                                (if (pattern.matchCase) 8 else 0),
+                            (if (pattern.domainAnchor) {
+                                1
+                            } else {
+                                0
+                            }) or
+                                (if (pattern.startAnchor) {
+                                    2
+                                } else {
+                                    0
+                                }) or
+                                (if (pattern.endAnchor) {
+                                    4
+                                } else {
+                                    0
+                                }) or
+                                (if (pattern.matchCase) {
+                                    8
+                                } else {
+                                    0
+                                })
                         )
                         strings.write(pattern.hostIndex.orEmpty())
                         strings.scope(rule.conditions.domains)
@@ -156,7 +204,7 @@ internal class CompiledFilterCache(private val file: File, private val buildVers
                                 null -> -1
                                 false -> 0
                                 true -> 1
-                            },
+                            }
                         )
                         strings.set(rule.conditions.methods)
                         strings.set(rule.conditions.excludedMethods)
@@ -172,9 +220,12 @@ internal class CompiledFilterCache(private val file: File, private val buildVers
                     }
                     output.writeLong(checksum.value)
                 }
-            if (temporary.length() <= MAX_BYTES) temporary.renameTo(file)
+            if (temporary.length() <= MAX_BYTES) {
+                temporary.renameTo(file)
+            }
         } catch (_: IOException) {
-            // Disposable optimization; the original filter lists remain authoritative.
+            // Disposable optimization; the original filter lists remain
+            // authoritative.
         } finally {
             temporary?.delete()
         }
@@ -246,8 +297,9 @@ internal class CompiledFilterCache(private val file: File, private val buildVers
         private const val MAX_BYTES = 64L * 1024 * 1024
         private const val BUFFER_SIZE = 64 * 1024
 
-        private fun DataInputStream.count(max: Int): Int = readInt().also {
-            require(it in 0..max)
-        }
+        private fun DataInputStream.count(max: Int): Int =
+            readInt().also {
+                require(it in 0..max)
+            }
     }
 }

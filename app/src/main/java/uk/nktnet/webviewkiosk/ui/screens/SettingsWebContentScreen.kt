@@ -31,22 +31,20 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.webcontent.Websit
 @Composable
 fun SettingsWebContentScreen(navController: NavController) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(top = 4.dp)
-            .padding(horizontal = 16.dp),
+        modifier =
+            Modifier.fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(top = 4.dp)
+                .padding(horizontal = 16.dp)
     ) {
         SettingLabel(
             navController = navController,
-            label = stringResource(R.string.settings_web_content_title)
+            label = stringResource(R.string.settings_web_content_title),
         )
         SettingDivider()
 
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
         ) {
             HomeUrlSetting()
             WebsiteBlacklistSetting()
@@ -60,13 +58,23 @@ fun SettingsWebContentScreen(navController: NavController) {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 SettingListItem(
                     title = stringResource(R.string.settings_content_blocking_title),
-                    description = stringResource(R.string.settings_content_blocking_description),
-                    onClick = { navController.navigate(Screen.SettingsContentBlocking.route) },
+                    description =
+                        stringResource(
+                            R.string.settings_content_blocking_description
+                        ),
+                    onClick = {
+                        navController.navigate(Screen.SettingsContentBlocking.route)
+                    },
                 )
                 SettingListItem(
                     title = stringResource(R.string.settings_files_title),
-                    description = stringResource(R.string.settings_web_content_files_description),
-                    onClick = { navController.navigate(Screen.SettingsWebContentFiles.route) },
+                    description =
+                        stringResource(
+                            R.string.settings_web_content_files_description
+                        ),
+                    onClick = {
+                        navController.navigate(Screen.SettingsWebContentFiles.route)
+                    },
                 )
             }
 

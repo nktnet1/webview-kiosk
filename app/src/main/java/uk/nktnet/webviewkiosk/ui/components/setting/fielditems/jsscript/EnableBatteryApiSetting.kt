@@ -16,7 +16,8 @@ fun EnableBatteryApiSetting() {
 
     BooleanSettingFieldItem(
         label = stringResource(R.string.js_scripts_enable_battery_api_title),
-        infoText = """
+        infoText =
+            """
             Allow web pages to access device battery status through a JavaScript
             interface. Web pages can use:
 
@@ -24,10 +25,11 @@ fun EnableBatteryApiSetting() {
 
             to retrieve battery level, charging status, temperature and other
             battery information.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.enableBatteryApi,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.enableBatteryApi = it }
+        onSave = { userSettings.enableBatteryApi = it },
     )
 }

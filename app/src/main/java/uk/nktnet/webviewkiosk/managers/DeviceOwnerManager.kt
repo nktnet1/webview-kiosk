@@ -13,12 +13,12 @@ import android.util.Log
 import com.rosan.dhizuku.api.Dhizuku
 import com.rosan.dhizuku.api.DhizukuBinderWrapper
 import com.rosan.dhizuku.api.DhizukuRequestPermissionListener
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.lsposed.hiddenapibypass.HiddenApiBypass
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
 import uk.nktnet.webviewkiosk.config.data.DeviceOwnerMode
-import kotlin.time.Duration.Companion.milliseconds
 
 object DeviceOwnerManager {
     private const val DHIZUKU_SETTLE_TIME_MS = 1000L
@@ -26,14 +26,14 @@ object DeviceOwnerManager {
 
     lateinit var DPM: DevicePolicyManager
         private set
+
     lateinit var DAR: ComponentName
         private set
+
     private var dhizukuBinderAvailableSince = 0L
     private val pendingPermissionRequests = PendingDhizukuPermissionRequests()
 
-    data class Status(
-        var mode: DeviceOwnerMode = DeviceOwnerMode.None,
-    )
+    data class Status(var mode: DeviceOwnerMode = DeviceOwnerMode.None)
 
     val status = MutableStateFlow(Status())
 
@@ -53,7 +53,9 @@ object DeviceOwnerManager {
         }
 
         try {
-            if (!HiddenApiBypass.setHiddenApiExemptions("") || !Dhizuku.init(context)) {
+            if (
+                !HiddenApiBypass.setHiddenApiExemptions("") || !Dhizuku.init(context)
+            ) {
                 dhizukuBinderAvailableSince = 0L
                 return
             }
@@ -82,8 +84,8 @@ object DeviceOwnerManager {
     suspend fun initWithDhizukuRetry(context: Context): DeviceOwnerMode {
         init(context)
         if (
-            status.value.mode != DeviceOwnerMode.None
-            || Build.VERSION.SDK_INT < Build.VERSION_CODES.P
+            status.value.mode != DeviceOwnerMode.None ||
+                Build.VERSION.SDK_INT < Build.VERSION_CODES.P
         ) {
             return status.value.mode
         }
@@ -100,13 +102,14 @@ object DeviceOwnerManager {
     }
 
     private fun resetToPlatformDpm(context: Context) {
-        DPM = context.getSystemService(
-            Context.DEVICE_POLICY_SERVICE
-        ) as DevicePolicyManager
-        DAR = ComponentName(
-            context.packageName,
-            WebviewKioskAdminReceiver::class.java.name
-        )
+        DPM =
+            context.getSystemService(Context.DEVICE_POLICY_SERVICE)
+                as DevicePolicyManager
+        DAR =
+            ComponentName(
+                context.packageName,
+                WebviewKioskAdminReceiver::class.java.name,
+            )
         updateStatus(DeviceOwnerMode.None)
     }
 
@@ -123,8 +126,10 @@ object DeviceOwnerManager {
                     DPM.isDeviceOwnerApp(context.packageName)
                 }
                 DeviceOwnerMode.Dhizuku -> {
-                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && Dhizuku.isPermissionGranted()
-                } else -> {
+                    Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                        Dhizuku.isPermissionGranted()
+                }
+                else -> {
                     false
                 }
             }
@@ -145,8 +150,8 @@ object DeviceOwnerManager {
         // Claim ownership before any Dhizuku preflight can reenter or suspend.
         val request = pendingPermissionRequests.replace()
         if (
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.P
-            || status.value.mode != DeviceOwnerMode.Dhizuku
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.P ||
+                status.value.mode != DeviceOwnerMode.Dhizuku
         ) {
             if (pendingPermissionRequests.consume(request)) {
                 deliverDhizukuPermissionResult(context, false, onGranted, onDenied)
@@ -154,16 +159,22 @@ object DeviceOwnerManager {
             return
         }
 
-        val alreadyGranted = try {
-            Dhizuku.isPermissionGranted()
-        } catch (e: Throwable) {
-            if (pendingPermissionRequests.consume(request)) {
-                invalidateDhizuku(context)
-                deliverDhizukuPermissionResult(context, false, onGranted, onDenied)
+        val alreadyGranted =
+            try {
+                Dhizuku.isPermissionGranted()
+            } catch (e: Throwable) {
+                if (pendingPermissionRequests.consume(request)) {
+                    invalidateDhizuku(context)
+                    deliverDhizukuPermissionResult(
+                        context,
+                        false,
+                        onGranted,
+                        onDenied,
+                    )
+                }
+                Log.e(javaClass.simpleName, "Failed to check Dhizuku permission", e)
+                return
             }
-            Log.e(javaClass.simpleName, "Failed to check Dhizuku permission", e)
-            return
-        }
         if (alreadyGranted) {
             if (pendingPermissionRequests.consume(request)) {
                 deliverDhizukuPermissionResult(context, true, onGranted, onDenied)
@@ -172,24 +183,34 @@ object DeviceOwnerManager {
         }
 
         // Do not launch a prompt if a newer request won during preflight.
-        if (!pendingPermissionRequests.isCurrent(request)) return
+        if (!pendingPermissionRequests.isCurrent(request)) {
+            return
+        }
         try {
-            Dhizuku.requestPermission(object : DhizukuRequestPermissionListener() {
-                @Throws(RemoteException::class)
-                override fun onRequestPermission(grantResult: Int) {
-                    if (!pendingPermissionRequests.consume(request)) return
-                    // The owner or its permission may have changed while the dialog was open.
-                    if (status.value.mode != DeviceOwnerMode.Dhizuku) return
-                    deliverDhizukuPermissionResult(
-                        context,
-                        grantResult == PackageManager.PERMISSION_GRANTED,
-                        onGranted,
-                        onDenied,
-                    )
+            Dhizuku.requestPermission(
+                object : DhizukuRequestPermissionListener() {
+                    @Throws(RemoteException::class)
+                    override fun onRequestPermission(grantResult: Int) {
+                        if (!pendingPermissionRequests.consume(request)) {
+                            return
+                        }
+                        // The owner or its permission may have changed while the
+                        // dialog was open.
+                        if (status.value.mode != DeviceOwnerMode.Dhizuku) {
+                            return
+                        }
+                        deliverDhizukuPermissionResult(
+                            context,
+                            grantResult == PackageManager.PERMISSION_GRANTED,
+                            onGranted,
+                            onDenied,
+                        )
+                    }
                 }
-            })
+            )
         } catch (e: Throwable) {
-            // A replaced or already completed request must not invalidate its successor.
+            // A replaced or already completed request must not invalidate its
+            // successor.
             if (pendingPermissionRequests.consume(request)) {
                 if (status.value.mode == DeviceOwnerMode.Dhizuku) {
                     invalidateDhizuku(context)
@@ -207,9 +228,14 @@ object DeviceOwnerManager {
         onDenied: () -> Unit,
     ) {
         try {
-            if (granted && hasOwnerPermission(context)) onGranted() else onDenied()
+            if (granted && hasOwnerPermission(context)) {
+                onGranted()
+            } else {
+                onDenied()
+            }
         } catch (e: Exception) {
-            // A consumer failure must not trigger the opposite callback or escape a binder thread.
+            // A consumer failure must not trigger the opposite callback or escape a
+            // binder thread.
             Log.e(javaClass.simpleName, "Dhizuku permission callback failed", e)
         }
     }
@@ -219,22 +245,27 @@ object DeviceOwnerManager {
     }
 
     @SuppressLint("PrivateApi")
-    private fun binderWrapperDevicePolicyManager(appContext: Context): DevicePolicyManager? {
+    private fun binderWrapperDevicePolicyManager(
+        appContext: Context
+    ): DevicePolicyManager? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
             return null
         }
         try {
-            val context = appContext.createPackageContext(
-                Dhizuku.getOwnerComponent().packageName,
-                Context.CONTEXT_IGNORE_SECURITY
-            )
-            val manager = context.getSystemService(
-                Context.DEVICE_POLICY_SERVICE
-            ) as DevicePolicyManager
+            val context =
+                appContext.createPackageContext(
+                    Dhizuku.getOwnerComponent().packageName,
+                    Context.CONTEXT_IGNORE_SECURITY,
+                )
+            val manager =
+                context.getSystemService(Context.DEVICE_POLICY_SERVICE)
+                    as DevicePolicyManager
             val field = manager.javaClass.getDeclaredField("mService")
             field.isAccessible = true
             val oldInterface = field[manager] as IDevicePolicyManager
-            if (oldInterface is DhizukuBinderWrapper) return manager
+            if (oldInterface is DhizukuBinderWrapper) {
+                return manager
+            }
             val oldBinder = oldInterface.asBinder()
             val newBinder = Dhizuku.binderWrapper(oldBinder)
             val newInterface = IDevicePolicyManager.Stub.asInterface(newBinder)
@@ -244,7 +275,7 @@ object DeviceOwnerManager {
             Log.e(
                 javaClass.simpleName,
                 "Failed to create Dhizuku binder wrapper",
-                e
+                e,
             )
         }
         return null

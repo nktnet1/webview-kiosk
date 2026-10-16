@@ -1,11 +1,11 @@
 package uk.nktnet.webviewkiosk.utils.webview
 
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertThrows
 import org.junit.Test
 import uk.nktnet.webviewkiosk.testing.runConcurrently
-import java.util.concurrent.atomic.AtomicInteger
 
 class SslErrorRequestTest {
     @Test
@@ -40,7 +40,12 @@ class SslErrorRequestTest {
     fun concurrentApprovalAndCancellationCompleteExactlyOnce() {
         val proceeded = AtomicInteger()
         val cancelled = AtomicInteger()
-        val request = SslErrorRequest(null, { proceeded.incrementAndGet() }, { cancelled.incrementAndGet() })
+        val request =
+            SslErrorRequest(
+                null,
+                { proceeded.incrementAndGet() },
+                { cancelled.incrementAndGet() },
+            )
 
         runConcurrently({ request.proceed() }, { request.cancel() })
         request.proceed()
@@ -55,7 +60,10 @@ class SslErrorRequestTest {
         var proceeded = 0
         val request = SslErrorRequest(null, { proceeded++ }, { throw failure })
 
-        assertSame(failure, assertThrows(IllegalStateException::class.java) { request.cancel() })
+        assertSame(
+            failure,
+            assertThrows(IllegalStateException::class.java) { request.cancel() },
+        )
         request.cancel()
         request.proceed()
 

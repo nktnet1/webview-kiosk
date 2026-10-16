@@ -13,12 +13,15 @@ fun getWebViewRequestCookie(url: String): String? {
 
 fun storeWebViewResponseCookies(url: String, headers: Map<String?, List<String>?>) {
     val manager = CookieManager.getInstance()
-    if (!manager.acceptCookie()) return
+    if (!manager.acceptCookie()) {
+        return
+    }
 
     headers.forEach { (name, values) ->
         if (name.equals("Set-Cookie", ignoreCase = true)) {
             values.orEmpty().forEach { cookie ->
-                // The synchronous overload makes redirect cookies available to the next request.
+                // The synchronous overload makes redirect cookies available to the
+                // next request.
                 manager.setCookie(url, cookie)
             }
         }

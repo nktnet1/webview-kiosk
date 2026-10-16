@@ -18,9 +18,11 @@ fun BackButtonHoldActionSetting() {
 
     DropdownSettingFieldItem(
         label = stringResource(R.string.device_back_button_hold_action_title),
-        infoText = """
+        infoText =
+            """
             Customise the behaviour when the back button is held down (long pressed).
-        """.trimIndent(),
+            """
+                .trimIndent(),
         options = BackButtonHoldActionOption.entries,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),

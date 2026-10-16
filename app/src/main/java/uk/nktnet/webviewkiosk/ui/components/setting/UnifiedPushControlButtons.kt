@@ -42,6 +42,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import uk.nktnet.webviewkiosk.R
@@ -51,7 +52,6 @@ import uk.nktnet.webviewkiosk.config.unifiedpush.UnifiedPushEndpoint
 import uk.nktnet.webviewkiosk.managers.UnifiedPushManager
 import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeAlertDialog as AlertDialog
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun UnifiedPushControlButtons() {
@@ -92,84 +92,84 @@ fun UnifiedPushControlButtons() {
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Surface(
             color = MaterialTheme.colorScheme.surface,
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.outline,
-                    shape = MaterialTheme.shapes.small
-                ),
+            modifier =
+                Modifier.fillMaxWidth()
+                    .border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outline,
+                        shape = MaterialTheme.shapes.small,
+                    ),
             shape = MaterialTheme.shapes.small,
-            tonalElevation = 1.dp
+            tonalElevation = 1.dp,
         ) {
             Column(
-                modifier = Modifier
-                    .animateContentSize()
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                modifier =
+                    Modifier.animateContentSize()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                val status = when {
-                    savedDistributor.isNullOrBlank() -> ""
-                    savedDistributor != ackDistributor -> " (pending)"
-                    else -> if (endpoint?.temporary ?: false) {
-                        " (ready, temporary)"
-                    } else {
-                        " (ready)"
+                val status =
+                    when {
+                        savedDistributor.isNullOrBlank() -> ""
+                        savedDistributor != ackDistributor -> " (pending)"
+                        else ->
+                            if (endpoint?.temporary ?: false) {
+                                " (ready, temporary)"
+                            } else {
+                                " (ready)"
+                            }
                     }
-                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = "Distributor$status",
-                            style = MaterialTheme.typography.titleSmall.copy(
-                                fontWeight = FontWeight.Bold
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            style =
+                                MaterialTheme.typography.titleSmall.copy(
+                                    fontWeight = FontWeight.Bold
+                                ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(Modifier.height(2.dp))
                         SelectionContainer {
                             Text(
                                 text = savedDistributor ?: "None",
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    fontFamily = FontFamily.Monospace
-                                ),
+                                style =
+                                    MaterialTheme.typography.bodySmall.copy(
+                                        fontFamily = FontFamily.Monospace
+                                    ),
                                 color = MaterialTheme.colorScheme.onSurface,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                     }
 
-                    IconButton(
-                        onClick = { expanded = !expanded },
-                    ) {
+                    IconButton(onClick = { expanded = !expanded }) {
                         Icon(
-                            painter = painterResource(
-                                if (expanded)
-                                    R.drawable.keyboard_arrow_up_24
-                                else
-                                    R.drawable.keyboard_arrow_down_24
-                            ),
-                            contentDescription = null
+                            painter =
+                                painterResource(
+                                    if (expanded) {
+                                        R.drawable.keyboard_arrow_up_24
+                                    } else {
+                                        R.drawable.keyboard_arrow_down_24
+                                    }
+                                ),
+                            contentDescription = null,
                         )
                     }
                 }
 
                 if (expanded) {
-                    HorizontalDivider(
-                        Modifier.padding(top = 6.dp, bottom = 12.dp),
-                    )
+                    HorizontalDivider(Modifier.padding(top = 6.dp, bottom = 12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
                         InfoRow(
                             label = "Endpoint URL",
@@ -189,14 +189,16 @@ fun UnifiedPushControlButtons() {
 
                         Row(
                             modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             TextButton(
                                 enabled = endpoint != null && !isRedacted,
-                                colors = ButtonDefaults.textButtonColors(
-                                    contentColor = MaterialTheme.colorScheme.error,
-                                ),
-                                onClick = { showRedactConfirm = true }
+                                colors =
+                                    ButtonDefaults.textButtonColors(
+                                        contentColor =
+                                            MaterialTheme.colorScheme.error
+                                    ),
+                                onClick = { showRedactConfirm = true },
                             ) {
                                 Text("Redact")
                             }
@@ -206,20 +208,21 @@ fun UnifiedPushControlButtons() {
                             Checkbox(
                                 enabled = !isRedacted,
                                 checked = isRedacted || showValuesCheckbox,
-                                onCheckedChange = { showValuesCheckbox = it }
+                                onCheckedChange = { showValuesCheckbox = it },
                             )
                             Text(
                                 text = "Show Values",
                                 style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier
-                                    .clickable(
+                                modifier =
+                                    Modifier.clickable(
                                         indication = null,
-                                        interactionSource = remember { MutableInteractionSource() }
+                                        interactionSource =
+                                            remember { MutableInteractionSource() },
                                     ) {
                                         if (!isRedacted) {
                                             showValuesCheckbox = !showValuesCheckbox
                                         }
-                                    }
+                                    },
                             )
                         }
                     }
@@ -231,20 +234,22 @@ fun UnifiedPushControlButtons() {
             Button(
                 onClick = { showUnregisterConfirm = true },
                 modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer,
-                    contentColor = MaterialTheme.colorScheme.onErrorContainer
-                )
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer,
+                        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+                    ),
             ) {
                 Text("Unregister")
             }
             Button(
                 onClick = { UnifiedPushManager.register(context) },
                 modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                colors =
+                    ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    ),
             ) {
                 Text("Register")
             }
@@ -262,7 +267,7 @@ fun UnifiedPushControlButtons() {
                     ) {
                         Text(
                             "Unregister",
-                            color = MaterialTheme.colorScheme.error
+                            color = MaterialTheme.colorScheme.error,
                         )
                     }
                 },
@@ -284,10 +289,11 @@ fun UnifiedPushControlButtons() {
                             - INSTANCE: ${UnifiedPushManager.getInstance(context)}
 
                             This action cannot be undone.
-                            """.trimIndent()
+                            """
+                                .trimIndent()
                         )
                     )
-                }
+                },
             )
         }
 
@@ -297,9 +303,10 @@ fun UnifiedPushControlButtons() {
                 confirmButton = {
                     TextButton(
                         onClick = {
-                            val redactedEndpoint = UnifiedPushEndpoint.createRedactEndpoint(
-                                endpoint?.temporary ?: false
-                            )
+                            val redactedEndpoint =
+                                UnifiedPushEndpoint.createRedactEndpoint(
+                                    endpoint?.temporary ?: false
+                                )
                             systemSettings.unifiedpushEndpoint = redactedEndpoint
                             endpoint = redactedEndpoint
                             showRedactConfirm = false
@@ -307,7 +314,7 @@ fun UnifiedPushControlButtons() {
                     ) {
                         Text(
                             "Redact",
-                            color = MaterialTheme.colorScheme.error
+                            color = MaterialTheme.colorScheme.error,
                         )
                     }
                 },
@@ -320,8 +327,9 @@ fun UnifiedPushControlButtons() {
                     Text("Redact")
                 },
                 text = {
-                    Text(normaliseInfoText(
-                        """
+                    Text(
+                        normaliseInfoText(
+                            """
                         Are you sure you want to redact the endpoint?
                         This action cannot be undone.
 
@@ -333,9 +341,11 @@ fun UnifiedPushControlButtons() {
                         This will not affect any UnifiedPush functionalities, although it
                         is recommended that you copy and store these values in a secure
                         location before redacting them.
-                        """.trimIndent()
-                    ))
-                }
+                        """
+                                .trimIndent()
+                        )
+                    )
+                },
             )
         }
     }
@@ -349,36 +359,43 @@ private fun InfoRow(
 ) {
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
-    val displayValue = if (value.isNullOrEmpty()) {
-        "None"
-    } else if (!showValues) {
-        "*".repeat(value.length)
-    } else {
-        value
-    }
+    val displayValue =
+        if (value.isNullOrEmpty()) {
+            "None"
+        } else if (!showValues) {
+            "*".repeat(value.length)
+        } else {
+            value
+        }
 
     Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(
             modifier = Modifier.weight(1f).padding(end = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(5.dp)
+            verticalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             SelectionContainer {
                 Text(
                     text = displayValue,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = FontFamily.Monospace
-                    ),
+                    style =
+                        MaterialTheme.typography.bodySmall.copy(
+                            fontFamily = FontFamily.Monospace
+                        ),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
-                    overflow = if (showValues) TextOverflow.Ellipsis else TextOverflow.Clip
+                    overflow =
+                        if (showValues) {
+                            TextOverflow.Ellipsis
+                        } else {
+                            TextOverflow.Clip
+                        },
                 )
             }
         }
@@ -391,11 +408,11 @@ private fun InfoRow(
                     val clipData = ClipData.newPlainText(label, value)
                     clipboard.setClipEntry(clipData.toClipEntry())
                 }
-            }
+            },
         ) {
             Icon(
                 painter = painterResource(R.drawable.baseline_content_copy_24),
-                contentDescription = null
+                contentDescription = null,
             )
         }
     }

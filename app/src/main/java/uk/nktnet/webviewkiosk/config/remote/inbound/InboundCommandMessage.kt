@@ -23,7 +23,7 @@ data class InboundGoBackCommand(
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-    ) : InboundCommandMessage {
+) : InboundCommandMessage {
     override fun toString() = "go_back"
 }
 
@@ -73,10 +73,8 @@ data class InboundGoToUrlCommand(
     override val wakeScreen: Boolean = false,
     val data: UrlData,
 ) : InboundCommandMessage {
-    @Serializable
-    data class UrlData(
-        val url: String
-    )
+    @Serializable data class UrlData(val url: String)
+
     override fun toString() = "go_to_url"
 }
 
@@ -90,10 +88,8 @@ data class InboundSearchCommand(
     override val wakeScreen: Boolean = false,
     val data: QueryData,
 ) : InboundCommandMessage {
-    @Serializable
-    data class QueryData(
-        val query: String
-    )
+    @Serializable data class QueryData(val query: String)
+
     override fun toString() = "search"
 }
 
@@ -105,7 +101,7 @@ data class InboundClearHistoryCommand(
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-    ) : InboundCommandMessage {
+) : InboundCommandMessage {
     override fun toString() = "clear_history"
 }
 
@@ -129,12 +125,10 @@ data class InboundToastCommand(
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-    val data: ToastData? = null
+    val data: ToastData? = null,
 ) : InboundCommandMessage {
-    @Serializable
-    data class ToastData(
-        val message: String
-    )
+    @Serializable data class ToastData(val message: String)
+
     override fun toString() = "toast"
 }
 
@@ -146,7 +140,7 @@ data class InboundLockCommand(
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-    ) : InboundCommandMessage {
+) : InboundCommandMessage {
     override fun toString() = "lock"
 }
 
@@ -158,7 +152,7 @@ data class InboundUnlockCommand(
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-    ) : InboundCommandMessage {
+) : InboundCommandMessage {
     override fun toString() = "unlock"
 }
 
@@ -170,7 +164,7 @@ data class InboundReconnectCommand(
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-    ) : InboundCommandMessage {
+) : InboundCommandMessage {
     override fun toString() = "reconnect"
 }
 
@@ -182,7 +176,7 @@ data class InboundLockDeviceCommand(
     override val targetUsernames: Set<String>? = null,
     override val interact: Boolean = true,
     override val wakeScreen: Boolean = false,
-    ) : InboundCommandMessage {
+) : InboundCommandMessage {
     override fun toString() = "lock_device"
 }
 
@@ -196,10 +190,8 @@ data class InboundPageUpCommand(
     override val wakeScreen: Boolean = false,
     val data: PageUpData = PageUpData(),
 ) : InboundCommandMessage {
-    @Serializable
-    data class PageUpData(
-        val absolute: Boolean = false
-    )
+    @Serializable data class PageUpData(val absolute: Boolean = false)
+
     override fun toString() = "page_up"
 }
 
@@ -213,10 +205,8 @@ data class InboundPageDownCommand(
     override val wakeScreen: Boolean = false,
     val data: PageDownData = PageDownData(),
 ) : InboundCommandMessage {
-    @Serializable
-    data class PageDownData(
-        val absolute: Boolean = false
-    )
+    @Serializable data class PageDownData(val absolute: Boolean = false)
+
     override fun toString() = "page_down"
 }
 
@@ -236,10 +226,12 @@ data class InboundNotifyCommand(
         val contentText: String = "Notify",
         val silent: Boolean = false,
         val onGoing: Boolean = false,
-        val priority: RemoteNotifyCommandPriority = RemoteNotifyCommandPriority.DEFAULT,
+        val priority: RemoteNotifyCommandPriority =
+            RemoteNotifyCommandPriority.DEFAULT,
         val timeout: Long = 0,
         val autoCancel: Boolean = true,
     )
+
     override fun toString() = "notify"
 }
 
@@ -258,6 +250,7 @@ data class InboundLaunchPackageCommand(
         val packageName: String,
         val activityName: String? = null,
     )
+
     override fun toString() = "launch_package"
 }
 
@@ -274,6 +267,7 @@ data class InboundErrorCommand(
     override fun toString() = "error"
 }
 
-val InboundCommandJsonParser = Json(BaseJson) {
-    classDiscriminator = "command"
-}
+val InboundCommandJsonParser =
+    Json(BaseJson) {
+        classDiscriminator = "command"
+    }

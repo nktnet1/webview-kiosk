@@ -20,6 +20,6 @@ fun EnableJavaScriptSetting() {
         initialValue = userSettings.enableJavaScript,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.enableJavaScript = it }
+        onSave = { userSettings.enableJavaScript = it },
     )
 }

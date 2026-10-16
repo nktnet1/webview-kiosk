@@ -16,8 +16,12 @@ fun AllowUniversalAccessFromFileURLsSetting() {
     val settingKey = UserSettingsKeys.WebEngine.ALLOW_UNIVERSAL_ACCESS_FROM_FILE_URLS
 
     BooleanSettingFieldItem(
-        label = stringResource(R.string.web_engine_allow_universal_access_from_file_urls_title),
-        infoText = """
+        label =
+            stringResource(
+                R.string.web_engine_allow_universal_access_from_file_urls_title
+            ),
+        infoText =
+            """
             This method was deprecated in API level 30 (Android 11).
 
             Sets whether cross-origin requests in the context of a file scheme URL
@@ -31,10 +35,11 @@ fun AllowUniversalAccessFromFileURLsSetting() {
             in a file:// context to launch cross-site scripting attacks, either accessing
             arbitrary local files including WebView cookies, app private data or even
             credentials used on arbitrary web sites.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         initialValue = userSettings.allowUniversalAccessFromFileURLs,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
-        onSave = { userSettings.allowUniversalAccessFromFileURLs = it }
+        onSave = { userSettings.allowUniversalAccessFromFileURLs = it },
     )
 }

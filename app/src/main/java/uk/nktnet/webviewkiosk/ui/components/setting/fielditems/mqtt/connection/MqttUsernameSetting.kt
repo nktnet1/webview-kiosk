@@ -17,14 +17,16 @@ fun MqttUsernameSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_connection_username_title),
-        infoText = """
+        infoText =
+            """
             The username used to authenticate with the MQTT broker.
-        """.trimIndent(),
+            """
+                .trimIndent(),
         placeholder = "e.g. user001",
         initialValue = userSettings.mqttUsername,
         settingKey = settingKey,
         restricted = userSettings.isRestricted(settingKey),
         isMultiline = false,
-        onSave = { userSettings.mqttUsername = it }
+        onSave = { userSettings.mqttUsername = it },
     )
 }

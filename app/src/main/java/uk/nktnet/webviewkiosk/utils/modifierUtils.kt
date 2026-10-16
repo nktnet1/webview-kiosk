@@ -40,23 +40,21 @@ fun Modifier.requestFocusWhenPlaced(
         }
     }
 
-    this
-        .focusRequester(focusRequester)
-        .onGloballyPositioned { coordinates ->
-            isPlaced = coordinates.isAttached
-                && coordinates.size.width > 0
-                && coordinates.size.height > 0
-        }
+    this.focusRequester(focusRequester).onGloballyPositioned { coordinates ->
+        isPlaced =
+            coordinates.isAttached &&
+                coordinates.size.width > 0 &&
+                coordinates.size.height > 0
+    }
 }
 
 fun Modifier.handleUserKeyEvent(
     context: Context,
-    isVisible: Boolean
+    isVisible: Boolean,
 ): Modifier = composed {
     val focusRequester = remember { FocusRequester() }
 
-    this
-        .defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
+    this.defaultMinSize(minWidth = 1.dp, minHeight = 1.dp)
         .requestFocusWhenPlaced(
             focusRequester = focusRequester,
             enabled = isVisible,

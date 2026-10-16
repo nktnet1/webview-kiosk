@@ -36,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.rosan.dhizuku.shared.DhizukuVariables
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import uk.nktnet.webviewkiosk.R
 import uk.nktnet.webviewkiosk.WebviewKioskAdminReceiver
@@ -58,17 +59,19 @@ import uk.nktnet.webviewkiosk.ui.components.setting.fielditems.device.owner.lock
 import uk.nktnet.webviewkiosk.utils.normaliseInfoText
 import uk.nktnet.webviewkiosk.utils.openPackage
 import uk.nktnet.webviewkiosk.utils.setupLockTaskPackage
-import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun SettingsDeviceOwnerScreen(navController: NavController) {
     val context = LocalContext.current
 
-    val dpm = context.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
-    val adminComponent = ComponentName(
-        context.packageName,
-        WebviewKioskAdminReceiver::class.java.name
-    )
+    val dpm =
+        context.getSystemService(Context.DEVICE_POLICY_SERVICE)
+            as DevicePolicyManager
+    val adminComponent =
+        ComponentName(
+            context.packageName,
+            WebviewKioskAdminReceiver::class.java.name,
+        )
 
     var isDeviceOwner by remember {
         mutableStateOf(dpm.isDeviceOwnerApp(context.packageName))
@@ -96,50 +99,51 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
     }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(top = 4.dp)
-            .padding(horizontal = 16.dp),
+        modifier =
+            Modifier.fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(top = 4.dp)
+                .padding(horizontal = 16.dp)
     ) {
         SettingLabel(
             navController = navController,
-            label = stringResource(R.string.settings_device_owner_title)
+            label = stringResource(R.string.settings_device_owner_title),
         )
         SettingDivider()
 
         Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
         ) {
             if (!hasOwnerPermission) {
                 Text(
-                    text = """
+                    text =
+                        """
                         ${stringResource(R.string.app_name)} is not set as the device owner.
                         The settings below will not take effect.
-                    """.trimIndent(),
+                    """
+                            .trimIndent(),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(top = 6.dp)
+                    modifier = Modifier.padding(top = 6.dp),
                 )
             }
 
             Spacer(modifier = Modifier.height(6.dp))
 
             if (
-                deviceOwnerStatus.mode == DeviceOwnerMode.DeviceOwner
-                && isDeviceOwner
+                deviceOwnerStatus.mode == DeviceOwnerMode.DeviceOwner &&
+                    isDeviceOwner
             ) {
                 Button(
                     onClick = { showDeviceOwnerRemovalDialog = true },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer,
-                        contentColor = MaterialTheme.colorScheme.onErrorContainer
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 1.dp),
+                    colors =
+                        ButtonDefaults.buttonColors(
+                            containerColor =
+                                MaterialTheme.colorScheme.errorContainer,
+                            contentColor =
+                                MaterialTheme.colorScheme.onErrorContainer,
+                        ),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
                 ) {
                     Text("Deactivate Device Owner")
                 }
@@ -147,9 +151,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                     Button(
                         onClick = { showAdminReceiverListDialog = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 1.dp),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
                     ) {
                         Text("Transfer Ownership")
                     }
@@ -162,9 +164,13 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 text = "Lock Task Features",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 8.dp),
             )
-            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+            HorizontalDivider(
+                Modifier,
+                DividerDefaults.Thickness,
+                DividerDefaults.color,
+            )
 
             LockTaskFeatureHomeSetting()
             LockTaskFeatureOverviewSetting()
@@ -177,13 +183,13 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Button(
-                enabled = hasOwnerPermission && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O,
+                enabled =
+                    hasOwnerPermission &&
+                        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O,
                 onClick = {
                     showLockTaskPackagesDialog = true
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 1.dp),
+                modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
             ) {
                 Text("Manage Lock Task Packages")
             }
@@ -194,9 +200,13 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 text = "Dhizuku",
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 8.dp),
             )
-            HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
+            HorizontalDivider(
+                Modifier,
+                DividerDefaults.Thickness,
+                DividerDefaults.color,
+            )
 
             DhizukuRequestPermissionOnLaunchSetting()
 
@@ -210,17 +220,21 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                                 context = context,
                                 onGranted = {
                                     setupLockTaskPackage(context)
-                                    hasOwnerPermission = DeviceOwnerManager.hasOwnerPermission(context)
-                                }
+                                    hasOwnerPermission =
+                                        DeviceOwnerManager.hasOwnerPermission(
+                                            context
+                                        )
+                                },
                             )
                         },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                        ),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 1.dp),
+                        colors =
+                            ButtonDefaults.buttonColors(
+                                containerColor =
+                                    MaterialTheme.colorScheme.tertiaryContainer,
+                                contentColor =
+                                    MaterialTheme.colorScheme.onTertiaryContainer,
+                            ),
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
                     ) {
                         Text("Request Dhizuku Permission")
                     }
@@ -233,9 +247,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                             DhizukuVariables.OFFICIAL_PACKAGE_NAME,
                         )
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 1.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 1.dp),
                 ) {
                     Text("Open Dhizuku")
                 }
@@ -248,7 +260,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
         DeviceAdminReceiverListDialog(
             showDialog = showAdminReceiverListDialog,
-            onDismiss = { showAdminReceiverListDialog = false }
+            onDismiss = { showAdminReceiverListDialog = false },
         )
     }
 
@@ -258,13 +270,16 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
             title = { Text("Deactivate Device Owner") },
             text = {
                 Text(
-                    normaliseInfoText("""
+                    normaliseInfoText(
+                        """
                         Are you sure you want to unset ${stringResource(R.string.app_name)}
                         as the device owner?
 
                         This means Lock Task Mode will no longer be available, meaning
                         the kiosk lock feature will utilise Screen Pinning instead.
-                    """.trimIndent())
+                    """
+                            .trimIndent()
+                    )
                 )
             },
             confirmButton = {
@@ -279,7 +294,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                                 Log.w(
                                     Constants.APP_SCHEME,
                                     "Failed to clear profile owner",
-                                    e
+                                    e,
                                 )
                             }
                         }
@@ -290,7 +305,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                             Log.e(
                                 Constants.APP_SCHEME,
                                 "Failed to clear device owner app",
-                                e
+                                e,
                             )
                         }
                         DeviceOwnerManager.init(context)
@@ -299,7 +314,7 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 ) {
                     Text(
                         "Deactivate",
-                        color = MaterialTheme.colorScheme.error
+                        color = MaterialTheme.colorScheme.error,
                     )
                 }
             },
@@ -311,14 +326,12 @@ fun SettingsDeviceOwnerScreen(navController: NavController) {
                 ) {
                     Text("Cancel")
                 }
-            }
+            },
         )
     }
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        LockTaskPackagesDialog(
-            showLockTaskPackagesDialog,
-        ) {
+        LockTaskPackagesDialog(showLockTaskPackagesDialog) {
             showLockTaskPackagesDialog = false
         }
     }

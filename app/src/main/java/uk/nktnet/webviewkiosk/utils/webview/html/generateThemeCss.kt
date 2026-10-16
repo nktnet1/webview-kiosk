@@ -2,7 +2,8 @@ package uk.nktnet.webviewkiosk.utils.webview.html
 
 import uk.nktnet.webviewkiosk.config.option.ThemeOption
 
-private const val DARK_CSS = """
+private const val DARK_CSS =
+    """
     body {
         background-color: #121212;
         color: #ffffff;
@@ -24,7 +25,8 @@ private const val DARK_CSS = """
     }
 """
 
-private const val LIGHT_CSS = """
+private const val LIGHT_CSS =
+    """
     body {
         background-color: #ffffff;
         color: #000000;
@@ -46,13 +48,15 @@ private const val LIGHT_CSS = """
     }
 """
 
-fun generateThemeCss(theme: ThemeOption): String = when (theme) {
-    ThemeOption.DARK -> DARK_CSS
-    ThemeOption.LIGHT -> LIGHT_CSS
-    ThemeOption.SYSTEM -> """
+fun generateThemeCss(theme: ThemeOption): String =
+    when (theme) {
+        ThemeOption.DARK -> DARK_CSS
+        ThemeOption.LIGHT -> LIGHT_CSS
+        ThemeOption.SYSTEM ->
+            """
         $LIGHT_CSS
         @media (prefers-color-scheme: dark) {
             $DARK_CSS
         }
     """
-}
+    }

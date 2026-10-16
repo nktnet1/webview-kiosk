@@ -22,41 +22,47 @@ enum class WebviewControlActionOption(val label: String) {
     companion object {
         fun itemFromString(value: String?): WebviewControlActionOption? {
             return entries.find {
-                it.name.equals(value, ignoreCase = true)
-                || it.label.equals(value, ignoreCase = true)
+                it.name.equals(value, ignoreCase = true) ||
+                    it.label.equals(value, ignoreCase = true)
             }
         }
 
-        fun getDefaultAddressBarOptions(): List<WebviewControlActionOption> = listOf(
-            BACK,
-            FORWARD,
-            REFRESH,
-            HOME,
-            HISTORY,
-            BOOKMARK,
-            FILES,
-            FIND,
-            SCROLL_TOP,
-        )
+        fun getDefaultAddressBarOptions(): List<WebviewControlActionOption> =
+            listOf(
+                BACK,
+                FORWARD,
+                REFRESH,
+                HOME,
+                HISTORY,
+                BOOKMARK,
+                FILES,
+                FIND,
+                SCROLL_TOP,
+            )
 
-        fun getDefaultKioskControlPanelOptions(): List<WebviewControlActionOption> = listOf(
-            NAVIGATION,
-            HOME,
-            REFRESH,
-            HISTORY,
-            BOOKMARK,
-            FILES,
-            LOCK,
-            UNLOCK,
-        )
+        fun getDefaultKioskControlPanelOptions(): List<WebviewControlActionOption> =
+            listOf(
+                NAVIGATION,
+                HOME,
+                REFRESH,
+                HISTORY,
+                BOOKMARK,
+                FILES,
+                LOCK,
+                UNLOCK,
+            )
 
-        fun parseFromJsonArray(jsonArray: JSONArray?): List<WebviewControlActionOption> {
+        fun parseFromJsonArray(
+            jsonArray: JSONArray?
+        ): List<WebviewControlActionOption> {
             if (jsonArray == null) {
-                return WebviewControlActionOption.getDefaultKioskControlPanelOptions()
+                return WebviewControlActionOption
+                    .getDefaultKioskControlPanelOptions()
             }
             return List(jsonArray.length()) { idx ->
-                itemFromString(jsonArray.optString(idx))
-            }.filterNotNull()
+                    itemFromString(jsonArray.optString(idx))
+                }
+                .filterNotNull()
         }
     }
 }

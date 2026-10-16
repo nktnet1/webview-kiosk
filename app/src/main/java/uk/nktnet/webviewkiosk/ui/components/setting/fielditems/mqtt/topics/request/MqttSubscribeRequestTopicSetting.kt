@@ -20,7 +20,8 @@ fun MqttSubscribeRequestTopicSetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.mqtt_subscribe_request_topic_title),
-        infoText = $$"""
+        infoText =
+            $$"""
             The MQTT topic name to receive requests.
 
             Supported variables:
@@ -29,7 +30,8 @@ fun MqttSubscribeRequestTopicSetting() {
 
             Example:
             - wk/${$${MqttVariableName.APP_INSTANCE_ID.name}}/request
-        """.trimIndent(),
+        """
+                .trimIndent(),
         placeholder = "e.g. wk/request",
         initialValue = userSettings.mqttSubscribeRequestTopic,
         settingKey = settingKey,
@@ -39,6 +41,6 @@ fun MqttSubscribeRequestTopicSetting() {
             mqttVariableReplacement(it)
         },
         isMultiline = false,
-        onSave = { userSettings.mqttSubscribeRequestTopic = it }
+        onSave = { userSettings.mqttSubscribeRequestTopic = it },
     )
 }

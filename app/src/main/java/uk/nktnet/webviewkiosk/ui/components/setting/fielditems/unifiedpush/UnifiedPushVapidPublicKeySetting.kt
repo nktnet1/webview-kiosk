@@ -36,12 +36,14 @@ fun UnifiedPushVapidPublicKeySetting() {
 
     TextSettingFieldItem(
         label = stringResource(R.string.unifiedpush_vapid_public_key_title),
-        infoText = """
+        infoText =
+            """
             VAPID public key (RFC8292), base64url, in uncompressed form (87 chars long).
 
             For more details, see:
             - https://www.rfc-editor.org/rfc/rfc8292
-        """.trimIndent(),
+            """
+                .trimIndent(),
         placeholder = "",
         validator = {
             it.isEmpty() || isValidVapidPublicKey(it)
@@ -62,20 +64,14 @@ fun UnifiedPushVapidPublicKeySetting() {
                 onClick = {
                     scope.launch {
                         val clipEntry = clipboard.getClipEntry()
-                        val pasteData = clipEntry
-                            ?.clipData
-                            ?.getItemAt(0)
-                            ?.text
-                            ?.toString()
-                            ?: ""
+                        val pasteData =
+                            clipEntry?.clipData?.getItemAt(0)?.text?.toString() ?: ""
                         setValue(pasteData)
                     }
                 },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 shape = RoundedCornerShape(4.dp),
-                colors = ButtonDefaults.buttonColors()
+                colors = ButtonDefaults.buttonColors(),
             ) {
                 Text(
                     text = "Paste Clipboard",
@@ -83,9 +79,9 @@ fun UnifiedPushVapidPublicKeySetting() {
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
-        }
+        },
     )
 }
