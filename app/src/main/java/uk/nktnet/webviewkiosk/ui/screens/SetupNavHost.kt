@@ -10,19 +10,26 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
 import androidx.navigation.createGraph
+import uk.nktnet.webviewkiosk.blocking.ContentBlockingService
 import uk.nktnet.webviewkiosk.config.Screen
+import uk.nktnet.webviewkiosk.ui.components.webview.ContentBlockingGate
 import uk.nktnet.webviewkiosk.utils.WEBVIEW_RECREATION_REQUEST_KEY
 import uk.nktnet.webviewkiosk.utils.authComposable
 
 @Composable
 fun SetupNavHost(navController: NavHostController) {
-    SetupNavHost(navController) { WebviewScreen(navController) }
+    val context = LocalContext.current
+    val blocker = remember(context) { ContentBlockingService.get(context) }
+    SetupNavHost(navController) {
+        ContentBlockingGate(blocker) { WebviewScreen(navController) }
+    }
 }
 
 /**

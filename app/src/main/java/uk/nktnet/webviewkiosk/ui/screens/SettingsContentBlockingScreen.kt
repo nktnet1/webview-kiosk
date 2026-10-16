@@ -9,6 +9,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -32,6 +33,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -316,15 +318,15 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                 if (!blockingEnabled) {
                     item(key = "blocking-disabled") {
                         Text(
-                            "Content blocking is disabled in " +
-                                "Web Content settings. " +
-                                "These lists will not take effect.",
+                            "Content blocking is disabled.",
                             modifier =
                                 Modifier.fillMaxWidth().semantics {
                                     liveRegion = LiveRegionMode.Polite
                                 },
                             color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.titleSmall,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontStyle = FontStyle.Italic,
+                            textAlign = TextAlign.Center,
                         )
                     }
                 }
@@ -811,82 +813,81 @@ private fun FilterListInfoDialog(
             ) {
                 val details = info
                 val unavailable = failure != null
-                InfoStat(
-                    "Type",
-                    when (item.type) {
-                        FilterListType.FILE -> "Custom"
-                        FilterListType.URL -> "URL"
-                        FilterListType.PRESET -> "Preset"
-                    },
-                )
-                InfoStat(
-                    "Status",
-                    if (item.enabled) {
-                        "Enabled"
-                    } else {
-                        "Disabled"
-                    },
-                )
-                InfoStat(
-                    "Last refreshed",
-                    when {
-                        item.type == FilterListType.FILE -> "Not applicable"
+                InfoSection("List details") {
+                    InfoStat(
+                        "Type",
+                        when (item.type) {
+                            FilterListType.FILE -> "Custom"
+                            FilterListType.URL -> "URL"
+                            FilterListType.PRESET -> "Preset"
+                        },
+                    )
+                    InfoStat(
+                        "Status",
+                        if (item.enabled) {
+                            "Enabled"
+                        } else {
+                            "Disabled"
+                        },
+                    )
+                    InfoStat(
+                        "Last refreshed",
+                        when {
+                            item.type == FilterListType.FILE -> "Not applicable"
 
-                        item.lastRefreshedAt == null -> "Unknown"
+                            item.lastRefreshedAt == null -> "Unknown"
 
-                        else ->
-                            remember(item.lastRefreshedAt) {
-                                DateFormat.getDateTimeInstance(
-                                        DateFormat.MEDIUM,
-                                        DateFormat.SHORT,
-                                    )
-                                    .format(Date(item.lastRefreshedAt))
-                            }
-                    },
-                )
-                InfoStat(
-                    "File size",
-                    fileSize?.let { Formatter.formatShortFileSize(context, it) },
-                    unavailable,
-                )
-                InfoStat(
-                    "Total rules",
-                    details?.let { numbers.format(it.totalRules) },
-                    unavailable,
-                )
-                InfoStat(
-                    "Network rules",
-                    details?.let { numbers.format(it.networkRules) },
-                    unavailable,
-                )
-                InfoStat(
-                    "Cosmetic rules",
-                    details?.let { numbers.format(it.cosmeticRules) },
-                    unavailable,
-                )
-                InfoStat(
-                    "Skipped rules",
-                    details?.let { numbers.format(it.skippedRules) },
-                    unavailable,
-                )
-                InfoStat(
-                    "Invalid rules",
-                    details?.let { numbers.format(it.invalidRules) },
-                    unavailable,
-                )
+                            else ->
+                                remember(item.lastRefreshedAt) {
+                                    DateFormat.getDateTimeInstance(
+                                            DateFormat.MEDIUM,
+                                            DateFormat.SHORT,
+                                        )
+                                        .format(Date(item.lastRefreshedAt))
+                                }
+                        },
+                        stacked = true,
+                    )
+                    InfoStat(
+                        "File size",
+                        fileSize?.let { Formatter.formatShortFileSize(context, it) },
+                        unavailable,
+                    )
+                }
+                InfoSection("Rules") {
+                    InfoStat(
+                        "Total rules",
+                        details?.let { numbers.format(it.totalRules) },
+                        unavailable,
+                    )
+                    InfoStat(
+                        "Network rules",
+                        details?.let { numbers.format(it.networkRules) },
+                        unavailable,
+                    )
+                    InfoStat(
+                        "Cosmetic rules",
+                        details?.let { numbers.format(it.cosmeticRules) },
+                        unavailable,
+                    )
+                    InfoStat(
+                        "Skipped rules",
+                        details?.let { numbers.format(it.skippedRules) },
+                        unavailable,
+                    )
+                    InfoStat(
+                        "Invalid rules",
+                        details?.let { numbers.format(it.invalidRules) },
+                        unavailable,
+                    )
+                }
                 item.sourceUrl?.let { source ->
-                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(
-                            "Source",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                    InfoSection("Source URL") {
                         SelectionContainer {
                             Text(
                                 source,
-                                modifier = Modifier.fillMaxWidth(),
-                                maxLines = 4,
-                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                                style = MaterialTheme.typography.bodySmall,
                             )
                         }
                     }
@@ -899,37 +900,84 @@ private fun FilterListInfoDialog(
 }
 
 @Composable
-private fun InfoStat(label: String, value: String?, unavailable: Boolean = false) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            label,
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.CenterEnd) {
-            if (value != null || unavailable) {
+private fun InfoSection(
+    title: String,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(title, style = MaterialTheme.typography.titleSmall)
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            shape = MaterialTheme.shapes.extraSmall,
+        ) {
+            Column(modifier = Modifier.fillMaxWidth(), content = content)
+        }
+    }
+}
+
+@Composable
+private fun InfoStat(
+    label: String,
+    value: String?,
+    unavailable: Boolean = false,
+    stacked: Boolean = false,
+) {
+    Column {
+        if (stacked) {
+            Text(
+                label,
+                modifier = Modifier.padding(start = 12.dp, end = 12.dp, top = 10.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Row(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (!stacked) {
                 Text(
-                    value ?: "Unavailable",
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.End,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            } else {
-                CircularProgressIndicator(
-                    modifier =
-                        Modifier.size(16.dp).semantics {
-                            contentDescription = "Loading $label"
-                        },
-                    strokeWidth = 2.dp,
+                    label,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
+            Box(
+                modifier = Modifier.weight(1.4f),
+                contentAlignment =
+                    if (stacked) {
+                        Alignment.CenterStart
+                    } else {
+                        Alignment.CenterEnd
+                    },
+            ) {
+                if (value != null || unavailable) {
+                    Text(
+                        value ?: "Unavailable",
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign =
+                            if (stacked) {
+                                TextAlign.Start
+                            } else {
+                                TextAlign.End
+                            },
+                    )
+                } else {
+                    CircularProgressIndicator(
+                        modifier =
+                            Modifier.size(16.dp).semantics {
+                                contentDescription = "Loading $label"
+                            },
+                        strokeWidth = 2.dp,
+                    )
+                }
+            }
         }
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
     }
 }
 
@@ -1112,6 +1160,7 @@ private fun ListTypeDropdown(
         OutlinedButton(
             onClick = { expanded = true },
             enabled = enabled,
+            shape = MaterialTheme.shapes.extraSmall,
             modifier =
                 Modifier.fillMaxWidth().semantics {
                     contentDescription = "List type"
@@ -1416,6 +1465,7 @@ private fun AddFilterListDialog(
                                     OutlinedButton(
                                         onClick = { presetsExpanded = true },
                                         enabled = !busy,
+                                        shape = MaterialTheme.shapes.extraSmall,
                                         modifier =
                                             Modifier.fillMaxWidth().semantics {
                                                 contentDescription = "Preset"

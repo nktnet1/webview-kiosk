@@ -19,12 +19,12 @@ fun EnableContentBlockingSetting() {
         label = stringResource(R.string.web_content_enable_content_blocking_title),
         infoText =
             """
-            Block ads and trackers using the enabled lists in Content Blocking.
+            Block ads and trackers using enabled filter lists.
 
             Disabling keeps your lists and their individual enabled states.
 
-            To add lists, open Content Blocking and select Add list. Choose a
-            preset, enter a URL, or use Custom to paste rules or import a file.
+            In Content Blocking, select Add list to choose a preset, enter a URL,
+            or paste or import custom rules.
             """
                 .trimIndent(),
         initialValue = userSettings.enableContentBlocking,
