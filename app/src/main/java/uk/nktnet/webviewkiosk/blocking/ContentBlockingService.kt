@@ -20,6 +20,7 @@ import uk.nktnet.webviewkiosk.adblock.CosmeticProcedure
 import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
 import uk.nktnet.webviewkiosk.adblock.NetworkFilterEngine
 import uk.nktnet.webviewkiosk.adblock.RuleLoadStage
+import uk.nktnet.webviewkiosk.adblock.ScriptletInjection
 import uk.nktnet.webviewkiosk.config.UserSettings
 import uk.nktnet.webviewkiosk.config.UserSettingsKeys
 
@@ -55,6 +56,9 @@ internal class ContentBlockingService(
 
     private val _initialLoadComplete = MutableStateFlow(false)
     val initialLoadComplete = _initialLoadComplete.asStateFlow()
+
+    private val _scriptletInjection = MutableStateFlow<ScriptletInjection?>(null)
+    val scriptletInjection = _scriptletInjection.asStateFlow()
 
     // Saved list changes do not need recompiling while Settings is open.
     // The WebView gate consumes this flag before creating the next page.
@@ -170,6 +174,7 @@ internal class ContentBlockingService(
         val revision = generation.incrementAndGet()
         if (!_enabled.value) {
             ready = false
+            _scriptletInjection.value = null
             _status.value = BlockingStatus.DISABLED
             _loadStage.value = null
             _lastError.value = null
@@ -243,6 +248,12 @@ internal class ContentBlockingService(
         }
         _lastError.value = null
         ready = hasRules
+        _scriptletInjection.value =
+            if (ready) {
+                engine.scriptletInjection()
+            } else {
+                null
+            }
         _skippedRules.value = engine.unsupportedRuleCount()
         _status.value =
             if (ready) {

@@ -51,12 +51,13 @@ internal data class FilterListInfo(
     val cosmeticRules: Int,
     val unsupportedRules: Int,
     val invalidRules: Int,
+    val scriptletRules: Int = 0,
 ) {
     val skippedRules: Int
         get() = unsupportedRules + invalidRules
 
     val totalRules: Int
-        get() = networkRules + cosmeticRules + skippedRules
+        get() = networkRules + cosmeticRules + scriptletRules + skippedRules
 }
 
 /**
@@ -593,6 +594,7 @@ internal class FilterListStore(
             counts.cosmeticRules,
             counts.unsupportedRules,
             counts.invalidRules,
+            counts.scriptletRules,
         )
     }
 

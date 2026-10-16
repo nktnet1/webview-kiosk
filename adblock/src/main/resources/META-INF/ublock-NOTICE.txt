@@ -1,0 +1,33 @@
+uBlock Origin scriptlet attribution
+
+Copyright (C) 2019-present Raymond Hill
+https://github.com/gorhill/uBlock
+SPDX-License-Identifier: GPL-3.0-or-later
+
+The bundled adblock/scriptlets.js contains adapted scriptlet behavior and small
+implementation patterns from uBlock Origin's src/js/resources. Its copyright,
+licence, and warranty notice are retained in that file. The complete upstream
+licence is provided unchanged at META-INF/licenses/ublock-GPL-3.0.txt.
+
+Reviewed source: the user-supplied uBlock-master.zip, whose archive comment names
+commit dfca51bea2b8605353547f605e9cffbb6dfa0789.
+Archive SHA-256:
+02eb8dbacc8ff09fd51524acd718998865c69a06041d3619def9d7204856311a
+
+Source references under src/js/resources at that commit:
+- set-constant.js: constant whitelist, type-change release, function stubs/cloaking.
+- utils.js: missing-property traps and abort exception-token semantics.
+- scriptlets.js: abortOnPropertyRead, abortOnPropertyWrite, noWindowOpenIf.
+- abort-current-script.js: current-script checks and data-URL text decoding.
+- prevent-addeventlistener.js: event-type and callback-source matching.
+- prevent-settimeout.js: callback and delay matching, noop callback defusing.
+- json-prune.js and object-prune.js: guarded JSON property-path pruning.
+- prevent-fetch.js: request-property matching and synthetic responses.
+
+Modified for Webview Kiosk on 2026-10-16. This is a bounded adaptation, not a copy
+of the full extension runtime. The fixed dispatcher, Kotlin validation and cache,
+shared hooks, frame routing, and resource budgets are project-specific. Optional
+upstream forms outside the documented compatibility contract are rejected.
+
+Upstream source permalink:
+https://github.com/gorhill/uBlock/tree/dfca51bea2b8605353547f605e9cffbb6dfa0789/src/js/resources

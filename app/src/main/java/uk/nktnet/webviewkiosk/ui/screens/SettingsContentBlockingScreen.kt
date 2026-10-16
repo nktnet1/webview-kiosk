@@ -961,6 +961,11 @@ private fun FilterListInfoDialog(
                         unavailable,
                     )
                     InfoStat(
+                        "Scriptlets",
+                        details?.let { numbers.format(it.scriptletRules) },
+                        unavailable,
+                    )
+                    InfoStat(
                         "Skipped",
                         details?.let { numbers.format(it.skippedRules) },
                         unavailable,

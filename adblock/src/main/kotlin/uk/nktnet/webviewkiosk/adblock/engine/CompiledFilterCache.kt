@@ -10,6 +10,7 @@ import java.util.zip.CheckedInputStream
 import java.util.zip.CheckedOutputStream
 import uk.nktnet.webviewkiosk.adblock.BlockingResponse
 import uk.nktnet.webviewkiosk.adblock.CosmeticProcedure
+import uk.nktnet.webviewkiosk.adblock.ScriptletType
 
 /**
  * One disposable, versioned binary snapshot of normalized rules, never Java object
@@ -159,11 +160,44 @@ internal class CompiledFilterCache(
                                 }
                             CosmeticRule(selector, domains, exception, procedure)
                         }
+                    val scriptlets =
+                        List(
+                            input.count(
+                                minOf(
+                                    ScriptletIndex.MAX_RULES,
+                                    FilterCompiler.MAX_RULES -
+                                        skipped -
+                                        networks.size -
+                                        cosmetics.size,
+                                )
+                            )
+                        ) {
+                            val scope = strings.scope()
+                            require(
+                                !scope.usesEntities &&
+                                    scope.included.none { ':' in it }
+                            )
+                            val exception = input.readBoolean()
+                            require(exception || scope.included.isNotEmpty())
+                            val instruction =
+                                if (input.readBoolean()) {
+                                    val type = ScriptletType.valueOf(strings.read())
+                                    val args =
+                                        List(input.count(8)) { strings.read() }
+                                    requireNotNull(
+                                        ScriptletParser.validated(type, args)
+                                    )
+                                } else {
+                                    require(exception)
+                                    null
+                                }
+                            ScriptletRule(instruction, scope, exception)
+                        }
                     val actual = checksum.value
                     if (input.readLong() != actual || input.read() != -1) {
                         return null
                     }
-                    CompiledRuleSet(networks, cosmetics, skipped)
+                    CompiledRuleSet(networks, cosmetics, skipped, scriptlets)
                 }
         } catch (_: IOException) {
             null
@@ -274,6 +308,17 @@ internal class CompiledFilterCache(
                             strings.write(procedure.upwardSelector.orEmpty())
                         }
                     }
+                    output.writeInt(rules.scriptlets.size)
+                    for ((instruction, domains, exception) in rules.scriptlets) {
+                        strings.scope(domains)
+                        output.writeBoolean(exception)
+                        output.writeBoolean(instruction != null)
+                        if (instruction != null) {
+                            strings.write(instruction.type.name)
+                            output.writeInt(instruction.arguments.size)
+                            instruction.arguments.forEach(strings::write)
+                        }
+                    }
                     output.writeLong(checksum.value)
                 }
             if (temporary.length() <= MAX_BYTES) {
@@ -361,7 +406,7 @@ internal class CompiledFilterCache(
         private const val MAGIC = 0x574b4346 // WKCF
 
         // Bump when parsing/matching semantics or the binary schema change.
-        private const val VERSION = 5
+        private const val VERSION = 6
         private const val MAX_BYTES = 64L * 1024 * 1024
         private const val BUFFER_SIZE = 64 * 1024
 

@@ -85,6 +85,10 @@ function page({ protocol = "https:", hostname = "publisher.example", bridgeAvail
   return {
     messages, timers, observers, body, head, document,
     run: () => runInNewContext(script, context),
+    defusePageTimers() {
+      context.setTimeout = () => 0;
+      context.clearTimeout = () => {};
+    },
     flush,
     mutate,
     add(id, classes = []) {
@@ -220,4 +224,15 @@ test("oversized and control-character tokens are skipped before the bridge", () 
   p.flush();
   assert.deepEqual(p.messages[0].ids, []);
   assert.deepEqual(p.messages[0].classes, ["good"]);
+});
+
+test("scriptlet timer hooks cannot defuse cosmetic updates", () => {
+  const p = page();
+  p.run();
+  p.flush();
+  p.reply({ selectors: [] });
+  p.defusePageTimers();
+  p.add("new-ad", ["advertisement"]);
+  p.flush();
+  assert.deepEqual(p.messages[1].classes, ["advertisement"]);
 });

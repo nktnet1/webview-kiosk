@@ -104,6 +104,8 @@ internal sealed interface ParsedFilter {
 
     data class Cosmetic(val rule: CosmeticRule) : ParsedFilter
 
+    data class Scriptlet(val rule: ScriptletRule) : ParsedFilter
+
     data class Invalid(val message: String) : ParsedFilter
 
     data object Unsupported : ParsedFilter
@@ -502,11 +504,34 @@ internal object FilterParser {
         if (selector.isEmpty()) {
             throw Invalid("missing CSS selector")
         }
-        if (
-            selector.length > 4096 ||
-                selector.startsWith("+js(") ||
-                selector.startsWith("^")
-        ) {
+        if (selector.startsWith("+js(")) {
+            if (
+                (!exception && delimiterLength != 2) ||
+                    (exception && delimiterLength != 3)
+            ) {
+                throw Unsupported()
+            }
+            val scope = domains(line.substring(0, separator), ',')
+            // Entity/regex domains need a public-suffix-aware synchronous frame
+            // dispatcher. Do not approximate them with hostname substrings.
+            if (
+                scope.usesEntities ||
+                    !exception && scope.included.isEmpty() ||
+                    scope.included.any { ':' in it }
+            ) {
+                throw Unsupported()
+            }
+            val instruction =
+                if (exception && selector == "+js()") {
+                    null
+                } else {
+                    ScriptletParser.parse(selector) ?: throw Unsupported()
+                }
+            return ParsedFilter.Scriptlet(
+                ScriptletRule(instruction, scope, exception)
+            )
+        }
+        if (selector.length > 4096 || selector.startsWith("^")) {
             throw Unsupported()
         }
         val scope = domains(line.substring(0, separator), ',')

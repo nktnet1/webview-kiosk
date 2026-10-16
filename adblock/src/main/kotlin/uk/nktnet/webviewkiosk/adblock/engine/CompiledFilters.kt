@@ -4,6 +4,8 @@ import java.util.Locale
 import okhttp3.HttpUrl
 import uk.nktnet.webviewkiosk.adblock.BlockingResponse
 import uk.nktnet.webviewkiosk.adblock.CosmeticProcedure
+import uk.nktnet.webviewkiosk.adblock.ScriptletInjection
+import uk.nktnet.webviewkiosk.adblock.ScriptletInstruction
 
 /** Validates rule text and builds the immutable indexes used by request threads. */
 internal object FilterCompiler {
@@ -17,6 +19,7 @@ internal object FilterCompiler {
         FilterParser.visit(text) { line, result ->
             when (result) {
                 is ParsedFilter.Network,
+                is ParsedFilter.Scriptlet,
                 is ParsedFilter.Cosmetic -> supported++
 
                 ParsedFilter.Unsupported -> unsupported++
@@ -45,7 +48,7 @@ internal object FilterCompiler {
             if (unsupported == 0) {
                 "Filter list has no rules (only comments or blank lines)"
             } else {
-                "Filter list has no supported network or CSS-hiding rules. " +
+                "Filter list has no supported network, cosmetic, or scriptlet rules. " +
                     "Unsupported rules: $unsupported. No changes were saved."
             }
         }
@@ -55,6 +58,7 @@ internal object FilterCompiler {
         val networks = LinkedHashSet<NetworkIdentity>()
         val disabled = HashSet<NetworkIdentity>()
         val cosmetics = LinkedHashSet<CosmeticRule>()
+        val scriptlets = LinkedHashSet<ScriptletRule>()
         var skipped = 0
         var total = 0
         for (text in lists) {
@@ -73,6 +77,16 @@ internal object FilterCompiler {
 
                     is ParsedFilter.Cosmetic -> cosmetics += result.rule
 
+                    is ParsedFilter.Scriptlet -> {
+                        require(
+                            scriptlets.size < ScriptletIndex.MAX_RULES ||
+                                result.rule in scriptlets
+                        ) {
+                            "At most ${ScriptletIndex.MAX_RULES} scriptlet rules can be enabled"
+                        }
+                        scriptlets += result.rule
+                    }
+
                     // Old saved lists can contain syntax this subset does not
                     // implement.
                     // Keep their useful rules; staged imports still reject malformed
@@ -82,7 +96,7 @@ internal object FilterCompiler {
             }
         }
         networks.removeAll(disabled)
-        return CompiledRuleSet(networks, cosmetics, skipped)
+        return CompiledRuleSet(networks, cosmetics, skipped, scriptlets.toList())
     }
 }
 
@@ -91,6 +105,7 @@ internal data class CompiledRuleSet(
     val networks: Collection<NetworkIdentity>,
     val cosmetics: Collection<CosmeticRule>,
     val skippedRules: Int,
+    val scriptlets: List<ScriptletRule> = emptyList(),
 ) {
     fun build(): CompiledFilters {
         if (
@@ -103,7 +118,7 @@ internal data class CompiledRuleSet(
             // Load OkHttp's existing public-suffix data on the compilation worker.
             httpAddress("https://example.com/")!!.topPrivateDomain()
         }
-        return CompiledFilters(networks, cosmetics, skippedRules)
+        return CompiledFilters(networks, cosmetics, skippedRules, scriptlets)
     }
 }
 
@@ -267,7 +282,14 @@ internal class CompiledFilters(
     networks: Collection<NetworkIdentity>,
     cosmetics: Collection<CosmeticRule>,
     val skippedRules: Int,
+    scriptletRules: List<ScriptletRule> = emptyList(),
 ) {
+    private val scriptletIndex = ScriptletIndex(scriptletRules)
+    val scriptletInjection: ScriptletInjection? = scriptletIndex.injection()
+
+    fun scriptlets(url: String): List<ScriptletInstruction> =
+        scriptletIndex.instructions(url)
+
     private val blockedHosts = HashSet<String>()
     private val allowedHosts = HashSet<String>()
     private val importantHosts = HashSet<String>()

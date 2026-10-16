@@ -7,6 +7,9 @@
   Object.defineProperty(window, "__wkCosmeticsInstalled", { value: true });
 
   var bridge = window.wkCosmeticRules;
+  // Installed before scriptlets: cosmetic work must keep using native timers.
+  var scheduleTimeout = setTimeout.bind(window);
+  var cancelTimeout = clearTimeout.bind(window);
   var seenClasses = new Set();
   var seenIds = new Set();
   var classes = new Set();
@@ -28,7 +31,7 @@
 
   function schedule(delay) {
     if (stopped || timer !== null) return;
-    timer = setTimeout(flush, delay === undefined ? 50 : delay);
+    timer = scheduleTimeout(flush, delay === undefined ? 50 : delay);
   }
 
   function queue(root) {
@@ -156,7 +159,7 @@
   function stop() {
     stopped = true;
     observer.disconnect();
-    if (timer !== null) clearTimeout(timer);
+    if (timer !== null) cancelTimeout(timer);
     timer = null;
     work = [];
     classes.clear();
@@ -245,7 +248,7 @@
     attributes: true, attributeFilter: ["class", "id"] });
   window.addEventListener("pagehide", function () {
     observer.disconnect();
-    if (timer !== null) clearTimeout(timer);
+    if (timer !== null) cancelTimeout(timer);
     timer = null;
   });
   window.addEventListener("pageshow", function () {

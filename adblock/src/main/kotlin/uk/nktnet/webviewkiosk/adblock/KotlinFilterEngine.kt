@@ -77,4 +77,10 @@ class KotlinFilterEngine(cacheFile: File? = null, cacheVersion: Int = 0) :
         compiled.cosmeticProcedures(url)
 
     override fun unsupportedRuleCount(): Int = compiled.skippedRules
+
+    override fun scriptletInjection(): ScriptletInjection? =
+        compiled.scriptletInjection
+
+    override fun scriptlets(url: String): List<ScriptletInstruction> =
+        compiled.scriptlets(url)
 }

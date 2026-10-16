@@ -9,6 +9,7 @@ data class FilterRuleCounts(
     val cosmeticRules: Int,
     val unsupportedRules: Int,
     val invalidRules: Int,
+    val scriptletRules: Int = 0,
 )
 
 /** Inspect text without compiling it or changing an engine's active snapshot. */
@@ -17,10 +18,12 @@ fun inspectFilterList(text: String): FilterRuleCounts {
     var cosmetic = 0
     var unsupported = 0
     var invalid = 0
+    var scriptlets = 0
     FilterParser.visit(text) { _, rule ->
         when (rule) {
             is ParsedFilter.Network -> network++
             is ParsedFilter.Cosmetic -> cosmetic++
+            is ParsedFilter.Scriptlet -> scriptlets++
             ParsedFilter.Unsupported -> unsupported++
             is ParsedFilter.Invalid -> invalid++
         }
@@ -30,6 +33,7 @@ fun inspectFilterList(text: String): FilterRuleCounts {
         cosmetic,
         unsupported,
         invalid,
+        scriptlets,
     )
 }
 

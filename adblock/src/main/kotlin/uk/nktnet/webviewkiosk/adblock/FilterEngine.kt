@@ -75,6 +75,10 @@ interface NetworkFilterEngine {
 
     fun cosmeticProcedures(url: String): List<CosmeticProcedure> = emptyList()
 
+    fun scriptletInjection(): ScriptletInjection? = null
+
+    fun scriptlets(url: String): List<ScriptletInstruction> = emptyList()
+
     fun unsupportedRuleCount(): Int = 0
 }
 
