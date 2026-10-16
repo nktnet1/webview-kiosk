@@ -1,62 +1,6 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
 import test from 'node:test';
-import { createContext, runInContext } from 'node:vm';
-
-const runtime = readFileSync(new URL(
-    '../../adblock/src/main/resources/adblock/scriptlets.js', import.meta.url), 'utf8');
-
-function page(rules, { host = 'site.example', protocol = 'https:', before = '' } = {}) {
-    const calls = { open: [], timers: [], listeners: [], fetch: [] };
-    class Target {
-        addEventListener(...args) { calls.listeners.push([this, ...args]); }
-    }
-    class Script extends Target {
-        constructor(textContent = '', src = '') {
-            super(); this.textContent = textContent; this.src = src;
-        }
-    }
-    const document = { currentScript: null };
-    // Use realm-local constructors and functions for actual property/exception tests.
-    const context = createContext({
-        location: { hostname: host, protocol, href: `${protocol}//${host}/path` },
-        document, EventTarget: Target, HTMLScriptElement: Script,
-        Response: class extends Response {}, Request, DOMException, atob,
-        open(...args) { calls.open.push(args); return 'opened'; },
-        setTimeout(...args) { calls.timers.push(args); return calls.timers.length; },
-        fetch(...args) { calls.fetch.push(args); return Promise.resolve('native response'); },
-    });
-    runInContext('self = globalThis; window = self;', context);
-    // Window is an EventTarget in WebView.
-    context.addEventListener = Target.prototype.addEventListener;
-    if (before) { runInContext(before, context); }
-    const config = { rules: [], hosts: [], exceptions: [] };
-    const hosts = new Map();
-    for (const [type, args, domain = 'site.example', excluded = [], exception = false] of rules) {
-        const index = config.rules.length;
-        config.rules.push([type, args, excluded, exception]);
-        if (domain === '') { config.exceptions.push(index); }
-        else {
-            if (!hosts.has(domain)) { hosts.set(domain, []); }
-            hosts.get(domain).push(index);
-        }
-    }
-    config.hosts = Array.from(hosts.entries());
-    const domains = '|' + Array.from(hosts.keys()).join('|') + '|';
-    return {
-        calls, context, document, Script,
-        run: code => runInContext(code, context),
-        install: () => runInContext(
-            `${runtime}(${JSON.stringify(domains)}, ` +
-            `${JSON.stringify(JSON.stringify(config))});`, context),
-    };
-}
-
-function installed(type, args, options) {
-    const fixture = page([[type, args]], options);
-    fixture.install();
-    return fixture;
-}
+import { page, installed, runtime } from './scriptlet-fixture.mjs';
 
 test('set hooks nested missing properties, replacement parents, and predefined functions', () => {
     const p = page([

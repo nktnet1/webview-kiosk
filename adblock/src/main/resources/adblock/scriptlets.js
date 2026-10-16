@@ -20,15 +20,10 @@
 
 */
 
-/*
- * Adapted portions: uBlock Origin scriptlet resources, Raymond Hill, GPL-3.0-or-later.
- * Modified for Webview Kiosk on 2026-10-16: bounded typed instructions, shared hooks,
- * own-frame routing, conservative argument subsets, and WebView resource limits.
- * See META-INF/ublock-NOTICE.txt and META-INF/licenses/ublock-GPL-3.0.txt.
- * Filter arguments are JSON data, never JavaScript source. See SCRIPTLETS.md.
- * Keep this a function expression; Kotlin appends the host gate and JSON payload.
+/* Modified for Webview Kiosk on 2026-10-16: bounded shared hooks and frame routing.
+ * Source attribution: META-INF/ublock-NOTICE.txt. Keep this a function expression.
  */
-(function(domains, serialized) {
+(function(domains, serialized, extension, resources) {
     'use strict';
     if (location.protocol !== 'https:' && location.protocol !== 'http:') { return; }
     const host = location.hostname.toLowerCase().replace(/\.$/, '');
@@ -117,19 +112,30 @@
             return inverted ? !match : match;
         };
     }
+    // One proxy per native function even when several families share a hook.
+    const wrappers = new WeakMap();
     function wrap(owner, name, intercept) {
         if (!owner || typeof owner[name] !== 'function') { return; }
+        let names = wrappers.get(owner);
+        if (!names) { names = new Map(); wrappers.set(owner, names); }
+        const prior = names.get(name);
+        if (prior && owner[name] === prior.proxy) { prior.handlers.push(intercept); return; }
         const original = owner[name];
         const desc = descriptor(owner, name);
         if (desc && !('value' in desc)) { return; }
+        const handlers = [intercept];
+        function dispatch(index, receiver, args) {
+            if (index === 0) { return handlers[0](original, receiver, args); }
+            const next = function(...values) { return dispatch(index - 1, this, values); };
+            return handlers[index](next, receiver, args);
+        }
         const proxy = new Proxy(original, {
-            apply(target, receiver, args) {
-                return intercept(target, receiver, args);
-            },
+            apply(target, receiver, args) { return dispatch(handlers.length - 1, receiver, args); },
         });
         define(owner, name, desc ? { ...desc, value: proxy } : {
             value: proxy, configurable: true, writable: true,
         });
+        names.set(name, { proxy, handlers });
     }
 
     const groups = new Map();
@@ -137,7 +143,7 @@
         if (!groups.has(rule[0])) { groups.set(rule[0], []); }
         groups.get(rule[0]).push(rule[1]);
     }
-    const aborting = ['ABORT_READ', 'ABORT_WRITE', 'ABORT_CURRENT_SCRIPT']
+    const aborting = ['ABORT_READ', 'ABORT_WRITE', 'ABORT_CURRENT_SCRIPT', 'ABORT_STACK_TRACE']
         .some(type => groups.has(type));
     const token = 'wk-scriptlet-' + Math.random().toString(36).slice(2);
     if (aborting) {
@@ -459,13 +465,23 @@
         ['JSON_PRUNE', installJson],
         ['PREVENT_FETCH', installFetch],
     ]);
+    const extra = typeof extension === 'function' ? extension({
+        groups, selected, wrap, apply, define, descriptor, matcher, source, nativeAdd,
+        trap, abort, resources: resources || {},
+    }) : new Map();
+    for (const [type, installer] of extra) { installers.set(type, installer); }
     const installed = new Set();
     for (const [type, args] of selected) {
         const install = installers.get(type);
         if (!install) { installProperty(type, args); }
-        else if (!installed.has(type)) {
-            installed.add(type);
-            install();
+        else if (type === 'RESOURCE' || type === 'SET_LOCAL_STORAGE' ||
+            type === 'SET_SESSION_STORAGE' || type === 'SET_COOKIE' ||
+            type === 'SET_COOKIE_RELOAD' || type === 'REMOVE_COOKIE' ||
+            type === 'CALL_NOTHROW' || type === 'ABORT_STACK_TRACE') {
+            try { install(args); } catch {}
+        } else if (!installed.has(install)) {
+            installed.add(install);
+            try { install(); } catch {}
         }
     }
 

@@ -7,7 +7,7 @@ import { performance } from 'node:perf_hooks';
 const path = process.argv[2];
 if (!path) { throw new Error('Pass the exported ublock-injection.js path'); }
 const source = readFileSync(path, 'utf8');
-const runtime = readFileSync(new URL(
+const runtime = readFileSync(process.argv[3] || new URL(
     '../adblock/src/main/resources/adblock/scriptlets.js', import.meta.url), 'utf8');
 const median = values => [...values].sort((a, b) => a - b)[Math.floor(values.length / 2)];
 function timed(run) {
@@ -18,10 +18,13 @@ function timed(run) {
 function context(host) {
     class Target { addEventListener() {} }
     const sandbox = createContext({
-        location: { protocol: 'https:', hostname: host },
-        document: { currentScript: null }, EventTarget: Target,
+        location: { protocol: 'https:', hostname: host, href: 'https://' + host + '/' },
+        document: { currentScript: null, readyState: 'loading', querySelectorAll: () => [] },
+        EventTarget: Target,
         Response: class extends Response {}, Request,
-        open() { return null; }, setTimeout() { return 1; },
+        timerDelays: [], open() { return null; },
+        setTimeout(callback, delay) { sandbox.timerDelays.push(delay); return 1; },
+        clearTimeout() {},
         fetch() { return Promise.resolve(new Response('')); },
     });
     new Script('self = globalThis; window = self;').runInContext(sandbox);
@@ -56,7 +59,14 @@ for (const host of ['www.youtube.com', 'unrelated.example']) {
 const publisher = context('timesofindia.indiatimes.com');
 compiled.runInContext(publisher);
 assert.equal(new Script('nsShowMaxCount').runInContext(publisher), 0);
-output.kotlinPayloadBehaviorChecks = 3;
+for (const host of ['imgdrive.net', 'unrelated.example']) {
+    const sandbox = context(host);
+    compiled.runInContext(sandbox);
+    new Script('setTimeout(function redirect(){}, 4000)').runInContext(sandbox);
+    const boosted = host === 'imgdrive.net' && source.includes('ADJUST_SET_TIMEOUT');
+    assert.equal(sandbox.timerDelays.at(-1), boosted ? 200 : 4000);
+}
+output.kotlinPayloadBehaviorChecks = 5;
 const count = 200000;
 const loop = new Script(`
     function loginCallback() {}
@@ -66,6 +76,7 @@ function timerCost(rules) {
     const times = [];
     for (let i = 0; i < 16; i++) {
         const sandbox = context('site.example');
+        new Script('setTimeout = function(){ return 1; };').runInContext(sandbox);
         if (rules.length) {
             const data = { rules, hosts: [['site.example', rules.map((_, index) => index)]],
                 exceptions: [] };

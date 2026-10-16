@@ -97,7 +97,33 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
         // A cheap synchronous host gate runs before the lazy routing payload.
         // This wildcard exposes no native bridge or privileged callable API.
         val gate = json(domains.joinToString("|", "|", "|"))
-        return ScriptletInjection("$runtime($gate,${json(data)});", setOf("*"))
+        val additional = rules.any {
+            (it.instruction?.type?.ordinal ?: 0) >
+                uk.nktnet.webviewkiosk.adblock.ScriptletType.PREVENT_FETCH.ordinal
+        }
+        val libraries =
+            if (additional) {
+                val resources =
+                    rules
+                        .mapNotNull { rule ->
+                            rule.instruction
+                                ?.takeIf {
+                                    it.type ==
+                                        uk.nktnet.webviewkiosk.adblock.ScriptletType
+                                            .RESOURCE
+                                }
+                                ?.arguments
+                                ?.firstOrNull()
+                        }
+                        .toSet()
+                ",$extraRuntime,${ScriptletResources.factories(resources)}"
+            } else {
+                ""
+            }
+        return ScriptletInjection(
+            "$runtime($gate,${json(data)}$libraries);",
+            setOf("*"),
+        )
     }
 
     companion object {
@@ -112,6 +138,14 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
             ScriptletIndex::class
                 .java
                 .getResourceAsStream("/adblock/scriptlets.js")!!
+                .bufferedReader()
+                .use { it.readText() }
+        }
+
+        private val extraRuntime by lazy {
+            ScriptletIndex::class
+                .java
+                .getResourceAsStream("/adblock/scriptlets-extra.js")!!
                 .bufferedReader()
                 .use { it.readText() }
         }

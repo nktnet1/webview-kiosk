@@ -406,7 +406,7 @@ internal class CompiledFilterCache(
         private const val MAGIC = 0x574b4346 // WKCF
 
         // Bump when parsing/matching semantics or the binary schema change.
-        private const val VERSION = 6
+        private const val VERSION = 7
         private const val MAX_BYTES = 64L * 1024 * 1024
         private const val BUFFER_SIZE = 64 * 1024
 

@@ -28,7 +28,23 @@ internal object SuggestedFilterLists {
     private const val HAGEZI_BASE_URL =
         "https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/adblock"
 
-    val all =
+    private fun ublock(name: String, description: String, file: String) =
+        SuggestedFilterList(
+            name = "uBlock $name",
+            description = description,
+            url = "https://ublockorigin.github.io/uAssets/filters/$file.txt",
+        )
+
+    private val ublock =
+        listOf(
+            ublock("Ads", "Ads", "filters"),
+            ublock("Privacy", "Trackers", "privacy"),
+            ublock("Badware", "Malicious sites", "badware"),
+            ublock("Quick fixes", "Urgent filter fixes", "quick-fixes"),
+            ublock("Unbreak", "Site compatibility fixes", "unbreak"),
+        )
+
+    private val others =
         listOf(
             SuggestedFilterList(
                 name = "EasyList",
@@ -41,14 +57,23 @@ internal object SuggestedFilterLists {
                 url = "https://easylist.to/easylist/easyprivacy.txt",
             ),
             SuggestedFilterList(
+                name = "Online Malicious URL Blocklist",
+                description = "Malicious URLs",
+                url =
+                    "https://malware-filter.gitlab.io/urlhaus-filter/" +
+                        "urlhaus-filter-ag-online.txt",
+            ),
+            SuggestedFilterList(
+                name = "Peter Lowe’s Ad and tracking server list",
+                description = "Ads & trackers",
+                url =
+                    "https://pgl.yoyo.org/adservers/serverlist.php?" +
+                        "hostformat=hosts&showintro=1&mimetype=plaintext",
+            ),
+            SuggestedFilterList(
                 name = "AdGuard Base",
                 description = "Ads",
                 url = "https://filters.adtidy.org/extension/ublock/filters/2.txt",
-            ),
-            SuggestedFilterList(
-                name = "uBlock Origin",
-                description = "Ads",
-                url = "https://ublockorigin.github.io/uAssets/filters/filters.txt",
             ),
             SuggestedFilterList(
                 name = "HaGeZi Multi LIGHT",
@@ -76,6 +101,12 @@ internal object SuggestedFilterLists {
                 url = "$HAGEZI_BASE_URL/ultimate.txt",
             ),
         )
+
+    val all = ublock + others
+
+    // The nine globally enabled subscriptions in upstream assets/assets.json.
+    // Regional and optional annoyance lists depend on user preference.
+    val defaults = ublock + others.take(4)
 }
 
 internal fun String.toFilterListUrlOrNull(): HttpUrl? =
@@ -128,6 +159,31 @@ internal class SuggestedFilterListDownloader(
                 type = FilterListType.PRESET,
             )
         }
+    }
+
+    /**
+     * Add missing defaults, preserving existing order, edits, and enabled states.
+     */
+    fun downloadDefaults(store: FilterListStore): FilterRefreshResult {
+        val missing =
+            SuggestedFilterLists.defaults.filterNot {
+                store.containsSource(it.url)
+            }
+        val failures = mutableListOf<FilterRefreshFailure>()
+        var added = 0
+        missing.forEach { suggestion ->
+            try {
+                download(suggestion, store)
+                added++
+            } catch (error: Exception) {
+                failures +=
+                    FilterRefreshFailure(
+                        suggestion.name,
+                        error.message ?: "Download failed",
+                    )
+            }
+        }
+        return FilterRefreshResult(added, missing.size, failures)
     }
 
     /** Download a manually entered URL using the same limits as presets. */

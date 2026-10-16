@@ -1,274 +1,276 @@
-# Scriptlet compatibility
+# Scriptlet compatibility — v1.0.14
 
-The Kotlin engine compiles a bounded subset of uBlock Origin `##+js(...)` filters.
-A fixed, locally bundled runtime implements nine scriptlet families. Subscription
-text supplies data only. No subscription JavaScript, `eval`, `Function`
-constructor, remote resource code, or HTML script-element injection is used.
+The standalone Kotlin engine compiles validated `##+js(...)` data into a fixed,
+locally bundled JavaScript library. Downloaded filters never supply executable
+source, replacement functions, script URLs, HTML, or an unrestricted expression.
+The native `eval` hook handles page-originated calls; filter text is never evaluated.
 
-## Supported operations
+The supplied upstream archive has 99 parameterized scriptlets and 30 JavaScript
+resources, totaling 129 canonical names (194 with aliases). Its 54 helper functions
+are separate. This patch implements 56 canonical names: 55 tested subsets and one
+conditional Navigation API operation. **27 implemented names are absent from the
+supplied active filter corpus.** See the complete
+[129-entry catalogue](SCRIPTLET-CATALOG.md), including aliases and exclusion reasons.
 
-✅ means executable, behavior-tested core semantics. ⚠️ identifies intentionally
-unsupported variants. All families currently require ordinary included hostnames;
-entity (`site.*`), regex-domain, IPv6-domain, and global injection rules are skipped.
-Exclusions and global or domain-specific scriptlet exceptions are supported.
+## Executable argument contracts
 
-| Family | Status | Implemented arguments | Skipped variants |
-| --- | --- | --- | --- |
-| `set` | ✅ | Dotted property, predefined constant or bounded integer | ⚠️ `runAt`, `as`, trust |
-| `aopr` | ✅ | Dotted property; missing and replaced ancestors | ⚠️ Unsafe property paths |
-| `aopw` | ✅ | Dotted property; missing and replaced ancestors | ⚠️ Unsafe property paths |
-| `nowoif` | ✅ | All calls, literal/regex, negation | ⚠️ Delay and decoy modes |
-| `aeld` | ✅ | Event type and function/`handleEvent` source matching | ⚠️ `elements`, `runAt` |
-| `nostif` | ✅ | Callback pattern, exact/ranged delay, negation | ⚠️ Additional options |
-| `acs` | ✅ | Property, script text, optional script `src` match | ⚠️ Complex regex syntax |
-| `json-prune` | ✅ | Own dotted paths, guards, `[]` and `*` | ⚠️ `[-]`, `{-}`, stacks |
-| `no-fetch-if` | ✅ | URL/method predicates, empty/string/object/array response | ⚠️ Other options |
-| `no-xhr-if` | ❌ | None | Faithful XHR state/event/abort emulation is not implemented |
+✅ means executable and behavior-tested within the listed subset, not support for
+all upstream options. ⚠️ means a provider-dependent feature. ❌ means skipped.
+Unknown arguments discard the whole instruction. There is no approximate fallback.
 
-Long names, `.js` suffixes, and the common aliases in `ScriptletParser` normalize
-to typed instructions. `set` supports `undefined`, `null`, booleans, empty strings,
-empty arrays/objects, `noopFunc`, `trueFunc`, `falseFunc`, `throwFunc`, and integers
-from -32767 to 32767. Arbitrary strings, expressions, and trusted scriptlets stay
-unsupported. Constants relinquish their trap after a non-null type-changing write.
+| Status | Names / families | Implemented subset |
+| --- | --- | --- |
+| ✅ | `set`, `set-constant` | Dotted property, predefined value or integer ±32767 |
+| ✅ | `aopr`, `aopw` | Nested/missing/replaced owners; shared property traps |
+| ✅ | `aost` | Property, bounded normalized stack pattern, optional negation |
+| ✅ | `acs`, `acis` | Property, current-script text, optional script source pattern |
+| ✅ | `nowoif` | All calls or pattern/negation; no delayed decoys |
+| ✅ | `aeld` | Event name and callback/handleEvent source; no extra options |
+| ✅ | `nostif`, `nosiif` | Callback pattern, exact/range delay, negation |
+| ✅ | `norafif` | Callback pattern or negation; logging-only invocation skipped |
+| ✅ | `nano-stb`, `nano-sib` | Pattern, exact delay or `*`, finite multiplier |
+| ✅ | `noeval-if` | One nonempty pattern; native page eval pass-through otherwise |
+| ✅ | `noeval`, `noeval-silent` | Legacy no-argument prevention of all eval calls |
+| ✅ | `json-prune` | Own paths, guards, `[]`/`*`; JSON.parse and Response.json |
+| ✅ | `no-fetch-if` | URL/method predicates and safe empty canned responses |
+| ✅ | Local/session storage setters | Key plus safe value or exact/regex `$remove$` |
+| ✅ | Cookie setters/reload/removal | Safe values, default/root/none path; no extra options |
+| ✅ | `set-attr` | Safe attribute, empty/boolean/integer/copy value; after load |
+| ✅ | `ra`, `rc` | Attribute/class tokens, optional selector, asap/stay/complete |
+| ✅ | `rmnt` | Node name and text pattern; parsing phase only, no replace options |
+| ✅ | `prevent-dialog` | Optional selector suffix; closes matching open dialogs |
+| ✅ | `href-sanitizer` | Selector, text/attribute/single query parameter source |
+| ✅ | `prevent-innerHTML`, freeze property | Selected DOM properties, selector, value pattern |
+| ✅ | `spoof-css` | Selector and up to three allowed style/rectangle pairs |
+| ✅ | `prevent-canvas` | Optional context-type pattern/negation |
+| ✅ | `call-nothrow` | Existing dotted function; preserves receiver, arguments, result |
+| ✅ | `window.name-defuser` | Clears top-frame name only |
+| ✅ | `disable-newtab-links` | Removes target and cancels matching anchor clicks |
+| ✅ | `prevent-refresh` | Meta refresh stop after load; optional immediate behavior |
+| ✅ | `nowebrtc`, `webrtc-if` | Native API prevention or bounded ICE allow-pattern |
+| ✅ | `nobab` | Upstream BAB eval signatures and timeout signature |
+| ✅ | `alert-buster` | Defuses alert; confirm and prompt retain native behavior |
+| ✅ | `multiup` | Direct form button link navigation, HTTP(S) destinations only |
+| ✅ | Fourteen fixed API shims | No filter arguments; see catalogue for exact names |
+| ⚠️ | `prevent-navigation` | Requires native Navigation API and cancelable automatic events |
+| ❌ | `no-xhr-if` / `prevent-xhr` | Async state, reuse, abort and events unverified |
+| ❌ | Fetch/XHR response prune/edit | Response lifecycle/stream contracts not implemented |
+| ❌ | Trusted scriptlets | Subscription storage has no trusted-source provenance |
+| ❌ | XML, media, object editing DSLs | Complete parsers and lifecycle contracts unverified |
+| ❌ | Overlay/debug/close-window | Polling, debugger or missing native-window adapter |
 
-`aeld` and `nostif` with no useful matching arguments are logging-only in uBO;
-they remain skipped. `nowoif` with no arguments prevents all `window.open` calls.
-JSON pruning covers both `JSON.parse` (including revivers) and `Response.json`.
-Fetch handling supports string URLs and `Request` objects with method overrides;
-other request inputs pass through. Fetch response directives are limited to empty
-text, `emptyStr`, `emptyObj`, and `emptyArr`. Random, WAR, custom response-property,
-throttle, and unknown response directives are skipped as complete instructions.
-XHR defusers are possible in WebView, but require faithful synchronous/asynchronous
-state transitions, response types, event order, abort, and reuse behavior. This
-patch does not approximate them with a network failure or a partial fake object.
+The safe constant set is empty string, undefined/null, booleans, empty arrays or
+objects, noop/true/false/throw functions, and bounded integers. Functions are locally
+predefined. Storage/cookie values use upstream's safe-word whitelist and integers.
+Attribute setters reject executable attributes and navigation/HTML/CSS destinations.
+Href sanitation accepts only HTTP(S) destinations; transformation pipelines are skipped.
+CSS spoofing permits display, visibility, opacity, position, dimensions, offsets and
+four private rectangle fields. No arbitrary CSS declarations are installed.
 
-## Integration and lifecycle
+Patterns use the existing bounded literal/regex subset. Lookarounds, backreferences,
+repeated groups, unsafe repeats and global/sticky flags are skipped. Matchers compile
+once per selected rule. Function-source matching caches at most 512 entries/256 KiB;
+individual strings are limited to 64 KiB. Oversized or unusual native arguments pass
+through. Timer multiplier defaults to 0.05 and is clamped to 0.001–50, as upstream.
 
-Parsing, argument validation, deduplication, indexing, and injection-source
-construction run on the existing compilation worker. The app receives one
-immutable `ScriptletInjection` after successful compilation. Settings retain
-their existing deferred-compilation gate. Cache schema 6 stores typed instructions
-and scopes, validates restored arguments, and invalidates schema 5 caches.
+## Domains, ordering and security
 
-`WebViewScriptlets` installs one `addDocumentStartJavaScript` registration on Main
-before navigation. The legacy API executes in page world and in child frames.
-It is available with the existing AndroidX WebKit 1.14.0 dependency; minimum
-Android SDK 21 is unchanged. No isolated-world or asynchronous bridge is used.
-A StateFlow subscription replaces/removes the registration on snapshot changes,
-and the app's navigation boundary synchronously refreshes it before starting a
-load. Repeated refreshes of the same snapshot do not install duplicates. Disposal
-cancels the subscription and removes the registration.
+Included ordinary hostnames and subdomains, domain exclusions, canonical exact
+scriptlet exceptions, and blank `#@#+js()` exceptions are supported. Global injection,
+entity (`site.*`), regex-domain, and IPv6-domain forms remain skipped. Normal CSS
+exceptions do not silently cancel scriptlet rules. Conditional directives and expanded
+includes retain list ordering. Aliases/default arguments normalize before deduplication.
+Conflicting terminal property hooks use the first instruction; compatible checks share
+accessors. Non-configurable/read-only properties fail open. Missing ancestors are hooked
+without manufacturing objects; replacement owners are handled within a 512-slot budget.
 
-AndroidX's documented origin grammar cannot express a hostname on every possible
-HTTP(S) port. The native registration therefore uses `*`, with a small synchronous
-own-frame protocol/host gate before the JSON instruction payload is deserialized. No
-native callable bridge is exposed. The gate uses only compiled hostname strings,
-includes the hostname apex and subdomains, respects label boundaries, and excludes
-private app assets. HTTP(S) on custom ports works. The per-frame dispatcher then
-applies exclusions, exact normalized exceptions, blanket `#@#+js()` exceptions,
-and instruction deduplication. Unrelated frames install no hooks and do not read
-the instruction payload. An unrelated top-level page may contain a targeted
-cross-origin child frame, which independently receives its own matching hooks.
+Compiled snapshots use schema 7, so schema 6 is recompiled. Cached instructions undergo
+validation again, including fixed resource keys. Filters cannot choose a resource path.
+Only shims needed by the compiled snapshot are bundled into its injection. No JS bridge
+or privileged page-callable method is introduced.
 
-Scriptlet exceptions take precedence across lists regardless of their order.
-Within the remaining rules, first occurrence order is retained; the first
-terminal property instruction wins a conflict. Multiple ACS checks and shared
-ancestors use one accessor pair. Function defusers share one proxy per target.
-CSS-only `#@#` exceptions and network cosmetic-hiding options do not silently
-cancel scriptlets. Existing cosmetic updates capture their native timer functions
-before scriptlets run, so a matching `nostif` cannot defuse cosmetic scheduling.
+## WebView integration and limits
 
-When `DOCUMENT_START_SCRIPT` is unavailable, scriptlets remain inactive. Network
-and existing cosmetic filtering continue; no late scriptlet injection is attempted.
-Updated rules apply to subsequent documents. Already modified live documents
-(including restored history documents) need a reload or WebView recreation to
-remove their hooks. Navigation/reload gets a fresh document and independent state.
+AndroidX WebKit 1.14.0 and minimum SDK 21 are unchanged. The existing worker prepares
+routing, scripts and resources before initial loading. `WebViewCompat` document-start
+registration uses feature detection and the legacy API's page world, which can access
+page globals. There is one registration per WebView/snapshot. Recompile, disable and
+disposal replace or remove it; deferred compilation before WebView loading is preserved.
 
-## Bounds and failure behavior
+AndroidX's allowed-origin grammar cannot express arbitrary HTTP(S) ports. Registration
+therefore uses the native wildcard, followed by a synchronous own-frame HTTP(S)/host
+gate before parsing rule data or installing hooks. Private app assets are excluded.
+Cross-origin frames match their own hostname, not their parent. about:blank, data and
+file frames are excluded. Unrelated pages install no hooks. The routing table uses
+literal host buckets, not prototype-keyed objects.
 
-- 8,192 enabled scriptlet records and 128 distinct instructions per document.
-- 4,096 characters per instruction expression; 512 per argument; 256 per pattern.
-- Property paths have at most 12 components; unsafe prototype access is rejected.
-- JSON instructions have at most 16 paths, each with at most 24 components.
-- JSON traversal plans at most 4,096 visits per rule/call before making deletions.
-  Budget exhaustion skips the whole pruning instruction, avoiding partial edits.
-- Property observers have at most 512 slots per document. No polling or observers
-  scan the DOM, and no timer is created just to wait for a missing property.
-- Function-source caches have at most 512 entries and 262,144 characters of text.
-- Regexes compile once per selected instruction. The accepted subset rejects
-  lookarounds, backreferences, quantified groups, bounded repeats, and quantified
-  assertions. At most one repetition is allowed, with an absolute start anchor
-  and no top-level alternation. There are at most four alternation operators.
-  Stateful and Unicode flags are unsupported; repetitions also forbid multiline.
-- Patterns inspect at most 65,536 characters of a candidate string; larger inputs fail
-  open. Regex validation in Kotlin is never used to match page text.
-- Routing data is bounded to two million characters; excess global input fails
-  compilation atomically and retains the previous working snapshot.
+Providers lacking DOCUMENT_START_SCRIPT skip scriptlets and retain network/cosmetic
+filtering. There is no late injection fallback. Native API-dependent operations fail
+open when their API is absent. Existing documents, including restored BFCache documents,
+retain their installed hooks until reload. Rules updated during a document's lifetime
+become active when a new document loads. Main-world page code can also overwrite
+configurable native function hooks; this is not a hostile-page security boundary.
 
-Read-only and non-configurable properties are left intact. Configurable children
-of read-only ancestors can still be trapped. Prototype/constructor access paths
-that could expand the mutation surface are rejected, while explicit ordinary
-`Object.prototype.someAdProperty` paths are supported. Nonmatching event handlers,
-timeouts, popups, Fetch calls, and unrelated login/session state pass through.
-Abort traps suppress only their own random-token `ReferenceError` error reports.
+DOM operations share one MutationObserver and a protected native animation-frame batch;
+there is no periodic polling. Attribute observation is limited to relevant names unless
+dialog rules require general observation. Attribute/class writes avoid repeated no-op
+mutations. Limits are 32 DOM instructions, 4096 nodes per sweep and 1024 per rule.
+Default attribute removal waits for the interactive DOM in WebView; `asap` starts early.
+Class removal starts early and stops at complete unless `stay` is specified. Attribute
+setting starts at complete and tracks later inserted elements. Node-text removal is
+bounded and stops at interactive. Its ability to prevent the first parser-blocking
+inline script still requires real WebView timing verification.
 
-## Audit and verification
+Captured native timers/listeners protect cosmetics and scriptlet housekeeping from
+other selected hooks. No wrapper is installed without a matching instruction. Shared
+function hooks use one proxy per owner/property. Maximum instructions are 128 per frame,
+8192 per compilation, eight argument fields, 512 characters each, and 2 MiB routing data.
+The CSS selector length/depth and storage/cookie enumeration budgets are also bounded.
+Native selector-query cost still depends on document size and selector complexity.
 
-The runtime is a locally reviewed, bounded adaptation of uBO semantics and small
-implementation patterns, with project-specific dispatch, hooks, and limits. The
-upstream copyright notice and complete GPL-3.0-or-later licence are retained; see
-[third-party notices](THIRD_PARTY_NOTICES.md). This review is not an independent
-third-party security certification.
-Review checks cover data/source separation, fixed dispatch, prototype pollution,
-regex bounds, origin boundaries, native-descriptor handling, function deduplication,
-cache invalidation, cancellation, and resource ownership. Subscription strings
-are JSON-escaped, including quotes, backslashes, HTML delimiters, and U+2028/U+2029.
-The host index uses Map entries rather than object-literal prototype-sensitive keys.
+Eval wrapping changes direct eval into an indirect native call, as upstream does; code
+that relies on lexical eval scope can behave differently. Cookies cannot access HttpOnly
+values, and browser cookie/storage policies still apply. WebRTC shims intentionally
+remove selected APIs/configurations and can affect communication sites if enabled by a
+matching list rule. Fixed vendor shims implement the upstream subset, not entire vendor
+SDKs. Ordinary login callbacks, session keys, nonmatching requests/events and properties
+are covered by behavior tests; arbitrary websites still need device checks.
 
-Kotlin tests cover each implemented family with real uBO examples, invalid forms,
-quoting, aliases, ordering, conditional/include handling, exclusions/exceptions,
-cache restoration/invalidation, data serialization, and caps. App JVM/Robolectric
-tests exercise deferred publication, disable/re-enable, provider unavailability,
-registration replacement, retry, and disposal. Node 24 executes the exact bundled
-runtime in isolated V8 contexts: property reads/writes, late ancestors, readonly
-properties, conflicts, error suppression, matching functions, timers, current
-scripts, JSON parsing/Response bodies, Fetch, frames, navigation, and host gates.
-The shared `checks` suite runs both cosmetic and scriptlet JavaScript tests.
+API references:
+- https://developer.android.com/reference/androidx/webkit/WebViewCompat
+- https://developer.android.com/reference/androidx/webkit/WebViewFeature
 
-Robolectric does not execute Chromium page JavaScript. No actual Android device or
-emulator was available here. Remaining device checks are native document-start
-ordering against the first inline page script, provider-specific execution worlds,
-HTTP(S) cross-origin child frames, custom ports, redirects, reload/back-forward
-behavior, updates during navigation, and representative login/authentication
-flows. V8 fixtures are behavioral coverage, not a claim of live-site equivalence.
-Worker/service-worker globals and opaque/about/srcdoc documents are not covered by
-these frame-global hooks. Entity-domain routing would require additional public
-suffix handling; it is an implementation gap, not an Android impossibility.
+## Default subscription action
 
-## Supplied corpus
+The preset picker starts with uBlock Ads, Privacy, Badware, Quick fixes and Unbreak.
+“Add uBlock Origin defaults” adds those five plus EasyList, EasyPrivacy, Online Malicious
+URL Blocklist and Peter Lowe’s Ad and tracking server list. This matches the nine global
+defaults in the supplied upstream assets.json and the official source checked 2026-10-16:
+https://github.com/gorhill/uBlock/blob/master/assets/assets.json
 
-The authoritative base is bundle commit `dbdb69357d212a7bf1b63083af569dd252f2152e`.
-The uploaded list's timestamp field is `%timestamp%`; its exact version is pinned
-by SHA-256, not by an inferred upstream date:
+This is user-initiated. Existing subscriptions with the same source URL retain their
+content, enabled state and order. Missing lists append in preset order. Individual
+failures are reported and only missing entries are retried; one deferred rule-change
+notification follows the batch. Locale-specific, optional annoyance and experimental
+lists are not silently selected. No subscriptions are fetched at startup.
 
-`3bde7d558863ea2431b868f4d910a8d6d484486fbd576e464d0ecc85446ef3c6`
+## Exact-input measurements
 
-Counts include active conditional branches, before deduplication across domains
-or lists. Comments and inactive branches are excluded. The input is unchanged.
+Input: the supplied `ublock-origin-filters.txt`, 473295 bytes. SHA-256:
+`3bde7d558863ea2431b868f4d910a8d6d484486fbd576e464d0ecc85446ef3c6`.
+Its header contains a timestamp placeholder, so the hash identifies the tested version.
+Counts exclude comments and inactive conditional branches and precede page deduplication.
+Original bundle and v1.0.13 counts were remeasured with the same bytes.
 
-| Metric | Supplied bundle | This patch |
-| --- | ---: | ---: |
-| Active rules | 6,064 | 6,064 |
-| Supported network | 1,432 | 1,432 |
-| Supported cosmetic | 1,771 | 1,771 |
-| Supported scriptlets | 0 | 1,525 |
-| Supported total | 3,203 | 4,728 |
-| Skipped total | 2,861 | 1,336 |
-| Skipped scriptlets | 2,444 | 919 |
-| Invalid | 0 | 0 |
-
-| Family (aliases combined) | Active input | Executable after | Still skipped |
+| Metric | Bundle v1.0.12 | Saved v1.0.13 | v1.0.14 |
 | --- | ---: | ---: | ---: |
-| `set` / `set-constant` | 302 | 253 | 49 |
-| `aopr` | 635 | 473 | 162 |
-| `aopw` | 181 | 122 | 59 |
-| `nowoif` | 178 | 87 | 91 |
-| `aeld` | 199 | 134 | 65 |
-| `nostif` | 193 | 175 | 18 |
-| `acs` | 345 | 250 | 95 |
-| `json-prune` | 19 | 12 | 7 |
-| `no-fetch-if` | 23 | 19 | 4 |
-| `no-xhr-if` | 22 | 0 | 22 |
-| Other families | 347 | 0 | 347 |
+| Total active rules | 6064 | 6064 | 6064 |
+| Network rules | 1432 | 1432 | 1432 |
+| Cosmetic rules | 1771 | 1771 | 1771 |
+| Executable scriptlet rules | 0 | 1525 | 1759 |
+| Total supported | 3203 | 4728 | 4962 |
+| Total skipped | 2861 | 1336 | 1102 |
+| Skipped scriptlets | 2444 | 919 | 685 |
+| Invalid rules | 0 | 0 | 0 |
 
-The 919 skipped scriptlets include unsupported domain scopes as well as argument
-forms and unimplemented families. The remaining 417 skipped non-scriptlet rules
-are unchanged. All ten requested families had zero executable rules in the base.
+| Active scriptlet name | Total | v1.0.13 executable | v1.0.14 executable |
+| --- | ---: | ---: | ---: |
+| `acs` | 345 | 250 | 250 |
+| `aeld` | 199 | 134 | 134 |
+| `aopr` | 635 | 473 | 473 |
+| `aopw` | 181 | 122 | 122 |
+| `aost` | 22 | 0 | 19 |
+| `cookie-remover` | 2 | 0 | 2 |
+| `disable-newtab-links` | 2 | 0 | 1 |
+| `href-sanitizer` | 1 | 0 | 1 |
+| `json-edit` | 1 | 0 | 0 |
+| `json-edit-fetch-response` | 1 | 0 | 0 |
+| `json-prune` | 19 | 12 | 12 |
+| `json-prune-fetch-response` | 1 | 0 | 0 |
+| `json-prune-xhr-response` | 1 | 0 | 0 |
+| `jsonl-edit-xhr-response` | 1 | 0 | 0 |
+| `nano-sib` | 51 | 0 | 40 |
+| `nano-stb` | 31 | 0 | 23 |
+| `no-fetch-if` | 23 | 19 | 19 |
+| `no-xhr-if` | 22 | 0 | 0 |
+| `nobab` | 15 | 0 | 13 |
+| `noeval` | 24 | 0 | 21 |
+| `noeval-if` | 5 | 0 | 4 |
+| `nofab` | 10 | 0 | 9 |
+| `norafif` | 1 | 0 | 1 |
+| `nosiif` | 26 | 0 | 23 |
+| `nostif` | 193 | 175 | 175 |
+| `nowebrtc` | 47 | 0 | 24 |
+| `nowoif` | 178 | 87 | 87 |
+| `popads-dummy` | 18 | 0 | 12 |
+| `popads.net` | 3 | 0 | 1 |
+| `ra` | 28 | 0 | 12 |
+| `refresh-defuser` | 2 | 0 | 2 |
+| `rmnt` | 27 | 0 | 19 |
+| `rpnt` | 11 | 0 | 0 |
+| `set` | 301 | 252 | 252 |
+| `set-constant` | 1 | 1 | 1 |
+| `set-cookie` | 6 | 0 | 6 |
+| `set-local-storage-item` | 1 | 0 | 1 |
+| `trusted-replace-xhr-response` | 7 | 0 | 0 |
+| `trusted-rpfr` | 2 | 0 | 0 |
 
-The other families remain ❌, with the same skipped counts before and after:
+## Validation and performance
 
-| Type | Active/skipped |
-| --- | ---: |
-| `aost` | 22 |
-| `cookie-remover` | 2 |
-| `disable-newtab-links` | 2 |
-| `href-sanitizer` | 1 |
-| `json-edit` | 1 |
-| `json-edit-fetch-response` | 1 |
-| `json-prune-fetch-response` | 1 |
-| `json-prune-xhr-response` | 1 |
-| `jsonl-edit-xhr-response` | 1 |
-| `nano-sib` | 51 |
-| `nano-stb` | 31 |
-| `nobab` | 15 |
-| `noeval` | 24 |
-| `noeval-if` | 5 |
-| `nofab` | 10 |
-| `norafif` | 1 |
-| `nosiif` | 26 |
-| `nowebrtc` | 47 |
-| `popads-dummy` | 18 |
-| `popads.net` | 3 |
-| `ra` | 28 |
-| `refresh-defuser` | 2 |
-| `rmnt` | 27 |
-| `rpnt` | 11 |
-| `set-cookie` | 6 |
-| `set-local-storage-item` | 1 |
-| `trusted-replace-xhr-response` | 7 |
-| `trusted-rpfr` | 2 |
+The final implementation passed 57 standalone engine tests, 705 app/Robolectric
+unit tests, 90 Node JavaScript/cosmetic tests, 50 Python tooling tests, Spotless and
+Kotlin-brace checks, and debug APK assembly. The APK was inspected: both runtimes,
+all 14 shims, the central attribution notice and full GPL text match their sources.
+No dependencies or Android SDK requirements changed.
 
-`ScriptletCorpusTest` accepts `UBLOCK_FILTER_FILE`, reports the exact digest,
-per-type counts, and median compile/lookup times. Set `SCRIPTLET_OUTPUT_DIR` to
-export the actual compiled payload and host counts outside the source tree.
-`scripts/benchmark-scriptlets.mjs` accepts that payload's path, checks actual
-Kotlin-produced rules on three fixtures, and reports host-V8 construction,
-document-start, and timer-dispatch measurements. These are host microbenchmarks,
-not estimates or measurements of Android page-load latency.
+Tests include real list examples, every added alias, malformed/unsafe arguments,
+non-configurable properties, shared/conflicting hooks, domain exceptions/exclusions,
+cache restoration/invalidation, navigation/frame snapshots, unavailable providers,
+DOM milestones/BFCache observer cleanup, safe callback queues, storage denial,
+conditional WebRTC/Navigation APIs, and unrelated login/session behavior.
+The default-list batch tests cover existing disabled URL subscriptions, ordering,
+deduplication, partial failures and retrying only missing subscriptions.
 
-## Validation results
+Robolectric tests registration ownership, provider failures and service publication;
+it does not execute a real Chromium renderer. Node 24.19.0 V8 executes the bundled
+code in separate VM realms, with controlled DOM/native-API fixtures and real Fetch
+Response objects. These are not real Android WebView tests. Real-device verification
+is still required for document-start timing, parser-blocking script interception,
+cross-origin frame timing, browser history/BFCache, cookie policies, layout APIs,
+WebRTC providers and representative authentication/media websites.
 
-The full suites passed: 52 adblock JVM tests and 703 app JVM/Robolectric tests,
-with zero failures or skips. The local `checks` runner passed 50 Python tests and
-42 JavaScript tests. Three additional behavioral checks exercised the actual
-Kotlin-exported corpus payload. `checkFormatting` passed Spotless and Detekt's
-brace checks, and all added lines are at most 100 characters. `assembleDebug`
-passed; the APK contains the exact runtime, attribution notice, and GPL text.
+Measurements below are actual host-runtime medians, not phone page-load estimates.
+Both JS revisions used the same current harness and exact Kotlin-produced payloads.
+There are five payload checks: YouTube property rules, publisher constants, unrelated
+hosts and the newly supported imgdrive.net timer booster. Construction uses 31
+samples, document-start 31 measured samples after five warmups, and timer dispatch
+11 measured samples after five warmups, 200000 calls each. Native timers are stubs;
+these values exclude Android scheduling, rendering, networking and real DOM traversal.
 
-Earlier full app runs intermittently reached the MQTT loopback test broker's
-five-second CONNACK gate timeout. A subsequent full run passed all 703 tests;
-no MQTT production code or tests were modified.
+| Host measurement | v1.0.13 | v1.0.14 |
+| --- | ---: | ---: |
+| Injection source bytes | 189426 | 241640 |
+| Source compilation, ms | 0.936 | 1.605 |
+| Unrelated document gate, ms | 0.032 | 0.040 |
+| YouTube document start, ms | 1.093 | 1.371 |
+| Publisher document start, ms | 1.114 | 1.377 |
+| Native timer stub, µs/call | 0.169 | 0.189 |
+| One defuser rule, µs/call | 0.436 | 0.396 |
+| Eight defuser rules, µs/call | 0.591 | 0.595 |
 
-Measured here on Linux, JDK 21, Node 24.19.0/V8, with an eight-CPU container limit:
+The final Kotlin corpus run measured warm compilation at 40.3 ms (v1.0.13) and
+38.8 ms (v1.0.14), with lookup at 7.33 and 7.74 µs per call respectively. An earlier
+expanded-engine run measured 50.8 ms; this variability prevents a speedup claim. Each is a median of
+seven measured rounds after one warmup; lookup rounds each contain 1000 calls. These
+are development-host observations affected by JVM warmup and load, not Android
+benchmarks. The expanded script source costs approximately 51 KiB more for this
+corpus; matching pages install only their selected operations. No Android page-load
+or battery-impact measurement was available.
 
-| Measurement | Median |
-| --- | ---: |
-| Kotlin compile of the supplied full list, seven warm samples | 148.79 ms |
-| Kotlin lookup at the busiest host, seven batches of 1,000 | 25.69 µs/call |
-| V8 construction of the 189,426-byte corpus source, 31 samples | 5.66 ms |
-| V8 document start, unrelated host, 31 samples | 0.070 ms |
-| V8 document start, `www.youtube.com`, 31 samples | 6.42 ms |
-| V8 document start, `timesofindia.indiatimes.com`, 31 samples | 3.35 ms |
-| Timer-stub dispatch baseline, 11 warm batches of 200,000 | 0.372 µs/call |
-| Timer-stub dispatch with one matching-family rule | 1.162 µs/call |
-| Timer-stub dispatch with eight rules | 1.638 µs/call |
+For reproduction, `ScriptletCorpusTest` accepts `UBLOCK_FILTER_FILE` and optionally
+`SCRIPTLET_OUTPUT_DIR`. `scripts/benchmark-scriptlets.mjs` reads the exported injection;
+its optional second path selects an older runtime for a same-harness comparison.
+`scripts/ci/test-local.sh checks` runs all JavaScript and Python tests.
 
-The busiest corpus host selects seven instructions. VM context construction is
-outside document-start timings. Fresh Script constructions vary the source to
-avoid V8's compilation-cache reuse. Timer callbacks are deliberately stubbed, so
-these numbers measure proxy/matcher dispatch, not browser timer scheduling. The
-increment over the stub baseline is about 0.79 µs/call for one rule and 1.27 µs/call
-for eight. Results are measured medians, not estimates; they do not predict
-Android renderer latency, memory use, or whole-page performance. No Android
-performance result is claimed without device measurements.
-
-## References reviewed
-
-- [uBO resources and argument semantics][ubo]
-- [AndroidX WebViewCompat API and origin grammar][webkit]
-- [Chromium source][chromium], `android_webview/.../AwContents.java`, for the
-  legacy API's `PAGE_WORLD_NAME` delegation.
-
-[ubo]: https://github.com/gorhill/uBlock/wiki/Resources-Library
-[webkit]: https://developer.android.com/reference/androidx/webkit/WebViewCompat
-[chromium]: https://chromium.googlesource.com/chromium/src/+/main/android_webview/
+Attribution is consolidated in [the packaged notice](src/main/resources/META-INF/ublock-NOTICE.txt).
+Required original notices remain on copied upstream source files.

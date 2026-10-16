@@ -434,7 +434,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                         },
                                     )
                                     DropdownMenuItem(
-                                        text = { Text("Rearrange lists") },
+                                        text = { Text("Rearrange") },
                                         enabled = !busy && lists.size > 1,
                                         onClick = {
                                             bulkActionsExpanded = false
@@ -830,6 +830,27 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                     onFailure = { addError = it },
                 ) {
                     downloader.downloadUrl(url, name, store)
+                }
+            },
+            onDownloadDefaults = {
+                var summary = FilterRefreshResult(0, 0, emptyList())
+                update(
+                    progressMessage =
+                        "Downloading and validating uBlock Origin defaults…",
+                    onStored = { showAddDialog = false },
+                    onSuccess = {
+                        ToastManager.show(
+                            context,
+                            "Added ${summary.updated} default lists",
+                        )
+                        error =
+                            summary.failures
+                                .takeIf { it.isNotEmpty() }
+                                ?.joinToString("\n") { "${it.name}: ${it.message}" }
+                    },
+                    onFailure = { addError = it },
+                ) {
+                    summary = downloader.downloadDefaults(store)
                 }
             },
             onDownloadPreset = { suggestion ->
@@ -1344,6 +1365,7 @@ private fun AddFilterListDialog(
     onAddCustom: (String, String, Uri?) -> Unit,
     onDownloadUrl: (String, String) -> Unit,
     onDownloadPreset: (SuggestedFilterList) -> Unit,
+    onDownloadDefaults: () -> Unit,
 ) {
     val context = LocalContext.current
     var type by rememberSaveable { mutableStateOf(FilterListType.PRESET) }
@@ -1587,6 +1609,23 @@ private fun AddFilterListDialog(
                         }
 
                         FilterListType.PRESET -> {
+                            OutlinedButton(
+                                onClick = onDownloadDefaults,
+                                enabled =
+                                    !busy &&
+                                        SuggestedFilterLists.defaults.any { preset ->
+                                            lists.none { it.sourceUrl == preset.url }
+                                        },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text("Add uBlock Origin defaults")
+                            }
+                            Text(
+                                "Five uBlock lists, EasyList, EasyPrivacy, " +
+                                    "Online Malicious URL Blocklist and Peter Lowe’s list. " +
+                                    "Already added lists are kept as they are.",
+                                style = MaterialTheme.typography.bodySmall,
+                            )
                             FilterListField("Preset") {
                                 Box(
                                     modifier =

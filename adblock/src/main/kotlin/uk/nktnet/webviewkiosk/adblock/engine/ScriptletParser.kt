@@ -61,8 +61,34 @@ internal object ScriptletParser {
 
     fun parse(expression: String): ScriptletInstruction? {
         val fields = arguments(expression) ?: return null
-        val type = aliases[fields.first().removeSuffix(".js")] ?: return null
-        return validated(type, fields.drop(1))
+        val name = fields.first().removeSuffix(".js")
+        ScriptletResources.aliases[name]?.let { resource ->
+            return if (fields.size == 1) {
+                validated(ScriptletType.RESOURCE, listOf(resource))
+            } else {
+                null
+            }
+        }
+        if (name in setOf("noeval", "noeval-silent", "silent-noeval")) {
+            return if (fields.size == 1) {
+                validated(ScriptletType.PREVENT_EVAL, listOf(""))
+            } else {
+                null
+            }
+        }
+        val type = aliases[name] ?: AdditionalScriptlets.aliases[name] ?: return null
+        val args =
+            if (name == "prevent-innerHTML") {
+                listOf("innerHTML") + fields.drop(1)
+            } else {
+                fields.drop(1)
+            }
+        if (
+            type == ScriptletType.PREVENT_EVAL && args.firstOrNull().isNullOrEmpty()
+        ) {
+            return null
+        }
+        return validated(type, args)
     }
 
     internal fun validated(
@@ -71,6 +97,9 @@ internal object ScriptletParser {
     ): ScriptletInstruction? {
         if (arguments.any { it.length > 512 || it.any(Char::isISOControl) }) {
             return null
+        }
+        if (type.ordinal > ScriptletType.PREVENT_FETCH.ordinal) {
+            return AdditionalScriptlets.validated(type, arguments)
         }
         val args = arguments.toMutableList()
         fun patterns(vararg indexes: Int): Boolean = indexes.all {
@@ -111,6 +140,7 @@ internal object ScriptletParser {
                         requestMatch(args[0]) &&
                         (args.size == 1 ||
                             args[1] in setOf("", "emptyStr", "emptyObj", "emptyArr"))
+                else -> false
             }
         if (!valid) {
             return null
@@ -213,7 +243,7 @@ internal object ScriptletParser {
         return result
     }
 
-    private fun property(value: String): Boolean =
+    internal fun property(value: String): Boolean =
         value.length in 1..256 &&
             value.split('.').let { parts ->
                 parts.size <= 12 &&
@@ -229,7 +259,7 @@ internal object ScriptletParser {
             (Regex("-?[0-9]{1,5}").matches(value) &&
                 (value.toIntOrNull() ?: 32768) in -32767..32767)
 
-    private fun paths(value: String): Boolean =
+    internal fun paths(value: String): Boolean =
         value.isNotBlank() &&
             value.split(' ').let { paths ->
                 paths.size <= 16 &&
@@ -244,7 +274,7 @@ internal object ScriptletParser {
                     }
             }
 
-    private fun delay(value: String): Boolean {
+    internal fun delay(value: String): Boolean {
         val raw = value.removePrefix("!")
         if (raw.isEmpty()) {
             return value.isEmpty()
@@ -260,7 +290,7 @@ internal object ScriptletParser {
         return low <= high
     }
 
-    private fun requestMatch(value: String): Boolean =
+    internal fun requestMatch(value: String): Boolean =
         value.isNotBlank() &&
             value.split(' ').let { parts ->
                 parts.size <= 8 &&
