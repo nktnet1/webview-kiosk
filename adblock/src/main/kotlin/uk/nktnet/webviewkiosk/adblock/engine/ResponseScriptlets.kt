@@ -138,14 +138,6 @@ internal object ResponseScriptlets {
                 ScriptletType.TRUSTED_LOCAL_STORAGE,
                 ScriptletType.TRUSTED_SESSION_STORAGE ->
                     args.size == 2 && arg(0).isNotEmpty() && !arg(1).contains('$')
-                ScriptletType.TRUSTED_SET_COOKIE,
-                ScriptletType.TRUSTED_SET_COOKIE_RELOAD -> {
-                    arity = 3
-                    args.size in 2..3 &&
-                        arg(0).isNotEmpty() &&
-                        !arg(1).contains('$') &&
-                        arg(2) in setOf("", "/", "none")
-                }
                 ScriptletType.TRUSTED_SET ->
                     args.size == 2 &&
                         ScriptletParser.property(arg(0)) &&

@@ -1,13 +1,14 @@
 /*
  * SPDX-License-Identifier: GPL-3.0-or-later
  * Adapted from uBlock Origin, Copyright (C) 2019-2026 Raymond Hill and contributors.
- * Modified for Webview Kiosk on 2026-10-16: validated subsets, bounded work, shared hooks.
+ * Modified for Webview Kiosk on 2026-10-17: validated subsets, bounded work, shared hooks.
  * Source attribution and licence: META-INF/ublock-NOTICE.txt.
  */
 (function(env) {
     'use strict';
     const { groups, selected, wrap, apply, define, descriptor, matcher, source,
-        nativeAdd, trap, abort, resources } = env;
+        nativeAdd, trap, abort, resources, regexpTest } = env;
+    const encodeCookie = self.encodeURIComponent;
     const timeout = self.setTimeout.bind(self);
     const clearTimeout = self.clearTimeout.bind(self);
     const frame = typeof self.requestAnimationFrame === 'function'
@@ -18,6 +19,12 @@
     const nativeStyle = self.getComputedStyle?.bind(self);
     const nativeRect = self.Element?.prototype.getBoundingClientRect;
     const now = Date.now.bind(Date);
+    const cookieDate = groups.has('TRUSTED_SET_COOKIE') || groups.has('TRUSTED_SET_COOKIE_RELOAD')
+        ? { Type: Date, time: Date.prototype.getTime, utc: Date.prototype.toUTCString,
+            iso: Date.prototype.toISOString, day: Date.prototype.getDate,
+            setDay: Date.prototype.setDate, year: Date.prototype.getFullYear,
+            setYear: Date.prototype.setFullYear, second: Date.prototype.getSeconds,
+            setSecond: Date.prototype.setSeconds } : null;
     const rules = type => groups.get(type) || [];
     const listen = (owner, name, fn, options) => apply(nativeAdd, owner, [name, fn, options]);
     const range = raw => {
@@ -147,24 +154,55 @@
             for (const key of keys) { if (match(key)) { store.removeItem(key); } }
         } else { store.removeItem(args[0]); }
     }
-    function cookie(args, reload) {
-        const name = encodeURIComponent(args[0]);
-        const value = encodeURIComponent(args[1]);
-        const wanted = name + '=' + value;
+    function cookie(args, reload, trusted = false) {
+        let name = args[0], value = args[1];
+        let expires = '';
+        const path = args[trusted ? 3 : 2];
+        if (trusted && (args[2] !== '' || value.includes('$'))) {
+            const date = new cookieDate.Type();
+            if (value.includes('$now$')) {
+                value = value.split('$now$').join(String(apply(cookieDate.time, date, [])));
+            }
+            if (value.includes('$currentDate$')) {
+                value = value.split('$currentDate$').join(apply(cookieDate.utc, date, []));
+            }
+            if (value.includes('$currentISODate$')) {
+                value = value.split('$currentISODate$').join(apply(cookieDate.iso, date, []));
+            }
+            if (args[2] !== '') {
+                if (args[2] === '1day') {
+                    apply(cookieDate.setDay, date, [apply(cookieDate.day, date, []) + 1]);
+                } else if (args[2] === '1year') {
+                    apply(cookieDate.setYear, date, [apply(cookieDate.year, date, []) + 1]);
+                } else {
+                    apply(cookieDate.setSecond, date,
+                        [apply(cookieDate.second, date, []) + Number(args[2])]);
+                }
+                expires = '; expires=' + apply(cookieDate.utc, date, []);
+            }
+        }
+        // Preserve valid cookie bytes; percent encoding is only a fallback.
+        if (!trusted && apply(regexpTest, /[^!#$%&'*+\-.0-9A-Z[\]^_`a-z|~]/, [name])) {
+            name = encodeCookie(name);
+        }
+        if (apply(regexpTest, /[^ -:<-[\]-~]/, [value])) { value = encodeCookie(value); }
         let dontOverwrite = false;
-        for (let i = 3; i + 1 < args.length; i += 2) {
+        let domain = '';
+        for (let i = trusted ? 4 : 3; i + 1 < args.length; i += 2) {
             if (args[i] === 'reload') { reload = args[i + 1] === '1'; }
             if (args[i] === 'dontOverwrite') { dontOverwrite = args[i + 1] === '1'; }
+            if (trusted && args[i] === 'domain') { domain = args[i + 1]; }
         }
         const current = () => {
             const pair = document.cookie.split(/\s*;\s*/).find(pair => pair.startsWith(name + '='));
             return pair === undefined ? undefined : pair.slice(name.length + 1);
         };
         const before = current();
-        if (before === value || dontOverwrite && before !== undefined) { return; }
-        let text = wanted;
-        if (args[2] !== 'none') { text += '; path=/'; }
-        if (name.startsWith('__Secure-') || name.startsWith('__Host-')) { text += '; Secure'; }
+        if (reload && before === value || dontOverwrite && before !== undefined) { return; }
+        let text = name + '=' + value + expires;
+        if (path !== 'none') { text += '; path=/'; }
+        if (domain) { text += '; domain=' + domain; }
+        if (trusted || name.startsWith('__Secure-') || name.startsWith('__Host-')) { text += '; Secure'; }
         try { document.cookie = text; } catch { return; }
         if (reload && current() === value) { location.reload(); }
     }
@@ -605,8 +643,8 @@
         ['SET_SESSION_STORAGE', args => storage('sessionStorage', args)],
         ['TRUSTED_LOCAL_STORAGE', args => storage('localStorage', args)],
         ['TRUSTED_SESSION_STORAGE', args => storage('sessionStorage', args)],
-        ['TRUSTED_SET_COOKIE', args => cookie(args, false)],
-        ['TRUSTED_SET_COOKIE_RELOAD', args => cookie(args, true)],
+        ['TRUSTED_SET_COOKIE', args => cookie(args, false, true)],
+        ['TRUSTED_SET_COOKIE_RELOAD', args => cookie(args, true, true)],
         ['SET_COOKIE', args => cookie(args, false)],
         ['SET_COOKIE_RELOAD', args => cookie(args, true)], ['REMOVE_COOKIE', removeCookie],
         ['CALL_NOTHROW', noThrow], ['PREVENT_CANVAS', canvas],

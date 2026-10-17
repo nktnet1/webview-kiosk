@@ -1,4 +1,4 @@
-# Compiled cache - v1.0.22
+# Compiled cache - v1.0.23
 
 All four opportunities are technically possible, with different tradeoffs:
 
@@ -11,7 +11,7 @@ All four opportunities are technically possible, with different tradeoffs:
 
 ## Representation and invalidation
 
-Schema 12 uses a disposable WKCF binary snapshot: source SHA-256, interned strings,
+Schema 13 uses a disposable WKCF binary snapshot: source SHA-256, interned strings,
 normalized network/cosmetic/scriptlet records, bounded counts and trailing CRC32.
 It does not use Java object serialization. Identity includes exact input text,
 list boundaries, ordering and trust bits. Cached scriptlet arguments are validated
@@ -25,7 +25,8 @@ exceptions and badfilters, and invalidates records for modifier delimiter parsin
 RE2/J programs for network patterns and query modifiers are rebuilt and bounded
 when records are restored. Schema 12 adds scriptlet entity scopes and canonical
 cookie flags; older schemas recompile once. The binary layout remains normalized
-rules, with runtime indexes rebuilt on load.
+rules, with runtime indexes rebuilt on load. Schema 13 invalidates old trusted-cookie
+argument contracts and permits their bounded ten-argument representation.
 
 The warm path reads one aggregate snapshot and constructs the indexes. On a miss,
 per-source SHA-256-keyed records in `compiled-rules.bin.sources` allow only changed,
@@ -74,6 +75,23 @@ A suitable format uses interned key tables, offsets and integer rule IDs for
 network, cosmetic and scriptlet buckets, separately from Kotlin runtime objects.
 It needs bounded decoding, equivalence tests and a schema bump.
 
+This remains a separate startup optimization; schema 13 does not persist indexes.
+The next cache implementation should save bucket keys, offsets and integer rule IDs
+for the four network indexes, plain-host sets, cosmetic maps and scriptlet routing.
+Restore those buckets into the existing lookup structures so request matching keeps
+its current algorithm. Rebuild regex programs and generate JavaScript from validated
+data and bundled runtimes; do not deserialize arbitrary Kotlin objects or cache
+filter-provided executable source. Keep per-source rule shards authoritative and
+cache only the merged snapshot's final indexes after cross-list precedence.
+
+Enable persisted indexes only after Android measurements show lower combined
+read/validation/index time at both median and P95, with no request-lookup regression.
+Measure cache bytes, peak allocations and fresh-list rebuild costs as well. Test
+invalid IDs/offsets, truncated buckets, checksums, trust separation and fallback to
+rebuilding. Larger files and rehydrated map allocations can offset the work saved;
+host-JVM timings alone do not establish an Android benefit. This optimization needs
+no new WebView interception, DOM work or per-request diagnostics.
+
 `FilterCacheBenchmarkTest` measures parsing, binary restoration and index/injection
 construction independently. The deterministic fixture has 20,000 plain hosts,
 10,000 conditional network rules, 10,000 cosmetics and 1,000 scriptlets. Each run
@@ -92,6 +110,13 @@ records than constructing indexes. Android IO/allocation profiling should guide
 whether persisting buckets improves startup. These measurements exclude reading
 and hashing original source files, Android scheduling/storage, WebView injection,
 rendering and page loading. They are not phone timings or a measured user speedup.
+
+A v1.0.23 rerun of the same host fixture measured 105.49 ms parse/normalize,
+47.00 ms read/validate, and 12.00 ms index/injection construction, with a
+3,788,584-byte cache. It includes subsequent rule-format changes and a different
+host run, so it is not a controlled speed comparison with v1.0.16. It confirms
+that index persistence must be evaluated against total restore time, not only
+against the avoided grouping work. No Android speedup has been measured here.
 
 ## Verification
 

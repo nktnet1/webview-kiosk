@@ -61,12 +61,6 @@ internal object AdditionalScriptlets {
         )
 
     fun validated(type: ScriptletType, input: List<String>): ScriptletInstruction? {
-        if (
-            type == ScriptletType.SET_COOKIE ||
-                type == ScriptletType.SET_COOKIE_RELOAD
-        ) {
-            return cookie(type, input)
-        }
         val args = input.toMutableList()
         fun arg(index: Int) = args.getOrElse(index) { "" }
         fun patterns(vararg indexes: Int) = indexes.all {
@@ -273,53 +267,6 @@ internal object AdditionalScriptlets {
         return ScriptletInstruction(type, args.toList())
     }
 
-    private fun cookie(
-        type: ScriptletType,
-        input: List<String>,
-    ): ScriptletInstruction? {
-        if (
-            input.size !in setOf(2, 3, 5, 7) ||
-                input[0].isEmpty() ||
-                !safeValue(input[1]) ||
-                input.getOrElse(2) { "" } !in setOf("", "/", "none")
-        ) {
-            return null
-        }
-        val options = input.drop(3).chunked(2)
-        if (
-            options.any {
-                it[0] !in setOf("reload", "dontOverwrite") ||
-                    it[1] !in setOf("0", "1")
-            } || options.map { it[0] }.distinct().size != options.size
-        ) {
-            return null
-        }
-        val flags = options.associate { it[0] to it[1] }
-        val args =
-            (input.take(2) +
-                    if (input.getOrNull(2) == "none") {
-                        "none"
-                    } else {
-                        ""
-                    })
-                .toMutableList()
-        // Stable defaults and option order keep exceptions and cache restores equal.
-        val reloadDefault = type == ScriptletType.SET_COOKIE_RELOAD
-        for (name in listOf("reload", "dontOverwrite")) {
-            val default =
-                if (name == "reload" && reloadDefault) {
-                    "1"
-                } else {
-                    "0"
-                }
-            val value = flags[name] ?: default
-            if (value != default) {
-                args += listOf(name, value)
-            }
-        }
-        return ScriptletInstruction(type, args)
-    }
-
     private fun unsigned(value: String, limit: Int): Boolean =
         Regex("[0-9]{1,9}").matches(value) &&
             (value.toIntOrNull() ?: Int.MAX_VALUE) <= limit
@@ -387,7 +334,7 @@ internal object AdditionalScriptlets {
         return !escaped && quote == null && closing.isEmpty()
     }
 
-    private fun safeValue(value: String): Boolean =
+    internal fun safeValue(value: String): Boolean =
         value.lowercase() in safeValues ||
             Regex("-?[0-9]{1,5}").matches(value) &&
                 (value.toIntOrNull() ?: 32768) in -32767..32767

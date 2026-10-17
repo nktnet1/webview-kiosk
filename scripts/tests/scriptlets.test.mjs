@@ -333,3 +333,80 @@ test('nested property traps follow the actual value produced by an existing sett
     assert.equal(p.run('player = { ads: true, title: "Video" }; player.ads'), false);
     assert.equal(p.run('player.title'), 'Video');
 });
+
+test('constants override configurable getters without extra reads or observers', () => {
+    const p = page([['SET', ['navigator.globalPrivacyControl', 'false']]], { before: `
+        nativeReads = 0;
+        const nav = {};
+        Object.defineProperty(nav, 'globalPrivacyControl', {
+            configurable: true, get() { nativeReads++; return true; },
+        });
+        Object.defineProperty(self, 'navigator', { configurable: true, get() { return nav; } });
+    ` });
+    p.install();
+    assert.equal(p.run('nativeReads'), 1);
+    assert.equal(p.run('navigator.globalPrivacyControl'), false);
+    assert.equal(p.run('navigator.globalPrivacyControl'), false);
+    assert.equal(p.run('nativeReads'), 1);
+    assert.equal(p.calls.listeners.length, 0);
+    assert.equal(p.calls.timers.length, 0);
+});
+
+test('prototype constants tolerate WebIDL receiver checks and apply to future instances', () => {
+    const p = page([
+        ['SET', ['Navigator.prototype.globalPrivacyControl', 'false']],
+        ['SET', ['navigator.globalPrivacyControl', 'false']],
+    ], { before: `
+        class Navigator {}
+        Object.defineProperty(Navigator.prototype, 'globalPrivacyControl', {
+            configurable: true, get() {
+                if (!(this instanceof Navigator)) { throw new TypeError('Illegal invocation'); }
+                return true;
+            },
+        });
+        self.Navigator = Navigator;
+        Object.defineProperty(self, 'navigator', {
+            configurable: true, get() { return currentNavigator; },
+        });
+        currentNavigator = new Navigator();
+    ` });
+    p.install();
+    assert.equal(p.run('navigator.globalPrivacyControl'), false);
+    assert.equal(p.run('new Navigator().globalPrivacyControl'), false);
+    assert.equal(p.run('currentNavigator = new Navigator(); navigator.globalPrivacyControl'), false);
+});
+
+test('constant installation preserves incompatible getters and non-configurable properties', () => {
+    const p = page([
+        ['SET', ['objectValue', 'false']], ['SET', ['fixed', 'false']],
+        ['SET', ['allowed', 'false']], ['SET', ['allowed', 'true']],
+    ], { before: `
+        originalGetter = () => ({ token: 'retained' });
+        Object.defineProperty(self, 'objectValue', { configurable: true, get: originalGetter });
+        Object.defineProperty(self, 'fixed', { configurable: false, get() { return true; } });
+        Object.defineProperty(self, 'allowed', { configurable: true, get() { return true; } });
+    ` });
+    p.install();
+    assert.equal(p.run('Object.getOwnPropertyDescriptor(self, "objectValue").get === originalGetter'), true);
+    assert.equal(p.run('objectValue.token'), 'retained');
+    assert.equal(p.run('fixed'), true);
+    assert.equal(p.run('allowed'), false);
+});
+
+test('released getter constants retain the original receiver and trusted constants stay set', () => {
+    const p = page([
+        ['SET', ['holder.flag', 'false']], ['TRUSTED_SET', ['holder.trusted', 'false']],
+    ], { before: `
+        holder = {};
+        for (const key of ['flag', 'trusted']) {
+            Object.defineProperty(holder, key, { configurable: true, get() {
+                if (this !== holder) { throw new TypeError('Wrong receiver'); }
+                return true;
+            } });
+        }
+    ` });
+    p.install();
+    assert.equal(p.run('holder.flag'), false);
+    assert.equal(p.run('holder.flag = "release"; holder.flag'), true);
+    assert.equal(p.run('holder.trusted = "retained"; holder.trusted'), false);
+});

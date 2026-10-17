@@ -20,7 +20,7 @@
 
 */
 
-/* Modified for Webview Kiosk on 2026-10-16: bounded shared hooks and frame routing.
+/* Modified for Webview Kiosk on 2026-10-17: bounded shared hooks and frame routing.
  * Source attribution: META-INF/ublock-NOTICE.txt. Keep this a function expression.
  */
 (function(domains, serialized, extension, resources, network, advanced) {
@@ -221,15 +221,21 @@
     function abort() { throw new NativeError(token); }
     const slots = new WeakMap();
     let slotCount = 0;
-    function slot(owner, name) {
+    function slot(owner, name, acceptsConstant) {
         if (!object(owner)) { return null; }
         let entries = slots.get(owner);
         if (!entries) { entries = new Map(); slots.set(owner, entries); }
         if (entries.has(name)) { return entries.get(name); }
         const desc = descriptor(owner, name);
         if (desc && (!desc.configurable || desc.writable === false ||
-            desc.get && !desc.set) || slotCount >= 512) { return null; }
-        const initial = owner[name];
+            desc.get && !desc.set && !acceptsConstant) || slotCount >= 512) { return null; }
+        let initial;
+        try { initial = owner[name]; } catch (error) {
+            // WebIDL getters may reject their prototype as a receiver. A constant
+            // can still replace the configurable leaf without invoking it again.
+            if (!acceptsConstant || !desc?.get) { throw error; }
+        }
+        if (acceptsConstant && !acceptsConstant(initial)) { return null; }
         const state = { value: initial, mode: '', readers: [], children: [], constant: null };
         define(owner, name, {
             configurable: true,
@@ -262,10 +268,10 @@
         slotCount++;
         return state;
     }
-    function trap(owner, parts, install) {
+    function trap(owner, parts, install, acceptsConstant) {
         if (!object(owner)) { return; }
         const name = parts[0];
-        const state = slot(owner, name);
+        const state = slot(owner, name, parts.length === 1 ? acceptsConstant : null);
         if (parts.length === 1) {
             if (state) {
                 install(state);
@@ -277,13 +283,13 @@
         }
         const rest = parts.slice(1);
         if (state) {
-            const child = value => { try { trap(value, rest, install); } catch {} };
+            const child = value => { try { trap(value, rest, install, acceptsConstant); } catch {} };
             state.children.push(child);
             child(state.value);
         } else {
             // A read-only ancestor may still contain configurable leaf properties.
             const desc = descriptor(owner, name);
-            if (desc) { trap(owner[name], rest, install); }
+            if (desc) { trap(owner[name], rest, install, acceptsConstant); }
         }
     }
     function constant(raw) {
@@ -335,33 +341,39 @@
         }
         try {
             const check = type === 'ABORT_CURRENT_SCRIPT' ? scriptCheck(args) : null;
+            const isConstant = type === 'SET' || type === 'TRUSTED_SET';
+            const trusted = type === 'TRUSTED_SET';
+            let value;
+            let acceptsConstant;
+            if (isConstant) {
+                value = trusted && args[1].startsWith('json:')
+                    ? apply(nativeParse, JSON, [args[1].slice(5)])
+                    : trusted && args[1].startsWith('{') && args[1] !== '{}'
+                        ? apply(nativeParse, JSON, [args[1]]).value : constant(args[1]);
+                if (['noopFunc', 'trueFunc', 'falseFunc'].includes(args[1])) {
+                    const name = args[0].split('.').slice(-1)[0];
+                    define(value, 'name', { value: name });
+                    value = new Proxy(value, {
+                        get(target, prop, receiver) {
+                            if (prop === 'toString') {
+                                return () => 'function ' + name + '() { [native code] }';
+                            }
+                            return reflectGet(target, prop, receiver);
+                        },
+                    });
+                }
+                acceptsConstant = prior => trusted || prior == null || value == null ||
+                    typeof prior === typeof value;
+            }
             trap(self, args[0].split('.'), state => {
                 if (state.mode && !(state.mode === type && check)) { return; }
-                if (type === 'SET' || type === 'TRUSTED_SET') {
-                    const trusted = type === 'TRUSTED_SET';
-                    let value = trusted && args[1].startsWith('json:')
-                        ? apply(nativeParse, JSON, [args[1].slice(5)])
-                        : trusted && args[1].startsWith('{') && args[1] !== '{}'
-                            ? apply(nativeParse, JSON, [args[1]]).value : constant(args[1]);
-                    if (['noopFunc', 'trueFunc', 'falseFunc'].includes(args[1])) {
-                        const name = args[0].split('.').slice(-1)[0];
-                        define(value, 'name', { value: name });
-                        value = new Proxy(value, {
-                            get(target, prop, receiver) {
-                                if (prop === 'toString') {
-                                    return () => 'function ' + name + '() { [native code] }';
-                                }
-                                return reflectGet(target, prop, receiver);
-                            },
-                        });
-                    }
-                    if (!trusted && state.value != null && value != null &&
-                        typeof state.value !== typeof value) { return; }
+                if (isConstant) {
+                    if (!acceptsConstant(state.value)) { return; }
                     state.constant = { value, released: false, trusted };
                 }
                 state.mode = type;
                 if (check) { state.readers.push(check); }
-            });
+            }, acceptsConstant);
         } catch { /* A non-configurable property must never break page loading. */ }
     }
 
@@ -545,7 +557,7 @@
         ['PREVENT_FETCH', installFetch], ['TRUSTED_PREVENT_FETCH', installFetch],
     ]);
     const environment = {
-        groups, selected, wrap, apply, define, descriptor, matcher, source, nativeAdd,
+        groups, selected, wrap, apply, define, descriptor, matcher, source, nativeAdd, regexpTest,
         trap, abort, resources: resources || {}, jsonPruner,
         nativeThen, resolved, rejected, NativeResponse, NativeRequest,
     };

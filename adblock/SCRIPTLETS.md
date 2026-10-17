@@ -487,3 +487,34 @@ with the same environment variable. The Kotlin test exports dispatcher cases fro
 the entire resolved PSL; Node executes the actual Kotlin-produced source and
 compares it with OkHttp-backed lookup results. This is desktop verification;
 Android device timing remains a separate measurement.
+
+
+## v1.0.23: property getters and cookie contracts
+
+Constant scriptlets can replace configurable getters without setters, including
+WebIDL getters which reject their prototype as the initial receiver. Only constant
+leaf installation receives this capability. Incompatible untrusted values and
+non-configurable or non-writable data properties retain their original descriptors.
+Existing hook ordering, shared ancestors and type-change release remain; trusted
+constants stay set. No observers, polling or new property-read branches are added.
+
+Cookie setters preserve valid cookie bytes and percent-encode only unsupported
+characters. Trusted cookies now use the upstream name/value/expiry/path positions,
+add `Secure`, and support `1day`, `1year` or 0..2,147,483,647 expiry seconds. Calendar
+expiry uses the captured native Date methods. `$now$`, `$currentDate$` and
+`$currentISODate$` expand from one timestamp before adjusting expiry. Trusted names
+must be cookie tokens, and unsupported placeholders still skip the whole rule.
+
+Both cookie families accept `reload, 0|1` and `dontOverwrite, 0|1`; trusted cookies
+also accept a literal `domain`. Domains are normalized, including IDNs. Regex domain
+options remain skipped. Options/defaults are canonicalized for exceptions and cache
+round trips. A same-value non-reloading write can refresh expiry, path or security
+attributes. Reload requires a changed value to be successfully read back; denied
+or ignored writes never trigger a reload. Trust gating and safe untrusted values
+remain enforced. Schema 13 invalidates the old positional contract.
+
+These changes run through the existing selected document-start hooks and cookie
+writes. They add no network interception or DOM scans. Native-device performance
+is not inferred from desktop tests. With `SCRIPTLET_OUTPUT_DIR` set, the engine tests
+export a restored cookie dispatcher; the JavaScript tests execute it to verify
+canonical argument positions, routing exceptions and reload guards end to end.

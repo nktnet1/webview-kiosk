@@ -137,6 +137,9 @@ internal object ScriptletParser {
         if (arguments.any { it.length > maxLength || it.any(Char::isISOControl) }) {
             return null
         }
+        if (type in CookieScriptlets.types) {
+            return CookieScriptlets.validated(type, arguments)
+        }
         if (type in AdvancedScriptlets.aliases.values) {
             return AdvancedScriptlets.validated(type, arguments)
         }
@@ -230,6 +233,7 @@ internal object ScriptletParser {
         val body = expression.substring(4, expression.length - 1)
         val result = mutableListOf<String>()
         var position = 0
+        var fieldLimit = 8
         while (position <= body.length) {
             while (body.getOrNull(position)?.isWhitespace() == true) {
                 position++
@@ -275,7 +279,16 @@ internal object ScriptletParser {
                 } else {
                     value.toString()
                 }
-            if (result.size > 8) {
+            if (result.size == 1) {
+                val name = result.single().removeSuffix(".js")
+                if (
+                    name == "trusted-set-cookie" ||
+                        name == "trusted-set-cookie-reload"
+                ) {
+                    fieldLimit = CookieScriptlets.MAX_ARGUMENTS + 1
+                }
+            }
+            if (result.size > fieldLimit) {
                 return null
             }
             if (position == body.length) {

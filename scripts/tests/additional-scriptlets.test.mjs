@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import test from 'node:test';
 import { page, installed } from './scriptlet-fixture.mjs';
 import { domFixture } from './scriptlet-dom-fixture.mjs';
@@ -169,6 +171,101 @@ test('cookie options reload only after saving and respect existing and empty coo
     installed('SET_COOKIE', args, { globals: { ...globals, document: denied } });
     assert.equal(reloads, 1);
 });
+
+const fixedCookieTime = `
+    Date = class extends Date {
+        constructor(...args) { super(...(args.length ? args : ['2024-02-29T12:34:56.000Z'])); }
+    };
+`;
+test('cookie encoding preserves valid bytes and encodes unsafe names and values', () => {
+    const document = cookieDocument();
+    installed('SET_COOKIE', ['consent$state', 'true', ''], { globals: { document } });
+    assert.equal(document.writes.at(-1), 'consent$state=true; path=/');
+    installed('SET_COOKIE', ['space name', 'true', ''], { globals: { document } });
+    assert.equal(document.writes.at(-1), 'space%20name=true; path=/');
+    installed('TRUSTED_SET_COOKIE', ['token', 'abc=+/"value",', '', ''], { globals: { document } });
+    assert.equal(document.writes.at(-1), 'token=abc=+/"value",; path=/; Secure');
+    installed('TRUSTED_SET_COOKIE', ['token', 'unsafe;value\\', '', 'none'], { globals: { document } });
+    assert.equal(document.writes.at(-1), 'token=unsafe%3Bvalue%5C; Secure');
+});
+
+test('cookie encoding uses native intrinsics when other selected property hooks replace them', () => {
+    const document = cookieDocument();
+    const p = page([
+        ['SET', ['RegExp.prototype.test', 'falseFunc']],
+        ['SET', ['encodeURIComponent', 'noopFunc']],
+        ['SET_COOKIE', ['space name', 'true', '']],
+        ['TRUSTED_SET_COOKIE', ['token', 'unsafe;value', '', '']],
+    ], { globals: { document } });
+    p.install();
+    assert.deepEqual(document.writes, ['space%20name=true; path=/', 'token=unsafe%3Bvalue; path=/; Secure']);
+});
+
+test('trusted cookie expiry, path, literal domain and flags use their own positions', () => {
+    for (const [expiry, expected] of [
+        ['1day', 'Fri, 01 Mar 2024 12:34:56 GMT'],
+        ['1year', 'Sat, 01 Mar 2025 12:34:56 GMT'],
+        ['3600', 'Thu, 29 Feb 2024 13:34:56 GMT'],
+        ['0', 'Thu, 29 Feb 2024 12:34:56 GMT'],
+    ]) {
+        const document = cookieDocument();
+        installed('TRUSTED_SET_COOKIE', ['choice', 'abc=', expiry, 'none',
+            'domain', 'site.example'], { globals: { document }, before: fixedCookieTime });
+        assert.equal(document.writes.at(-1), `choice=abc=; expires=${expected}; domain=site.example; Secure`);
+    }
+    const document = cookieDocument();
+    document.jar.set('choice', 'abc=');
+    installed('TRUSTED_SET_COOKIE', ['choice', 'abc=', '1day', ''],
+        { globals: { document }, before: fixedCookieTime });
+    assert.match(document.writes.at(-1), /; expires=.*; path=\/; Secure$/);
+    assert.equal(document.writes.length, 1, 'Same-value writes can update expiry or scope');
+});
+
+test('trusted cookie placeholders use captured Date methods before expiry adjustment', () => {
+    const document = cookieDocument();
+    const p = page([
+        ['SET', ['Date', 'undefined']],
+        ['TRUSTED_SET_COOKIE', ['time', '$now$/$currentISODate$/$currentDate$', '1year', '']],
+    ], { globals: { document }, before: fixedCookieTime });
+    p.install();
+    assert.equal(document.jar.get('time'),
+        '1709210096000/2024-02-29T12:34:56.000Z/Thu, 29 Feb 2024 12:34:56 GMT');
+    assert.match(document.writes.at(-1), /expires=Sat, 01 Mar 2025 12:34:56 GMT/);
+});
+
+test('trusted reload flags avoid loops and failed Secure writes never reload', () => {
+    let reloads = 0;
+    const document = cookieDocument();
+    const location = { protocol: 'https:', hostname: 'site.example', reload() { reloads++; } };
+    const args = ['choice', 'abc=', '1day', '', 'reload', '1'];
+    installed('TRUSTED_SET_COOKIE', args, { globals: { document, location }, before: fixedCookieTime });
+    installed('TRUSTED_SET_COOKIE', args, { globals: { document, location }, before: fixedCookieTime });
+    assert.equal(reloads, 1); assert.equal(document.writes.length, 1);
+    document.jar.set('choice', '');
+    installed('TRUSTED_SET_COOKIE_RELOAD', ['choice', 'abc=', '', '', 'dontOverwrite', '1'],
+        { globals: { document, location } });
+    assert.equal(reloads, 1); assert.equal(document.jar.get('choice'), '');
+    const refused = { currentScript: null, get cookie() { return ''; }, set cookie(value) {} };
+    installed('TRUSTED_SET_COOKIE', args,
+        { globals: { document: refused, location: { ...location, protocol: 'http:' } }, before: fixedCookieTime });
+    assert.equal(reloads, 1);
+});
+
+test('cached Kotlin-produced cookie routing preserves arguments, exceptions and reload guards',
+    { skip: !process.env.SCRIPTLET_OUTPUT_DIR }, () => {
+        const source = readFileSync(join(process.env.SCRIPTLET_OUTPUT_DIR, 'cookie-injection.js'), 'utf8');
+        const document = cookieDocument(); let reloads = 0;
+        const location = { protocol: 'https:', hostname: 'site.example', reload() { reloads++; } };
+        for (let i = 0; i < 2; i++) {
+            page([], { globals: { document, location }, before: fixedCookieTime }).run(source);
+        }
+        assert.equal(document.writes.length, 1); assert.equal(reloads, 1);
+        assert.equal(document.writes[0],
+            'token=abc=; expires=Sat, 01 Mar 2025 12:34:56 GMT; path=/; domain=site.example; Secure');
+        const excluded = cookieDocument();
+        page([], { host: 'safe.site.example', globals: { document: excluded }, before: fixedCookieTime }).run(source);
+        assert.equal(excluded.writes.length, 0);
+    });
 
 test('call-nothrow retains receivers and results while suppressing target throws', () => {
     const p = installed('CALL_NOTHROW', ['api.run'], { before:
