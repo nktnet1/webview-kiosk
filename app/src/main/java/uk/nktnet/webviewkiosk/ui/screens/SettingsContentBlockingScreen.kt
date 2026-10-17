@@ -699,11 +699,6 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                                     style = MaterialTheme.typography.bodyMedium,
                                 )
                             }
-                            Text(
-                                "Drag to reorder. Update applies to selected URL and preset lists.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
                         }
                     }
                 }
