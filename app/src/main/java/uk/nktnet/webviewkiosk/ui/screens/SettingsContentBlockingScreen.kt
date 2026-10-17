@@ -1208,6 +1208,18 @@ private fun FilterListInfoDialog(
                         unavailable,
                     )
                 }
+                details
+                    ?.skipReasons
+                    ?.takeIf { it.isNotEmpty() }
+                    ?.let { reasons ->
+                        InfoSection("Skipped rules") {
+                            reasons.entries
+                                .sortedBy { it.key.ordinal }
+                                .forEach { (reason, count) ->
+                                    InfoStat(reason.label, numbers.format(count))
+                                }
+                        }
+                    }
                 item.sourceUrl?.let { source ->
                     InfoSection("Source URL") {
                         SelectionContainer {

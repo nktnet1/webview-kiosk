@@ -205,12 +205,13 @@ internal class CompiledFilterCache(
                             )
                         ) {
                             val scope = strings.scope()
-                            require(
-                                !scope.usesEntities &&
-                                    scope.included.none { ':' in it }
-                            )
+                            require(scope.included.none { ':' in it })
                             val exception = input.readBoolean()
-                            require(exception || scope.included.isNotEmpty())
+                            require(
+                                exception ||
+                                    scope.included.isNotEmpty() ||
+                                    scope.includedEntities.isNotEmpty()
+                            )
                             val instruction =
                                 if (input.readBoolean()) {
                                     val type = ScriptletType.valueOf(strings.read())
@@ -463,7 +464,7 @@ internal class CompiledFilterCache(
         private const val MAGIC = 0x574b4346 // WKCF
 
         // Bump when parsing/matching semantics or the binary schema change.
-        private const val VERSION = 11
+        private const val VERSION = 12
         private const val MAX_BYTES = 64L * 1024 * 1024
         private const val BUFFER_SIZE = 64 * 1024
 

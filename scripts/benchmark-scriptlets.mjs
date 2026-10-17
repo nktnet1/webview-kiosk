@@ -78,9 +78,9 @@ function timerCost(rules) {
         const sandbox = context('site.example');
         new Script('setTimeout = function(){ return 1; };').runInContext(sandbox);
         if (rules.length) {
-            const data = { rules, hosts: [['site.example', rules.map((_, index) => index)]],
+            const data = { rules: rules.map(rule => [...rule, []]), entities: [], hosts: [['site.example', rules.map((_, index) => index)]],
                 exceptions: [] };
-            new Script(`${runtime}('|site.example|', ${JSON.stringify(JSON.stringify(data))});`)
+            new Script(`${runtime}(['|site.example|','||'], ${JSON.stringify(JSON.stringify(data))});`)
                 .runInContext(sandbox);
         }
         const duration = timed(() => loop.runInContext(sandbox));

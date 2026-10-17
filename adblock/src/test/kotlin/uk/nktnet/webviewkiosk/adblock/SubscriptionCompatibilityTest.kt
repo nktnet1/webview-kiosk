@@ -164,7 +164,7 @@ class SubscriptionCompatibilityTest {
             val unsupported = mutableListOf<String>()
             var invalid = 0
             FilterParser.visit(text) { number, result ->
-                if (result == ParsedFilter.Unsupported) {
+                if (result is ParsedFilter.Unsupported) {
                     unsupported += lines[number - 1]
                 }
                 if (result is ParsedFilter.Invalid) {

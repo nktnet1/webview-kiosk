@@ -29,17 +29,58 @@
     const host = location.hostname.toLowerCase().replace(/\.$/, '');
     if (host === 'appassets.androidplatform.net' ||
         host === 'pdf-dummy.webviewkiosk.nktnet.uk') { return; }
+    const hostGate = domains[0];
+    const entityGate = domains[1];
     let candidate = host;
     let eligible = false;
     while (candidate) {
-        if (domains.includes('|' + candidate + '|')) { eligible = true; break; }
+        if (hostGate.includes('|' + candidate + '|')) { eligible = true; break; }
         const dot = candidate.indexOf('.');
         if (dot === -1) { break; }
         candidate = candidate.slice(dot + 1);
     }
+    if (!eligible && entityGate !== '||') {
+        const labels = host.split('.');
+        eligible = labels.slice(0, -1).some(label => entityGate.includes('|' + label + '|'));
+    }
     if (!eligible) { return; }
     const config = JSON.parse(serialized);
     const domainMatches = (name) => host === name || host.endsWith('.' + name);
+    // Binary search newline-delimited ASCII rules; no per-frame PSL maps or DOM work.
+    function contains(list, value) {
+        let low = 0, high = list.length;
+        while (low < high) {
+            const mid = Math.floor((low + high) / 2);
+            const start = mid === 0 ? 0 : list.lastIndexOf('\n', mid - 1) + 1;
+            const end = list.indexOf('\n', mid);
+            const rule = list.slice(start, end);
+            if (rule === value) { return true; }
+            if (rule < value) { low = end + 1; } else { high = start; }
+        }
+        return false;
+    }
+    function entityName() {
+        if (!config.suffixes || host.includes(':') || /^\d+\.\d+\.\d+\.\d+$/.test(host)) {
+            return '';
+        }
+        const labels = host.split('.');
+        let suffixLength = 1;
+        for (let i = 0; i < labels.length; i++) {
+            const suffix = labels.slice(i).join('.');
+            if (contains(config.suffixes[1], suffix)) {
+                suffixLength = labels.length - i - 1;
+                break;
+            }
+            if (contains(config.suffixes[0], suffix) || i < labels.length - 1 &&
+                contains(config.suffixes[0], '*.' + labels.slice(i + 1).join('.'))) {
+                suffixLength = Math.max(suffixLength, labels.length - i);
+            }
+        }
+        return labels.slice(0, labels.length - suffixLength).join('.');
+    }
+    const entity = entityName();
+    const entityMatches = name => entity !== '' &&
+        (entity === name || entity.endsWith('.' + name));
     const candidates = new Set(config.exceptions);
     const hostIndex = new Map(config.hosts);
     let suffix = host;
@@ -50,9 +91,17 @@
         if (dot === -1) { break; }
         suffix = suffix.slice(dot + 1);
     }
+    const entityIndex = new Map(config.entities);
+    suffix = entity;
+    while (suffix) {
+        for (const index of entityIndex.get(suffix) || []) { candidates.add(index); }
+        const dot = suffix.indexOf('.');
+        if (dot === -1) { break; }
+        suffix = suffix.slice(dot + 1);
+    }
     const matching = Array.from(candidates).sort((a, b) => a - b)
         .map(index => config.rules[index])
-        .filter(rule => !rule[2].some(domainMatches));
+        .filter(rule => !rule[2].some(domainMatches) && !rule[4].some(entityMatches));
     if (matching.some(rule => rule[3] && rule[0] === null)) { return; }
     const key = rule => JSON.stringify([rule[0], rule[1]]);
     const excepted = new Set(matching.filter(rule => rule[3]).map(key));

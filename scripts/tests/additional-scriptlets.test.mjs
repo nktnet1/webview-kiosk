@@ -147,6 +147,29 @@ test('cookie removal matches names only and repeats on beforeunload', () => {
     assert.equal(document.jar.has('advert'), false);
 });
 
+test('cookie options reload only after saving and respect existing and empty cookies', () => {
+    const document = cookieDocument(); let reloads = 0;
+    const globals = { document, location: { protocol: 'https:', hostname: 'site.example',
+        reload() { reloads++; } } };
+    const args = ['GPC', '1', '', 'reload', '1'];
+    installed('SET_COOKIE', args, { globals });
+    assert.equal(document.jar.get('GPC'), '1'); assert.equal(reloads, 1);
+    installed('SET_COOKIE', args, { globals });
+    assert.equal(reloads, 1); assert.equal(document.writes.length, 1);
+    document.jar.set('GPC', '');
+    installed('SET_COOKIE', [...args, 'dontOverwrite', '1'], { globals });
+    assert.equal(document.jar.get('GPC'), ''); assert.equal(reloads, 1);
+    installed('SET_COOKIE_RELOAD', ['GPC', '1', 'none', 'reload', '0'], { globals });
+    assert.equal(reloads, 1); assert.equal(document.writes.at(-1), 'GPC=1');
+    const refused = { currentScript: null, get cookie() { return ''; }, set cookie(value) {} };
+    installed('SET_COOKIE', args, { globals: { ...globals, document: refused } });
+    assert.equal(reloads, 1);
+    const denied = { currentScript: null, get cookie() { return ''; },
+        set cookie(value) { throw new DOMException('Denied', 'SecurityError'); } };
+    installed('SET_COOKIE', args, { globals: { ...globals, document: denied } });
+    assert.equal(reloads, 1);
+});
+
 test('call-nothrow retains receivers and results while suppressing target throws', () => {
     const p = installed('CALL_NOTHROW', ['api.run'], { before:
         'api={value:5,run(x){if(x<0)throw Error("bad");return this.value+x;}};' });

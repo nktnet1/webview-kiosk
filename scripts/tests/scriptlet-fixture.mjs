@@ -10,7 +10,7 @@ const network = readFileSync(new URL(
 const advanced = readFileSync(new URL(
     '../../adblock/src/main/resources/adblock/scriptlets-advanced.js', import.meta.url), 'utf8');
 export function page(rules, { host = 'site.example', protocol = 'https:', before = '',
-    globals = {} } = {}) {
+    globals = {}, suffixes } = {}) {
     const calls = { open: [], timers: [], intervals: [], frames: new Map(), listeners: [],
         fetch: [], stopped: 0 };
     class Target {
@@ -45,19 +45,27 @@ export function page(rules, { host = 'site.example', protocol = 'https:', before
     context.addEventListener = Target.prototype.addEventListener;
     context.removeEventListener = Target.prototype.removeEventListener;
     if (before) { runInContext(before, context); }
-    const config = { rules: [], hosts: [], exceptions: [] };
+    const config = { rules: [], hosts: [], entities: [], exceptions: [], suffixes };
+    const entities = new Map();
     const hosts = new Map();
     for (const [type, args, domain = 'site.example', excluded = [], exception = false] of rules) {
         const index = config.rules.length;
-        config.rules.push([type, args, excluded, exception]);
+        config.rules.push([type, args, excluded.filter(name => !name.endsWith('.*')), exception,
+            excluded.filter(name => name.endsWith('.*')).map(name => name.slice(0, -2))]);
         if (domain === '') { config.exceptions.push(index); }
-        else {
+        else if (domain.endsWith('.*')) {
+            const entity = domain.slice(0, -2);
+            if (!entities.has(entity)) { entities.set(entity, []); }
+            entities.get(entity).push(index);
+        } else {
             if (!hosts.has(domain)) { hosts.set(domain, []); }
             hosts.get(domain).push(index);
         }
     }
     config.hosts = Array.from(hosts.entries());
-    const domains = '|' + Array.from(hosts.keys()).join('|') + '|';
+    config.entities = Array.from(entities.entries());
+    const domains = ['|' + Array.from(hosts.keys()).join('|') + '|',
+        '|' + Array.from(entities.keys()).map(name => name.split('.').at(-1)).join('|') + '|'];
     const names = [...new Set(rules.filter(rule => rule[0] === 'RESOURCE')
         .map(rule => rule[1][0]))];
     const factories = names.map(name => {

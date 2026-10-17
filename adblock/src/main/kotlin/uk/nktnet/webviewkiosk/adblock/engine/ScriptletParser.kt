@@ -1,5 +1,6 @@
 package uk.nktnet.webviewkiosk.adblock.engine
 
+import uk.nktnet.webviewkiosk.adblock.FilterSkipReason
 import uk.nktnet.webviewkiosk.adblock.ScriptletInstruction
 import uk.nktnet.webviewkiosk.adblock.ScriptletType
 
@@ -94,6 +95,29 @@ internal object ScriptletParser {
             return null
         }
         return validated(type, args, trusted)
+    }
+
+    fun skipReason(expression: String, trusted: Boolean): FilterSkipReason {
+        val fields =
+            arguments(expression) ?: return FilterSkipReason.SCRIPTLET_ARGUMENTS
+        val name = fields.first().removeSuffix(".js")
+        val type =
+            aliases[name]
+                ?: AdditionalScriptlets.aliases[name]
+                ?: ResponseScriptlets.aliases[name]
+                ?: AdvancedScriptlets.aliases[name]
+        if (type?.requiresTrust == true && !trusted) {
+            return FilterSkipReason.SCRIPTLET_TRUST
+        }
+        return if (
+            type != null ||
+                name in ScriptletResources.aliases ||
+                name in setOf("noeval", "noeval-silent", "silent-noeval")
+        ) {
+            FilterSkipReason.SCRIPTLET_ARGUMENTS
+        } else {
+            FilterSkipReason.SCRIPTLET_NAME
+        }
     }
 
     internal fun validated(

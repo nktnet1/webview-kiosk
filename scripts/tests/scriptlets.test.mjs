@@ -279,7 +279,7 @@ test('the host gate avoids loading instruction data on unrelated or private orig
         { host: 'appassets.androidplatform.net' }, { protocol: 'about:' },
     ]) {
         const p = page([], options);
-        p.run(`${runtime}('|site.example|', 'unread invalid JSON');`);
+        p.run(`${runtime}(['|site.example|','||'], 'unread invalid JSON');`);
         assert.equal(p.calls.listeners.length, 0);
     }
 });

@@ -3,6 +3,7 @@ package uk.nktnet.webviewkiosk.adblock.engine
 import java.util.Locale
 import uk.nktnet.webviewkiosk.adblock.BlockingResponse
 import uk.nktnet.webviewkiosk.adblock.CosmeticProcedure
+import uk.nktnet.webviewkiosk.adblock.FilterSkipReason
 
 internal data class DomainScope(
     val included: Set<String> = emptySet(),
@@ -111,7 +112,7 @@ internal sealed interface ParsedFilter {
 
     data class Invalid(val message: String) : ParsedFilter
 
-    data object Unsupported : ParsedFilter
+    data class Unsupported(val reason: FilterSkipReason) : ParsedFilter
 }
 
 /**
@@ -123,7 +124,8 @@ internal object FilterParser {
 
     private class Invalid(message: String) : RuntimeException(message)
 
-    private class Unsupported : RuntimeException() {
+    private class Unsupported(val reason: FilterSkipReason? = null) :
+        RuntimeException() {
         // The four-argument constructor is unavailable before Android 7.
         override fun fillInStackTrace(): Throwable = this
     }
@@ -441,7 +443,7 @@ internal object FilterParser {
             normalizedHost(host)
                 ?: return ParsedFilter.Invalid("invalid hosts hostname")
         if (!normalized.contains('.') && !normalized.contains(':')) {
-            return ParsedFilter.Unsupported
+            return ParsedFilter.Unsupported(FilterSkipReason.OTHER)
         }
         val literal =
             if (normalized.contains(':')) {
@@ -472,7 +474,7 @@ internal object FilterParser {
     private fun parse(line: String, trusted: Boolean): ParsedFilter =
         try {
             if (line.length > 8192) {
-                throw Unsupported()
+                throw Unsupported(FilterSkipReason.LIMIT)
             }
             val proceduralException = line.indexOf("#@?#")
             val proceduralCosmetic = line.indexOf("#?#")
@@ -495,8 +497,20 @@ internal object FilterParser {
 
                 else -> parseNetwork(line)
             }
-        } catch (_: Unsupported) {
-            ParsedFilter.Unsupported
+        } catch (error: Unsupported) {
+            ParsedFilter.Unsupported(
+                error.reason
+                    ?: if (
+                        "##" in line ||
+                            "#@#" in line ||
+                            "#?#" in line ||
+                            "#@?#" in line
+                    ) {
+                        FilterSkipReason.OTHER
+                    } else {
+                        FilterSkipReason.NETWORK
+                    }
+            )
         } catch (error: Invalid) {
             ParsedFilter.Invalid(error.message.orEmpty())
         }
@@ -525,7 +539,13 @@ internal object FilterParser {
                         normalizedHost(raw.substringBefore('/')) != null
             }
         ) {
-            throw Unsupported()
+            throw Unsupported(
+                if (selector.startsWith("+js(")) {
+                    FilterSkipReason.SCRIPTLET_SCOPE
+                } else {
+                    FilterSkipReason.PROCEDURAL
+                }
+            )
         }
         if (selector.startsWith("+js(")) {
             if (
@@ -534,15 +554,19 @@ internal object FilterParser {
             ) {
                 throw Unsupported()
             }
-            val scope = domains(line.substring(0, separator), ',')
-            // Entity/regex domains need a public-suffix-aware synchronous frame
-            // dispatcher. Do not approximate them with hostname substrings.
+            val scope =
+                try {
+                    domains(scopeText, ',')
+                } catch (_: Unsupported) {
+                    throw Unsupported(FilterSkipReason.SCRIPTLET_SCOPE)
+                }
             if (
-                scope.usesEntities ||
-                    !exception && scope.included.isEmpty() ||
+                !exception &&
+                    scope.included.isEmpty() &&
+                    scope.includedEntities.isEmpty() ||
                     scope.included.any { ':' in it }
             ) {
-                throw Unsupported()
+                throw Unsupported(FilterSkipReason.SCRIPTLET_SCOPE)
             }
             val instruction =
                 if (exception && selector == "+js()") {
@@ -550,19 +574,31 @@ internal object FilterParser {
                 } else {
                     // Disabling an instruction grants no script execution privilege.
                     ScriptletParser.parse(selector, trusted || exception)
-                        ?: throw Unsupported()
+                        ?: throw Unsupported(
+                            ScriptletParser.skipReason(
+                                selector,
+                                trusted || exception,
+                            )
+                        )
                 }
             return ParsedFilter.Scriptlet(
                 ScriptletRule(instruction, scope, exception)
             )
         }
-        if (selector.length > 4096 || selector.startsWith("^")) {
-            throw Unsupported()
+        if (selector.startsWith("^")) {
+            throw Unsupported(FilterSkipReason.HTML)
+        }
+        if (selector.length > 4096) {
+            throw Unsupported(FilterSkipReason.LIMIT)
         }
         val scope = domains(line.substring(0, separator), ',')
         val action =
             if (procedural.any(selector::contains)) {
-                parseProcedure(selector, scope)
+                try {
+                    parseProcedure(selector, scope)
+                } catch (_: Unsupported) {
+                    throw Unsupported(FilterSkipReason.PROCEDURAL)
+                }
             } else {
                 null
             }
@@ -984,6 +1020,16 @@ internal object FilterParser {
         var redirect: BlockingResponse? = null
         var redirectOnly = false
         var removeParam: ParameterRemoval? = null
+        // Diagnose the unsupported modifier without interpreting a partial rule.
+        val optionNames = options.map {
+            it.substringBefore('=').removePrefix("~").lowercase(Locale.ROOT)
+        }
+        if ("popup" in optionNames || "popunder" in optionNames) {
+            throw Unsupported(FilterSkipReason.POPUP)
+        }
+        if ("csp" in optionNames) {
+            throw Unsupported(FilterSkipReason.CSP)
+        }
         // Check unknown options before interpreting any remaining restriction.
         for (option in options) {
             val name =

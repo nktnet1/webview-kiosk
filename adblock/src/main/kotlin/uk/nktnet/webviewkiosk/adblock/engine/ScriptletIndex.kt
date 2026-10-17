@@ -6,12 +6,21 @@ import uk.nktnet.webviewkiosk.adblock.ScriptletInstruction
 /** Host-indexed routing is mirrored in the synchronous document-start dispatcher. */
 internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
     private val hosts = linkedMapOf<String, MutableList<Int>>()
+    private val entities = linkedMapOf<String, MutableList<Int>>()
+    private val usesEntities = rules.any { it.domains.usesEntities }
     private val genericExceptions = mutableListOf<Int>()
 
     init {
         rules.forEachIndexed { index, rule ->
-            if (rule.domains.included.isEmpty() && rule.exception) {
+            if (
+                rule.domains.included.isEmpty() &&
+                    rule.domains.includedEntities.isEmpty() &&
+                    rule.exception
+            ) {
                 genericExceptions += index
+            }
+            rule.domains.includedEntities.forEach { entity ->
+                entities.getOrPut(entity) { mutableListOf() }.add(index)
             }
             rule.domains.included.forEach { domain ->
                 hosts.getOrPut(domain) { mutableListOf() }.add(index)
@@ -27,7 +36,19 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
         }
         val candidates = sortedSetOf<Int>().apply { addAll(genericExceptions) }
         hostSuffixes(host) { hosts[it]?.let(candidates::addAll) }
-        val matching = candidates.map(rules::get).filter { it.domains.matches(host) }
+        val domain =
+            if (usesEntities) {
+                address.topPrivateDomain()
+            } else {
+                null
+            }
+        entityName(host, domain)?.let { entity ->
+            hostSuffixes(entity) { entities[it]?.let(candidates::addAll) }
+        }
+        val matching =
+            candidates.map(rules::get).filter {
+                it.domains.matches(host, domain)
+            }
         if (matching.any { it.exception && it.instruction == null }) {
             return emptyList()
         }
@@ -48,16 +69,20 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
             return null
         }
         val domains = linkedSetOf<String>()
+        val entityLabels = linkedSetOf<String>()
         rules
             .filterNot { it.exception }
             .forEach { rule ->
+                rule.domains.includedEntities.forEach {
+                    entityLabels += it.substringAfterLast('.')
+                }
                 rule.domains.included
                     .filterNot { it in PRIVATE_HOSTS }
                     .forEach { domain ->
                         domains += domain
                     }
             }
-        if (domains.isEmpty()) {
+        if (domains.isEmpty() && entityLabels.isEmpty()) {
             return null
         }
         val data = buildString {
@@ -73,7 +98,9 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
                 strings(instruction?.arguments.orEmpty())
                 append(',')
                 strings(rule.domains.excluded)
-                append(',').append(rule.exception).append(']')
+                append(',').append(rule.exception).append(',')
+                strings(rule.domains.excludedEntities)
+                append(']')
             }
             append("],\"hosts\":[")
             hosts.entries.forEachIndexed { index, (host, values) ->
@@ -86,7 +113,23 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
                     .append(values.joinToString(",", "[", "]"))
                     .append(']')
             }
-            append("],\"exceptions\":")
+            append("],\"entities\":[")
+            entities.entries.forEachIndexed { index, (entity, values) ->
+                if (index != 0) {
+                    append(',')
+                }
+                append('[')
+                    .append(json(entity))
+                    .append(',')
+                    .append(values.joinToString(",", "[", "]"))
+                    .append(']')
+            }
+            if (usesEntities) {
+                append("],\"suffixes\":").append(ScriptletSuffixes.serialized)
+            } else {
+                append(']')
+            }
+            append(",\"exceptions\":")
             append(genericExceptions.joinToString(",", "[", "]"))
             append('}')
         }
@@ -96,7 +139,9 @@ internal class ScriptletIndex(private val rules: List<ScriptletRule>) {
         // AndroidX's origin grammar cannot express arbitrary HTTP(S) ports.
         // A cheap synchronous host gate runs before the lazy routing payload.
         // This wildcard exposes no native bridge or privileged callable API.
-        val gate = json(domains.joinToString("|", "|", "|"))
+        val gate =
+            "[${json(domains.joinToString("|", "|", "|"))}," +
+                "${json(entityLabels.joinToString("|", "|", "|"))}]"
         val additional = rules.any {
             (it.instruction?.type?.ordinal ?: 0) >
                 uk.nktnet.webviewkiosk.adblock.ScriptletType.PREVENT_FETCH.ordinal

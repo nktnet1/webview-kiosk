@@ -14,6 +14,7 @@ import java.util.UUID
 import org.json.JSONArray
 import org.json.JSONObject
 import uk.nktnet.webviewkiosk.adblock.FilterListValidator
+import uk.nktnet.webviewkiosk.adblock.FilterSkipReason
 import uk.nktnet.webviewkiosk.adblock.FilterSource
 import uk.nktnet.webviewkiosk.adblock.KotlinFilterEngine
 import uk.nktnet.webviewkiosk.adblock.inspectFilterList
@@ -55,6 +56,7 @@ internal data class FilterListInfo(
     val unsupportedRules: Int,
     val invalidRules: Int,
     val scriptletRules: Int = 0,
+    val skipReasons: Map<FilterSkipReason, Int> = emptyMap(),
 ) {
     val skippedRules: Int
         get() = unsupportedRules + invalidRules
@@ -645,6 +647,7 @@ internal class FilterListStore(
             counts.unsupportedRules,
             counts.invalidRules,
             counts.scriptletRules,
+            counts.skipReasons,
         )
     }
 

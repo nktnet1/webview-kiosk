@@ -65,9 +65,15 @@ class SettingsContentBlockingScreenTest {
         File(context.filesDir, "content-blocking-lists").deleteRecursively()
         store = FilterListStore(context)
         listOf("First", "Second", "Other").forEach { name ->
+            val skipped =
+                if (name == "First") {
+                    "\n||popup.example^\$popup\n||csp.example^\$csp=script-src 'none'"
+                } else {
+                    ""
+                }
             store.importFrom(
                 name,
-                "||${name.lowercase()}.example^".byteInputStream(),
+                "||${name.lowercase()}.example^$skipped".byteInputStream(),
             )
         }
         ViewRootForTest.onViewCreatedCallback = { roots += it }
@@ -95,6 +101,20 @@ class SettingsContentBlockingScreenTest {
         scope.cancel()
         activityController.pause().stop().destroy()
         ViewRootForTest.onViewCreatedCallback = null
+    }
+
+    @Test
+    fun listInfoExplainsSkippedRulesWithoutChangingTheList() {
+        val saved = store.list()
+        clickDescription("Options for First")
+        click("Info")
+        awaitCondition {
+            hasText("Popup rules") && hasText("Content Security Policy rules")
+        }
+        assertTrue(hasText("Skipped rules"))
+        assertEquals(2, store.info(saved.first().id).skipReasons.values.sum())
+        assertEquals(saved, store.list())
+        click("Close")
     }
 
     @Test

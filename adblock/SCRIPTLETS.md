@@ -447,3 +447,43 @@ its optional second path selects an older runtime for a same-harness comparison.
 
 Attribution is consolidated in [the packaged notice](src/main/resources/META-INF/ublock-NOTICE.txt).
 Required original notices remain on copied upstream source files.
+
+
+## v1.0.22: entity routing, cookie flags and inspection reasons
+
+Scriptlet scopes now accept entities (`ticketmaster.*`), mixed hostname/entity
+inclusions, exclusions and both instruction-specific and blanket exceptions.
+Entity names are derived from the registrable domain, including private suffixes,
+wildcard suffixes, PSL exceptions, IDNs and unknown suffixes. Regex and path scopes
+remain unsupported; they are never treated as ordinary hostname matches.
+
+The build copies the suffix data from the resolved OkHttp JVM dependency into this
+module's resources. No network fetch, separate PSL version or internal OkHttp API
+is used at runtime. The compiler normalizes and sorts it once, then includes it only
+in snapshots that use scriptlet entities. Document-start scripts keep the cheap
+host/entity-label gate before parsing routing data. Candidate frames resolve the
+suffix once using binary search, then use indexed entity buckets. No new request
+hooks, observers or per-request diagnostics are installed. Existing 2 MiB routing,
+8,192 rule and 128 instruction limits remain. This is bounded additional work on
+entity candidate frames, not a claim of zero Android startup cost.
+
+`set-cookie` and `set-cookie-reload` support `reload, 0|1` and
+`dontOverwrite, 0|1` pairs after the path argument. Unknown, duplicate or incomplete
+options skip the whole rule. Canonical option order and defaults preserve exception
+matching and cache round trips. Reload happens only after a changed cookie is
+successfully read back. Existing safe-value and trusted-source restrictions remain;
+trusted-cookie expiry/domain options are not added by this patch.
+
+List Info shows a breakdown of skipped rules: popup, CSP, HTML, unsupported
+cosmetics, scriptlet scope/name/arguments/trust, network syntax, safety limits and
+invalid syntax. Counts are collected during list inspection only. Parser acceptance
+is separate from runtime effectiveness. `$popup`, CSP/header/body filtering and
+unbounded scriptlet patterns are not made supported by assigning a reason.
+
+Verification includes native lookup/cache tests and JavaScript routing/cookie tests.
+For full suffix parity, run `:adblock:test` with `SCRIPTLET_OUTPUT_DIR` set to a
+temporary directory, then run `node --test scripts/tests/entity-routing.test.mjs`
+with the same environment variable. The Kotlin test exports dispatcher cases from
+the entire resolved PSL; Node executes the actual Kotlin-produced source and
+compares it with OkHttp-backed lookup results. This is desktop verification;
+Android device timing remains a separate measurement.

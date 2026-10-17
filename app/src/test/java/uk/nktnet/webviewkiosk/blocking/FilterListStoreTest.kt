@@ -194,6 +194,13 @@ class FilterListStoreTest {
         assertEquals(3, info.cosmeticRules)
         assertEquals(1, info.unsupportedRules)
         assertEquals(1, info.invalidRules)
+        assertEquals(
+            mapOf(
+                uk.nktnet.webviewkiosk.adblock.FilterSkipReason.POPUP to 1,
+                uk.nktnet.webviewkiosk.adblock.FilterSkipReason.INVALID to 1,
+            ),
+            info.skipReasons,
+        )
         assertEquals(2, info.skippedRules)
         assertEquals(9, info.totalRules)
         assertEquals(saved, store.list())

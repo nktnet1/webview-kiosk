@@ -151,14 +151,24 @@
         const name = encodeURIComponent(args[0]);
         const value = encodeURIComponent(args[1]);
         const wanted = name + '=' + value;
-        const present = () => document.cookie.split(/\s*;\s*/).includes(wanted);
-        if (present()) { return; }
+        let dontOverwrite = false;
+        for (let i = 3; i + 1 < args.length; i += 2) {
+            if (args[i] === 'reload') { reload = args[i + 1] === '1'; }
+            if (args[i] === 'dontOverwrite') { dontOverwrite = args[i + 1] === '1'; }
+        }
+        const current = () => {
+            const pair = document.cookie.split(/\s*;\s*/).find(pair => pair.startsWith(name + '='));
+            return pair === undefined ? undefined : pair.slice(name.length + 1);
+        };
+        const before = current();
+        if (before === value || dontOverwrite && before !== undefined) { return; }
         let text = wanted;
         if (args[2] !== 'none') { text += '; path=/'; }
         if (name.startsWith('__Secure-') || name.startsWith('__Host-')) { text += '; Secure'; }
-        document.cookie = text;
-        if (reload && present()) { location.reload(); }
+        try { document.cookie = text; } catch { return; }
+        if (reload && current() === value) { location.reload(); }
     }
+
     function removeCookie(args) {
         const match = matcher(args[0]);
         const remove = () => {

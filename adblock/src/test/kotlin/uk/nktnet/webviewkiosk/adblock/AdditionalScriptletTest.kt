@@ -16,6 +16,44 @@ import uk.nktnet.webviewkiosk.adblock.engine.ScriptletResources
 class AdditionalScriptletTest {
     @get:Rule val folder = TemporaryFolder()
 
+    @Test
+    fun cookieFlagsAreValidatedCanonicalizedAndMatchedByExceptions() {
+        val rule = "+js(set-cookie, GPC, 1, , reload, 1)"
+        assertEquals(
+            listOf("GPC", "1", "", "reload", "1"),
+            ScriptletParser.parse(rule)!!.arguments,
+        )
+        assertEquals(
+            ScriptletParser.parse("+js(set-cookie, GPC, 1)"),
+            ScriptletParser.parse("+js(set-cookie, GPC, 1, /, reload, 0)"),
+        )
+        val engine = KotlinFilterEngine()
+        engine.replace(
+            listOf(
+                "usaa.com##+js(set-cookie, GPC, 1, , dontOverwrite, 1, reload, 1)\n" +
+                    "usaa.com#@#+js(set-cookie, GPC, 1, /, reload, 1, dontOverwrite, 1)"
+            )
+        )
+        assertTrue(engine.scriptlets("https://usaa.com/").isEmpty())
+        for (tail in
+            listOf(
+                "reload",
+                "reload, 2",
+                "reload, 1, reload, 1",
+                "domain, example.com",
+                "dontOverwrite, true",
+                "reload, 1, extra, 1",
+            )) {
+            assertNull(
+                tail,
+                ScriptletParser.parse("+js(set-cookie, GPC, 1, , $tail)"),
+            )
+        }
+        assertNull(
+            ScriptletParser.parse("+js(set-cookie, GPC, unsafe-value, , reload, 1)")
+        )
+    }
+
     // Real upstream names and forms, including operations absent from filters.txt.
     private val examples =
         linkedMapOf(
@@ -153,7 +191,7 @@ class AdditionalScriptletTest {
                 "set-cookie, name, arbitrary",
                 "set-cookie, name, true, /path",
                 "set-local-storage-item, key, \$now\$",
-                "set-cookie, name, true, , reload, 1",
+                "set-cookie, name, true, , unknown, 1",
                 "set-attr, body, onclick, true",
                 "set-attr, iframe, srcdoc, true",
                 "ra, onclick, a, unexpected",

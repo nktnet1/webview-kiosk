@@ -1,4 +1,4 @@
-# Compiled cache - v1.0.21
+# Compiled cache - v1.0.22
 
 All four opportunities are technically possible, with different tradeoffs:
 
@@ -11,7 +11,7 @@ All four opportunities are technically possible, with different tradeoffs:
 
 ## Representation and invalidation
 
-Schema 11 uses a disposable WKCF binary snapshot: source SHA-256, interned strings,
+Schema 12 uses a disposable WKCF binary snapshot: source SHA-256, interned strings,
 normalized network/cosmetic/scriptlet records, bounded counts and trailing CRC32.
 It does not use Java object serialization. Identity includes exact input text,
 list boundaries, ordering and trust bits. Cached scriptlet arguments are validated
@@ -23,7 +23,9 @@ Schema 10 invalidates records for document-specific navigation matching; it stil
 rebuilds runtime indexes. Schema 11 adds query-modifier identities, including
 exceptions and badfilters, and invalidates records for modifier delimiter parsing.
 RE2/J programs for network patterns and query modifiers are rebuilt and bounded
-when records are restored. Older schemas recompile once.
+when records are restored. Schema 12 adds scriptlet entity scopes and canonical
+cookie flags; older schemas recompile once. The binary layout remains normalized
+rules, with runtime indexes rebuilt on load.
 
 The warm path reads one aggregate snapshot and constructs the indexes. On a miss,
 per-source SHA-256-keyed records in `compiled-rules.bin.sources` allow only changed,

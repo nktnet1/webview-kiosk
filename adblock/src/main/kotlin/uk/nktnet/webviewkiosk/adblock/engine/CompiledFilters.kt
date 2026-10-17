@@ -23,7 +23,7 @@ internal object FilterCompiler {
                 is ParsedFilter.Scriptlet,
                 is ParsedFilter.Cosmetic -> supported++
 
-                ParsedFilter.Unsupported -> unsupported++
+                is ParsedFilter.Unsupported -> unsupported++
 
                 is ParsedFilter.Invalid -> {
                     invalid++
@@ -158,7 +158,9 @@ internal data class CompiledRuleSet(
                 it.conditions.thirdParty != null ||
                     it.conditions.domains.usesEntities ||
                     it.conditions.targets.usesEntities
-            } || cosmetics.any { it.domains.usesEntities }
+            } ||
+                cosmetics.any { it.domains.usesEntities } ||
+                scriptlets.any { it.domains.usesEntities }
         ) {
             // Load OkHttp's existing public-suffix data on the compilation worker.
             httpAddress("https://example.com/")!!.topPrivateDomain()

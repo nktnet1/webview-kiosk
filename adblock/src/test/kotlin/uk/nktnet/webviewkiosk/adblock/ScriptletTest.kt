@@ -162,8 +162,7 @@ class ScriptletTest {
                 inspectFilterList("site.example##$expression").unsupportedRules,
             )
         }
-        for (scope in
-            listOf("", "~site.example", "site.*", "/site[0-9]/", "[::1]")) {
+        for (scope in listOf("", "~site.example", "/site[0-9]/", "[::1]")) {
             assertEquals(
                 scope,
                 1,
