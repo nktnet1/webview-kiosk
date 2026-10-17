@@ -270,14 +270,9 @@ internal data class UrlPattern(
         compiledRegex?.let { pattern ->
             // RE2/J has no backtracking. Also cap aggregate automaton work per
             // request.
-            if (
-                !budget.consume(
-                    (url.length + 1) * maxOf(1, pattern.programSize() / 4)
-                )
-            ) {
-                return false
-            }
-            return pattern.matcher(url).find()
+            return budget.consume(
+                (url.length + 1) * maxOf(1, pattern.programSize() / 4)
+            ) && pattern.matcher(url).find()
         }
         if (!domainAnchor) {
             return glob(url, 0, !startAnchor, budget)

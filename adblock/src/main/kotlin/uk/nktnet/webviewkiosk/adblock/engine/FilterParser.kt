@@ -1279,11 +1279,11 @@ internal object FilterParser {
             return try {
                 UrlPattern(
                     raw.substring(1, raw.lastIndex),
-                    false,
-                    false,
-                    false,
-                    matchCase,
-                    null,
+                    domainAnchor = false,
+                    startAnchor = false,
+                    endAnchor = false,
+                    matchCase = matchCase,
+                    hostIndex = null,
                     regex = true,
                 )
             } catch (_: IllegalArgumentException) {
