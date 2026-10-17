@@ -16,20 +16,25 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AlertDialogDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
@@ -67,6 +72,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
@@ -112,6 +118,7 @@ import uk.nktnet.webviewkiosk.blocking.filterListFailureMessage
 import uk.nktnet.webviewkiosk.blocking.toFilterListUrlOrNull
 import uk.nktnet.webviewkiosk.managers.AuthenticationManager
 import uk.nktnet.webviewkiosk.managers.ToastManager
+import uk.nktnet.webviewkiosk.ui.components.common.SystemSafeDialog
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingDivider
 import uk.nktnet.webviewkiosk.ui.components.setting.SettingLabel
 import uk.nktnet.webviewkiosk.utils.navigateToWebViewScreen
@@ -707,7 +714,7 @@ fun SettingsContentBlockingScreen(navController: NavController) {
                             overflow = TextOverflow.Ellipsis,
                         )
                         Text(
-                            "${lists.size} total · ${lists.count { it.enabled }} enabled",
+                            "${lists.count { it.enabled }}/${lists.size} enabled",
                             modifier = Modifier.weight(1f),
                             textAlign = TextAlign.End,
                             style = MaterialTheme.typography.bodySmall,
@@ -1211,6 +1218,7 @@ private fun FilterListInfoDialog(
 ) {
     val context = LocalContext.current
     val numbers = remember { NumberFormat.getIntegerInstance() }
+    val scrollState = rememberScrollState()
     var fileSize by remember(item.id) { mutableStateOf<Long?>(null) }
     var info by remember(item.id) { mutableStateOf<FilterListInfo?>(null) }
     var failure by remember(item.id) { mutableStateOf<String?>(null) }
@@ -1226,141 +1234,210 @@ private fun FilterListInfoDialog(
             failure = "List information is unavailable. Please try again."
         }
     }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            SelectionContainer {
-                Text(
-                    item.displayName(),
-                    modifier =
-                        Modifier.heightIn(max = 120.dp)
-                            .verticalScroll(rememberScrollState()),
-                )
-            }
-        },
-        text = {
+    SystemSafeDialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier =
+                Modifier.windowInsetsPadding(WindowInsets.safeDrawing)
+                    .padding(vertical = 16.dp)
+                    .fillMaxHeight(0.9f)
+                    .wrapContentHeight()
+                    .widthIn(min = 280.dp, max = 560.dp),
+            shape = AlertDialogDefaults.shape,
+            color = AlertDialogDefaults.containerColor,
+            tonalElevation = AlertDialogDefaults.TonalElevation,
+        ) {
             Column(
                 modifier =
-                    Modifier.fillMaxWidth()
-                        .heightIn(max = 540.dp)
-                        .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                    Modifier.fillMaxWidth().padding(top = 24.dp, bottom = 8.dp)
             ) {
-                val details = info
-                val unavailable = failure != null
-                item.sourceUrl?.let { source ->
-                    InfoSection("Source URL") {
-                        SelectionContainer {
-                            Text(
-                                source,
-                                modifier = Modifier.fillMaxWidth().padding(12.dp),
-                                style = MaterialTheme.typography.bodySmall,
+                SelectionContainer {
+                    Text(
+                        item.displayName(),
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .padding(horizontal = 24.dp)
+                                .heightIn(max = 120.dp)
+                                .verticalScroll(rememberScrollState()),
+                        style = MaterialTheme.typography.headlineSmall,
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+                Box(
+                    modifier =
+                        Modifier.fillMaxWidth()
+                            .weight(1f, fill = false)
+                            .heightIn(max = 540.dp)
+                            .padding(horizontal = 24.dp)
+                ) {
+                    Column(
+                        modifier =
+                            Modifier.fillMaxWidth().verticalScroll(scrollState),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    ) {
+                        val details = info
+                        val unavailable = failure != null
+                        item.sourceUrl?.let { source ->
+                            InfoSection("Source URL") {
+                                SelectionContainer {
+                                    Text(
+                                        source,
+                                        modifier =
+                                            Modifier.fillMaxWidth().padding(12.dp),
+                                        style = MaterialTheme.typography.bodySmall,
+                                    )
+                                }
+                            }
+                        }
+                        InfoSection("List details") {
+                            InfoStat(
+                                "Type",
+                                when (item.type) {
+                                    FilterListType.FILE -> "Custom"
+                                    FilterListType.URL -> "URL"
+                                    FilterListType.PRESET -> "Preset"
+                                },
+                            )
+                            InfoStat(
+                                "Status",
+                                if (item.enabled) {
+                                    "Enabled"
+                                } else {
+                                    "Disabled"
+                                },
+                            )
+                            InfoStat(
+                                "File size",
+                                fileSize?.let {
+                                    Formatter.formatShortFileSize(context, it)
+                                },
+                                unavailable,
+                            )
+                            InfoStat(
+                                "Last updated",
+                                when {
+                                    item.type == FilterListType.FILE ->
+                                        "Not applicable"
+
+                                    item.lastRefreshedAt == null -> "Unknown"
+
+                                    else ->
+                                        remember(item.lastRefreshedAt) {
+                                            SimpleDateFormat(
+                                                    "d MMM yyyy, h:mm a",
+                                                    Locale.getDefault(),
+                                                )
+                                                .format(Date(item.lastRefreshedAt))
+                                        }
+                                },
                             )
                         }
+                        InfoSection("Rules") {
+                            InfoStat(
+                                "Network",
+                                details?.let { numbers.format(it.networkRules) },
+                                unavailable,
+                            )
+                            InfoStat(
+                                "Cosmetic",
+                                details?.let { numbers.format(it.cosmeticRules) },
+                                unavailable,
+                            )
+                            InfoStat(
+                                "Scriptlets",
+                                details?.let { numbers.format(it.scriptletRules) },
+                                unavailable,
+                            )
+                            InfoStat(
+                                "Skipped",
+                                details?.let { numbers.format(it.skippedRules) },
+                                unavailable,
+                            )
+                            InfoStat(
+                                "Invalid",
+                                details?.let { numbers.format(it.invalidRules) },
+                                unavailable,
+                            )
+                            InfoStat(
+                                "Total",
+                                details?.let { numbers.format(it.totalRules) },
+                                unavailable,
+                            )
+                        }
+                        details
+                            ?.takeIf { it.partialRules > 0 }
+                            ?.let { info ->
+                                InfoSection("Partially supported rules") {
+                                    InfoStat(
+                                        "\$all",
+                                        numbers.format(info.partialRules),
+                                    )
+                                    Text(
+                                        "Applies to intercepted network requests and page navigation. " +
+                                            "Popup and inline script/font filtering are unavailable.",
+                                        modifier = Modifier.padding(12.dp),
+                                        style = MaterialTheme.typography.bodySmall,
+                                    )
+                                }
+                            }
+                        details
+                            ?.skipReasons
+                            ?.takeIf { it.isNotEmpty() }
+                            ?.let { reasons ->
+                                InfoSection("Skipped rules") {
+                                    reasons.entries
+                                        .sortedBy { it.key.ordinal }
+                                        .forEach { (reason, count) ->
+                                            InfoStat(
+                                                reason.label,
+                                                numbers.format(count),
+                                            )
+                                        }
+                                }
+                            }
+                        failure?.let {
+                            Text(it, color = MaterialTheme.colorScheme.error)
+                        }
                     }
-                }
-                InfoSection("List details") {
-                    InfoStat(
-                        "Type",
-                        when (item.type) {
-                            FilterListType.FILE -> "Custom"
-                            FilterListType.URL -> "URL"
-                            FilterListType.PRESET -> "Preset"
-                        },
-                    )
-                    InfoStat(
-                        "Status",
-                        if (item.enabled) {
-                            "Enabled"
-                        } else {
-                            "Disabled"
-                        },
-                    )
-                    InfoStat(
-                        "Refreshed",
-                        when {
-                            item.type == FilterListType.FILE -> "Not applicable"
-
-                            item.lastRefreshedAt == null -> "Unknown"
-
-                            else ->
-                                remember(item.lastRefreshedAt) {
-                                    SimpleDateFormat(
-                                            "d MMM yyyy, h:mm a",
-                                            Locale.getDefault(),
+                    if (scrollState.canScrollForward) {
+                        Box(
+                            modifier =
+                                Modifier.align(Alignment.BottomCenter)
+                                    .fillMaxWidth()
+                                    .height(40.dp)
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(
+                                                AlertDialogDefaults.containerColor
+                                                    .copy(alpha = 0f),
+                                                AlertDialogDefaults.containerColor
+                                                    .copy(alpha = 0.7f),
+                                            )
                                         )
-                                        .format(Date(item.lastRefreshedAt))
-                                }
-                        },
-                    )
-                    InfoStat(
-                        "File size",
-                        fileSize?.let { Formatter.formatShortFileSize(context, it) },
-                        unavailable,
-                    )
-                }
-                InfoSection("Rules") {
-                    InfoStat(
-                        "Network",
-                        details?.let { numbers.format(it.networkRules) },
-                        unavailable,
-                    )
-                    InfoStat(
-                        "Cosmetic",
-                        details?.let { numbers.format(it.cosmeticRules) },
-                        unavailable,
-                    )
-                    InfoStat(
-                        "Scriptlets",
-                        details?.let { numbers.format(it.scriptletRules) },
-                        unavailable,
-                    )
-                    InfoStat(
-                        "Skipped",
-                        details?.let { numbers.format(it.skippedRules) },
-                        unavailable,
-                    )
-                    InfoStat(
-                        "Invalid",
-                        details?.let { numbers.format(it.invalidRules) },
-                        unavailable,
-                    )
-                    InfoStat(
-                        "Total",
-                        details?.let { numbers.format(it.totalRules) },
-                        unavailable,
-                    )
-                }
-                details
-                    ?.takeIf { it.partialRules > 0 }
-                    ?.let { info ->
-                        InfoSection("Partially supported rules") {
-                            InfoStat("\$all", numbers.format(info.partialRules))
+                                    ),
+                            contentAlignment = Alignment.BottomCenter,
+                        ) {
                             Text(
-                                "Applies to intercepted network requests and page navigation. " +
-                                    "Popup and inline script/font filtering are unavailable.",
-                                modifier = Modifier.padding(12.dp),
-                                style = MaterialTheme.typography.bodySmall,
+                                "Scroll for more \u2193",
+                                modifier = Modifier.padding(bottom = 4.dp),
+                                style = MaterialTheme.typography.labelMedium,
+                                color =
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                        alpha = 0.9f
+                                    ),
                             )
                         }
                     }
-                details
-                    ?.skipReasons
-                    ?.takeIf { it.isNotEmpty() }
-                    ?.let { reasons ->
-                        InfoSection("Skipped rules") {
-                            reasons.entries
-                                .sortedBy { it.key.ordinal }
-                                .forEach { (reason, count) ->
-                                    InfoStat(reason.label, numbers.format(count))
-                                }
-                        }
-                    }
-                failure?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                }
+                Row(
+                    modifier =
+                        Modifier.fillMaxWidth().padding(top = 4.dp, end = 16.dp),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    TextButton(onClick = onDismiss) { Text("Close") }
+                }
             }
-        },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
-    )
+        }
+    }
 }
 
 @Composable

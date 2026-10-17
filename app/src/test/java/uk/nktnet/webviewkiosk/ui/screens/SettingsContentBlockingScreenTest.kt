@@ -237,18 +237,21 @@ class SettingsContentBlockingScreenTest {
 
     @Test
     fun togglingOneListDoesNotDisableTheOtherSwitches() {
+        assertTrue(hasText("3/3 enabled"))
         clickDescription("Filter First")
         assertFalse(disabled(descriptionNode("Filter Second")))
         assertFalse(disabled(descriptionNode("Filter Other")))
         awaitCondition {
             !store.list().first().enabled &&
-                selectionState("Filter First") == ToggleableState.Off
+                selectionState("Filter First") == ToggleableState.Off &&
+                hasText("2/3 enabled")
         }
 
         clickDescription("Filter Second")
         awaitCondition {
             !store.list()[1].enabled &&
-                selectionState("Filter Second") == ToggleableState.Off
+                selectionState("Filter Second") == ToggleableState.Off &&
+                hasText("1/3 enabled")
         }
         assertTrue(store.list()[2].enabled)
     }
@@ -267,6 +270,12 @@ class SettingsContentBlockingScreenTest {
             textNode("Source URL").boundsInWindow.top <
                 textNode("List details").boundsInWindow.top
         )
+        assertTrue(hasText("Last updated"))
+        assertFalse(hasText("Refreshed"))
+        assertTrue(
+            textNode("File size").boundsInWindow.top <
+                textNode("Last updated").boundsInWindow.top
+        )
         assertTrue(
             nodes().any { node ->
                 node.config.getOrNull(SemanticsProperties.Text)?.any { text ->
@@ -274,6 +283,72 @@ class SettingsContentBlockingScreenTest {
                 } == true
             }
         )
+    }
+
+    @Test
+    fun listInfoSignalsMoreContentUntilScrolledToBottom() {
+        clickDescription("Options for First")
+        click("Info")
+        awaitCondition { hasText("Scroll for more \u2193") }
+
+        val scrollable =
+            generateSequence(textNode("List details")) { it.parent }
+                .first { it.config.getOrNull(SemanticsActions.ScrollBy) != null }
+        val hint = textNode("Scroll for more \u2193")
+        assertTrue(
+            "Scroll hint should overlay the bottom of the details",
+            hint.boundsInWindow.top < scrollable.boundsInWindow.bottom,
+        )
+        assertTrue(
+            "Scroll hint should remain within the details area",
+            hint.boundsInWindow.bottom <= scrollable.boundsInWindow.bottom,
+        )
+        assertTrue(
+            "Scroll hint overlaps Close",
+            hint.boundsInWindow.bottom <= textNode("Close").boundsInWindow.top,
+        )
+
+        assertTrue(
+            scrollable.config[SemanticsActions.ScrollBy].action!!.invoke(0f, 10000f)
+        )
+        awaitCondition { !hasText("Scroll for more \u2193") }
+        assertTrue(hasText("Skipped rules"))
+        val gap =
+            textNode("Close").boundsInWindow.top - scrollable.boundsInWindow.bottom
+        val density = activityController.get().resources.displayMetrics.density
+        assertTrue(
+            "Too much space above Close: ${gap / density}dp",
+            gap <= 28f * density,
+        )
+    }
+
+    @Test
+    @Config(qualifiers = "w480dp-h640dp")
+    fun listInfoDialogLeavesSpaceAroundSystemBarsOnShortScreens() {
+        clickDescription("Options for First")
+        click("Info")
+        awaitCondition { hasText("List details") && hasText("Close") }
+        val density = activityController.get().resources.displayMetrics.density
+        val height = activityController.get().resources.displayMetrics.heightPixels
+        val dialog =
+            nodes().first { it.config.contains(SemanticsProperties.IsDialog) }
+        val title =
+            nodes()
+                .filter { node ->
+                    node.config.getOrNull(SemanticsProperties.Text)?.any {
+                        it.text == "First"
+                    } == true
+                }
+                .minBy { it.boundsInWindow.top }
+        val close = textNode("Close")
+        assertTrue(
+            title.boundsInWindow.top - dialog.boundsInWindow.top >= 24f * density
+        )
+        assertTrue(
+            dialog.boundsInWindow.bottom - close.boundsInWindow.bottom >=
+                24f * density
+        )
+        assertTrue(dialog.boundsInWindow.bottom <= height - 16f * density)
     }
 
     @Test
